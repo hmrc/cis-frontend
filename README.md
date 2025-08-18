@@ -1,7 +1,15 @@
 
 # cis-frontend
 
-This is a placeholder README.md for a new repository
+This is the new cis-frontend repository
+
+## Running the service
+
+Service Manager: `sm2 --start CIS_ALL`
+
+To run all tests and coverage: `./run_all_tests.sh`
+
+To start the server locally: `sbt run`
 
 ### License
 

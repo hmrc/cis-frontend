@@ -1,4 +1,4 @@
-service.name = cis-frontend
+service.name = Construction Industry Scheme
 
 site.back = Back
 site.remove = Remove
@@ -27,9 +27,9 @@ error.title.prefix = Error:
 error.prefix = Error
 error.summary.title = There is a problem
 
-index.title = cis-frontend
-index.heading = cis-frontend
-index.guidance = Welcome to your new frontend. Please see the README file for a guide to getting started.
+index.title = Construction Industry Scheme
+index.heading = Construction Industry Scheme
+index.guidance = Welcome to cis-frontend. Please see the README file for a guide to getting started.
 
 checkYourAnswers.title = Check your answers
 checkYourAnswers.heading = Check your answers
