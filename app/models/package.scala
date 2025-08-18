@@ -138,6 +138,7 @@ package object models {
                 }
               }
           }
+        case _ => JsError("cannot find value at path")
       }
     }
   }
