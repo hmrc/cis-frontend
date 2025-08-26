@@ -20,7 +20,6 @@ import views.html.components.H1
 import play.api.test.FakeRequest
 import play.api.i18n.Messages
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 
 class H1Spec extends SpecBase with Matchers {
 
@@ -90,10 +89,6 @@ class H1Spec extends SpecBase with Matchers {
     def getHeadingElement(html: play.twirl.api.Html): org.jsoup.select.Elements = {
       val doc = Jsoup.parse(html.body)
       doc.select("h1")
-    }
-
-    def parseHtml(html: play.twirl.api.Html): Document = {
-      Jsoup.parse(html.body)
     }
   }
 }

@@ -20,7 +20,6 @@ import views.html.components.BulletList
 import play.api.test.FakeRequest
 import play.api.i18n.Messages
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 
 class BulletListSpec extends SpecBase with Matchers {
 
@@ -110,7 +109,7 @@ class BulletListSpec extends SpecBase with Matchers {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val testItems = Seq("First bullet", "Second bullet", "Third bullet")
+
 
     def getBulletElements(html: play.twirl.api.Html): org.jsoup.select.Elements = {
       val doc = Jsoup.parse(html.body)
@@ -122,8 +121,6 @@ class BulletListSpec extends SpecBase with Matchers {
       doc.select("ul")
     }
 
-    def parseHtml(html: play.twirl.api.Html): Document = {
-      Jsoup.parse(html.body)
-    }
+
   }
 }
