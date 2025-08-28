@@ -47,3 +47,11 @@ signedOut.guidance = We did not save your answers.
 
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
+
+inactivityRequest.title = inactivityRequest
+inactivityRequest.heading = inactivityRequest
+inactivityRequest.option1 = Option 1
+inactivityRequest.option2 = Option 2
+inactivityRequest.checkYourAnswersLabel = inactivityRequest
+inactivityRequest.error.required = Select inactivityRequest
+inactivityRequest.change.hidden = InactivityRequest

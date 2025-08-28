@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package generators
+package forms
 
-import models._
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Gen}
+import javax.inject.Inject
 
-trait ModelGenerators {
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.InactivityRequest
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+class InactivityRequestFormProvider @Inject() extends Mappings {
+
+  def apply(): Form[InactivityRequest] =
+    Form(
+      "value" -> enumerable[InactivityRequest]("inactivityRequest.error.required")
+    )
 }
