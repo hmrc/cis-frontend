@@ -11,6 +11,30 @@ To run all tests and coverage: `./run_all_tests.sh`
 
 To start the server locally: `sbt run`
 
+## Adding New Pages
+
+### Folder Structure
+The project uses domain-based organization. Each new page should be placed in the appropriate domain folder:
+
+```
+app/
+├── controllers/[domain]/          # e.g., monthlyreturns/
+├── models/[domain]/               # e.g., monthlyreturns/
+├── views/[domain]/                # e.g., monthlyreturns/
+├── forms/[domain]/                # e.g., monthlyreturns/
+├── pages/[domain]/                # e.g., monthlyreturns/
+└── viewmodels/checkAnswers/[domain]/
+```
+
+```
+test/
+├── controllers/[domain]/
+├── models/[domain]/
+├── forms/[domain]/
+└── views/[domain]/
+```
+
+
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
