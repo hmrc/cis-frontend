@@ -14,7 +14,7 @@ To start the server locally: `sbt run`
 ## Adding New Pages
 
 ### Folder Structure
-The project uses domain-based organization. Each new page should be placed in the appropriate domain folder:
+The project uses domain-based organisation. Each new page should be placed in the appropriate domain folder:
 
 ```
 app/
@@ -33,7 +33,6 @@ test/
 ├── forms/[domain]/
 └── views/[domain]/
 ```
-
 
 ### License
 
