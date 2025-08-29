@@ -14,12 +14,19 @@
  * limitations under the License.
  *@
 
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.Radios
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.errormessage.ErrorMessage
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+
 @this(
     layout: templates.Layout,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
+    govukInsetText: GovukInsetText,
+    fieldSet: components.FieldSet,
+    paragraph: components.Paragraph
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
@@ -32,13 +39,32 @@
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
         }
 
-        @govukRadios(
-            RadiosViewModel(
-                field  = form("value"),
-                legend = LegendViewModel(messages("inactivityRequest.heading")).asPageHeading(),
-                items  = InactivityRequest.options
+        @fieldSet(
+            legend = "inactivityRequest.heading",
+            asHeading = true,
+            describedBy = None
+        ) {
+            @paragraph("inactivityRequest.p1")
+            @paragraph("inactivityRequest.p2")
+
+            @govukInsetText(
+                InsetTextViewModel(
+                    content = Text(messages("inactivityRequest.insetText"))
+                )
             )
-        )
+
+            @govukRadios(
+                Radios(
+                    fieldset = None,
+                    name = form("value").name,
+                    items = InactivityRequest.options map (item => item.copy(checked = form("value").value.isDefined && form("value").value == item.value)),
+                    errorMessage = if(form("value").hasErrors) Some(ErrorMessage(
+                        content = Text(messages(form("value").error.get.message, form("value").error.get.args: _*)),
+                        visuallyHiddenText = Some(messages("error.prefix"))
+                    )) else None
+                ).copy(classes = "govuk-radios--inline")
+            )
+        }
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))
