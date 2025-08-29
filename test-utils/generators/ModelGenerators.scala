@@ -16,8 +16,7 @@
 
 package generators
 
-import models._
-import org.scalacheck.Arbitrary.arbitrary
+import models.monthlyreturns.InactivityRequest
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {

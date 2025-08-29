@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package models
+package models.monthlyreturns
 
 import play.api.i18n.Messages
-import uk.gov.hmrc.govukfrontend.views.Aliases.Text
+import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
+import viewmodels.govuk.radios._
+import models.Enumerable
+import models.WithName
 
 sealed trait InactivityRequest
 

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
-import controllers.routes
-import models.{CheckMode, UserAnswers}
-import pages.InactivityRequestPage
+import controllers.monthlyreturns.routes
+import models.{UserAnswers, CheckMode}
+import pages.monthlyreturns.InactivityRequestPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent

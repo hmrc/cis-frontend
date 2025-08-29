@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package forms
+package forms.monthlyreturns
 
 import forms.behaviours.OptionFieldBehaviours
-import models.InactivityRequest
+import models.monthlyreturns.InactivityRequest
 import play.api.data.FormError
 
 class InactivityRequestFormProviderSpec extends OptionFieldBehaviours {

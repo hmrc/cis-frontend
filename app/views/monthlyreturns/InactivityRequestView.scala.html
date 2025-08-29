@@ -17,6 +17,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.Radios
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.errormessage.ErrorMessage
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+@import models.monthlyreturns.InactivityRequest
 
 @this(
     layout: templates.Layout,
@@ -33,7 +34,7 @@
 
 @layout(pageTitle = title(form, messages("inactivityRequest.title"))) {
 
-    @formHelper(action = routes.InactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.InactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))

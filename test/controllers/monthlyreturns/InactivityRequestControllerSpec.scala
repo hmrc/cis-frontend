@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.InactivityRequestFormProvider
-import models.{NormalMode, InactivityRequest, UserAnswers}
+import forms.monthlyreturns.InactivityRequestFormProvider
+import models.{NormalMode, UserAnswers}
+import models.monthlyreturns.InactivityRequest
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.InactivityRequestPage
+import pages.monthlyreturns.InactivityRequestPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.InactivityRequestView
+import views.html.monthlyreturns.InactivityRequestView
+import controllers.routes
 
 import scala.concurrent.Future
 
@@ -37,7 +39,7 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val inactivityRequestRoute = routes.InactivityRequestController.onPageLoad(NormalMode).url
+  lazy val inactivityRequestRoute = controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode).url
 
   val formProvider = new InactivityRequestFormProvider()
   val form = formProvider()

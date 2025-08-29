@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
-import models.InactivityRequest
+import models.monthlyreturns.InactivityRequest
 import play.api.libs.json.JsPath
+import pages.QuestionPage
 
 case object InactivityRequestPage extends QuestionPage[InactivityRequest] {
 

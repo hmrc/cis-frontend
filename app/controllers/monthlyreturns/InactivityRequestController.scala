@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import controllers.actions._
-import forms.InactivityRequestFormProvider
+import forms.monthlyreturns.InactivityRequestFormProvider
 import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
-import pages.InactivityRequestPage
+import pages.monthlyreturns.InactivityRequestPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.InactivityRequestView
+import views.html.monthlyreturns.InactivityRequestView
 
 import scala.concurrent.{ExecutionContext, Future}
 
