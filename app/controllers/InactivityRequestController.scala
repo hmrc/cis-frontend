@@ -44,10 +44,10 @@ class InactivityRequestController @Inject()(
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData) {
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
     implicit request =>
 
-      val preparedForm = request.userAnswers.flatMap(_.get(InactivityRequestPage)) match {
+      val preparedForm = request.userAnswers.get(InactivityRequestPage) match {
         case None => form
         case Some(value) => form.fill(value)
       }
