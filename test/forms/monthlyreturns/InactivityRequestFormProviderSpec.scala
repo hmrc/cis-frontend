@@ -14,15 +14,32 @@
  * limitations under the License.
  */
 
-package generators
+package forms.monthlyreturns
 
+import forms.behaviours.OptionFieldBehaviours
 import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+import play.api.data.FormError
 
-trait ModelGenerators {
+class InactivityRequestFormProviderSpec extends OptionFieldBehaviours {
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  val form = new InactivityRequestFormProvider()()
+
+  ".value" - {
+
+    val fieldName = "value"
+    val requiredKey = "inactivityRequest.error.required"
+
+    behave like optionsField[InactivityRequest](
+      form,
+      fieldName,
+      validValues  = InactivityRequest.values,
+      invalidError = FormError(fieldName, "error.invalid")
+    )
+
+    behave like mandatoryField(
+      form,
+      fieldName,
+      requiredError = FormError(fieldName, requiredKey)
+    )
+  }
 }

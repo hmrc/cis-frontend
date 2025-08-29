@@ -35,7 +35,7 @@ class H1Spec extends SpecBase with Matchers {
     "must render with default CSS class" in new Setup {
       val html = h1(testText)
       val heading = getHeadingElement(html)
-      heading.attr("class") mustBe "govuk-heading-l"
+      heading.attr("class") mustBe "govuk-heading-l govuk-!-margin-bottom-7"
     }
 
     "must render with custom CSS class" in new Setup {

@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import utils.Utils.emptyString
+package pages.monthlyreturns
 
-@this()
+import models.monthlyreturns.InactivityRequest
+import play.api.libs.json.JsPath
+import pages.QuestionPage
 
-@(
-  msg: String,
-  classes: String = "govuk-heading-l govuk-!-margin-bottom-7",
-  id: Option[String] = None
-)(implicit messages: Messages)
+case object InactivityRequestPage extends QuestionPage[InactivityRequest] {
 
-<h1 @{id.fold(emptyString)(id => s"id=$id")} class="@classes">@messages(msg)</h1>
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "inactivityRequest"
+}

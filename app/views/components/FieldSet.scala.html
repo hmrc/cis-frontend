@@ -16,12 +16,16 @@
 
 @import utils.Utils.emptyString
 
-@this()
+@this(govukFieldset: GovukFieldset)
 
-@(
-  msg: String,
-  classes: String = "govuk-heading-l govuk-!-margin-bottom-7",
-  id: Option[String] = None
-)(implicit messages: Messages)
+@(legend: String, asHeading: Boolean = true, describedBy: Option[String])(content: Html)(implicit messages: Messages)
 
-<h1 @{id.fold(emptyString)(id => s"id=$id")} class="@classes">@messages(msg)</h1>
+@govukFieldset(Fieldset(
+    legend = Some(Legend(
+        content = Text(messages(legend)),
+        classes = if(asHeading) "govuk-fieldset__legend--xl govuk-!-margin-bottom-7" else emptyString,
+        isPageHeading = asHeading
+    )),
+    describedBy = describedBy,
+    html = content
+))

@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import utils.Utils.emptyString
+package forms.monthlyreturns
 
-@this()
+import javax.inject.Inject
 
-@(
-  msg: String,
-  classes: String = "govuk-heading-l govuk-!-margin-bottom-7",
-  id: Option[String] = None
-)(implicit messages: Messages)
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.monthlyreturns.InactivityRequest
 
-<h1 @{id.fold(emptyString)(id => s"id=$id")} class="@classes">@messages(msg)</h1>
+class InactivityRequestFormProvider @Inject() extends Mappings {
+
+  def apply(): Form[InactivityRequest] =
+    Form(
+      "value" -> enumerable[InactivityRequest]("inactivityRequest.error.required")
+    )
+}
