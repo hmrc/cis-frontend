@@ -1,0 +1,9 @@
+confirmEmailAddress.title = Cadarnhau eich cyfeiriad e-bost
+confirmEmailAddress.heading = Cadarnhau eich cyfeiriad e-bost
+confirmEmailAddress.paragraph = Bydd Cyllid a Thollau Ei Mawrhydi (HMRC) yn anfon cadarnhad o gyflwyniad llwyddiannus drwy e-bost gan ddefnyddio'r cyfeiriad isod. Gallwch newid y cyfeiriad e-bost dros dro ar gyfer y cyflwyniad hwn.
+confirmEmailAddress.input.label = Cyfeiriad e-bost
+confirmEmailAddress.checkYourAnswersLabel = Cyfeiriad e-bost
+confirmEmailAddress.error.required = Rhowch gyfeiriad e-bost
+confirmEmailAddress.error.length = Rhaid i ConfirmEmailAddress fod yn 54 nod neu lai
+confirmEmailAddress.error.invalid = Rhowch gyfeiriad e-bost dilys
+confirmEmailAddress.change.hidden = ConfirmEmailAddress
