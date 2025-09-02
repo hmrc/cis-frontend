@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import forms.DateConfirmNilPaymentsFormProvider
+import forms.monthlyreturns.DateConfirmNilPaymentsFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmNilPaymentsPage
