@@ -24,7 +24,8 @@ GET        /monthly-return/submit-inactive-request            controllers.monthl
 POST       /monthly-return/submit-inactive-request            controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-submit-inactive-request     controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-submit-inactive-request     controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = CheckMode)
-GET        /confirm-email-address                        controllers.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
-POST       /confirm-email-address                        controllers.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
-GET        /change-confirm-email-address                 controllers.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
-POST       /change-confirm-email-address                 controllers.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/confirm-email-address        controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/confirm-email-address        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-confirm-email-address controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-confirm-email-address controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)

@@ -31,12 +31,12 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
       val html = view(form, NormalMode)
       val doc = Jsoup.parse(html.body)
 
-      doc.title must include(messages("confirmEmailAddress.title"))
-      doc.select("h1").text mustBe messages("confirmEmailAddress.heading")
+      doc.title must include(messages("monthlyreturns.confirmEmailAddress.title"))
+      doc.select("h1").text mustBe messages("monthlyreturns.confirmEmailAddress.heading")
 
-      doc.select("p").text must include(messages("confirmEmailAddress.paragraph"))
+      doc.select("p").text must include(messages("monthlyreturns.confirmEmailAddress.paragraph"))
 
-      doc.select("label").text must include(messages("confirmEmailAddress.input.label"))
+      doc.select("label").text must include(messages("monthlyreturns.confirmEmailAddress.input.label"))
 
       doc.select("button[type=submit]").text mustBe messages("site.continue")
     }
@@ -50,7 +50,7 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
 
       doc.select(".govuk-error-summary").size() mustBe 1
 
-      val expected = messages("confirmEmailAddress.error.required")
+      val expected = messages("monthlyreturns.confirmEmailAddress.error.required")
       doc.text() must include(expected)
     }
   }

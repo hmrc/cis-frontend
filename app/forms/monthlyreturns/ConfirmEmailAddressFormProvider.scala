@@ -28,8 +28,8 @@ class ConfirmEmailAddressFormProvider @Inject() extends Mappings {
 
   def apply(): Form[String] =
     Form(
-      "value" -> text("confirmEmailAddress.error.required")
-        .verifying(maxLength(MaxEmailLength, "confirmEmailAddress.error.length"))
-        .verifying(regexp(EmailRegex, "confirmEmailAddress.error.invalid"))
+      "value" -> text("monthlyreturns.confirmEmailAddress.error.required")
+        .verifying(maxLength(MaxEmailLength, "monthlyreturns.confirmEmailAddress.error.length"))
+        .verifying(regexp(EmailRegex, "monthlyreturns.confirmEmailAddress.error.invalid"))
     )
 }

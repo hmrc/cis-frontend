@@ -28,7 +28,7 @@
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("confirmEmailAddress.title"))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.confirmEmailAddress.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.ConfirmEmailAddressController.onSubmit(mode)) {
 
@@ -36,13 +36,13 @@
             @govukErrorSummary(ErrorSummaryViewModel(form))
         }
 
-        @h1("confirmEmailAddress.heading")
-        @paragraph("confirmEmailAddress.paragraph")
+        @h1("monthlyreturns.confirmEmailAddress.heading")
+        @paragraph("monthlyreturns.confirmEmailAddress.paragraph")
 
         @govukInput(
             InputViewModel(
                 field = form("value"),
-                label = LabelViewModel(messages("confirmEmailAddress.input.label"))
+                label = LabelViewModel(messages("monthlyreturns.confirmEmailAddress.input.label"))
             )
             .withWidth(Fixed20)
         )

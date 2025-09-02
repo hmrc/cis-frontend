@@ -56,13 +56,14 @@ monthlyreturns.inactivityRequest.change.hidden = do you want to submit an inacti
 monthlyreturns.inactivityRequest.p1 = You can submit an inactivity request to tell HM Revenue & Customs (HMRC) that you do not anticipate paying subcontractors in the next six months.
 monthlyreturns.inactivityRequest.p2 = If this request is accepted, you won’t need to send us a monthly return.
 monthlyreturns.inactivityRequest.insetText = You must let HMRC know when you start to pay subcontractors again by phoning the CIS Helpline. Telephone: 0300 200 3210
-confirmEmailAddress.title = Confirm your email address
-confirmEmailAddress.heading = Confirm your email address
-confirmEmailAddress.paragraph = HM Revenue and Customs (HMRC) will send confirmation of successful submission by email using the address below. You can change the email address temporarily for this submission.
-confirmEmailAddress.input.label = Confirm your email address
-confirmEmailAddress.checkYourAnswersLabel = Confirm your email address
-confirmEmailAddress.error.required = Your entry for ‘Email address’ is invalid. Please amend.
-confirmEmailAddress.error.length = Confirm Email Address must be 254 characters or less
-confirmEmailAddress.error.invalid = Enter a valid email address
-confirmEmailAddress.change.hidden = Confirm your email address
+
+monthlyreturns.confirmEmailAddress.title = Confirm your email address
+monthlyreturns.confirmEmailAddress.heading = Confirm your email address
+monthlyreturns.confirmEmailAddress.paragraph = HM Revenue and Customs (HMRC) will send confirmation of successful submission by email using the address below. You can change the email address temporarily for this submission.
+monthlyreturns.confirmEmailAddress.input.label = Confirm your email address
+monthlyreturns.confirmEmailAddress.checkYourAnswersLabel = Confirm your email address
+monthlyreturns.confirmEmailAddress.error.required = Your entry for ‘Email address’ is invalid. Please amend.
+monthlyreturns.confirmEmailAddress.error.length = Confirm Email Address must be 254 characters or less
+monthlyreturns.confirmEmailAddress.error.invalid = Enter a valid email address
+monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 

@@ -32,11 +32,11 @@ object ConfirmEmailAddressSummary  {
       answer =>
 
         SummaryListRowViewModel(
-          key     = "confirmEmailAddress.checkYourAnswersLabel",
+          key     = "monthlyreturns.confirmEmailAddress.checkYourAnswersLabel",
           value   = ValueViewModel(HtmlFormat.escape(answer).toString),
           actions = Seq(
             ActionItemViewModel("site.change", routes.ConfirmEmailAddressController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("confirmEmailAddress.change.hidden"))
+              .withVisuallyHiddenText(messages("monthlyreturns.confirmEmailAddress.change.hidden"))
           )
         )
     }

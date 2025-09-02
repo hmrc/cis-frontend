@@ -23,10 +23,10 @@ class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
   private val MaxEmailLength = 254
 
-  val requiredKey = "confirmEmailAddress.error.required"
-  val lengthKey = "confirmEmailAddress.error.length"
+  val requiredKey = "monthlyreturns.confirmEmailAddress.error.required"
+  val lengthKey = "monthlyreturns.confirmEmailAddress.error.length"
   val maxLength = MaxEmailLength
-  val invalidKey = "confirmEmailAddress.error.invalid"
+  val invalidKey = "monthlyreturns.confirmEmailAddress.error.invalid"
 
   val form = new ConfirmEmailAddressFormProvider()()
 
