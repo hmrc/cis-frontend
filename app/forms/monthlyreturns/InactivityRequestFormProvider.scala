@@ -26,6 +26,6 @@ class InactivityRequestFormProvider @Inject() extends Mappings {
 
   def apply(): Form[InactivityRequest] =
     Form(
-      "value" -> enumerable[InactivityRequest]("inactivityRequest.error.required")
+      "value" -> enumerable[InactivityRequest]("monthlyreturns.inactivityRequest.error.required")
     )
 }

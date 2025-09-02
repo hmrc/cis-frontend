@@ -20,7 +20,7 @@ GET         /account/signed-out                          controllers.auth.Signed
 
 GET         /unauthorised                                controllers.UnauthorisedController.onPageLoad()
 
-GET        /submit-inactive-request                           controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
-POST       /submit-inactive-request                           controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
-GET        /change-submit-inactive-request                    controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
-POST       /change-submit-inactive-request                    controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/submit-inactive-request            controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/submit-inactive-request            controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-submit-inactive-request     controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-submit-inactive-request     controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = CheckMode)

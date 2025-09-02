@@ -34,6 +34,18 @@ test/
 └── views/[domain]/
 ```
 
+### Example: routes and messages
+
+```routes
+GET  /monthly-return/submit-inactive-request  controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
+```
+
+Message key (messages.en):
+
+```properties
+monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
+```
+
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").

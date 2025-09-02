@@ -37,7 +37,12 @@ object InactivityRequest extends Enumerable.Implicits {
   def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map {
     case (value, index) =>
       RadioItem(
-        content = Text(messages(s"inactivityRequest.${value.toString}")),
+        content = Text(
+          value match {
+            case Option1 => messages("site.yes")
+            case Option2 => messages("site.no")
+          }
+        ),
         value   = Some(value.toString),
         id      = Some(s"value_$index")
       )

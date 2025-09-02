@@ -32,18 +32,21 @@ object InactivityRequestSummary  {
     answers.get(InactivityRequestPage).map {
       answer =>
 
+        val answerText = answer.toString match {
+          case "option1" => messages("site.yes")
+          case _          => messages("site.no")
+        }
+
         val value = ValueViewModel(
-          HtmlContent(
-            HtmlFormat.escape(messages(s"inactivityRequest.$answer"))
-          )
+          HtmlContent(HtmlFormat.escape(answerText))
         )
 
         SummaryListRowViewModel(
-          key     = "inactivityRequest.checkYourAnswersLabel",
+          key     = "monthlyreturns.inactivityRequest.checkYourAnswersLabel",
           value   = value,
           actions = Seq(
             ActionItemViewModel("site.change", routes.InactivityRequestController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("inactivityRequest.change.hidden"))
+              .withVisuallyHiddenText(messages("monthlyreturns.inactivityRequest.change.hidden"))
           )
         )
     }
