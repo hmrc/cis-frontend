@@ -1,4 +1,4 @@
-/*
+@*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ *@
 
-package generators
+@import utils.Utils.emptyString
 
-import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+@this(govukFieldset: GovukFieldset)
 
-trait ModelGenerators {
+@(legend: String, asHeading: Boolean = true, describedBy: Option[String])(content: Html)(implicit messages: Messages)
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
-}
+@govukFieldset(Fieldset(
+    legend = Some(Legend(
+        content = Text(messages(legend)),
+        classes = if(asHeading) "govuk-fieldset__legend--xl govuk-!-margin-bottom-7" else emptyString,
+        isPageHeading = asHeading
+    )),
+    describedBy = describedBy,
+    html = content
+))

@@ -47,3 +47,13 @@ signedOut.guidance = We did not save your answers.
 
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
+
+monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
+monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
+monthlyreturns.inactivityRequest.checkYourAnswersLabel = Do you want to submit an inactivity request?
+monthlyreturns.inactivityRequest.error.required = Select Yes if you want to submit an inactivity request.
+monthlyreturns.inactivityRequest.change.hidden = do you want to submit an inactivity request
+monthlyreturns.inactivityRequest.p1 = You can submit an inactivity request to tell HM Revenue & Customs (HMRC) that you do not anticipate paying subcontractors in the next six months.
+monthlyreturns.inactivityRequest.p2 = If this request is accepted, you won’t need to send us a monthly return.
+monthlyreturns.inactivityRequest.insetText = You must let HMRC know when you start to pay subcontractors again by phoning the CIS Helpline. Telephone: 0300 200 3210
+
