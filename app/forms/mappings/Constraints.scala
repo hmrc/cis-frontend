@@ -24,58 +24,54 @@ import play.api.data.validation.{Constraint, Invalid, Valid}
 trait Constraints {
 
   protected def firstError[A](constraints: Constraint[A]*): Constraint[A] =
-    Constraint {
-      input =>
-        constraints
-          .map(_.apply(input))
-          .find(_ != Valid)
-          .getOrElse(Valid)
+    Constraint { input =>
+      constraints
+        .map(_.apply(input))
+        .find(_ != Valid)
+        .getOrElse(Valid)
     }
 
   protected def minimumValue[A](minimum: A, errorKey: String)(implicit ev: Ordering[A]): Constraint[A] =
-    Constraint {
-      input =>
+    Constraint { input =>
 
-        import ev._
+      import ev._
 
-        if (input >= minimum) {
-          Valid
-        } else {
-          Invalid(errorKey, minimum)
-        }
+      if (input >= minimum) {
+        Valid
+      } else {
+        Invalid(errorKey, minimum)
+      }
     }
 
   protected def maximumValue[A](maximum: A, errorKey: String)(implicit ev: Ordering[A]): Constraint[A] =
-    Constraint {
-      input =>
+    Constraint { input =>
 
-        import ev._
+      import ev._
 
-        if (input <= maximum) {
-          Valid
-        } else {
-          Invalid(errorKey, maximum)
-        }
+      if (input <= maximum) {
+        Valid
+      } else {
+        Invalid(errorKey, maximum)
+      }
     }
 
   protected def inRange[A](minimum: A, maximum: A, errorKey: String)(implicit ev: Ordering[A]): Constraint[A] =
-    Constraint {
-      input =>
+    Constraint { input =>
 
-        import ev._
+      import ev._
 
-        if (input >= minimum && input <= maximum) {
-          Valid
-        } else {
-          Invalid(errorKey, minimum, maximum)
-        }
+      if (input >= minimum && input <= maximum) {
+        Valid
+      } else {
+        Invalid(errorKey, minimum, maximum)
+      }
     }
 
   protected def regexp(regex: String, errorKey: String): Constraint[String] =
     Constraint {
       case str if str.matches(regex) =>
         Valid
-      case _ =>
+      case _                         =>
         Invalid(errorKey, regex)
     }
 
@@ -83,7 +79,7 @@ trait Constraints {
     Constraint {
       case str if str.length <= maximum =>
         Valid
-      case _ =>
+      case _                            =>
         Invalid(errorKey, maximum)
     }
 
@@ -91,7 +87,7 @@ trait Constraints {
     Constraint {
       case date if date.isAfter(maximum) =>
         Invalid(errorKey, args: _*)
-      case _ =>
+      case _                             =>
         Valid
     }
 
@@ -99,7 +95,7 @@ trait Constraints {
     Constraint {
       case date if date.isBefore(minimum) =>
         Invalid(errorKey, args: _*)
-      case _ =>
+      case _                              =>
         Valid
     }
 
@@ -107,27 +103,29 @@ trait Constraints {
     Constraint {
       case set if set.nonEmpty =>
         Valid
-      case _ =>
+      case _                   =>
         Invalid(errorKey)
     }
 
-  protected def minimumCurrency(minimum: BigDecimal, errorKey: String)(implicit ev: Ordering[BigDecimal]): Constraint[BigDecimal] =
-    Constraint {
-      input =>
-        if (input >= minimum) {
-          Valid
-        } else {
-          Invalid(errorKey, CurrencyFormatter.currencyFormat(minimum))
-        }
+  protected def minimumCurrency(minimum: BigDecimal, errorKey: String)(implicit
+    ev: Ordering[BigDecimal]
+  ): Constraint[BigDecimal] =
+    Constraint { input =>
+      if (input >= minimum) {
+        Valid
+      } else {
+        Invalid(errorKey, CurrencyFormatter.currencyFormat(minimum))
+      }
     }
 
-  protected def maximumCurrency(maximum: BigDecimal, errorKey: String)(implicit ev: Ordering[BigDecimal]): Constraint[BigDecimal] =
-    Constraint {
-      input =>
-        if (input <= maximum) {
-          Valid
-        } else {
-          Invalid(errorKey, CurrencyFormatter.currencyFormat(maximum))
-        }
+  protected def maximumCurrency(maximum: BigDecimal, errorKey: String)(implicit
+    ev: Ordering[BigDecimal]
+  ): Constraint[BigDecimal] =
+    Constraint { input =>
+      if (input <= maximum) {
+        Valid
+      } else {
+        Invalid(errorKey, CurrencyFormatter.currencyFormat(maximum))
+      }
     }
 }

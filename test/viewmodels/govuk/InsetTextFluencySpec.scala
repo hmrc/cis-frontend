@@ -28,8 +28,8 @@ class InsetTextFluencySpec extends AnyFreeSpec with Matchers {
     "apply" - {
       "must create an InsetText with the given content" in {
         val content = Text("Test content")
-        val result = insettext.InsetTextViewModel(content)
-        
+        val result  = insettext.InsetTextViewModel(content)
+
         result.content mustEqual content
       }
     }
@@ -40,11 +40,11 @@ class InsetTextFluencySpec extends AnyFreeSpec with Matchers {
     "withContent" - {
       "must update the content" in {
         val originalContent = Text("Original content")
-        val newContent = Text("New content")
-        val insetText = insettext.InsetTextViewModel(originalContent)
-        
+        val newContent      = Text("New content")
+        val insetText       = insettext.InsetTextViewModel(originalContent)
+
         val result = insetText.withContent(newContent)
-        
+
         result.content mustEqual newContent
       }
     }
@@ -52,8 +52,8 @@ class InsetTextFluencySpec extends AnyFreeSpec with Matchers {
     "withCssClass" - {
       "must add the new class to existing classes" in {
         val insetText = insettext.InsetTextViewModel(Text("Test"))
-        val result = insetText.withCssClass("test-class")
-        
+        val result    = insetText.withCssClass("test-class")
+
         result.classes must include("test-class")
       }
     }
@@ -61,8 +61,8 @@ class InsetTextFluencySpec extends AnyFreeSpec with Matchers {
     "withAttribute" - {
       "must add the new attribute" in {
         val insetText = insettext.InsetTextViewModel(Text("Test"))
-        val result = insetText.withAttribute("data-test" -> "value")
-        
+        val result    = insetText.withAttribute("data-test" -> "value")
+
         result.attributes must contain("data-test" -> "value")
       }
     }
