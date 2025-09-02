@@ -37,8 +37,12 @@ class IndexControllerSpec extends SpecBase {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
+<<<<<<< HEAD
 
         redirectLocation(result).value mustEqual monthlyReturnsRoutes.InactivityRequestController.onPageLoad(NormalMode).url
+=======
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
+>>>>>>> 65ecf52 ([DTR-266] reorganise confirm email address components into monthlyreturns package)
       }
     }
   }

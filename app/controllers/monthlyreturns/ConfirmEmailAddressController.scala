@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import controllers.actions._
-import forms.ConfirmEmailAddressFormProvider
+import forms.monthlyreturns.ConfirmEmailAddressFormProvider
 import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
-import pages.ConfirmEmailAddressPage
+import pages.monthlyreturns.ConfirmEmailAddressPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.ConfirmEmailAddressView
+import views.html.monthlyreturns.ConfirmEmailAddressView
 
 import scala.concurrent.{ExecutionContext, Future}
 

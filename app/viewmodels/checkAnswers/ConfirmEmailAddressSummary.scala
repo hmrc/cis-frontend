@@ -16,9 +16,9 @@
 
 package viewmodels.checkAnswers
 
-import controllers.routes
+import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
-import pages.ConfirmEmailAddressPage
+import pages.monthlyreturns.ConfirmEmailAddressPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow

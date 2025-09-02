@@ -39,7 +39,7 @@ class IndexController @Inject()(
     val userAnswers = UserAnswers(request.userId)
     
     sessionRepository.set(userAnswers).map { _ =>
-      Results.Redirect(controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode))
+      Results.Redirect(controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode))
     }
   }
 }
