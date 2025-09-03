@@ -30,7 +30,6 @@ class DateConfirmNilPaymentsFormProvider @Inject() extends Mappings {
     Form(
       "value" -> monthYearPaymentDate(
         invalidKey = "monthlyreturns.dateConfirmNilPayments.error.required",
-        allRequiredKey = "monthlyreturns.dateConfirmNilPayments.error.required.all",
         twoRequiredKey = "monthlyreturns.dateConfirmNilPayments.error.required.two",
         requiredKey = "monthlyreturns.dateConfirmNilPayments.error.required",
         dateFormats = DateFormats.monthYearFormats,

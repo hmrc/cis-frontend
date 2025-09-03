@@ -69,7 +69,6 @@ trait Mappings extends Formatters with Constraints {
 
   protected def monthYearPaymentDate(
     invalidKey: String,
-    allRequiredKey: String,
     twoRequiredKey: String,
     requiredKey: String,
     args: Seq[String] = Seq.empty,
@@ -77,6 +76,6 @@ trait Mappings extends Formatters with Constraints {
     fieldKeys: Seq[String]
   )(implicit messages: Messages): FieldMapping[LocalDate] =
     of(
-      new MonthYearDateFormatter(invalidKey, allRequiredKey, twoRequiredKey, requiredKey, args, dateFormats, fieldKeys)
+      new MonthYearDateFormatter(invalidKey, twoRequiredKey, requiredKey, args, dateFormats, fieldKeys)
     )
 }

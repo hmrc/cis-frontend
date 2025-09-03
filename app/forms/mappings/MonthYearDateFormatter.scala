@@ -26,14 +26,13 @@ case class DateFormat(dateType: String, errorKey: String, regex: String)
 
 class MonthYearDateFormatter(
   invalidKey: String,
-  allRequiredKey: String,
   twoRequiredKey: String,
   requiredKey: String,
   args: Seq[String] = Seq.empty,
   dateFormats: Seq[DateFormat],
   fieldKeys: Seq[String]
 )(implicit messages: Messages)
-    extends LocalDateFormatter(invalidKey, allRequiredKey, twoRequiredKey, requiredKey, args) {
+    extends LocalDateFormatter(invalidKey, "", twoRequiredKey, requiredKey, args) {
 
   override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], LocalDate] = {
     val fields = fieldKeys.map { field =>

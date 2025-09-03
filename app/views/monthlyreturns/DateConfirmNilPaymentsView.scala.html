@@ -20,6 +20,7 @@
 @this(
     layout: templates.Layout,
     h1: H1,
+    h2: H2,
     paragraph: Paragraph,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
@@ -39,7 +40,7 @@
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.day")))
         }
 
-        @h1("monthlyreturns.dateConfirmNilPayments.title")
+        @h1("monthlyreturns.dateConfirmNilPayments.heading.h1")
         @paragraph("monthlyreturns.dateConfirmNilPayments.paragraph")
 
 
@@ -48,24 +49,14 @@
                 field  = form("value"),
                 legend = LegendViewModel(
                     HtmlContent(
-                        Seq(
-                            s"<dt><b>${messages("monthlyreturns.dateConfirmNilPayments.heading.h2")}</b></dt>",
-                            s"<br>"
-                        ).mkString
+                        h2("monthlyreturns.dateConfirmNilPayments.heading.h2").toString
                     )
                 )
             )
             .withMonthYearFormField(form("value"))
             .withHint(
                 HintViewModel(
-                    HtmlContent(
-                        Seq(
-                            s"<dt>${messages("monthlyreturns.dateConfirmNilPayments.hint.h1")}</dt>",
-                            s"<dt>${messages("monthlyreturns.dateConfirmNilPayments.hint.h2")}</dt>",
-                            s"</br>",
-                            s"<dt>${messages("monthlyreturns.dateConfirmNilPayments.hint.h3")}</dt>"
-                        ).mkString
-                    )
+                    HtmlContent(paragraph("monthlyreturns.dateConfirmNilPayments.hint").toString)
                 )
             )
         )
@@ -76,13 +67,8 @@
         ))
 
         @govukDetails(Details(
-            summary = Text(s"${messages("monthlyreturns.dateConfirmNilPayments.details.summary")}"),
-            content = HtmlContent(
-                        Seq(
-                            s"<p>${messages("monthlyreturns.dateConfirmNilPayments.details.p1")}</p>",
-                            s"<p>${messages("monthlyreturns.dateConfirmNilPayments.details.p2")}</p>"
-                        ).mkString
-                      )
+                summary = Text(s"${messages("monthlyreturns.dateConfirmNilPayments.details.summary")}"),
+                content = HtmlContent(paragraph("monthlyreturns.dateConfirmNilPayments.details").toString)
             )
         )
 
