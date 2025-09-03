@@ -21,7 +21,6 @@ import models.NormalMode
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import controllers.{routes => mainRoutes}
-import controllers.monthlyreturns.{routes => monthlyReturnsRoutes}
 
 class IndexControllerSpec extends SpecBase {
 
@@ -37,8 +36,7 @@ class IndexControllerSpec extends SpecBase {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-
-        redirectLocation(result).value mustEqual monthlyReturnsRoutes.InactivityRequestController.onPageLoad(NormalMode).url
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
       }
     }
   }
