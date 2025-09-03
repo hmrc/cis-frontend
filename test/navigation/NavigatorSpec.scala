@@ -19,6 +19,7 @@ package navigation
 import base.SpecBase
 import controllers.routes
 import pages._
+import pages.monthlyreturns.InactivityRequestPage
 import models._
 
 class NavigatorSpec extends SpecBase {
@@ -29,6 +30,10 @@ class NavigatorSpec extends SpecBase {
 
     "in Normal mode" - {
 
+      "must go from InactivityRequestPage to ConfirmEmailAddressController" in {
+        navigator.nextPage(InactivityRequestPage, NormalMode, UserAnswers("id")) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+      }
+
       "must go from a page that doesn't exist in the route map to Index" in {
 
         case object UnknownPage extends Page
@@ -37,6 +42,10 @@ class NavigatorSpec extends SpecBase {
     }
 
     "in Check mode" - {
+
+      "must go from InactivityRequestPage to ConfirmEmailAddressController in CheckMode" in {
+        navigator.nextPage(InactivityRequestPage, CheckMode, UserAnswers("id")) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(CheckMode)
+      }
 
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {
 
