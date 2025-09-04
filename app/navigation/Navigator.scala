@@ -27,11 +27,13 @@ import models._
 class Navigator @Inject() () {
 
   private val normalRoutes: Page => UserAnswers => Call = {
-    case InactivityRequestPage   =>
+    case DateConfirmNilPaymentsPage =>
+      _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+    case InactivityRequestPage      =>
       _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
-    case ConfirmEmailAddressPage => _ => controllers.routes.DeclarationController.onPageLoad(NormalMode)
-    case DeclarationPage         => _ => controllers.routes.CheckYourAnswersController.onPageLoad()
-    case _                       => _ => controllers.routes.IndexController.onPageLoad()
+    case ConfirmEmailAddressPage    => _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+    case DeclarationPage            => _ => controllers.routes.CheckYourAnswersController.onPageLoad()
+    case _                          => _ => controllers.routes.IndexController.onPageLoad()
   }
 
   private val checkRouteMap: Page => UserAnswers => Call = { case _ =>

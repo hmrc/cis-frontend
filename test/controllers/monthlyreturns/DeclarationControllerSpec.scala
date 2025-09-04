@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.DeclarationFormProvider
-import models.{Declaration, NormalMode, UserAnswers}
+import forms.monthlyreturns.DeclarationFormProvider
+import models.monthlyreturns.Declaration
+import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.DeclarationPage
+import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.DeclarationView
+import views.html.monthlyreturns.DeclarationView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class DeclarationControllerSpec extends SpecBase with MockitoSugar {
@@ -57,7 +59,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual OK
 
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, "")(request, messages(application)).toString
       }
     }
 
@@ -75,10 +77,31 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(Declaration.Confirmed), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(Declaration.Confirmed), NormalMode, "")(
           request,
           messages(application)
         ).toString
+      }
+    }
+
+    "must populate the view correctly on a GET when date is available" in {
+
+      val testDate = LocalDate.of(2024, 4, 5)
+      val userAnswers = UserAnswers(userAnswersId)
+        .set(DateConfirmNilPaymentsPage, testDate)
+        .success.value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, declarationRoute)
+
+        val view = application.injector.instanceOf[DeclarationView]
+
+        val result = route(application, request).value
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode, "5 April 2024")(request, messages(application)).toString
       }
     }
 
@@ -124,7 +147,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, "")(request, messages(application)).toString
       }
     }
 
@@ -138,7 +161,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -154,7 +177,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }

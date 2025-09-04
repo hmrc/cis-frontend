@@ -88,7 +88,7 @@ monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
 declaration.title = Declaration
 declaration.heading = Declaration
-declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month April 2024.
+declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month {0}.
 declaration.warning = If you give any false information you may face financial penalties and prosecution.
 declaration.checkbox = I confirm that the information given on this return is correct and complete to the best of my knowledge.
 declaration.checkYourAnswersLabel = Declaration
