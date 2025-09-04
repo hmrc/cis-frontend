@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package generators
+package pages.monthlyreturns
 
-import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-trait ModelGenerators {
+case object ConfirmEmailAddressPage extends QuestionPage[String] {
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "confirmEmailAddress"
 }

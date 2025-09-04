@@ -28,6 +28,7 @@ package object govuk {
       with FieldsetFluency
       with HintFluency
       with InputFluency
+      with InsetTextFluency
       with LabelFluency
       with RadiosFluency
       with SummaryListFluency

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package generators
+package pages.monthlyreturns
 
 import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+import play.api.libs.json.JsPath
+import pages.QuestionPage
 
-trait ModelGenerators {
+case object InactivityRequestPage extends QuestionPage[InactivityRequest] {
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "inactivityRequest"
 }
