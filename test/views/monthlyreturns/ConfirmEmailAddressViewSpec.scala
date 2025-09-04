@@ -29,7 +29,7 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
 
     "must render the page with heading, paragraph, input and button" in new Setup {
       val html = view(form, NormalMode)
-      val doc = Jsoup.parse(html.body)
+      val doc  = Jsoup.parse(html.body)
 
       doc.title must include(messages("monthlyreturns.confirmEmailAddress.title"))
       doc.select("h1").text mustBe messages("monthlyreturns.confirmEmailAddress.heading")
@@ -43,8 +43,8 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
 
     "must show error summary and messages when form has errors" in new Setup {
       val boundWithError = form.bind(Map("value" -> ""))
-      val html = view(boundWithError, NormalMode)
-      val doc = Jsoup.parse(html.body)
+      val html           = view(boundWithError, NormalMode)
+      val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
 
@@ -56,16 +56,14 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
   }
 
   trait Setup {
-    val app = applicationBuilder().build()
-    val view = app.injector.instanceOf[ConfirmEmailAddressView]
-    val formProvider = app.injector.instanceOf[ConfirmEmailAddressFormProvider]
-    val form = formProvider()
+    val app                                       = applicationBuilder().build()
+    val view                                      = app.injector.instanceOf[ConfirmEmailAddressView]
+    val formProvider                              = app.injector.instanceOf[ConfirmEmailAddressFormProvider]
+    val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
-    implicit val messages: Messages = play.api.i18n.MessagesImpl(
+    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
   }
 }
-
-
