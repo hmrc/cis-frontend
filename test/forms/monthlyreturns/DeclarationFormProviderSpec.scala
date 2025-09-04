@@ -16,20 +16,30 @@
 
 package forms.monthlyreturns
 
-import javax.inject.Inject
+import forms.behaviours.EnumFieldBehaviours
+import models.monthlyreturns.Declaration
+import play.api.data.FormError
 
-import forms.mappings.Mappings
-import play.api.data.Form
+class DeclarationFormProviderSpec extends EnumFieldBehaviours {
 
-class ConfirmEmailAddressFormProvider @Inject() extends Mappings {
+  val form = new DeclarationFormProvider()()
 
-  private val EmailRegex     = "^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"
-  private val MaxEmailLength = 254
+  ".value" - {
 
-  def apply(): Form[String] =
-    Form(
-      "value" -> text("monthlyreturns.confirmEmailAddress.error.required")
-        .verifying(maxLength(MaxEmailLength, "monthlyreturns.confirmEmailAddress.error.length"))
-        .verifying(regexp(EmailRegex, "monthlyreturns.confirmEmailAddress.error.invalid"))
+    val fieldName   = "value"
+    val requiredKey = "declaration.error.required"
+
+    behave like enumField[Declaration](
+      form,
+      fieldName,
+      validValues = Declaration.values,
+      invalidError = FormError(fieldName, "error.invalid")
     )
+
+    behave like mandatoryEnumField(
+      form,
+      fieldName,
+      requiredKey
+    )
+  }
 }

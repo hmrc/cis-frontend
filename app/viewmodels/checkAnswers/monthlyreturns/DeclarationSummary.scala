@@ -18,23 +18,35 @@ package viewmodels.checkAnswers.monthlyreturns
 
 import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.ConfirmEmailAddressPage
+import pages.monthlyreturns.DeclarationPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
+import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object ConfirmEmailAddressSummary {
+object DeclarationSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(ConfirmEmailAddressPage).map { answer =>
+    answers.get(DeclarationPage).map { answers =>
+
+      val value = ValueViewModel(
+        HtmlContent(
+          answers
+            .map { answer =>
+              HtmlFormat.escape(messages(s"declaration.$answer")).toString
+            }
+            .mkString(",<br>")
+        )
+      )
+
       SummaryListRowViewModel(
-        key = "monthlyreturns.confirmEmailAddress.checkYourAnswersLabel",
-        value = ValueViewModel(HtmlFormat.escape(answer).toString),
+        key = "declaration.checkYourAnswersLabel",
+        value = value,
         actions = Seq(
-          ActionItemViewModel("site.change", routes.ConfirmEmailAddressController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("monthlyreturns.confirmEmailAddress.change.hidden"))
+          ActionItemViewModel("site.change", routes.DeclarationController.onPageLoad(CheckMode).url)
+            .withVisuallyHiddenText(messages("declaration.change.hidden"))
         )
       )
     }

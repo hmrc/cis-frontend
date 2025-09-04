@@ -16,11 +16,16 @@
 
 package generators
 
-import models._
+import models.monthlyreturns.Declaration
 import models.monthlyreturns.InactivityRequest
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
+
+  implicit lazy val arbitraryDeclaration: Arbitrary[Declaration] =
+    Arbitrary {
+      Gen.oneOf(Declaration.values)
+    }
 
   implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
     Arbitrary {

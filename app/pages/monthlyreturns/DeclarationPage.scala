@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import utils.Utils.emptyString
+package pages.monthlyreturns
 
-@this(govukFieldset: GovukFieldset)
+import models.monthlyreturns.Declaration
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-@(legend: String, asHeading: Boolean = true, describedBy: Option[String])(content: Html)(implicit messages: Messages)
+case object DeclarationPage extends QuestionPage[Set[Declaration]] {
 
-@govukFieldset(Fieldset(
-    legend = Some(Legend(
-        content = Text(messages(legend)),
-        classes = if(asHeading) "govuk-fieldset__legend--l govuk-!-margin-bottom-7" else emptyString,
-        isPageHeading = asHeading
-    )),
-    describedBy = describedBy,
-    html = content
-))
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "declaration"
+}

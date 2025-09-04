@@ -17,29 +17,31 @@
 package controllers.monthlyreturns
 
 import controllers.actions._
-import forms.monthlyreturns.ConfirmEmailAddressFormProvider
+import forms.monthlyreturns.DeclarationFormProvider
 import javax.inject.Inject
 import models.Mode
+import models.monthlyreturns.Declaration
 import navigation.Navigator
-import pages.monthlyreturns.ConfirmEmailAddressPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
+import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.ConfirmEmailAddressView
+import utils.DateTimeFormats.dateTimeFormat
+import views.html.monthlyreturns.DeclarationView
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConfirmEmailAddressController @Inject() (
+class DeclarationController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  formProvider: ConfirmEmailAddressFormProvider,
+  formProvider: DeclarationFormProvider,
   val controllerComponents: MessagesControllerComponents,
-  view: ConfirmEmailAddressView
+  view: DeclarationView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
@@ -48,12 +50,20 @@ class ConfirmEmailAddressController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-    val preparedForm = request.userAnswers.get(ConfirmEmailAddressPage) match {
+    val preparedForm = request.userAnswers.get(DeclarationPage) match {
       case None        => form
-      case Some(value) => form.fill(value)
+      case Some(value) => form.fill(value.head)
     }
 
-    Ok(view(preparedForm, mode))
+    val formattedDate = request.userAnswers
+      .get(DateConfirmNilPaymentsPage)
+      .map { date =>
+        implicit val lang: Lang = messagesApi.preferred(request).lang
+        date.format(dateTimeFormat())
+      }
+      .getOrElse("")
+
+    Ok(view(preparedForm, mode, formattedDate))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -61,12 +71,21 @@ class ConfirmEmailAddressController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => {
+            val formattedDate = request.userAnswers
+              .get(DateConfirmNilPaymentsPage)
+              .map { date =>
+                implicit val lang: Lang = messagesApi.preferred(request).lang
+                date.format(dateTimeFormat())
+              }
+              .getOrElse("")
+            Future.successful(BadRequest(view(formWithErrors, mode, formattedDate)))
+          },
           value =>
             for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmEmailAddressPage, value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(value)))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(ConfirmEmailAddressPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
         )
   }
 }

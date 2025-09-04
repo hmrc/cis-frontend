@@ -17,64 +17,92 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.monthlyreturns.ConfirmEmailAddressFormProvider
+import forms.monthlyreturns.DeclarationFormProvider
+import models.monthlyreturns.Declaration
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.ConfirmEmailAddressPage
+import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.monthlyreturns.ConfirmEmailAddressView
+import views.html.monthlyreturns.DeclarationView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
-class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
+class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  val formProvider = new ConfirmEmailAddressFormProvider()
+  lazy val declarationRoute = routes.DeclarationController.onPageLoad(NormalMode).url
+
+  val formProvider = new DeclarationFormProvider()
   val form         = formProvider()
 
-  lazy val confirmEmailAddressRoute = routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
-
-  "ConfirmEmailAddress Controller" - {
+  "Declaration Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
+        val request = FakeRequest(GET, declarationRoute)
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[ConfirmEmailAddressView]
+        val view = application.injector.instanceOf[DeclarationView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+
+        contentAsString(result) mustEqual view(form, NormalMode, "")(request, messages(application)).toString
       }
     }
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(ConfirmEmailAddressPage, "test@example.com").success.value
+      val userAnswers = UserAnswers(userAnswersId).set(DeclarationPage, Set(Declaration.Confirmed)).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
+        val request = FakeRequest(GET, declarationRoute)
 
-        val view = application.injector.instanceOf[ConfirmEmailAddressView]
+        val view = application.injector.instanceOf[DeclarationView]
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill("test@example.com"), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(Declaration.Confirmed), NormalMode, "")(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must populate the view correctly on a GET when date is available" in {
+
+      val testDate    = LocalDate.of(2024, 4, 5)
+      val userAnswers = UserAnswers(userAnswersId)
+        .set(DateConfirmNilPaymentsPage, testDate)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, declarationRoute)
+
+        val view = application.injector.instanceOf[DeclarationView]
+
+        val result = route(application, request).value
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode, "5 April 2024")(
           request,
           messages(application)
         ).toString
@@ -97,8 +125,8 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", "test@example.com"))
+          FakeRequest(POST, declarationRoute)
+            .withFormUrlEncodedBody(("value", Declaration.Confirmed.toString))
 
         val result = route(application, request).value
 
@@ -113,17 +141,17 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", ""))
+          FakeRequest(POST, declarationRoute)
+            .withFormUrlEncodedBody(("value", "invalid value"))
 
-        val boundForm = form.bind(Map("value" -> ""))
+        val boundForm = form.bind(Map("value" -> "invalid value"))
 
-        val view = application.injector.instanceOf[ConfirmEmailAddressView]
+        val view = application.injector.instanceOf[DeclarationView]
 
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, "")(request, messages(application)).toString
       }
     }
 
@@ -132,7 +160,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
+        val request = FakeRequest(GET, declarationRoute)
 
         val result = route(application, request).value
 
@@ -147,8 +175,8 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", "test@example.com"))
+          FakeRequest(POST, declarationRoute)
+            .withFormUrlEncodedBody(("value", Declaration.Confirmed.toString))
 
         val result = route(application, request).value
 
