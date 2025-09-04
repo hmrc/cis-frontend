@@ -39,10 +39,11 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val inactivityRequestRoute = controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode).url
+  lazy val inactivityRequestRoute =
+    controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode).url
 
   val formProvider = new InactivityRequestFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   "InactivityRequest Controller" - {
 
@@ -64,7 +65,8 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(InactivityRequestPage, InactivityRequest.values.head).success.value
+      val userAnswers =
+        UserAnswers(userAnswersId).set(InactivityRequestPage, InactivityRequest.values.head).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -76,7 +78,10 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(InactivityRequest.values.head), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(InactivityRequest.values.head), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 

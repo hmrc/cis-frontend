@@ -30,7 +30,8 @@ class UnauthorisedWrongRoleControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.UnauthorisedWrongRoleController.onPageLoad().url)
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.UnauthorisedWrongRoleController.onPageLoad().url)
 
         val result = route(application, request).value
 

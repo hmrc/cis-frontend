@@ -35,18 +35,21 @@ import uk.gov.hmrc.auth.core.retrieve.~
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait IdentifierAction extends ActionBuilder[IdentifierRequest, AnyContent] with ActionFunction[Request, IdentifierRequest]
+trait IdentifierAction
+    extends ActionBuilder[IdentifierRequest, AnyContent]
+    with ActionFunction[Request, IdentifierRequest]
 
-class AuthenticatedIdentifierAction @Inject()(
-                                               override val authConnector: AuthConnector,
-                                               config: FrontendAppConfig,
-                                               val parser: BodyParsers.Default
-                                             )
-                                             (implicit val executionContext: ExecutionContext)
-  extends IdentifierAction with AuthorisedFunctions with Logging {
+class AuthenticatedIdentifierAction @Inject() (
+  override val authConnector: AuthConnector,
+  config: FrontendAppConfig,
+  val parser: BodyParsers.Default
+)(implicit val executionContext: ExecutionContext)
+    extends IdentifierAction
+    with AuthorisedFunctions
+    with Logging {
 
-  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] ={
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] = {
+    implicit val hc: HeaderCarrier  = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
     val defaultPredicate: Predicate = AuthProviders(GovernmentGateway)
     authorised(defaultPredicate)
       .retrieve(
@@ -54,23 +57,33 @@ class AuthenticatedIdentifierAction @Inject()(
           and Retrievals.affinityGroup and Retrievals.credentialRole and Retrievals.credentials
       ) {
         case Some(internalId) ~ Enrolments(enrolments) ~ Some(Organisation) ~ Some(User) ~ credentials =>
-          hasCisOrgEnrolment(enrolments).map { empRef =>
-            block(IdentifierRequest(request, internalId, employerReference = empRef))
-          }.getOrElse(Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
-        case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant) ~ _ =>
+          hasCisOrgEnrolment(enrolments)
+            .map { empRef =>
+              block(IdentifierRequest(request, internalId, employerReference = empRef))
+            }
+            .getOrElse(
+              Future.successful(
+                Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+              )
+            )
+        case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant) ~ _                                    =>
           logger.info("EnrolmentAuthIdentifierAction - Organisation: Assistant login attempt")
           Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedWrongRoleController.onPageLoad()))
-        case Some(_) ~ _ ~ Some(Individual) ~ _ ~ _ =>
+        case Some(_) ~ _ ~ Some(Individual) ~ _ ~ _                                                    =>
           logger.info("EnrolmentAuthIdentifierAction - Individual login attempt")
-          Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad()))
-        case Some(_) ~ _ ~ Some(Agent) ~ _ ~ _ =>
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad())
+          )
+        case Some(_) ~ _ ~ Some(Agent) ~ _ ~ _                                                         =>
           logger.info("EnrolmentAuthIdentifierAction - Unauthorised Agent login attempt")
-          Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedAgentAffinityController.onPageLoad()))
-        case _ =>
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.UnauthorisedAgentAffinityController.onPageLoad())
+          )
+        case _                                                                                         =>
           logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve internal id or affinity group")
           Future.successful(Redirect(routes.UnauthorisedController.onPageLoad()))
       } recover {
-      case _: NoActiveSession =>
+      case _: NoActiveSession        =>
         Redirect(config.loginUrl, Map("continue" -> Seq(config.loginContinueUrl)))
       case _: AuthorisationException =>
         logger.warn("EnrolmentAuthIdentifierAction - AuthorisationException")
@@ -80,19 +93,18 @@ class AuthenticatedIdentifierAction @Inject()(
 
   private def hasCisOrgEnrolment[A](enrolments: Set[Enrolment]): Option[EmployerReference] =
     enrolments.find(_.key == "HMRC-CIS-ORG") match {
-      case Some(enrolment) => {
-        val taxOfficeNumber = enrolment.identifiers.find(id => id.key == "TaxOfficeNumber").map(_.value)
+      case Some(enrolment) =>
+        val taxOfficeNumber    = enrolment.identifiers.find(id => id.key == "TaxOfficeNumber").map(_.value)
         val taxOfficeReference = enrolment.identifiers.find(id => id.key == "TaxOfficeReference").map(_.value)
-        val isActivated = enrolment.isActivated
+        val isActivated        = enrolment.isActivated
         (taxOfficeNumber, taxOfficeReference, isActivated) match {
           case (Some(number), Some(reference), true) =>
             Some(EmployerReference(number, reference))
-          case _ =>
+          case _                                     =>
             logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve cis enrolments")
             None
         }
-      }
-      case _ => None
+      case _               => None
     }
-    
+
 }

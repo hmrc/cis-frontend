@@ -24,10 +24,10 @@ import views.html.monthlyreturns.UnauthorisedIndividualView
 
 import javax.inject.Inject
 
-class UnauthorisedIndividualAffinityController @Inject()(
+class UnauthorisedIndividualAffinityController @Inject() (
   val controllerComponents: MessagesControllerComponents,
-  view:                     UnauthorisedIndividualView
-)(implicit appConfig:       FrontendAppConfig)
+  view: UnauthorisedIndividualView
+)(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport {
 

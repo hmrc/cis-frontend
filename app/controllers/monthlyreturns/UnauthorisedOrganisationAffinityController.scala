@@ -24,10 +24,10 @@ import views.html.monthlyreturns.UnauthorisedOrgView
 
 import javax.inject.Inject
 
-class UnauthorisedOrganisationAffinityController @Inject()(
+class UnauthorisedOrganisationAffinityController @Inject() (
   val controllerComponents: MessagesControllerComponents,
-  view:                     UnauthorisedOrgView
-)(implicit appConfig:       FrontendAppConfig)
+  view: UnauthorisedOrgView
+)(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport {
 

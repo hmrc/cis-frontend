@@ -32,10 +32,8 @@ class InactivityRequestSpec extends AnyFreeSpec with Matchers with ScalaCheckPro
 
       val gen = Gen.oneOf(InactivityRequest.values.toSeq)
 
-      forAll(gen) {
-        inactivityRequest =>
-
-          JsString(inactivityRequest.toString).validate[InactivityRequest].asOpt.value mustEqual inactivityRequest
+      forAll(gen) { inactivityRequest =>
+        JsString(inactivityRequest.toString).validate[InactivityRequest].asOpt.value mustEqual inactivityRequest
       }
     }
 
@@ -43,10 +41,8 @@ class InactivityRequestSpec extends AnyFreeSpec with Matchers with ScalaCheckPro
 
       val gen = arbitrary[String] suchThat (!InactivityRequest.values.map(_.toString).contains(_))
 
-      forAll(gen) {
-        invalidValue =>
-
-          JsString(invalidValue).validate[InactivityRequest] mustEqual JsError("error.invalid")
+      forAll(gen) { invalidValue =>
+        JsString(invalidValue).validate[InactivityRequest] mustEqual JsError("error.invalid")
       }
     }
 
@@ -54,10 +50,8 @@ class InactivityRequestSpec extends AnyFreeSpec with Matchers with ScalaCheckPro
 
       val gen = Gen.oneOf(InactivityRequest.values.toSeq)
 
-      forAll(gen) {
-        inactivityRequest =>
-
-          Json.toJson(inactivityRequest) mustEqual JsString(inactivityRequest.toString)
+      forAll(gen) { inactivityRequest =>
+        Json.toJson(inactivityRequest) mustEqual JsString(inactivityRequest.toString)
       }
     }
   }

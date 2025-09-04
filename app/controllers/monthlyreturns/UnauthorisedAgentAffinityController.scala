@@ -24,10 +24,10 @@ import views.html.monthlyreturns.UnauthorisedAgentView
 
 import javax.inject.Inject
 
-class UnauthorisedAgentAffinityController @Inject()(
+class UnauthorisedAgentAffinityController @Inject() (
   val controllerComponents: MessagesControllerComponents,
-  view:                     UnauthorisedAgentView
-)(implicit appConfig:       FrontendAppConfig)
+  view: UnauthorisedAgentView
+)(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport {
 

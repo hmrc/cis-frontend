@@ -16,6 +16,7 @@
 
 package generators
 
+import models._
 import models.monthlyreturns.InactivityRequest
 import org.scalacheck.{Arbitrary, Gen}
 

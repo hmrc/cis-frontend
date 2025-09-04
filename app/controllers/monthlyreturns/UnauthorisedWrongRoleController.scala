@@ -24,10 +24,10 @@ import views.html.monthlyreturns.UnauthorisedOrgStandardView
 
 import javax.inject.Inject
 
-class UnauthorisedWrongRoleController @Inject()(
+class UnauthorisedWrongRoleController @Inject() (
   val controllerComponents: MessagesControllerComponents,
-  view:                     UnauthorisedOrgStandardView
-)(implicit appConfig:       FrontendAppConfig)
+  view: UnauthorisedOrgStandardView
+)(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport {
 

@@ -17,7 +17,7 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import controllers.monthlyreturns.routes
-import models.{UserAnswers, CheckMode}
+import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.InactivityRequestPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
@@ -26,28 +26,27 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object InactivityRequestSummary  {
+object InactivityRequestSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(InactivityRequestPage).map {
-      answer =>
+    answers.get(InactivityRequestPage).map { answer =>
 
-        val answerText = answer.toString match {
-          case "option1" => messages("site.yes")
-          case _          => messages("site.no")
-        }
+      val answerText = answer.toString match {
+        case "option1" => messages("site.yes")
+        case _         => messages("site.no")
+      }
 
-        val value = ValueViewModel(
-          HtmlContent(HtmlFormat.escape(answerText))
+      val value = ValueViewModel(
+        HtmlContent(HtmlFormat.escape(answerText))
+      )
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.inactivityRequest.checkYourAnswersLabel",
+        value = value,
+        actions = Seq(
+          ActionItemViewModel("site.change", routes.InactivityRequestController.onPageLoad(CheckMode).url)
+            .withVisuallyHiddenText(messages("monthlyreturns.inactivityRequest.change.hidden"))
         )
-
-        SummaryListRowViewModel(
-          key     = "monthlyreturns.inactivityRequest.checkYourAnswersLabel",
-          value   = value,
-          actions = Seq(
-            ActionItemViewModel("site.change", routes.InactivityRequestController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("monthlyreturns.inactivityRequest.change.hidden"))
-          )
-        )
+      )
     }
 }

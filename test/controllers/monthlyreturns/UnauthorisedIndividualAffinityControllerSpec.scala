@@ -30,7 +30,8 @@ class UnauthorisedIndividualAffinityControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad().url)
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad().url)
 
         val result = route(application, request).value
 
