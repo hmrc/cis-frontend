@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
-import controllers.actions.IdentifierAction
-
-import javax.inject.Inject
+import config.FrontendAppConfig
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.IndexView
+import views.html.monthlyreturns.UnauthorisedIndividualView
 
-class IndexController @Inject()(
-                                 val controllerComponents: MessagesControllerComponents,
-                                 identify: IdentifierAction,
-                                 view: IndexView
-                               ) extends FrontendBaseController with I18nSupport {
+import javax.inject.Inject
 
-  def onPageLoad(): Action[AnyContent] = identify { implicit request =>
+class UnauthorisedIndividualAffinityController @Inject()(
+  val controllerComponents: MessagesControllerComponents,
+  view:                     UnauthorisedIndividualView
+)(implicit appConfig:       FrontendAppConfig)
+    extends FrontendBaseController
+    with I18nSupport {
+
+  def onPageLoad: Action[AnyContent] = Action { implicit request =>
     Ok(view())
   }
+
 }

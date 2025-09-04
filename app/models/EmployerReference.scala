@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package models.requests
+package models
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import play.api.libs.json.{Json, OFormat}
 
-case class IdentifierRequest[A] (
-  request:            Request[A],
-  userId:             String,
-  employerReference:  EmployerReference,
-  isAgent:            Boolean = false
-) extends WrappedRequest[A](request)
+case class EmployerReference(taxOfficeNumber: String, taxOfficeReference: String)
+
+object EmployerReference {
+  implicit val format: OFormat[EmployerReference] = Json.format[EmployerReference]
+}

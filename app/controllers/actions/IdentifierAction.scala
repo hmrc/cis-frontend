@@ -19,13 +19,19 @@ package controllers.actions
 import com.google.inject.Inject
 import config.FrontendAppConfig
 import controllers.routes
+import models.EmployerReference
 import models.requests.IdentifierRequest
-import play.api.mvc.Results._
-import play.api.mvc._
-import uk.gov.hmrc.auth.core._
+import play.api.Logging
+import play.api.mvc.Results.*
+import play.api.mvc.*
+import uk.gov.hmrc.auth.core.*
+import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
+import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
+import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.auth.core.retrieve.~
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,39 +42,80 @@ class AuthenticatedIdentifierAction @Inject()(
                                                config: FrontendAppConfig,
                                                val parser: BodyParsers.Default
                                              )
-                                             (implicit val executionContext: ExecutionContext) extends IdentifierAction with AuthorisedFunctions {
+                                             (implicit val executionContext: ExecutionContext)
+  extends IdentifierAction with AuthorisedFunctions with Logging {
 
-  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] = {
-
+  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] ={
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
-    authorised().retrieve(Retrievals.internalId) {
-      _.map {
-        internalId => block(IdentifierRequest(request, internalId))
-      }.getOrElse(throw new UnauthorizedException("Unable to retrieve internal Id"))
-    } recover {
+    val defaultPredicate: Predicate = AuthProviders(GovernmentGateway)
+    authorised(defaultPredicate)
+      .retrieve(
+        Retrievals.internalId and Retrievals.allEnrolments
+          and Retrievals.affinityGroup and Retrievals.credentialRole and Retrievals.credentials
+      ) {
+        case Some(internalId) ~ Enrolments(enrolments) ~ Some(Organisation) ~ Some(User) ~ credentials =>
+//          hasCisOrgEnrolment(enrolments) match {
+//            case Some(true) => block(IdentifierRequest(request, internalId, enrolments = enrolments))
+//            case _ => Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+//          }
+          hasCisOrgEnrolment(enrolments).map { empRef =>
+            block(IdentifierRequest(request, internalId, employerReference = empRef))
+          }.getOrElse(Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
+        case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant) ~ _ =>
+          logger.info("EnrolmentAuthIdentifierAction - Organisation: Assistant login attempt")
+          Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedWrongRoleController.onPageLoad()))
+        case Some(_) ~ _ ~ Some(Individual) ~ _ ~ _ =>
+          logger.info("EnrolmentAuthIdentifierAction - Individual login attempt")
+          Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad()))
+        case Some(_) ~ _ ~ Some(Agent) ~ _ ~ _ =>
+          logger.info("EnrolmentAuthIdentifierAction - Unauthorised Agent login attempt")
+          Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedAgentAffinityController.onPageLoad()))
+        case _ =>
+          logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve internal id or affinity group")
+          Future.successful(Redirect(routes.UnauthorisedController.onPageLoad()))
+      } recover {
       case _: NoActiveSession =>
         Redirect(config.loginUrl, Map("continue" -> Seq(config.loginContinueUrl)))
       case _: AuthorisationException =>
+        logger.warn("EnrolmentAuthIdentifierAction - AuthorisationException")
         Redirect(routes.UnauthorisedController.onPageLoad())
     }
   }
-}
 
-class SessionIdentifierAction @Inject()(
-                                         val parser: BodyParsers.Default
-                                       )
-                                       (implicit val executionContext: ExecutionContext) extends IdentifierAction {
-
-  override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] = {
-
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
-    hc.sessionId match {
-      case Some(session) =>
-        block(IdentifierRequest(request, session.value))
-      case None =>
-        Future.successful(Redirect(routes.JourneyRecoveryController.onPageLoad()))
+  private def hasCisOrgEnrolment[A](enrolments: Set[Enrolment]): Option[EmployerReference] =
+    enrolments.find(_.key == "HMRC-CIS-ORG") match {
+      case Some(enrolment) => {
+        val taxOfficeNumber = enrolment.identifiers.find(id => id.key == "TaxOfficeNumber").map(_.value)
+        val taxOfficeReference = enrolment.identifiers.find(id => id.key == "TaxOfficeReference").map(_.value)
+        val isActivated = enrolment.isActivated
+        (taxOfficeNumber, taxOfficeReference, isActivated) match {
+          case (Some(number), Some(reference), true) =>
+            Some(EmployerReference(number, reference))
+          case _ =>
+            logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve cis enrolments")
+            None
+        }
+      }
+      case _ => None
     }
-  }
+//      .map { enrolment =>
+//        val taxOfficeNumber = enrolment.identifiers.find(id => id.key == "TaxOfficeNumber").map(_.value)
+//        val taxOfficeReference = enrolment.identifiers.find(id => id.key == "TaxOfficeReference").map(_.value)
+//        val isActivated = enrolment.isActivated
+//        (taxOfficeNumber, taxOfficeReference, isActivated) match {
+//          case (Some(number), Some(reference), true) =>
+//            Some(EmployerReference(taxOfficeNumber, taxOfficeReference))
+//          case _ =>
+//            logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve cis enrolments")
+//            None
+//        }
+//      }.getOrElse {
+//          None
+//      }
+
 }
+
+//object IdentifierAction {
+//  private[controllers] val HMRC_CIS_ORG_KEY = "HMRC-CIS-ORG"
+//  private[actions] val defaultPredicate: Predicate = AuthProviders(GovernmentGateway)
+//}

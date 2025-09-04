@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package models.requests
+package controllers.actions
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.auth.core.retrieve.~
 
-case class IdentifierRequest[A] (
-  request:            Request[A],
-  userId:             String,
-  employerReference:  EmployerReference,
-  isAgent:            Boolean = false
-) extends WrappedRequest[A](request)
+object TestAuthRetrievals {
+  implicit class Ops[A](a: A) {
+    def ~[B](b: B): A ~ B = new ~(a, b)
+  }
+}

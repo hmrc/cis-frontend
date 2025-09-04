@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package views.components
+
 import base.SpecBase
 import org.scalatest.matchers.must.Matchers
 import views.html.components.H3
