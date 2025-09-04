@@ -24,7 +24,12 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import play.api.libs.json.{JsError, JsString, Json}
 
-class DeclarationSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with OptionValues with ModelGenerators {
+class DeclarationSpec
+    extends AnyFreeSpec
+    with Matchers
+    with ScalaCheckPropertyChecks
+    with OptionValues
+    with ModelGenerators {
 
   "Declaration" - {
 
@@ -32,10 +37,8 @@ class DeclarationSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyC
 
       val gen = arbitrary[Declaration]
 
-      forAll(gen) {
-        declaration =>
-
-          JsString(declaration.toString).validate[Declaration].asOpt.value mustEqual declaration
+      forAll(gen) { declaration =>
+        JsString(declaration.toString).validate[Declaration].asOpt.value mustEqual declaration
       }
     }
 
@@ -43,10 +46,8 @@ class DeclarationSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyC
 
       val gen = arbitrary[String] suchThat (!Declaration.values.map(_.toString).contains(_))
 
-      forAll(gen) {
-        invalidValue =>
-
-          JsString(invalidValue).validate[Declaration] mustEqual JsError("error.invalid")
+      forAll(gen) { invalidValue =>
+        JsString(invalidValue).validate[Declaration] mustEqual JsError("error.invalid")
       }
     }
 
@@ -54,10 +55,8 @@ class DeclarationSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyC
 
       val gen = arbitrary[Declaration]
 
-      forAll(gen) {
-        declaration =>
-
-          Json.toJson(declaration) mustEqual JsString(declaration.toString)
+      forAll(gen) { declaration =>
+        Json.toJson(declaration) mustEqual JsString(declaration.toString)
       }
     }
   }

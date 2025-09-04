@@ -30,43 +30,43 @@ import views.html.DeclarationView
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DeclarationController @Inject()(
-                                        override val messagesApi: MessagesApi,
-                                        sessionRepository: SessionRepository,
-                                        navigator: Navigator,
-                                        identify: IdentifierAction,
-                                        getData: DataRetrievalAction,
-                                        requireData: DataRequiredAction,
-                                        formProvider: DeclarationFormProvider,
-                                        val controllerComponents: MessagesControllerComponents,
-                                        view: DeclarationView
-                                      )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+class DeclarationController @Inject() (
+  override val messagesApi: MessagesApi,
+  sessionRepository: SessionRepository,
+  navigator: Navigator,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  formProvider: DeclarationFormProvider,
+  val controllerComponents: MessagesControllerComponents,
+  view: DeclarationView
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport {
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(DeclarationPage) match {
-        case None => form
-        case Some(value) => form.fill(value.head)
-      }
+    val preparedForm = request.userAnswers.get(DeclarationPage) match {
+      case None        => form
+      case Some(value) => form.fill(value.head)
+    }
 
-      Ok(view(preparedForm, mode))
+    Ok(view(preparedForm, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(value)))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(value)))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
+        )
   }
 }
