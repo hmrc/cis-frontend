@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package generators
+package pages
 
 import models.Declaration
-import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+import play.api.libs.json.JsPath
 
-trait ModelGenerators {
+case object DeclarationPage extends QuestionPage[Set[Declaration]] {
 
-  implicit lazy val arbitraryDeclaration: Arbitrary[Declaration] =
-    Arbitrary {
-      Gen.oneOf(Declaration.values)
-    }
+  override def path: JsPath = JsPath \ toString
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  override def toString: String = "declaration"
 }
