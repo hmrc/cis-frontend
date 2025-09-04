@@ -23,7 +23,7 @@ import models.Mode
 import models.monthlyreturns.Declaration
 import navigation.Navigator
 import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
-import play.api.i18n.{I18nSupport, MessagesApi, Lang}
+import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -55,10 +55,13 @@ class DeclarationController @Inject() (
       case Some(value) => form.fill(value.head)
     }
 
-    val formattedDate = request.userAnswers.get(DateConfirmNilPaymentsPage).map { date =>
-      implicit val lang: Lang = messagesApi.preferred(request).lang
-      date.format(dateTimeFormat())
-    }.getOrElse("")
+    val formattedDate = request.userAnswers
+      .get(DateConfirmNilPaymentsPage)
+      .map { date =>
+        implicit val lang: Lang = messagesApi.preferred(request).lang
+        date.format(dateTimeFormat())
+      }
+      .getOrElse("")
 
     Ok(view(preparedForm, mode, formattedDate))
   }
@@ -69,10 +72,13 @@ class DeclarationController @Inject() (
         .bindFromRequest()
         .fold(
           formWithErrors => {
-            val formattedDate = request.userAnswers.get(DateConfirmNilPaymentsPage).map { date =>
-              implicit val lang: Lang = messagesApi.preferred(request).lang
-              date.format(dateTimeFormat())
-            }.getOrElse("")
+            val formattedDate = request.userAnswers
+              .get(DateConfirmNilPaymentsPage)
+              .map { date =>
+                implicit val lang: Lang = messagesApi.preferred(request).lang
+                date.format(dateTimeFormat())
+              }
+              .getOrElse("")
             Future.successful(BadRequest(view(formWithErrors, mode, formattedDate)))
           },
           value =>

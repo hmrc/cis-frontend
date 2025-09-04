@@ -86,10 +86,11 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when date is available" in {
 
-      val testDate = LocalDate.of(2024, 4, 5)
+      val testDate    = LocalDate.of(2024, 4, 5)
       val userAnswers = UserAnswers(userAnswersId)
         .set(DateConfirmNilPaymentsPage, testDate)
-        .success.value
+        .success
+        .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -101,7 +102,10 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, "5 April 2024")(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, "5 April 2024")(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
