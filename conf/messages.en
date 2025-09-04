@@ -48,6 +48,24 @@ signedOut.guidance = We did not save your answers.
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
 
+monthlyreturns.dateConfirmNilPayments.title = Confirm nil return payments to subcontractors this month
+monthlyreturns.dateConfirmNilPayments.heading.h1 = Confirm nil return payments to subcontractors this month
+monthlyreturns.dateConfirmNilPayments.heading.h2 = Enter the tax month and year you are reporting nil payments for
+monthlyreturns.dateConfirmNilPayments.paragraph = A nil return is to record that you have not made any payments to subcontractors in the Construction Industry Scheme for the tax month shown below.
+monthlyreturns.dateConfirmNilPayments.hint = Tax months end on the 5th of a month. For example, 6 May to 5 June is the tax month of May, 6 June to 5 July is the tax month of June.
+monthlyreturns.dateConfirmNilPayments.warning = You are required by law to submit this return to HMRC by the due date. A penalty may be charged for late returns.
+monthlyreturns.dateConfirmNilPayments.details.summary = When is the due date
+monthlyreturns.dateConfirmNilPayments.details = You must send your monthly returns to HMRC in time to reach us by the 19th of each month. This is known as the Due Date. For example: a return completed for the period beginning 6 May and ending on the 5 June must reach us by the 19 June at the latest.
+monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Confirm nil return payments to subcontractors this month
+monthlyreturns.dateConfirmNilPayments.change.hidden = confirm nil return payments to subcontractors this month
+monthlyreturns.dateConfirmNilPayments.error.required.month = Please enter 'Tax month ending, month'
+monthlyreturns.dateConfirmNilPayments.error.required.year = Please enter 'Tax month ending, year'
+monthlyreturns.dateConfirmNilPayments.error.required.two = The 'Tax month ending' must include {0} and {1}
+monthlyreturns.dateConfirmNilPayments.error.required = The 'Tax month ending' must include {0}
+monthlyreturns.dateConfirmNilPayments.error.invalid = Please enter a valid 'Tax month ending, month and year'
+monthlyreturns.dateConfirmNilPayments.error.invalid.month = Please enter a valid 'Tax month ending, month'
+monthlyreturns.dateConfirmNilPayments.error.invalid.year = Please enter a valid 'Tax month ending, year'
+
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.checkYourAnswersLabel = Do you want to submit an inactivity request?

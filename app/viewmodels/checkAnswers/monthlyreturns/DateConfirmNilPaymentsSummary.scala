@@ -16,36 +16,30 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.InactivityRequestPage
-import play.api.i18n.Messages
-import play.twirl.api.HtmlFormat
-import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent
+import pages.monthlyreturns.DateConfirmNilPaymentsPage
+import play.api.i18n.{Lang, Messages}
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import viewmodels.govuk.summarylist._
-import viewmodels.implicits._
+import utils.DateTimeFormats.dateTimeFormat
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
-object InactivityRequestSummary {
+object DateConfirmNilPaymentsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(InactivityRequestPage).map { answer =>
+    answers.get(DateConfirmNilPaymentsPage).map { answer =>
 
-      val answerText = answer.toString match {
-        case "option1" => messages("site.yes")
-        case _         => messages("site.no")
-      }
-
-      val value = ValueViewModel(
-        HtmlContent(HtmlFormat.escape(answerText))
-      )
+      implicit val lang: Lang = messages.lang
 
       SummaryListRowViewModel(
-        key = "monthlyreturns.inactivityRequest.checkYourAnswersLabel",
-        value = value,
+        key = "monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel",
+        value = ValueViewModel(answer.format(dateTimeFormat())),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.InactivityRequestController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("monthlyreturns.inactivityRequest.change.hidden"))
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.dateConfirmNilPayments.change.hidden"))
         )
       )
     }

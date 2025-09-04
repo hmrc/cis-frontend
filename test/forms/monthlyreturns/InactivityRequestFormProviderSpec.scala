@@ -26,13 +26,13 @@ class InactivityRequestFormProviderSpec extends OptionFieldBehaviours {
 
   ".value" - {
 
-    val fieldName = "value"
+    val fieldName   = "value"
     val requiredKey = "monthlyreturns.inactivityRequest.error.required"
 
     behave like optionsField[InactivityRequest](
       form,
       fieldName,
-      validValues  = InactivityRequest.values,
+      validValues = InactivityRequest.values,
       invalidError = FormError(fieldName, "error.invalid")
     )
 

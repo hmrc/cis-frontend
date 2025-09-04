@@ -16,39 +16,39 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
-import forms.monthlyreturns.InactivityRequestFormProvider
-import javax.inject.Inject
+import controllers.actions.*
+import forms.monthlyreturns.DateConfirmNilPaymentsFormProvider
 import models.Mode
 import navigation.Navigator
-import pages.monthlyreturns.InactivityRequestPage
+import pages.monthlyreturns.DateConfirmNilPaymentsPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.InactivityRequestView
+import views.html.monthlyreturns.DateConfirmNilPaymentsView
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class InactivityRequestController @Inject() (
+class DateConfirmNilPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  formProvider: InactivityRequestFormProvider,
+  formProvider: DateConfirmNilPaymentsFormProvider,
   val controllerComponents: MessagesControllerComponents,
-  view: InactivityRequestView
+  view: DateConfirmNilPaymentsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
-  val form = formProvider()
-
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-    val preparedForm = request.userAnswers.get(InactivityRequestPage) match {
+    val form = formProvider()
+
+    val preparedForm = request.userAnswers.get(DateConfirmNilPaymentsPage) match {
       case None        => form
       case Some(value) => form.fill(value)
     }
@@ -58,15 +58,18 @@ class InactivityRequestController @Inject() (
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
+
+      val form = formProvider()
+
       form
         .bindFromRequest()
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value =>
             for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(InactivityRequestPage, value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(InactivityRequestPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
         )
   }
 }

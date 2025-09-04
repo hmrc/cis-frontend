@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package generators
+package utils
 
-import models._
-import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+import forms.mappings.DateFormat
 
-trait ModelGenerators {
+object DateFormats {
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  private val MonthRegex = "^(0?[1-9]|1[0-2])$"
+  private val YearRegex  = "^\\d{4}$"
+
+  val monthYearFormats: Seq[DateFormat] = Seq(
+    DateFormat(
+      dateType = "month",
+      errorKey = "monthlyreturns.dateConfirmNilPayments.error.invalid.month",
+      regex = MonthRegex
+    ),
+    DateFormat(
+      dateType = "year",
+      errorKey = "monthlyreturns.dateConfirmNilPayments.error.invalid.year",
+      regex = YearRegex
+    )
+  )
+
 }

@@ -26,8 +26,8 @@ class ParagraphSpec extends SpecBase with Matchers {
   "paragraph" - {
     "must render the correct paragraph text in the output HTML" in new Setup {
       val paragraphText = testText
-      val html = p(paragraphText)
-      val para = getParagraphElement(html)
+      val html          = p(paragraphText)
+      val para          = getParagraphElement(html)
       para.size mustBe 1
       para.text mustBe paragraphText
     }
@@ -39,8 +39,8 @@ class ParagraphSpec extends SpecBase with Matchers {
     }
 
     "must render with bold styling when enabled" in new Setup {
-      val html = p(testText, bold = true)
-      val para = getParagraphElement(html)
+      val html      = p(testText, bold = true)
+      val para      = getParagraphElement(html)
       val classAttr = para.attr("class")
       classAttr must include("govuk-body")
       classAttr must include("govuk-!-font-weight-bold")
@@ -54,15 +54,15 @@ class ParagraphSpec extends SpecBase with Matchers {
 
     "must render with custom CSS classes" in new Setup {
       val customClass = "custom-paragraph-class"
-      val html = p(testText, extraClasses = customClass)
-      val para = getParagraphElement(html)
+      val html        = p(testText, extraClasses = customClass)
+      val para        = getParagraphElement(html)
       para.attr("class").trim mustBe s"govuk-body $customClass"
     }
 
     "must render with both bold styling and custom classes" in new Setup {
       val customClass = "custom-paragraph-class"
-      val html = p(testText, bold = true, extraClasses = customClass)
-      val para = getParagraphElement(html)
+      val html        = p(testText, bold = true, extraClasses = customClass)
+      val para        = getParagraphElement(html)
       para.attr("class").trim mustBe s"govuk-body $customClass govuk-!-font-weight-bold"
     }
 
@@ -81,10 +81,10 @@ class ParagraphSpec extends SpecBase with Matchers {
   }
 
   trait Setup {
-    val app = applicationBuilder().build()
-    val p = app.injector.instanceOf[Paragraph]
+    val app                                       = applicationBuilder().build()
+    val p                                         = app.injector.instanceOf[Paragraph]
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
-    implicit val messages: Messages = play.api.i18n.MessagesImpl(
+    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
