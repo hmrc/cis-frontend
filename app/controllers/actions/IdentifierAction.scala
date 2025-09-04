@@ -54,10 +54,6 @@ class AuthenticatedIdentifierAction @Inject()(
           and Retrievals.affinityGroup and Retrievals.credentialRole and Retrievals.credentials
       ) {
         case Some(internalId) ~ Enrolments(enrolments) ~ Some(Organisation) ~ Some(User) ~ credentials =>
-//          hasCisOrgEnrolment(enrolments) match {
-//            case Some(true) => block(IdentifierRequest(request, internalId, enrolments = enrolments))
-//            case _ => Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
-//          }
           hasCisOrgEnrolment(enrolments).map { empRef =>
             block(IdentifierRequest(request, internalId, employerReference = empRef))
           }.getOrElse(Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
@@ -98,24 +94,5 @@ class AuthenticatedIdentifierAction @Inject()(
       }
       case _ => None
     }
-//      .map { enrolment =>
-//        val taxOfficeNumber = enrolment.identifiers.find(id => id.key == "TaxOfficeNumber").map(_.value)
-//        val taxOfficeReference = enrolment.identifiers.find(id => id.key == "TaxOfficeReference").map(_.value)
-//        val isActivated = enrolment.isActivated
-//        (taxOfficeNumber, taxOfficeReference, isActivated) match {
-//          case (Some(number), Some(reference), true) =>
-//            Some(EmployerReference(taxOfficeNumber, taxOfficeReference))
-//          case _ =>
-//            logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve cis enrolments")
-//            None
-//        }
-//      }.getOrElse {
-//          None
-//      }
-
+    
 }
-
-//object IdentifierAction {
-//  private[controllers] val HMRC_CIS_ORG_KEY = "HMRC-CIS-ORG"
-//  private[actions] val defaultPredicate: Predicate = AuthProviders(GovernmentGateway)
-//}
