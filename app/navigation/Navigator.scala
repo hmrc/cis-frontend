@@ -27,14 +27,15 @@ import models._
 class Navigator @Inject() () {
 
   private val normalRoutes: Page => UserAnswers => Call = {
-    case InactivityRequestPage => _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+    case InactivityRequestPage   =>
+      _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
     case ConfirmEmailAddressPage => _ => controllers.routes.DeclarationController.onPageLoad(NormalMode)
-    case DeclarationPage => _ => controllers.routes.CheckYourAnswersController.onPageLoad()
-    case _ => _ => controllers.routes.IndexController.onPageLoad()
+    case DeclarationPage         => _ => controllers.routes.CheckYourAnswersController.onPageLoad()
+    case _                       => _ => controllers.routes.IndexController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = {
-    case _ => _ => controllers.routes.CheckYourAnswersController.onPageLoad()
+  private val checkRouteMap: Page => UserAnswers => Call = { case _ =>
+    _ => controllers.routes.CheckYourAnswersController.onPageLoad()
   }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {

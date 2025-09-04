@@ -18,7 +18,7 @@ package controllers
 
 import base.SpecBase
 import forms.DeclarationFormProvider
-import models.{NormalMode, Declaration, UserAnswers}
+import models.{Declaration, NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -40,7 +40,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
   lazy val declarationRoute = routes.DeclarationController.onPageLoad(NormalMode).url
 
   val formProvider = new DeclarationFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   "Declaration Controller" - {
 
@@ -75,7 +75,10 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(Declaration.Confirmed), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(Declaration.Confirmed), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 

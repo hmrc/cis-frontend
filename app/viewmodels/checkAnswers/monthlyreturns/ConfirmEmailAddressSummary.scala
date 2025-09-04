@@ -25,19 +25,17 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object ConfirmEmailAddressSummary  {
+object ConfirmEmailAddressSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(ConfirmEmailAddressPage).map {
-      answer =>
-
-        SummaryListRowViewModel(
-          key     = "monthlyreturns.confirmEmailAddress.checkYourAnswersLabel",
-          value   = ValueViewModel(HtmlFormat.escape(answer).toString),
-          actions = Seq(
-            ActionItemViewModel("site.change", routes.ConfirmEmailAddressController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("monthlyreturns.confirmEmailAddress.change.hidden"))
-          )
+    answers.get(ConfirmEmailAddressPage).map { answer =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.confirmEmailAddress.checkYourAnswersLabel",
+        value = ValueViewModel(HtmlFormat.escape(answer).toString),
+        actions = Seq(
+          ActionItemViewModel("site.change", routes.ConfirmEmailAddressController.onPageLoad(CheckMode).url)
+            .withVisuallyHiddenText(messages("monthlyreturns.confirmEmailAddress.change.hidden"))
         )
+      )
     }
 }

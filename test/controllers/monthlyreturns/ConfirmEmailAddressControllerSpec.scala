@@ -38,7 +38,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new ConfirmEmailAddressFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   lazy val confirmEmailAddressRoute = routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
 
@@ -74,7 +74,10 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill("test@example.com"), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill("test@example.com"), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 

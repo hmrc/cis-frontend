@@ -21,15 +21,12 @@ import play.api.data.{Form, FormError}
 
 trait EnumFieldBehaviours extends FormSpec {
 
-  def enumField[T](form: Form[_],
-                   fieldName: String,
-                   validValues: Seq[T],
-                   invalidError: FormError): Unit = {
-    
+  def enumField[T](form: Form[_], fieldName: String, validValues: Seq[T], invalidError: FormError): Unit = {
+
     for {
       value <- validValues
     } yield s"binds `$value` successfully" in {
-      val data = Map(fieldName -> value.toString)
+      val data   = Map(fieldName -> value.toString)
       val result = form.bind(data)
       result.get mustEqual value
       result.errors mustBe empty
@@ -41,9 +38,7 @@ trait EnumFieldBehaviours extends FormSpec {
     }
   }
 
-  def mandatoryEnumField(form: Form[_],
-                         fieldName: String,
-                         requiredKey: String): Unit = {
+  def mandatoryEnumField(form: Form[_], fieldName: String, requiredKey: String): Unit = {
 
     "fail to bind when no answer is provided" in {
       val data = Map.empty[String, String]
