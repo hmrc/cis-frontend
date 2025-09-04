@@ -37,7 +37,7 @@ class FieldSetSpec extends SpecBase with Matchers {
       val html      = fieldSet("Test Legend", asHeading = true, describedBy = None)(testContent)
       val legend    = getLegendElement(html)
       val classAttr = legend.attr("class")
-      classAttr must include("govuk-fieldset__legend--xl")
+      classAttr must include("govuk-fieldset__legend--l")
       classAttr must include("govuk-!-margin-bottom-7")
     }
 
@@ -45,20 +45,20 @@ class FieldSetSpec extends SpecBase with Matchers {
       val html      = fieldSet("Test Legend", asHeading = false, describedBy = None)(testContent)
       val legend    = getLegendElement(html)
       val classAttr = legend.attr("class")
-      classAttr must not include "govuk-fieldset__legend--xl"
+      classAttr must not include "govuk-fieldset__legend--l"
       classAttr must not include "govuk-!-margin-bottom-7"
     }
 
     "must render with isPageHeading attribute when asHeading is true" in new Setup {
       val html   = fieldSet("Test Legend", asHeading = true, describedBy = None)(testContent)
       val legend = getLegendElement(html)
-      legend.attr("class") must include("govuk-fieldset__legend--xl")
+      legend.attr("class") must include("govuk-fieldset__legend--l")
     }
 
     "must not render with isPageHeading attribute when asHeading is false" in new Setup {
       val html   = fieldSet("Test Legend", asHeading = false, describedBy = None)(testContent)
       val legend = getLegendElement(html)
-      legend.attr("class") must not include "govuk-fieldset__legend--xl"
+      legend.attr("class") must not include "govuk-fieldset__legend--l"
     }
 
     "must render with describedBy attribute when provided" in new Setup {

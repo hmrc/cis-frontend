@@ -31,7 +31,7 @@ class DeclarationViewSpec extends SpecBase with Matchers {
       val html = view(form, NormalMode, "5 April 2024")
       val doc  = Jsoup.parse(html.body)
 
-      doc.title must include(messages("declaration.title"))
+      doc.title                 must include(messages("declaration.title"))
       doc.select("legend").text must include(messages("declaration.heading"))
 
       doc.select("p").text must include(messages("declaration.paragraph", "5 April 2024"))
