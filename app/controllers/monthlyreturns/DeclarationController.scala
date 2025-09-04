@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import controllers.actions._
-import forms.DeclarationFormProvider
+import forms.monthlyreturns.DeclarationFormProvider
 import javax.inject.Inject
 import models.Mode
+import models.monthlyreturns.Declaration
 import navigation.Navigator
-import pages.DeclarationPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
+import play.api.i18n.{I18nSupport, MessagesApi, Lang}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.DeclarationView
+import utils.DateTimeFormats.dateTimeFormat
+import views.html.monthlyreturns.DeclarationView
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -53,7 +55,12 @@ class DeclarationController @Inject() (
       case Some(value) => form.fill(value.head)
     }
 
-    Ok(view(preparedForm, mode))
+    val formattedDate = request.userAnswers.get(DateConfirmNilPaymentsPage).map { date =>
+      implicit val lang: Lang = messagesApi.preferred(request).lang
+      date.format(dateTimeFormat())
+    }.getOrElse("")
+
+    Ok(view(preparedForm, mode, formattedDate))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -61,7 +68,13 @@ class DeclarationController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => {
+            val formattedDate = request.userAnswers.get(DateConfirmNilPaymentsPage).map { date =>
+              implicit val lang: Lang = messagesApi.preferred(request).lang
+              date.format(dateTimeFormat())
+            }.getOrElse("")
+            Future.successful(BadRequest(view(formWithErrors, mode, formattedDate)))
+          },
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(value)))

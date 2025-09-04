@@ -16,6 +16,7 @@
 
 @import viewmodels.govuk._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+@import models.monthlyreturns.Declaration
 
 @this(
     layout: templates.Layout,
@@ -28,11 +29,11 @@
     paragraph: components.Paragraph
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, formattedDate: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("declaration.title"))) {
 
-    @formHelper(action = routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
@@ -43,7 +44,7 @@
             asHeading = true,
             describedBy = None
         ) {
-            @paragraph("declaration.paragraph")
+            @paragraph(messages("declaration.paragraph", formattedDate))
             
             @govukWarningText(
                 WarningTextViewModel(

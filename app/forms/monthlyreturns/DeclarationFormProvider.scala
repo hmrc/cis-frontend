@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package forms
+package forms.monthlyreturns
 
-import forms.behaviours.EnumFieldBehaviours
-import models.Declaration
-import play.api.data.FormError
+import javax.inject.Inject
 
-class DeclarationFormProviderSpec extends EnumFieldBehaviours {
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.monthlyreturns.Declaration
 
-  val form = new DeclarationFormProvider()()
+class DeclarationFormProvider @Inject() extends Mappings {
 
-  ".value" - {
-
-    val fieldName   = "value"
-    val requiredKey = "declaration.error.required"
-
-    behave like enumField[Declaration](
-      form,
-      fieldName,
-      validValues = Declaration.values,
-      invalidError = FormError(fieldName, "error.invalid")
+  def apply(): Form[Declaration] =
+    Form(
+      "value" -> enumerable[Declaration]("declaration.error.required")
     )
-
-    behave like mandatoryEnumField(
-      form,
-      fieldName,
-      requiredKey
-    )
-  }
 }

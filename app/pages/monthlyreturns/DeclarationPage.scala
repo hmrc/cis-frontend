@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package forms
+package pages.monthlyreturns
 
-import javax.inject.Inject
+import models.monthlyreturns.Declaration
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-import forms.mappings.Mappings
-import play.api.data.Form
-import play.api.data.Forms.set
-import models.Declaration
+case object DeclarationPage extends QuestionPage[Set[Declaration]] {
 
-class DeclarationFormProvider @Inject() extends Mappings {
+  override def path: JsPath = JsPath \ toString
 
-  def apply(): Form[Declaration] =
-    Form(
-      "value" -> enumerable[Declaration]("declaration.error.required")
-    )
+  override def toString: String = "declaration"
 }
