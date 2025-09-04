@@ -31,6 +31,8 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
     case InactivityRequestPage      =>
       _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+    case ConfirmEmailAddressPage    => 
+      _ => controllers.routes.DeclarationController.onPageLoad(NormalMode)
     case _                          => _ => routes.CheckYourAnswersController.onPageLoad()
   }
 
