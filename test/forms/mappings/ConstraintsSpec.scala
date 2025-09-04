@@ -18,7 +18,7 @@ package forms.mappings
 
 import java.time.LocalDate
 
-import config.CurrencyFormatter
+import utils.CurrencyFormatter
 import generators.Generators
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
