@@ -85,3 +85,5 @@ monthlyreturns.confirmEmailAddress.error.length = Your input for ‘Email addres
 monthlyreturns.confirmEmailAddress.error.invalid = Enter a valid email address
 monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
+monthlyReturn.duplicate = We already have a return for {0} {1}. Choose a different month and year.
+
