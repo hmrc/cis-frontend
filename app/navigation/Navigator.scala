@@ -34,13 +34,7 @@ class Navigator @Inject() () {
     case _                          => _ => routes.CheckYourAnswersController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = {
-    case DateConfirmNilPaymentsPage =>
-      _ => routes.CheckYourAnswersController.onPageLoad()
-    case InactivityRequestPage      =>
-      _ => routes.CheckYourAnswersController.onPageLoad()
-    case _                          => _ => routes.CheckYourAnswersController.onPageLoad()
-  }
+  private val checkRouteMap: Page => UserAnswers => Call = { _ => _ => routes.CheckYourAnswersController.onPageLoad() }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {
     case NormalMode =>
