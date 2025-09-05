@@ -17,9 +17,9 @@
 package controllers.actions
 
 import base.SpecBase
-import models.UserAnswers
+import models.{EmployerReference, UserAnswers}
 import models.requests.{IdentifierRequest, OptionalDataRequest}
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.FakeRequest
 import repositories.SessionRepository
@@ -43,7 +43,11 @@ class DataRetrievalActionSpec extends SpecBase with MockitoSugar {
         when(sessionRepository.get("id")) thenReturn Future(None)
         val action            = new Harness(sessionRepository)
 
-        val result = action.callTransform(IdentifierRequest(FakeRequest(), "id")).futureValue
+        val result = action
+          .callTransform(
+            IdentifierRequest(FakeRequest(), "id", EmployerReference("taxOfficeNumber", "taxOfficeReference"))
+          )
+          .futureValue
 
         result.userAnswers must not be defined
       }
@@ -57,7 +61,11 @@ class DataRetrievalActionSpec extends SpecBase with MockitoSugar {
         when(sessionRepository.get("id")) thenReturn Future(Some(UserAnswers("id")))
         val action            = new Harness(sessionRepository)
 
-        val result = action.callTransform(new IdentifierRequest(FakeRequest(), "id")).futureValue
+        val result = action
+          .callTransform(
+            new IdentifierRequest(FakeRequest(), "id", EmployerReference("taxOfficeNumber", "taxOfficeReference"))
+          )
+          .futureValue
 
         result.userAnswers mustBe defined
       }

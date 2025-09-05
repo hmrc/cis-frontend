@@ -20,6 +20,11 @@ GET         /account/signed-out                          controllers.auth.Signed
 
 GET         /unauthorised                                controllers.UnauthorisedController.onPageLoad()
 
+GET         /monthly-return/unauthorised/standard-user   controllers.monthlyreturns.UnauthorisedWrongRoleController.onPageLoad()
+GET         /monthly-return/unauthorised/organisation    controllers.monthlyreturns.UnauthorisedOrganisationAffinityController.onPageLoad()
+GET         /monthly-return/unauthorised/individual      controllers.monthlyreturns.UnauthorisedIndividualAffinityController.onPageLoad()
+GET         /monthly-return/unauthorised/agent           controllers.monthlyreturns.UnauthorisedAgentAffinityController.onPageLoad()
+
 GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = CheckMode)
