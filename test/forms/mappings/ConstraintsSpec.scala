@@ -152,6 +152,43 @@ class ConstraintsSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyC
     }
   }
 
+  "maxMonthYearDate" - {
+
+    "must return Valid for a date before or equal to the maximum" in {
+
+      val gen: Gen[(LocalDate, LocalDate)] = for {
+        maxDate <- datesBetween(LocalDate.now().plusMonths(4), LocalDate.now().plusMonths(4))
+        date    <- datesBetween(LocalDate.of(2007, 5, 5), LocalDate.now())
+      } yield (maxDate, date)
+
+      forAll(gen) { case (maxDate, date) =>
+        val result =
+          maxMonthYearDate(maxDate, "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")(
+            date
+          )
+
+        result mustEqual Valid
+      }
+    }
+
+    "must return Invalid for a date after the maximum" in {
+
+      val gen: Gen[(LocalDate, LocalDate)] = for {
+        maxDate <- datesBetween(LocalDate.now().plusMonths(3), LocalDate.now().plusMonths(4))
+        date    <- datesBetween(LocalDate.now().plusMonths(5), LocalDate.now().plusMonths(6))
+      } yield (maxDate, date)
+
+      forAll(gen) { case (maxDate, date) =>
+        val result =
+          maxMonthYearDate(maxDate, "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")(
+            date
+          )
+
+        result mustEqual Invalid("monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")
+      }
+    }
+  }
+
   "minDate" - {
 
     "must return Valid for a date after or equal to the minimum" in {
@@ -177,6 +214,51 @@ class ConstraintsSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyC
       forAll(gen) { case (min, date) =>
         val result = minDate(min, "error.past", "foo")(date)
         result mustEqual Invalid("error.past", "foo")
+      }
+    }
+  }
+
+  "minMonthYearDate" - {
+
+    "must return Valid for a date after or equal to the minimum" in {
+
+      val gen: Gen[(LocalDate, LocalDate)] = for {
+        minDate <- datesBetween(LocalDate.of(2007, 5, 5), LocalDate.of(2007, 5, 6))
+        date    <- datesBetween(LocalDate.of(2007, 5, 6), LocalDate.now())
+      } yield (minDate, date)
+
+      forAll(gen) { case (minDate, date) =>
+        val result =
+          minMonthYearDate(
+            minDate,
+            "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate",
+            "test"
+          )(
+            date
+          )
+
+        result mustEqual Valid
+      }
+    }
+
+    "must return Invalid for a date before the minimum" in {
+
+      val gen: Gen[(LocalDate, LocalDate)] = for {
+        minDate <- datesBetween(LocalDate.of(2007, 5, 5), LocalDate.of(2007, 5, 6))
+        date    <- datesBetween(LocalDate.of(2006, 5, 5), LocalDate.of(2007, 5, 4))
+      } yield (minDate, date)
+
+      forAll(gen) { case (minDate, date) =>
+        val result =
+          minMonthYearDate(
+            minDate,
+            "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate",
+            "test"
+          )(
+            date
+          )
+
+        result mustEqual Invalid("monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate", "test")
       }
     }
   }
