@@ -16,16 +16,24 @@
 
 package forms.monthlyreturns
 
+import base.SpecBase
+import config.FrontendAppConfig
 import forms.behaviours.DateBehaviours
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.when
 import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
 
 import java.time.LocalDate
 
-class DateConfirmNilPaymentsFormProviderSpec extends DateBehaviours {
+class DateConfirmNilPaymentsFormProviderSpec extends DateBehaviours with SpecBase with MockitoSugar {
 
-  private implicit val messages: Messages = stubMessages()
-  private val form                        = new DateConfirmNilPaymentsFormProvider()()
+  private implicit val messages: Messages      = stubMessages()
+  val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+
+  when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+
+  private val form = new DateConfirmNilPaymentsFormProvider(mockFrontendAppConfig)()
 
   ".value" - {
 
