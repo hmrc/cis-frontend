@@ -56,20 +56,20 @@ class NavigatorSpec extends SpecBase {
 
     "in Check mode" - {
 
-      "must go from DateConfirmNilPaymentsPage to InactivityRequestController in CheckMode" in {
+      "must go from DateConfirmNilPaymentsPage to CheckYourAnswers Page in CheckMode" in {
         navigator.nextPage(
           DateConfirmNilPaymentsPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(CheckMode)
+        ) mustBe routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from InactivityRequestPage to ConfirmEmailAddressController in CheckMode" in {
+      "must go from InactivityRequestPage to CheckYourAnswers Page in CheckMode" in {
         navigator.nextPage(
           InactivityRequestPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(CheckMode)
+        ) mustBe routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {

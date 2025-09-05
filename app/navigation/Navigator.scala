@@ -36,9 +36,9 @@ class Navigator @Inject() () {
 
   private val checkRouteMap: Page => UserAnswers => Call = {
     case DateConfirmNilPaymentsPage =>
-      _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(CheckMode)
+      _ => routes.CheckYourAnswersController.onPageLoad()
     case InactivityRequestPage      =>
-      _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(CheckMode)
+      _ => routes.CheckYourAnswersController.onPageLoad()
     case _                          => _ => routes.CheckYourAnswersController.onPageLoad()
   }
 
