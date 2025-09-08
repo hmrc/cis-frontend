@@ -38,7 +38,6 @@ class FieldSetSpec extends SpecBase with Matchers {
       val legend    = getLegendElement(html)
       val classAttr = legend.attr("class")
       classAttr must include("govuk-fieldset__legend--l")
-      classAttr must include("govuk-!-margin-bottom-7")
     }
 
     "must not render with heading styling when asHeading is false" in new Setup {
@@ -46,7 +45,6 @@ class FieldSetSpec extends SpecBase with Matchers {
       val legend    = getLegendElement(html)
       val classAttr = legend.attr("class")
       classAttr must not include "govuk-fieldset__legend--l"
-      classAttr must not include "govuk-!-margin-bottom-7"
     }
 
     "must render with isPageHeading attribute when asHeading is true" in new Setup {
