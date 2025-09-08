@@ -23,13 +23,12 @@ import play.api.i18n.Messages
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, YearMonth}
 import java.util.Locale
-import javax.inject.Inject
 import scala.math.Ordering.Implicits.infixOrderingOps
 import scala.util.{Failure, Success, Try}
 
 case class DateFormat(dateType: String, errorKey: String, regex: String)
 
-class MonthYearDateFormatter @Inject() (
+class MonthYearDateFormatter(
   invalidKey: String,
   twoRequiredKey: String,
   requiredKey: String,
@@ -51,9 +50,9 @@ class MonthYearDateFormatter @Inject() (
 
     lazy val regexErrors = dateFormats.flatMap(checkInput(key, fields, _))
 
-    lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(fields)
+    lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(key, fields)
 
-    lazy val maxMonthYearDateErrors = maxMonthYearDateCheck(fields)
+    lazy val maxMonthYearDateErrors = maxMonthYearDateCheck(key, fields)
 
     if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then Left(missingFieldErrors ++ regexErrors)
     else if earliestMonthYearDateErrors.nonEmpty then Left(earliestMonthYearDateErrors.toSeq)
@@ -69,7 +68,7 @@ class MonthYearDateFormatter @Inject() (
         None
     }
 
-  private def earliestMonthYearDateCheck(fields: Map[String, Option[String]]): Option[FormError] = {
+  private def earliestMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
 
     val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(config.earliestTaxPeriodEndDate)
 
@@ -84,7 +83,7 @@ class MonthYearDateFormatter @Inject() (
           ) >= (earliestTaxPeriodEndDate.getYear, earliestTaxPeriodEndDate.getMonthValue)) =>
         Some(
           FormError(
-            "value.month",
+            s"$key.month",
             "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate",
             formattedDateInSeq
           )
@@ -95,7 +94,7 @@ class MonthYearDateFormatter @Inject() (
     }
   }
 
-  private def maxMonthYearDateCheck(fields: Map[String, Option[String]]): Option[FormError] = {
+  private def maxMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
 
     val oMonth = fields.get("month").flatten
     val oYear  = fields.get("year").flatten
@@ -107,7 +106,7 @@ class MonthYearDateFormatter @Inject() (
       case (Some(month), Some(year))
           if YearMonth.from(LocalDate.of(year.toInt, month.toInt, 5)).isAfter(YearMonth.from(maxDate)) =>
         Some(
-          FormError("value.month", "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")
+          FormError(s"$key.month", "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")
         )
       case _ =>
         None
