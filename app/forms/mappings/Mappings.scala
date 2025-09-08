@@ -16,6 +16,7 @@
 
 package forms.mappings
 
+import config.FrontendAppConfig
 import models.Enumerable
 import play.api.data.FieldMapping
 import play.api.data.Forms.of
@@ -73,9 +74,18 @@ trait Mappings extends Formatters with Constraints {
     requiredKey: String,
     args: Seq[String] = Seq.empty,
     dateFormats: Seq[DateFormat],
-    fieldKeys: Seq[String]
+    fieldKeys: Seq[String],
+    config: FrontendAppConfig
   )(implicit messages: Messages): FieldMapping[LocalDate] =
     of(
-      new MonthYearDateFormatter(invalidKey, twoRequiredKey, requiredKey, args, dateFormats, fieldKeys)
+      new MonthYearDateFormatter(
+        invalidKey,
+        twoRequiredKey,
+        requiredKey,
+        args,
+        dateFormats,
+        fieldKeys,
+        config
+      )
     )
 }

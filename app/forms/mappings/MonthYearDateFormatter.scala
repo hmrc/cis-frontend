@@ -16,10 +16,14 @@
 
 package forms.mappings
 
+import config.FrontendAppConfig
 import play.api.data.FormError
-
-import java.time.LocalDate
 import play.api.i18n.Messages
+
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, YearMonth}
+import java.util.Locale
+import scala.math.Ordering.Implicits.infixOrderingOps
 import scala.util.{Failure, Success, Try}
 
 case class DateFormat(dateType: String, errorKey: String, regex: String)
@@ -30,12 +34,13 @@ class MonthYearDateFormatter(
   requiredKey: String,
   args: Seq[String] = Seq.empty,
   dateFormats: Seq[DateFormat],
-  fieldKeys: Seq[String]
+  fieldKeys: Seq[String],
+  config: FrontendAppConfig
 )(implicit messages: Messages)
     extends LocalDateFormatter(invalidKey, "", twoRequiredKey, requiredKey, args) {
 
   override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], LocalDate] = {
-    val fields = fieldKeys.map { field =>
+    val fields: Map[String, Option[String]] = fieldKeys.map { field =>
       field -> data.get(s"$key.$field").filter(_.nonEmpty)
     }.toMap
 
@@ -43,15 +48,16 @@ class MonthYearDateFormatter(
       FormError(s"$key.$field", s"monthlyreturns.dateConfirmNilPayments.error.required.$field")
     }.toList
 
-    val regexErrors = dateFormats.flatMap(checkInput(key, fields, _))
+    lazy val regexErrors = dateFormats.flatMap(checkInput(key, fields, _))
 
-    if (regexErrors.nonEmpty || missingFieldErrors.nonEmpty) {
-      Left(missingFieldErrors ++ regexErrors)
-    } else {
-      formatDate(key, data).left.map {
-        _.map(_.copy(key = key, args = args))
-      }
-    }
+    lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(key, fields)
+
+    lazy val maxMonthYearDateErrors = maxMonthYearDateCheck(key, fields)
+
+    if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then Left(missingFieldErrors ++ regexErrors)
+    else if earliestMonthYearDateErrors.nonEmpty then Left(earliestMonthYearDateErrors.toSeq)
+    else if maxMonthYearDateErrors.nonEmpty then Left(maxMonthYearDateErrors.toSeq)
+    else formatDate(key, data).left.map(_.map(_.copy(key = key, args = args)))
   }
 
   private def checkInput(key: String, fields: Map[String, Option[String]], dateFormat: DateFormat): Option[FormError] =
@@ -61,6 +67,52 @@ class MonthYearDateFormatter(
       case _                                                     =>
         None
     }
+
+  private def earliestMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
+
+    val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(config.earliestTaxPeriodEndDate)
+
+    val formattedDateInSeq =
+      earliestTaxPeriodEndDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)).split(" ").toSeq
+
+    (fields.get("month").flatten, fields.get("year").flatten) match {
+      case (Some(month), Some(year))
+          if !((
+            year.toInt,
+            month.toInt
+          ) >= (earliestTaxPeriodEndDate.getYear, earliestTaxPeriodEndDate.getMonthValue)) =>
+        Some(
+          FormError(
+            s"$key.month",
+            "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate",
+            formattedDateInSeq
+          )
+        )
+      case _ =>
+        None
+
+    }
+  }
+
+  private def maxMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
+
+    val oMonth = fields.get("month").flatten
+    val oYear  = fields.get("year").flatten
+
+    val today              = LocalDate.now()
+    val maxDate: LocalDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+
+    (oMonth, oYear) match {
+      case (Some(month), Some(year))
+          if YearMonth.from(LocalDate.of(year.toInt, month.toInt, 5)).isAfter(YearMonth.from(maxDate)) =>
+        Some(
+          FormError(s"$key.month", "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")
+        )
+      case _ =>
+        None
+
+    }
+  }
 
   private def formatDate(key: String, data: Map[String, String]): Either[Seq[FormError], LocalDate] = {
 
