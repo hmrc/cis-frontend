@@ -17,8 +17,7 @@
 package forms.mappings
 
 import utils.CurrencyFormatter
-import java.time.{LocalDate, YearMonth}
-import scala.math.Ordering.Implicits.infixOrderingOps
+import java.time.LocalDate
 
 import play.api.data.validation.{Constraint, Invalid, Valid}
 
@@ -92,27 +91,11 @@ trait Constraints {
         Valid
     }
 
-  protected def maxMonthYearDate(maxDate: LocalDate, errorKey: String): Constraint[LocalDate] =
-    Constraint {
-      case date if YearMonth.from(date).isAfter(YearMonth.from(maxDate)) =>
-        Invalid(errorKey)
-      case _                                                             =>
-        Valid
-    }
-
   protected def minDate(minimum: LocalDate, errorKey: String, args: Any*): Constraint[LocalDate] =
     Constraint {
       case date if date.isBefore(minimum) =>
         Invalid(errorKey, args: _*)
       case _                              =>
-        Valid
-    }
-
-  protected def minMonthYearDate(minDate: LocalDate, errorKey: String, arg: String): Constraint[LocalDate] =
-    Constraint {
-      case date if !((date.getYear, date.getMonthValue) >= (minDate.getYear, minDate.getMonthValue)) =>
-        Invalid(errorKey, arg)
-      case _                                                                                         =>
         Valid
     }
 

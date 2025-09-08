@@ -19,46 +19,23 @@ package forms.monthlyreturns
 import config.FrontendAppConfig
 import forms.mappings.Mappings
 import play.api.data.Form
-import play.api.data.validation._
 import play.api.i18n.Messages
 import utils.DateFormats
 
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 
 class DateConfirmNilPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) extends Mappings {
 
-  def apply()(implicit messages: Messages): Form[LocalDate] = {
-
-    val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(appConfig.earliestTaxPeriodEndDate)
-
-    val formattedDate = earliestTaxPeriodEndDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK))
-
-    val today = LocalDate.now()
-
-    val maxDate: LocalDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
-
+  def apply()(implicit messages: Messages): Form[LocalDate] =
     Form(
       "value" -> monthYearPaymentDate(
         invalidKey = "monthlyreturns.dateConfirmNilPayments.error.required",
         twoRequiredKey = "monthlyreturns.dateConfirmNilPayments.error.required.two",
         requiredKey = "monthlyreturns.dateConfirmNilPayments.error.required",
         dateFormats = DateFormats.monthYearFormats,
-        fieldKeys = List("month", "year")
-      ).verifying(
-        minMonthYearDate(
-          earliestTaxPeriodEndDate,
-          "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate",
-          formattedDate
-        )
-      ).verifying(
-        maxMonthYearDate(
-          maxDate,
-          "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod"
-        )
+        fieldKeys = List("month", "year"),
+        config = appConfig
       )
     )
-  }
 }

@@ -65,7 +65,7 @@ monthlyreturns.dateConfirmNilPayments.error.required = The 'Tax month ending' mu
 monthlyreturns.dateConfirmNilPayments.error.invalid = Please enter a valid 'Tax month ending, month and year'
 monthlyreturns.dateConfirmNilPayments.error.invalid.month = Please enter a valid 'Tax month ending, month'
 monthlyreturns.dateConfirmNilPayments.error.invalid.year = Please enter a valid 'Tax month ending, year'
-monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Your entry for 'Tax month ending' is incorrect. It cannot be before {0}. Please amend.
+monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Your entry for 'Tax month ending' is incorrect. It cannot be before {0} {1} {2}. Please amend.
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = 'Tax month ending' cannot be more than 3 return periods ahead of the current date.
 
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
