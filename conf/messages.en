@@ -87,3 +87,13 @@ monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
 monthlyReturn.duplicate = We already have a return for {0} {1}. Choose a different month and year.
 
+
+declaration.title = Declaration
+declaration.heading = Declaration
+declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month {0}.
+declaration.warning = If you give any false information you may face financial penalties and prosecution.
+declaration.checkbox = I confirm that the information given on this return is correct and complete to the best of my knowledge.
+declaration.checkYourAnswersLabel = Declaration
+declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
+declaration.change.hidden = Declaration
+declaration.submit = Confirm and submit
