@@ -22,6 +22,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.govuk.summarylist._
+import viewmodels.checkAnswers.monthlyreturns.DeclarationSummary
 import views.html.CheckYourAnswersView
 
 class CheckYourAnswersController @Inject() (
@@ -37,7 +38,9 @@ class CheckYourAnswersController @Inject() (
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
     val list = SummaryListViewModel(
-      rows = Seq.empty
+      rows = Seq(
+        DeclarationSummary.row(request.userAnswers)
+      ).flatten
     )
 
     Ok(view(list))

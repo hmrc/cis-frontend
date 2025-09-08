@@ -14,25 +14,18 @@
  * limitations under the License.
  */
 
-package utils
+package forms.monthlyreturns
 
-import play.api.i18n.Lang
+import javax.inject.Inject
 
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.monthlyreturns.Declaration
 
-object DateTimeFormats {
+class DeclarationFormProvider @Inject() extends Mappings {
 
-  private val dateTimeFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
-
-  private val localisedDateTimeFormatters = Map(
-    "en" -> dateTimeFormatter,
-    "cy" -> dateTimeFormatter.withLocale(new Locale("cy"))
-  )
-
-  def dateTimeFormat()(implicit lang: Lang): DateTimeFormatter =
-    localisedDateTimeFormatters.getOrElse(lang.code, dateTimeFormatter)
-
-  val dateTimeHintFormat: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d M yyyy")
+  def apply(): Form[Declaration] =
+    Form(
+      "value" -> enumerable[Declaration]("declaration.error.required")
+    )
 }

@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.mvc.Call
 import controllers.routes
 import pages.*
-import pages.monthlyreturns.{DateConfirmNilPaymentsPage, InactivityRequestPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
 import models.*
 
 @Singleton
@@ -31,6 +31,8 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
     case InactivityRequestPage      =>
       _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+    case ConfirmEmailAddressPage    =>
+      _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case _                          => _ => routes.CheckYourAnswersController.onPageLoad()
   }
 

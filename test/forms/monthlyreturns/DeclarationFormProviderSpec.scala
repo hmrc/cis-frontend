@@ -14,21 +14,32 @@
  * limitations under the License.
  */
 
-package generators
+package forms.monthlyreturns
 
+import forms.behaviours.EnumFieldBehaviours
 import models.monthlyreturns.Declaration
-import models.monthlyreturns.InactivityRequest
-import org.scalacheck.{Arbitrary, Gen}
+import play.api.data.FormError
 
-trait ModelGenerators {
+class DeclarationFormProviderSpec extends EnumFieldBehaviours {
 
-  implicit lazy val arbitraryDeclaration: Arbitrary[Declaration] =
-    Arbitrary {
-      Gen.oneOf(Declaration.values)
-    }
+  val form = new DeclarationFormProvider()()
 
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  ".value" - {
+
+    val fieldName   = "value"
+    val requiredKey = "declaration.error.required"
+
+    behave like enumField[Declaration](
+      form,
+      fieldName,
+      validValues = Declaration.values,
+      invalidError = FormError(fieldName, "error.invalid")
+    )
+
+    behave like mandatoryEnumField(
+      form,
+      fieldName,
+      requiredKey
+    )
+  }
 }

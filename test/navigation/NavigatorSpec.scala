@@ -46,6 +46,14 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
       }
 
+      "must go from ConfirmEmailAddressPage to DeclarationController" in {
+        navigator.nextPage(
+          ConfirmEmailAddressPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      }
+
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page
@@ -67,6 +75,14 @@ class NavigatorSpec extends SpecBase {
       "must go from InactivityRequestPage to CheckYourAnswers Page in CheckMode" in {
         navigator.nextPage(
           InactivityRequestPage,
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from ConfirmEmailAddressPage to CheckYourAnswers Page in CheckMode" in {
+        navigator.nextPage(
+          ConfirmEmailAddressPage,
           CheckMode,
           UserAnswers("id")
         ) mustBe routes.CheckYourAnswersController.onPageLoad()
