@@ -102,7 +102,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, "5 April 2024")(
+        contentAsString(result) mustEqual view(form, NormalMode, "April 2024")(
           request,
           messages(application)
         ).toString
