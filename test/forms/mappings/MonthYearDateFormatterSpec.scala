@@ -65,16 +65,6 @@ class MonthYearDateFormatterSpec
     max = LocalDate.of(2020, 5, 5)
   )
 
-  val invalidDatesBefore = datesBetween(
-    min = LocalDate.of(2000, 5, 5),
-    max = LocalDate.of(2010, 5, 4)
-  )
-
-  val invalidDatesAfter = datesBetween(
-    min = LocalDate.of(2050, 5, 5),
-    max = LocalDate.of(2060, 5, 5)
-  )
-
   "must bind valid dates with valid month and year" in {
 
     forAll(validDates -> "valid date") { date =>
