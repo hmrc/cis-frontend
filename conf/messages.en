@@ -120,7 +120,7 @@ monthlyreturns.inactivityRequest.insetText = You must let HMRC know when you sta
 
 monthlyreturns.confirmEmailAddress.title = Confirm your email address
 monthlyreturns.confirmEmailAddress.heading = Confirm your email address
-monthlyreturns.confirmEmailAddress.paragraph = HMRC will send a confirmation of successful submission by email using the address below. You can change the email address temporarily for this submission.
+monthlyreturns.confirmEmailAddress.paragraph = HMRC will send a confirmation of successful submission by email using the address below. You can change your email address temporarily for this submission.
 monthlyreturns.confirmEmailAddress.input.label = Email address
 monthlyreturns.confirmEmailAddress.checkYourAnswersLabel = Email address
 monthlyreturns.confirmEmailAddress.error.required = Your entry for ‘Email address’ is invalid. Please amend.
