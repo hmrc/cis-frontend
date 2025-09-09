@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.responses.{MrDetails, MrResponse}
+import models.responses.{InTransitMonthlyReturnDetails, MonthlyReturnResponse}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
@@ -34,16 +34,13 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with MockitoSugar with ScalaF
   implicit val ec: ExecutionContext = global
   implicit val hc: HeaderCarrier    = HeaderCarrier()
 
-  // ---- Mocks
   val mockConnector: ConstructionIndustrySchemeConnector =
     mock[ConstructionIndustrySchemeConnector]
 
-  // ---- System under test
   val service = new MonthlyReturnService(mockConnector)
 
-  // ---- Test data helpers
-  private def mr(year: Int, month: Int, id: Long = 1L): MrDetails =
-    MrDetails(
+  private def mr(year: Int, month: Int, id: Long = 1L): InTransitMonthlyReturnDetails =
+    InTransitMonthlyReturnDetails(
       monthlyReturnId = id,
       taxYear = year,
       taxMonth = month,
@@ -61,7 +58,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with MockitoSugar with ScalaF
 
   "MonthlyReturnService.retrieveAllMonthlyReturns" should {
     "return the payload from the connector and call it with the given instanceId" in {
-      val expected = MrResponse(Seq(mr(2023, 4), mr(2024, 5)))
+      val expected = MonthlyReturnResponse(Seq(mr(2023, 4), mr(2024, 5)))
 
       when(mockConnector.retrieveMonthlyReturns()(any()))
         .thenReturn(Future.successful(expected))
@@ -87,7 +84,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with MockitoSugar with ScalaF
 
   "MonthlyReturnService.isDuplicate" should {
     "return true when a monthly return with the same year and month exists" in {
-      val data = MrResponse(Seq(mr(2022, 12), mr(2024, 5)))
+      val data = MonthlyReturnResponse(Seq(mr(2022, 12), mr(2024, 5)))
       when(mockConnector.retrieveMonthlyReturns()(any()))
         .thenReturn(Future.successful(data))
 
@@ -95,7 +92,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with MockitoSugar with ScalaF
     }
 
     "return false when no monthly return matches the year and month" in {
-      val data = MrResponse(Seq(mr(2024, 4), mr(2024, 6)))
+      val data = MonthlyReturnResponse(Seq(mr(2024, 4), mr(2024, 6)))
       when(mockConnector.retrieveMonthlyReturns()(any()))
         .thenReturn(Future.successful(data))
 

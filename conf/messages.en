@@ -87,7 +87,6 @@ monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
 monthlyReturn.duplicate = We already have a return for {0} {1}. Choose a different month and year.
 
-
 declaration.title = Declaration
 declaration.heading = Declaration
 declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month {0}.

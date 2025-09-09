@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.responses.MrResponse
+import models.responses.MonthlyReturnResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MonthlyReturnService @Inject() (constructionIndustrySchemeConnector: ConstructionIndustrySchemeConnector)(implicit
   ec: ExecutionContext
 ) {
-  def retrieveAllMonthlyReturns()(implicit hc: HeaderCarrier): Future[MrResponse] =
+  def retrieveAllMonthlyReturns()(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     constructionIndustrySchemeConnector.retrieveMonthlyReturns()
 
   def isDuplicate(year: Int, month: Int)(implicit hc: HeaderCarrier): Future[Boolean] =

@@ -30,7 +30,6 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.DateConfirmNilPaymentsView
 
-import java.time.Month
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
@@ -78,7 +77,7 @@ class DateConfirmNilPaymentsController @Inject() (
           value => {
             val year      = value.getYear
             val month     = value.getMonthValue
-            val monthName = Month.of(month).getDisplayName(TextStyle.FULL, Locale.UK)
+            val monthName = value.getMonth.getDisplayName(TextStyle.FULL, Locale.UK)
 
             monthlyReturnService
               .isDuplicate(year, month)
@@ -89,7 +88,6 @@ class DateConfirmNilPaymentsController @Inject() (
                   Future.successful(BadRequest(view(dupForm, mode)))
 
                 case false =>
-                  // Not a duplicate — proceed as before
                   for {
                     updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
                     _              <- sessionRepository.set(updatedAnswers)

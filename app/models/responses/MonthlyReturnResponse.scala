@@ -21,7 +21,7 @@ import play.api.libs.json.{Json, OFormat}
 
 import java.time.LocalDateTime
 
-case class MrDetails(
+case class InTransitMonthlyReturnDetails(
   monthlyReturnId: Long,
   taxYear: Int,
   taxMonth: Int,
@@ -45,13 +45,13 @@ case class MrDetails(
   )
 }
 
-object MrDetails {
-  implicit val format: OFormat[MrDetails] = Json.format[MrDetails]
+object InTransitMonthlyReturnDetails {
+  implicit val format: OFormat[InTransitMonthlyReturnDetails] = Json.format[InTransitMonthlyReturnDetails]
 }
 
-case class MrResponse(monthlyReturnList: Seq[MrDetails])
+case class MonthlyReturnResponse(monthlyReturnList: Seq[InTransitMonthlyReturnDetails])
 
-object MrResponse {
-  import MrDetails.format
-  implicit val format: OFormat[MrResponse] = Json.format[MrResponse]
+object MonthlyReturnResponse {
+  import InTransitMonthlyReturnDetails.format
+  implicit val format: OFormat[MonthlyReturnResponse] = Json.format[MonthlyReturnResponse]
 }

@@ -21,7 +21,6 @@ import itutil.ApplicationWithWiremock
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, OK}
 import uk.gov.hmrc.http.HeaderCarrier
 
 class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec

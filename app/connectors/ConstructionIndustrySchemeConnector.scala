@@ -16,7 +16,7 @@
 
 package connectors
 
-import models.responses.MrResponse
+import models.responses.MonthlyReturnResponse
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -31,8 +31,8 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
 
   private val constructionIndustrySchemeBaseUrl: String = config.baseUrl("construction-industry-scheme") + "/cis"
 
-  def retrieveMonthlyReturns()(implicit hc: HeaderCarrier): Future[MrResponse] =
+  def retrieveMonthlyReturns()(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     http
       .get(url"$constructionIndustrySchemeBaseUrl/monthly-returns")(hc)
-      .execute[MrResponse]
+      .execute[MonthlyReturnResponse]
 }
