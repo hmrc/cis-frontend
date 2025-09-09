@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmNilPaymentsFormProvider
 import models.{NormalMode, UserAnswers}
@@ -43,7 +44,11 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   private implicit val messages: Messages = stubMessages()
 
-  private val formProvider = new DateConfirmNilPaymentsFormProvider()
+  val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+
+  when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+
+  private val formProvider = new DateConfirmNilPaymentsFormProvider(mockFrontendAppConfig)
   private def form         = formProvider()
 
   def onwardRoute = Call("GET", "/foo")

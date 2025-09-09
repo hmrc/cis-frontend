@@ -52,4 +52,6 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val countdown: Int = configuration.get[Int]("timeout-dialog.countdown")
 
   lazy val cacheTtl: Long = configuration.get[Int]("mongodb.timeToLiveInSeconds")
+
+  lazy val earliestTaxPeriodEndDate: String = configuration.get[String]("earliest-tax-period-end-date")
 }

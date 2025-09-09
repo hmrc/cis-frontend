@@ -16,6 +16,7 @@
 
 package forms.monthlyreturns
 
+import config.FrontendAppConfig
 import forms.mappings.Mappings
 import play.api.data.Form
 import play.api.i18n.Messages
@@ -24,7 +25,7 @@ import utils.DateFormats
 import java.time.LocalDate
 import javax.inject.Inject
 
-class DateConfirmNilPaymentsFormProvider @Inject() extends Mappings {
+class DateConfirmNilPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) extends Mappings {
 
   def apply()(implicit messages: Messages): Form[LocalDate] =
     Form(
@@ -33,7 +34,8 @@ class DateConfirmNilPaymentsFormProvider @Inject() extends Mappings {
         twoRequiredKey = "monthlyreturns.dateConfirmNilPayments.error.required.two",
         requiredKey = "monthlyreturns.dateConfirmNilPayments.error.required",
         dateFormats = DateFormats.monthYearFormats,
-        fieldKeys = List("month", "year")
+        fieldKeys = List("month", "year"),
+        config = appConfig
       )
     )
 }
