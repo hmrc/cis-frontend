@@ -84,7 +84,18 @@ class DateConfirmNilPaymentsController @Inject() (
               .flatMap {
                 case true =>
                   val dupForm =
-                    form.fill(value).withGlobalError("monthlyReturn.duplicate", monthName, year.toString)
+                    form
+                      .fill(value)
+                      .withError(
+                        "value.month",
+                        "monthlyReturn.dateConfirmNilPayments.error.duplicate.month",
+                        Seq(monthName): _*
+                      )
+                      .withError(
+                        "value.year",
+                        "monthlyReturn.dateConfirmNilPayments.error.duplicate.year",
+                        Seq(year.toString): _*
+                      )
                   Future.successful(BadRequest(view(dupForm, mode)))
 
                 case false =>
