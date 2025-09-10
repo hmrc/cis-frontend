@@ -24,9 +24,14 @@ import pages.monthlyreturns.DateConfirmNilPaymentsPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.DateConfirmNilPaymentsView
 
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,6 +43,7 @@ class DateConfirmNilPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   formProvider: DateConfirmNilPaymentsFormProvider,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: DateConfirmNilPaymentsView
 )(implicit ec: ExecutionContext)
@@ -59,17 +65,40 @@ class DateConfirmNilPaymentsController @Inject() (
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
 
+      implicit val hc: HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
       val form = formProvider()
 
       form
         .bindFromRequest()
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
+          value => {
+            val year      = value.getYear
+            val month     = value.getMonthValue
+            val monthName = value.getMonth.getDisplayName(TextStyle.FULL, Locale.UK)
+
+            monthlyReturnService
+              .isDuplicate(year, month)
+              .flatMap {
+                case true =>
+                  val dupForm =
+                    form.fill(value).withGlobalError("monthlyReturn.duplicate", monthName, year.toString)
+                  Future.successful(BadRequest(view(dupForm, mode)))
+
+                case false =>
+                  for {
+                    updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
+                    _              <- sessionRepository.set(updatedAnswers)
+                  } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
+              }
+              .recover { case _ =>
+                val errForm =
+                  form.fill(value).withGlobalError("error.technical")
+                InternalServerError(view(errForm, mode))
+              }
+          }
         )
   }
 }
