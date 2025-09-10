@@ -87,14 +87,8 @@ class DateConfirmNilPaymentsController @Inject() (
                     form
                       .fill(value)
                       .withError(
-                        "value.month",
-                        "monthlyReturn.dateConfirmNilPayments.error.duplicate.month",
-                        Seq(monthName): _*
-                      )
-                      .withError(
-                        "value.year",
-                        "monthlyReturn.dateConfirmNilPayments.error.duplicate.year",
-                        Seq(year.toString): _*
+                        "value",
+                        "monthlyreturns.dateConfirmNilPayments.error.duplicate"
                       )
                   Future.successful(BadRequest(view(dupForm, mode)))
 
