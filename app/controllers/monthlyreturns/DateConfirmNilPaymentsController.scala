@@ -30,8 +30,6 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.DateConfirmNilPaymentsView
 
-import java.time.format.TextStyle
-import java.util.Locale
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -75,9 +73,8 @@ class DateConfirmNilPaymentsController @Inject() (
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value => {
-            val year      = value.getYear
-            val month     = value.getMonthValue
-            val monthName = value.getMonth.getDisplayName(TextStyle.FULL, Locale.UK)
+            val year  = value.getYear
+            val month = value.getMonthValue
 
             monthlyReturnService
               .isDuplicate(year, month)

@@ -48,22 +48,27 @@
         @paragraph("monthlyreturns.dateConfirmNilPayments.paragraph")
 
 
-        @h2("monthlyreturns.dateConfirmNilPayments.heading.h2")
-        @hint("monthlyreturns.dateConfirmNilPayments.hint")
-
-        @govukDetails(Details(
-            summary = Text(messages("monthlyreturns.dateConfirmNilPayments.table.summary")),
-            content = HtmlContent(taxMonthPeriodsTable().toString)
-        ))
-
         @govukDateInput(
             WithMonthYearViewModel(
                 field  = form("value"),
                 legend = LegendViewModel(
-                    messages("monthlyreturns.dateConfirmNilPayments.heading.h2")
-                    ).withCssClass("govuk-visually-hidden")
-        )
-        .withMonthYearFormField(form("value"))
+                    HtmlContent(
+                        h2("monthlyreturns.dateConfirmNilPayments.heading.h2").toString
+                    )
+                )
+            )
+            .withMonthYearFormField(form("value"))
+            .withHint(
+                HintViewModel(
+                    HtmlContent(
+                        hint("monthlyreturns.dateConfirmNilPayments.hint").toString +
+                        govukDetails(Details(
+                            summary = Text(messages("monthlyreturns.dateConfirmNilPayments.table.summary")),
+                            content = HtmlContent(taxMonthPeriodsTable().toString)
+                        )).toString
+                    )
+                )
+            )
         )
 
         @govukWarningText(
