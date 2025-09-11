@@ -39,3 +39,6 @@ GET        /monthly-return/declaration                        controllers.monthl
 POST       /monthly-return/declaration                        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/monthly-nil-return/inactivity-warning                       controllers.monthlyreturns.InactivityWarningController.onPageLoad
+POST       /monthly-return/monthly-nil-return/inactivity-warning                       controllers.monthlyreturns.InactivityWarningController.onSubmit
