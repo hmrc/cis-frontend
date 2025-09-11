@@ -39,3 +39,5 @@ GET        /monthly-return/declaration                        controllers.monthl
 POST       /monthly-return/declaration                        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
+
+GET        /submissionSending                       controllers.SubmissionSendingController.onPageLoad()

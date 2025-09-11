@@ -139,3 +139,6 @@ declaration.checkYourAnswersLabel = Declaration
 declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
 declaration.change.hidden = Declaration
 declaration.submit = Confirm and submit
+
+submissionSending.title = submissionSending
+submissionSending.heading = submissionSending
