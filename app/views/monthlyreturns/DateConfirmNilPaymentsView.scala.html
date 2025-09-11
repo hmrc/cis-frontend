@@ -30,7 +30,6 @@
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
     govukDetails: GovukDetails,
-    hint: components.Hint,
     taxMonthPeriodsTable: components.TaxMonthPeriodsTable
 )
 
@@ -61,7 +60,7 @@
             .withHint(
                 HintViewModel(
                     HtmlContent(
-                        hint("monthlyreturns.dateConfirmNilPayments.hint").toString +
+                        paragraph("monthlyreturns.dateConfirmNilPayments.hint", extraClasses = "govuk-hint").toString +
                         govukDetails(Details(
                             summary = Text(messages("monthlyreturns.dateConfirmNilPayments.table.summary")),
                             content = HtmlContent(taxMonthPeriodsTable().toString)
