@@ -138,3 +138,9 @@ declaration.checkYourAnswersLabel = Declaration
 declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
 declaration.change.hidden = Declaration
 declaration.submit = Confirm and submit
+
+monthlyreturns.inactivityWarning.title = Nil Monthly Return - Inactivity Warning
+monthlyreturns.inactivityWarning.heading = Nil Monthly Return - Inactivity Warning
+monthlyreturns.inactivityWarning.paragraph = You are submitting a monthly return to tell us about payments to construction workers. Our records for the submission period show that if your request for inactivity is accepted it is important to note that this is only valid for 6 months.
+monthlyreturns.inactivityWarning.warning = If you submit any subcontractors before the end of this period you must advise a monthly return.
+monthlyreturns.inactivityWarning.submit = Accept and continue
