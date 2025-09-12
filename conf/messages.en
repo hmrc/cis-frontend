@@ -139,3 +139,8 @@ declaration.checkYourAnswersLabel = Declaration
 declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
 declaration.change.hidden = Declaration
 declaration.submit = Confirm and submit
+
+monthlyreturns.submissionSending.title = Submission - Sending
+monthlyreturns.submissionSending.heading = Sending your submission
+monthlyreturns.submissionSending.paragraph = Your submission is being sent to HM Revenue and Customs.
+monthlyreturns.submissionSending.insetText = Do not refresh this page or press the back button while your submission is being processed.
