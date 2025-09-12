@@ -40,7 +40,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.day")))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))
         }
 
         @h1("monthlyreturns.dateConfirmNilPayments.heading.h1")
@@ -60,7 +60,7 @@
             .withHint(
                 HintViewModel(
                     HtmlContent(
-                        paragraph("monthlyreturns.dateConfirmNilPayments.hint").toString +
+                        paragraph("monthlyreturns.dateConfirmNilPayments.hint", extraClasses = "govuk-hint").toString +
                         govukDetails(Details(
                             summary = Text(messages("monthlyreturns.dateConfirmNilPayments.table.summary")),
                             content = HtmlContent(taxMonthPeriodsTable().toString)

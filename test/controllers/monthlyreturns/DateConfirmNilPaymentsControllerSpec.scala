@@ -216,7 +216,11 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val monthName   =
           Month.of(validAnswer.getMonthValue).getDisplayName(TextStyle.FULL, Locale.UK)
         val expectedMsg =
-          messages(application)("monthlyReturn.duplicate", monthName, validAnswer.getYear.toString)
+          messages(application)(
+            "monthlyreturns.dateConfirmNilPayments.error.duplicate",
+            monthName,
+            validAnswer.getYear.toString
+          )
 
         contentAsString(result) must include(expectedMsg)
       }
