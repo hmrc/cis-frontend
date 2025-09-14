@@ -23,6 +23,7 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import utils.DateTimeFormats.dateTimeFormat
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
+import java.time.format.DateTimeFormatter
 
 object DateConfirmNilPaymentsSummary {
 
@@ -31,9 +32,14 @@ object DateConfirmNilPaymentsSummary {
 
       implicit val lang: Lang = messages.lang
 
+      val taxPeriodEnd   = answer
+      val taxPeriodStart = taxPeriodEnd.minusMonths(1).withDayOfMonth(6)
+      val taxPeriodText  = s"${taxPeriodStart.format(DateTimeFormatter.ofPattern("d MMM yyyy"))} to ${taxPeriodEnd
+          .format(DateTimeFormatter.ofPattern("d MMM yyyy"))}"
+
       SummaryListRowViewModel(
-        key = "monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel",
-        value = ValueViewModel(answer.format(dateTimeFormat())),
+        key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
+        value = ValueViewModel(taxPeriodText),
         actions = Seq(
           ActionItemViewModel(
             "site.change",

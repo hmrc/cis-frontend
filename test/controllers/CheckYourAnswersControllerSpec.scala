@@ -20,6 +20,7 @@ import base.SpecBase
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import viewmodels.govuk.SummaryListFluency
+import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.CheckYourAnswersView
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
@@ -35,11 +36,17 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[CheckYourAnswersView]
-        val list = SummaryListViewModel(Seq.empty)
+        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val returnDetailsList = SummaryListViewModel(
+          Seq(
+            ReturnTypeSummary.row(messages(application)).get,
+            PaymentsToSubcontractorsSummary.row(messages(application)).get
+          )
+        )
+        val emailList         = SummaryListViewModel(Seq.empty)
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(list)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(returnDetailsList, emailList)(request, messages(application)).toString
       }
     }
 

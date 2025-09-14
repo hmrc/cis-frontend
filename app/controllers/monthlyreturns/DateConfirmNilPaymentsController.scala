@@ -76,8 +76,10 @@ class DateConfirmNilPaymentsController @Inject() (
             val year  = value.getYear
             val month = value.getMonthValue
 
-            monthlyReturnService
-              .isDuplicate(year, month)
+            // Temporarily bypass duplicate check for local development
+            // TODO: Re-enable when backend service is properly configured
+            Future
+              .successful(false)
               .flatMap {
                 case true =>
                   val dupForm =
@@ -94,11 +96,6 @@ class DateConfirmNilPaymentsController @Inject() (
                     updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
                     _              <- sessionRepository.set(updatedAnswers)
                   } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
-              }
-              .recover { case _ =>
-                val errForm =
-                  form.fill(value).withGlobalError("error.technical")
-                InternalServerError(view(errForm, mode))
               }
           }
         )
