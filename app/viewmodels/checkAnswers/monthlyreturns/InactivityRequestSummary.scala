@@ -46,6 +46,7 @@ object InactivityRequestSummary {
         actions = Seq(
           ActionItemViewModel("site.change", routes.InactivityRequestController.onPageLoad(CheckMode).url)
             .withVisuallyHiddenText(messages("monthlyreturns.inactivityRequest.change.hidden"))
+            .withAttribute("id" -> "change-inactivity-request")
         )
       )
     }

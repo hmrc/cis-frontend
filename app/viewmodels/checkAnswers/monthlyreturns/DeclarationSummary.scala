@@ -47,6 +47,7 @@ object DeclarationSummary {
         actions = Seq(
           ActionItemViewModel("site.change", routes.DeclarationController.onPageLoad(CheckMode).url)
             .withVisuallyHiddenText(messages("declaration.change.hidden"))
+            .withAttribute("id" -> "change-declaration")
         )
       )
     }

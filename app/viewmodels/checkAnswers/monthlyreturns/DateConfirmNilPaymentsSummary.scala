@@ -46,6 +46,7 @@ object DateConfirmNilPaymentsSummary {
             controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.dateConfirmNilPayments.change.hidden"))
+            .withAttribute("id" -> "change-date-confirm-nil-payments")
         )
       )
     }
