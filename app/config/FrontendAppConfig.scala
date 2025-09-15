@@ -54,4 +54,6 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val cacheTtl: Long = configuration.get[Int]("mongodb.timeToLiveInSeconds")
 
   lazy val earliestTaxPeriodEndDate: String = configuration.get[String]("earliest-tax-period-end-date")
+
+  lazy val hmrcOnlineServicesHelpdeskUrl: String = configuration.get[String]("urls.hmrcOnlineServicesHelpdesk")
 }

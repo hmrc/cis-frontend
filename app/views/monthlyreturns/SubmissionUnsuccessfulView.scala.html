@@ -14,6 +14,8 @@
  * limitations under the License.
  *@
 
+@import config.FrontendAppConfig
+
 @this(
         layout: templates.Layout,
         govukButton: GovukButton,
@@ -25,7 +27,7 @@
         link: components.Link,
         govukWarningText: GovukWarningText,
         govukDetails: GovukDetails,
-        config: play.api.Configuration
+        appConfig: FrontendAppConfig
 )
 
 @()(implicit request: Request[_], messages: Messages)
@@ -38,7 +40,7 @@
         @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p1", baseClass="govuk-body-lead")
         @link(
             linkTextKey   = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
-            linkUrl       = config.get[String]("urls.hmrcOnlineServicesHelpdesk"),
+            linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
             isNewTab      = true,
             prefixTextKey = "monthlyreturns.submissionUnsuccessful.links.prefix"
         )
