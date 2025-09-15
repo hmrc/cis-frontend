@@ -22,8 +22,10 @@
         h2: components.H2,
         paragraph: components.Paragraph,
         bulletList: components.BulletList,
+        link: components.Link,
         govukWarningText: GovukWarningText,
-        govukDetails: GovukDetails
+        govukDetails: GovukDetails,
+        config: play.api.Configuration
 )
 
 @()(implicit request: Request[_], messages: Messages)
@@ -34,7 +36,15 @@
 
         @h1("monthlyreturns.submissionUnsuccessful.heading.h1")
         @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p1", baseClass="govuk-body-lead")
-        @paragraph("monthlyreturns.submissionUnsuccessful.links")
+        @paragraph(
+            message = "monthlyreturns.submissionUnsuccessful.links",
+            args    = Seq(
+                link(
+                    href         = config.get[String]("urls.hmrcOnlineServicesHelpdesk"),
+                    textKey      = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
+                )
+            )
+        )
         @govukDetails(
             Details(
                 summary = Text(messages("monthlyreturns.submissionUnsuccessful.details.summary")),
