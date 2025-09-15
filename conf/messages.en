@@ -108,6 +108,7 @@ monthlyreturns.dateConfirmNilPayments.error.invalid.month = Please enter a valid
 monthlyreturns.dateConfirmNilPayments.error.invalid.year = Please enter a valid 'Tax month ending, year'
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Your entry for 'Tax month ending' is incorrect. It cannot be before {0} {1} {2}. Please amend.
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = 'Tax month ending' cannot be more than 3 return periods ahead of the current date.
+monthlyreturns.dateConfirmNilPayments.error.duplicate = You already have an existing monthly return for the return period selected. Please amend.
 
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
@@ -144,3 +145,9 @@ monthlyreturns.submissionSending.title = Submission - Sending
 monthlyreturns.submissionSending.heading = Sending your submission
 monthlyreturns.submissionSending.paragraph = Your submission is being sent to HM Revenue and Customs.
 monthlyreturns.submissionSending.insetText = Do not refresh this page or press the back button while your submission is being processed.
+
+monthlyreturns.inactivityWarning.title = Nil Monthly Return - Inactivity Warning
+monthlyreturns.inactivityWarning.heading = Nil Monthly Return - Inactivity Warning
+monthlyreturns.inactivityWarning.paragraph = You are submitting a monthly return to tell us about payments to construction workers. Our records for the submission period show that if your request for inactivity is accepted it is important to note that this is only valid for 6 months.
+monthlyreturns.inactivityWarning.warning = If you submit any subcontractors before the end of this period you must advise a monthly return.
+monthlyreturns.inactivityWarning.submit = Accept and continue
