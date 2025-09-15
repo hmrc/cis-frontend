@@ -45,3 +45,5 @@ POST       /monthly-return/nil-month-return-inactive                       contr
 
 GET        /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 POST       /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
+
+GET        /monthly-return/submission-awaiting                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
