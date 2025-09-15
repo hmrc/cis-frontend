@@ -26,6 +26,6 @@ class DeclarationFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Declaration] =
     Form(
-      "value" -> enumerable[Declaration]("declaration.error.required")
+      "value" -> enumerable[Declaration]("monthlyreturns.declaration.error.required")
     )
 }
