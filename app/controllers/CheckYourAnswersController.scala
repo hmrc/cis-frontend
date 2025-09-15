@@ -22,7 +22,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.govuk.summarylist._
-import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, DeclarationSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.CheckYourAnswersView
 
 class CheckYourAnswersController @Inject() (
@@ -42,8 +42,7 @@ class CheckYourAnswersController @Inject() (
         ReturnTypeSummary.row,
         DateConfirmNilPaymentsSummary.row(request.userAnswers),
         PaymentsToSubcontractorsSummary.row,
-        InactivityRequestSummary.row(request.userAnswers),
-        DeclarationSummary.row(request.userAnswers)
+        InactivityRequestSummary.row(request.userAnswers)
       ).flatten
     )
 
