@@ -55,5 +55,5 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val earliestTaxPeriodEndDate: String = configuration.get[String]("earliest-tax-period-end-date")
 
-  lazy val hmrcOnlineServicesHelpdeskUrl: String = configuration.get[String]("urls.hmrcOnlineServicesHelpdesk")
+  lazy val hmrcOnlineServicesHelpdeskUrl: String = configuration.get[String]("links.hmrc-online-services-helpdesk")
 }
