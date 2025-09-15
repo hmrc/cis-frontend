@@ -35,9 +35,7 @@
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionAwaiting.title"))) {
 
     @h1("monthlyreturns.submissionAwaiting.heading")
-    <p class="govuk-body-lead">
-        @{Html(messages("monthlyreturns.submissionAwaiting.paragraph.p1"))}
-    </p>
+    @paragraph("monthlyreturns.submissionAwaiting.paragraph.p1", baseClass="govuk-body-lead")
     @paragraph("monthlyreturns.submissionAwaiting.paragraph.p2")
     @paragraph("monthlyreturns.submissionAwaiting.paragraph.p3")
 
@@ -58,7 +56,7 @@
     @h2("monthlyreturns.submissionAwaiting.heading.h2")
     @paragraph("monthlyreturns.submissionAwaiting.paragraph.p4")
     @link("monthlyreturns.submissionAwaiting.link.l2",
-        config.hmrcOnlineServicesHelpdesk,
+        config.hmrcOnlineServicesHelpdeskUrl,
         true,
         "monthlyreturns.submissionAwaiting.link.l1")
 
