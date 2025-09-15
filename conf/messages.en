@@ -144,3 +144,20 @@ monthlyreturns.inactivityWarning.heading = Nil Monthly Return - Inactivity Warni
 monthlyreturns.inactivityWarning.paragraph = You are submitting a monthly return to tell us about payments to construction workers. Our records for the submission period show that if your request for inactivity is accepted it is important to note that this is only valid for 6 months.
 monthlyreturns.inactivityWarning.warning = If you submit any subcontractors before the end of this period you must advise a monthly return.
 monthlyreturns.inactivityWarning.submit = Accept and continue
+
+monthlyreturns.submissionUnsuccessful.title = Submission unsuccessful
+monthlyreturns.submissionUnsuccessful.heading.h1 = Submission unsuccessful
+monthlyreturns.submissionUnsuccessful.heading.h2 = Alternative ways to submit your return
+monthlyreturns.submissionUnsuccessful.paragraph.p1 = There has been a problem with your submission. You cannot amend or attempt to resubmit it.
+monthlyreturns.submissionUnsuccessful.paragraph.p2 = If you cannot resolve this issue online, you may need to submit your return using an alternative method.
+monthlyreturns.submissionUnsuccessful.paragraph.p3 = Contact the CIS Helpline on <strong>0300 200 3210</strong> for guidance on alternative submission methods.
+monthlyreturns.submissionUnsuccessful.links = To solve this problem please contact the <a href="https://www.gov.uk/find-hmrc-contacts/technical-support-with-hmrc-online-services" class="govuk-link" target="_blank" rel="noreferrer noopener">HMRC Online Services Helpdesk</a>.
+monthlyreturns.submissionUnsuccessful.details.summary = What information to provide when contacting HMRC
+monthlyreturns.submissionUnsuccessful.details.intro = When contacting the helpdesk, please provide:
+monthlyreturns.submissionUnsuccessful.details.li1 = your Employers Reference number
+monthlyreturns.submissionUnsuccessful.details.li2 = the date and time you attempted to submit
+monthlyreturns.submissionUnsuccessful.details.li3 = details of any error messages you received
+monthlyreturns.submissionUnsuccessful.details.li4 = the type of return you were trying to submit (CIS monthly return)
+monthlyreturns.submissionUnsuccessful.paragraph.outro = This will help us resolve your issue more quickly.
+monthlyreturns.submissionUnsuccessful.warning = You must still submit your monthly return by the deadline to avoid penalties, even if you experience technical difficulties.
+monthlyreturns.submissionUnsuccessful.submit = Return to start

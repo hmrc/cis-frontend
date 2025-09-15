@@ -42,3 +42,6 @@ POST       /monthly-return/change-declaration                  controllers.month
 
 GET        /monthly-return/nil-month-return-inactive                      controllers.monthlyreturns.InactivityWarningController.onPageLoad
 POST       /monthly-return/nil-month-return-inactive                       controllers.monthlyreturns.InactivityWarningController.onSubmit
+
+GET        /monthly-return/monthly-nil-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
+POST       /monthly-return/monthly-nil-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
