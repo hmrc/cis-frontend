@@ -36,14 +36,11 @@
 
         @h1("monthlyreturns.submissionUnsuccessful.heading.h1")
         @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p1", baseClass="govuk-body-lead")
-        @paragraph(
-            message = "monthlyreturns.submissionUnsuccessful.links",
-            args    = Seq(
-                link(
-                    href         = config.get[String]("urls.hmrcOnlineServicesHelpdesk"),
-                    textKey      = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
-                )
-            )
+        @link(
+            linkTextKey   = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
+            linkUrl       = config.get[String]("urls.hmrcOnlineServicesHelpdesk"),
+            isNewTab      = true,
+            prefixTextKey = "monthlyreturns.submissionUnsuccessful.links.prefix"
         )
         @govukDetails(
             Details(

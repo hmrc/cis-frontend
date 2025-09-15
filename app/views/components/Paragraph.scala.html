@@ -22,10 +22,9 @@
   message: String,
   bold: Boolean = false,
   baseClass: String = "govuk-body",
-  extraClasses: String = emptyString,
-  args: Seq[Any] = Nil
+  extraClasses: String = emptyString
 )(implicit messages: Messages)
 
 <p class="@baseClass @extraClasses @if(bold){govuk-!-font-weight-bold}">
-  @{Html(messages(message, args*))}
+  @{Html(messages(message))}
 </p>

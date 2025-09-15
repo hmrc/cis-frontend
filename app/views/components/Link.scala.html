@@ -14,8 +14,22 @@
  * limitations under the License.
  *@
 
+@import utils.Utils.emptyString
+
 @this()
 
-@(href: String, textKey: String)(implicit messages: Messages)
+@(
+    linkTextKey: String,
+    linkUrl: String,
+    isNewTab: Boolean = false,
+    prefixTextKey: String = emptyString,
+    extraClasses: String = emptyString
+)(implicit messages: Messages)
 
-<a class="govuk-link" href="@href">@messages(textKey)</a>
+
+<p class="govuk-body @if(extraClasses.nonEmpty){@extraClasses}">
+    @if(prefixTextKey.nonEmpty) {
+        @{Html(messages(prefixTextKey))}
+    }
+    <a href="@linkUrl" class="govuk-link" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>
+</p>
