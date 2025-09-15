@@ -27,5 +27,5 @@
 )(implicit messages: Messages)
 
 <p class="@baseClass @extraClasses @if(bold){govuk-!-font-weight-bold}">
-  @{Html(messages(message, args:_*))}
+  @{Html(messages(message, args*))}
 </p>
