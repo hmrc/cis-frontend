@@ -129,6 +129,8 @@ monthlyreturns.confirmEmailAddress.error.length = Your input for ‘Email addres
 monthlyreturns.confirmEmailAddress.error.invalid = Enter a valid email address
 monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
+monthlyReturn.duplicate = We already have a return for {0} {1}. Choose a different month and year.
+
 declaration.title = Declaration
 declaration.heading = Declaration
 declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month {0}.
@@ -138,6 +140,11 @@ declaration.checkYourAnswersLabel = Declaration
 declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
 declaration.change.hidden = Declaration
 declaration.submit = Confirm and submit
+
+monthlyreturns.submissionSending.title = Submission - Sending
+monthlyreturns.submissionSending.heading = Sending your submission
+monthlyreturns.submissionSending.paragraph = Your submission is being sent to HM Revenue and Customs.
+monthlyreturns.submissionSending.insetText = Do not refresh this page or press the back button while your submission is being processed.
 
 monthlyreturns.inactivityWarning.title = Nil Monthly Return - Inactivity Warning
 monthlyreturns.inactivityWarning.heading = Nil Monthly Return - Inactivity Warning
