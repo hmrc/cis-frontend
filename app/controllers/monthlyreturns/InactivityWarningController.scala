@@ -26,19 +26,19 @@ import views.html.monthlyreturns.InactivityWarningView
 
 import javax.inject.Inject
 
-class InactivityWarningController @Inject()(
-                                       override val messagesApi: MessagesApi,
-                                       navigator: Navigator,
-                                       identify: IdentifierAction,
-                                       getData: DataRetrievalAction,
-                                       requireData: DataRequiredAction,
-                                       val controllerComponents: MessagesControllerComponents,
-                                       view: InactivityWarningView
-                                     ) extends FrontendBaseController with I18nSupport {
+class InactivityWarningController @Inject() (
+  override val messagesApi: MessagesApi,
+  navigator: Navigator,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  val controllerComponents: MessagesControllerComponents,
+  view: InactivityWarningView
+) extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    Ok(view())
   }
 
   def onSubmit: Action[AnyContent] =
