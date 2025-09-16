@@ -20,28 +20,21 @@ import controllers.actions.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.SubmissionUnsuccessfulView
+import views.html.monthlyreturns.SubmissionAwaitingView
 
 import javax.inject.Inject
 
-class SubmissionUnsuccessfulController @Inject() (
+class SubmissionAwaitingController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: SubmissionUnsuccessfulView
+  view: SubmissionAwaitingView
 ) extends FrontendBaseController
     with I18nSupport {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     Ok(view())
   }
-
-  /** TEMP no-op: keeps the wiring but doesn’t clear session or navigate yet. */
-  def onSubmit: Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
-      // no-op for now — just reload this page
-      Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
-    }
 }
