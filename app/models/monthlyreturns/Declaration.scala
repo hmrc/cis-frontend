@@ -35,7 +35,7 @@ object Declaration extends Enumerable.Implicits {
   def checkboxItems(implicit messages: Messages): Seq[CheckboxItem] =
     values.zipWithIndex.map { case (value, index) =>
       CheckboxItemViewModel(
-        content = Text(messages("declaration.checkbox")),
+        content = Text(messages("monthlyreturns.declaration.checkbox")),
         fieldId = "value",
         index = index,
         value = value.toString

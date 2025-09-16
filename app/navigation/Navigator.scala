@@ -18,7 +18,6 @@ package navigation
 
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.Call
-import controllers.routes
 import pages.*
 import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage}
 import models.*
@@ -36,11 +35,13 @@ class Navigator @Inject() () {
     case DeclarationPage            =>
       _ => controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
     case InactivityWarningPage      =>
-      _ => routes.CheckYourAnswersController.onPageLoad()
-    case _                          => _ => routes.CheckYourAnswersController.onPageLoad()
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case _                          => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = { _ => _ => routes.CheckYourAnswersController.onPageLoad() }
+  private val checkRouteMap: Page => UserAnswers => Call = { _ => _ =>
+    controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+  }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {
     case NormalMode =>

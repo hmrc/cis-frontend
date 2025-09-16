@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package viewmodels.checkAnswers.monthlyreturns
 
-import javax.inject.Inject
+import play.api.i18n.Messages
+import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
-import forms.mappings.Mappings
-import play.api.data.Form
-import models.monthlyreturns.Declaration
+object PaymentsToSubcontractorsSummary {
 
-class DeclarationFormProvider @Inject() extends Mappings {
-
-  def apply(): Form[Declaration] =
-    Form(
-      "value" -> enumerable[Declaration]("monthlyreturns.declaration.error.required")
+  def row(implicit messages: Messages): Option[SummaryListRow] =
+    Some(
+      SummaryListRowViewModel(
+        key = messages("monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel"),
+        value = ValueViewModel(messages("monthlyreturns.paymentsToSubcontractors.value"))
+      )
     )
 }

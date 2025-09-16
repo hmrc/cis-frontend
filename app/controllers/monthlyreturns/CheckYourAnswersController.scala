@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import com.google.inject.Inject
 import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
@@ -22,7 +22,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.govuk.summarylist._
-import viewmodels.checkAnswers.monthlyreturns.DeclarationSummary
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.CheckYourAnswersView
 
 class CheckYourAnswersController @Inject() (
@@ -37,12 +37,23 @@ class CheckYourAnswersController @Inject() (
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-    val list = SummaryListViewModel(
+    val returnDetailsList = SummaryListViewModel(
       rows = Seq(
-        DeclarationSummary.row(request.userAnswers)
+        ReturnTypeSummary.row,
+        DateConfirmNilPaymentsSummary.row(request.userAnswers),
+        PaymentsToSubcontractorsSummary.row,
+        InactivityRequestSummary.row(request.userAnswers)
       ).flatten
     )
 
-    Ok(view(list))
+    val emailList = SummaryListViewModel(
+      rows = Seq(
+        ConfirmEmailAddressSummary.row(request.userAnswers)
+      ).flatten
+    )
+
+    Ok(view(returnDetailsList, emailList))
   }
 }
+
+

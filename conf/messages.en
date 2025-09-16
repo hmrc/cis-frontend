@@ -31,8 +31,13 @@ index.title = Construction Industry Scheme
 index.heading = Construction Industry Scheme
 index.guidance = Welcome to cis-frontend. Please see the README file for a guide to getting started.
 
-checkYourAnswers.title = Check your answers
-checkYourAnswers.heading = Check your answers
+checkYourAnswers.title = Check your answers before submitting your return
+checkYourAnswers.heading = Check your answers before submitting your return
+checkYourAnswers.returnDetails.heading = Return details
+checkYourAnswers.emailConfirmation.heading = Email confirmation
+checkYourAnswers.submitSection.heading = Now submit your return
+checkYourAnswers.submitSection.confirmation = By submitting this return you are confirming that, to the best of your knowledge, the details you are providing are correct.
+checkYourAnswers.submitSection.button = Accept and submit
 
 journeyRecovery.continue.title = Sorry, there is a problem with the service
 journeyRecovery.continue.heading = Sorry, there is a problem with the service
@@ -97,7 +102,13 @@ monthlyreturns.dateConfirmNilPayments.table.row.11.input = 03 2025
 monthlyreturns.dateConfirmNilPayments.table.row.12.period = 6th March - 5th April
 monthlyreturns.dateConfirmNilPayments.table.row.12.monthEnding = April
 monthlyreturns.dateConfirmNilPayments.table.row.12.input = 04 2025
-monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Confirm nil return payments to subcontractors this month
+monthlyreturns.returnType.checkYourAnswersLabel = Return type
+monthlyreturns.returnType.value = Monthly nil return
+
+monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Payments to subcontractors
+monthlyreturns.paymentsToSubcontractors.value = None
+
+monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Tax period
 monthlyreturns.dateConfirmNilPayments.change.hidden = confirm nil return payments to subcontractors this month
 monthlyreturns.dateConfirmNilPayments.error.required.month = Please enter ‘Tax month ending, month’
 monthlyreturns.dateConfirmNilPayments.error.required.year = Please enter ‘Tax month ending, year’
@@ -112,7 +123,7 @@ monthlyreturns.dateConfirmNilPayments.error.duplicate = You already have an exis
 
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
-monthlyreturns.inactivityRequest.checkYourAnswersLabel = Do you want to submit an inactivity request?
+monthlyreturns.inactivityRequest.checkYourAnswersLabel = Inactivity request
 monthlyreturns.inactivityRequest.error.required = Select Yes if you want to submit an inactivity request.
 monthlyreturns.inactivityRequest.change.hidden = do you want to submit an inactivity request
 monthlyreturns.inactivityRequest.p1 = You can submit an inactivity request to tell HMRC that you do not anticipate paying subcontractors in the next six months.
@@ -129,17 +140,15 @@ monthlyreturns.confirmEmailAddress.error.length = Your input for ‘Email addres
 monthlyreturns.confirmEmailAddress.error.invalid = Enter a valid email address
 monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
-monthlyReturn.duplicate = We already have a return for {0} {1}. Choose a different month and year.
-
-declaration.title = Declaration
-declaration.heading = Declaration
-declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month {0}.
-declaration.warning = If you give any false information you may face financial penalties and prosecution.
-declaration.checkbox = I confirm that the information given on this return is correct and complete to the best of my knowledge.
-declaration.checkYourAnswersLabel = Declaration
-declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
-declaration.change.hidden = Declaration
-declaration.submit = Confirm and submit
+monthlyreturns.declaration.title = Declaration
+monthlyreturns.declaration.heading = Declaration
+monthlyreturns.declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors in the Construction Industry during the tax month {0}.
+monthlyreturns.declaration.warning = If you give any false information you may face financial penalties and prosecution.
+monthlyreturns.declaration.checkbox = I confirm that the information given on this return is correct and complete to the best of my knowledge.
+monthlyreturns.declaration.checkYourAnswersLabel = Declaration
+monthlyreturns.declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
+monthlyreturns.declaration.change.hidden = Declaration
+monthlyreturns.declaration.submit = Confirm and submit
 
 monthlyreturns.submissionSending.title = Submission - Sending
 monthlyreturns.submissionSending.heading = Sending your submission
