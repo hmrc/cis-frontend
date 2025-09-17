@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package models.requests
+package controllers.actions
 
-import play.api.mvc.{Request, WrappedRequest}
-import models.{EmployerReference, UserAnswers}
+import uk.gov.hmrc.auth.core.retrieve.~
 
-case class OptionalDataRequest[A](
-  request: Request[A],
-  userId: String,
-  userAnswers: Option[UserAnswers],
-  employerReference: Option[EmployerReference] = None,
-  isAgent: Boolean = false
-) extends WrappedRequest[A](request)
-
-case class DataRequest[A](
-  request: Request[A],
-  userId: String,
-  userAnswers: UserAnswers,
-  employerReference: Option[EmployerReference] = None,
-  isAgent: Boolean = false
-) extends WrappedRequest[A](request)
+object TestAuthRetrievals {
+  implicit class Ops[A](a: A) {
+    def ~[B](b: B): A ~ B = new ~(a, b)
+  }
+}
