@@ -31,13 +31,13 @@ index.title = Construction Industry Scheme
 index.heading = Construction Industry Scheme
 index.guidance = Welcome to cis-frontend. Please see the README file for a guide to getting started.
 
-checkYourAnswers.title = Check your answers before submitting your return
-checkYourAnswers.heading = Check your answers before submitting your return
-checkYourAnswers.returnDetails.heading = Return details
-checkYourAnswers.emailConfirmation.heading = Email confirmation
-checkYourAnswers.submitSection.heading = Now submit your return
-checkYourAnswers.submitSection.confirmation = By submitting this return you are confirming that, to the best of your knowledge, the details you are providing are correct.
-checkYourAnswers.submitSection.button = Accept and submit
+monthlyreturns.checkYourAnswers.title = Check your answers before submitting your return
+monthlyreturns.checkYourAnswers.heading = Check your answers before submitting your return
+monthlyreturns.checkYourAnswers.returnDetails.heading = Return details
+monthlyreturns.checkYourAnswers.emailConfirmation.heading = Email confirmation
+monthlyreturns.checkYourAnswers.submitSection.heading = Now submit your return
+monthlyreturns.checkYourAnswers.submitSection.confirmation = By submitting this return you are confirming that, to the best of your knowledge, the details you are providing are correct.
+monthlyreturns.checkYourAnswers.submitSection.button = Accept and submit
 
 journeyRecovery.continue.title = Sorry, there is a problem with the service
 journeyRecovery.continue.heading = Sorry, there is a problem with the service
