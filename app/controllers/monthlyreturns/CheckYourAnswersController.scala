@@ -54,4 +54,8 @@ class CheckYourAnswersController @Inject() (
 
     Ok(view(returnDetailsList, emailList))
   }
+
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+  }
 }
