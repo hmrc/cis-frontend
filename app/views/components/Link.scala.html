@@ -1,5 +1,5 @@
 @*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,47 +14,22 @@
  * limitations under the License.
  *@
 
+@import utils.Utils.emptyString
+
 @this()
 
 @(
-  text: String,
-  call: Call,
-  target: Option[String] = None,
-  id: Option[String] = None,
-  classes: Option[String] = None,
-  textHidden: Option[String] = None,
-  style: Option[String] = None,
-  fullStop: Boolean = false
-)
+        linkTextKey: String,
+        linkUrl: String,
+        isNewTab: Boolean = false,
+        prefixTextKey: String = emptyString,
+        extraClasses: String = emptyString
+)(implicit messages: Messages)
 
-@caption = @{
-  if (textHidden.exists(_.trim.nonEmpty)) {
-    Html(s"""<span aria-hidden="true">$text</span><span class="govuk-visually-hidden">${textHidden.getOrElse("")}</span>""")
-  } else Html(s"$text")
-}
 
-@idAttr = @{
-  id.map(i => Html(s"""id="$i""""))
-}
-
-@linkClasses = @{
-  classes.getOrElse("govuk-link govuk-link--no-visited-state")
-}
-
-@linkStyles = @{
-  style match {
-    case Some(s) => Html("style=" + s)
-    case None => Html("")
-  }
-}
-
-@targetAttrs = @{
-  target.map { t =>
-    val rel = if (t == "_blank") s""" rel="noopener noreferrer"""" else ""
-    Html(s"""target="$t"$rel""")
-  }
-}
-
-@* The <a> tag is split on purpose - to avoid inline-block whitespace problem *@
-<a @targetAttrs @idAttr class="@linkClasses" @linkStyles href="@call"
-  >@caption</a>@{if(fullStop)(".")}
+<p class="govuk-body @if(extraClasses.nonEmpty){@extraClasses}">
+    @if(prefixTextKey.nonEmpty) {
+        @{Html(messages(prefixTextKey))}
+    }
+    <a href="@linkUrl" class="govuk-link" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>
+</p>

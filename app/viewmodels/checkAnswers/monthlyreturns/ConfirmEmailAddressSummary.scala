@@ -35,6 +35,7 @@ object ConfirmEmailAddressSummary {
         actions = Seq(
           ActionItemViewModel("site.change", routes.ConfirmEmailAddressController.onPageLoad(CheckMode).url)
             .withVisuallyHiddenText(messages("monthlyreturns.confirmEmailAddress.change.hidden"))
+            .withAttribute("id" -> "change-confirm-email-address")
         )
       )
     }

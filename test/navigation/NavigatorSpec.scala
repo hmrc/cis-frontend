@@ -17,8 +17,9 @@
 package navigation
 
 import base.SpecBase
-import controllers.routes
+import controllers.monthlyreturns
 import pages._
+import pages.monthlyreturns.*
 import models._
 
 class NavigatorSpec extends SpecBase {
@@ -29,19 +30,76 @@ class NavigatorSpec extends SpecBase {
 
     "in Normal mode" - {
 
-      "must go from a page that doesn't exist in the route map to Index" in {
+      "must go from DateConfirmNilPaymentsPage to InactivityRequestController" in {
+        navigator.nextPage(
+          DateConfirmNilPaymentsPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+      }
+
+      "must go from InactivityRequestPage to ConfirmEmailAddressController" in {
+        navigator.nextPage(
+          InactivityRequestPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+      }
+
+      "must go from ConfirmEmailAddressPage to DeclarationController" in {
+        navigator.nextPage(
+          ConfirmEmailAddressPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      }
+
+      "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page
-        navigator.nextPage(UnknownPage, NormalMode, UserAnswers("id")) mustBe routes.IndexController.onPageLoad()
+        navigator.nextPage(
+          UnknownPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController
+          .onPageLoad()
       }
     }
 
     "in Check mode" - {
 
+      "must go from DateConfirmNilPaymentsPage to CheckYourAnswers Page in CheckMode" in {
+        navigator.nextPage(
+          DateConfirmNilPaymentsPage,
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from InactivityRequestPage to CheckYourAnswers Page in CheckMode" in {
+        navigator.nextPage(
+          InactivityRequestPage,
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from ConfirmEmailAddressPage to CheckYourAnswers Page in CheckMode" in {
+        navigator.nextPage(
+          ConfirmEmailAddressPage,
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page
-        navigator.nextPage(UnknownPage, CheckMode, UserAnswers("id")) mustBe routes.CheckYourAnswersController
+        navigator.nextPage(
+          UnknownPage,
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController
           .onPageLoad()
       }
     }

@@ -17,12 +17,13 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmNilPaymentsFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.{any, anyInt}
+import org.mockito.Mockito.{verifyNoInteractions, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.DateConfirmNilPaymentsPage
 import play.api.i18n.Messages
@@ -31,16 +32,23 @@ import play.api.mvc.{AnyContentAsEmpty, AnyContentAsFormUrlEncoded, Call}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import views.html.monthlyreturns.DateConfirmNilPaymentsView
 
-import java.time.{LocalDate, ZoneOffset}
+import java.time.format.TextStyle
+import java.time.{LocalDate, Month, ZoneOffset}
+import java.util.Locale
 import scala.concurrent.Future
 
 class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   private implicit val messages: Messages = stubMessages()
 
-  private val formProvider = new DateConfirmNilPaymentsFormProvider()
+  val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+
+  when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+
+  private val formProvider = new DateConfirmNilPaymentsFormProvider(mockFrontendAppConfig)
   private def form         = formProvider()
 
   def onwardRoute = Call("GET", "/foo")
@@ -101,14 +109,18 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
     "must redirect to the next page when valid data is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
-
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.isDuplicate(anyInt(), anyInt())(any()))
+        .thenReturn(Future.successful(false))
 
       val application =
         applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
           )
           .build()
 
@@ -170,5 +182,106 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must return Bad Request with duplicate error when the submitted month/year already exists" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.isDuplicate(anyInt(), anyInt())(any()))
+        .thenReturn(Future.successful(true))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, dateConfirmNilPaymentsRoute)
+            .withFormUrlEncodedBody(
+              "value.month" -> validAnswer.getMonthValue.toString,
+              "value.year"  -> validAnswer.getYear.toString
+            )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual BAD_REQUEST
+
+        val monthName   =
+          Month.of(validAnswer.getMonthValue).getDisplayName(TextStyle.FULL, Locale.UK)
+        val expectedMsg =
+          messages(application)(
+            "monthlyreturns.dateConfirmNilPayments.error.duplicate",
+            monthName,
+            validAnswer.getYear.toString
+          )
+
+        contentAsString(result) must include(expectedMsg)
+      }
+    }
+
+    "must return Internal Server Error when duplicate check fails unexpectedly" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.isDuplicate(anyInt(), anyInt())(any()))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, dateConfirmNilPaymentsRoute)
+            .withFormUrlEncodedBody(
+              "value.month" -> validAnswer.getMonthValue.toString,
+              "value.year"  -> validAnswer.getYear.toString
+            )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
+        contentAsString(result) must include(messages(application)("error.technical"))
+      }
+    }
+
+    "must not call duplicate check when invalid data is submitted" in {
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      val request =
+        FakeRequest(POST, dateConfirmNilPaymentsRoute)
+          .withFormUrlEncodedBody(
+            "value" -> "invalid-value"
+          )
+
+      running(application) {
+        val result = route(application, request).value
+        status(result) mustEqual BAD_REQUEST
+        verifyNoInteractions(mockMonthlyReturnService)
+      }
+    }
+
   }
 }

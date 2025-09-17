@@ -15,6 +15,8 @@
  *@
 
 @import views.html.components.*
+@import viewmodels.govuk._
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 @import uk.gov.hmrc.hmrcfrontend.views.html.components.implicits._
 
 @this(
@@ -27,7 +29,8 @@
     govukDateInput: GovukDateInput,
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
-    govukDetails: GovukDetails
+    govukDetails: GovukDetails,
+    taxMonthPeriodsTable: components.TaxMonthPeriodsTable
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
@@ -37,7 +40,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.day")))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))
         }
 
         @h1("monthlyreturns.dateConfirmNilPayments.heading.h1")
@@ -56,15 +59,22 @@
             .withMonthYearFormField(form("value"))
             .withHint(
                 HintViewModel(
-                    HtmlContent(paragraph("monthlyreturns.dateConfirmNilPayments.hint").toString)
+                    HtmlContent(
+                        paragraph("monthlyreturns.dateConfirmNilPayments.hint", extraClasses = "govuk-hint").toString +
+                        govukDetails(Details(
+                            summary = Text(messages("monthlyreturns.dateConfirmNilPayments.table.summary")),
+                            content = HtmlContent(taxMonthPeriodsTable().toString)
+                        )).toString
+                    )
                 )
             )
         )
 
-        @govukWarningText(WarningText(
-            iconFallbackText = Some("Warning"),
-            content = Text(s"${messages("monthlyreturns.dateConfirmNilPayments.warning")}")
-        ))
+        @govukWarningText(
+            WarningTextViewModel(
+                content = Text(messages("monthlyreturns.dateConfirmNilPayments.warning"))
+            )
+        )
 
         @govukDetails(Details(
                 summary = Text(s"${messages("monthlyreturns.dateConfirmNilPayments.details.summary")}"),

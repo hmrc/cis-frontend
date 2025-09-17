@@ -17,21 +17,30 @@
 package navigation
 
 import javax.inject.{Inject, Singleton}
-
 import play.api.mvc.Call
-import controllers.routes
-import pages._
-import models._
+import pages.*
+import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage}
+import models.*
 
 @Singleton
 class Navigator @Inject() () {
 
-  private val normalRoutes: Page => UserAnswers => Call = { case _ =>
-    _ => routes.IndexController.onPageLoad()
+  private val normalRoutes: Page => UserAnswers => Call = {
+    case DateConfirmNilPaymentsPage =>
+      _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+    case InactivityRequestPage      =>
+      _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+    case ConfirmEmailAddressPage    =>
+      _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+    case DeclarationPage            =>
+      _ => controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+    case InactivityWarningPage      =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case _                          => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = { case _ =>
-    _ => routes.CheckYourAnswersController.onPageLoad()
+  private val checkRouteMap: Page => UserAnswers => Call = { _ => _ =>
+    controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {

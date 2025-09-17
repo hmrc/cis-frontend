@@ -11,8 +11,8 @@ GET         /language/:lang                              controllers.LanguageSwi
 GET         /refresh-session                             controllers.KeepAliveController.keepAlive()
 
 GET         /there-is-a-problem                          controllers.JourneyRecoveryController.onPageLoad(continueUrl: Option[RedirectUrl] ?= None)
-
-GET         /check-your-answers                          controllers.CheckYourAnswersController.onPageLoad()
+ 
+GET        /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
 
 GET         /account/sign-out-survey                     controllers.auth.AuthController.signOut()
 GET         /account/sign-out                            controllers.auth.AuthController.signOutNoSurvey()
@@ -39,3 +39,18 @@ GET        /monthly-return/confirm-email-address        controllers.monthlyretur
 POST       /monthly-return/confirm-email-address        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-confirm-email-address controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-confirm-email-address controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/declaration                        controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/declaration                        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/submission-send                       controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
+
+GET        /monthly-return/nil-month-return-inactive                      controllers.monthlyreturns.InactivityWarningController.onPageLoad
+POST       /monthly-return/nil-month-return-inactive                       controllers.monthlyreturns.InactivityWarningController.onSubmit
+
+GET        /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
+POST       /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
+
+GET        /monthly-return/submission-awaiting                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad

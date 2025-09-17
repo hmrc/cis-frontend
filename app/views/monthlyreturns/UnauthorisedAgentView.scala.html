@@ -1,5 +1,5 @@
 @*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,14 +31,7 @@
   pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.agent.heading.title")),
   showSignOut = false
 ) {
-
   @heading(messages("monthlyreturns.unauthorised.agent.heading"))
-
   @paragraph(messages("monthlyreturns.unauthorised.agent.p1"), extraClasses = "govuk-!-margin-bottom-5")
-
-  @paragraphWithLink(messages("monthlyreturns.unauthorised.agent.guidance", link(
-    text = messages("monthlyreturns.unauthorised.agent.guidance.link"),
-    call = Call("GET", appConfig.govUkCISGuidanceUrl)
-  )))
-
+  @link("monthlyreturns.unauthorised.agent.guidance.link", appConfig.govUkCISGuidanceUrl)
 }
