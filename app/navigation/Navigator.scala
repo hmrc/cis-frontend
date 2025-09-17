@@ -21,6 +21,7 @@ import play.api.mvc.Call
 import pages.*
 import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage}
 import models.*
+import models.monthlyreturns.InactivityRequest
 
 @Singleton
 class Navigator @Inject() () {
@@ -33,7 +34,16 @@ class Navigator @Inject() () {
     case ConfirmEmailAddressPage    =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case DeclarationPage            =>
-      _ => controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+      userAnswers =>
+        userAnswers
+          .get(InactivityRequestPage)
+          .map {
+            case InactivityRequest.Option2 =>
+              controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+            case _                         =>
+              controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+          }
+          .getOrElse(controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad)
     case InactivityWarningPage      =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case _                          => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
