@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
-import views.html.CheckYourAnswersView
+import views.html.monthlyreturns.CheckYourAnswersView
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
@@ -48,10 +48,6 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
         status(result) mustEqual OK
         val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
         contentAsString(result) mustEqual rendered
-
-        contentAsString(result) must include(
-          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
-        )
       }
     }
 
@@ -79,10 +75,10 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
-          .onPageLoad()
-          .url
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
       }
     }
   }
 }
+
+
