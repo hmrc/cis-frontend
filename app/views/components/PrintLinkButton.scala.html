@@ -16,6 +16,16 @@
 
 @this()
 
-@()
+@(textKey: String, id: String = "print-link", secondary: Boolean = true, extraClasses: String = "")(implicit messages: play.api.i18n.Messages)
 
-<hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+<div class="govuk-button-group">
+    <a
+        id="@id"
+        href="#"
+        role="button"
+        draggable="false"
+        class="govuk-button @if(secondary){govuk-button--secondary} hmrc-!-js-visible govuk-!-display-none-print@if(extraClasses.nonEmpty){ @extraClasses}"
+        data-module="hmrc-print-link">
+        @messages(textKey)
+    </a>
+</div>

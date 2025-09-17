@@ -31,7 +31,7 @@
     paragraph: components.Paragraph,
     bulletList: components.BulletList,
     sectionBreak: components.SectionBreak,
-    printButton: components.PrintButton
+    printLinkButton: components.PrintLinkButton
 )
 
 @(reference: String,
@@ -105,7 +105,7 @@
         )
     )
 
-    @printButton("monthlyreturns.submissionSuccessful.print")
+    @printLinkButton("monthlyreturns.submissionSuccessful.print")
 
     @h2("monthlyreturns.submissionSuccessful.next.heading")
     @paragraph("monthlyreturns.submissionSuccessful.next.p1")

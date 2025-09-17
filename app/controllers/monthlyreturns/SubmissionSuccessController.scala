@@ -27,36 +27,37 @@ import java.time.{Clock, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-class SubmissionSuccessController @Inject()(
-                                       override val messagesApi: MessagesApi,
-                                       identify: IdentifierAction,
-                                       getData: DataRetrievalAction,
-                                       requireData: DataRequiredAction,
-                                       val controllerComponents: MessagesControllerComponents,
-                                       view: SubmissionSuccessView,
-                                       clock: Clock
-                                           ) extends FrontendBaseController with I18nSupport {
+class SubmissionSuccessController @Inject() (
+  override val messagesApi: MessagesApi,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  val controllerComponents: MessagesControllerComponents,
+  view: SubmissionSuccessView,
+  clock: Clock
+) extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      val email: String =
-        request.userAnswers.get(ConfirmEmailAddressPage).get
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val email: String =
+      request.userAnswers.get(ConfirmEmailAddressPage).get
 
-      val periodEnd = request.userAnswers.get(DateConfirmNilPaymentsPage).get
-      val periodStart = periodEnd.minusMonths(1).withDayOfMonth(6)
+    val periodEnd   = request.userAnswers.get(DateConfirmNilPaymentsPage).get
+    val periodStart = periodEnd.minusMonths(1).withDayOfMonth(6)
 
-      val dmyFmt = DateTimeFormatter.ofPattern("d MMM uuuu")
-      val periodRange = s"${periodStart.format(dmyFmt)} to ${periodEnd.format(dmyFmt)}"
+    val dmyFmt      = DateTimeFormatter.ofPattern("d MMM uuuu")
+    val periodRange = s"${periodStart.format(dmyFmt)} to ${periodEnd.format(dmyFmt)}"
 
-      val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-      val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
-      val submittedDate = ukNow.format(dmyFmt)
+    val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+    val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
+    val submittedDate = ukNow.format(dmyFmt)
 
-      val reference = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
-      val contractorName = "PAL 355 Scheme"
-      val employerRef = "123/AB456"
-      
-      Ok(view(
+    val reference      = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
+    val contractorName = "PAL 355 Scheme"
+    val employerRef    = "123/AB456"
+
+    Ok(
+      view(
         reference = reference,
         periodRangeText = periodRange,
         submittedTime = submittedTime,
@@ -64,6 +65,7 @@ class SubmissionSuccessController @Inject()(
         contractorName = contractorName,
         empRef = employerRef,
         email = email
-      ))
+      )
+    )
   }
 }

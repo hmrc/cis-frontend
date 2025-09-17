@@ -44,16 +44,16 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   }
 
   trait Setup {
-    val email: String = "test@test.com"
-    val periodEnd: LocalDate = LocalDate.of(2018, 3, 5)
-    val fixedInstant: Instant = Instant.parse("2017-01-06T08:46:00Z")
-    val reference: String = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
+    val email: String          = "test@test.com"
+    val periodEnd: LocalDate   = LocalDate.of(2018, 3, 5)
+    val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
+    val reference: String      = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
     val contractorName: String = "PAL 355 Scheme"
-    val employerRef: String = "123/AB456"
+    val employerRef: String    = "123/AB456"
 
-    private val dmyFmt = DateTimeFormatter.ofPattern("d MMM uuuu")
+    private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu")
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm z")
-    private val london = ZoneId.of("Europe/London")
+    private val london  = ZoneId.of("Europe/London")
 
     protected lazy val periodStart: LocalDate =
       periodEnd.minusMonths(1).withDayOfMonth(6)
@@ -72,16 +72,21 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
     lazy val ua: UserAnswers =
       emptyUserAnswers
-        .set(ConfirmEmailAddressPage, email).success.value
-        .set(DateConfirmNilPaymentsPage, periodEnd).success.value
+        .set(ConfirmEmailAddressPage, email)
+        .success
+        .value
+        .set(DateConfirmNilPaymentsPage, periodEnd)
+        .success
+        .value
 
     lazy val app: Application =
       applicationBuilder(userAnswers = Some(ua))
         .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
         .build()
 
-    lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad.url)
-    lazy val view: SubmissionSuccessView = app.injector.instanceOf[SubmissionSuccessView]
+    lazy val request: FakeRequest[AnyContentAsEmpty.type] =
+      FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad.url)
+    lazy val view: SubmissionSuccessView                  = app.injector.instanceOf[SubmissionSuccessView]
 
     lazy val expectedHtml: String =
       view(
@@ -93,5 +98,5 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         empRef = employerRef,
         email = email
       )(request, messages(app)).toString
-   }
+  }
 }
