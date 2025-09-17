@@ -53,6 +53,27 @@ signedOut.guidance = We did not save your answers.
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
 
+monthlyreturns.unauthorised.org.title = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.org.heading = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.org.guidance = To access this page
+monthlyreturns.unauthorised.org.guidance.link = register with the Construction Industry Scheme
+
+monthlyreturns.unauthorised.org.standard.title = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.org.standard.heading = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.org.standard.p1 = You’ve signed in with a standard organisation account.
+monthlyreturns.unauthorised.org.standard.p2 = Only Government Gateway accounts with an administrator role can register to use this service.
+monthlyreturns.unauthorised.org.standard.guidance.link = Find out more about who can use this service
+
+monthlyreturns.unauthorised.individual.title = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.individual.heading = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.individual.p1 = You’ve signed in with an individual account. Only users with an organisation account can register to use this service.
+monthlyreturns.unauthorised.individual.guidance.link = Find out more about who can use this service
+
+monthlyreturns.unauthorised.agent.title = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.agent.heading = Sorry, you’re unable to use this service
+monthlyreturns.unauthorised.agent.p1 = You’ve signed in an agent account. Only users with an organisation account can register to use this service.
+monthlyreturns.unauthorised.agent.guidance.link = Find out more about who can use this service
+
 monthlyreturns.dateConfirmNilPayments.title = Confirm nil return payments to subcontractors this month
 monthlyreturns.dateConfirmNilPayments.heading.h1 = Confirm nil return payments to subcontractors this month
 monthlyreturns.dateConfirmNilPayments.heading.h2 = Enter the tax month and year you are reporting nil payments for
