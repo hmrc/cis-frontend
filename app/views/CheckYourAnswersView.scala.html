@@ -41,6 +41,6 @@
     @paragraph("checkYourAnswers.submitSection.confirmation")
 
     @govukButton(
-        ButtonViewModel(messages("checkYourAnswers.submitSection.button"))
+        ButtonViewModel(messages("checkYourAnswers.submitSection.button")).asLink(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url)
     )
 }

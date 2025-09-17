@@ -46,7 +46,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
         val emailList         = SummaryListViewModel(Seq.empty)
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(returnDetailsList, emailList)(request, messages(application)).toString
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+
+        contentAsString(result) must include(
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
+        )
       }
     }
 

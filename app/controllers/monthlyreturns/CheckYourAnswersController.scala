@@ -55,5 +55,3 @@ class CheckYourAnswersController @Inject() (
     Ok(view(returnDetailsList, emailList))
   }
 }
-
-
