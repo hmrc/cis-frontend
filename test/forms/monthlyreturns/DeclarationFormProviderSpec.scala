@@ -27,7 +27,7 @@ class DeclarationFormProviderSpec extends EnumFieldBehaviours {
   ".value" - {
 
     val fieldName   = "value"
-    val requiredKey = "declaration.error.required"
+    val requiredKey = "monthlyreturns.declaration.error.required"
 
     behave like enumField[Declaration](
       form,

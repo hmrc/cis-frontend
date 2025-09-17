@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package viewmodels.checkAnswers.monthlyreturns
 
-import pages.Page
+import play.api.i18n.Messages
+import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
-case object InactivityWarningPage extends Page {
-  override def toString: String = "inactivityWarning"
+object ReturnTypeSummary {
+
+  def row(implicit messages: Messages): Option[SummaryListRow] =
+    Some(
+      SummaryListRowViewModel(
+        key = messages("monthlyreturns.returnType.checkYourAnswersLabel"),
+        value = ValueViewModel(messages("monthlyreturns.returnType.value"))
+      )
+    )
 }

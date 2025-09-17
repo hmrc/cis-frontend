@@ -31,14 +31,14 @@ class DeclarationViewSpec extends SpecBase with Matchers {
       val html = view(form, NormalMode, "5 April 2024")
       val doc  = Jsoup.parse(html.body)
 
-      doc.title                 must include(messages("declaration.title"))
-      doc.select("legend").text must include(messages("declaration.heading"))
+      doc.title                 must include(messages("monthlyreturns.declaration.title"))
+      doc.select("legend").text must include(messages("monthlyreturns.declaration.heading"))
 
-      doc.select("p").text must include(messages("declaration.paragraph", "5 April 2024"))
+      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph", "5 April 2024"))
 
       doc.select("input[type=checkbox]").size() mustBe 1
 
-      doc.select("button[type=submit]").text mustBe messages("declaration.submit")
+      doc.select("button[type=submit]").text mustBe messages("monthlyreturns.declaration.submit")
     }
 
     "must show error summary and messages when form has errors" in new Setup {
@@ -50,7 +50,7 @@ class DeclarationViewSpec extends SpecBase with Matchers {
 
       doc.select(".govuk-error-summary").size() mustBe 1
 
-      val expected = messages("declaration.error.required")
+      val expected = messages("monthlyreturns.declaration.error.required")
       doc.text() must include(expected)
     }
 
@@ -58,7 +58,7 @@ class DeclarationViewSpec extends SpecBase with Matchers {
       val html = view(form, NormalMode, "")
       val doc  = Jsoup.parse(html.body)
 
-      doc.select("p").text must include(messages("declaration.paragraph", ""))
+      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph", ""))
     }
   }
 

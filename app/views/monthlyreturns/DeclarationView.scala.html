@@ -31,7 +31,7 @@
 
 @(form: Form[_], mode: Mode, formattedDate: String)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("declaration.title"))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.declaration.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
@@ -40,15 +40,15 @@
         }
 
         @fieldSet(
-            legend = "declaration.heading",
+            legend = "monthlyreturns.declaration.heading",
             asHeading = true,
             describedBy = None
         ) {
-            @paragraph(messages("declaration.paragraph", formattedDate))
+            @paragraph(messages("monthlyreturns.declaration.paragraph", formattedDate))
             
             @govukWarningText(
                 WarningTextViewModel(
-                    content = Text(messages("declaration.warning"))
+                    content = Text(messages("monthlyreturns.declaration.warning"))
                 )
             )
 
@@ -56,14 +56,14 @@
                 CheckboxesViewModel(
                     form   = form,
                     name   = "value",
-                    legend = LegendViewModel(messages("declaration.checkbox")).withCssClass("govuk-visually-hidden"),
+                    legend = LegendViewModel(messages("monthlyreturns.declaration.checkbox")).withCssClass("govuk-visually-hidden"),
                     items  = Declaration.checkboxItems
                 )
             )
         }
 
         @govukButton(
-            ButtonViewModel(messages("declaration.submit"))
+            ButtonViewModel(messages("monthlyreturns.declaration.submit"))
         )
     }
 }

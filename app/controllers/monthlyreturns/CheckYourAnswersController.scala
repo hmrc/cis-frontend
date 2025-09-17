@@ -16,33 +16,44 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.*
-import models.NormalMode
-import navigation.Navigator
+import com.google.inject.Inject
+import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.InactivityWarningView
+import viewmodels.govuk.summarylist._
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import views.html.CheckYourAnswersView
 
-import javax.inject.Inject
-
-class InactivityWarningController @Inject() (
+class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
-  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: InactivityWarningView
+  view: CheckYourAnswersView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view())
-  }
+  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-  def onSubmit: Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
-      Redirect(navigator.nextPage(pages.monthlyreturns.InactivityWarningPage, NormalMode, request.userAnswers))
-    }
+    val returnDetailsList = SummaryListViewModel(
+      rows = Seq(
+        ReturnTypeSummary.row,
+        DateConfirmNilPaymentsSummary.row(request.userAnswers),
+        PaymentsToSubcontractorsSummary.row,
+        InactivityRequestSummary.row(request.userAnswers)
+      ).flatten
+    )
+
+    val emailList = SummaryListViewModel(
+      rows = Seq(
+        ConfirmEmailAddressSummary.row(request.userAnswers)
+      ).flatten
+    )
+
+    Ok(view(returnDetailsList, emailList))
+  }
 }
+
+

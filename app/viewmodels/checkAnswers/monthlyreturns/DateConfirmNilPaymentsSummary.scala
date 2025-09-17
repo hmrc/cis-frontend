@@ -18,28 +18,32 @@ package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.DateConfirmNilPaymentsPage
-import play.api.i18n.{Lang, Messages}
+import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import utils.DateTimeFormats.dateTimeFormat
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
+import java.time.format.DateTimeFormatter
 
 object DateConfirmNilPaymentsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(DateConfirmNilPaymentsPage).map { answer =>
 
-      implicit val lang: Lang = messages.lang
+      val taxPeriodEnd   = answer
+      val taxPeriodStart = taxPeriodEnd.minusMonths(1).withDayOfMonth(6)
+      val taxPeriodText  = s"${taxPeriodStart.format(DateTimeFormatter.ofPattern("d MMM yyyy"))} to ${taxPeriodEnd
+          .format(DateTimeFormatter.ofPattern("d MMM yyyy"))}"
 
       SummaryListRowViewModel(
-        key = "monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel",
-        value = ValueViewModel(answer.format(dateTimeFormat())),
+        key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
+        value = ValueViewModel(taxPeriodText),
         actions = Seq(
           ActionItemViewModel(
             "site.change",
             controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.dateConfirmNilPayments.change.hidden"))
+            .withAttribute("id" -> "change-date-confirm-nil-payments")
         )
       )
     }

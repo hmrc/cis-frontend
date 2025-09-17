@@ -1,4 +1,4 @@
-/*
+@*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +12,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ *@
 
-package pages.monthlyreturns
+@this(
+    layout: templates.Layout,
+    govukInsetText: GovukInsetText,
+    h1: components.H1,
+    paragraph: components.Paragraph
+)
 
-import pages.Page
+@()(implicit request: Request[_], messages: Messages)
 
-case object InactivityWarningPage extends Page {
-  override def toString: String = "inactivityWarning"
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title"))) {
+
+    @h1("monthlyreturns.submissionSending.heading")
+
+    @paragraph("monthlyreturns.submissionSending.paragraph")
+
+    @govukInsetText(
+        InsetTextViewModel(
+            content = Text(messages("monthlyreturns.submissionSending.insetText"))
+        )
+    )
+
 }
