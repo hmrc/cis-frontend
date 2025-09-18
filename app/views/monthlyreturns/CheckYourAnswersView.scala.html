@@ -18,6 +18,7 @@
 
 @this(
     layout: templates.Layout,
+    formHelper: FormWithCSRF,
     govukSummaryList: GovukSummaryList,
     govukButton: GovukButton,
     h1: components.H1,
@@ -27,20 +28,25 @@
 
 @(returnDetailsList: SummaryList, emailList: SummaryList)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("checkYourAnswers.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.checkYourAnswers.title"))) {
 
-    @h1("checkYourAnswers.heading")
+    @formHelper(action = controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit()) {
 
-    @h2("checkYourAnswers.returnDetails.heading")
-    @govukSummaryList(returnDetailsList)
+        @h1("monthlyreturns.checkYourAnswers.heading")
 
-    @h2("checkYourAnswers.emailConfirmation.heading")
-    @govukSummaryList(emailList)
+        @h2("monthlyreturns.checkYourAnswers.returnDetails.heading")
+        @govukSummaryList(returnDetailsList)
 
-    @h2("checkYourAnswers.submitSection.heading")
-    @paragraph("checkYourAnswers.submitSection.confirmation")
+        @h2("monthlyreturns.checkYourAnswers.emailConfirmation.heading")
+        @govukSummaryList(emailList)
 
-    @govukButton(
-        ButtonViewModel(messages("checkYourAnswers.submitSection.button"))
-    )
+        @h2("monthlyreturns.checkYourAnswers.submitSection.heading")
+        @paragraph("monthlyreturns.checkYourAnswers.submitSection.confirmation")
+
+        @govukButton(
+            ButtonViewModel(messages("monthlyreturns.checkYourAnswers.submitSection.button"))
+        )
+    }
 }
+
+
