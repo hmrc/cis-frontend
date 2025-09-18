@@ -49,7 +49,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
     val reference: String      = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
     val contractorName: String = "PAL 355 Scheme"
-    val employerRef: String    = "123/AB456"
+    val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
     private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu")
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm z")
