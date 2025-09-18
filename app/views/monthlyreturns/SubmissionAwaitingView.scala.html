@@ -32,7 +32,9 @@
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionAwaiting.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionAwaiting.title")),
+        showBackLink = false
+        ) {
 
     @h1("monthlyreturns.submissionAwaiting.heading")
     @paragraph("monthlyreturns.submissionAwaiting.paragraph.p1", baseClass="govuk-body-lead")

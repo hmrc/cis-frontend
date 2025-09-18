@@ -23,7 +23,9 @@
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title")),
+        showBackLink = false
+        ) {
 
     @h1("monthlyreturns.submissionSending.heading")
 
