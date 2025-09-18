@@ -32,7 +32,9 @@
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessful.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessful.title")),
+        showBackLink = false
+        ) {
 
     @formHelper(action = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onSubmit) {
 
