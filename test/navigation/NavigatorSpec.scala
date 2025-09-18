@@ -73,6 +73,14 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
       }
 
+      "must go from DeclarationPage to InactivityWarning when inactivity request is missing" in {
+        navigator.nextPage(
+          DeclarationPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+      }
+
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page

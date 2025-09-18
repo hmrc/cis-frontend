@@ -35,15 +35,12 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case DeclarationPage            =>
       userAnswers =>
-        userAnswers
-          .get(InactivityRequestPage)
-          .map {
-            case InactivityRequest.Option2 =>
-              controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-            case _                         =>
-              controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
-          }
-          .getOrElse(controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad)
+        userAnswers.get(InactivityRequestPage) match {
+          case Some(InactivityRequest.Option2)        =>
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          case Some(InactivityRequest.Option1) | None =>
+            controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        }
     case InactivityWarningPage      =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case _                          => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
