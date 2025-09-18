@@ -17,17 +17,37 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import navigation.{FakeNavigator, Navigator}
 import play.api.test.FakeRequest
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
+import play.api.inject.bind
+import play.api.mvc.Call
 import play.api.test.Helpers.*
+import repositories.SessionRepository
 import views.html.monthlyreturns.SubmissionSendingView
 
-class SubmissionSendingControllerSpec extends SpecBase {
+import scala.concurrent.Future
+
+class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
+
+  def onwardRoute = Call("GET", "/foo")
 
   "SubmissionSending Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        .overrides(
+          bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+          bind[SessionRepository].toInstance(mockSessionRepository)
+        )
+        .build()
 
       running(application) {
         val request = FakeRequest(GET, routes.SubmissionSendingController.onPageLoad().url)

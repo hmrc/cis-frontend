@@ -19,17 +19,36 @@ package controllers
 import base.SpecBase
 import models.NormalMode
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import controllers.{routes => mainRoutes}
-import controllers.monthlyreturns.{routes => monthlyReturnsRoutes}
+import repositories.SessionRepository
+import play.api.test.Helpers.*
+import controllers.routes as mainRoutes
+import controllers.monthlyreturns.routes as monthlyReturnsRoutes
+import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
+import play.api.inject.bind
+import play.api.mvc.Call
 
-class IndexControllerSpec extends SpecBase {
+import scala.concurrent.Future
+
+class IndexControllerSpec extends SpecBase with MockitoSugar {
+
+  def onwardRoute = Call("GET", "/foo")
 
   "Index Controller" - {
 
     "must redirect to DateConfirmNilPayments page for a GET" in {
 
-      val application = applicationBuilder(userAnswers = None).build()
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application = applicationBuilder(userAnswers = None)
+        .overrides(
+          bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+          bind[SessionRepository].toInstance(mockSessionRepository)
+        )
+        .build()
 
       running(application) {
         val request = FakeRequest(GET, mainRoutes.IndexController.onPageLoad().url)
