@@ -43,7 +43,9 @@
   email: String
 )(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSuccess.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSuccess.title")),
+        showBackLink = false
+        ) {
 
     @govukPanel(
         Panel(
