@@ -30,7 +30,7 @@
 
 @layout(pageTitle = title(form, messages("monthlyreturns.confirmEmailAddress.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.ConfirmEmailAddressController.onSubmit(mode)) {
+    @formHelper(action = controllers.monthlyreturns.routes.ConfirmEmailAddressController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))
@@ -44,6 +44,7 @@
                 field = form("value"),
                 label = LabelViewModel(messages("monthlyreturns.confirmEmailAddress.input.label"))
             )
+            .asEmail()
             .withWidth(Fixed20)
         )
 
