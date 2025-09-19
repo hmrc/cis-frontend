@@ -14,18 +14,18 @@
  * limitations under the License.
  *@
 
-@import utils.Utils.emptyString
-
 @this()
 
-@(
-  message: String,
-  bold: Boolean = false,
-  baseClass: String = "govuk-body",
-  extraClasses: String = emptyString,
-  args: Seq[Any] = Nil
-)(implicit messages: Messages)
+@(textKey: String, id: String = "print-link", secondary: Boolean = true, extraClasses: String = "")(implicit messages: play.api.i18n.Messages)
 
-<p class="@baseClass @extraClasses @if(bold){govuk-!-font-weight-bold}">
-  @{Html(messages(message, args*))}
-</p>
+<div class="govuk-button-group">
+    <a
+        id="@id"
+        href="#"
+        role="button"
+        draggable="false"
+        class="govuk-button @if(secondary){govuk-button--secondary} hmrc-!-js-visible govuk-!-display-none-print@if(extraClasses.nonEmpty){ @extraClasses}"
+        data-module="hmrc-print-link">
+        @messages(textKey)
+    </a>
+</div>
