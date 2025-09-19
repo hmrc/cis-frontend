@@ -11,8 +11,9 @@ GET         /language/:lang                              controllers.LanguageSwi
 GET         /refresh-session                             controllers.KeepAliveController.keepAlive()
 
 GET         /there-is-a-problem                          controllers.JourneyRecoveryController.onPageLoad(continueUrl: Option[RedirectUrl] ?= None)
- 
+
 GET        /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
+POST       /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
 GET         /account/sign-out-survey                     controllers.auth.AuthController.signOut()
 GET         /account/sign-out                            controllers.auth.AuthController.signOutNoSurvey()
@@ -54,3 +55,5 @@ GET        /monthly-return/submission-unsuccessful                       control
 POST       /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
 
 GET        /monthly-return/submission-awaiting                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
+
+GET        /monthly-return/confirmation                       controllers.monthlyreturns.SubmissionSuccessController.onPageLoad

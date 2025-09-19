@@ -35,18 +35,18 @@ object DeclarationSummary {
         HtmlContent(
           answers
             .map { answer =>
-              HtmlFormat.escape(messages(s"declaration.$answer")).toString
+              HtmlFormat.escape(messages(s"monthlyreturns.declaration.$answer")).toString
             }
             .mkString(",<br>")
         )
       )
 
       SummaryListRowViewModel(
-        key = "declaration.checkYourAnswersLabel",
+        key = "monthlyreturns.declaration.checkYourAnswersLabel",
         value = value,
         actions = Seq(
           ActionItemViewModel("site.change", routes.DeclarationController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("declaration.change.hidden"))
+            .withVisuallyHiddenText(messages("monthlyreturns.declaration.change.hidden"))
             .withAttribute("id" -> "change-declaration")
         )
       )

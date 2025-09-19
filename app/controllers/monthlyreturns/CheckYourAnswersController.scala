@@ -23,7 +23,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.govuk.summarylist._
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
-import views.html.CheckYourAnswersView
+import views.html.monthlyreturns.CheckYourAnswersView
 
 class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
@@ -53,5 +53,9 @@ class CheckYourAnswersController @Inject() (
     )
 
     Ok(view(returnDetailsList, emailList))
+  }
+
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
   }
 }

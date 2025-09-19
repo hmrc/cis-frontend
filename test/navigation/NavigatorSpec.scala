@@ -21,6 +21,7 @@ import controllers.monthlyreturns
 import pages._
 import pages.monthlyreturns.*
 import models._
+import models.monthlyreturns.InactivityRequest
 
 class NavigatorSpec extends SpecBase {
 
@@ -52,6 +53,32 @@ class NavigatorSpec extends SpecBase {
           NormalMode,
           UserAnswers("id")
         ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      }
+
+      "must go from DeclarationPage to CheckYourAnswers when inactivity request is NO" in {
+        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option2)
+        navigator.nextPage(
+          DeclarationPage,
+          NormalMode,
+          ua
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from DeclarationPage to InactivityWarning when inactivity request is YES" in {
+        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option1)
+        navigator.nextPage(
+          DeclarationPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+      }
+
+      "must go from DeclarationPage to InactivityWarning when inactivity request is missing" in {
+        navigator.nextPage(
+          DeclarationPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
       }
 
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {

@@ -20,8 +20,9 @@ import base.SpecBase
 import org.scalatest.matchers.must.Matchers
 import views.html.components.Paragraph
 import play.api.test.FakeRequest
-import play.api.i18n.Messages
+import play.api.i18n.{DefaultMessagesApi, Lang, Messages, MessagesImpl}
 import org.jsoup.Jsoup
+import play.twirl.api.Html
 
 class ParagraphSpec extends SpecBase with Matchers {
 
@@ -79,6 +80,31 @@ class ParagraphSpec extends SpecBase with Matchers {
       val html = p(testText, extraClasses = "")
       val para = getParagraphElement(html)
       para.attr("class").trim mustBe "govuk-body"
+    }
+
+    "must interpolate args into message text" in new Setup {
+      val testMessages: Messages = MessagesImpl(
+        Lang("en"),
+        new DefaultMessagesApi(Map("en" -> Map("paragraph.with.arg" -> "Hello {0}")))
+      )
+
+      val html = p(message = "paragraph.with.arg", args = Seq("World"))(testMessages)
+      val para = getParagraphElement(html)
+      para.text mustBe "Hello World"
+    }
+
+    "must render Html args (e.g. a link)" in new Setup {
+      val testMessages: Messages = MessagesImpl(
+        Lang("en"),
+        new DefaultMessagesApi(Map("en" -> Map("paragraph.with.html" -> "Contact {0}")))
+      )
+
+      val link = Html("""<a class="govuk-link" href="#">HMRC</a>""")
+      val html = p(message = "paragraph.with.html", args = Seq(link))(testMessages)
+      val para = getParagraphElement(html)
+
+      para.text mustBe "Contact HMRC"
+      Jsoup.parse(html.body).select("a.govuk-link").size mustBe 1
     }
   }
 
