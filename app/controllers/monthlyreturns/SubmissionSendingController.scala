@@ -43,13 +43,14 @@ class SubmissionSendingController @Inject() (
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
 
-    def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] =
-      for {
-        ua1 <- userAnswers.remove(DateConfirmNilPaymentsPage)
-        ua2 <- ua1.remove(InactivityRequestPage)
-        ua3 <- ua2.remove(ConfirmEmailAddressPage)
-        ua4 <- ua3.remove(DeclarationPage)
-      } yield ua4
+    def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
+      val pagesToRemove =
+        Seq(DateConfirmNilPaymentsPage, InactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
+
+      pagesToRemove.foldLeft(Try(userAnswers)) { (currentUserAnswers, page) =>
+        currentUserAnswers.flatMap(_.remove(page))
+      }
+    }
 
     for {
       updatedUserAnswers <- Future.fromTry(removeUserAnswers(request.userAnswers))
