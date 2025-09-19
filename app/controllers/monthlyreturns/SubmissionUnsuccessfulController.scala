@@ -38,10 +38,8 @@ class SubmissionUnsuccessfulController @Inject() (
     Ok(view())
   }
 
-  /** TEMP no-op: keeps the wiring but doesn’t clear session or navigate yet. */
   def onSubmit: Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
-      // no-op for now — just reload this page
-      Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
+    identify { implicit request =>
+      Redirect(controllers.routes.IndexController.onPageLoad())
     }
 }

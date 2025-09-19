@@ -53,36 +53,16 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
       }
     }
 
-    "POST onSubmit (temporary no-op)" - {
+    "POST onSubmit must redirect to IndexController (start of journey)" in {
+      val app = applicationBuilder(userAnswers = None).build()
+      running(app) {
+        val result = route(
+          app,
+          FakeRequest(POST, routes.SubmissionUnsuccessfulController.onSubmit.url)
+        ).value
 
-      "must redirect back to the same page when user answers exist" in {
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-        running(application) {
-          val request =
-            FakeRequest(POST, routes.SubmissionUnsuccessfulController.onSubmit.url)
-              .withFormUrlEncodedBody() // ensure form content-type
-
-          val result = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual routes.SubmissionUnsuccessfulController.onPageLoad.url
-        }
-      }
-
-      "must redirect to Journey Recovery when no existing data is found" in {
-        val application = applicationBuilder(userAnswers = None).build()
-
-        running(application) {
-          val request =
-            FakeRequest(POST, routes.SubmissionUnsuccessfulController.onSubmit.url)
-              .withFormUrlEncodedBody()
-
-          val result = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-        }
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.IndexController.onPageLoad().url
       }
     }
 
