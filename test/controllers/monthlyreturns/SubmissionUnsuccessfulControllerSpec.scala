@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.NormalMode
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
@@ -62,7 +63,7 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
         ).value
 
         status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe controllers.routes.IndexController.onPageLoad().url
+        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode).url
       }
     }
 
