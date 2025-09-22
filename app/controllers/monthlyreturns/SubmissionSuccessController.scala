@@ -18,14 +18,13 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.EmployerReference
-import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionSuccessView
 
-import java.time.{Clock, ZoneId, ZonedDateTime}
+import java.time.{Clock, LocalDate, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -45,12 +44,9 @@ class SubmissionSuccessController @Inject() (
     s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val email: String = request.userAnswers.get(ConfirmEmailAddressPage).get
-    val periodEnd     = request.userAnswers.get(DateConfirmNilPaymentsPage).get
-    val periodStart   = periodEnd.minusMonths(1).withDayOfMonth(6)
-
+    val email: String = "test@test.com"
     val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
-    val periodRange   = s"${periodStart.format(dmyFmt)} to ${periodEnd.format(dmyFmt)}"
+    val periodEnd     = LocalDate.of(2018, 3, 5).format(dmyFmt)
     val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
     val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
     val submittedDate = ukNow.format(dmyFmt)
@@ -69,7 +65,7 @@ class SubmissionSuccessController @Inject() (
     Ok(
       view(
         reference = reference,
-        periodRangeText = periodRange,
+        periodEnd = periodEnd,
         submittedTime = submittedTime,
         submittedDate = submittedDate,
         contractorName = contractorName,

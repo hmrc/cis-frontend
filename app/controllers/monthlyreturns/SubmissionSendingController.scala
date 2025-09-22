@@ -17,24 +17,46 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.UserAnswers
+import pages.monthlyreturns.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionSendingView
 
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class SubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
+  sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionSendingView
-) extends FrontendBaseController
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+
+    def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
+      val pagesToRemove =
+        Seq(DateConfirmNilPaymentsPage, InactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
+
+      pagesToRemove.foldLeft(Try(userAnswers)) { (currentUserAnswers, page) =>
+        currentUserAnswers.flatMap(_.remove(page))
+      }
+    }
+
+    for {
+      updatedUserAnswers <- Future.fromTry(removeUserAnswers(request.userAnswers))
+      _                  <- sessionRepository.set(updatedUserAnswers)
+    } yield Ok(view())
+
   }
+
 }
