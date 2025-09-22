@@ -202,7 +202,7 @@ monthlyreturns.submissionUnsuccessful.submit = Return to start
 
 monthlyreturns.submissionAwaiting.title = Submission awaiting confirmation
 monthlyreturns.submissionAwaiting.heading = Submission awaiting confirmation
-monthlyreturns.submissionAwaiting.paragraph.p1 = Your submission has been sent, but not yet received by HM Revenue & Customs. Please come back later for your results.
+monthlyreturns.submissionAwaiting.paragraph.p1 = Your submission has been sent, but not yet received by HMRC. Please come back later for your results.
 monthlyreturns.submissionAwaiting.paragraph.p2 = Your submission is currently being processed. This usually takes a few minutes, but may take longer during busy periods.
 monthlyreturns.submissionAwaiting.paragraph.p3 = You can check if your submission has been processed by refreshing this page or checking your submitted returns.
 monthlyreturns.submissionAwaiting.details.summary = What happens during processing
