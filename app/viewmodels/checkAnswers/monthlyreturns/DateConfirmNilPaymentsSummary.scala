@@ -26,13 +26,17 @@ import java.time.format.DateTimeFormatter
 
 object DateConfirmNilPaymentsSummary {
 
-  private val dmyFmt = DateTimeFormatter.ofPattern("d MMM yyyy")
-
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(DateConfirmNilPaymentsPage).map { taxPeriodEnd =>
+    answers.get(DateConfirmNilPaymentsPage).map { answer =>
+
+      val taxPeriodEnd   = answer
+      val taxPeriodStart = taxPeriodEnd.minusMonths(1).withDayOfMonth(6)
+      val taxPeriodText  = s"${taxPeriodStart.format(DateTimeFormatter.ofPattern("d MMM yyyy"))} to ${taxPeriodEnd
+          .format(DateTimeFormatter.ofPattern("d MMM yyyy"))}"
+
       SummaryListRowViewModel(
         key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
-        value = ValueViewModel(taxPeriodEnd.format(dmyFmt)),
+        value = ValueViewModel(taxPeriodText),
         actions = Seq(
           ActionItemViewModel(
             "site.change",
