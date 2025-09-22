@@ -55,12 +55,6 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     private val timeFmt = DateTimeFormatter.ofPattern("HH:mm z")
     private val london  = ZoneId.of("Europe/London")
 
-    protected lazy val periodStart: LocalDate =
-      periodEnd.minusMonths(1).withDayOfMonth(6)
-
-    protected lazy val periodRange: String =
-      s"${periodStart.format(dmyFmt)} to ${periodEnd.format(dmyFmt)}"
-
     protected lazy val ukNow: ZonedDateTime =
       ZonedDateTime.ofInstant(fixedInstant, london)
 
@@ -91,7 +85,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     lazy val expectedHtml: String =
       view(
         reference = reference,
-        periodRangeText = periodRange,
+        periodEnd = periodEnd.format(dmyFmt),
         submittedTime = submittedTime,
         submittedDate = submittedDate,
         contractorName = contractorName,

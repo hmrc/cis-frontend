@@ -35,7 +35,7 @@
 )
 
 @(reference: String,
-  periodRangeText: String,
+  periodEnd: String,
   submittedTime: String,
   submittedDate: String,
   contractorName: String,
@@ -63,7 +63,7 @@
 
     @paragraph(
         message = "monthlyreturns.submissionSuccessful.submitted.line",
-        args    = Seq(periodRangeText, submittedTime, submittedDate)
+        args    = Seq(periodEnd, submittedTime, submittedDate)
     )
 
     @h2("monthlyreturns.submissionSuccessful.submissionDetails.heading")
