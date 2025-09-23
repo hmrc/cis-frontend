@@ -217,7 +217,7 @@ monthlyreturns.submissionAwaiting.paragraph.p4 = If you have any questions about
 monthlyreturns.submissionAwaiting.link.l1 = For technical problems, contact the
 monthlyreturns.submissionAwaiting.link.l2 = HMRC Online Services Helpdesk.
 
-monthlyreturns.submissionSuccess.title = Your monthly return has been successfully submitted
+monthlyreturns.submissionSuccess.title = Confirmation
 monthlyreturns.submissionSuccess.heading = Your monthly return has been successfully submitted
 monthlyreturns.submissionSuccessful.panel.ref = Your reference number
 monthlyreturns.submissionSuccessful.submitted.line = Your CIS monthly return for period ended {0} was successfully submitted to HMRC at {1} on {2}.
