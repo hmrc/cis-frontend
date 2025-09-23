@@ -46,8 +46,16 @@ class Navigator @Inject() () {
     case _                          => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = { _ => _ =>
-    controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+  private val checkRouteMap: Page => UserAnswers => Call = {
+    case InactivityRequestPage =>
+      userAnswers =>
+        userAnswers.get(InactivityRequestPage) match {
+          case Some(InactivityRequest.Option2)        =>
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          case Some(InactivityRequest.Option1) | None =>
+            controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        }
+    case _                     => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {
