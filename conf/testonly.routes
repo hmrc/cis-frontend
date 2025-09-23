@@ -1,3 +1,3 @@
 # microservice specific test routes
 
-GET        /monthly-return/submission-send                           stub.controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
+GET        /monthly-return/submission-send                           stub.controllers.monthlyreturns.StubSubmissionSendingController.onPageLoad()

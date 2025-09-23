@@ -20,17 +20,17 @@ import controllers.actions.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import stub.views.html.monthlyreturns.SubmissionSendingView
+import stub.views.html.monthlyreturns.StubSubmissionSendingView
 
 import javax.inject.Inject
 
-class SubmissionSendingController @Inject() (
+class StubSubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: SubmissionSendingView
+  view: StubSubmissionSendingView
 ) extends FrontendBaseController
     with I18nSupport {
 

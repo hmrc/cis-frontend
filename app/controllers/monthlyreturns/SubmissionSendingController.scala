@@ -17,13 +17,13 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import controllers.routes
 import models.UserAnswers
 import pages.monthlyreturns.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.SubmissionSendingView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,13 +35,14 @@ class SubmissionSendingController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  val controllerComponents: MessagesControllerComponents,
-  view: SubmissionSendingView
+  val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+
+    val ua = request.userAnswers
 
     def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
       val pagesToRemove =
@@ -53,10 +54,19 @@ class SubmissionSendingController @Inject() (
     }
 
     for {
-      updatedUserAnswers <- Future.fromTry(removeUserAnswers(request.userAnswers))
+      emailAddress       <- Future.apply(ua.get(ConfirmEmailAddressPage))
+      updatedUserAnswers <- Future.fromTry(removeUserAnswers(ua))
       _                  <- sessionRepository.set(updatedUserAnswers)
-    } yield Ok(view())
+    } yield emailAddress match {
+      case Some(ea) if ea.equalsIgnoreCase("Submissionsuccessful@test.com")   =>
+        Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
+      case Some(ea) if ea.equalsIgnoreCase("Submissionunsuccessful@test.com") =>
+        Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+      case Some(ea) if ea.equalsIgnoreCase("Awaitingconfirmation@test.com")   =>
+        Redirect(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad)
+      case _                                                                  =>
+        Redirect(routes.JourneyRecoveryController.onPageLoad())
+    }
 
   }
-
 }

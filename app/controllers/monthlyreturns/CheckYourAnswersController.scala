@@ -59,7 +59,7 @@ class CheckYourAnswersController @Inject() (
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     if (appConfig.stubSendingEnabled)
-      Redirect(stub.controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+      Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
     else
       Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
   }
