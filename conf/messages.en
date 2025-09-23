@@ -173,7 +173,7 @@ monthlyreturns.declaration.submit = Confirm and submit
 
 monthlyreturns.submissionSending.title = Submission - Sending
 monthlyreturns.submissionSending.heading = Sending your submission
-monthlyreturns.submissionSending.paragraph = Your submission is being sent to HM Revenue and Customs.
+monthlyreturns.submissionSending.paragraph = Your submission is being sent to HMRC.
 monthlyreturns.submissionSending.insetText = Do not refresh this page or press the back button while your submission is being processed.
 
 monthlyreturns.inactivityWarning.title = Nil Monthly Return - Inactivity Warning
@@ -202,7 +202,7 @@ monthlyreturns.submissionUnsuccessful.submit = Return to start
 
 monthlyreturns.submissionAwaiting.title = Submission awaiting confirmation
 monthlyreturns.submissionAwaiting.heading = Submission awaiting confirmation
-monthlyreturns.submissionAwaiting.paragraph.p1 = Your submission has been sent, but not yet received by HM Revenue & Customs. Please come back later for your results.
+monthlyreturns.submissionAwaiting.paragraph.p1 = Your submission has been sent, but not yet received by HMRC. Please come back later for your results.
 monthlyreturns.submissionAwaiting.paragraph.p2 = Your submission is currently being processed. This usually takes a few minutes, but may take longer during busy periods.
 monthlyreturns.submissionAwaiting.paragraph.p3 = You can check if your submission has been processed by refreshing this page or checking your submitted returns.
 monthlyreturns.submissionAwaiting.details.summary = What happens during processing
