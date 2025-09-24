@@ -19,14 +19,15 @@ package controllers.monthlyreturns
 import base.SpecBase
 import navigation.{FakeNavigator, Navigator}
 import play.api.test.FakeRequest
+import models.UserAnswers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.Helpers.*
+import play.api.libs.json._
 import repositories.SessionRepository
-import views.html.monthlyreturns.SubmissionSendingView
 
 import scala.concurrent.Future
 
@@ -36,13 +37,22 @@ class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   "SubmissionSending Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "must return SEE_OTHER and redirect to the Submission Success page when user answer has email address as Submissionsuccessful@test.com" in {
+
+      val data: JsObject = Json.obj(
+        "dateConfirmNilPayments" -> "2019-09-05",
+        "inactivityRequest"      -> "option1",
+        "confirmEmailAddress"    -> "Submissionsuccessful@test.com",
+        "declaration"            -> Json.arr("confirmed")
+      )
+
+      val ua = UserAnswers("randomId", data)
 
       val mockSessionRepository = mock[SessionRepository]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+      val application = applicationBuilder(userAnswers = Some(ua))
         .overrides(
           bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
           bind[SessionRepository].toInstance(mockSessionRepository)
@@ -54,10 +64,112 @@ class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[SubmissionSendingView]
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url
+      }
+    }
 
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+    "must return SEE_OTHER and redirect to the Submission Unsuccess page when user answer has email address as Submissionunsuccessful@test.com" in {
+
+      val data: JsObject = Json.obj(
+        "dateConfirmNilPayments" -> "2019-09-05",
+        "inactivityRequest"      -> "option1",
+        "confirmEmailAddress"    -> "Submissionunsuccessful@test.com",
+        "declaration"            -> Json.arr("confirmed")
+      )
+
+      val ua = UserAnswers("randomId", data)
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .overrides(
+          bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+          bind[SessionRepository].toInstance(mockSessionRepository)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.SubmissionSendingController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
+      }
+    }
+
+    "must return SEE_OTHER and redirect to the Submission Awaiting page when user answer has email address as Awaitingconfirmation@test.com" in {
+
+      val data: JsObject = Json.obj(
+        "dateConfirmNilPayments" -> "2019-09-05",
+        "inactivityRequest"      -> "option1",
+        "confirmEmailAddress"    -> "Awaitingconfirmation@test.com",
+        "declaration"            -> Json.arr("confirmed")
+      )
+
+      val ua = UserAnswers("randomId", data)
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .overrides(
+          bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+          bind[SessionRepository].toInstance(mockSessionRepository)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.SubmissionSendingController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url
+      }
+    }
+
+    "must return SEE_OTHER and redirect to the Journey Recovery page when user answer has email address other than above 3 emails" in {
+
+      val data: JsObject = Json.obj(
+        "dateConfirmNilPayments" -> "2019-09-05",
+        "inactivityRequest"      -> "option1",
+        "confirmEmailAddress"    -> "AnyOther@test.com",
+        "declaration"            -> Json.arr("confirmed")
+      )
+
+      val ua = UserAnswers("randomId", data)
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .overrides(
+          bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+          bind[SessionRepository].toInstance(mockSessionRepository)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.SubmissionSendingController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(
+          result
+        ).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 

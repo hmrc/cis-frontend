@@ -11,6 +11,8 @@ To run all tests and coverage: `./run_all_tests.sh`
 
 To start the server locally: `sbt run`
 
+To enable test-only routes when running locally, start the server with: `sbt 'run -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes 6993'` 
+
 ## Adding New Pages
 
 ### Folder Structure

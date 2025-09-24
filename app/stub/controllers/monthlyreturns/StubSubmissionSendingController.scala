@@ -14,35 +14,34 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package stub.controllers.monthlyreturns
 
 import controllers.actions.*
-import controllers.routes
 import models.UserAnswers
-import pages.monthlyreturns.*
+import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import stub.views.html.monthlyreturns.StubSubmissionSendingView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class SubmissionSendingController @Inject() (
+class StubSubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  val controllerComponents: MessagesControllerComponents
+  val controllerComponents: MessagesControllerComponents,
+  view: StubSubmissionSendingView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-
-    val ua = request.userAnswers
 
     def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
       val pagesToRemove =
@@ -54,19 +53,9 @@ class SubmissionSendingController @Inject() (
     }
 
     for {
-      emailAddress       <- Future.apply(ua.get(ConfirmEmailAddressPage))
-      updatedUserAnswers <- Future.fromTry(removeUserAnswers(ua))
+      updatedUserAnswers <- Future.fromTry(removeUserAnswers(request.userAnswers))
       _                  <- sessionRepository.set(updatedUserAnswers)
-    } yield emailAddress match {
-      case Some(ea) if ea.equalsIgnoreCase("Submissionsuccessful@test.com")   =>
-        Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
-      case Some(ea) if ea.equalsIgnoreCase("Submissionunsuccessful@test.com") =>
-        Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-      case Some(ea) if ea.equalsIgnoreCase("Awaitingconfirmation@test.com")   =>
-        Redirect(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad)
-      case _                                                                  =>
-        Redirect(routes.JourneyRecoveryController.onPageLoad())
-    }
+    } yield Ok(view())
 
   }
 }
