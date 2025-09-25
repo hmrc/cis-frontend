@@ -16,11 +16,13 @@
 
 package services
 
+import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
 import models.responses.MonthlyReturnResponse
 import pages.monthlyreturns.CisIdPage
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -30,13 +32,18 @@ import scala.concurrent.{ExecutionContext, Future}
 class MonthlyReturnService @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector,
   sessionRepository: SessionRepository
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
   def resolveAndStoreCisId(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(String, UserAnswers)] =
     ua.get(CisIdPage) match {
       case Some(cisId) => Future.successful((cisId, ua))
       case None        =>
+        // temporarily added for testing
+        logger.info("[resolveAndStoreCisId] cache-miss: fetching CIS taxpayer from backend")
         cisConnector.getCisTaxpayer().flatMap { tp =>
+          // temporarily added for testing
+          logger.info(s"[resolveAndStoreCisId] taxpayer payload:\n${Json.prettyPrint(Json.toJson(tp))}")
           val cisId = tp.uniqueId.trim
           if (cisId.isEmpty) {
             Future.failed(new RuntimeException("Empty cisId (uniqueId) returned from /cis/taxpayer"))
