@@ -103,12 +103,30 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from InactivityRequestPage to CheckYourAnswers Page in CheckMode" in {
+      "must go from InactivityRequestPage to CheckYourAnswers in CheckMode when inactivity request is NO" in {
+        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option2)
+        navigator.nextPage(
+          InactivityRequestPage,
+          CheckMode,
+          ua
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from InactivityRequestPage to InactivityWarning in CheckMode when inactivity request is YES" in {
+        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option1)
+        navigator.nextPage(
+          InactivityRequestPage,
+          CheckMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+      }
+
+      "must go from InactivityRequestPage to InactivityWarning in CheckMode when inactivity request is missing" in {
         navigator.nextPage(
           InactivityRequestPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
       }
 
       "must go from ConfirmEmailAddressPage to CheckYourAnswers Page in CheckMode" in {
