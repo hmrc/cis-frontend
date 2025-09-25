@@ -17,21 +17,44 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
+import repositories.SessionRepository
+import models.UserAnswers
 import models.responses.MonthlyReturnResponse
+import pages.monthlyreturns.CisIdPage
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MonthlyReturnService @Inject() (constructionIndustrySchemeConnector: ConstructionIndustrySchemeConnector)(implicit
-  ec: ExecutionContext
-) {
-  def retrieveAllMonthlyReturns()(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
-    constructionIndustrySchemeConnector.retrieveMonthlyReturns()
+class MonthlyReturnService @Inject() (
+  cisConnector: ConstructionIndustrySchemeConnector,
+  sessionRepository: SessionRepository
+)(implicit ec: ExecutionContext) {
 
-  def isDuplicate(year: Int, month: Int)(implicit hc: HeaderCarrier): Future[Boolean] =
-    retrieveAllMonthlyReturns().map { res =>
+  def resolveAndStoreCisId(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(String, UserAnswers)] =
+    ua.get(CisIdPage) match {
+      case Some(cisId) => Future.successful((cisId, ua))
+      case None        =>
+        cisConnector.getCisTaxpayer().flatMap { tp =>
+          val cisId = tp.uniqueId.trim
+          if (cisId.isEmpty) {
+            Future.failed(new RuntimeException("Empty cisId (uniqueId) returned from /cis/taxpayer"))
+          } else {
+            ua.set(CisIdPage, cisId)
+              .fold(
+                err => Future.failed(err),
+                updatedUa => sessionRepository.set(updatedUa).map(_ => (cisId, updatedUa))
+              )
+          }
+        }
+    }
+
+  def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
+    cisConnector.retrieveMonthlyReturns(cisId)
+
+  def isDuplicate(cisId: String, year: Int, month: Int)(implicit hc: HeaderCarrier): Future[Boolean] =
+    retrieveAllMonthlyReturns(cisId).map { res =>
       res.monthlyReturnList.exists(mr => mr.taxYear == year && mr.taxMonth == month)
     }
 }

@@ -17,29 +17,34 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
+import models.UserAnswers
+import models.monthlyreturns.CisTaxpayer
 import models.responses.{InTransitMonthlyReturnDetails, MonthlyReturnResponse}
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar
+import pages.monthlyreturns.CisIdPage
+import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MonthlyReturnServiceSpec extends AnyWordSpec with MockitoSugar with ScalaFutures with Matchers {
+class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matchers {
 
-  implicit val ec: ExecutionContext = global
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val mockConnector: ConstructionIndustrySchemeConnector =
-    mock[ConstructionIndustrySchemeConnector]
+  private def newService(): (MonthlyReturnService, ConstructionIndustrySchemeConnector, SessionRepository) = {
+    val connector   = mock(classOf[ConstructionIndustrySchemeConnector])
+    val sessionRepo = mock(classOf[SessionRepository])
+    val service     = new MonthlyReturnService(connector, sessionRepo)
+    (service, connector, sessionRepo)
+  }
 
-  val service = new MonthlyReturnService(mockConnector)
-
-  private def mr(year: Int, month: Int, id: Long = 1L): InTransitMonthlyReturnDetails =
+  private def createMonthlyReturn(year: Int, month: Int, id: Long): InTransitMonthlyReturnDetails =
     InTransitMonthlyReturnDetails(
       monthlyReturnId = id,
       taxYear = year,
@@ -56,57 +61,173 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with MockitoSugar with ScalaF
       supersededBy = None
     )
 
-  "MonthlyReturnService.retrieveAllMonthlyReturns" should {
-    "return the payload from the connector and call it with the given instanceId" in {
-      val expected = MonthlyReturnResponse(Seq(mr(2023, 4), mr(2024, 5)))
+  private def createTaxpayer(
+    id: String = "CIS-123",
+    ton: String = "111",
+    tor: String = "test111",
+    name1: Option[String] = Some("TEST LTD")
+  ): CisTaxpayer =
+    CisTaxpayer(
+      uniqueId = id,
+      taxOfficeNumber = ton,
+      taxOfficeRef = tor,
+      aoDistrict = None,
+      aoPayType = None,
+      aoCheckCode = None,
+      aoReference = None,
+      validBusinessAddr = None,
+      correlation = None,
+      ggAgentId = None,
+      employerName1 = name1,
+      employerName2 = None,
+      agentOwnRef = None,
+      schemeName = None,
+      utr = None,
+      enrolledSig = None
+    )
 
-      when(mockConnector.retrieveMonthlyReturns()(any()))
-        .thenReturn(Future.successful(expected))
+  "resolveAndStoreCisId" should {
 
-      val result = service.retrieveAllMonthlyReturns().futureValue
-      result mustBe expected
+    "return existing cisId from UserAnswers without calling BE" in {
+      val (service, connector, sessionRepo) = newService()
 
-      verify(mockConnector, times(1))
-        .retrieveMonthlyReturns()(any())
-      verifyNoMoreInteractions(mockConnector)
+      val existing    = "CIS-001"
+      val emptyUa     = UserAnswers("test-user")
+      val uaWithCisId = emptyUa.set(CisIdPage, existing).get
+
+      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId).futureValue
+      cisId mustBe existing
+      savedUa mustBe uaWithCisId
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
 
-    "propagate failures from the connector" in {
-      when(mockConnector.retrieveMonthlyReturns()(any()))
-        .thenReturn(Future.failed(new RuntimeException("boom")))
+    "fetch taxpayer when missing, store cisId in session, and return updated UA" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val emptyUa  = UserAnswers("test-user")
+      val taxpayer = createTaxpayer()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayer))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa).futureValue
+
+      cisId mustBe "CIS-123"
+      savedUa.get(CisIdPage) mustBe Some("CIS-123")
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(uaCaptor.capture())
+      uaCaptor.getValue.get(CisIdPage) mustBe Some("CIS-123")
+
+      verify(connector).getCisTaxpayer()(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "fail when BE returns empty uniqueId" in {
+      val (service, connector, sessionRepo) = newService()
+      val emptyUa                           = UserAnswers("test-user")
+
+      val emptyTaxpayer = createTaxpayer(id = " ", name1 = None)
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(emptyTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.retrieveAllMonthlyReturns().futureValue
+        service.resolveAndStoreCisId(emptyUa).futureValue
       }
-      ex.getMessage must include("boom")
+      ex.getMessage must include("Empty cisId (uniqueId) returned from /cis/taxpayer")
+
+      verify(connector).getCisTaxpayer()(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
     }
   }
 
-  "MonthlyReturnService.isDuplicate" should {
-    "return true when a monthly return with the same year and month exists" in {
-      val data = MonthlyReturnResponse(Seq(mr(2022, 12), mr(2024, 5)))
-      when(mockConnector.retrieveMonthlyReturns()(any()))
-        .thenReturn(Future.successful(data))
+  "retrieveAllMonthlyReturns" should {
 
-      service.isDuplicate(2024, 5).futureValue mustBe true
-    }
+    "delegate to connector with the given cisId and return the payload" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
 
-    "return false when no monthly return matches the year and month" in {
-      val data = MonthlyReturnResponse(Seq(mr(2024, 4), mr(2024, 6)))
-      when(mockConnector.retrieveMonthlyReturns()(any()))
-        .thenReturn(Future.successful(data))
+      val payload = MonthlyReturnResponse(
+        Seq(
+          createMonthlyReturn(year = 2024, month = 4, id = 101L),
+          createMonthlyReturn(year = 2024, month = 5, id = 102L)
+        )
+      )
 
-      service.isDuplicate(2024, 5).futureValue mustBe false
+      when(connector.retrieveMonthlyReturns(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.retrieveAllMonthlyReturns(cisId).futureValue
+      result mustBe payload
+
+      verify(connector).retrieveMonthlyReturns(eqTo(cisId))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
     }
 
     "propagate failures from the connector" in {
-      when(mockConnector.retrieveMonthlyReturns()(any()))
-        .thenReturn(Future.failed(new RuntimeException("oops")))
+      val (service, connector, _) = newService()
+
+      when(connector.retrieveMonthlyReturns(eqTo("CIS-ERR"))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
 
       val ex = intercept[RuntimeException] {
-        service.isDuplicate(2024, 5).futureValue
+        service.retrieveAllMonthlyReturns("CIS-ERR").futureValue
       }
-      ex.getMessage must include("oops")
+      ex.getMessage must include("upstream failed")
+    }
+  }
+
+  "isDuplicate" should {
+
+    "return true when a monthly return with the same (year, month) exists" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
+
+      val fetchedMonthlyReturns = MonthlyReturnResponse(
+        Seq(
+          createMonthlyReturn(year = 2025, month = 9, id = 1L),
+          createMonthlyReturn(year = 2024, month = 5, id = 2L)
+        )
+      )
+
+      when(connector.retrieveMonthlyReturns(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(fetchedMonthlyReturns))
+
+      service.isDuplicate(cisId, year = 2024, month = 5).futureValue mustBe true
+    }
+
+    "return false when no monthly return matches the (year, month)" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
+
+      val fetchedMonthlyReturns = MonthlyReturnResponse(
+        Seq(
+          createMonthlyReturn(year = 2024, month = 4, id = 1L),
+          createMonthlyReturn(year = 2024, month = 6, id = 2L)
+        )
+      )
+
+      when(connector.retrieveMonthlyReturns(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(fetchedMonthlyReturns))
+
+      service.isDuplicate(cisId, year = 2024, month = 5).futureValue mustBe false
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, _) = newService()
+
+      when(connector.retrieveMonthlyReturns(eqTo("CIS-123"))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val ex = intercept[RuntimeException] {
+        service.isDuplicate("CIS-123", year = 2024, month = 5).futureValue
+      }
+      ex.getMessage must include("boom")
     }
   }
 }
