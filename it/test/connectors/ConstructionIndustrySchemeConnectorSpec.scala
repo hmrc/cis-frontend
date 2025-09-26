@@ -16,10 +16,10 @@
 
 package connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, urlPathMatching}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.matchers.should.Matchers
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,11 +33,69 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   val connector: ConstructionIndustrySchemeConnector = app.injector.instanceOf[ConstructionIndustrySchemeConnector]
 
-  "retrieveMonthlyReturns" should {
+  private val cisId = "abc-123"
 
-    "return an MrResponse when BE returns 200 with valid JSON" in {
+  "getCisTaxpayer" should {
+
+    "return CisTaxpayer when BE returns 200 with valid JSON" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/taxpayer"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(
+                """{
+                  |  "uniqueId": "abc-123",
+                  |  "taxOfficeNumber": "111",
+                  |  "taxOfficeRef": "test111",
+                  |  "employerName1": "TEST LTD"
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getCisTaxpayer().futureValue
+      result.uniqueId mustBe "abc-123"
+      result.taxOfficeNumber mustBe "111"
+      result.taxOfficeRef mustBe "test111"
+      result.employerName1 mustBe Some("TEST LTD")
+    }
+
+    "fail when BE returns 200 with invalid JSON" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/taxpayer"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody("""{ "unexpectedField": true }""")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisTaxpayer().futureValue
+      }
+      ex.getMessage.toLowerCase must include("uniqueid")
+    }
+
+    "propagate an upstream error when BE returns 500" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/taxpayer"))
+          .willReturn(aResponse().withStatus(500).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisTaxpayer().futureValue
+      }
+      ex.getMessage must include("returned 500")
+    }
+  }
+  
+  "retrieveMonthlyReturns(cisId)" should {
+
+    "return an MonthlyReturnResponse when BE returns 200 with valid JSON" in {
       stubFor(
         get(urlPathMatching("/cis/monthly-returns"))
+          .withQueryParam("cisId", equalTo(cisId))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -54,31 +112,30 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveMonthlyReturns().futureValue
-
-      result.monthlyReturnList.map(_.monthlyReturnId) should contain allOf(101L, 102L)
-      result.monthlyReturnList.map(_.taxMonth) should contain allOf(4, 5)
+      val result = connector.retrieveMonthlyReturns("abc-123").futureValue
+      result.monthlyReturnList.map(_.monthlyReturnId) must contain allOf(101L, 102L)
+      result.monthlyReturnList.map(_.taxMonth) must contain allOf(4, 5)
     }
 
     "fail when BE returns 200 with invalid JSON" in {
       stubFor(
         get(urlPathMatching("/cis/monthly-returns"))
+          .withQueryParam("cisId", equalTo(cisId))
           .willReturn(
             aResponse()
               .withStatus(200)
-              .withBody("""{ "notMonthlyReturnList": [] }""") // missing required field
+              .withBody("""{ "notMonthlyReturnList": [] }""")
           )
       )
 
-      val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturns().futureValue
-      }
-      ex.getMessage.toLowerCase should include("monthlyreturnlist")
+      val ex = intercept[Exception] {connector.retrieveMonthlyReturns("abc-123").futureValue}
+      ex.getMessage.toLowerCase must include("monthlyreturnlist")
     }
 
     "propagate an upstream error when BE returns 500" in {
       stubFor(
         get(urlPathMatching("/cis/monthly-returns"))
+          .withQueryParam("cisId", equalTo(cisId))
           .willReturn(
             aResponse()
               .withStatus(500)
@@ -87,24 +144,24 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturns().futureValue
+        connector.retrieveMonthlyReturns("abc-123").futureValue
       }
-      ex.getMessage should include("returned 500")
+      ex.getMessage must include("returned 500")
     }
 
     "fail the future on connection issues" in {
-      // Using an invalid status in WireMock to simulate a connection problem
       stubFor(
         get(urlPathMatching("/cis/monthly-returns"))
+          .withQueryParam("cisId", equalTo(cisId))
           .willReturn(
             aResponse().withStatus(0)
           )
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturns().futureValue
+        connector.retrieveMonthlyReturns("abc-123").futureValue
       }
-      ex.getMessage.toLowerCase should include("exception")
+      ex.getMessage.toLowerCase must include("exception")
     }
   }
 }
