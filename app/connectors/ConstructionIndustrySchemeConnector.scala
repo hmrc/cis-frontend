@@ -16,8 +16,7 @@
 
 package connectors
 
-import models.responses.MonthlyReturnResponse
-import models.monthlyreturns.CisTaxpayer
+import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig

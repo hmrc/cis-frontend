@@ -21,7 +21,6 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.ws.WSClient
 
 trait ApplicationWithWiremock
   extends AnyWordSpec
@@ -43,8 +42,6 @@ trait ApplicationWithWiremock
   override lazy val app: Application = new GuiceApplicationBuilder()
     .configure(extraConfig)
     .build()
-
-  lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
   override protected def beforeAll(): Unit =
     wireMock.start()

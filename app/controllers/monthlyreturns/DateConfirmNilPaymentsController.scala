@@ -70,7 +70,7 @@ class DateConfirmNilPaymentsController @Inject() (
           case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           case _                                                     =>
-            val errForm = preparedForm.withGlobalError("error.technical")
+            val errForm = preparedForm.withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
             InternalServerError(view(errForm, mode))
         }
     }
@@ -115,7 +115,7 @@ class DateConfirmNilPaymentsController @Inject() (
                   }
               }
               .recover { _ =>
-                val errForm = form.fill(value).withGlobalError("error.technical")
+                val errForm = form.fill(value).withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
                 InternalServerError(view(errForm, mode))
               }
           }

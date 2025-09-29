@@ -18,8 +18,7 @@ package services
 
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
-import models.monthlyreturns.CisTaxpayer
-import models.responses.{InTransitMonthlyReturnDetails, MonthlyReturnResponse}
+import models.monthlyreturns.{CisTaxpayer, MonthlyReturnDetails, MonthlyReturnResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -44,8 +43,8 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     (service, connector, sessionRepo)
   }
 
-  private def createMonthlyReturn(year: Int, month: Int, id: Long): InTransitMonthlyReturnDetails =
-    InTransitMonthlyReturnDetails(
+  private def createMonthlyReturn(year: Int, month: Int, id: Long): MonthlyReturnDetails =
+    MonthlyReturnDetails(
       monthlyReturnId = id,
       taxYear = year,
       taxMonth = month,

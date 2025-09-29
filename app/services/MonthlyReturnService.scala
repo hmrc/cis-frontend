@@ -20,7 +20,7 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
-import models.responses.MonthlyReturnResponse
+import models.monthlyreturns.MonthlyReturnResponse
 import pages.monthlyreturns.CisIdPage
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
