@@ -31,6 +31,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Failure
 
 class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matchers {
 
@@ -142,6 +143,28 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
 
       verify(connector).getCisTaxpayer()(any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when adding cisId to UserAnswers returns an error" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val taxpayer = createTaxpayer()
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayer))
+
+      val ua = mock(classOf[UserAnswers])
+      when(ua.get(CisIdPage)).thenReturn(None)
+      when(ua.set(CisIdPage, "CIS-123"))
+        .thenReturn(Failure(new RuntimeException("UA set failed")))
+
+      val ex = intercept[RuntimeException] {
+        service.resolveAndStoreCisId(ua).futureValue
+      }
+      ex.getMessage must include("UA set failed")
+
+      verifyNoInteractions(sessionRepo)
+      verify(connector).getCisTaxpayer()(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
     }
   }
 
