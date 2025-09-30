@@ -25,7 +25,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.DateConfirmNilPaymentsView
@@ -48,17 +48,32 @@ class DateConfirmNilPaymentsController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
 
-    val form = formProvider()
+      implicit val hc: HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    val preparedForm = request.userAnswers.get(DateConfirmNilPaymentsPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
+      val form = formProvider()
+
+      val preparedForm = request.userAnswers.get(DateConfirmNilPaymentsPage) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      monthlyReturnService
+        .resolveAndStoreCisId(request.userAnswers)
+        .map { _ =>
+          Ok(view(preparedForm, mode))
+        }
+        .recover {
+          case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          case _                                                     =>
+            val errForm = preparedForm.withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
+            InternalServerError(view(errForm, mode))
+        }
     }
-
-    Ok(view(preparedForm, mode))
-  }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
@@ -77,27 +92,30 @@ class DateConfirmNilPaymentsController @Inject() (
             val month = value.getMonthValue
 
             monthlyReturnService
-              .isDuplicate(year, month)
-              .flatMap {
-                case true =>
-                  val dupForm =
-                    form
-                      .fill(value)
-                      .withError(
-                        "value",
-                        "monthlyreturns.dateConfirmNilPayments.error.duplicate"
-                      )
-                  Future.successful(BadRequest(view(dupForm, mode)))
+              .resolveAndStoreCisId(request.userAnswers)
+              .flatMap { case (cisId, _) =>
+                monthlyReturnService
+                  .isDuplicate(cisId, year, month)
+                  .flatMap {
+                    case true =>
+                      val dupForm =
+                        form
+                          .fill(value)
+                          .withError(
+                            "value",
+                            "monthlyreturns.dateConfirmNilPayments.error.duplicate"
+                          )
+                      Future.successful(BadRequest(view(dupForm, mode)))
 
-                case false =>
-                  for {
-                    updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
-                    _              <- sessionRepository.set(updatedAnswers)
-                  } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
+                    case false =>
+                      for {
+                        updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmNilPaymentsPage, value))
+                        _              <- sessionRepository.set(updatedAnswers)
+                      } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
+                  }
               }
-              .recover { case _ =>
-                val errForm =
-                  form.fill(value).withGlobalError("error.technical")
+              .recover { _ =>
+                val errForm = form.fill(value).withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
                 InternalServerError(view(errForm, mode))
               }
           }

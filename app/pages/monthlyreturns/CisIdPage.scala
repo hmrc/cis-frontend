@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package models
+package pages.monthlyreturns
 
-import play.api.libs.json.*
+import play.api.libs.json._
+import pages.QuestionPage
 
-case class MonthlyReturnDetails(
-  monthlyReturnId: String,
-  taxYear: String,
-  taxMonth: String,
-  nilReturnIndicator: Option[String],
-  status: Option[String]
-)
-
-object MonthlyReturnDetails {
-  implicit val format: OFormat[MonthlyReturnDetails] = Json.format
+object CisIdPage extends QuestionPage[String] {
+  override def path: JsPath = JsPath \ "cisId"
 }
