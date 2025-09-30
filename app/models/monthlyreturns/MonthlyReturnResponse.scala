@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package models.responses
+package models.monthlyreturns
 
-import models.MonthlyReturnDetails
 import play.api.libs.json.{Json, OFormat}
 
 import java.time.LocalDateTime
 
-case class InTransitMonthlyReturnDetails(
+case class MonthlyReturnDetails(
   monthlyReturnId: Long,
   taxYear: Int,
   taxMonth: Int,
@@ -35,23 +34,14 @@ case class InTransitMonthlyReturnDetails(
   lastUpdate: Option[LocalDateTime],
   amendment: Option[String],
   supersededBy: Option[Long]
-) {
-  val toMonthlyReturnDetails: MonthlyReturnDetails = MonthlyReturnDetails(
-    monthlyReturnId = monthlyReturnId.toString,
-    taxYear = taxYear.toString,
-    taxMonth = taxMonth.toString,
-    nilReturnIndicator = nilReturnIndicator,
-    status = status
-  )
+)
+
+object MonthlyReturnDetails {
+  implicit val format: OFormat[MonthlyReturnDetails] = Json.format[MonthlyReturnDetails]
 }
 
-object InTransitMonthlyReturnDetails {
-  implicit val format: OFormat[InTransitMonthlyReturnDetails] = Json.format[InTransitMonthlyReturnDetails]
-}
-
-case class MonthlyReturnResponse(monthlyReturnList: Seq[InTransitMonthlyReturnDetails])
+case class MonthlyReturnResponse(monthlyReturnList: Seq[MonthlyReturnDetails])
 
 object MonthlyReturnResponse {
-  import InTransitMonthlyReturnDetails.format
   implicit val format: OFormat[MonthlyReturnResponse] = Json.format[MonthlyReturnResponse]
 }
