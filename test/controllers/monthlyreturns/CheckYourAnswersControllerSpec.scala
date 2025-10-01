@@ -17,11 +17,19 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.UserAnswers
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
+import play.api.inject.bind
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
+
+import scala.concurrent.Future
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
@@ -66,8 +74,14 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
     }
 
     "must redirect to submission sending on POST" in {
+      val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+      when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
+        .thenReturn(Future.successful(true))
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(bind[MonthlyReturnService].toInstance(mockService))
+          .build()
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
@@ -80,5 +94,46 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
           .url
       }
     }
+
+    "must redirect to Journey Recovery on POST when service throws " in {
+      val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+      when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(bind[MonthlyReturnService].toInstance(mockService))
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockService, times(1)).submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]())
+      }
+    }
+
+    "must redirect to Journey Recovery for POST if no existing data is found" in {
+      val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+      when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
+        .thenReturn(Future.successful(true))
+
+      val application =
+        applicationBuilder(userAnswers = None)
+          .overrides(bind[MonthlyReturnService].toInstance(mockService))
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
   }
 }

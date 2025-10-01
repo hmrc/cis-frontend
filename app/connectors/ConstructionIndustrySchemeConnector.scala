@@ -46,37 +46,30 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
 
-  def submitChris(request: ChrisSubmissionRequest)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val base   = sys.props.get("cisBaseUrl").orElse(Some(cisBaseUrl)).getOrElse("")
-    val urlStr = s"$base/chris"
-
-    logger.info(s"[FE connector] about to POST $urlStr")
-
-    val body = Json.toJson(request)
-    logger.info(s"[FE connector] payload built ok (len=${body.toString.length})")
-
-    val call = http
-      .post(url"$urlStr")
+  def submitChris(request: ChrisSubmissionRequest)(implicit hc: HeaderCarrier): Future[Boolean] =
+    http
+      .post(url"$cisBaseUrl/chris")
       .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
-      .withBody(body)
+      .withBody(Json.toJson(request))
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
-
-    call.transform(
-      {
-        case Right(r) if r.status >= 200 && r.status < 300 =>
-          logger.info(s"[FE connector] POST $urlStr -> ${r.status}")
+      .map {
+        case Right(response) if response.status / 100 == 2 =>
           true
-        case Right(r)                                      =>
-          logger.warn(s"[FE connector] POST $urlStr unexpected ${r.status}: ${r.body.take(200)}")
-          throw new RuntimeException(s"Unexpected CHRIS status: ${r.status}")
-        case Left(e)                                       =>
-          logger.warn(s"[FE connector] POST $urlStr upstream error ${e.statusCode}: ${e.message}")
-          throw new RuntimeException(s"CHRIS submission failed: ${e.statusCode} ${e.message}")
-      },
-      { t =>
-        logger.error(s"[FE connector] building/sending POST $urlStr failed", t)
-        t
+
+        case Right(response) =>
+          logger.warn(s"[submitChris] Unexpected non-2xx status=${response.status}")
+          throw new RuntimeException(s"Unexpected CHRIS status: ${response.status}")
+
+        case Left(errorResponse) =>
+          if (errorResponse.statusCode / 100 == 5) {
+            logger.error(
+              s"[submitChris] Upstream 5xx status=${errorResponse.statusCode} message=${errorResponse.message}"
+            )
+          } else {
+            logger.warn(
+              s"[submitChris] Upstream 4xx status=${errorResponse.statusCode} message=${errorResponse.message}"
+            )
+          }
+          throw new RuntimeException(s"CHRIS submission failed: ${errorResponse.statusCode} ${errorResponse.message}")
       }
-    )
-  }
 }

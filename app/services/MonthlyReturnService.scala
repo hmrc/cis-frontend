@@ -68,22 +68,25 @@ class MonthlyReturnService @Inject() (
 
   def submitNilMonthlyReturn(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Boolean] = {
     for {
-      tp          <- cisConnector.getCisTaxpayer()
-      utr         <- valueOrFail(tp.utr.map(_.trim).filter(_.nonEmpty), "CIS taxpayer utr was empty/missing from /cis/taxpayer")
+      taxpayer    <- cisConnector.getCisTaxpayer()
+      utr         <- valueOrFail(
+                       taxpayer.utr.map(_.trim).filter(_.nonEmpty),
+                       "CIS taxpayer utr was empty/missing from /cis/taxpayer"
+                     )
       aoReference <- valueOrFail(
-                       tp.aoReference.map(_.trim).filter(_.nonEmpty),
+                       taxpayer.aoReference.map(_.trim).filter(_.nonEmpty),
                        "CIS taxpayer AOref was empty/missing from /cis/taxpayer"
                      )
 
-      inactivityB <- valueOrFail(readInactivityBool(ua), "InactivityRequest was not answered")
-      periodYm    <- valueOrFail(readMonthYearYm(ua), "Month/Year was not answered")
+      inactivityBoolean <- valueOrFail(readInactivityRequest(ua), "InactivityRequest was not answered")
+      monthYear         <- valueOrFail(readMonthYear(ua), "Month/Year was not answered")
 
       dto = ChrisSubmissionRequest.from(
               utr = utr,
               aoReference = aoReference,
               informationCorrect = true,
-              inactivity = inactivityB,
-              period = periodYm
+              inactivity = inactivityBoolean,
+              monthYear = monthYear
             )
 
       _ = logger.info(s"[submitNilMonthlyReturn] payload=${Json.stringify(Json.toJson(dto))}")
@@ -97,16 +100,16 @@ class MonthlyReturnService @Inject() (
 
   private def valueOrFail[A](opt: Option[A], err: => String): Future[A] =
     opt match {
-      case Some(v) => Future.successful(v)
-      case None    => Future.failed(new RuntimeException(err))
+      case Some(value) => Future.successful(value)
+      case None        => Future.failed(new RuntimeException(err))
     }
 
-  private def readInactivityBool(ua: UserAnswers): Option[Boolean] =
+  private def readInactivityRequest(ua: UserAnswers): Option[Boolean] =
     ua.get(pages.monthlyreturns.InactivityRequestPage).map {
       case InactivityRequest.Option1 => true
       case InactivityRequest.Option2 => false
     }
 
-  private def readMonthYearYm(ua: UserAnswers): Option[YearMonth] =
+  private def readMonthYear(ua: UserAnswers): Option[YearMonth] =
     ua.get(pages.monthlyreturns.DateConfirmNilPaymentsPage).map(YearMonth.from)
 }

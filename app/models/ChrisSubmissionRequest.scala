@@ -21,31 +21,31 @@ import play.api.libs.json.{Json, OFormat}
 import java.time.YearMonth
 
 case class ChrisSubmissionRequest(
-                                   utr: String,
-                                   aoReference: String,
-                                   informationCorrect: String,
-                                   inactivity: String,
-                                   monthYear: String
-                                 )
+  utr: String,
+  aoReference: String,
+  informationCorrect: String,
+  inactivity: String,
+  monthYear: String
+)
 
 object ChrisSubmissionRequest {
   implicit val format: OFormat[ChrisSubmissionRequest] = Json.format[ChrisSubmissionRequest]
 
-  private def yesNo(b: Boolean): String   = if (b) "yes" else "no"
-  private def yyMm(ym: YearMonth): String = ym.toString
+  private def yesNo(boolean: Boolean): String                 = if (boolean) "yes" else "no"
+  private def toYearMonthString(yearMonth: YearMonth): String = yearMonth.toString
 
   def from(
-            utr: String,
-            aoReference: String,
-            informationCorrect: Boolean,
-            inactivity: Boolean,
-            period: YearMonth
-          ): ChrisSubmissionRequest =
+    utr: String,
+    aoReference: String,
+    informationCorrect: Boolean,
+    inactivity: Boolean,
+    monthYear: YearMonth
+  ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
       utr = utr,
       aoReference = aoReference,
       informationCorrect = yesNo(informationCorrect),
       inactivity = yesNo(inactivity),
-      monthYear = yyMm(period)
+      monthYear = toYearMonthString(monthYear)
     )
 }

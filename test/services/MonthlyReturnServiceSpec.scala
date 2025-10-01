@@ -17,18 +17,19 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.UserAnswers
-import models.monthlyreturns.{CisTaxpayer, MonthlyReturnDetails, MonthlyReturnResponse}
+import models.{ChrisSubmissionRequest, UserAnswers}
+import models.monthlyreturns.{CisTaxpayer, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.{LocalDate, YearMonth}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
@@ -252,4 +253,149 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       ex.getMessage must include("boom")
     }
   }
+
+  "submitNilMonthlyReturn" should {
+
+    def uaWith(inact: InactivityRequest, yearMonth: YearMonth): UserAnswers = {
+      val emptyUa   = UserAnswers("test-user")
+      val updatedUa = emptyUa.set(InactivityRequestPage, inact).get
+      val date      = LocalDate.of(yearMonth.getYear, yearMonth.getMonthValue, 1)
+      updatedUa.set(DateConfirmNilPaymentsPage, date).get
+    }
+
+    def taxpayerWith(utr: Option[String], aoRef: Option[String]): CisTaxpayer =
+      createTaxpayer().copy(utr = utr, aoReference = aoRef)
+
+    "build DTO correctly and return true on success" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("  1234567890 "), aoRef = Some(" 123/AB456 "))))
+
+      val dtoCaptor: ArgumentCaptor[ChrisSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
+
+      when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
+
+      val yearMonth = YearMonth.of(2025, 3)
+      val ua        = uaWith(InactivityRequest.Option1, yearMonth)
+
+      val result = service.submitNilMonthlyReturn(ua).futureValue
+      result mustBe true
+
+      val dto = dtoCaptor.getValue
+      dto.utr mustBe "1234567890"
+      dto.aoReference mustBe "123/AB456"
+      dto.informationCorrect mustBe "yes"
+      dto.inactivity mustBe "yes"
+      dto.monthYear mustBe yearMonth.toString
+    }
+
+    "map Option2 -> inactivity=false" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
+
+      val dtoCaptor: ArgumentCaptor[ChrisSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
+
+      when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
+
+      val yearMonth = YearMonth.of(2024, 12)
+      val ua        = uaWith(InactivityRequest.Option2, yearMonth)
+
+      val result = service.submitNilMonthlyReturn(ua).futureValue
+      result mustBe true
+      dtoCaptor.getValue.inactivity mustBe "no"
+    }
+
+    "return false and not call submitChris when UTR missing/empty" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = None, aoRef = Some("123/AB456"))))
+
+      val ua = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 1))
+
+      val result = service.submitNilMonthlyReturn(ua).futureValue
+      result mustBe false
+      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "return false and not call submitChris when AO reference missing/empty" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = None)))
+
+      val ua = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 2))
+
+      val result = service.submitNilMonthlyReturn(ua).futureValue
+      result mustBe false
+      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "return false when InactivityRequest was not answered" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
+
+      val uaMissingInactivity = {
+        val emptyUa = UserAnswers("test-user")
+        val date    = LocalDate.of(2025, 6, 1)
+        emptyUa.set(DateConfirmNilPaymentsPage, date).get
+      }
+
+      val result = service.submitNilMonthlyReturn(uaMissingInactivity).futureValue
+      result mustBe false
+      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "return false when Month/Year was not answered" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
+
+      val uaMissingDate = {
+        val emptyUa = UserAnswers("test-user")
+        emptyUa.set(InactivityRequestPage, InactivityRequest.Option1).get
+      }
+
+      val result = service.submitNilMonthlyReturn(uaMissingDate).futureValue
+      result mustBe false
+      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "propagate submitChris=false as false" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
+
+      when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(false))
+
+      val ua = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
+      service.submitNilMonthlyReturn(ua).futureValue mustBe false
+    }
+
+    "recover to false if submitChris throws" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
+
+      when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val ua = uaWith(InactivityRequest.Option2, YearMonth.of(2025, 5))
+      service.submitNilMonthlyReturn(ua).futureValue mustBe false
+    }
+  }
+
 }
