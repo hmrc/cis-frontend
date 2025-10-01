@@ -19,23 +19,30 @@ package controllers.monthlyreturns
 import com.google.inject.Inject
 import config.FrontendAppConfig
 import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView,
   appConfig: FrontendAppConfig
-) extends FrontendBaseController
-    with I18nSupport {
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
@@ -57,10 +64,26 @@ class CheckYourAnswersController @Inject() (
     Ok(view(returnDetailsList, emailList))
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    if (appConfig.stubSendingEnabled)
-      Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
-    else
-      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-  }
+  def onSubmit(): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
+      if (appConfig.stubSendingEnabled) {
+        Future.successful(
+          Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
+        )
+      } else {
+        monthlyReturnService
+          .submitNilMonthlyReturn(request.userAnswers)
+          .map { ok =>
+            if (ok) {
+              Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+            } else {
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            }
+          }
+          .recover { case ex =>
+            logger.error("CHRIS submission failed", ex)
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      }
+    }
 }

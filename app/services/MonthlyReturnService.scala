@@ -19,12 +19,13 @@ package services
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
-import models.UserAnswers
-import models.monthlyreturns.MonthlyReturnResponse
+import models.{ChrisSubmissionRequest, UserAnswers}
+import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
 import pages.monthlyreturns.CisIdPage
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.YearMonth
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -64,4 +65,48 @@ class MonthlyReturnService @Inject() (
     retrieveAllMonthlyReturns(cisId).map { res =>
       res.monthlyReturnList.exists(mr => mr.taxYear == year && mr.taxMonth == month)
     }
+
+  def submitNilMonthlyReturn(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    for {
+      tp          <- cisConnector.getCisTaxpayer()
+      utr         <- valueOrFail(tp.utr.map(_.trim).filter(_.nonEmpty), "CIS taxpayer utr was empty/missing from /cis/taxpayer")
+      aoReference <- valueOrFail(
+                       tp.aoReference.map(_.trim).filter(_.nonEmpty),
+                       "CIS taxpayer AOref was empty/missing from /cis/taxpayer"
+                     )
+
+      inactivityB <- valueOrFail(readInactivityBool(ua), "InactivityRequest was not answered")
+      periodYm    <- valueOrFail(readMonthYearYm(ua), "Month/Year was not answered")
+
+      dto = ChrisSubmissionRequest.from(
+              utr = utr,
+              aoReference = aoReference,
+              informationCorrect = true,
+              inactivity = inactivityB,
+              period = periodYm
+            )
+
+      _ = logger.info(s"[submitNilMonthlyReturn] payload=${Json.stringify(Json.toJson(dto))}")
+
+      ok <- cisConnector.submitChris(dto)
+    } yield ok
+  }.recover { case t =>
+    logger.error("[submitNilMonthlyReturn] building/submitting payload failed", t)
+    false
+  }
+
+  private def valueOrFail[A](opt: Option[A], err: => String): Future[A] =
+    opt match {
+      case Some(v) => Future.successful(v)
+      case None    => Future.failed(new RuntimeException(err))
+    }
+
+  private def readInactivityBool(ua: UserAnswers): Option[Boolean] =
+    ua.get(pages.monthlyreturns.InactivityRequestPage).map {
+      case InactivityRequest.Option1 => true
+      case InactivityRequest.Option2 => false
+    }
+
+  private def readMonthYearYm(ua: UserAnswers): Option[YearMonth] =
+    ua.get(pages.monthlyreturns.DateConfirmNilPaymentsPage).map(YearMonth.from)
 }

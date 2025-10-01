@@ -16,8 +16,12 @@
 
 package connectors
 
+import models.ChrisSubmissionRequest
 import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
+import play.api.Logging
+import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -27,7 +31,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, http: HttpClientV2)(implicit
   ec: ExecutionContext
-) extends HttpReadsInstances {
+) extends HttpReadsInstances
+    with Logging {
 
   private val cisBaseUrl: String = config.baseUrl("construction-industry-scheme") + "/cis"
 
@@ -40,4 +45,38 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
+
+  def submitChris(request: ChrisSubmissionRequest)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    val base   = sys.props.get("cisBaseUrl").orElse(Some(cisBaseUrl)).getOrElse("")
+    val urlStr = s"$base/chris"
+
+    logger.info(s"[FE connector] about to POST $urlStr")
+
+    val body = Json.toJson(request)
+    logger.info(s"[FE connector] payload built ok (len=${body.toString.length})")
+
+    val call = http
+      .post(url"$urlStr")
+      .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
+      .withBody(body)
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+
+    call.transform(
+      {
+        case Right(r) if r.status >= 200 && r.status < 300 =>
+          logger.info(s"[FE connector] POST $urlStr -> ${r.status}")
+          true
+        case Right(r)                                      =>
+          logger.warn(s"[FE connector] POST $urlStr unexpected ${r.status}: ${r.body.take(200)}")
+          throw new RuntimeException(s"Unexpected CHRIS status: ${r.status}")
+        case Left(e)                                       =>
+          logger.warn(s"[FE connector] POST $urlStr upstream error ${e.statusCode}: ${e.message}")
+          throw new RuntimeException(s"CHRIS submission failed: ${e.statusCode} ${e.message}")
+      },
+      { t =>
+        logger.error(s"[FE connector] building/sending POST $urlStr failed", t)
+        t
+      }
+    )
+  }
 }
