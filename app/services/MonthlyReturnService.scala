@@ -20,8 +20,8 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
-import models.monthlyreturns.MonthlyReturnResponse
-import pages.monthlyreturns.CisIdPage
+import models.monthlyreturns.{MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, MonthlyReturnEntityPage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -39,10 +39,8 @@ class MonthlyReturnService @Inject() (
     ua.get(CisIdPage) match {
       case Some(cisId) => Future.successful((cisId, ua))
       case None        =>
-        // temporarily added for testing
         logger.info("[resolveAndStoreCisId] cache-miss: fetching CIS taxpayer from backend")
         cisConnector.getCisTaxpayer().flatMap { tp =>
-          // temporarily added for testing
           logger.info(s"[resolveAndStoreCisId] taxpayer payload:\n${Json.prettyPrint(Json.toJson(tp))}")
           val cisId = tp.uniqueId.trim
           if (cisId.isEmpty) {
@@ -64,4 +62,88 @@ class MonthlyReturnService @Inject() (
     retrieveAllMonthlyReturns(cisId).map { res =>
       res.monthlyReturnList.exists(mr => mr.taxYear == year && mr.taxMonth == month)
     }
+
+  def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    logger.info("[MonthlyReturnService] Starting monthly nil return creation process")
+
+    for {
+      cisId   <- getCisId(userAnswers)
+      year    <- getTaxYear(userAnswers)
+      month   <- getTaxMonth(userAnswers)
+      _       <- failIfDuplicateInSession(userAnswers, cisId, year, month)
+      _       <- callBackendToCreate(cisId, year, month, userAnswers)
+      updated <- mirrorEntityToSession(userAnswers, year, month)
+    } yield updated
+  }
+
+  private def getCisId(ua: UserAnswers): Future[String] =
+    ua.get(CisIdPage) match {
+      case Some(id) => Future.successful(id)
+      case None     => Future.failed(new RuntimeException("CIS ID not found in session data"))
+    }
+
+  private def getTaxYear(ua: UserAnswers): Future[Int] =
+    ua.get(DateConfirmNilPaymentsPage) match {
+      case Some(date) => Future.successful(date.getYear)
+      case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
+    }
+
+  private def getTaxMonth(ua: UserAnswers): Future[Int] =
+    ua.get(DateConfirmNilPaymentsPage) match {
+      case Some(date) => Future.successful(date.getMonthValue)
+      case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
+    }
+
+  private def failIfDuplicateInSession(ua: UserAnswers, cisId: String, year: Int, month: Int): Future[Unit] =
+    ua.get(MonthlyReturnEntityPage) match {
+      case Some(_) =>
+        logger.warn(
+          s"[MonthlyReturnService] Duplicate creation detected for CIS ID: $cisId, Tax Year: $year, Tax Month: $month"
+        )
+        Future.failed(new RuntimeException("Monthly return record already exists in session data"))
+      case None    => Future.successful(())
+    }
+
+  private def callBackendToCreate(cisId: String, year: Int, month: Int, ua: UserAnswers)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] = {
+    val payload = NilMonthlyReturnRequest(
+      instanceId = cisId,
+      taxYear = year,
+      taxMonth = month,
+      decEmpStatusConsidered = ua.get(InactivityRequestPage).map(_.toString),
+      decInformationCorrect = ua.get(DeclarationPage).map(_.toString)
+    )
+    cisConnector.createNilMonthlyReturn(payload)
+  }
+
+  private def mirrorEntityToSession(ua: UserAnswers, year: Int, month: Int): Future[UserAnswers] = {
+    val now    = java.time.LocalDateTime.now()
+    val entity = MonthlyReturnEntity(
+      monthlyReturnId = 0L,
+      schemeId = 0L,
+      taxYear = year,
+      taxMonth = month,
+      taxYearPrevious = None,
+      taxMonthPrevious = None,
+      nilReturnIndicator = Some("Y"),
+      decNilReturnNoPayments = Some("Y"),
+      decInformationCorrect = ua.get(DeclarationPage).map(_.toString),
+      decNoMoreSubPayments = Some("Y"),
+      decAllSubsVerified = Some("Y"),
+      decEmpStatusConsidered = ua.get(InactivityRequestPage).map(_.toString),
+      status = Some("SUBMITTED"),
+      createDate = now,
+      lastUpdate = now,
+      version = 1,
+      lMigrated = None,
+      amendment = None,
+      supersededBy = None
+    )
+
+    ua.set(MonthlyReturnEntityPage, entity) match {
+      case scala.util.Success(updated) => sessionRepository.set(updated).map(_ => updated)
+      case scala.util.Failure(err)     => Future.failed(err)
+    }
+  }
 }

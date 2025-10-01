@@ -16,7 +16,9 @@
 
 package connectors
 
-import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
+import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse, NilMonthlyReturnRequest}
+import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.given
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -40,4 +42,10 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
+
+  def createNilMonthlyReturn(payload: NilMonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns/nil")
+      .withBody(Json.toJson(payload))
+      .execute[Unit]
 }
