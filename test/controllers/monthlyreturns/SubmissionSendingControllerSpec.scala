@@ -37,9 +37,45 @@ class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   "SubmissionSending Controller" - {
 
+    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+
+      val data: JsObject = Json.obj(
+        "dateConfirmNilPayments" -> "2019-09-05",
+        "inactivityRequest"      -> "option1",
+        "confirmEmailAddress"    -> "Submissionsuccessful@test.com",
+        "declaration"            -> Json.arr("confirmed")
+      )
+
+      val ua = UserAnswers("randomId", data)
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .overrides(
+          bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+          bind[SessionRepository].toInstance(mockSessionRepository)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.SubmissionSendingController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+      }
+    }
+
     "must return SEE_OTHER and redirect to the Submission Success page when user answer has email address as Submissionsuccessful@test.com" in {
 
       val data: JsObject = Json.obj(
+        "cisId"                  -> "1",
         "dateConfirmNilPayments" -> "2019-09-05",
         "inactivityRequest"      -> "option1",
         "confirmEmailAddress"    -> "Submissionsuccessful@test.com",
@@ -74,6 +110,7 @@ class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "must return SEE_OTHER and redirect to the Submission Unsuccess page when user answer has email address as Submissionunsuccessful@test.com" in {
 
       val data: JsObject = Json.obj(
+        "cisId"                  -> "1",
         "dateConfirmNilPayments" -> "2019-09-05",
         "inactivityRequest"      -> "option1",
         "confirmEmailAddress"    -> "Submissionunsuccessful@test.com",
@@ -108,6 +145,7 @@ class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "must return SEE_OTHER and redirect to the Submission Awaiting page when user answer has email address as Awaitingconfirmation@test.com" in {
 
       val data: JsObject = Json.obj(
+        "cisId"                  -> "1",
         "dateConfirmNilPayments" -> "2019-09-05",
         "inactivityRequest"      -> "option1",
         "confirmEmailAddress"    -> "Awaitingconfirmation@test.com",
@@ -142,6 +180,7 @@ class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "must return SEE_OTHER and redirect to the Journey Recovery page when user answer has email address other than above 3 emails" in {
 
       val data: JsObject = Json.obj(
+        "cisId"                  -> "1",
         "dateConfirmNilPayments" -> "2019-09-05",
         "inactivityRequest"      -> "option1",
         "confirmEmailAddress"    -> "AnyOther@test.com",

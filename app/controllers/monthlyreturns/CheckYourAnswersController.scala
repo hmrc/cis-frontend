@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import com.google.inject.Inject
 import config.FrontendAppConfig
-import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -31,30 +31,32 @@ class CheckYourAnswersController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView,
   appConfig: FrontendAppConfig
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
 
-    val returnDetailsList = SummaryListViewModel(
-      rows = Seq(
-        ReturnTypeSummary.row,
-        DateConfirmNilPaymentsSummary.row(request.userAnswers),
-        PaymentsToSubcontractorsSummary.row,
-        InactivityRequestSummary.row(request.userAnswers)
-      ).flatten
-    )
+      val returnDetailsList = SummaryListViewModel(
+        rows = Seq(
+          ReturnTypeSummary.row,
+          DateConfirmNilPaymentsSummary.row(request.userAnswers),
+          PaymentsToSubcontractorsSummary.row,
+          InactivityRequestSummary.row(request.userAnswers)
+        ).flatten
+      )
 
-    val emailList = SummaryListViewModel(
-      rows = Seq(
-        ConfirmEmailAddressSummary.row(request.userAnswers)
-      ).flatten
-    )
+      val emailList = SummaryListViewModel(
+        rows = Seq(
+          ConfirmEmailAddressSummary.row(request.userAnswers)
+        ).flatten
+      )
 
-    Ok(view(returnDetailsList, emailList))
+      Ok(view(returnDetailsList, emailList))
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>

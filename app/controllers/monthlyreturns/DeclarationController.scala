@@ -39,6 +39,7 @@ class DeclarationController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: DeclarationFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: DeclarationView
@@ -48,22 +49,23 @@ class DeclarationController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
 
-    val preparedForm = request.userAnswers.get(DeclarationPage) match {
-      case None        => form
-      case Some(value) => form.fill(value.head)
-    }
-
-    val formattedDate = request.userAnswers
-      .get(DateConfirmNilPaymentsPage)
-      .map { date =>
-        implicit val lang: Lang = messagesApi.preferred(request).lang
-        date.format(dateTimeFormat())
+      val preparedForm = request.userAnswers.get(DeclarationPage) match {
+        case None        => form
+        case Some(value) => form.fill(value.head)
       }
-      .getOrElse("")
 
-    Ok(view(preparedForm, mode, formattedDate))
+      val formattedDate = request.userAnswers
+        .get(DateConfirmNilPaymentsPage)
+        .map { date =>
+          implicit val lang: Lang = messagesApi.preferred(request).lang
+          date.format(dateTimeFormat())
+        }
+        .getOrElse("")
+
+      Ok(view(preparedForm, mode, formattedDate))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {

@@ -16,8 +16,6 @@
 
 package controllers.actions
 
-import controllers.routes
-
 import javax.inject.Inject
 import models.requests.DataRequest
 import pages.monthlyreturns.CisIdPage
@@ -33,9 +31,10 @@ class CisIdRequiredActionImpl @Inject() (implicit val executionContext: Executio
       case Some(cisId) =>
         Future.successful(Right(request))
       case None        =>
-        Future.successful(Left(Redirect(routes.JourneyRecoveryController.onPageLoad())))
+        Future.successful(
+          Left(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+        )
     }
-
 }
 
 trait CisIdRequiredAction extends ActionRefiner[DataRequest, DataRequest]

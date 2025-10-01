@@ -33,6 +33,7 @@ class SubmissionSuccessController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionSuccessView,
   clock: Clock
@@ -43,35 +44,36 @@ class SubmissionSuccessController @Inject() (
   private def formatEmployerRef(er: EmployerReference): String =
     s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val email: String = "test@test.com"
-    val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
-    val periodEnd     = LocalDate.of(2018, 3, 5).format(dmyFmt)
-    val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-    val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
-    val submittedDate = ukNow.format(dmyFmt)
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
+      val email: String = "test@test.com"
+      val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
+      val periodEnd     = LocalDate.of(2018, 3, 5).format(dmyFmt)
+      val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+      val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
+      val submittedDate = ukNow.format(dmyFmt)
 
-    val employerRef: String =
-      request.employerReference
-        .map(formatEmployerRef)
-        .getOrElse {
-          val msg = s"SubmissionSuccess: employerReference missing for userId=${request.userId}"
-          logger.error(msg)
-          throw new IllegalStateException(msg)
-        }
-    val reference           = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
-    val contractorName      = "PAL 355 Scheme"
+      val employerRef: String =
+        request.employerReference
+          .map(formatEmployerRef)
+          .getOrElse {
+            val msg = s"SubmissionSuccess: employerReference missing for userId=${request.userId}"
+            logger.error(msg)
+            throw new IllegalStateException(msg)
+          }
+      val reference           = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
+      val contractorName      = "PAL 355 Scheme"
 
-    Ok(
-      view(
-        reference = reference,
-        periodEnd = periodEnd,
-        submittedTime = submittedTime,
-        submittedDate = submittedDate,
-        contractorName = contractorName,
-        empRef = employerRef,
-        email = email
+      Ok(
+        view(
+          reference = reference,
+          periodEnd = periodEnd,
+          submittedTime = submittedTime,
+          submittedDate = submittedDate,
+          contractorName = contractorName,
+          empRef = employerRef,
+          email = email
+        )
       )
-    )
   }
 }

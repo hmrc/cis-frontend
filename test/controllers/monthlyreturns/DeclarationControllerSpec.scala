@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.DeclarationFormProvider
 import models.monthlyreturns.Declaration
-import models.{NormalMode, UserAnswers}
+import models.NormalMode
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -48,7 +48,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, declarationRoute)
@@ -63,9 +63,26 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
+    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, declarationRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+      }
+    }
+
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(DeclarationPage, Set(Declaration.Confirmed)).success.value
+      val userAnswers = userAnswersWithCisId.set(DeclarationPage, Set(Declaration.Confirmed)).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -87,7 +104,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
     "must populate the view correctly on a GET when date is available" in {
 
       val testDate    = LocalDate.of(2024, 4, 5)
-      val userAnswers = UserAnswers(userAnswersId)
+      val userAnswers = userAnswersWithCisId
         .set(DateConfirmNilPaymentsPage, testDate)
         .success
         .value
