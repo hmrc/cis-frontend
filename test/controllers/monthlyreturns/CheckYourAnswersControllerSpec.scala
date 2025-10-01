@@ -22,6 +22,10 @@ import play.api.test.Helpers._
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
+// Service is injected via application builder; no direct import needed after consolidation
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage}
+import models.monthlyreturns.{Declaration, InactivityRequest}
+import java.time.LocalDate
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
@@ -65,9 +69,23 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
       }
     }
 
-    "must redirect to submission sending on POST" in {
+    "must redirect to submission sending on POST when monthly return creation succeeds" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "test-cis-id")
+        .success
+        .value
+        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .success
+        .value
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .success
+        .value
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
@@ -78,6 +96,20 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
           .onPageLoad()
           .url
+      }
+    }
+
+    "must redirect to journey recovery on POST when monthly return creation fails" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }
