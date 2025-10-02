@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.InactivityRequestFormProvider
-import models.{NormalMode, UserAnswers}
+import models.NormalMode
 import models.monthlyreturns.InactivityRequest
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
@@ -49,7 +49,7 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, inactivityRequestRoute)
@@ -63,10 +63,27 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
+    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, inactivityRequestRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+      }
+    }
+
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
       val userAnswers =
-        UserAnswers(userAnswersId).set(InactivityRequestPage, InactivityRequest.values.head).success.value
+        userAnswersWithCisId.set(InactivityRequestPage, InactivityRequest.values.head).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 

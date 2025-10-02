@@ -30,13 +30,15 @@ class SubmissionUnsuccessfulController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionUnsuccessfulView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
+      Ok(view())
   }
 
   def onSubmit: Action[AnyContent] =
