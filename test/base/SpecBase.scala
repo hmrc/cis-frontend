@@ -29,7 +29,7 @@ import play.api.i18n.{Messages, MessagesApi}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 
 trait SpecBase
     extends AnyFreeSpec
@@ -46,11 +46,11 @@ trait SpecBase
 
   def emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
 
-  val data = Json.obj(
+  val cisIdData = Json.obj(
     "cisId" -> "1"
   )
 
-  def userAnswersWithCisId: UserAnswers = UserAnswers(userAnswersId, data)
+  def userAnswersWithCisId: UserAnswers = UserAnswers(userAnswersId, cisIdData)
 
   def messages(app: Application): Messages = app.injector.instanceOf[MessagesApi].preferred(FakeRequest())
 
