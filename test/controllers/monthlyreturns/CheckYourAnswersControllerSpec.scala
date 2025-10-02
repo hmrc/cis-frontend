@@ -22,12 +22,17 @@ import play.api.test.Helpers._
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
-// Service is injected via application builder; no direct import needed after consolidation
+import services.MonthlyReturnService
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage}
 import models.monthlyreturns.{Declaration, InactivityRequest}
 import java.time.LocalDate
+import scala.concurrent.Future
+import com.google.inject.AbstractModule
 
-class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
+class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
 
   "Check Your Answers Controller" - {
 
@@ -85,7 +90,18 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
         .success
         .value
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+      val mockService = mock[MonthlyReturnService]
+      when(mockService.createNilMonthlyReturn(any())(any()))
+        .thenReturn(Future.successful(userAnswers))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          new AbstractModule {
+            override def configure(): Unit =
+              bind(classOf[MonthlyReturnService]).toInstance(mockService)
+          }
+        )
+        .build()
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
