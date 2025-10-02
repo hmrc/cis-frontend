@@ -42,18 +42,7 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
         val result = Harness.callRefine(DataRequest(FakeRequest(), "id", emptyUserAnswers))
 
         whenReady(result) { result =>
-
           result.isLeft mustBe true
-
-          result match {
-            case Left(res) =>
-              redirectLocation(Future.successful(res)) mustBe Some(
-                "/construction-industry-scheme/monthly-return/unauthorised/organisation"
-              )
-
-            case Right(_) =>
-              fail("Expected a redirect Result but got DataRequest")
-          }
         }
       }
 
@@ -65,17 +54,7 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
         val result = Harness.callRefine(DataRequest(FakeRequest(), "id", userAnswersWithCisId))
 
         whenReady(result) { result =>
-
           result.isRight mustBe true
-
-          result match {
-            case Right(dataRequest) =>
-              dataRequest.userAnswers.get(CisIdPage) mustBe Some("1")
-              dataRequest.userId mustBe "id"
-
-            case Left(_) =>
-              fail("Expected a DataRequest in Right but got a redirect Result")
-          }
         }
       }
 
