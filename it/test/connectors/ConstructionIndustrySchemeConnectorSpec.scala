@@ -16,7 +16,7 @@
 
 package connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, equalToJson, get, post, stubFor, urlPathEqualTo, urlPathMatching}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
 import models.ChrisSubmissionRequest
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -24,6 +24,8 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
+
+import org.scalatest.EitherValues.*
 
 class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
   with Matchers
@@ -177,57 +179,61 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   "submitChris" should {
 
-    "return true when BE returns 200" in  {
+    "return Right(HttpResponse) when BE returns 200" in  {
       stubFor(
         post(urlPathEqualTo("/cis/chris"))
           .willReturn(aResponse().withStatus(OK))
       )
-      connector.submitChris(payload).futureValue mustBe true
+      val result = connector.submitChris(payload).futureValue
+      result mustBe a[Right[?, ?]]
+      result.value.status mustBe 200
+
     }
 
-    "return true for other 2xx (e.g. 201)" in {
+    "return Right(HttpResponse) for other 2xx (e.g. 201)" in {
       stubFor(
         post(urlPathEqualTo("/cis/chris"))
           .willReturn(aResponse().withStatus(CREATED))
       )
-      connector.submitChris(payload).futureValue mustBe true
-    }
+      val result = connector.submitChris(payload).futureValue
+      result mustBe a[Right[?, ?]]
+      result.value.status mustBe 201    }
 
-    "throw RuntimeException for unexpected non-2xx (e.g. 304)" in {
+    "return Right(HttpResponse) for unexpected non-2xx (e.g. 304)" in {
       stubFor(
         post(urlPathEqualTo("/cis/chris"))
-          .willReturn(aResponse().withStatus(NOT_MODIFIED))
-      )
+          .willReturn(aResponse().withStatus(NOT_MODIFIED).withBody("not modified"))      )
 
-      val ex = intercept[RuntimeException] {
-        connector.submitChris(payload).futureValue
-      }
-      ex.getMessage must include("Unexpected CHRIS status: 304")
+      val result = connector.submitChris(payload).futureValue
+      result mustBe a[Right[?, ?]]
+      val response = result.value
+      response.status mustBe 304
     }
 
-    "throw RuntimeException for 4xx (e.g. 404)" in {
+    "return Left(UpstreamErrorResponse) for 4xx (e.g. 404)" in {
       stubFor(
         post(urlPathEqualTo("/cis/chris"))
           .willReturn(aResponse().withStatus(NOT_FOUND).withBody("""{"message":"not found"}"""))
       )
 
-      val ex = intercept[RuntimeException] {
-        connector.submitChris(payload).futureValue
-      }
-      ex.getMessage must include("CHRIS submission failed: 404")
+      val result = connector.submitChris(payload).futureValue
+      result mustBe a[Left[?, ?]]
+      val response = result.left.value
+      response.statusCode mustBe 404
+      response.message.toLowerCase must include ("not found")
     }
 
-    "throw RuntimeException for upstream 5xx (e.g. 500)" in {
+    "return Left(UpstreamErrorResponse) for 5xx (e.g. 500)" in {
       stubFor(
         post(urlPathEqualTo("/cis/chris"))
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
       )
 
-      val ex = intercept[RuntimeException] {
-        connector.submitChris(payload).futureValue
-      }
-      ex.getMessage must include ("CHRIS submission failed: 500")
+      val result = connector.submitChris(payload).futureValue
+      result mustBe a[Left[?, ?]]
+      val response = result.left.value
+      response.statusCode mustBe 500
+      response.message.toLowerCase must include ("boom")
     }
-
   }
 }

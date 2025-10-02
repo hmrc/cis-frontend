@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.UserAnswers
+import models.{ChrisResult, UserAnswers}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
@@ -76,7 +76,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
     "must redirect to submission sending on POST" in {
       val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
       when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
-        .thenReturn(Future.successful(true))
+        .thenReturn(scala.concurrent.Future.successful(ChrisResult.Submitted))
 
       val application =
         applicationBuilder(userAnswers = Some(emptyUserAnswers))
@@ -107,7 +107,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-        val result = route(application, request).value
+        val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
@@ -118,8 +118,6 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
     "must redirect to Journey Recovery for POST if no existing data is found" in {
       val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
-      when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
-        .thenReturn(Future.successful(true))
 
       val application =
         applicationBuilder(userAnswers = None)
@@ -128,7 +126,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-        val result = route(application, request).value
+        val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url

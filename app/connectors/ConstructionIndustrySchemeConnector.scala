@@ -46,30 +46,12 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
 
-  def submitChris(request: ChrisSubmissionRequest)(implicit hc: HeaderCarrier): Future[Boolean] =
+  def submitChris(
+    request: ChrisSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
     http
       .post(url"$cisBaseUrl/chris")
       .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
       .withBody(Json.toJson(request))
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
-      .map {
-        case Right(response) if response.status / 100 == 2 =>
-          true
-
-        case Right(response) =>
-          logger.warn(s"[submitChris] Unexpected non-2xx status=${response.status}")
-          throw new RuntimeException(s"Unexpected CHRIS status: ${response.status}")
-
-        case Left(errorResponse) =>
-          if (errorResponse.statusCode / 100 == 5) {
-            logger.error(
-              s"[submitChris] Upstream 5xx status=${errorResponse.statusCode} message=${errorResponse.message}"
-            )
-          } else {
-            logger.warn(
-              s"[submitChris] Upstream 4xx status=${errorResponse.statusCode} message=${errorResponse.message}"
-            )
-          }
-          throw new RuntimeException(s"CHRIS submission failed: ${errorResponse.statusCode} ${errorResponse.message}")
-      }
 }

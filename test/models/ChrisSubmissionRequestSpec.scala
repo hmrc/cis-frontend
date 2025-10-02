@@ -25,8 +25,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
 
   "ChrisSubmissionRequest.from" should {
     "map booleans to 'yes'/'no' and YearMonth to ISO yyyy-MM" in {
-      val yearMonth  = YearMonth.of(2025, 3)
-      val dto = ChrisSubmissionRequest.from(
+      val yearMonth = YearMonth.of(2025, 3)
+      val dto       = ChrisSubmissionRequest.from(
         utr = "1234567890",
         aoReference = "123/AB456",
         informationCorrect = true,
@@ -52,9 +52,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         monthYear = "2025-03"
       )
 
-      val json = Json.toJson(dto)
-      val expected = Json.parse(
-        """{
+      val json     = Json.toJson(dto)
+      val expected = Json.parse("""{
           |  "utr": "1234567890",
           |  "aoReference": "123/AB456",
           |  "informationCorrect": "yes",
@@ -66,8 +65,7 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
     }
 
     "read from JSON into the model" in {
-      val json = Json.parse(
-        """{
+      val json = Json.parse("""{
           |  "utr": "1234567890",
           |  "aoReference": "123/AB456",
           |  "informationCorrect": "yes",

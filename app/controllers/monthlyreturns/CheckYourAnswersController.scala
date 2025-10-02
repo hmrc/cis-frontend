@@ -24,6 +24,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import models.ChrisResult.*
 import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
@@ -73,15 +74,16 @@ class CheckYourAnswersController @Inject() (
       } else {
         monthlyReturnService
           .submitNilMonthlyReturn(request.userAnswers)
-          .map { ok =>
-            if (ok) {
+          .map {
+            case Submitted            =>
               Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-            } else {
+            case Rejected(_, _)       =>
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-            }
+            case UpstreamFailed(_, _) =>
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           }
           .recover { case ex =>
-            logger.error("CHRIS submission failed", ex)
+            logger.error("[onSubmit] Unexpected failure submitting Nil Monthly Return", ex)
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           }
       }
