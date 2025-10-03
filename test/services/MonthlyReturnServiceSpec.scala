@@ -313,19 +313,34 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       dtoCaptor.getValue.inactivity mustBe "no"
     }
 
-    "returns Rejected on non-2xx (e.g. 400)" in {
+    "returns Rejected on non-2xx (e.g. 304)" in {
       val (service, connector, _) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
 
       when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Right(HttpResponse(400, "bad request"))))
+        .thenReturn(Future.successful(Right(HttpResponse(304, "not modified"))))
 
       val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
       val result = service.submitNilMonthlyReturn(ua).futureValue
 
-      result mustBe Rejected(400, "bad request")
+      result mustBe Rejected(304, "not modified")
+    }
+
+    "returns Rejected on 4xx (e.g. 404)" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
+
+      when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Left(UpstreamErrorResponse("not found", 404))))
+
+      val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
+      val result = service.submitNilMonthlyReturn(ua).futureValue
+
+      result mustBe UpstreamFailed(404, "not found")
     }
 
     "returns UpstreamFailed when connector yields UpstreamErrorResponse (e.g. 502)" in {

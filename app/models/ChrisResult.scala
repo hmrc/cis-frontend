@@ -18,7 +18,7 @@ package models
 
 sealed trait ChrisResult
 object ChrisResult {
-  case object Submitted                                         extends ChrisResult
-  final case class Rejected(status: Int, body: String)          extends ChrisResult
+  case object Submitted extends ChrisResult
+  final case class Rejected(status: Int, body: String) extends ChrisResult
   final case class UpstreamFailed(status: Int, message: String) extends ChrisResult
 }

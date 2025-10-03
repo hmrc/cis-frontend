@@ -25,16 +25,16 @@ class ChrisResultSpec extends AnyFreeSpec with Matchers {
     "keeps status and body" in {
       val a = ChrisResult.Rejected(400, "bad")
       a.status mustBe 400
-      a.body   mustBe "bad"
+      a.body mustBe "bad"
     }
   }
 
   "UpstreamFailed" - {
     "keeps status and message; equals by value" in {
       val a = ChrisResult.UpstreamFailed(502, "boom")
-      a.status  mustBe 502
+      a.status mustBe 502
       a.message mustBe "boom"
     }
   }
-  
+
 }

@@ -90,6 +90,23 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
       }
     }
 
+    "must redirect to stub when stub enabled and service not hit" in {
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .configure("features.stub-sending-enabled" -> true)
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual stub.controllers.monthlyreturns.routes.StubSubmissionSendingController
+          .onPageLoad()
+          .url
+      }
+    }
+
     "must redirect to submission sending on POST" in {
       val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
       when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
@@ -109,6 +126,44 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
           .onPageLoad()
           .url
+      }
+    }
+
+    "must redirect to Journey Recovery when service returns Rejected" in {
+      val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+      when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
+        .thenReturn(scala.concurrent.Future.successful(ChrisResult.Rejected(NOT_MODIFIED, "Not modified")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(bind[MonthlyReturnService].toInstance(mockService))
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery when service returns UpstreamFailed" in {
+      val mockService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+      when(mockService.submitNilMonthlyReturn(any[UserAnswers])(any[HeaderCarrier]()))
+        .thenReturn(scala.concurrent.Future.successful(ChrisResult.UpstreamFailed(INTERNAL_SERVER_ERROR, "boom")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(bind[MonthlyReturnService].toInstance(mockService))
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
