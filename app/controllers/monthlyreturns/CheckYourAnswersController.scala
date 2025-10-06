@@ -27,6 +27,8 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.Logging
+import services.guard.DuplicateCreationCheck.{DuplicateFound, NoDuplicate}
+import services.guard.DuplicateCreationGuard
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +41,8 @@ class CheckYourAnswersController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView,
   appConfig: FrontendAppConfig,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  duplicateCreationGuard: DuplicateCreationGuard 
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -70,22 +73,27 @@ class CheckYourAnswersController @Inject() (
 
     logger.info("[CheckYourAnswersController] Starting monthly nil return creation process")
 
-    monthlyReturnService
-      .createNilMonthlyReturn(request.userAnswers)
-      .map { _ =>
-        logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
-
-        if (appConfig.stubSendingEnabled)
-          Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
-        else
-          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-      }
-      .recover { case exception =>
-        logger.error(
-          s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
-          exception
-        )
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-      }
+    duplicateCreationGuard.check.flatMap {
+      case DuplicateFound =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      case NoDuplicate =>
+        monthlyReturnService
+          .createNilMonthlyReturn(request.userAnswers)
+              .map { _ =>
+                logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
+      
+                if (appConfig.stubSendingEnabled)
+                  Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
+                else
+                  Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+              }
+              .recover { case exception =>
+                logger.error(
+                  s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
+                  exception
+                )
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
+    }
   }
 }
