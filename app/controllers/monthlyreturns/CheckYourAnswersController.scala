@@ -25,6 +25,7 @@ import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateC
 import views.html.monthlyreturns.CheckYourAnswersView
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.Logging
 
 import javax.inject.Inject
@@ -65,7 +66,7 @@ class CheckYourAnswersController @Inject() (
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
     logger.info("[CheckYourAnswersController] Starting monthly nil return creation process")
 
