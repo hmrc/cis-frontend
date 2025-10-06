@@ -42,7 +42,7 @@ class CheckYourAnswersController @Inject() (
   view: CheckYourAnswersView,
   appConfig: FrontendAppConfig,
   monthlyReturnService: MonthlyReturnService,
-  duplicateCreationGuard: DuplicateCreationGuard 
+  duplicateCreationGuard: DuplicateCreationGuard
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -76,24 +76,24 @@ class CheckYourAnswersController @Inject() (
     duplicateCreationGuard.check.flatMap {
       case DuplicateFound =>
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      case NoDuplicate =>
+      case NoDuplicate    =>
         monthlyReturnService
           .createNilMonthlyReturn(request.userAnswers)
-              .map { _ =>
-                logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
-      
-                if (appConfig.stubSendingEnabled)
-                  Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
-                else
-                  Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-              }
-              .recover { case exception =>
-                logger.error(
-                  s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
-                  exception
-                )
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              }
+          .map { _ =>
+            logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
+
+            if (appConfig.stubSendingEnabled)
+              Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
+            else
+              Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+          }
+          .recover { case exception =>
+            logger.error(
+              s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
+              exception
+            )
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
     }
   }
 }
