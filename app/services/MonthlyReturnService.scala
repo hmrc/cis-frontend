@@ -20,7 +20,7 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
-import models.monthlyreturns.{MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
+import models.monthlyreturns.{MonthlyReturn, MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, MonthlyReturnEntityPage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
@@ -67,12 +67,12 @@ class MonthlyReturnService @Inject() (
     logger.info("[MonthlyReturnService] Starting monthly nil return creation process")
 
     for {
-      cisId   <- getCisId(userAnswers)
-      year    <- getTaxYear(userAnswers)
-      month   <- getTaxMonth(userAnswers)
-      _       <- failIfDuplicateInSession(userAnswers, cisId, year, month)
-      _       <- callBackendToCreate(cisId, year, month, userAnswers)
-      updated <- mirrorEntityToSession(userAnswers, year, month)
+      cisId         <- getCisId(userAnswers)
+      year          <- getTaxYear(userAnswers)
+      month         <- getTaxMonth(userAnswers)
+      _             <- failIfDuplicateInSession(userAnswers, cisId, year, month)
+      monthlyReturn <- callBackendToCreate(cisId, year, month, userAnswers)
+      updated       <- mirrorEntityToSession(userAnswers, monthlyReturn)
     } yield updated
   }
 
@@ -106,7 +106,7 @@ class MonthlyReturnService @Inject() (
 
   private def callBackendToCreate(cisId: String, year: Int, month: Int, ua: UserAnswers)(implicit
     hc: HeaderCarrier
-  ): Future[Unit] = {
+  ): Future[MonthlyReturn] = {
     val payload = NilMonthlyReturnRequest(
       instanceId = cisId,
       taxYear = year,
@@ -117,28 +117,28 @@ class MonthlyReturnService @Inject() (
     cisConnector.createNilMonthlyReturn(payload)
   }
 
-  private def mirrorEntityToSession(ua: UserAnswers, year: Int, month: Int): Future[UserAnswers] = {
+  private def mirrorEntityToSession(ua: UserAnswers, monthlyReturn: MonthlyReturn): Future[UserAnswers] = {
     val now    = java.time.LocalDateTime.now()
     val entity = MonthlyReturnEntity(
-      monthlyReturnId = 0L,
-      schemeId = 0L,
-      taxYear = year,
-      taxMonth = month,
+      monthlyReturnId = monthlyReturn.monthlyReturnId,
+      schemeId = 0L, // Not provided by backend
+      taxYear = monthlyReturn.taxYear,
+      taxMonth = monthlyReturn.taxMonth,
       taxYearPrevious = None,
       taxMonthPrevious = None,
-      nilReturnIndicator = Some("Y"),
-      decNilReturnNoPayments = Some("Y"),
-      decInformationCorrect = ua.get(DeclarationPage).map(_.toString),
-      decNoMoreSubPayments = Some("Y"),
-      decAllSubsVerified = Some("Y"),
-      decEmpStatusConsidered = ua.get(InactivityRequestPage).map(_.toString),
-      status = Some("SUBMITTED"),
+      nilReturnIndicator = monthlyReturn.nilReturnIndicator,
+      decNilReturnNoPayments = monthlyReturn.decNilReturnNoPayments,
+      decInformationCorrect = monthlyReturn.decInformationCorrect,
+      decNoMoreSubPayments = monthlyReturn.decNoMoreSubPayments,
+      decAllSubsVerified = monthlyReturn.decAllSubsVerified,
+      decEmpStatusConsidered = monthlyReturn.decEmpStatusConsidered,
+      status = monthlyReturn.status,
       createDate = now,
-      lastUpdate = now,
-      version = 1,
+      lastUpdate = monthlyReturn.lastUpdate.getOrElse(now),
+      version = 1, // Not provided by backend
       lMigrated = None,
-      amendment = None,
-      supersededBy = None
+      amendment = monthlyReturn.amendment,
+      supersededBy = monthlyReturn.supersededBy
     )
 
     ua.set(MonthlyReturnEntityPage, entity) match {
