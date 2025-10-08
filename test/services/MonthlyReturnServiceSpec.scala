@@ -18,14 +18,14 @@ package services
 
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
-import models.monthlyreturns.{CisTaxpayer, MonthlyReturnDetails, MonthlyReturnResponse}
+import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturn, MonthlyReturnDetails, MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, MonthlyReturnEntityPage}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -250,6 +250,207 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         service.isDuplicate("CIS-123", year = 2024, month = 5).futureValue
       }
       ex.getMessage must include("boom")
+    }
+  }
+
+  "createNilMonthlyReturn" should {
+
+    "successfully create nil monthly return and mirror to session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+      val testDate = java.time.LocalDate.of(taxYear, taxMonth, 15)
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, cisId)
+        .get
+        .set(DateConfirmNilPaymentsPage, testDate)
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+
+      val monthlyReturnFromBackend = MonthlyReturn(
+        monthlyReturnId = 12345L,
+        taxYear = taxYear,
+        taxMonth = taxMonth,
+        nilReturnIndicator = Some("Y"),
+        decEmpStatusConsidered = Some("Y"),
+        decAllSubsVerified = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        decNoMoreSubPayments = Some("Y"),
+        decNilReturnNoPayments = Some("Y"),
+        status = Some("STARTED"),
+        lastUpdate = Some(java.time.LocalDateTime.now()),
+        amendment = Some("N"),
+        supersededBy = None
+      )
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(monthlyReturnFromBackend))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.createNilMonthlyReturn(userAnswers).futureValue
+
+      val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
+        ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(requestCaptor.capture())(any[HeaderCarrier])
+
+      val capturedRequest = requestCaptor.getValue
+      capturedRequest.instanceId mustBe cisId
+      capturedRequest.taxYear mustBe taxYear
+      capturedRequest.taxMonth mustBe taxMonth
+      capturedRequest.decEmpStatusConsidered mustBe Some("option1")
+      capturedRequest.decInformationCorrect mustBe Some("Set(confirmed)")
+
+      val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(sessionCaptor.capture())
+
+      val updatedUserAnswers = sessionCaptor.getValue
+      val entity             = updatedUserAnswers.get(MonthlyReturnEntityPage)
+      entity mustBe defined
+      entity.get.monthlyReturnId mustBe 12345L
+      entity.get.taxYear mustBe taxYear
+      entity.get.taxMonth mustBe taxMonth
+      entity.get.status mustBe Some("STARTED")
+    }
+
+    "fail when CIS ID is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("CIS ID not found in session data")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when date is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Date confirm nil payments not found in session data")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when duplicate monthly return already exists in session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val existingEntity = MonthlyReturnEntity(
+        monthlyReturnId = 999L,
+        schemeId = 0L,
+        taxYear = 2024,
+        taxMonth = 10,
+        taxYearPrevious = None,
+        taxMonthPrevious = None,
+        nilReturnIndicator = Some("Y"),
+        decNilReturnNoPayments = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        decNoMoreSubPayments = Some("Y"),
+        decAllSubsVerified = Some("Y"),
+        decEmpStatusConsidered = Some("Y"),
+        status = Some("STARTED"),
+        createDate = java.time.LocalDateTime.now(),
+        lastUpdate = java.time.LocalDateTime.now(),
+        version = 1,
+        lMigrated = None,
+        amendment = None,
+        supersededBy = None
+      )
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(MonthlyReturnEntityPage, existingEntity)
+        .get
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Monthly return record already exists in session data")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "propagate failures from connector" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Backend error")))
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Backend error")
+
+      verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "propagate failures from session repository" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+
+      val monthlyReturnFromBackend = MonthlyReturn(
+        monthlyReturnId = 12345L,
+        taxYear = 2024,
+        taxMonth = 10,
+        nilReturnIndicator = Some("Y"),
+        decEmpStatusConsidered = Some("Y"),
+        decAllSubsVerified = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        decNoMoreSubPayments = Some("Y"),
+        decNilReturnNoPayments = Some("Y"),
+        status = Some("STARTED"),
+        lastUpdate = Some(java.time.LocalDateTime.now()),
+        amendment = Some("N"),
+        supersededBy = None
+      )
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(monthlyReturnFromBackend))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.failed(new RuntimeException("Session error")))
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Session error")
+
+      verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
+      verify(sessionRepo).set(any[UserAnswers])
     }
   }
 }
