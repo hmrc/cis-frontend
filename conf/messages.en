@@ -69,9 +69,9 @@ monthlyreturns.unauthorised.individual.heading = Sorry, you are unable to use th
 monthlyreturns.unauthorised.individual.p1 = You are signed in with an individual account. You need an organisation account to use this service.
 monthlyreturns.unauthorised.individual.guidance.link = Find out more about who can use this service
 
-monthlyreturns.unauthorised.agent.title = Sorry, you’re unable to use this service
-monthlyreturns.unauthorised.agent.heading = Sorry, you’re unable to use this service
-monthlyreturns.unauthorised.agent.p1 = You’ve signed in an agent account. Only users with an organisation account can register to use this service.
+monthlyreturns.unauthorised.agent.title = Sorry, you are unable to use this service
+monthlyreturns.unauthorised.agent.heading = Sorry, you are unable to use this service
+monthlyreturns.unauthorised.agent.p1 = You are signed in with an agent account. You need an organisation account to use this service.
 monthlyreturns.unauthorised.agent.guidance.link = Find out more about who can use this service
 
 monthlyreturns.dateConfirmNilPayments.title = Confirm nil return payments to subcontractors this month
