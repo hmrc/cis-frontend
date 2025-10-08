@@ -21,8 +21,6 @@
   layout: templates.Layout,
   heading: H1,
   paragraph: Paragraph,
-  paragraphWithLink: ParagraphWithLink,
-  link: Link
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
@@ -31,7 +29,6 @@
   pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.individual.title")),
   showSignOut = false
 ) {
-    @heading(messages("monthlyreturns.unauthorised.individual.heading"))
+    @heading(messages("monthlyreturns.unauthorised.individual.heading"), classes = "govuk-heading-xl")
     @paragraph(messages("monthlyreturns.unauthorised.individual.p1"), extraClasses = "govuk-!-margin-bottom-5")
-    @link("monthlyreturns.unauthorised.individual.guidance.link", appConfig.govUkCISGuidanceUrl)
 }
