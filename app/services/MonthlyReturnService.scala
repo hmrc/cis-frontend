@@ -20,8 +20,8 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
-import models.monthlyreturns.MonthlyReturnResponse
-import pages.monthlyreturns.CisIdPage
+import models.monthlyreturns.{MonthlyReturn, MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, MonthlyReturnEntityPage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -39,10 +39,8 @@ class MonthlyReturnService @Inject() (
     ua.get(CisIdPage) match {
       case Some(cisId) => Future.successful((cisId, ua))
       case None        =>
-        // temporarily added for testing
         logger.info("[resolveAndStoreCisId] cache-miss: fetching CIS taxpayer from backend")
         cisConnector.getCisTaxpayer().flatMap { tp =>
-          // temporarily added for testing
           logger.info(s"[resolveAndStoreCisId] taxpayer payload:\n${Json.prettyPrint(Json.toJson(tp))}")
           val cisId = tp.uniqueId.trim
           if (cisId.isEmpty) {
@@ -64,4 +62,77 @@ class MonthlyReturnService @Inject() (
     retrieveAllMonthlyReturns(cisId).map { res =>
       res.monthlyReturnList.exists(mr => mr.taxYear == year && mr.taxMonth == month)
     }
+
+  def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    logger.info("[MonthlyReturnService] Starting monthly nil return creation process")
+
+    for {
+      cisId         <- getCisId(userAnswers)
+      year          <- getTaxYear(userAnswers)
+      month         <- getTaxMonth(userAnswers)
+      monthlyReturn <- callBackendToCreate(cisId, year, month, userAnswers)
+      updated       <- mirrorEntityToSession(userAnswers, monthlyReturn)
+    } yield updated
+  }
+
+  private def getCisId(ua: UserAnswers): Future[String] =
+    ua.get(CisIdPage) match {
+      case Some(id) => Future.successful(id)
+      case None     => Future.failed(new RuntimeException("CIS ID not found in session data"))
+    }
+
+  private def getTaxYear(ua: UserAnswers): Future[Int] =
+    ua.get(DateConfirmNilPaymentsPage) match {
+      case Some(date) => Future.successful(date.getYear)
+      case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
+    }
+
+  private def getTaxMonth(ua: UserAnswers): Future[Int] =
+    ua.get(DateConfirmNilPaymentsPage) match {
+      case Some(date) => Future.successful(date.getMonthValue)
+      case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
+    }
+
+  private def callBackendToCreate(cisId: String, year: Int, month: Int, ua: UserAnswers)(implicit
+    hc: HeaderCarrier
+  ): Future[MonthlyReturn] = {
+    val payload = NilMonthlyReturnRequest(
+      instanceId = cisId,
+      taxYear = year,
+      taxMonth = month,
+      decEmpStatusConsidered = None,
+      decInformationCorrect = ua.get(DeclarationPage).map(_.toString)
+    )
+    cisConnector.createNilMonthlyReturn(payload)
+  }
+
+  private def mirrorEntityToSession(ua: UserAnswers, monthlyReturn: MonthlyReturn): Future[UserAnswers] = {
+    val now    = java.time.LocalDateTime.now()
+    val entity = MonthlyReturnEntity(
+      monthlyReturnId = monthlyReturn.monthlyReturnId,
+      schemeId = 0L, // Not provided by backend
+      taxYear = monthlyReturn.taxYear,
+      taxMonth = monthlyReturn.taxMonth,
+      taxYearPrevious = None,
+      taxMonthPrevious = None,
+      nilReturnIndicator = monthlyReturn.nilReturnIndicator.getOrElse("Y"),
+      decNilReturnNoPayments = monthlyReturn.decNilReturnNoPayments.getOrElse("Y"),
+      decInformationCorrect = monthlyReturn.decInformationCorrect.getOrElse("Y"),
+      decNoMoreSubPayments = monthlyReturn.decNoMoreSubPayments.getOrElse("Y"),
+      decAllSubsVerified = monthlyReturn.decAllSubsVerified.getOrElse("Y"),
+      decEmpStatusConsidered = monthlyReturn.decEmpStatusConsidered.getOrElse("N"),
+      status = monthlyReturn.status.getOrElse("STARTED"),
+      createDate = now,
+      lastUpdate = monthlyReturn.lastUpdate.getOrElse(now),
+      version = 1, // Not provided by backend
+      lMigrated = None,
+      amendment = monthlyReturn.amendment.getOrElse("N"),
+      supersededBy = monthlyReturn.supersededBy
+    )
+
+    ua.set(MonthlyReturnEntityPage, entity) match {
+      case scala.util.Success(updated) => sessionRepository.set(updated).map(_ => updated)
+      case scala.util.Failure(err)     => Future.failed(err)
+    }
+  }
 }

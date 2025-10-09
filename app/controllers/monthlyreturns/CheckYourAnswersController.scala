@@ -15,8 +15,6 @@
  */
 
 package controllers.monthlyreturns
-
-import com.google.inject.Inject
 import config.FrontendAppConfig
 import controllers.actions.*
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -25,6 +23,13 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import play.api.Logging
+
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 
 class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
@@ -34,9 +39,12 @@ class CheckYourAnswersController @Inject() (
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView,
-  appConfig: FrontendAppConfig
-) extends FrontendBaseController
-    with I18nSupport {
+  appConfig: FrontendAppConfig,
+  monthlyReturnService: MonthlyReturnService
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
@@ -59,10 +67,27 @@ class CheckYourAnswersController @Inject() (
       Ok(view(returnDetailsList, emailList))
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    if (appConfig.stubSendingEnabled)
-      Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
-    else
-      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    logger.info("[CheckYourAnswersController] Starting monthly nil return creation process")
+
+    monthlyReturnService
+      .createNilMonthlyReturn(request.userAnswers)
+      .map { _ =>
+        logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
+
+        if (appConfig.stubSendingEnabled)
+          Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
+        else
+          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+      }
+      .recover { case exception =>
+        logger.error(
+          s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
+          exception
+        )
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
   }
 }
