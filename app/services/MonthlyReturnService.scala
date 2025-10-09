@@ -100,7 +100,7 @@ class MonthlyReturnService @Inject() (
       instanceId = cisId,
       taxYear = year,
       taxMonth = month,
-      decEmpStatusConsidered = ua.get(InactivityRequestPage).map(_.toString),
+      decEmpStatusConsidered = None,
       decInformationCorrect = ua.get(DeclarationPage).map(_.toString)
     )
     cisConnector.createNilMonthlyReturn(payload)
@@ -115,18 +115,18 @@ class MonthlyReturnService @Inject() (
       taxMonth = monthlyReturn.taxMonth,
       taxYearPrevious = None,
       taxMonthPrevious = None,
-      nilReturnIndicator = monthlyReturn.nilReturnIndicator,
-      decNilReturnNoPayments = monthlyReturn.decNilReturnNoPayments,
-      decInformationCorrect = monthlyReturn.decInformationCorrect,
-      decNoMoreSubPayments = monthlyReturn.decNoMoreSubPayments,
-      decAllSubsVerified = monthlyReturn.decAllSubsVerified,
-      decEmpStatusConsidered = monthlyReturn.decEmpStatusConsidered,
-      status = monthlyReturn.status,
+      nilReturnIndicator = monthlyReturn.nilReturnIndicator.getOrElse("Y"),
+      decNilReturnNoPayments = monthlyReturn.decNilReturnNoPayments.getOrElse("Y"),
+      decInformationCorrect = monthlyReturn.decInformationCorrect.getOrElse("Y"),
+      decNoMoreSubPayments = monthlyReturn.decNoMoreSubPayments.getOrElse("Y"),
+      decAllSubsVerified = monthlyReturn.decAllSubsVerified.getOrElse("Y"),
+      decEmpStatusConsidered = monthlyReturn.decEmpStatusConsidered.getOrElse("N"),
+      status = monthlyReturn.status.getOrElse("STARTED"),
       createDate = now,
       lastUpdate = monthlyReturn.lastUpdate.getOrElse(now),
       version = 1, // Not provided by backend
       lMigrated = None,
-      amendment = monthlyReturn.amendment,
+      amendment = monthlyReturn.amendment.getOrElse("N"),
       supersededBy = monthlyReturn.supersededBy
     )
 

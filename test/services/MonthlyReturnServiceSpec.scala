@@ -304,7 +304,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       capturedRequest.instanceId mustBe cisId
       capturedRequest.taxYear mustBe taxYear
       capturedRequest.taxMonth mustBe taxMonth
-      capturedRequest.decEmpStatusConsidered mustBe Some("option1")
+      capturedRequest.decEmpStatusConsidered mustBe None
       capturedRequest.decInformationCorrect mustBe Some("Set(confirmed)")
 
       val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -316,7 +316,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       entity.get.monthlyReturnId mustBe 12345L
       entity.get.taxYear mustBe taxYear
       entity.get.taxMonth mustBe taxMonth
-      entity.get.status mustBe Some("STARTED")
+      entity.get.status mustBe "STARTED"
     }
 
     "fail when CIS ID is missing from session" in {
