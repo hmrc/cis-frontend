@@ -351,48 +351,6 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verifyNoInteractions(sessionRepo)
     }
 
-    "fail when duplicate monthly return already exists in session" in {
-      val (service, connector, sessionRepo) = newService()
-
-      val existingEntity = MonthlyReturnEntity(
-        monthlyReturnId = 999L,
-        schemeId = 0L,
-        taxYear = 2024,
-        taxMonth = 10,
-        taxYearPrevious = None,
-        taxMonthPrevious = None,
-        nilReturnIndicator = Some("Y"),
-        decNilReturnNoPayments = Some("Y"),
-        decInformationCorrect = Some("Y"),
-        decNoMoreSubPayments = Some("Y"),
-        decAllSubsVerified = Some("Y"),
-        decEmpStatusConsidered = Some("Y"),
-        status = Some("STARTED"),
-        createDate = java.time.LocalDateTime.now(),
-        lastUpdate = java.time.LocalDateTime.now(),
-        version = 1,
-        lMigrated = None,
-        amendment = None,
-        supersededBy = None
-      )
-
-      val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
-        .get
-        .set(MonthlyReturnEntityPage, existingEntity)
-        .get
-
-      val ex = intercept[RuntimeException] {
-        service.createNilMonthlyReturn(userAnswers).futureValue
-      }
-      ex.getMessage must include("Monthly return record already exists in session data")
-
-      verifyNoInteractions(connector)
-      verifyNoInteractions(sessionRepo)
-    }
-
     "propagate failures from connector" in {
       val (service, connector, sessionRepo) = newService()
 

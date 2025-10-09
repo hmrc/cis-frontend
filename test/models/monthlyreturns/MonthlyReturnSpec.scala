@@ -42,7 +42,7 @@ class MonthlyReturnSpec extends SpecBase {
         supersededBy = None
       )
 
-      val json = Json.toJson(monthlyReturn)
+      val json   = Json.toJson(monthlyReturn)
       val parsed = json.as[MonthlyReturn]
 
       parsed mustBe monthlyReturn
@@ -55,7 +55,7 @@ class MonthlyReturnSpec extends SpecBase {
         taxMonth = 10
       )
 
-      val json = Json.toJson(monthlyReturn)
+      val json   = Json.toJson(monthlyReturn)
       val parsed = json.as[MonthlyReturn]
 
       parsed mustBe monthlyReturn
@@ -63,19 +63,19 @@ class MonthlyReturnSpec extends SpecBase {
 
     "handle null values correctly" in {
       val json = Json.obj(
-        "monthlyReturnId" -> 12345L,
-        "taxYear" -> 2024,
-        "taxMonth" -> 10,
-        "nilReturnIndicator" -> null,
+        "monthlyReturnId"        -> 12345L,
+        "taxYear"                -> 2024,
+        "taxMonth"               -> 10,
+        "nilReturnIndicator"     -> null,
         "decEmpStatusConsidered" -> null,
-        "decAllSubsVerified" -> null,
-        "decInformationCorrect" -> null,
-        "decNoMoreSubPayments" -> null,
+        "decAllSubsVerified"     -> null,
+        "decInformationCorrect"  -> null,
+        "decNoMoreSubPayments"   -> null,
         "decNilReturnNoPayments" -> null,
-        "status" -> null,
-        "lastUpdate" -> null,
-        "amendment" -> null,
-        "supersededBy" -> null
+        "status"                 -> null,
+        "lastUpdate"             -> null,
+        "amendment"              -> null,
+        "supersededBy"           -> null
       )
 
       val parsed = json.as[MonthlyReturn]

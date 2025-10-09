@@ -70,7 +70,6 @@ class MonthlyReturnService @Inject() (
       cisId         <- getCisId(userAnswers)
       year          <- getTaxYear(userAnswers)
       month         <- getTaxMonth(userAnswers)
-      _             <- failIfDuplicateInSession(userAnswers, cisId, year, month)
       monthlyReturn <- callBackendToCreate(cisId, year, month, userAnswers)
       updated       <- mirrorEntityToSession(userAnswers, monthlyReturn)
     } yield updated
@@ -92,16 +91,6 @@ class MonthlyReturnService @Inject() (
     ua.get(DateConfirmNilPaymentsPage) match {
       case Some(date) => Future.successful(date.getMonthValue)
       case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
-    }
-
-  private def failIfDuplicateInSession(ua: UserAnswers, cisId: String, year: Int, month: Int): Future[Unit] =
-    ua.get(MonthlyReturnEntityPage) match {
-      case Some(_) =>
-        logger.warn(
-          s"[MonthlyReturnService] Duplicate creation detected for CIS ID: $cisId, Tax Year: $year, Tax Month: $month"
-        )
-        Future.failed(new RuntimeException("Monthly return record already exists in session data"))
-      case None    => Future.successful(())
     }
 
   private def callBackendToCreate(cisId: String, year: Int, month: Int, ua: UserAnswers)(implicit
