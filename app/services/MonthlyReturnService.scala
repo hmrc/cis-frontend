@@ -21,7 +21,7 @@ import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
 import models.monthlyreturns.{MonthlyReturn, MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, MonthlyReturnEntityPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, MonthlyReturnEntityPage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
