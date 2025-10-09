@@ -20,10 +20,7 @@ import base.SpecBase
 import controllers.Execution.trampoline
 import models.requests.DataRequest
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.CisIdPage
 import play.api.mvc.Result
-import play.api.test.*
-import play.api.test.Helpers.*
 import play.api.test.FakeRequest
 
 import scala.concurrent.Future
