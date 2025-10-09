@@ -27,7 +27,8 @@
 
 @layout(
   pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.individual.title")),
-  showSignOut = false
+  showSignOut = false,
+  showBackLink = false
 ) {
     @heading(messages("monthlyreturns.unauthorised.individual.heading"), classes = "govuk-heading-xl")
     @paragraph(messages("monthlyreturns.unauthorised.individual.p1"), extraClasses = "govuk-!-margin-bottom-5")
