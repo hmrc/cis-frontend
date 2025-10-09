@@ -58,11 +58,10 @@ monthlyreturns.unauthorised.org.heading = Sorry, you’re unable to use this ser
 monthlyreturns.unauthorised.org.guidance = To access this page
 monthlyreturns.unauthorised.org.guidance.link = register with the Construction Industry Scheme
 
-monthlyreturns.unauthorised.org.standard.title = Sorry, you’re unable to use this service
-monthlyreturns.unauthorised.org.standard.heading = Sorry, you’re unable to use this service
-monthlyreturns.unauthorised.org.standard.p1 = You’ve signed in with a standard organisation account.
-monthlyreturns.unauthorised.org.standard.p2 = Only Government Gateway accounts with an administrator role can register to use this service.
-monthlyreturns.unauthorised.org.standard.guidance.link = Find out more about who can use this service
+monthlyreturns.unauthorised.org.standard.title = Sorry, you are unable to use this service
+monthlyreturns.unauthorised.org.standard.heading = Sorry, you are unable to use this service
+monthlyreturns.unauthorised.org.standard.paragraph = Return to
+monthlyreturns.unauthorised.org.standard.guidance.link = Construction Industry Scheme
 
 monthlyreturns.unauthorised.individual.title = Sorry, you’re unable to use this service
 monthlyreturns.unauthorised.individual.heading = Sorry, you’re unable to use this service
