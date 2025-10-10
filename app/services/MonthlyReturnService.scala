@@ -21,7 +21,7 @@ import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.UserAnswers
 import models.monthlyreturns.{MonthlyReturn, MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, MonthlyReturnEntityPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, MonthlyReturnEntityPage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -100,7 +100,7 @@ class MonthlyReturnService @Inject() (
       instanceId = cisId,
       taxYear = year,
       taxMonth = month,
-      decEmpStatusConsidered = None,
+      decEmpStatusConsidered = ua.get(InactivityRequestPage).map(_.toString),
       decInformationCorrect = ua.get(DeclarationPage).map(_.toString)
     )
     logger.info(s"[MonthlyReturnService] Calling BE to create FormP monthly nil return for $cisId $year/$month")

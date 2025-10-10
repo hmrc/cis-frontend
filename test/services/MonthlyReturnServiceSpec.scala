@@ -304,7 +304,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       capturedRequest.instanceId mustBe cisId
       capturedRequest.taxYear mustBe taxYear
       capturedRequest.taxMonth mustBe taxMonth
-      capturedRequest.decEmpStatusConsidered mustBe None
+      capturedRequest.decEmpStatusConsidered mustBe Some("option1")
       capturedRequest.decInformationCorrect mustBe Some("Set(confirmed)")
 
       val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
