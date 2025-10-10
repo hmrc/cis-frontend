@@ -64,7 +64,7 @@ class MonthlyReturnService @Inject() (
     }
 
   def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
-    logger.info("[MonthlyReturnService] Starting monthly nil return creation process")
+    logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")
 
     for {
       cisId         <- getCisId(userAnswers)
@@ -103,7 +103,10 @@ class MonthlyReturnService @Inject() (
       decEmpStatusConsidered = None,
       decInformationCorrect = ua.get(DeclarationPage).map(_.toString)
     )
-    cisConnector.createNilMonthlyReturn(payload)
+    logger.info(s"[MonthlyReturnService] Calling BE to create FormP monthly nil return for $cisId $year/$month")
+    cisConnector.createNilMonthlyReturn(payload).andThen { case scala.util.Success(_) =>
+      logger.info("[MonthlyReturnService] FormP monthly nil return creation completed successfully")
+    }
   }
 
   private def mirrorEntityToSession(ua: UserAnswers, monthlyReturn: MonthlyReturn): Future[UserAnswers] = {

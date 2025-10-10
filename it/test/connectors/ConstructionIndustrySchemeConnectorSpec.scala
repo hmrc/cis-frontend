@@ -16,7 +16,7 @@
 
 package connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, stubFor, urlPathEqualTo, urlPathMatching}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -162,6 +162,50 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         connector.retrieveMonthlyReturns("abc-123").futureValue
       }
       ex.getMessage.toLowerCase must include("exception")
+    }
+  }
+
+  "createNilMonthlyReturn(payload)" should {
+
+    "POST to /cis/monthly-returns/nil/create and return MonthlyReturn on 200" in {
+      val body =
+        """
+          |{ "monthlyReturnId": 12345, "taxYear": 2024, "taxMonth": 10 }
+          |""".stripMargin
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/nil/create"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(body)
+          )
+      )
+
+      val req = models.monthlyreturns.NilMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2024,
+        taxMonth = 10,
+        decEmpStatusConsidered = None,
+        decInformationCorrect = Some("Set(confirmed)")
+      )
+
+      val out = connector.createNilMonthlyReturn(req).futureValue
+      out.monthlyReturnId mustBe 12345L
+      out.taxYear mustBe 2024
+      out.taxMonth mustBe 10
+    }
+
+    "propagate upstream error on non-2xx" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/nil/create"))
+          .willReturn(aResponse().withStatus(500).withBody("boom"))
+      )
+
+      val req = models.monthlyreturns.NilMonthlyReturnRequest(cisId, 2024, 10, None, Some("Set(confirmed)"))
+      val ex = intercept[Exception] { connector.createNilMonthlyReturn(req).futureValue }
+      ex.getMessage must include("returned 500")
     }
   }
 }

@@ -45,7 +45,7 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
 
   def createNilMonthlyReturn(payload: NilMonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[MonthlyReturn] =
     http
-      .post(url"$cisBaseUrl/monthly-returns/nil")
+      .post(url"$cisBaseUrl/monthly-returns/nil/create")
       .withBody(Json.toJson(payload))
       .execute[MonthlyReturn]
 }

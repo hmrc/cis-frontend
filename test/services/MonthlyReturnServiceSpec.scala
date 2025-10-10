@@ -410,5 +410,31 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
       verify(sessionRepo).set(any[UserAnswers])
     }
+
+    "handle None decInformationCorrect in request payload" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+
+      val monthlyReturnFromBackend = MonthlyReturn(
+        monthlyReturnId = 1L,
+        taxYear = 2024,
+        taxMonth = 10
+      )
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(monthlyReturnFromBackend))
+      when(sessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      service.createNilMonthlyReturn(userAnswers).futureValue
+
+      val captor: ArgumentCaptor[NilMonthlyReturnRequest] = ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(captor.capture())(any[HeaderCarrier])
+      captor.getValue.decInformationCorrect mustBe None
+    }
   }
 }
