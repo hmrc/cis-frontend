@@ -18,14 +18,14 @@ package services
 
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
-import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturn, MonthlyReturnDetails, MonthlyReturnEntity, MonthlyReturnResponse, NilMonthlyReturnRequest}
+import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, MonthlyReturnEntityPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -273,24 +273,10 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .set(DeclarationPage, Set(Declaration.Confirmed))
         .get
 
-      val monthlyReturnFromBackend = MonthlyReturn(
-        monthlyReturnId = 12345L,
-        taxYear = taxYear,
-        taxMonth = taxMonth,
-        nilReturnIndicator = Some("Y"),
-        decEmpStatusConsidered = Some("Y"),
-        decAllSubsVerified = Some("Y"),
-        decInformationCorrect = Some("Y"),
-        decNoMoreSubPayments = Some("Y"),
-        decNilReturnNoPayments = Some("Y"),
-        status = Some("STARTED"),
-        lastUpdate = Some(java.time.LocalDateTime.now()),
-        amendment = Some("N"),
-        supersededBy = None
-      )
+      val backendResponse = NilMonthlyReturnResponse(status = "STARTED")
 
       when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(monthlyReturnFromBackend))
+        .thenReturn(Future.successful(backendResponse))
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -304,19 +290,15 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       capturedRequest.instanceId mustBe cisId
       capturedRequest.taxYear mustBe taxYear
       capturedRequest.taxMonth mustBe taxMonth
-      capturedRequest.decEmpStatusConsidered mustBe Some("option1")
-      capturedRequest.decInformationCorrect mustBe Some("Set(confirmed)")
+      capturedRequest.decNilReturnNoPayments mustBe "Y"
+      capturedRequest.decInformationCorrect mustBe "Y"
 
       val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepo).set(sessionCaptor.capture())
 
       val updatedUserAnswers = sessionCaptor.getValue
-      val entity             = updatedUserAnswers.get(MonthlyReturnEntityPage)
-      entity mustBe defined
-      entity.get.monthlyReturnId mustBe 12345L
-      entity.get.taxYear mustBe taxYear
-      entity.get.taxMonth mustBe taxMonth
-      entity.get.status mustBe "STARTED"
+      updatedUserAnswers.get(NilReturnStatusPage) mustBe Some("STARTED")
+      result.get(NilReturnStatusPage) mustBe Some("STARTED")
     }
 
     "fail when CIS ID is missing from session" in {
@@ -359,6 +341,10 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .get
         .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
 
       when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("Backend error")))
@@ -380,25 +366,13 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .get
         .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
-
-      val monthlyReturnFromBackend = MonthlyReturn(
-        monthlyReturnId = 12345L,
-        taxYear = 2024,
-        taxMonth = 10,
-        nilReturnIndicator = Some("Y"),
-        decEmpStatusConsidered = Some("Y"),
-        decAllSubsVerified = Some("Y"),
-        decInformationCorrect = Some("Y"),
-        decNoMoreSubPayments = Some("Y"),
-        decNilReturnNoPayments = Some("Y"),
-        status = Some("STARTED"),
-        lastUpdate = Some(java.time.LocalDateTime.now()),
-        amendment = Some("N"),
-        supersededBy = None
-      )
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
 
       when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(monthlyReturnFromBackend))
+        .thenReturn(Future.successful(NilMonthlyReturnResponse(status = "STARTED")))
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.failed(new RuntimeException("Session error")))
 
@@ -411,7 +385,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verify(sessionRepo).set(any[UserAnswers])
     }
 
-    "handle None decInformationCorrect in request payload" in {
+    "fail when declaration is not confirmed" in {
       val (service, connector, sessionRepo) = newService()
 
       val userAnswers = UserAnswers("test-user")
@@ -419,22 +393,17 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .get
         .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set.empty[Declaration])
+        .get
 
-      val monthlyReturnFromBackend = MonthlyReturn(
-        monthlyReturnId = 1L,
-        taxYear = 2024,
-        taxMonth = 10
-      )
+      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
+      ex mustBe a[IllegalArgumentException]
+      ex.getMessage must include("Declaration must be confirmed")
 
-      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(monthlyReturnFromBackend))
-      when(sessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
-
-      service.createNilMonthlyReturn(userAnswers).futureValue
-
-      val captor: ArgumentCaptor[NilMonthlyReturnRequest] = ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
-      verify(connector).createNilMonthlyReturn(captor.capture())(any[HeaderCarrier])
-      captor.getValue.decInformationCorrect mustBe None
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
   }
 }

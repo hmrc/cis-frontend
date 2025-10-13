@@ -22,8 +22,8 @@ final case class NilMonthlyReturnRequest(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  decEmpStatusConsidered: Option[String],
-  decInformationCorrect: Option[String]
+  decInformationCorrect: String,
+  decNilReturnNoPayments: String
 )
 
 object NilMonthlyReturnRequest {

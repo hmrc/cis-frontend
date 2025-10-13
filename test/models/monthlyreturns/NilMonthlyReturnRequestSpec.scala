@@ -25,11 +25,11 @@ final class NilMonthlyReturnRequestSpec extends AnyFreeSpec with Matchers {
   "NilMonthlyReturnRequest JSON" - {
 
     "writes and reads round-trip with None and Some" in {
-      val m  = NilMonthlyReturnRequest("abc-123", 2024, 10, None, Some("Set(confirmed)"))
+      val m  = NilMonthlyReturnRequest("abc-123", 2024, 10, "Y", "Y")
       val js = Json.toJson(m)
       (js \ "instanceId").as[String] mustBe "abc-123"
-      (js \ "decEmpStatusConsidered").toOption mustBe None
-      (js \ "decInformationCorrect").as[String] mustBe "Set(confirmed)"
+      (js \ "decNilReturnNoPayments").as[String] mustBe "Y"
+      (js \ "decInformationCorrect").as[String] mustBe "Y"
 
       Json.fromJson[NilMonthlyReturnRequest](js) mustBe JsSuccess(m)
     }

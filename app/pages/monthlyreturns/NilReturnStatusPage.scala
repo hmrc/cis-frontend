@@ -16,13 +16,10 @@
 
 package pages.monthlyreturns
 
-import models.monthlyreturns.MonthlyReturnEntity
-import pages.QuestionPage
 import play.api.libs.json.JsPath
+import pages.QuestionPage
 
-case object MonthlyReturnEntityPage extends QuestionPage[MonthlyReturnEntity] {
-
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "monthlyReturnEntity"
+object NilReturnStatusPage extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ "nilReturnStatus"
+  override def toString: String = "nil-return-status"
 }

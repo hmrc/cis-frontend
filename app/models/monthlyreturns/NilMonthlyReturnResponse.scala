@@ -17,24 +17,9 @@
 package models.monthlyreturns
 
 import play.api.libs.json.{Json, OFormat}
-import java.time.LocalDateTime
 
-case class MonthlyReturn(
-  monthlyReturnId: Long,
-  taxYear: Int,
-  taxMonth: Int,
-  nilReturnIndicator: Option[String] = None,
-  decEmpStatusConsidered: Option[String] = None,
-  decAllSubsVerified: Option[String] = None,
-  decInformationCorrect: Option[String] = None,
-  decNoMoreSubPayments: Option[String] = None,
-  decNilReturnNoPayments: Option[String] = None,
-  status: Option[String] = None,
-  lastUpdate: Option[LocalDateTime] = None,
-  amendment: Option[String] = None,
-  supersededBy: Option[Long] = None
-)
+final case class NilMonthlyReturnResponse(status: String)
 
-object MonthlyReturn {
-  implicit val format: OFormat[MonthlyReturn] = Json.format[MonthlyReturn]
+object NilMonthlyReturnResponse {
+  implicit val format: OFormat[NilMonthlyReturnResponse] = Json.format[NilMonthlyReturnResponse]
 }

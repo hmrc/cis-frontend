@@ -167,10 +167,10 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   "createNilMonthlyReturn(payload)" should {
 
-    "POST to /cis/monthly-returns/nil/create and return MonthlyReturn on 200" in {
+    "POST to /cis/monthly-returns/nil/create and return status on 200" in {
       val body =
         """
-          |{ "monthlyReturnId": 12345, "taxYear": 2024, "taxMonth": 10 }
+          |{ "status": "STARTED" }
           |""".stripMargin
 
       stubFor(
@@ -187,14 +187,12 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         instanceId = cisId,
         taxYear = 2024,
         taxMonth = 10,
-        decEmpStatusConsidered = None,
-        decInformationCorrect = Some("Set(confirmed)")
+        decInformationCorrect = "Y",
+        decNilReturnNoPayments = "Y"
       )
 
       val out = connector.createNilMonthlyReturn(req).futureValue
-      out.monthlyReturnId mustBe 12345L
-      out.taxYear mustBe 2024
-      out.taxMonth mustBe 10
+      out.status mustBe "STARTED"
     }
 
     "propagate upstream error on non-2xx" in {
@@ -203,7 +201,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           .willReturn(aResponse().withStatus(500).withBody("boom"))
       )
 
-      val req = models.monthlyreturns.NilMonthlyReturnRequest(cisId, 2024, 10, None, Some("Set(confirmed)"))
+      val req = models.monthlyreturns.NilMonthlyReturnRequest(cisId, 2024, 10, "Y", "Y")
       val ex = intercept[Exception] { connector.createNilMonthlyReturn(req).futureValue }
       ex.getMessage must include("returned 500")
     }
