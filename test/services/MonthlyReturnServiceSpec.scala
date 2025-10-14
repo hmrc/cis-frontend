@@ -27,12 +27,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
 import java.time.{LocalDate, YearMonth}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 
@@ -567,6 +566,44 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
       ex mustBe a[IllegalArgumentException]
       ex.getMessage must include("Declaration must be confirmed")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when declaration is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+
+      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
+      ex mustBe a[IllegalArgumentException]
+      ex.getMessage must include("declaration missing")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when inactivity request is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+
+      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
+      ex mustBe a[IllegalArgumentException]
+      ex.getMessage must include("C2 (InactivityRequest) missing")
 
       verifyNoInteractions(connector)
       verifyNoInteractions(sessionRepo)
