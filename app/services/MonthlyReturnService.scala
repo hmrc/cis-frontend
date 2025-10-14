@@ -20,9 +20,8 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import models.ChrisResult.*
 import repositories.SessionRepository
-import models.UserAnswers
-import models.monthlyreturns.{Declaration, InactivityRequest, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.{ChrisResult, ChrisSubmissionRequest, UserAnswers}
 import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
 import pages.monthlyreturns.CisIdPage

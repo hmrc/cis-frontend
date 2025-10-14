@@ -15,16 +15,12 @@
  */
 
 package controllers.monthlyreturns
-import config.FrontendAppConfig
 import controllers.actions.*
-import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import models.ChrisResult.*
 import viewmodels.govuk.summarylist.*
-import viewmodels.checkAnswers.monthlyreturns.{ConfirmEmailAddressSummary, DateConfirmNilPaymentsSummary, InactivityRequestSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,9 +28,8 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.Logging
 
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
@@ -44,8 +39,7 @@ class CheckYourAnswersController @Inject() (
   monthlyReturnService: MonthlyReturnService,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: CheckYourAnswersView,
-  appConfig: FrontendAppConfig
+  view: CheckYourAnswersView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -81,11 +75,7 @@ class CheckYourAnswersController @Inject() (
       .createNilMonthlyReturn(request.userAnswers)
       .map { _ =>
         logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
-
-        if (appConfig.stubSendingEnabled)
-          Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
-        else
-          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+        Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
       }
       .recover { case exception =>
         logger.error(
@@ -95,27 +85,4 @@ class CheckYourAnswersController @Inject() (
         Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
       }
   }
-  def onSubmit(): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
-      if (appConfig.stubSendingEnabled) {
-        Future.successful(
-          Redirect(stub.controllers.monthlyreturns.routes.StubSubmissionSendingController.onPageLoad())
-        )
-      } else {
-        monthlyReturnService
-          .submitNilMonthlyReturn(request.userAnswers)
-          .map {
-            case Submitted            =>
-              Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-            case Rejected(_, _)       =>
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-            case UpstreamFailed(_, _) =>
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          }
-          .recover { case ex =>
-            logger.error("[onSubmit] Unexpected failure submitting Nil Monthly Return", ex)
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          }
-      }
-    }
 }

@@ -16,10 +16,7 @@
 
 package connectors
 
-import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import play.api.libs.json.Json
-import play.api.libs.ws.JsonBodyWritables.given
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
+import models.monthlyreturns.{NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import models.ChrisSubmissionRequest
 import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
 import play.api.Logging
