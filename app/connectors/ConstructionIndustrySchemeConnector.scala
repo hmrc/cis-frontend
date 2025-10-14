@@ -20,6 +20,12 @@ import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse, NilMonthlyRetu
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.given
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
+import models.ChrisSubmissionRequest
+import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
+import play.api.Logging
+import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -29,7 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, http: HttpClientV2)(implicit
   ec: ExecutionContext
-) extends HttpReadsInstances {
+) extends HttpReadsInstances
+    with Logging {
 
   private val cisBaseUrl: String = config.baseUrl("construction-industry-scheme") + "/cis"
 
@@ -42,6 +49,15 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
+
+  def submitChris(
+    request: ChrisSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
+    http
+      .post(url"$cisBaseUrl/chris")
+      .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
+      .withBody(Json.toJson(request))
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
 
   def createNilMonthlyReturn(
     payload: NilMonthlyReturnRequest

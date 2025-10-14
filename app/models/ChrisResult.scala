@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,24 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import config.FrontendAppConfig
-@import views.html.components._
+package models
 
-@this(
-  layout: templates.Layout,
-  heading: H1,
-  paragraph: Paragraph,
-)
-
-@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
-
-@layout(
-  pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.individual.title")),
-  showSignOut = false,
-  showBackLink = false
-) {
-    @heading(messages("monthlyreturns.unauthorised.individual.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("monthlyreturns.unauthorised.individual.p1"), extraClasses = "govuk-!-margin-bottom-5")
+sealed trait ChrisResult
+object ChrisResult {
+  case object Submitted extends ChrisResult
+  final case class Rejected(status: Int, body: String) extends ChrisResult
+  final case class UpstreamFailed(status: Int, message: String) extends ChrisResult
 }

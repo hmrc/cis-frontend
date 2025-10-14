@@ -41,6 +41,22 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         contentAsString(result) mustBe expectedHtml
       }
     }
+
+    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in new Setup {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+      }
+    }
   }
 
   trait Setup {
@@ -65,7 +81,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       ukNow.format(dmyFmt)
 
     lazy val ua: UserAnswers =
-      emptyUserAnswers
+      userAnswersWithCisId
         .set(ConfirmEmailAddressPage, email)
         .success
         .value

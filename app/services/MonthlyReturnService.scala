@@ -18,13 +18,18 @@ package services
 
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
+import models.ChrisResult.*
 import repositories.SessionRepository
 import models.UserAnswers
 import models.monthlyreturns.{Declaration, InactivityRequest, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import models.{ChrisResult, ChrisSubmissionRequest, UserAnswers}
+import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
+import pages.monthlyreturns.CisIdPage
 import play.api.libs.json.Json
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
+import java.time.YearMonth
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -62,6 +67,71 @@ class MonthlyReturnService @Inject() (
     retrieveAllMonthlyReturns(cisId).map { res =>
       res.monthlyReturnList.exists(mr => mr.taxYear == year && mr.taxMonth == month)
     }
+
+  def submitNilMonthlyReturn(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[ChrisResult] =
+    for {
+      taxpayer          <- cisConnector.getCisTaxpayer()
+      utr               <- valueOrFail(
+                             taxpayer.utr.map(_.trim).filter(_.nonEmpty),
+                             "CIS taxpayer utr was empty/missing from /cis/taxpayer"
+                           )
+      aoReference       <- valueOrFail(
+                             taxpayer.aoReference.map(_.trim).filter(_.nonEmpty),
+                             "CIS taxpayer AOref was empty/missing from /cis/taxpayer"
+                           )
+      inactivityBoolean <- valueOrFail(readInactivityRequest(ua), "InactivityRequest was not answered")
+      monthYear         <- valueOrFail(readMonthYear(ua), "Month/Year was not answered")
+
+      dto = ChrisSubmissionRequest.from(
+              utr = utr,
+              aoReference = aoReference,
+              informationCorrect = true,
+              inactivity = inactivityBoolean,
+              monthYear = monthYear
+            )
+
+      _ = logger.info(s"[submitNilMonthlyReturn] payload=${Json.stringify(Json.toJson(dto))}")
+
+      response <- cisConnector.submitChris(dto)
+      result    = mapConnectorResult("submitNilMonthlyReturn", response)
+    } yield result
+
+  private def mapConnectorResult(context: String, either: Either[UpstreamErrorResponse, HttpResponse]): ChrisResult =
+    either match {
+      case Right(response) if response.status / 100 == 2 =>
+        logger.info(s"[$context] CHRIS accepted: status=${response.status}")
+        Submitted
+
+      case Right(response) =>
+        logger.warn(s"[$context] CHRIS non-2xx: status=${response.status} body=${response.body}")
+        Rejected(response.status, response.body)
+
+      case Left(response) =>
+        logFailure(response, context)
+        UpstreamFailed(response.statusCode, response.message)
+    }
+
+  private def logFailure(response: UpstreamErrorResponse, context: String): Unit =
+    if (response.statusCode / 100 == 5) {
+      logger.error(s"[$context] CHRIS 5xx: status=${response.statusCode} message=${response.message}")
+    } else {
+      logger.warn(s"[$context] CHRIS 4xx: status=${response.statusCode} message=${response.message}")
+    }
+
+  private def valueOrFail[A](opt: Option[A], err: => String): Future[A] =
+    opt match {
+      case Some(value) => Future.successful(value)
+      case None        => Future.failed(new RuntimeException(err))
+    }
+
+  private def readInactivityRequest(ua: UserAnswers): Option[Boolean] =
+    ua.get(pages.monthlyreturns.InactivityRequestPage).map {
+      case InactivityRequest.Option1 => true
+      case InactivityRequest.Option2 => false
+    }
+
+  private def readMonthYear(ua: UserAnswers): Option[YearMonth] =
+    ua.get(pages.monthlyreturns.DateConfirmNilPaymentsPage).map(YearMonth.from)
 
   def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")

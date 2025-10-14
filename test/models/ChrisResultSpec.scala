@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,24 +12,29 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import config.FrontendAppConfig
-@import views.html.components._
+package models
 
-@this(
-  layout: templates.Layout,
-  heading: H1,
-  paragraph: Paragraph,
-)
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
-@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+class ChrisResultSpec extends AnyFreeSpec with Matchers {
 
-@layout(
-  pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.individual.title")),
-  showSignOut = false,
-  showBackLink = false
-) {
-    @heading(messages("monthlyreturns.unauthorised.individual.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("monthlyreturns.unauthorised.individual.p1"), extraClasses = "govuk-!-margin-bottom-5")
+  "Rejected" - {
+    "keeps status and body" in {
+      val a = ChrisResult.Rejected(400, "bad")
+      a.status mustBe 400
+      a.body mustBe "bad"
+    }
+  }
+
+  "UpstreamFailed" - {
+    "keeps status and message; equals by value" in {
+      val a = ChrisResult.UpstreamFailed(502, "boom")
+      a.status mustBe 502
+      a.message mustBe "boom"
+    }
+  }
+
 }

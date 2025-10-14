@@ -20,18 +20,16 @@
 @this(
   layout: templates.Layout,
   heading: H1,
-  link: Link,
   paragraph: Paragraph,
-  paragraphWithLink: ParagraphWithLink
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-  pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.agent.heading.title")),
-  showSignOut = false
+  pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.agent.title")),
+  showSignOut = false,
+  showBackLink = false
 ) {
-  @heading(messages("monthlyreturns.unauthorised.agent.heading"))
-  @paragraph(messages("monthlyreturns.unauthorised.agent.p1"), extraClasses = "govuk-!-margin-bottom-5")
-  @link("monthlyreturns.unauthorised.agent.guidance.link", appConfig.govUkCISGuidanceUrl)
+    @heading(messages("monthlyreturns.unauthorised.agent.heading"), classes = "govuk-heading-xl")
+    @paragraph(messages("monthlyreturns.unauthorised.agent.p1"), extraClasses = "govuk-!-margin-bottom-5")
 }
