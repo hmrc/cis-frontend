@@ -53,10 +53,11 @@ signedOut.guidance = We did not save your answers.
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
 
-monthlyreturns.unauthorised.org.title = Sorry, you’re unable to use this service
-monthlyreturns.unauthorised.org.heading = Sorry, you’re unable to use this service
-monthlyreturns.unauthorised.org.guidance = To access this page
-monthlyreturns.unauthorised.org.guidance.link = register with the Construction Industry Scheme
+monthlyreturns.unauthorised.org.title = You need to register to use this service - GOV.UK
+monthlyreturns.unauthorised.org.heading = You need to register to use this service
+monthlyreturns.unauthorised.org.guidance.p1 = Register with the
+monthlyreturns.unauthorised.org.guidance.link = Construction Industry Scheme
+monthlyreturns.unauthorised.org.guidance.p2 = to set up an account.
 
 monthlyreturns.unauthorised.org.standard.title = Sorry, you are unable to use this service
 monthlyreturns.unauthorised.org.standard.heading = Sorry, you are unable to use this service

@@ -18,30 +18,27 @@
 @import views.html.components._
 
 @this(
-        layout: templates.Layout,
-        paragraph: Paragraph,
-        link: Link,
-        paragraphWithLink: ParagraphWithLink,
-        heading: H1
+    layout: templates.Layout,
+    link: Link,
+    heading: H1,
 )
 
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.org..title")),
+    pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.org.title")),
     showBackLink = false,
     timeout = false
 ) {
 
-    @heading(messages("monthlyreturns.unauthorised.org.heading"))
-
+    @heading(messages("monthlyreturns.unauthorised.org.heading"), classes = "govuk-heading-xl")
 
     @link(
         "monthlyreturns.unauthorised.org.guidance.link",
         appConfig.govUkCISGuidanceUrl,
         false,
-        "monthlyreturns.unauthorised.org.guidance"
+        "monthlyreturns.unauthorised.org.guidance.p1",
+        suffixTextKey = "monthlyreturns.unauthorised.org.guidance.p2"
     )
-
 }

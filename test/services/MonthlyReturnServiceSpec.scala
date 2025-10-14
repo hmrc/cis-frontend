@@ -17,21 +17,21 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
+import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import models.ChrisResult.*
 import models.{ChrisSubmissionRequest, UserAnswers}
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
 import java.time.{LocalDate, YearMonth}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 
@@ -415,6 +415,198 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val result = service.submitNilMonthlyReturn(uaMissingDate).failed.futureValue
       result.getMessage.toLowerCase must include("month/year")
       verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
+    }
+  }
+
+  "createNilMonthlyReturn" should {
+
+    "successfully create nil monthly return and mirror to session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+      val testDate = java.time.LocalDate.of(taxYear, taxMonth, 15)
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, cisId)
+        .get
+        .set(DateConfirmNilPaymentsPage, testDate)
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+
+      val backendResponse = NilMonthlyReturnResponse(status = "STARTED")
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(backendResponse))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.createNilMonthlyReturn(userAnswers).futureValue
+
+      val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
+        ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(requestCaptor.capture())(any[HeaderCarrier])
+
+      val capturedRequest = requestCaptor.getValue
+      capturedRequest.instanceId mustBe cisId
+      capturedRequest.taxYear mustBe taxYear
+      capturedRequest.taxMonth mustBe taxMonth
+      capturedRequest.decNilReturnNoPayments mustBe "Y"
+      capturedRequest.decInformationCorrect mustBe "Y"
+
+      val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(sessionCaptor.capture())
+
+      val updatedUserAnswers = sessionCaptor.getValue
+      updatedUserAnswers.get(NilReturnStatusPage) mustBe Some("STARTED")
+      result.get(NilReturnStatusPage) mustBe Some("STARTED")
+    }
+
+    "fail when CIS ID is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("CIS ID not found in session data")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when date is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Date confirm nil payments not found in session data")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "propagate failures from connector" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Backend error")))
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Backend error")
+
+      verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "propagate failures from session repository" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(NilMonthlyReturnResponse(status = "STARTED")))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.failed(new RuntimeException("Session error")))
+
+      val ex = intercept[RuntimeException] {
+        service.createNilMonthlyReturn(userAnswers).futureValue
+      }
+      ex.getMessage must include("Session error")
+
+      verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
+      verify(sessionRepo).set(any[UserAnswers])
+    }
+
+    "fail when declaration is not confirmed" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set.empty[Declaration])
+        .get
+
+      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
+      ex mustBe a[IllegalArgumentException]
+      ex.getMessage must include("Declaration must be confirmed")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when declaration is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+
+      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
+      ex mustBe a[IllegalArgumentException]
+      ex.getMessage must include("declaration missing")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when inactivity request is missing from session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+
+      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
+      ex mustBe a[IllegalArgumentException]
+      ex.getMessage must include("C2 (InactivityRequest) missing")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
   }
 }

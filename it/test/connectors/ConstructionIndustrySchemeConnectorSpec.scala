@@ -236,4 +236,46 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       response.message.toLowerCase must include ("boom")
     }
   }
+
+  "createNilMonthlyReturn(payload)" should {
+
+    "POST to /cis/monthly-returns/nil/create and return status on 200" in {
+      val body =
+        """
+          |{ "status": "STARTED" }
+          |""".stripMargin
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/nil/create"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(body)
+          )
+      )
+
+      val req = models.monthlyreturns.NilMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2024,
+        taxMonth = 10,
+        decInformationCorrect = "Y",
+        decNilReturnNoPayments = "Y"
+      )
+
+      val out = connector.createNilMonthlyReturn(req).futureValue
+      out.status mustBe "STARTED"
+    }
+
+    "propagate upstream error on non-2xx" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/nil/create"))
+          .willReturn(aResponse().withStatus(500).withBody("boom"))
+      )
+
+      val req = models.monthlyreturns.NilMonthlyReturnRequest(cisId, 2024, 10, "Y", "Y")
+      val ex = intercept[Exception] { connector.createNilMonthlyReturn(req).futureValue }
+      ex.getMessage must include("returned 500")
+    }
+  }
 }
