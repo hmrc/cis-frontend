@@ -17,11 +17,9 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import models.ChrisResult.*
 import models.{ChrisSubmissionRequest, UserAnswers}
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
