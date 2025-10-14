@@ -34,49 +34,6 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-//class SubmissionSendingController @Inject() (
-//  override val messagesApi: MessagesApi,
-//  sessionRepository: SessionRepository,
-//  identify: IdentifierAction,
-//  getData: DataRetrievalAction,
-//  requireData: DataRequiredAction,
-//  requireCisId: CisIdRequiredAction,
-//  val controllerComponents: MessagesControllerComponents
-//)(implicit ec: ExecutionContext)
-//    extends FrontendBaseController
-//    with I18nSupport {
-//
-//  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
-//    implicit request =>
-//
-//      val ua = request.userAnswers
-//
-//      def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
-//        val pagesToRemove =
-//          Seq(DateConfirmNilPaymentsPage, InactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
-//
-//        pagesToRemove.foldLeft(Try(userAnswers)) { (currentUserAnswers, page) =>
-//          currentUserAnswers.flatMap(_.remove(page))
-//        }
-//      }
-//
-//      for {
-//        emailAddress       <- Future.apply(ua.get(ConfirmEmailAddressPage))
-//        updatedUserAnswers <- Future.fromTry(removeUserAnswers(ua))
-//        _                  <- sessionRepository.set(updatedUserAnswers)
-//      } yield emailAddress match {
-//        case Some(ea) if ea.equalsIgnoreCase("Submissionsuccessful@test.com")   =>
-//          Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
-//        case Some(ea) if ea.equalsIgnoreCase("Submissionunsuccessful@test.com") =>
-//          Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-//        case Some(ea) if ea.equalsIgnoreCase("Awaitingconfirmation@test.com")   =>
-//          Redirect(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad)
-//        case _                                                                  =>
-//          Redirect(routes.JourneyRecoveryController.onPageLoad())
-//      }
-//  }
-//}
-
 class SubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
