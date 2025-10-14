@@ -156,6 +156,42 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         }
       }
 
+      "must call monthly return service on POST" in {
+
+        val userAnswers = emptyUserAnswers
+          .set(CisIdPage, "test-cis-id")
+          .success
+          .value
+          .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+          .success
+          .value
+          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .success
+          .value
+          .set(DeclarationPage, Set(Declaration.Confirmed))
+          .success
+          .value
+
+        val mockService = mock[MonthlyReturnService]
+        when(mockService.createNilMonthlyReturn(any())(any()))
+          .thenReturn(scala.concurrent.Future.successful(userAnswers))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            new AbstractModule {
+              override def configure(): Unit =
+                bind(classOf[MonthlyReturnService]).toInstance(mockService)
+            }
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+          route(application, request).value
+          org.mockito.Mockito.verify(mockService).createNilMonthlyReturn(any())(any())
+        }
+      }
+
       "must redirect to journey recovery on POST when monthly return creation fails" in {
 
         val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
