@@ -35,6 +35,6 @@
     <a href="@linkUrl" class="govuk-link" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>
 
     @if(suffixTextKey.nonEmpty) {
-        <span>@{Html(messages(suffixTextKey))}</span>
+        @{Html(messages(suffixTextKey))}
     }
 </p>
