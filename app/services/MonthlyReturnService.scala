@@ -24,7 +24,7 @@ import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyRe
 import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.{ChrisResult, ChrisSubmissionRequest, UserAnswers}
 import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
@@ -50,17 +50,21 @@ class MonthlyReturnService @Inject() (
           if (cisId.isEmpty) {
             Future.failed(new RuntimeException("Empty cisId (uniqueId) returned from /cis/taxpayer"))
           } else {
-            ua.set(CisIdPage, cisId)
-              .fold(
-                err => Future.failed(err),
-                updatedUa => sessionRepository.set(updatedUa).map(_ => (cisId, updatedUa))
-              )
+            val contractorName = tp.schemeName.getOrElse("")
+            for {
+              updatedUaWithCisId      <- Future.fromTry(ua.set(CisIdPage, cisId))
+              updatedUaWithContractor <- Future.fromTry(updatedUaWithCisId.set(ContractorNamePage, contractorName))
+              _                       <- sessionRepository.set(updatedUaWithContractor)
+            } yield (cisId, updatedUaWithContractor)
           }
         }
     }
 
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
+
+  def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
+    cisConnector.getSchemeEmail(cisId)
 
   def isDuplicate(cisId: String, year: Int, month: Int)(implicit hc: HeaderCarrier): Future[Boolean] =
     retrieveAllMonthlyReturns(cisId).map { res =>
