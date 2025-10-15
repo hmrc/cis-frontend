@@ -20,6 +20,8 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import models.ChrisResult.*
 import repositories.SessionRepository
+import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.{ChrisResult, ChrisSubmissionRequest, UserAnswers}
 import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
 import pages.monthlyreturns.CisIdPage
@@ -41,10 +43,8 @@ class MonthlyReturnService @Inject() (
     ua.get(CisIdPage) match {
       case Some(cisId) => Future.successful((cisId, ua))
       case None        =>
-        // temporarily added for testing
         logger.info("[resolveAndStoreCisId] cache-miss: fetching CIS taxpayer from backend")
         cisConnector.getCisTaxpayer().flatMap { tp =>
-          // temporarily added for testing
           logger.info(s"[resolveAndStoreCisId] taxpayer payload:\n${Json.prettyPrint(Json.toJson(tp))}")
           val cisId = tp.uniqueId.trim
           if (cisId.isEmpty) {
@@ -131,4 +131,85 @@ class MonthlyReturnService @Inject() (
 
   private def readMonthYear(ua: UserAnswers): Option[YearMonth] =
     ua.get(pages.monthlyreturns.DateConfirmNilPaymentsPage).map(YearMonth.from)
+
+  def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")
+
+    for {
+      cisId         <- getCisId(userAnswers)
+      year          <- getTaxYear(userAnswers)
+      month         <- getTaxMonth(userAnswers)
+      infoCorrect   <- getInfoCorrect(userAnswers)
+      nilNoPayments <- getNilNoPayments(userAnswers)
+      resp          <- callBackendToCreate(cisId, year, month, infoCorrect, nilNoPayments)
+      saved         <- persistStatus(userAnswers, resp.status)
+    } yield saved
+  }
+
+  private def getCisId(ua: UserAnswers): Future[String] =
+    ua.get(CisIdPage) match {
+      case Some(id) => Future.successful(id)
+      case None     => Future.failed(new RuntimeException("CIS ID not found in session data"))
+    }
+
+  private def getTaxYear(ua: UserAnswers): Future[Int] =
+    ua.get(DateConfirmNilPaymentsPage) match {
+      case Some(date) => Future.successful(date.getYear)
+      case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
+    }
+
+  private def getTaxMonth(ua: UserAnswers): Future[Int] =
+    ua.get(DateConfirmNilPaymentsPage) match {
+      case Some(date) => Future.successful(date.getMonthValue)
+      case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
+    }
+
+  private def getInfoCorrect(ua: UserAnswers): Future[String] =
+    ua.get(DeclarationPage) match {
+      case Some(selections: Set[Declaration]) =>
+        if (selections.contains(Declaration.Confirmed)) { Future.successful("Y") }
+        else { Future.failed(new IllegalArgumentException("Declaration must be confirmed")) }
+      case None                               =>
+        Future.failed(new IllegalArgumentException("declaration missing"))
+    }
+
+  private def getNilNoPayments(ua: UserAnswers): Future[String] =
+    ua.get(InactivityRequestPage) match {
+      case Some(ir) => Future.successful(mapInactivityRequestToYN(ir))
+      case None     => Future.failed(new IllegalArgumentException("C2 (InactivityRequest) missing"))
+    }
+
+  private def mapInactivityRequestToYN(ir: InactivityRequest): String = ir match {
+    case InactivityRequest.Option1 => "Y"
+    case InactivityRequest.Option2 => "N"
+  }
+
+  private def callBackendToCreate(
+    cisId: String,
+    year: Int,
+    month: Int,
+    infoCorrect: String,
+    nilNoPayments: String
+  )(implicit hc: HeaderCarrier): Future[NilMonthlyReturnResponse] = {
+    val payload = NilMonthlyReturnRequest(
+      instanceId = cisId,
+      taxYear = year,
+      taxMonth = month,
+      decInformationCorrect = infoCorrect,
+      decNilReturnNoPayments = nilNoPayments
+    )
+
+    logger.info(s"[MonthlyReturnService] Calling BE  to create FormP monthly nil return for $cisId $year/$month")
+    cisConnector.createNilMonthlyReturn(payload).andThen {
+      case scala.util.Success(r) =>
+        logger.info(s"[MonthlyReturnService] FormP monthly nil return creation completed successfully")
+      case scala.util.Failure(e) => logger.error("[MonthlyReturnService] BE call failed", e)
+    }
+  }
+
+  private def persistStatus(ua: UserAnswers, status: String): Future[UserAnswers] =
+    ua.set(NilReturnStatusPage, status) match {
+      case scala.util.Success(updated) => sessionRepository.set(updated).map(_ => updated)
+      case scala.util.Failure(err)     => Future.failed(err)
+    }
 }

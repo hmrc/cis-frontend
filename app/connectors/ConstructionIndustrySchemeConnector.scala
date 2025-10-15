@@ -16,6 +16,7 @@
 
 package connectors
 
+import models.monthlyreturns.{NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import models.ChrisSubmissionRequest
 import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
 import play.api.Logging
@@ -54,4 +55,12 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
       .withBody(Json.toJson(request))
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
+
+  def createNilMonthlyReturn(
+    payload: NilMonthlyReturnRequest
+  )(implicit hc: HeaderCarrier): Future[NilMonthlyReturnResponse] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns/nil/create")
+      .withBody(Json.toJson(payload))
+      .execute[NilMonthlyReturnResponse]
 }

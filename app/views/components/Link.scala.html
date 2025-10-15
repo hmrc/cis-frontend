@@ -23,7 +23,8 @@
         linkUrl: String,
         isNewTab: Boolean = false,
         prefixTextKey: String = emptyString,
-        extraClasses: String = emptyString
+        suffixTextKey: String = emptyString,
+        extraClasses: String = emptyString,
 )(implicit messages: Messages)
 
 
@@ -32,4 +33,8 @@
         @{Html(messages(prefixTextKey))}
     }
     <a href="@linkUrl" class="govuk-link" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>
+
+    @if(suffixTextKey.nonEmpty) {
+        @{Html(messages(suffixTextKey))}
+    }
 </p>
