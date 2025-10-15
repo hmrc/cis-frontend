@@ -58,3 +58,5 @@ GET        /monthly-return/submission-awaiting                       controllers
 
 GET        /monthly-return/confirmation                       controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/already-submitted                  controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
+
+GET        /page-not-found                                    controllers.PageNotFoundController.onPageLoad()
