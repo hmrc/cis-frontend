@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
 import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -82,6 +82,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
     lazy val ua: UserAnswers =
       userAnswersWithCisId
+        .set(ContractorNamePage, contractorName)
+        .success
+        .value
         .set(ConfirmEmailAddressPage, email)
         .success
         .value
