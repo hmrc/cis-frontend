@@ -24,7 +24,7 @@ import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyRe
 import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.{ChrisResult, ChrisSubmissionRequest, UserAnswers}
 import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
-import pages.monthlyreturns.{CisIdPage, ContractorNamePage}
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage, IrMarkPage}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
@@ -97,6 +97,25 @@ class MonthlyReturnService @Inject() (
 
       response <- cisConnector.submitChris(dto)
       result    = mapConnectorResult("submitNilMonthlyReturn", response)
+
+      _ <- result match {
+             case Submitted =>
+               response match {
+                 case Right(httpResponse) =>
+                   val jsonResponse = Json.parse(httpResponse.body)
+                   val irMark       = (jsonResponse \ "irMark").asOpt[String]
+                   irMark match {
+                     case Some(mark) =>
+                       val updatedUa = ua.set(IrMarkPage, mark).getOrElse(ua)
+                       sessionRepository.set(updatedUa)
+                     case None       =>
+                       logger.warn("[submitNilMonthlyReturn] IR mark not found in response")
+                       Future.successful(())
+                   }
+                 case Left(_)             => Future.successful(())
+               }
+             case _         => Future.successful(())
+           }
     } yield result
 
   private def mapConnectorResult(context: String, either: Either[UpstreamErrorResponse, HttpResponse]): ChrisResult =

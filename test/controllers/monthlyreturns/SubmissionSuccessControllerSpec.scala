@@ -18,13 +18,14 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, IrMarkPage}
 import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
 import views.html.monthlyreturns.SubmissionSuccessView
+import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
@@ -63,7 +64,8 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     val email: String          = "test@test.com"
     val periodEnd: LocalDate   = LocalDate.of(2018, 3, 5)
     val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
-    val reference: String      = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
+    val irMarkBase64: String   = "Pyy1LRJh053AE+nuyp0GJR7oESw="
+    val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
     val contractorName: String = "PAL 355 Scheme"
     val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
@@ -89,6 +91,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         .success
         .value
         .set(DateConfirmNilPaymentsPage, periodEnd)
+        .success
+        .value
+        .set(IrMarkPage, irMarkBase64)
         .success
         .value
 

@@ -268,7 +268,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       createTaxpayer().copy(utr = utr, aoReference = aoRef)
 
     "build DTO correctly and return true on success" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("  1234567890 "), aoRef = Some(" 123/AB456 "))))
@@ -277,7 +277,19 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
 
       when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Right(HttpResponse(200, "<Ack/>"))))
+        .thenReturn(
+          Future.successful(
+            Right(
+              HttpResponse(
+                200,
+                """{"success":true,"status":200,"body":"<Ack/>","irMark":"Pyy1LRJh053AE+nuyp0GJR7oESw="}"""
+              )
+            )
+          )
+        )
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val yearMonth = YearMonth.of(2025, 3)
       val ua        = uaWith(InactivityRequest.Option1, yearMonth)
@@ -294,7 +306,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
 
     "map Option2 -> inactivity=false" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
@@ -303,7 +315,19 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
 
       when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Right(HttpResponse(202, "<Ack/>"))))
+        .thenReturn(
+          Future.successful(
+            Right(
+              HttpResponse(
+                202,
+                """{"success":true,"status":202,"body":"<Ack/>","irMark":"Pyy1LRJh053AE+nuyp0GJR7oESw="}"""
+              )
+            )
+          )
+        )
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val yearMonth = YearMonth.of(2024, 12)
       val ua        = uaWith(InactivityRequest.Option2, yearMonth)

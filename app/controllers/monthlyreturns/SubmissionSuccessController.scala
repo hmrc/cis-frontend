@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.EmployerReference
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, IrMarkPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionSuccessView
+import utils.IrMarkReferenceGenerator
 
 import java.time.{Clock, LocalDate, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
@@ -88,7 +89,11 @@ class SubmissionSuccessController @Inject() (
         val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
         val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
         val submittedDate = ukNow.format(dmyFmt)
-        val reference     = "KCNJQEFYOYVU6C2BTZCDQSWUSGG5ODG"
+        val irMarkBase64  = request.userAnswers.get(IrMarkPage).getOrElse {
+          logger.error("[SubmissionSuccess] irMark missing from userAnswers")
+          throw new IllegalStateException("irMark missing from userAnswers")
+        }
+        val reference     = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
 
         Ok(
           view(
