@@ -23,13 +23,13 @@ import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
 import services.MonthlyReturnService
+import services.guard.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.Logging
 
 import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
@@ -39,7 +39,8 @@ class CheckYourAnswersController @Inject() (
   monthlyReturnService: MonthlyReturnService,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: CheckYourAnswersView
+  view: CheckYourAnswersView,
+  duplicateMRCreationGuard: DuplicateMRCreationGuard
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -71,18 +72,25 @@ class CheckYourAnswersController @Inject() (
 
     logger.info("[CheckYourAnswersController] Starting monthly nil return creation process")
 
-    monthlyReturnService
-      .createNilMonthlyReturn(request.userAnswers)
-      .map { _ =>
-        logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
-        Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-      }
-      .recover { case exception =>
-        logger.error(
-          s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
-          exception
-        )
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-      }
+    duplicateMRCreationGuard.check.flatMap {
+      case DuplicateMRCreationCheck.DuplicateFound =>
+        logger.warn("[CheckYourAnswersController] Duplicate submission attempt detected; blocking progression")
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case DuplicateMRCreationCheck.NoDuplicate =>
+        monthlyReturnService
+          .createNilMonthlyReturn(request.userAnswers)
+          .map { _ =>
+            logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
+            Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+          }
+          .recover { case exception =>
+            logger.error(
+              s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
+              exception
+            )
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+    }
   }
 }
