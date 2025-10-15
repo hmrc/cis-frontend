@@ -38,8 +38,7 @@ class DuplicateMRCreationGuardSpec extends AnyWordSpec with Matchers with ScalaF
       request = FakeRequest(),
       userId = ua.id,
       userAnswers = ua,
-      employerReference = None,
-      isAgent = false
+      employerReference = None
     )
 
   private val submittedStatus: String = "SUBMITTED"
