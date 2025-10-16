@@ -25,17 +25,24 @@ import views.html.monthlyreturns.CheckYourAnswersView
 import services.MonthlyReturnService
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.*
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage}
 import models.monthlyreturns.{Declaration, InactivityRequest}
 import java.time.LocalDate
 import com.google.inject.AbstractModule
+import models.requests.DataRequest
+import services.guard.{DuplicateMRCreationCheck, DuplicateMRCreationGuard}
+import services.guard.DuplicateMRCreationCheck.DuplicateFound
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
 
   import scala.concurrent.Future
 
   class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
+
+    private val blockGuard = new DuplicateMRCreationGuard {
+      def check(implicit r: DataRequest[_]) = Future.successful(DuplicateFound)
+    }
 
     "Check Your Answers Controller" - {
 
@@ -93,25 +100,6 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
           status(result) mustEqual SEE_OTHER
           redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-        }
-      }
-
-      "must redirect to stub when stub enabled and service not hit" in {
-        val application =
-          applicationBuilder(userAnswers = Some(emptyUserAnswers))
-            .configure("features.stub-sending-enabled" -> true)
-            .build()
-
-        running(application) {
-          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-          val result  = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(
-            result
-          ).value mustEqual stub.controllers.monthlyreturns.routes.StubSubmissionSendingController
-            .onPageLoad()
-            .url
         }
       }
 
@@ -203,6 +191,29 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
           status(result) mustEqual SEE_OTHER
           redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to Journey Recovery on POST when duplicate is found (guard blocks) and not call service" in {
+        val mockService = mock[MonthlyReturnService]
+        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            new AbstractModule {
+              override def configure(): Unit = {
+                bind(classOf[MonthlyReturnService]).toInstance(mockService)
+                bind(classOf[DuplicateMRCreationGuard]).toInstance(blockGuard)
+              }
+            }
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+          val result  = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+          verifyNoInteractions(mockService)
         }
       }
     }
