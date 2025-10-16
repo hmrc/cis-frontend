@@ -248,6 +248,11 @@ stub.monthlyreturns.submissionSuccessful.button = Successful
 stub.monthlyreturns.submissionUnsuccessful.button = Unsuccessful
 stub.monthlyreturns.submissionAwaiting.button = Awaiting
 
+monthlyreturns.alreadySubmitted.title      = You have already submitted your monthly nil return
+monthlyreturns.alreadySubmitted.heading    = You have already submitted your monthly nil return
+monthlyreturns.alreadySubmitted.paragraph  = View and manage your monthly returns in your
+monthlyreturns.alreadySubmitted.link       = Construction Industry Scheme account.
+
 pageNotFound.title      = Page not found
 pageNotFound.heading    = Page not found
 pageNotFound.p1         = If you typed the web address, check it is correct.
