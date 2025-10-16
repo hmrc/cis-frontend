@@ -75,7 +75,7 @@ class CheckYourAnswersController @Inject() (
     duplicateMRCreationGuard.check.flatMap {
       case DuplicateMRCreationCheck.DuplicateFound =>
         logger.warn("[CheckYourAnswersController] Duplicate submission attempt detected; blocking progression")
-        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
 
       case DuplicateMRCreationCheck.NoDuplicate =>
         monthlyReturnService
