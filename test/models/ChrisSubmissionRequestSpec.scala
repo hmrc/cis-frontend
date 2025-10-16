@@ -16,7 +16,7 @@
 
 package models
 
-import models..ChrisSubmissionRequest
+import models.submission.ChrisSubmissionRequest
 
 import java.time.YearMonth
 import org.scalatest.wordspec.AnyWordSpec
