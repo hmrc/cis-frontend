@@ -40,8 +40,9 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val constructionIndustryAccountUrl: String = configuration.get[String]("urls.constructionIndustryAccount")
   lazy val hmrcOnlineServiceDeskUrl: String       = configuration.get[String]("urls.hmrcOnlineServiceDesk")
 
-  private val exitSurveyBaseUrl: String = configuration.get[Service]("microservice.services.feedback-frontend").baseUrl
-  lazy val exitSurveyUrl: String        = s"$exitSurveyBaseUrl/feedback/cis-frontend"
+  private lazy val exitSurveyBaseUrl: String =
+    configuration.get[Service]("microservice.services.feedback-frontend").baseUrl
+  lazy val exitSurveyUrl: String             = s"$exitSurveyBaseUrl/feedback/cis-frontend"
 
   lazy val languageTranslationEnabled: Boolean =
     configuration.get[Boolean]("features.welsh-translation")
@@ -56,7 +57,8 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val cacheTtl: Long = configuration.get[Int]("mongodb.timeToLiveInSeconds")
 
-  lazy val earliestTaxPeriodEndDate: String = configuration.get[String]("earliest-tax-period-end-date")
+  lazy val earliestTaxPeriodEndDate: String  = configuration.get[String]("earliest-tax-period-end-date")
+  lazy val submissionPollTimeoutSeconds: Int = configuration.get[Int]("submission-poll-timeout-seconds")
 
   lazy val hmrcOnlineServicesHelpdeskUrl: String = configuration.get[String]("links.hmrc-online-services-helpdesk")
 
