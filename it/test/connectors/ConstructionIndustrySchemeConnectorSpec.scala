@@ -18,7 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
-import models.ChrisSubmissionRequest
+import models.submission.ChrisSubmissionRequest
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec

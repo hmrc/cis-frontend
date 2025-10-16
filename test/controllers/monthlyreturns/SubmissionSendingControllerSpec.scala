@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.ChrisResult.*
+import models.submission.ChrisResult.*
 import navigation.{FakeNavigator, Navigator}
 import play.api.test.FakeRequest
 import models.UserAnswers
