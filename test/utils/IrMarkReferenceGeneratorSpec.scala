@@ -32,9 +32,9 @@ class IrMarkReferenceGeneratorSpec extends AnyFreeSpec with Matchers {
     }
 
     "must be stable for random bytes and contain only base32 alphabet" in {
-      val rnd = new scala.util.Random(42)
+      val rnd   = new scala.util.Random(42)
       val bytes = Array.fill[Byte](64)((rnd.nextInt(256) - 128).toByte)
-      val b64 = java.util.Base64.getEncoder.encodeToString(bytes)
+      val b64   = java.util.Base64.getEncoder.encodeToString(bytes)
 
       val out = IrMarkReferenceGenerator.fromBase64(b64)
 
@@ -43,5 +43,3 @@ class IrMarkReferenceGeneratorSpec extends AnyFreeSpec with Matchers {
     }
   }
 }
-
-

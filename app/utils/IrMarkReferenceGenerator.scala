@@ -27,61 +27,62 @@ object IrMarkReferenceGenerator {
   private def encodeBase32NoPadding(bytes: Array[Byte]): String = {
     if (bytes.isEmpty) return ""
 
-    val out = new StringBuilder((bytes.length * 8 + 4) / 5)
+    val out                 = new StringBuilder((bytes.length * 8 + 4) / 5)
+    def quint(v: Int): Unit = out.append(base32Alphabet(v & 0x1f))
 
     var i = 0
     while (i + 4 < bytes.length) {
-      val b0 = bytes(i)     & 0xFF
-      val b1 = bytes(i + 1) & 0xFF
-      val b2 = bytes(i + 2) & 0xFF
-      val b3 = bytes(i + 3) & 0xFF
-      val b4 = bytes(i + 4) & 0xFF
+      val b0 = bytes(i) & 0xff
+      val b1 = bytes(i + 1) & 0xff
+      val b2 = bytes(i + 2) & 0xff
+      val b3 = bytes(i + 3) & 0xff
+      val b4 = bytes(i + 4) & 0xff
 
-      out.append(base32Alphabet((b0 >> 3) & 0x1F))
-      out.append(base32Alphabet(((b0 << 2) | (b1 >> 6)) & 0x1F))
-      out.append(base32Alphabet((b1 >> 1) & 0x1F))
-      out.append(base32Alphabet(((b1 << 4) | (b2 >> 4)) & 0x1F))
-      out.append(base32Alphabet(((b2 << 1) | (b3 >> 7)) & 0x1F))
-      out.append(base32Alphabet((b3 >> 2) & 0x1F))
-      out.append(base32Alphabet(((b3 << 3) | (b4 >> 5)) & 0x1F))
-      out.append(base32Alphabet(b4 & 0x1F))
+      quint(b0 >> 3)
+      quint((b0 << 2) | (b1 >> 6))
+      quint(b1 >> 1)
+      quint((b1 << 4) | (b2 >> 4))
+      quint((b2 << 1) | (b3 >> 7))
+      quint(b3 >> 2)
+      quint((b3 << 3) | (b4 >> 5))
+      quint(b4)
 
       i += 5
     }
 
     val remaining = bytes.length - i
     if (remaining == 1) {
-      val b0 = bytes(i) & 0xFF
-      out.append(base32Alphabet((b0 >> 3) & 0x1F))
-      out.append(base32Alphabet((b0 << 2) & 0x1F))
+      val b0 = bytes(i) & 0xff
+      quint(b0 >> 3)
+      quint(b0 << 2)
     } else if (remaining == 2) {
-      val b0 = bytes(i) & 0xFF
-      val b1 = bytes(i + 1) & 0xFF
-      out.append(base32Alphabet((b0 >> 3) & 0x1F))
-      out.append(base32Alphabet(((b0 << 2) | (b1 >> 6)) & 0x1F))
-      out.append(base32Alphabet((b1 >> 1) & 0x1F))
-      out.append(base32Alphabet((b1 << 4) & 0x1F))
+      val b0 = bytes(i) & 0xff
+      val b1 = bytes(i + 1) & 0xff
+      quint(b0 >> 3)
+      quint((b0 << 2) | (b1 >> 6))
+      quint(b1 >> 1)
+      quint(b1 << 4)
     } else if (remaining == 3) {
-      val b0 = bytes(i) & 0xFF
-      val b1 = bytes(i + 1) & 0xFF
-      val b2 = bytes(i + 2) & 0xFF
-      out.append(base32Alphabet((b0 >> 3) & 0x1F))
-      out.append(base32Alphabet(((b0 << 2) | (b1 >> 6)) & 0x1F))
-      out.append(base32Alphabet((b1 >> 1) & 0x1F))
-      out.append(base32Alphabet(((b1 << 4) | (b2 >> 4)) & 0x1F))
-      out.append(base32Alphabet((b2 << 1) & 0x1F))
+      val b0 = bytes(i) & 0xff
+      val b1 = bytes(i + 1) & 0xff
+      val b2 = bytes(i + 2) & 0xff
+      quint(b0 >> 3)
+      quint((b0 << 2) | (b1 >> 6))
+      quint(b1 >> 1)
+      quint((b1 << 4) | (b2 >> 4))
+      quint(b2 << 1)
     } else if (remaining == 4) {
-      val b0 = bytes(i) & 0xFF
-      val b1 = bytes(i + 1) & 0xFF
-      val b2 = bytes(i + 2) & 0xFF
-      val b3 = bytes(i + 3) & 0xFF
-      out.append(base32Alphabet((b0 >> 3) & 0x1F))
-      out.append(base32Alphabet(((b0 << 2) | (b1 >> 6)) & 0x1F))
-      out.append(base32Alphabet((b1 >> 1) & 0x1F))
-      out.append(base32Alphabet(((b1 << 4) | (b2 >> 4)) & 0x1F))
-      out.append(base32Alphabet(((b2 << 1) | (b3 >> 7)) & 0x1F))
-      out.append(base32Alphabet((b3 >> 2) & 0x1F))
-      out.append(base32Alphabet((b3 << 3) & 0x1F))
+      val b0 = bytes(i) & 0xff
+      val b1 = bytes(i + 1) & 0xff
+      val b2 = bytes(i + 2) & 0xff
+      val b3 = bytes(i + 3) & 0xff
+      quint(b0 >> 3)
+      quint((b0 << 2) | (b1 >> 6))
+      quint(b1 >> 1)
+      quint((b1 << 4) | (b2 >> 4))
+      quint((b2 << 1) | (b3 >> 7))
+      quint(b3 >> 2)
+      quint(b3 << 3)
     }
 
     out.toString
