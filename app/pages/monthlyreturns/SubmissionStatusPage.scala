@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package services
+package pages.monthlyreturns
 
-import config.FrontendAppConfig
+import models.ChrisResult
+import pages.QuestionPage
+import play.api.libs.json.{JsPath, Json, OFormat}
 
 import java.time.LocalDateTime
-import javax.inject.{Inject, Singleton}
 
-@Singleton
-class PollingService(@Inject appConfig: FrontendAppConfig) {
+case object SubmissionStatusPage extends QuestionPage[SubmissionStatus] {
 
-  def calculatePollTimeout(submissionDateTime: LocalDateTime): LocalDateTime = {
-    val timeout = appConfig.submissionPollTimeoutSeconds
-    submissionDateTime.plusSeconds(timeout)
-  }
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "submittedDateTime"
+}
+
+case class SubmissionStatus(id: String, submittedAt: LocalDateTime, result: ChrisResult, timedOut: Boolean)
+
+object SubmissionStatus {
+  implicit val format: OFormat[SubmissionStatus] = Json.format[SubmissionStatus]
 }

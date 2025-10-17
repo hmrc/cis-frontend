@@ -16,26 +16,27 @@
 
 package services
 
+import config.FrontendAppConfig
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import models.ChrisResult.*
 import repositories.SessionRepository
 import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage, SubmissionStatus, SubmissionStatusPage}
 import models.{ChrisResult, ChrisSubmissionRequest, UserAnswers}
 import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
-import pages.monthlyreturns.CisIdPage
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
-import java.time.YearMonth
+import java.time.{LocalDateTime, YearMonth}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MonthlyReturnService @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector,
-  sessionRepository: SessionRepository
+  sessionRepository: SessionRepository,
+  appConfig: FrontendAppConfig
 )(implicit ec: ExecutionContext)
     extends Logging {
 
@@ -89,17 +90,49 @@ class MonthlyReturnService @Inject() (
               monthYear = monthYear
             )
 
-      _ = logger.info(s"[submitNilMonthlyReturn] payload=${Json.stringify(Json.toJson(dto))}")
-
-      response <- cisConnector.submitChris(dto)
-      result    = mapConnectorResult("submitNilMonthlyReturn", response)
+      _                             = logger.info(s"[submitNilMonthlyReturn] payload=${Json.stringify(Json.toJson(dto))}")
+      response                     <- cisConnector.submitChris(dto)
+      result                        = mapConnectorResult("submitNilMonthlyReturn", response)
+      userAnswersWithSubmittedDate <- Future.fromTry(
+                                        ua.set(
+                                          SubmissionStatusPage,
+                                          SubmissionStatus(
+                                            taxpayer.taxOfficeNumber,
+                                            LocalDateTime.now(),
+                                            Pending,
+                                            false
+                                          )
+                                        )
+                                      )
+      _                            <- sessionRepository.set(userAnswersWithSubmittedDate)
     } yield result
+
+  def checkAndUpdateSubmissionStatus(
+    submissionStatus: SubmissionStatus,
+    userAnswers: UserAnswers
+  ): Future[SubmissionStatus] = {
+    val timeout         = appConfig.submissionPollTimeoutSeconds
+    val timeoutDateTime = submissionStatus.submittedAt.plusSeconds(timeout)
+
+    submissionStatus match {
+      case SubmissionStatus(_, submittedAt, Pending, false) =>
+        val newResult = cisConnector.stubbedSubmissionStatus(submissionStatus.submittedAt)
+        val timedOut  = LocalDateTime.now().isAfter(timeoutDateTime) && newResult == Pending
+        val newStatus = submissionStatus.copy(result = newResult, timedOut)
+        for {
+          updatedAnswers <- Future.fromTry(userAnswers.set(SubmissionStatusPage, newStatus))
+          _              <- sessionRepository.set(updatedAnswers)
+        } yield newStatus
+      case _                                                =>
+        Future.successful(submissionStatus)
+    }
+  }
 
   private def mapConnectorResult(context: String, either: Either[UpstreamErrorResponse, HttpResponse]): ChrisResult =
     either match {
       case Right(response) if response.status / 100 == 2 =>
         logger.info(s"[$context] CHRIS accepted: status=${response.status}")
-        Submitted
+        Pending
 
       case Right(response) =>
         logger.warn(s"[$context] CHRIS non-2xx: status=${response.status} body=${response.body}")

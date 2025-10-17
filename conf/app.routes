@@ -47,6 +47,7 @@ GET        /monthly-return/change-declaration                  controllers.month
 POST       /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/submission-send                       controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
+GET        /monthly-return/submission-send/polling                       controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect
 
 GET        /monthly-return/nil-month-return-inactive                      controllers.monthlyreturns.InactivityWarningController.onPageLoad
 POST       /monthly-return/nil-month-return-inactive                       controllers.monthlyreturns.InactivityWarningController.onSubmit
