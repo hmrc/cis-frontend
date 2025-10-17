@@ -29,6 +29,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import views.html.monthlyreturns.SubmissionSendingView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,6 +44,7 @@ class SubmissionSendingController @Inject() (
   requireCisId: CisIdRequiredAction,
   appConfig: FrontendAppConfig,
   monthlyReturnService: MonthlyReturnService,
+  view: SubmissionSendingView,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -60,6 +62,8 @@ class SubmissionSendingController @Inject() (
         monthlyReturnService
           .submitNilMonthlyReturn(request.userAnswers)
           .map {
+            case Pending                               =>
+              Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
             case Submitted                             =>
               Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
             case Rejected(_, _) | UpstreamFailed(_, _) =>
@@ -68,6 +72,20 @@ class SubmissionSendingController @Inject() (
           .recover { case ex =>
             logger.error("[Submission Sending] Unexpected failure submitting Nil Monthly Return", ex)
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      }
+    }
+
+  def onPollAndRedirect: Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(SubmissionStatusPage) match {
+        case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case Some(submissionStatus) =>
+          monthlyReturnService.checkAndUpdateSubmissionStatus(submissionStatus, request.userAnswers).map {
+            case SubmissionStatus(_, _, Pending, false) => Ok(view()).withHeaders("Refresh" -> "1")
+            case SubmissionStatus(_, _, _, true)        => Redirect(routes.SubmissionAwaitingController.onPageLoad)
+            case SubmissionStatus(_, _, Submitted, _)   => Redirect(routes.SubmissionSuccessController.onPageLoad)
+            case _                                      => Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
           }
       }
     }

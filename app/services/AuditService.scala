@@ -28,22 +28,24 @@ import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AuditService @Inject(
+class AuditService @Inject (
   auditConnector: AuditConnector
 )(implicit ec: ExecutionContext) {
 
   private val auditSource: String = "cis-frontend"
 
-  def sendEvent[A <: AuditEventModel](auditEvent: A)(implicit hc: HeaderCarrier, writes: Writes[A], request: Request[?]): Future[AuditResult] = {
+  def sendEvent[A <: AuditEventModel](
+    auditEvent: A
+  )(implicit hc: HeaderCarrier, writes: Writes[A], request: Request[?]): Future[AuditResult] = {
     val extendedDataEvent = ExtendedDataEvent(
       auditSource = auditSource,
-      auditType   = auditEvent.auditType,
-      detail      = Json.toJson(auditEvent),
-      tags        = AuditExtensions.auditHeaderCarrier(hc).toAuditTags()
+      auditType = auditEvent.auditType,
+      detail = Json.toJson(auditEvent),
+      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags()
     )
 
     auditConnector.sendExtendedEvent(extendedDataEvent)
-    
+
   }
 
 }

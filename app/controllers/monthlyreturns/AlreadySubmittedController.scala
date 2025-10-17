@@ -24,12 +24,14 @@ import views.html.monthlyreturns.AlreadySubmittedView
 
 import javax.inject.Inject
 
-class AlreadySubmittedController @Inject()(
+class AlreadySubmittedController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: AlreadySubmittedView
-)(implicit appConfig: FrontendAppConfig) extends FrontendBaseController with I18nSupport {
+)(implicit appConfig: FrontendAppConfig)
+    extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] =  Action { implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = Action { implicit request =>
+    Ok(view())
   }
 }

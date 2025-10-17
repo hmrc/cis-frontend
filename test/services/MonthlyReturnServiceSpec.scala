@@ -16,6 +16,7 @@
 
 package services
 
+import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import models.ChrisResult.*
@@ -26,11 +27,12 @@ import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage, SubmissionStatus, SubmissionStatusPage}
+import play.api.Configuration
 import repositories.SessionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 
-import java.time.{LocalDate, YearMonth}
+import java.time.{LocalDate, LocalDateTime, YearMonth}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
@@ -42,7 +44,12 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
   private def newService(): (MonthlyReturnService, ConstructionIndustrySchemeConnector, SessionRepository) = {
     val connector   = mock(classOf[ConstructionIndustrySchemeConnector])
     val sessionRepo = mock(classOf[SessionRepository])
-    val service     = new MonthlyReturnService(connector, sessionRepo)
+    val testConfig  = new FrontendAppConfig(
+      Configuration(
+        "submission-poll-timeout-seconds" -> 60
+      )
+    )
+    val service     = new MonthlyReturnService(connector, sessionRepo, testConfig)
     (service, connector, sessionRepo)
   }
 
@@ -268,7 +275,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       createTaxpayer().copy(utr = utr, aoReference = aoRef)
 
     "build DTO correctly and return true on success" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("  1234567890 "), aoRef = Some(" 123/AB456 "))))
@@ -279,11 +286,14 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(Future.successful(Right(HttpResponse(200, "<Ack/>"))))
 
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
       val yearMonth = YearMonth.of(2025, 3)
       val ua        = uaWith(InactivityRequest.Option1, yearMonth)
 
       val result = service.submitNilMonthlyReturn(ua).futureValue
-      result mustBe Submitted
+      result mustBe Pending
 
       val dto = dtoCaptor.getValue
       dto.utr mustBe "1234567890"
@@ -294,7 +304,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
 
     "map Option2 -> inactivity=false" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
@@ -305,22 +315,28 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(Future.successful(Right(HttpResponse(202, "<Ack/>"))))
 
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
       val yearMonth = YearMonth.of(2024, 12)
       val ua        = uaWith(InactivityRequest.Option2, yearMonth)
 
       val result = service.submitNilMonthlyReturn(ua).futureValue
-      result mustBe Submitted
+      result mustBe Pending
       dtoCaptor.getValue.inactivity mustBe "no"
     }
 
     "returns Rejected on non-2xx (e.g. 304)" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
 
       when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Right(HttpResponse(304, "not modified"))))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
       val result = service.submitNilMonthlyReturn(ua).futureValue
@@ -329,13 +345,16 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
 
     "returns Rejected on 4xx (e.g. 404)" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
 
       when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Left(UpstreamErrorResponse("not found", 404))))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
       val result = service.submitNilMonthlyReturn(ua).futureValue
@@ -344,13 +363,16 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
 
     "returns UpstreamFailed when connector yields UpstreamErrorResponse (e.g. 502)" in {
-      val (service, connector, _) = newService()
+      val (service, connector, sessionRepo) = newService()
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
 
       when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Left(UpstreamErrorResponse("bad gateway", 502))))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 5))
       val result = service.submitNilMonthlyReturn(ua).futureValue
@@ -416,6 +438,98 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       result.getMessage.toLowerCase must include("month/year")
       verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
     }
+  }
+
+  "checkAndUpdateSubmissionStatus" should {
+    "return pending + timedOut: false if the timeout has not yet elapsed" in {
+      val (service, cisConnector, sessionRepo) = newService()
+      when(sessionRepo.set(any())) thenReturn Future.successful(true)
+      when(cisConnector.stubbedSubmissionStatus(any[LocalDateTime])) thenReturn Pending
+
+      val submissionStatus = SubmissionStatus(
+        "123",
+        LocalDateTime.now(),
+        Pending,
+        false
+      )
+      val ua               = UserAnswers("test-user").set(SubmissionStatusPage, submissionStatus).get
+
+      val result = service.checkAndUpdateSubmissionStatus(submissionStatus, ua)
+
+      result.futureValue.result mustBe Pending
+      result.futureValue.timedOut mustBe false
+    }
+
+    "return pending + timedOut: true if the timeout has elapsed" in {
+      val (service, cisConnector, sessionRepo) = newService()
+      when(sessionRepo.set(any())) thenReturn Future.successful(true)
+      when(cisConnector.stubbedSubmissionStatus(any[LocalDateTime])) thenReturn Pending
+
+      val submissionStatus = SubmissionStatus(
+        "123",
+        LocalDateTime.now().minusSeconds(90),
+        Pending,
+        false
+      )
+      val ua               = UserAnswers("test-user").set(SubmissionStatusPage, submissionStatus).get
+
+      val result = service.checkAndUpdateSubmissionStatus(submissionStatus, ua)
+
+      result.futureValue.result mustBe Pending
+      result.futureValue.timedOut mustBe true
+    }
+
+    Seq(Submitted, Rejected(1, "Error"), UpstreamFailed(1, "Error")).foreach { chrisResult =>
+
+      s"return $chrisResult + timedOut: false if the timeout has not elapsed" in {
+        val (service, cisConnector, sessionRepo) = newService()
+        when(sessionRepo.set(any())) thenReturn Future.successful(true)
+        when(cisConnector.stubbedSubmissionStatus(any[LocalDateTime])) thenReturn chrisResult
+
+        val submissionStatus = SubmissionStatus(
+          "123",
+          LocalDateTime.now(),
+          Pending,
+          false
+        )
+        val ua               = UserAnswers("test-user")
+          .set(
+            SubmissionStatusPage,
+            submissionStatus.copy(result = chrisResult)
+          )
+          .get
+
+        val result = service.checkAndUpdateSubmissionStatus(submissionStatus, ua)
+
+        result.futureValue.result mustBe chrisResult
+        result.futureValue.timedOut mustBe false
+      }
+
+      s"return $chrisResult + timedOut: false if the even when timeout has elapsed" in {
+        val (service, cisConnector, sessionRepo) = newService()
+        when(sessionRepo.set(any())) thenReturn Future.successful(true)
+        when(cisConnector.stubbedSubmissionStatus(any[LocalDateTime])) thenReturn chrisResult
+
+        val submissionStatus = SubmissionStatus(
+          "123",
+          LocalDateTime.now().minusSeconds(90),
+          Pending,
+          false
+        )
+        val ua               = UserAnswers("test-user")
+          .set(
+            SubmissionStatusPage,
+            submissionStatus.copy(result = chrisResult)
+          )
+          .get
+
+        val result = service.checkAndUpdateSubmissionStatus(submissionStatus, ua)
+
+        result.futureValue.result mustBe chrisResult
+        result.futureValue.timedOut mustBe false
+      }
+    }
+
   }
 
   "createNilMonthlyReturn" should {

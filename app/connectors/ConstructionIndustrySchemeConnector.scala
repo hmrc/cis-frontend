@@ -16,8 +16,9 @@
 
 package connectors
 
+import models.ChrisResult.{Pending, Rejected, Submitted}
 import models.monthlyreturns.{NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import models.ChrisSubmissionRequest
+import models.{ChrisResult, ChrisSubmissionRequest}
 import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
 import play.api.Logging
 import play.api.libs.json.Json
@@ -26,6 +27,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, String
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.{Duration, LocalDateTime}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,6 +57,16 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
       .withBody(Json.toJson(request))
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
+
+  def stubbedSubmissionStatus(submittedDate: LocalDateTime): ChrisResult = {
+    val secondsElapsed = Duration.between(submittedDate, LocalDateTime.now()).toSeconds
+
+    secondsElapsed match {
+      case n if n < 100 => Pending
+      case n if n < 150 => Submitted
+      case _            => Rejected(0, "Error occurred")
+    }
+  }
 
   def createNilMonthlyReturn(
     payload: NilMonthlyReturnRequest

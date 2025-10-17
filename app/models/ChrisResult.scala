@@ -16,9 +16,18 @@
 
 package models
 
+import play.api.libs.json.{Json, OFormat}
+
 sealed trait ChrisResult
 object ChrisResult {
   case object Submitted extends ChrisResult
+  case object Pending extends ChrisResult
   final case class Rejected(status: Int, body: String) extends ChrisResult
   final case class UpstreamFailed(status: Int, message: String) extends ChrisResult
+
+  implicit val format: OFormat[ChrisResult]                  = Json.format[ChrisResult]
+  implicit val submittedFormat: OFormat[Submitted.type]      = Json.format[Submitted.type]
+  implicit val pendingFormat: OFormat[Pending.type]          = Json.format[Pending.type]
+  implicit val rejectedFormat: OFormat[Rejected]             = Json.format[Rejected]
+  implicit val upstreamFailedFormat: OFormat[UpstreamFailed] = Json.format[UpstreamFailed]
 }
