@@ -16,10 +16,12 @@
 
 package models
 
+import models.submission.ChrisSubmissionRequest
+
 import java.time.YearMonth
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
 

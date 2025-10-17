@@ -14,27 +14,12 @@
  * limitations under the License.
  */
 
-package models
+package pages.submission
 
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.JsPath
+import pages.QuestionPage
 
-class ChrisResultSpec extends AnyFreeSpec with Matchers {
-
-  "Rejected" - {
-    "keeps status and body" in {
-      val a = ChrisResult.Rejected(400, "bad")
-      a.status mustBe 400
-      a.body mustBe "bad"
-    }
-  }
-
-  "UpstreamFailed" - {
-    "keeps status and message; equals by value" in {
-      val a = ChrisResult.UpstreamFailed(502, "boom")
-      a.status mustBe 502
-      a.message mustBe "boom"
-    }
-  }
-
+object SubmissionStatusPage extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ "submission" \ "status"
+  override def toString: String = "submissionStatus"
 }

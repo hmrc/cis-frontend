@@ -17,8 +17,8 @@
 package connectors
 
 import models.monthlyreturns.{NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import models.ChrisSubmissionRequest
 import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
+import models.submission.*
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
@@ -47,15 +47,6 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
 
-  def submitChris(
-    request: ChrisSubmissionRequest
-  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    http
-      .post(url"$cisBaseUrl/chris")
-      .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
-      .withBody(Json.toJson(request))
-      .execute[Either[UpstreamErrorResponse, HttpResponse]]
-
   def createNilMonthlyReturn(
     payload: NilMonthlyReturnRequest
   )(implicit hc: HeaderCarrier): Future[NilMonthlyReturnResponse] =
@@ -63,4 +54,38 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .post(url"$cisBaseUrl/monthly-returns/nil/create")
       .withBody(Json.toJson(payload))
       .execute[NilMonthlyReturnResponse]
+
+  def createAndTrackSubmission(
+    req: CreateAndTrackSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[CreateAndTrackSubmissionResponse] =
+    http
+      .post(url"$cisBaseUrl/submissions/create-and-track")
+      .withBody(Json.toJson(req))
+      .execute[CreateAndTrackSubmissionResponse]
+
+  def submitToChris(
+    submissionId: String,
+    request: ChrisSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/submit-to-chris")
+      .withBody(Json.toJson(request))
+      .execute[ChrisSubmissionResponse]
+
+  def updateSubmission(
+    submissionId: String,
+    request: UpdateSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/update")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { resp =>
+        if (resp.status / 100 == 2) {
+          Future.unit
+        } else {
+          Future.failed(UpstreamErrorResponse(resp.body, resp.status, resp.status))
+        }
+      }
+
 }
