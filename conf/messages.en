@@ -261,4 +261,4 @@ systemError.heading     = Sorry, there is a problem with this service
 systemError.p1          = Try again later.
 systemError.p2          = Contact the
 systemError.link        = HMRC Online Services Helpdesk
-systemError.p3          = if you need to speak to someone about Construction Industry Scheme and quote the reference number: [JYM8CWI72FVXT5FQ]
+systemError.p3          = if you need to speak to someone about Construction Industry Scheme and quote the reference number:

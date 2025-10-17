@@ -17,26 +17,25 @@
 package controllers
 
 import config.FrontendAppConfig
-import controllers.actions.*
 
 import javax.inject.Inject
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import utils.ReferenceGenerator
 import views.html.SystemErrorView
 
-class SystemErrorController @Inject()(
-   override val messagesApi: MessagesApi,
-   identify: IdentifierAction,
-   getData: DataRetrievalAction,
-   requireData: DataRequiredAction,
-   val controllerComponents: MessagesControllerComponents,
-   view: SystemErrorView
+class SystemErrorController @Inject() (
+  override val messagesApi: MessagesApi,
+  val controllerComponents: MessagesControllerComponents,
+  view: SystemErrorView,
+  referenceGenerator: ReferenceGenerator
 )(implicit appConfig: FrontendAppConfig)
-  extends FrontendBaseController with I18nSupport {
+    extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = Action { implicit request =>
+    val referenceNumber = referenceGenerator.generateReference()
+    Ok(view(referenceNumber))
   }
 }
