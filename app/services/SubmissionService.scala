@@ -34,49 +34,6 @@ class SubmissionService @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  private def buildCreateAndTrackRequest(ua: UserAnswers): Future[CreateAndTrackSubmissionRequest] = {
-    val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
-    val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
-      .map(YearMonth.from)
-      .getOrElse(throw new RuntimeException("Month/Year not selected"))
-    val email      = ua.get(ConfirmEmailAddressPage)
-
-    Future.successful(
-      CreateAndTrackSubmissionRequest(
-        instanceId = instanceId,
-        taxYear = ym.getYear,
-        taxMonth = ym.getMonthValue,
-        emailRecipient = email
-      )
-    )
-  }
-
-  private def buildChrisSubmissionRequest(ua: UserAnswers, taxpayer: CisTaxpayer): ChrisSubmissionRequest = {
-    val utr = taxpayer.utr
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer UTR missing"))
-    val ao  = taxpayer.aoReference
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer AOref missing"))
-
-    val inactivity = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
-    val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
-      .map(YearMonth.from)
-      .getOrElse(throw new RuntimeException("Month/Year not selected"))
-
-    ChrisSubmissionRequest.from(
-      utr = utr,
-      aoReference = ao,
-      informationCorrect = true,
-      inactivity = inactivity,
-      monthYear = ym
-    )
-  }
-
   def createAndTrack(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[CreateAndTrackSubmissionResponse] =
     for {
       req      <- buildCreateAndTrackRequest(ua)
@@ -119,5 +76,48 @@ class SubmissionService @Inject() (
     )
 
     cisConnector.updateSubmission(submissionId, update)
+  }
+
+  private def buildCreateAndTrackRequest(ua: UserAnswers): Future[CreateAndTrackSubmissionRequest] = {
+    val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
+    val ym         = ua
+      .get(DateConfirmNilPaymentsPage)
+      .map(YearMonth.from)
+      .getOrElse(throw new RuntimeException("Month/Year not selected"))
+    val email      = ua.get(ConfirmEmailAddressPage)
+
+    Future.successful(
+      CreateAndTrackSubmissionRequest(
+        instanceId = instanceId,
+        taxYear = ym.getYear,
+        taxMonth = ym.getMonthValue,
+        emailRecipient = email
+      )
+    )
+  }
+
+  private def buildChrisSubmissionRequest(ua: UserAnswers, taxpayer: CisTaxpayer): ChrisSubmissionRequest = {
+    val utr = taxpayer.utr
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .getOrElse(throw new RuntimeException("CIS taxpayer UTR missing"))
+    val ao  = taxpayer.aoReference
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .getOrElse(throw new RuntimeException("CIS taxpayer AOref missing"))
+
+    val inactivity = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
+    val ym         = ua
+      .get(DateConfirmNilPaymentsPage)
+      .map(YearMonth.from)
+      .getOrElse(throw new RuntimeException("Month/Year not selected"))
+
+    ChrisSubmissionRequest.from(
+      utr = utr,
+      aoReference = ao,
+      informationCorrect = true,
+      inactivity = inactivity,
+      monthYear = ym
+    )
   }
 }

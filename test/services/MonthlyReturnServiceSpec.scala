@@ -18,9 +18,7 @@ package services
 
 import connectors.ConstructionIndustrySchemeConnector
 import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import models.submission.ChrisResult.*
 import models.UserAnswers
-import models.submission.ChrisSubmissionRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -29,9 +27,8 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import repositories.SessionRepository
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{LocalDate, YearMonth}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
@@ -253,169 +250,6 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         service.isDuplicate("CIS-123", year = 2024, month = 5).futureValue
       }
       ex.getMessage must include("boom")
-    }
-  }
-
-  "submitNilMonthlyReturn" should {
-
-    def uaWith(inact: InactivityRequest, yearMonth: YearMonth): UserAnswers = {
-      val emptyUa   = UserAnswers("test-user")
-      val updatedUa = emptyUa.set(InactivityRequestPage, inact).get
-      val date      = LocalDate.of(yearMonth.getYear, yearMonth.getMonthValue, 1)
-      updatedUa.set(DateConfirmNilPaymentsPage, date).get
-    }
-
-    def taxpayerWith(utr: Option[String], aoRef: Option[String]): CisTaxpayer =
-      createTaxpayer().copy(utr = utr, aoReference = aoRef)
-
-    "build DTO correctly and return true on success" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("  1234567890 "), aoRef = Some(" 123/AB456 "))))
-
-      val dtoCaptor: ArgumentCaptor[ChrisSubmissionRequest] =
-        ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
-
-      when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Right(HttpResponse(200, "<Ack/>"))))
-
-      val yearMonth = YearMonth.of(2025, 3)
-      val ua        = uaWith(InactivityRequest.Option1, yearMonth)
-
-      val result = service.submitNilMonthlyReturn(ua).futureValue
-      result mustBe Submitted
-
-      val dto = dtoCaptor.getValue
-      dto.utr mustBe "1234567890"
-      dto.aoReference mustBe "123/AB456"
-      dto.informationCorrect mustBe "yes"
-      dto.inactivity mustBe "yes"
-      dto.monthYear mustBe yearMonth.toString
-    }
-
-    "map Option2 -> inactivity=false" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
-
-      val dtoCaptor: ArgumentCaptor[ChrisSubmissionRequest] =
-        ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
-
-      when(connector.submitChris(dtoCaptor.capture())(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Right(HttpResponse(202, "<Ack/>"))))
-
-      val yearMonth = YearMonth.of(2024, 12)
-      val ua        = uaWith(InactivityRequest.Option2, yearMonth)
-
-      val result = service.submitNilMonthlyReturn(ua).futureValue
-      result mustBe Submitted
-      dtoCaptor.getValue.inactivity mustBe "no"
-    }
-
-    "returns Rejected on non-2xx (e.g. 304)" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
-
-      when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Right(HttpResponse(304, "not modified"))))
-
-      val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
-      val result = service.submitNilMonthlyReturn(ua).futureValue
-
-      result mustBe Rejected(304, "not modified")
-    }
-
-    "returns Rejected on 4xx (e.g. 404)" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
-
-      when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Left(UpstreamErrorResponse("not found", 404))))
-
-      val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 7))
-      val result = service.submitNilMonthlyReturn(ua).futureValue
-
-      result mustBe UpstreamFailed(404, "not found")
-    }
-
-    "returns UpstreamFailed when connector yields UpstreamErrorResponse (e.g. 502)" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
-
-      when(connector.submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Left(UpstreamErrorResponse("bad gateway", 502))))
-
-      val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 5))
-      val result = service.submitNilMonthlyReturn(ua).futureValue
-
-      result mustBe UpstreamFailed(502, "bad gateway")
-    }
-
-    "fails the future and does not call submitChris when UTR missing/empty" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = None, aoRef = Some("123/AB456"))))
-
-      val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 1))
-      val result = service.submitNilMonthlyReturn(ua).failed.futureValue
-
-      result.getMessage.toLowerCase must include("utr")
-      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
-    }
-
-    "fails the future and does not call submitChris when AO reference missing/empty" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = None)))
-
-      val ua     = uaWith(InactivityRequest.Option1, YearMonth.of(2025, 2))
-      val result = service.submitNilMonthlyReturn(ua).failed.futureValue
-
-      result.getMessage.toLowerCase must include("aoref")
-      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
-    }
-
-    "fails the future when InactivityRequest was not answered" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
-
-      val uaMissingInactivity = {
-        val emptyUa = UserAnswers("test-user")
-        val date    = LocalDate.of(2025, 6, 1)
-        emptyUa.set(DateConfirmNilPaymentsPage, date).get
-      }
-
-      val result = service.submitNilMonthlyReturn(uaMissingInactivity).failed.futureValue
-      result.getMessage.toLowerCase must include("inactivityrequest")
-      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
-    }
-
-    "fails the future when Month/Year was not answered" in {
-      val (service, connector, _) = newService()
-
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(taxpayerWith(utr = Some("1234567890"), aoRef = Some("123/AB456"))))
-
-      val uaMissingDate = {
-        val emptyUa = UserAnswers("test-user")
-        emptyUa.set(InactivityRequestPage, InactivityRequest.Option1).get
-      }
-
-      val result = service.submitNilMonthlyReturn(uaMissingDate).failed.futureValue
-      result.getMessage.toLowerCase must include("month/year")
-      verify(connector, never()).submitChris(any[ChrisSubmissionRequest])(any[HeaderCarrier])
     }
   }
 
