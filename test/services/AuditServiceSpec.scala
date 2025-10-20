@@ -29,15 +29,12 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuditServiceSpec extends SpecBase
-  with MockitoSugar
-  with FutureAwaits
-  with DefaultAwaitTimeout {
+class AuditServiceSpec extends SpecBase with MockitoSugar with FutureAwaits with DefaultAwaitTimeout {
 
-  private val mockAuditConnector = mock[AuditConnector]
-  private val service: AuditService = app.injector.instanceOf[AuditService]
+  private val mockAuditConnector                    = mock[AuditConnector]
+  private val service: AuditService                 = app.injector.instanceOf[AuditService]
   private implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
-  private val testUri = "testUri"
+  private val testUri                               = "testUri"
 
   implicit val ec: ExecutionContext = global
 
