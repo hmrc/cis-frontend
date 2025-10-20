@@ -277,7 +277,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       status = status,
       hmrcMarkGenerated = irmark,
       correlationId = Some(corr),
-      nextPollInSeconds = None,
+      responseEndPoint = None,
       gatewayTimestamp = Some(ts),
       error = err
     )

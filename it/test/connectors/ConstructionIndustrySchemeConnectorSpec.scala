@@ -312,7 +312,10 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
                   |  "hmrcMarkGenerated": "IRMARK999",
                   |  "correlationId": "CID999",
                   |  "gatewayTimestamp": "2025-01-01T00:00:00Z",
-                  |  "nextPollInSeconds": 15
+                  |  "responseEndPoint": {
+                  |    "url": "https://chris.example/poll/CID-123",
+                  |    "pollIntervalSeconds": 15
+                  |  }
                   |}""".stripMargin
               )
           )
@@ -320,8 +323,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
       val out = connector.submitToChris("sub-123", payload).futureValue
       out.status mustBe "ACCEPTED"
-      out.nextPollInSeconds.value mustBe 15
-    }
+      val ep = out.responseEndPoint.value
+      ep.url mustBe "https://chris.example/poll/CID-123"
+      ep.pollIntervalSeconds mustBe 15    }
 
     "fail the future when BE returns non-2xx (e.g. 500)" in {
       stubFor(

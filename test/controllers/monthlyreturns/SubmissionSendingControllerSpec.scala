@@ -68,7 +68,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status = status,
       hmrcMarkGenerated = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
       correlationId = Some("CID123"),
-      nextPollInSeconds = None,
+      responseEndPoint = None,
       gatewayTimestamp = Some("2025-01-01T00:00:00Z"),
       error = None
     )

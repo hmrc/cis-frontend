@@ -18,12 +18,21 @@ package models.submission
 
 import play.api.libs.json.{JsObject, Json, OFormat}
 
+final case class ResponseEndPointDto(
+  url: String,
+  pollIntervalSeconds: Int
+)
+
+object ResponseEndPointDto {
+  implicit val format: OFormat[ResponseEndPointDto] = Json.format[ResponseEndPointDto]
+}
+
 final case class ChrisSubmissionResponse(
   submissionId: String,
   status: String,
   hmrcMarkGenerated: String,
   correlationId: Option[String] = None,
-  nextPollInSeconds: Option[Int] = None,
+  responseEndPoint: Option[ResponseEndPointDto] = None,
   gatewayTimestamp: Option[String] = None,
   error: Option[JsObject] = None
 )
