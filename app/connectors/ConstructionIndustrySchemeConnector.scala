@@ -88,7 +88,6 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         }
       }
 
-
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     http
       .get(url"$cisBaseUrl/scheme/email/$cisId")

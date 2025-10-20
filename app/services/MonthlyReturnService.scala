@@ -20,10 +20,9 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.UserAnswers
 import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
-import pages.monthlyreturns.CisIdPage
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
