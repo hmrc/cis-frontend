@@ -21,26 +21,26 @@ import org.scalatest.matchers.should.Matchers.{should, shouldBe}
 import play.api.libs.json.{JsValue, Json}
 
 class AuditEventModelSpec extends SpecBase {
-  
+
   "AuthFailureAuditEventModel" - {
     val underTest = AuthFailureAuditEventModel()
     "must serialise correctly" in {
       Json.toJson(underTest) mustBe Json.obj()
     }
   }
-  
+
   "extendedDataEvent" - {
-    val testAuditType: String = "test-audit-type"
+    val testAuditType: String   = "test-audit-type"
     val testDetailJson: JsValue = Json.toJson(testAuditType)
     "behave as expected" in {
-      val event = new AuditEventModel {
-        override val auditType: String = testAuditType
+      val event    = new AuditEventModel {
+        override val auditType: String   = testAuditType
         override val detailJson: JsValue = testDetailJson
       }
       val extended = event.extendedDataEvent
       extended.auditType shouldBe testAuditType
-      extended.detail shouldBe testDetailJson
+      extended.detail    shouldBe testDetailJson
     }
   }
-  
+
 }
