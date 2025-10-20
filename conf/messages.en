@@ -39,12 +39,17 @@ monthlyreturns.checkYourAnswers.submitSection.heading = Now submit your return
 monthlyreturns.checkYourAnswers.submitSection.confirmation = By submitting this return you are confirming that, to the best of your knowledge, the details you are providing are correct.
 monthlyreturns.checkYourAnswers.submitSection.button = Accept and submit
 
-journeyRecovery.continue.title = Sorry, there is a problem with the service
-journeyRecovery.continue.heading = Sorry, there is a problem with the service
-journeyRecovery.continue.guidance = [Add content to explain how to proceed.]
-journeyRecovery.startAgain.title = Sorry, there is a problem with the service
-journeyRecovery.startAgain.heading = Sorry, there is a problem with the service
-journeyRecovery.startAgain.guidance = [Add content to explain why the user needs to start again.]
+journeyRecovery.continue.title = Sorry, there is a problem with this service
+journeyRecovery.continue.heading = Sorry, there is a problem with this service
+journeyRecovery.continue.guidance.p1 = There is problem with this service. You can return to
+journeyRecovery.continue.guidance.link = Construction Industry Scheme
+journeyRecovery.continue.guidance.p2 = or try again later.
+
+journeyRecovery.startAgain.title = Sorry, there is a problem with this service
+journeyRecovery.startAgain.heading = Sorry, there is a problem with this service
+journeyRecovery.startAgain.guidance.p1 = There is problem with this service. You can return to
+journeyRecovery.startAgain.guidance.link = Construction Industry Scheme
+journeyRecovery.startAgain.guidance.p2 = or try again later.
 
 signedOut.title = For your security, we signed you out
 signedOut.heading = For your security, we signed you out
