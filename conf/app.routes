@@ -61,3 +61,4 @@ GET        /monthly-return/already-submitted                  controllers.monthl
 
 GET        /page-not-found                                    controllers.PageNotFoundController.onPageLoad()
 GET        /access-denied                                     controllers.AccessDeniedController.onPageLoad()
+GET        /system-error/there-is-a-problem                   controllers.SystemErrorController.onPageLoad()
