@@ -60,3 +60,4 @@ GET        /monthly-return/confirmation                       controllers.monthl
 GET        /monthly-return/already-submitted                  controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
 
 GET        /page-not-found                                    controllers.PageNotFoundController.onPageLoad()
+GET        /access-denied                                     controllers.AccessDeniedController.onPageLoad()
