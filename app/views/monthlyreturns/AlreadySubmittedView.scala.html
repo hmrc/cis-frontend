@@ -14,11 +14,12 @@
  * limitations under the License.
  *@
 
-@import views.html.components._
 @import config.FrontendAppConfig
+@import views.html.components._
 
 @this(
     layout: templates.Layout,
+    govukButton: GovukButton,
     heading: H1,
     link: Link
 )
@@ -26,16 +27,17 @@
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("journeyRecovery.startAgain.title")),
-    showBackLink = false,
-    showSignOut = false
+    pageTitle = titleNoForm(messages("monthlyreturns.alreadySubmitted.title")),
+    showSignOut = false,
+    showBackLink = false
 ) {
 
-    @heading(messages("journeyRecovery.startAgain.heading"), classes = "govuk-heading-xl")
+    @heading((messages("monthlyreturns.alreadySubmitted.heading")), classes = "govuk-heading-xl")
+
     @link(
-        "journeyRecovery.startAgain.guidance.link",
-        appConfig.govUkCISGuidanceUrl,
-        prefixTextKey = "journeyRecovery.startAgain.guidance.p1",
-        suffixTextKey = "journeyRecovery.startAgain.guidance.p2"
+        "monthlyreturns.alreadySubmitted.link",
+        appConfig.constructionIndustryAccountUrl,
+        false,
+        "monthlyreturns.alreadySubmitted.paragraph"
     )
 }

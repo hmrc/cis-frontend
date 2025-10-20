@@ -14,28 +14,32 @@
  * limitations under the License.
  *@
 
-@import views.html.components._
 @import config.FrontendAppConfig
+@import views.html.components._
 
 @this(
     layout: templates.Layout,
+    govukButton: GovukButton,
     heading: H1,
+    paragraph: Paragraph,
     link: Link
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("journeyRecovery.startAgain.title")),
-    showBackLink = false,
-    showSignOut = false
+    pageTitle = titleNoForm(messages("pageNotFound.title")),
+    showSignOut = false,
+    showBackLink = false
 ) {
 
-    @heading(messages("journeyRecovery.startAgain.heading"), classes = "govuk-heading-xl")
+    @heading(messages("pageNotFound.heading"), classes = "govuk-heading-xl")
+    @paragraph(messages("pageNotFound.p1"))
+    @paragraph(messages("pageNotFound.p2"))
     @link(
-        "journeyRecovery.startAgain.guidance.link",
-        appConfig.govUkCISGuidanceUrl,
-        prefixTextKey = "journeyRecovery.startAgain.guidance.p1",
-        suffixTextKey = "journeyRecovery.startAgain.guidance.p2"
+        "pageNotFound.link",
+        appConfig.hmrcOnlineServiceDeskUrl,
+        prefixTextKey = "pageNotFound.p3",
+        suffixTextKey = "pageNotFound.p4"
     )
 }

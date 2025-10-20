@@ -39,12 +39,17 @@ monthlyreturns.checkYourAnswers.submitSection.heading = Now submit your return
 monthlyreturns.checkYourAnswers.submitSection.confirmation = By submitting this return you are confirming that, to the best of your knowledge, the details you are providing are correct.
 monthlyreturns.checkYourAnswers.submitSection.button = Accept and submit
 
-journeyRecovery.continue.title = Sorry, there is a problem with the service
-journeyRecovery.continue.heading = Sorry, there is a problem with the service
-journeyRecovery.continue.guidance = [Add content to explain how to proceed.]
-journeyRecovery.startAgain.title = Sorry, there is a problem with the service
-journeyRecovery.startAgain.heading = Sorry, there is a problem with the service
-journeyRecovery.startAgain.guidance = [Add content to explain why the user needs to start again.]
+journeyRecovery.continue.title = Sorry, there is a problem with this service
+journeyRecovery.continue.heading = Sorry, there is a problem with this service
+journeyRecovery.continue.guidance.p1 = There is problem with this service. You can return to
+journeyRecovery.continue.guidance.link = Construction Industry Scheme
+journeyRecovery.continue.guidance.p2 = or try again later.
+
+journeyRecovery.startAgain.title = Sorry, there is a problem with this service
+journeyRecovery.startAgain.heading = Sorry, there is a problem with this service
+journeyRecovery.startAgain.guidance.p1 = There is problem with this service. You can return to
+journeyRecovery.startAgain.guidance.link = Construction Industry Scheme
+journeyRecovery.startAgain.guidance.p2 = or try again later.
 
 signedOut.title = For your security, we signed you out
 signedOut.heading = For your security, we signed you out
@@ -53,7 +58,7 @@ signedOut.guidance = We did not save your answers.
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
 
-monthlyreturns.unauthorised.org.title = You need to register to use this service - GOV.UK
+monthlyreturns.unauthorised.org.title = You need to register to use this service
 monthlyreturns.unauthorised.org.heading = You need to register to use this service
 monthlyreturns.unauthorised.org.guidance.p1 = Register with the
 monthlyreturns.unauthorised.org.guidance.link = Construction Industry Scheme
@@ -242,3 +247,16 @@ monthlyreturns.submissionSuccessful.feedback.p1 = Send us your feedback. Your vi
 stub.monthlyreturns.submissionSuccessful.button = Successful
 stub.monthlyreturns.submissionUnsuccessful.button = Unsuccessful
 stub.monthlyreturns.submissionAwaiting.button = Awaiting
+
+monthlyreturns.alreadySubmitted.title      = You have already submitted your monthly nil return
+monthlyreturns.alreadySubmitted.heading    = You have already submitted your monthly nil return
+monthlyreturns.alreadySubmitted.paragraph  = View and manage your monthly returns in your
+monthlyreturns.alreadySubmitted.link       = Construction Industry Scheme account.
+
+pageNotFound.title      = Page not found
+pageNotFound.heading    = Page not found
+pageNotFound.p1         = If you typed the web address, check it is correct.
+pageNotFound.p2         = If you pasted the web address, check you copied the entire address.
+pageNotFound.p3         = If the web address is correct or you selected a link or button, contact the
+pageNotFound.link       = HMRC Online Services Helpdesk
+pageNotFound.p4         = if you need to speak to someone.

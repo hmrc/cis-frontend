@@ -48,17 +48,21 @@ class MonthlyReturnService @Inject() (
           if (cisId.isEmpty) {
             Future.failed(new RuntimeException("Empty cisId (uniqueId) returned from /cis/taxpayer"))
           } else {
-            ua.set(CisIdPage, cisId)
-              .fold(
-                err => Future.failed(err),
-                updatedUa => sessionRepository.set(updatedUa).map(_ => (cisId, updatedUa))
-              )
+            val contractorName = tp.schemeName.getOrElse("")
+            for {
+              updatedUaWithCisId      <- Future.fromTry(ua.set(CisIdPage, cisId))
+              updatedUaWithContractor <- Future.fromTry(updatedUaWithCisId.set(ContractorNamePage, contractorName))
+              _                       <- sessionRepository.set(updatedUaWithContractor)
+            } yield (cisId, updatedUaWithContractor)
           }
         }
     }
 
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
+
+  def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
+    cisConnector.getSchemeEmail(cisId)
 
   def isDuplicate(cisId: String, year: Int, month: Int)(implicit hc: HeaderCarrier): Future[Boolean] =
     retrieveAllMonthlyReturns(cisId).map { res =>
