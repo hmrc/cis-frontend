@@ -260,3 +260,10 @@ pageNotFound.p2         = If you pasted the web address, check you copied the en
 pageNotFound.p3         = If the web address is correct or you selected a link or button, contact the
 pageNotFound.link       = HMRC Online Services Helpdesk
 pageNotFound.p4         = if you need to speak to someone.
+
+systemError.title       = Sorry, there is a problem with this service
+systemError.heading     = Sorry, there is a problem with this service
+systemError.p1          = Try again later.
+systemError.p2          = Contact the
+systemError.link        = HMRC Online Services Helpdesk
+systemError.p3          = if you need to speak to someone about Construction Industry Scheme and quote the reference number:
