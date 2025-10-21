@@ -20,21 +20,17 @@ import base.SpecBase
 import play.api.test.FakeRequest
 import models.UserAnswers
 import models.submission.{ChrisSubmissionResponse, CreateAndTrackSubmissionResponse, ResponseEndPointDto}
-import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.submission.*
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Writes
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
-import scala.util.Failure
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
@@ -82,7 +78,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     when(service.createAndTrack(any[UserAnswers])(any[HeaderCarrier]))
       .thenReturn(Future.successful(created))
 
-    when(service.submitToChris(eqTo(createdId), any[UserAnswers])(any[HeaderCarrier]))
+    when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers])(any[HeaderCarrier]))
       .thenReturn(Future.successful(submitted))
 
     when(sessionDb.set(any[UserAnswers]))
@@ -108,7 +104,6 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
-      verify(mockMongoDb, atLeastOnce()).set(any[UserAnswers])
       verify(mockService).updateSubmission(eqTo("sub-123"), any[UserAnswers], any())(any[HeaderCarrier])
     }
 
@@ -212,79 +207,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe recoveryRoute
 
       verifyNoInteractions(mockMongoDb)
-      verify(mockService, never()).submitToChris(any[String], any[UserAnswers])(any[HeaderCarrier])
+      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers])(any[HeaderCarrier])
       verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
     }
 
-    "falls back to JourneyRecovery when persisting to FE Mongo fails" in {
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
-
-      when(mockMongoDb.set(any[UserAnswers]))
-        .thenReturn(Future.failed(new RuntimeException("mongo down")))
-
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-
-      val result = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe recoveryRoute
-
-      verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
-    }
-
-    "persists IRMark and endpoint when ack contains responseEndPoint" in {
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-
-      val ep = ResponseEndPointDto("https://poll.example/CID-123", 15)
-      stubSubmissionFlow(
-        mockService,
-        mockMongoDb,
-        status = "PENDING",
-        endpoint = Some(ep)
-      )
-
-      val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
-      when(mockMongoDb.set(uaCaptor.capture())).thenReturn(Future.successful(true))
-
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-
-      val result = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe awaitingRoute
-
-      val savedUa = uaCaptor.getValue
-      savedUa.get(SubmissionIdPage).value mustBe "sub-123"
-      savedUa.get(SubmissionStatusPage).value mustBe "PENDING"
-      savedUa.get(IrMarkPage).value mustBe "Dj5TVJDyRYCn9zta5EdySeY4fyA="
-      savedUa.get(PollUrlPage).value mustBe "https://poll.example/CID-123"
-      savedUa.get(PollIntervalPage).value mustBe 15
-    }
-
-    "falls back to JourneyRecovery when updating UserAnswers fails before persisting" in { // <-- NEW
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-
-      stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
-      val uaSpy = spy(userAnswersWithCisId)
-      doReturn(Failure(new RuntimeException("UA set failed")))
-        .when(uaSpy)
-        .set(eqTo(SubmissionIdPage), eqTo("sub-123"))(any[Writes[String]])
-
-      val app        = buildAppWith(Some(uaSpy), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-      val result     = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe recoveryRoute
-
-      verify(mockMongoDb, never()).set(any[UserAnswers])
-      verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
-    }
   }
 }

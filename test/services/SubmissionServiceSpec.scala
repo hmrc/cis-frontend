@@ -27,6 +27,7 @@ import org.mockito.ArgumentCaptor
 import org.scalatest.TryValues
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
 import play.api.libs.json.{JsObject, Json}
+import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{LocalDate, YearMonth}
@@ -60,7 +61,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   "createAndTrack" - {
     "build request from UserAnswers and return BE response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val expectedReq = CreateAndTrackSubmissionRequest(
         instanceId = "123",
@@ -84,7 +86,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when CIS ID is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val ua = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
 
@@ -97,7 +100,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val ua = emptyUserAnswers.set(CisIdPage, "123").success.value
 
@@ -109,10 +113,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     }
   }
 
-  "submitToChris" - {
+  "submitToChrisAndPersist" - {
     "fetch taxpayer, build ChrisSubmissionRequest and return BE response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayer))
@@ -126,10 +131,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       )
 
       val beResp = mkChrisResp()
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
       when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(beResp))
 
-      val out = service.submitToChris("sub-123", uaWithInactivityYes).futureValue
+      val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes).futureValue
       out mustBe beResp
 
       val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -140,14 +149,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when taxpayer UTR is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val badTaxpayer = taxpayer.copy(utr = None)
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChris("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
       }
       ex.getMessage must include("CIS taxpayer UTR missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -155,14 +165,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when taxpayer AO reference is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val badTaxpayer = taxpayer.copy(aoReference = None)
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChris("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
       }
       ex.getMessage must include("CIS taxpayer AOref missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -170,7 +181,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year not selected" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayer))
@@ -178,7 +190,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val uaNoYM = emptyUserAnswers.set(CisIdPage, "123").success.value
 
       val ex = intercept[RuntimeException] {
-        service.submitToChris("sub-123", uaNoYM).futureValue
+        service.submitToChrisAndPersist("sub-123", uaNoYM).futureValue
       }
       ex.getMessage must include("Month/Year not selected")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -188,16 +200,17 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   "updateSubmission" - {
     "translate chris response to UpdateSubmissionRequest and call connector" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
 
-      val ua = uaBase // has cisId, ym, email
+      val ua = uaBase
 
       val chrisResp = mkChrisResp(
         status = "DEPARTMENTAL_ERROR",
-        irmark = "IR-ABC",
+        irmark = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
         ts = "2025-02-02T10:20:30Z",
         err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops"))
       )
@@ -212,7 +225,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.instanceId mustBe "123"
       upd.taxYear mustBe 2025
       upd.taxMonth mustBe 10
-      upd.hmrcMarkGenerated mustBe Some("IR-ABC")
+      upd.hmrcMarkGenerated mustBe Some("Dj5TVJDyRYCn9zta5EdySeY4fyA=")
       upd.submittableStatus mustBe "DEPARTMENTAL_ERROR"
       upd.acceptedTime mustBe Some("2025-02-02T10:20:30Z")
       upd.emailRecipient mustBe Some("test@test.com")
@@ -223,7 +236,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when CIS ID missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val ua        = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
       val chrisResp = mkChrisResp()
@@ -237,7 +251,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year not selected" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val service                                        = new SubmissionService(connector)
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
 
       val ua        = emptyUserAnswers.set(CisIdPage, "123").success.value
       val chrisResp = mkChrisResp()

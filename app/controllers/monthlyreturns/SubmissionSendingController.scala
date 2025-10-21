@@ -17,25 +17,19 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.UserAnswers
-import models.submission.ChrisSubmissionResponse
-import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
-import repositories.SessionRepository
 import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.concurrent.ExecutionContext
 
 class SubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
-  sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -55,8 +49,7 @@ class SubmissionSendingController @Inject() (
 
       (for {
         created   <- submissionService.createAndTrack(request.userAnswers)
-        submitted <- submissionService.submitToChris(created.submissionId, request.userAnswers)
-        _         <- writeToFeMongo(request.userAnswers, created.submissionId, submitted)
+        submitted <- submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers)
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
       } yield redirectForStatus(submitted.status))
         .recover { case ex =>
@@ -76,32 +69,4 @@ class SubmissionSendingController @Inject() (
       Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
   }
 
-  private def writeToFeMongo(
-    ua: UserAnswers,
-    submissionId: String,
-    response: ChrisSubmissionResponse
-  ): Future[Boolean] = {
-    val updatedUa: Try[UserAnswers] = for {
-      ua1 <- ua.set(SubmissionIdPage, submissionId)
-      ua2 <- ua1.set(SubmissionStatusPage, response.status)
-      ua3 <- ua2.set(IrMarkPage, response.hmrcMarkGenerated)
-      ua4 <- response.responseEndPoint match {
-               case Some(endpoint) =>
-                 for {
-                   u1 <- ua3.set(PollUrlPage, endpoint.url)
-                   u2 <- u1.set(PollIntervalPage, endpoint.pollIntervalSeconds)
-                 } yield u2
-               case None           =>
-                 Success(ua3)
-             }
-    } yield ua4
-
-    updatedUa.fold(
-      { err =>
-        logger.error(s"[writeToFeMongo] Failed to update UserAnswers: ${err.getMessage}", err)
-        Future.failed(err)
-      },
-      sessionRepository.set
-    )
-  }
 }
