@@ -261,6 +261,10 @@ pageNotFound.p3         = If the web address is correct or you selected a link o
 pageNotFound.link       = HMRC Online Services Helpdesk
 pageNotFound.p4         = if you need to speak to someone.
 
+accessDenied.title      = Sorry, there is a problem with the service
+accessDenied.heading    = Sorry, there is a problem with the service
+accessDenied.link       = Return to the Construction Industry Scheme start page.
+
 systemError.title       = Sorry, there is a problem with this service
 systemError.heading     = Sorry, there is a problem with this service
 systemError.p1          = Try again later.
