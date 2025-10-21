@@ -244,8 +244,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         mockService,
         mockMongoDb,
         status = "PENDING",
-        endpoint = Some(ep),
-        irMark = "Dj5TVJDyRYCn9zta5EdySeY4fyA="
+        endpoint = Some(ep)
       )
 
       val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
