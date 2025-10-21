@@ -210,7 +210,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val chrisResp = mkChrisResp(
         status = "DEPARTMENTAL_ERROR",
-        irmark = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
         ts = "2025-02-02T10:20:30Z",
         err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops"))
       )
