@@ -25,7 +25,7 @@
     link: Link
 )
 
-@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@()(implicit request: RequestHeader, appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages("pageNotFound.title")),
