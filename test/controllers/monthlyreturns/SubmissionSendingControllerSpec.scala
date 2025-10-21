@@ -19,18 +19,22 @@ package controllers.monthlyreturns
 import base.SpecBase
 import play.api.test.FakeRequest
 import models.UserAnswers
-import models.submission.{ChrisSubmissionResponse, CreateAndTrackSubmissionResponse}
+import models.submission.{ChrisSubmissionResponse, CreateAndTrackSubmissionResponse, ResponseEndPointDto}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
+import pages.submission.*
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Writes
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
+import scala.util.Failure
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
@@ -58,7 +62,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     service: SubmissionService,
     sessionDb: SessionRepository,
     status: String,
-    createdId: String = "sub-123"
+    createdId: String = "sub-123",
+    endpoint: Option[ResponseEndPointDto] = None,
+    irMark: String = "Dj5TVJDyRYCn9zta5EdySeY4fyA="
   ): (CreateAndTrackSubmissionResponse, ChrisSubmissionResponse) = {
 
     val created = CreateAndTrackSubmissionResponse(submissionId = createdId)
@@ -66,9 +72,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     val submitted = ChrisSubmissionResponse(
       submissionId = createdId,
       status = status,
-      hmrcMarkGenerated = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
+      hmrcMarkGenerated = irMark,
       correlationId = Some("CID123"),
-      responseEndPoint = None,
+      responseEndPoint = endpoint,
       gatewayTimestamp = Some("2025-01-01T00:00:00Z"),
       error = None
     )
@@ -111,10 +117,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "SUBMITTED_NO_RECEIPT")
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val ctl = app.injector.instanceOf[SubmissionSendingController]
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
@@ -125,10 +131,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val ctl = app.injector.instanceOf[SubmissionSendingController]
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe awaitingRoute
@@ -139,10 +145,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val ctl = app.injector.instanceOf[SubmissionSendingController]
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe awaitingRoute
@@ -153,10 +159,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "FATAL_ERROR")
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val ctl = app.injector.instanceOf[SubmissionSendingController]
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
@@ -167,13 +173,27 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "DEPARTMENTAL_ERROR")
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val ctl = app.injector.instanceOf[SubmissionSendingController]
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
+    }
+
+    "redirects to JourneyRecovery for unknown status" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubSubmissionFlow(mockService, mockMongoDb, status = "SOMETHING_ELSE")
+
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
     }
 
     "falls back to JourneyRecovery when any step fails (e.g. create fails)" in {
@@ -183,16 +203,88 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.createAndTrack(any[UserAnswers])(any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val ctl = app.injector.instanceOf[SubmissionSendingController]
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
 
       verifyNoInteractions(mockMongoDb)
       verify(mockService, never()).submitToChris(any[String], any[UserAnswers])(any[HeaderCarrier])
+      verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
+    }
+
+    "falls back to JourneyRecovery when persisting to FE Mongo fails" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
+
+      when(mockMongoDb.set(any[UserAnswers]))
+        .thenReturn(Future.failed(new RuntimeException("mongo down")))
+
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
+    }
+
+    "persists IRMark and endpoint when ack contains responseEndPoint" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val ep = ResponseEndPointDto("https://poll.example/CID-123", 15)
+      stubSubmissionFlow(
+        mockService,
+        mockMongoDb,
+        status = "PENDING",
+        endpoint = Some(ep),
+        irMark = "Dj5TVJDyRYCn9zta5EdySeY4fyA="
+      )
+
+      val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      when(mockMongoDb.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe awaitingRoute
+
+      val savedUa = uaCaptor.getValue
+      savedUa.get(SubmissionIdPage).value mustBe "sub-123"
+      savedUa.get(SubmissionStatusPage).value mustBe "PENDING"
+      savedUa.get(IrMarkPage).value mustBe "Dj5TVJDyRYCn9zta5EdySeY4fyA="
+      savedUa.get(PollUrlPage).value mustBe "https://poll.example/CID-123"
+      savedUa.get(PollIntervalPage).value mustBe 15
+    }
+
+    "falls back to JourneyRecovery when updating UserAnswers fails before persisting" in { // <-- NEW
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
+      val uaSpy = spy(userAnswersWithCisId)
+      doReturn(Failure(new RuntimeException("UA set failed")))
+        .when(uaSpy)
+        .set(eqTo(SubmissionIdPage), eqTo("sub-123"))(any[Writes[String]])
+
+      val app        = buildAppWith(Some(uaSpy), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+      val result     = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verify(mockMongoDb, never()).set(any[UserAnswers])
       verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
     }
   }
