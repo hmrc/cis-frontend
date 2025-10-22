@@ -14,32 +14,32 @@
  * limitations under the License.
  *@
 
-@import config.FrontendAppConfig
 @import views.html.components._
+@import config.FrontendAppConfig
 
 @this(
     layout: templates.Layout,
-    govukButton: GovukButton,
     heading: H1,
     paragraph: Paragraph,
-    link: Link
+    texWithLinkAndReference: TextWithLinkAndReference
 )
 
-@()(implicit request: RequestHeader, appConfig: FrontendAppConfig, messages: Messages)
+@(incidentReferenceNumber: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("pageNotFound.title")),
-    showSignOut = false,
-    showBackLink = false
+    pageTitle = titleNoForm(messages("systemError.title")),
+    showBackLink = false,
+    showSignOut = false
 ) {
 
-    @heading(messages("pageNotFound.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("pageNotFound.p1"))
-    @paragraph(messages("pageNotFound.p2"))
-    @link(
-        "pageNotFound.link",
+    @heading(messages("systemError.heading"), classes = "govuk-heading-xl")
+    @paragraph(messages("systemError.p1"))
+
+    @texWithLinkAndReference(
+        "systemError.link",
         appConfig.hmrcOnlineServiceDeskUrl,
-        prefixTextKey = "pageNotFound.p3",
-        suffixTextKey = "pageNotFound.p4"
+        prefixTextKey = "systemError.p2",
+        suffixTextKey = "systemError.p3",
+        referenceNumber = incidentReferenceNumber
     )
 }

@@ -14,32 +14,26 @@
  * limitations under the License.
  *@
 
-@import config.FrontendAppConfig
 @import views.html.components._
+@import config.FrontendAppConfig
 
 @this(
     layout: templates.Layout,
-    govukButton: GovukButton,
-    heading: H1,
-    paragraph: Paragraph,
+    header: H1,
     link: Link
 )
 
-@()(implicit request: RequestHeader, appConfig: FrontendAppConfig, messages: Messages)
+@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("pageNotFound.title")),
-    showSignOut = false,
-    showBackLink = false
+    pageTitle = titleNoForm(messages("accessDenied.title")),
+    showBackLink = false,
+    showSignOut = false
 ) {
 
-    @heading(messages("pageNotFound.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("pageNotFound.p1"))
-    @paragraph(messages("pageNotFound.p2"))
+    @header(messages("accessDenied.heading"), classes = "govuk-heading-xl")
     @link(
-        "pageNotFound.link",
-        appConfig.hmrcOnlineServiceDeskUrl,
-        prefixTextKey = "pageNotFound.p3",
-        suffixTextKey = "pageNotFound.p4"
+        "accessDenied.link",
+        appConfig.govUkCISGuidanceUrl
     )
 }
