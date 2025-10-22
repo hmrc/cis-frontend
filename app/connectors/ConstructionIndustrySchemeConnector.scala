@@ -26,6 +26,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, String
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.{Duration, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -71,6 +72,17 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .post(url"$cisBaseUrl/submissions/$submissionId/submit-to-chris")
       .withBody(Json.toJson(request))
       .execute[ChrisSubmissionResponse]
+
+  def getSubmissionStatus(submittedDate: Instant): Future[String] = {
+    // TODO: add real implementation
+    val secondsElapsed = Duration.between(submittedDate, Instant.now()).toSeconds
+
+    secondsElapsed match {
+      case n if n < 25 => Future.successful("PENDING")
+      case n if n < 50 => Future.successful("SUBMITTED")
+      case _           => Future.successful("FATAL_ERROR")
+    }
+  }
 
   def updateSubmission(
     submissionId: String,

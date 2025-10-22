@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package pages.submission
+package models.submission
 
-import play.api.libs.json.JsPath
-import pages.QuestionPage
+import play.api.libs.json.{Json, OFormat}
+import java.time.Instant
 
-object SubmissionIdPage extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ "submission" \ "submissionId"
-  override def toString: String = "submissionId"
+case class SubmissionDetails(id: String, status: String, irMark: String, submittedAt: Instant)
+
+object SubmissionDetails {
+  implicit val format: OFormat[SubmissionDetails] = Json.format[SubmissionDetails]
 }

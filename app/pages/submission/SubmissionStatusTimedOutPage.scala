@@ -19,7 +19,7 @@ package pages.submission
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object IrMarkPage extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ "submission" \ "irMark"
-  override def toString: String = "irMark"
+case class SubmissionStatusTimedOutPage(submissionId: String) extends QuestionPage[Boolean] {
+  override def path: JsPath     = JsPath \ "submission" \ submissionId \ "timedOut"
+  override def toString: String = "timedOut"
 }
