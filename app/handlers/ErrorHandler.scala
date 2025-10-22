@@ -24,7 +24,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.RequestHeader
 import play.twirl.api.Html
 import uk.gov.hmrc.play.bootstrap.frontend.http.FrontendErrorHandler
-import views.html.{ErrorTemplate, PageNotFoundView, SystemErrorView}
+import views.html.{AccessDeniedView, ErrorTemplate, PageNotFoundView, SystemErrorView}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,6 +34,7 @@ class ErrorHandler @Inject() (
   view: ErrorTemplate,
   notFoundView: PageNotFoundView,
   systemErrorView: SystemErrorView,
+  accessDeniedView: AccessDeniedView,
   referenceGenerator: ReferenceGenerator
 )(implicit val ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendErrorHandler
@@ -53,4 +54,7 @@ class ErrorHandler @Inject() (
     logger.error(s"CIS internal server error. Reference number: $referenceNumber")
     Future.successful(systemErrorView(referenceNumber))
   }
+
+  override def fallbackClientErrorTemplate(implicit request: RequestHeader): Future[Html] =
+    Future.successful(accessDeniedView())
 }
