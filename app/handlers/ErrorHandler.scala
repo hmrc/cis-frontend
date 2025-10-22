@@ -17,6 +17,7 @@
 package handlers
 
 import config.FrontendAppConfig
+import play.api.Logging
 import utils.ReferenceGenerator
 import javax.inject.{Inject, Singleton}
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -36,7 +37,8 @@ class ErrorHandler @Inject() (
   referenceGenerator: ReferenceGenerator
 )(implicit val ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendErrorHandler
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit
     request: RequestHeader
@@ -46,6 +48,9 @@ class ErrorHandler @Inject() (
   override def notFoundTemplate(implicit request: RequestHeader): Future[Html] =
     Future.successful(notFoundView())
 
-  override def internalServerErrorTemplate(implicit request: RequestHeader): Future[Html] =
-    Future.successful(systemErrorView(referenceGenerator.generateReference()))
+  override def internalServerErrorTemplate(implicit request: RequestHeader): Future[Html] = {
+    val referenceNumber = referenceGenerator.generateReference()
+    logger.error(s"CIS internal server error. Reference number: $referenceNumber")
+    Future.successful(systemErrorView(referenceNumber))
+  }
 }
