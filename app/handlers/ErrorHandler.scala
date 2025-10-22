@@ -17,12 +17,14 @@
 package handlers
 
 import config.FrontendAppConfig
+import play.api.Logging
+import utils.ReferenceGenerator
 import javax.inject.{Inject, Singleton}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.RequestHeader
 import play.twirl.api.Html
 import uk.gov.hmrc.play.bootstrap.frontend.http.FrontendErrorHandler
-import views.html.{AccessDeniedView, ErrorTemplate, PageNotFoundView}
+import views.html.{AccessDeniedView, ErrorTemplate, SystemErrorView, PageNotFoundView}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -31,9 +33,12 @@ class ErrorHandler @Inject() (
   view: ErrorTemplate,
   notFoundView: PageNotFoundView,
   accessDeniedView: AccessDeniedView
+  systemErrorView: SystemErrorView,
+  referenceGenerator: ReferenceGenerator
 )(implicit val ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendErrorHandler
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit
     request: RequestHeader
@@ -45,4 +50,10 @@ class ErrorHandler @Inject() (
 
   override def fallbackClientErrorTemplate(implicit request: RequestHeader): Future[Html] =
     Future.successful(accessDeniedView())
+      
+  override def internalServerErrorTemplate(implicit request: RequestHeader): Future[Html] = {
+    val referenceNumber = referenceGenerator.generateReference()
+    logger.error(s"CIS internal server error. Reference number: $referenceNumber")
+    Future.successful(systemErrorView(referenceNumber))
+  }
 }
