@@ -24,7 +24,7 @@
     texWithLinkAndReference: TextWithLinkAndReference
 )
 
-@(incidentReferenceNumber: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(incidentReferenceNumber: String)(implicit request: RequestHeader, appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages("systemError.title")),
