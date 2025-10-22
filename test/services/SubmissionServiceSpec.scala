@@ -20,18 +20,20 @@ import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
-import models.submission.{ChrisSubmissionRequest, ChrisSubmissionResponse, CreateAndTrackSubmissionRequest, CreateAndTrackSubmissionResponse, UpdateSubmissionRequest}
+import models.submission.{ChrisSubmissionRequest, ChrisSubmissionResponse, CreateAndTrackSubmissionRequest, CreateAndTrackSubmissionResponse, ResponseEndPointDto, UpdateSubmissionRequest}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.ArgumentCaptor
 import org.scalatest.TryValues
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
+import pages.submission.{PollIntervalPage, PollUrlPage, SubmissionIdPage}
 import play.api.libs.json.{JsObject, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{LocalDate, YearMonth}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 class SubmissionServiceSpec extends SpecBase with TryValues {
 
@@ -194,6 +196,73 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       }
       ex.getMessage must include("Month/Year not selected")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "persists poll endpoint details when response.endpoint is present" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayer))
+
+      val beRespWithEndpoint = ChrisSubmissionResponse(
+        submissionId = "sub-123",
+        status = "SUBMITTED",
+        hmrcMarkGenerated = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
+        correlationId = Some("CID-123"),
+        responseEndPoint = Some(
+          ResponseEndPointDto(
+            url = "https://poll.example.test/cis/sub-123",
+            pollIntervalSeconds = 15
+          )
+        ),
+        gatewayTimestamp = Some("2025-01-01T00:00:00Z"),
+        error = None
+      )
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(beRespWithEndpoint))
+
+      val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes).futureValue
+      out mustBe beRespWithEndpoint
+      verify(sessionRepository).set(uaCaptor.capture())
+      val saved = uaCaptor.getValue
+      saved.get(PollUrlPage).value mustBe "https://poll.example.test/cis/sub-123"
+      saved.get(PollIntervalPage).value mustBe 15
+    }
+
+    "fails fast and does not persist if updating UserAnswers fails" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository                              = mock(classOf[SessionRepository])
+      val service                                        = new SubmissionService(connector, sessionRepository)
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayer))
+
+      val beResp = mkChrisResp()
+
+      when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(beResp))
+
+      val ua    = uaWithInactivityYes
+      val uaSpy = spy(ua)
+
+      doReturn(Failure(new RuntimeException("boom: cannot write submission id")))
+        .when(uaSpy)
+        .set(eqTo(SubmissionIdPage), eqTo("sub-123"))(any())
+
+      val ex = intercept[RuntimeException] {
+        service.submitToChrisAndPersist("sub-123", uaSpy).futureValue
+      }
+      ex.getMessage must include("boom: cannot write submission id")
+      verify(sessionRepository, never()).set(any[UserAnswers])
     }
   }
 
