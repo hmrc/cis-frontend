@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package models
+package pages.submission
 
-sealed trait ChrisResult
-object ChrisResult {
-  case object Submitted extends ChrisResult
-  final case class Rejected(status: Int, body: String) extends ChrisResult
-  final case class UpstreamFailed(status: Int, message: String) extends ChrisResult
+import pages.QuestionPage
+import play.api.libs.json.JsPath
+
+object PollUrlPage extends QuestionPage[String] {
+  override val path: JsPath     = JsPath \ "submission" \ "poll" \ "url"
+  override val toString: String = "submissionPollUrl"
 }

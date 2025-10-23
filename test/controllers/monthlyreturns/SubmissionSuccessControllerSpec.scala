@@ -18,7 +18,8 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, IrMarkPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.submission.IrMarkPage
 import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*

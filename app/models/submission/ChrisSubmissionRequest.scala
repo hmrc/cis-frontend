@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package models
+package models.submission
 
 import play.api.libs.json.{Json, OFormat}
-
 import java.time.YearMonth
 
 case class ChrisSubmissionRequest(
