@@ -16,33 +16,29 @@
 
 package controllers.monthlyreturns
 
-import config.FrontendAppConfig
 import controllers.actions.*
-import models.ChrisResult.*
-import models.UserAnswers
-import pages.monthlyreturns.*
+import models.submission.SubmissionDetails
+import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
-import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import views.html.monthlyreturns.SubmissionSendingView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class SubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
-  sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  appConfig: FrontendAppConfig,
-  monthlyReturnService: MonthlyReturnService,
+  submissionService: SubmissionService,
+  view: SubmissionSendingView,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -51,47 +47,44 @@ class SubmissionSendingController @Inject() (
 
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      if (appConfig.stubSendingEnabled) {
-        stubRouteFromEmail(request.userAnswers)
-      } else {
-        monthlyReturnService
-          .submitNilMonthlyReturn(request.userAnswers)
-          .map {
-            case Submitted                             =>
-              Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
-            case Rejected(_, _) | UpstreamFailed(_, _) =>
-              Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-          }
-          .recover { case ex =>
-            logger.error("[Submission Sending] Unexpected failure submitting Nil Monthly Return", ex)
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      (for {
+        created   <- submissionService.createAndTrack(request.userAnswers)
+        submitted <- submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers)
+        _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
+      } yield redirectForStatus(submitted.status))
+        .recover { case ex =>
+          logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+    }
+
+  private def redirectForStatus(status: String): Result = status match {
+    case "SUBMITTED" | "SUBMITTED_NO_RECEIPT" =>
+      Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
+    case "FATAL_ERROR" | "DEPARTMENTAL_ERROR" =>
+      Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+    case "PENDING" | "ACCEPTED"               =>
+      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
+    case _                                    =>
+      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+  }
+
+  def onPollAndRedirect: Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(SubmissionDetailsPage) match {
+        case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case Some(submissionStatus) =>
+          submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).map {
+            case "PENDING" | "ACCEPTED"               => Ok(view()).withHeaders("Refresh" -> "10")
+            case "TIMED_OUT"                          => Redirect(routes.SubmissionAwaitingController.onPageLoad)
+            case "SUBMITTED" | "SUBMITTED_NO_RECEIPT" => Redirect(routes.SubmissionSuccessController.onPageLoad)
+            case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" => Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
+            case _                                    => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           }
       }
     }
-
-  private def stubRouteFromEmail(ua: UserAnswers)(implicit ec: ExecutionContext): Future[Result] = {
-    def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
-      val pagesToRemove =
-        Seq(DateConfirmNilPaymentsPage, InactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
-      pagesToRemove.foldLeft(Try(userAnswers))((acc, page) => acc.flatMap(_.remove(page)))
-    }
-
-    for {
-      emailAddress       <- Future.apply(ua.get(ConfirmEmailAddressPage))
-      updatedUserAnswers <- Future.fromTry(removeUserAnswers(ua))
-      _                  <- sessionRepository.set(updatedUserAnswers)
-    } yield emailAddress match {
-      case Some(ea) if ea.equalsIgnoreCase("Submissionsuccessful@test.com")   =>
-        Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
-      case Some(ea) if ea.equalsIgnoreCase("Submissionunsuccessful@test.com") =>
-        Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-      case Some(ea) if ea.equalsIgnoreCase("Awaitingconfirmation@test.com")   =>
-        Redirect(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad)
-      case _                                                                  =>
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-    }
-  }
 }

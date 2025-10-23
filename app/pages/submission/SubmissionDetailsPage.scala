@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package pages.submission
 
-import play.api.libs.json.JsPath
+import models.submission.SubmissionDetails
 import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case object IrMarkPage extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ toString
-  override def toString: String = "irMark"
+case object SubmissionDetailsPage extends QuestionPage[SubmissionDetails] {
+  override def path: JsPath     = JsPath \ "submission" \ "submissionDetails"
+  override def toString: String = "submissionDetails"
 }

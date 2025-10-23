@@ -17,8 +17,8 @@
 package connectors
 
 import models.monthlyreturns.{NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import models.ChrisSubmissionRequest
 import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
+import models.submission.*
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
@@ -26,6 +26,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, String
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.{Duration, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,15 +48,6 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
 
-  def submitChris(
-    request: ChrisSubmissionRequest
-  )(implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, HttpResponse]] =
-    http
-      .post(url"$cisBaseUrl/chris")
-      .setHeader("Content-Type" -> "application/json", "Accept" -> "application/json")
-      .withBody(Json.toJson(request))
-      .execute[Either[UpstreamErrorResponse, HttpResponse]]
-
   def createNilMonthlyReturn(
     payload: NilMonthlyReturnRequest
   )(implicit hc: HeaderCarrier): Future[NilMonthlyReturnResponse] =
@@ -63,6 +55,50 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .post(url"$cisBaseUrl/monthly-returns/nil/create")
       .withBody(Json.toJson(payload))
       .execute[NilMonthlyReturnResponse]
+
+  def createAndTrackSubmission(
+    req: CreateAndTrackSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[CreateAndTrackSubmissionResponse] =
+    http
+      .post(url"$cisBaseUrl/submissions/create-and-track")
+      .withBody(Json.toJson(req))
+      .execute[CreateAndTrackSubmissionResponse]
+
+  def submitToChris(
+    submissionId: String,
+    request: ChrisSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/submit-to-chris")
+      .withBody(Json.toJson(request))
+      .execute[ChrisSubmissionResponse]
+
+  def getSubmissionStatus(submittedDate: Instant): Future[String] = {
+    // TODO: add real implementation
+    val secondsElapsed = Duration.between(submittedDate, Instant.now()).toSeconds
+
+    secondsElapsed match {
+      case n if n < 25 => Future.successful("PENDING")
+      case n if n < 50 => Future.successful("SUBMITTED")
+      case _           => Future.successful("FATAL_ERROR")
+    }
+  }
+
+  def updateSubmission(
+    submissionId: String,
+    request: UpdateSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/update")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { resp =>
+        if (resp.status / 100 == 2) {
+          Future.unit
+        } else {
+          Future.failed(UpstreamErrorResponse(resp.body, resp.status, resp.status))
+        }
+      }
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     http

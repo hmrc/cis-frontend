@@ -18,14 +18,13 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
-import models.ChrisSubmissionRequest
+import models.submission.{ChrisSubmissionRequest, CreateAndTrackSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
-import uk.gov.hmrc.http.HeaderCarrier
-
-import org.scalatest.EitherValues.*
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
   with Matchers
@@ -37,7 +36,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   val connector: ConstructionIndustrySchemeConnector = app.injector.instanceOf[ConstructionIndustrySchemeConnector]
 
-  private val cisId = "abc-123"
+  private val cisId = "123"
 
   private val payload = ChrisSubmissionRequest(
     utr = "1234567890",
@@ -57,7 +56,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
               .withStatus(OK)
               .withBody(
                 """{
-                  |  "uniqueId": "abc-123",
+                  |  "uniqueId": "123",
                   |  "taxOfficeNumber": "111",
                   |  "taxOfficeRef": "test111",
                   |  "employerName1": "TEST LTD"
@@ -67,7 +66,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val result = connector.getCisTaxpayer().futureValue
-      result.uniqueId mustBe "abc-123"
+      result.uniqueId mustBe "123"
       result.taxOfficeNumber mustBe "111"
       result.taxOfficeRef mustBe "test111"
       result.employerName1 mustBe Some("TEST LTD")
@@ -124,7 +123,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveMonthlyReturns("abc-123").futureValue
+      val result = connector.retrieveMonthlyReturns("123").futureValue
       result.monthlyReturnList.map(_.monthlyReturnId) must contain allOf(101L, 102L)
       result.monthlyReturnList.map(_.taxMonth) must contain allOf(4, 5)
     }
@@ -140,7 +139,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val ex = intercept[Exception] {connector.retrieveMonthlyReturns("abc-123").futureValue}
+      val ex = intercept[Exception] {connector.retrieveMonthlyReturns("123").futureValue}
       ex.getMessage.toLowerCase must include("monthlyreturnlist")
     }
 
@@ -156,7 +155,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturns("abc-123").futureValue
+        connector.retrieveMonthlyReturns("123").futureValue
       }
       ex.getMessage must include("returned 500")
     }
@@ -171,69 +170,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturns("abc-123").futureValue
+        connector.retrieveMonthlyReturns("123").futureValue
       }
       ex.getMessage.toLowerCase must include("exception")
-    }
-  }
-
-  "submitChris" should {
-
-    "return Right(HttpResponse) when BE returns 200" in  {
-      stubFor(
-        post(urlPathEqualTo("/cis/chris"))
-          .willReturn(aResponse().withStatus(OK))
-      )
-      val result = connector.submitChris(payload).futureValue
-      result mustBe a[Right[?, ?]]
-      result.value.status mustBe 200
-
-    }
-
-    "return Right(HttpResponse) for other 2xx (e.g. 201)" in {
-      stubFor(
-        post(urlPathEqualTo("/cis/chris"))
-          .willReturn(aResponse().withStatus(CREATED))
-      )
-      val result = connector.submitChris(payload).futureValue
-      result mustBe a[Right[?, ?]]
-      result.value.status mustBe 201    }
-
-    "return Right(HttpResponse) for unexpected non-2xx (e.g. 304)" in {
-      stubFor(
-        post(urlPathEqualTo("/cis/chris"))
-          .willReturn(aResponse().withStatus(NOT_MODIFIED).withBody("not modified"))      )
-
-      val result = connector.submitChris(payload).futureValue
-      result mustBe a[Right[?, ?]]
-      val response = result.value
-      response.status mustBe 304
-    }
-
-    "return Left(UpstreamErrorResponse) for 4xx (e.g. 404)" in {
-      stubFor(
-        post(urlPathEqualTo("/cis/chris"))
-          .willReturn(aResponse().withStatus(NOT_FOUND).withBody("""{"message":"not found"}"""))
-      )
-
-      val result = connector.submitChris(payload).futureValue
-      result mustBe a[Left[?, ?]]
-      val response = result.left.value
-      response.statusCode mustBe 404
-      response.message.toLowerCase must include ("not found")
-    }
-
-    "return Left(UpstreamErrorResponse) for 5xx (e.g. 500)" in {
-      stubFor(
-        post(urlPathEqualTo("/cis/chris"))
-          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
-      )
-
-      val result = connector.submitChris(payload).futureValue
-      result mustBe a[Left[?, ?]]
-      val response = result.left.value
-      response.statusCode mustBe 500
-      response.message.toLowerCase must include ("boom")
     }
   }
 
@@ -278,4 +217,161 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       ex.getMessage must include("returned 500")
     }
   }
+
+  "createAndTrackSubmission" should {
+
+    "POST to /cis/submissions/create-and-track and return submissionId on 201" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/create-and-track"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(CREATED)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "submissionId": "sub-123" }""")
+          )
+      )
+
+      val req = CreateAndTrackSubmissionRequest(
+        instanceId = "123",
+        taxYear = 2024,
+        taxMonth = 4,
+        emailRecipient = Some("user@test.com")
+      )
+
+      val res = connector.createAndTrackSubmission(req).futureValue
+      res.submissionId mustBe "sub-123"
+    }
+
+    "fail the future on 400 (bad request)" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/create-and-track"))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("""{"message":"invalid"}"""))
+      )
+
+      val req = CreateAndTrackSubmissionRequest("123", 2024, 4)
+      val ex = intercept[Throwable] {
+        connector.createAndTrackSubmission(req).futureValue
+      }
+      ex.getMessage.toLowerCase must include("400")
+    }
+
+    "fail the future on 5xx (e.g. 502)" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/create-and-track"))
+          .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
+      )
+
+      val req = CreateAndTrackSubmissionRequest("123", 2024, 4)
+      val ex = intercept[Throwable] {
+        connector.createAndTrackSubmission(req).futureValue
+      }
+      ex.getMessage.toLowerCase must include("502")
+    }
+  }
+
+  "submitToChris" should {
+
+    "return a ChrisSubmissionResponse when BE returns 200 SUBMITTED" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/sub-123/submit-to-chris"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """{
+                  |  "submissionId": "sub-123",
+                  |  "status": "SUBMITTED",
+                  |  "hmrcMarkGenerated": "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
+                  |  "correlationId": "CID123",
+                  |  "gatewayTimestamp": "2025-01-01T00:00:00Z"
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val out = connector.submitToChris("sub-123", payload).futureValue
+      out.submissionId mustBe "sub-123"
+      out.status mustBe "SUBMITTED"
+      out.hmrcMarkGenerated mustBe "Dj5TVJDyRYCn9zta5EdySeY4fyA="
+    }
+
+    "support 202 ACCEPTED with nextPollInSeconds" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/sub-123/submit-to-chris"))
+          .willReturn(
+            aResponse()
+              .withStatus(ACCEPTED)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """{
+                  |  "submissionId": "sub-123",
+                  |  "status": "ACCEPTED",
+                  |  "hmrcMarkGenerated": "IRMARK999",
+                  |  "correlationId": "CID999",
+                  |  "gatewayTimestamp": "2025-01-01T00:00:00Z",
+                  |  "responseEndPoint": {
+                  |    "url": "https://chris.example/poll/CID-123",
+                  |    "pollIntervalSeconds": 15
+                  |  }
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val out = connector.submitToChris("sub-123", payload).futureValue
+      out.status mustBe "ACCEPTED"
+      val ep = out.responseEndPoint.value
+      ep.url mustBe "https://chris.example/poll/CID-123"
+      ep.pollIntervalSeconds mustBe 15    }
+
+    "fail the future when BE returns non-2xx (e.g. 500)" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/sub-err/submit-to-chris"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Throwable] {
+        connector.submitToChris("sub-err", payload).futureValue
+      }
+      ex.getMessage.toLowerCase must include("500")
+    }
+  }
+
+  "updateSubmission" should {
+
+    "complete successfully on 204 No Content" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/sub-123/update"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      val req = UpdateSubmissionRequest(
+        instanceId = "123",
+        taxYear = 2024,
+        taxMonth = 4,
+        hmrcMarkGenerated = Some("Dj5TVJDyRYCn9zta5EdySeY4fyA="),
+        submittableStatus = "FATAL_ERROR"
+      )
+
+      connector.updateSubmission("sub-123", req).futureValue mustBe (())
+    }
+
+    "fail the future with UpstreamErrorResponse on non-2xx (e.g. 502)" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/submissions/sub-123/update"))
+          .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
+      )
+
+      val req = UpdateSubmissionRequest("123", 2024, 4, submittableStatus = "FATAL_ERROR")
+
+      val err = connector.updateSubmission("sub-123", req).failed.futureValue
+      err mustBe a[UpstreamErrorResponse]
+      err.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+  
 }

@@ -18,7 +18,9 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, IrMarkPage}
+import models.submission.SubmissionDetails
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -45,7 +47,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
     "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in new Setup {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      private val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
 
@@ -93,7 +95,10 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         .set(DateConfirmNilPaymentsPage, periodEnd)
         .success
         .value
-        .set(IrMarkPage, irMarkBase64)
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+        )
         .success
         .value
 
