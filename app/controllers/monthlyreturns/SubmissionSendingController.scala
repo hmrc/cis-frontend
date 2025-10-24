@@ -48,7 +48,7 @@ class SubmissionSendingController @Inject() (
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       (for {
-        created   <- submissionService.createAndTrack(request.userAnswers)
+        created   <- submissionService.create(request.userAnswers)
         submitted <- submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers)
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
       } yield redirectForStatus(submitted.status))

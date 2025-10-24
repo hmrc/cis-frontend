@@ -20,7 +20,7 @@ import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
-import models.submission.{ChrisSubmissionRequest, ChrisSubmissionResponse, CreateAndTrackSubmissionRequest, CreateAndTrackSubmissionResponse, ResponseEndPointDto, UpdateSubmissionRequest}
+import models.submission.*
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.ArgumentCaptor
@@ -60,29 +60,29 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       enrolledSig = None
     )
 
-  "createAndTrack" - {
+  "create" - {
     "build request from UserAnswers and return BE response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository                              = mock(classOf[SessionRepository])
       val service                                        = new SubmissionService(connector, sessionRepository)
 
-      val expectedReq = CreateAndTrackSubmissionRequest(
+      val expectedReq = CreateSubmissionRequest(
         instanceId = "123",
         taxYear = 2025,
         taxMonth = 10,
         emailRecipient = Some("test@test.com")
       )
 
-      val beResp = CreateAndTrackSubmissionResponse("sub-123")
-      when(connector.createAndTrackSubmission(any[CreateAndTrackSubmissionRequest])(any[HeaderCarrier]))
+      val beResp = CreateSubmissionResponse("sub-123")
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(beResp))
 
-      val out = service.createAndTrack(uaBase).futureValue
+      val out = service.create(uaBase).futureValue
       out mustBe beResp
 
-      val cap: ArgumentCaptor[CreateAndTrackSubmissionRequest] =
-        ArgumentCaptor.forClass(classOf[CreateAndTrackSubmissionRequest])
-      verify(connector).createAndTrackSubmission(cap.capture())(any[HeaderCarrier]())
+      val cap: ArgumentCaptor[CreateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[CreateSubmissionRequest])
+      verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
       cap.getValue mustBe expectedReq
     }
 
@@ -94,7 +94,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
 
       val ex = intercept[RuntimeException] {
-        service.createAndTrack(ua).futureValue
+        service.create(ua).futureValue
       }
       ex.getMessage must include("CIS ID missing")
       verifyNoInteractions(connector)
@@ -108,7 +108,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = emptyUserAnswers.set(CisIdPage, "123").success.value
 
       val ex = intercept[RuntimeException] {
-        service.createAndTrack(ua).futureValue
+        service.create(ua).futureValue
       }
       ex.getMessage must include("Month/Year not selected")
       verifyNoInteractions(connector)
