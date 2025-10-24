@@ -18,7 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
-import models.submission.{ChrisSubmissionRequest, CreateAndTrackSubmissionRequest, UpdateSubmissionRequest}
+import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -218,11 +218,11 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     }
   }
 
-  "createAndTrackSubmission" should {
+  "createSubmission" should {
 
-    "POST to /cis/submissions/create-and-track and return submissionId on 201" in {
+    "POST to /cis/submissions/create and return submissionId on 201" in {
       stubFor(
-        post(urlPathEqualTo("/cis/submissions/create-and-track"))
+        post(urlPathEqualTo("/cis/submissions/create"))
           .withHeader("Content-Type", equalTo("application/json"))
           .willReturn(
             aResponse()
@@ -232,39 +232,39 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val req = CreateAndTrackSubmissionRequest(
+      val req = CreateSubmissionRequest(
         instanceId = "123",
         taxYear = 2024,
         taxMonth = 4,
         emailRecipient = Some("user@test.com")
       )
 
-      val res = connector.createAndTrackSubmission(req).futureValue
+      val res = connector.createSubmission(req).futureValue
       res.submissionId mustBe "sub-123"
     }
 
     "fail the future on 400 (bad request)" in {
       stubFor(
-        post(urlPathEqualTo("/cis/submissions/create-and-track"))
+        post(urlPathEqualTo("/cis/submissions/create"))
           .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("""{"message":"invalid"}"""))
       )
 
-      val req = CreateAndTrackSubmissionRequest("123", 2024, 4)
+      val req = CreateSubmissionRequest("123", 2024, 4)
       val ex = intercept[Throwable] {
-        connector.createAndTrackSubmission(req).futureValue
+        connector.createSubmission(req).futureValue
       }
       ex.getMessage.toLowerCase must include("400")
     }
 
     "fail the future on 5xx (e.g. 502)" in {
       stubFor(
-        post(urlPathEqualTo("/cis/submissions/create-and-track"))
+        post(urlPathEqualTo("/cis/submissions/create"))
           .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
       )
 
-      val req = CreateAndTrackSubmissionRequest("123", 2024, 4)
+      val req = CreateSubmissionRequest("123", 2024, 4)
       val ex = intercept[Throwable] {
-        connector.createAndTrackSubmission(req).futureValue
+        connector.createSubmission(req).futureValue
       }
       ex.getMessage.toLowerCase must include("502")
     }
