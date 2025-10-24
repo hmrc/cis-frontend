@@ -357,7 +357,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         submittableStatus = "FATAL_ERROR"
       )
 
-      connector.updateSubmission("sub-123", req).futureValue mustBe (())
+      connector.updateSubmission("sub-123", req).futureValue mustBe ()
     }
 
     "fail the future with UpstreamErrorResponse on non-2xx (e.g. 502)" in {
