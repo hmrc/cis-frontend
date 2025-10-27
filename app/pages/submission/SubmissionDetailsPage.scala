@@ -16,10 +16,11 @@
 
 package pages.submission
 
-import play.api.libs.json.JsPath
+import models.submission.SubmissionDetails
 import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-object SubmissionIdPage extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ "submission" \ "submissionId"
-  override def toString: String = "submissionId"
+case object SubmissionDetailsPage extends QuestionPage[SubmissionDetails] {
+  override def path: JsPath     = JsPath \ "submission" \ "submissionDetails"
+  override def toString: String = "submissionDetails"
 }

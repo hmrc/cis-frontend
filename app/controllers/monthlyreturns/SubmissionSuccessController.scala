@@ -18,8 +18,9 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.EmployerReference
+import models.submission.SubmissionDetails
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
-import pages.submission.IrMarkPage
+import pages.submission.SubmissionDetailsPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -85,22 +86,22 @@ class SubmissionSuccessController @Inject() (
       }
 
       emailFuture.map { email =>
-        val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
-        val periodEnd     = request.userAnswers
+        val dmyFmt            = DateTimeFormatter.ofPattern("d MMM uuuu")
+        val periodEnd         = request.userAnswers
           .get(DateConfirmNilPaymentsPage)
           .map(_.format(dmyFmt))
           .getOrElse {
             logger.error("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
             throw new IllegalStateException("taxPeriodEnd missing from userAnswers")
           }
-        val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-        val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
-        val submittedDate = ukNow.format(dmyFmt)
-        val irMarkBase64  = request.userAnswers.get(IrMarkPage).getOrElse {
+        val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
+        val submittedDate     = ukNow.format(dmyFmt)
+        val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
           logger.error("[SubmissionSuccess] irMark missing from userAnswers")
-          throw new IllegalStateException("irMark missing from userAnswers")
+          throw new IllegalStateException("submissionDetails missing from userAnswers")
         }
-        val reference     = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
+        val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
 
         Ok(
           view(
