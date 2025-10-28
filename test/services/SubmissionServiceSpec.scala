@@ -129,7 +129,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         aoReference = "123/AB456",
         informationCorrect = true,
         inactivity = true,
-        monthYear = YearMonth.parse("2025-10")
+        monthYear = YearMonth.parse("2025-10"),
+        email = "test@test.com"
       )
 
       val beResp = mkChrisResp()

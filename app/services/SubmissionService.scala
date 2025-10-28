@@ -116,13 +116,15 @@ class SubmissionService @Inject() (
       .get(DateConfirmNilPaymentsPage)
       .map(YearMonth.from)
       .getOrElse(throw new RuntimeException("Month/Year not selected"))
+    val email      = ua.get(ConfirmEmailAddressPage).get
 
     ChrisSubmissionRequest.from(
       utr = utr,
       aoReference = ao,
       informationCorrect = true,
       inactivity = inactivity,
-      monthYear = ym
+      monthYear = ym,
+      email = email
     )
   }
 
