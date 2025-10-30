@@ -17,6 +17,7 @@
 package services
 
 import base.SpecBase
+import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
@@ -26,12 +27,13 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.ArgumentCaptor
 import org.scalatest.TryValues
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
-import pages.submission.{PollIntervalPage, PollUrlPage, SubmissionIdPage}
+import pages.submission.{CorrelationIdPage, PollIntervalPage, PollUrlPage, SubmissionDetailsPage}
+import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{LocalDate, YearMonth}
+import java.time.{Instant, LocalDate, YearMonth}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -63,8 +65,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   "create" - {
     "build request from UserAnswers and return BE response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val expectedReq = CreateSubmissionRequest(
         instanceId = "123",
@@ -88,8 +95,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when CIS ID is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val ua = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
 
@@ -102,8 +114,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val ua = emptyUserAnswers.set(CisIdPage, "123").success.value
 
@@ -118,8 +135,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   "submitToChrisAndPersist" - {
     "fetch taxpayer, build ChrisSubmissionRequest and return BE response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayer))
@@ -151,8 +173,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when taxpayer UTR is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val badTaxpayer = taxpayer.copy(utr = None)
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
@@ -167,8 +194,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when taxpayer AO reference is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val badTaxpayer = taxpayer.copy(aoReference = None)
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
@@ -183,8 +215,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year not selected" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayer))
@@ -200,8 +237,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "persists poll endpoint details when response.endpoint is present" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayer))
@@ -240,8 +282,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fails fast and does not persist if updating UserAnswers fails" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       when(connector.getCisTaxpayer()(any[HeaderCarrier]))
         .thenReturn(Future.successful(taxpayer))
@@ -256,7 +303,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       doReturn(Failure(new RuntimeException("boom: cannot write submission id")))
         .when(uaSpy)
-        .set(eqTo(SubmissionIdPage), eqTo("sub-123"))(any())
+        .set(eqTo(SubmissionDetailsPage), any)(any())
 
       val ex = intercept[RuntimeException] {
         service.submitToChrisAndPersist("sub-123", uaSpy).futureValue
@@ -269,8 +316,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   "updateSubmission" - {
     "translate chris response to UpdateSubmissionRequest and call connector" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
@@ -304,8 +356,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when CIS ID missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val ua        = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
       val chrisResp = mkChrisResp()
@@ -319,8 +376,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year not selected" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository                              = mock(classOf[SessionRepository])
-      val service                                        = new SubmissionService(connector, sessionRepository)
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val ua        = emptyUserAnswers.set(CisIdPage, "123").success.value
       val chrisResp = mkChrisResp()
@@ -330,6 +392,321 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       }
       ex.getMessage must include("Month/Year not selected")
       verifyNoInteractions(connector)
+    }
+  }
+
+  "checkAndUpdateSubmissionStatus" - {
+    "fail when SubmissionDetailsPage is not present" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      val ua = uaBase
+
+      when(connector.getSubmissionStatus(any, any)(any))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"))))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).failed.futureValue
+
+      result mustBe an[IllegalStateException]
+      result.getMessage must include("No submission details present")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "return TIMED_OUT when SubmissionStatusTimedOutPage is already true" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(SubmissionStatusTimedOutPage("sub-123"), true)
+        .success
+        .value
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "TIMED_OUT"
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "update status and save to repository when submission is not timed out" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "3600"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submittedAt       = Instant.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"))))
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "SUBMITTED"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
+    }
+
+    "mark as timed out when timeout exceeded and status is still PENDING" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submittedAt       = Instant.now().minusSeconds(120)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"))))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "PENDING"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "PENDING"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe true
+    }
+
+    "mark as timed out when timeout exceeded and status is ACCEPTED" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submittedAt       = Instant.now().minusSeconds(120)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "ACCEPTED",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"))))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "ACCEPTED"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "ACCEPTED"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe true
+    }
+
+    "not mark as timed out when timeout exceeded but status is SUBMITTED" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submittedAt       = Instant.now().minusSeconds(120)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"))))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "SUBMITTED"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
+    }
+
+    "not mark as timed out when timeout exceeded but status is FATAL_ERROR" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submittedAt       = Instant.now().minusSeconds(120)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"))))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "FATAL_ERROR"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "FATAL_ERROR"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
     }
   }
 

@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package pages.submission
+package utils
 
-import play.api.libs.json.JsPath
-import pages.QuestionPage
+import scala.concurrent.Future
+import scala.util.Try
 
-object SubmissionStatusPage extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ "submission" \ "status"
-  override def toString: String = "submissionStatus"
+object TypeUtils {
+  extension [T](o: Option[T]) {
+    def toTry(message: String): Try[T]       = o.toRight(new Exception(message)).toTry
+    def toTry: Try[T]                        = o.toTry("No value found")
+    def toFuture(message: String): Future[T] = Future.fromTry(o.toTry(message))
+    def toFuture: Future[T]                  = Future.fromTry(o.toTry)
+  }
+
+  extension [T](t: Try[T]) {
+    def toFuture: Future[T] = Future.fromTry(t)
+  }
 }
