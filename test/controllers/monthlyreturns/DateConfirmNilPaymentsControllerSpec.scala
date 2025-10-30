@@ -52,16 +52,16 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
   private val formProvider = new DateConfirmNilPaymentsFormProvider(mockFrontendAppConfig)
   private def form         = formProvider()
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
-  val validAnswer = LocalDate.now(ZoneOffset.UTC)
+  val validAnswer: LocalDate = LocalDate.now(ZoneOffset.UTC)
 
-  lazy val dateConfirmNilPaymentsRoute =
+  lazy val dateConfirmNilPaymentsRoute: String =
     controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode).url
 
-  override val emptyUserAnswers = UserAnswers(userAnswersId)
+  override val emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
 
-  def getRequest(): FakeRequest[AnyContentAsEmpty.type] =
+  def getRequest: FakeRequest[AnyContentAsEmpty.type] =
     FakeRequest(GET, dateConfirmNilPaymentsRoute)
 
   def postRequest(): FakeRequest[AnyContentAsFormUrlEncoded] =
@@ -86,11 +86,11 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         .build()
 
       running(application) {
-        val result = route(application, getRequest()).value
+        val result = route(application, getRequest).value
         val view   = application.injector.instanceOf[DateConfirmNilPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(getRequest(), messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode)(getRequest, messages(application)).toString
       }
     }
 
@@ -106,14 +106,14 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         .build()
 
       running(application) {
-        val result = route(application, getRequest()).value
+        val result = route(application, getRequest).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
-    "must return 500 and show global error when service fails with non-NOT_FOUND" in {
+    "must redirect to system error page if unable to retrieve cisId" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
         .thenReturn(Future.failed(new RuntimeException("boom")))
@@ -125,13 +125,10 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         .build()
 
       running(application) {
-        val result = route(application, getRequest()).value
-        val view   = application.injector.instanceOf[DateConfirmNilPaymentsView]
+        val result = route(application, getRequest).value
 
-        val errorForm = form.withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
-
-        status(result) mustEqual INTERNAL_SERVER_ERROR
-        contentAsString(result) mustEqual view(errorForm, NormalMode)(getRequest(), messages(application)).toString
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
 
@@ -150,11 +147,11 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val view   = application.injector.instanceOf[DateConfirmNilPaymentsView]
-        val result = route(application, getRequest()).value
+        val result = route(application, getRequest).value
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode)(
-          getRequest(),
+          getRequest,
           messages(application)
         ).toString
       }
@@ -220,7 +217,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val result = route(application, getRequest()).value
+        val result = route(application, getRequest).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
@@ -284,7 +281,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must return Internal Server Error when duplicate check fails unexpectedly" in {
+    "must redirect to system error page when duplicate check fails unexpectedly" in {
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -314,10 +311,8 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
         val result = route(application, request).value
 
-        status(result) mustEqual INTERNAL_SERVER_ERROR
-        contentAsString(result) must include(
-          messages(application)("monthlyreturns.dateConfirmNilPayments.error.technical")
-        )
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
 

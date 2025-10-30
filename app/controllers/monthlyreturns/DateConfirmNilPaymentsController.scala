@@ -21,6 +21,7 @@ import forms.monthlyreturns.DateConfirmNilPaymentsFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmNilPaymentsPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -46,7 +47,8 @@ class DateConfirmNilPaymentsController @Inject() (
   view: DateConfirmNilPaymentsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
@@ -69,9 +71,12 @@ class DateConfirmNilPaymentsController @Inject() (
         .recover {
           case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          case _                                                     =>
-            val errForm = preparedForm.withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
-            InternalServerError(view(errForm, mode))
+          case exception                                             =>
+            logger.error(
+              s"[DateConfirmNilPaymentsController] Failed to retrieve cisId: ${exception.getMessage}",
+              exception
+            )
+            Redirect(controllers.routes.SystemErrorController.onPageLoad())
         }
     }
 
@@ -114,9 +119,12 @@ class DateConfirmNilPaymentsController @Inject() (
                       } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, updatedAnswers))
                   }
               }
-              .recover { _ =>
-                val errForm = form.fill(value).withGlobalError("monthlyreturns.dateConfirmNilPayments.error.technical")
-                InternalServerError(view(errForm, mode))
+              .recover { exception =>
+                logger.error(
+                  s"[DateConfirmNilPaymentsController] duplicate check fails unexpectedly: ${exception.getMessage}",
+                  exception
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
               }
           }
         )

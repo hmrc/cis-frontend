@@ -89,7 +89,7 @@ class CheckYourAnswersController @Inject() (
               s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
               exception
             )
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            Redirect(controllers.routes.SystemErrorController.onPageLoad())
           }
     }
   }

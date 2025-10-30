@@ -23,6 +23,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.ReferenceGenerator
 import views.html.SystemErrorView
+import play.api.Logging
 
 class SystemErrorController @Inject() (
   override val messagesApi: MessagesApi,
@@ -31,10 +32,12 @@ class SystemErrorController @Inject() (
   referenceGenerator: ReferenceGenerator
 )(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad: Action[AnyContent] = Action { implicit request =>
     val referenceNumber = referenceGenerator.generateReference()
+    logger.error(s"CIS internal server error. Reference number: $referenceNumber")
     Ok(view(referenceNumber))
   }
 }

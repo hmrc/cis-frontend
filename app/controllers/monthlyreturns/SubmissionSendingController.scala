@@ -58,7 +58,7 @@ class SubmissionSendingController @Inject() (
       } yield redirectForStatus(submitted.status))
         .recover { case ex =>
           logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
         }
     }
 

@@ -26,8 +26,6 @@ import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
-import java.time.Instant
-
 class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
   with Matchers
   with ScalaFutures
