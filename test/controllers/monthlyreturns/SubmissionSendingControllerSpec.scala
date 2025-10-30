@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import play.api.test.FakeRequest
 import models.UserAnswers
-import models.submission.{ChrisSubmissionResponse, CreateAndTrackSubmissionResponse, ResponseEndPointDto}
+import models.submission.{ChrisSubmissionResponse, CreateSubmissionResponse, ResponseEndPointDto}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
@@ -61,9 +61,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     createdId: String = "sub-123",
     endpoint: Option[ResponseEndPointDto] = None,
     irMark: String = "Dj5TVJDyRYCn9zta5EdySeY4fyA="
-  ): (CreateAndTrackSubmissionResponse, ChrisSubmissionResponse) = {
+  ): (CreateSubmissionResponse, ChrisSubmissionResponse) = {
 
-    val created = CreateAndTrackSubmissionResponse(submissionId = createdId)
+    val created = CreateSubmissionResponse(submissionId = createdId)
 
     val submitted = ChrisSubmissionResponse(
       submissionId = createdId,
@@ -75,7 +75,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       error = None
     )
 
-    when(service.createAndTrack(any[UserAnswers])(any[HeaderCarrier]))
+    when(service.create(any[UserAnswers])(any[HeaderCarrier]))
       .thenReturn(Future.successful(created))
 
     when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers])(any[HeaderCarrier]))
@@ -195,7 +195,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
-      when(mockService.createAndTrack(any[UserAnswers])(any[HeaderCarrier]))
+      when(mockService.create(any[UserAnswers])(any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()

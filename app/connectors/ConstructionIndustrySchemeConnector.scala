@@ -55,13 +55,13 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .withBody(Json.toJson(payload))
       .execute[NilMonthlyReturnResponse]
 
-  def createAndTrackSubmission(
-    req: CreateAndTrackSubmissionRequest
-  )(implicit hc: HeaderCarrier): Future[CreateAndTrackSubmissionResponse] =
+  def createSubmission(
+    req: CreateSubmissionRequest
+  )(implicit hc: HeaderCarrier): Future[CreateSubmissionResponse] =
     http
-      .post(url"$cisBaseUrl/submissions/create-and-track")
+      .post(url"$cisBaseUrl/submissions/create")
       .withBody(Json.toJson(req))
-      .execute[CreateAndTrackSubmissionResponse]
+      .execute[CreateSubmissionResponse]
 
   def submitToChris(
     submissionId: String,

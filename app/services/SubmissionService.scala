@@ -38,10 +38,10 @@ class SubmissionService @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  def createAndTrack(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[CreateAndTrackSubmissionResponse] =
+  def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[CreateSubmissionResponse] =
     for {
-      req      <- buildCreateAndTrackRequest(ua)
-      response <- cisConnector.createAndTrackSubmission(req)
+      req      <- buildCreateRequest(ua)
+      response <- cisConnector.createSubmission(req)
     } yield response
 
   def submitToChrisAndPersist(submissionId: String, ua: UserAnswers)(implicit
@@ -83,7 +83,7 @@ class SubmissionService @Inject() (
     cisConnector.updateSubmission(submissionId, update)
   }
 
-  private def buildCreateAndTrackRequest(ua: UserAnswers): Future[CreateAndTrackSubmissionRequest] = {
+  private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
     val ym         = ua
       .get(DateConfirmNilPaymentsPage)
@@ -92,7 +92,7 @@ class SubmissionService @Inject() (
     val email      = ua.get(ConfirmEmailAddressPage)
 
     Future.successful(
-      CreateAndTrackSubmissionRequest(
+      CreateSubmissionRequest(
         instanceId = instanceId,
         taxYear = ym.getYear,
         taxMonth = ym.getMonthValue,
