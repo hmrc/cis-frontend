@@ -30,8 +30,8 @@ class AccessDeniedViewSpec extends SpecBase {
   "AccessDeniedView" - {
 
     "must render the page with the correct title, heading and link" in new Setup {
-      val html: HtmlFormat.Appendable = view()
-      val doc: Document               = Jsoup.parse(html.body)
+      private val html: HtmlFormat.Appendable = view()
+      private val doc: Document               = Jsoup.parse(html.body)
 
       doc.title                                 must include(messages("accessDenied.title"))
       doc.select("h1").text                     must include(messages("accessDenied.heading"))
@@ -40,7 +40,7 @@ class AccessDeniedViewSpec extends SpecBase {
   }
 
   trait Setup {
-    val app: Application                          = applicationBuilder().build()
+    private val app: Application                  = applicationBuilder().build()
     val view: AccessDeniedView                    = app.injector.instanceOf[AccessDeniedView]
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(

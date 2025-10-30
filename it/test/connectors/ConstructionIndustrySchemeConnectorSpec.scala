@@ -373,5 +373,143 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       err.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
     }
   }
-  
+
+  "getSubmissionStatus" should {
+
+    val pollUrl = "https%3A%2F%2Fsomeurl.com%3Ftimestamp%3D2025-01-15T10%3A30%3A00Z"
+    val correlationId = "CID-ABC-123"
+
+    "return ChrisPollResponse with SUBMITTED status when BE returns 200 with valid JSON" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """{
+                  |  "status": "SUBMITTED",
+                  |  "pollUrl": "https://chris.example/poll/next"
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      result.status mustBe "SUBMITTED"
+      result.pollUrl mustBe Some("https://chris.example/poll/next")
+    }
+
+    "return ChrisPollResponse with ACCEPTED status and no pollUrl when pollUrl is absent" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """{
+                  |  "status": "ACCEPTED"
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      result.status mustBe "ACCEPTED"
+      result.pollUrl mustBe None
+    }
+
+    "return ChrisPollResponse with FATAL_ERROR status" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """{
+                  |  "status": "FATAL_ERROR"
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      result.status mustBe "FATAL_ERROR"
+      result.pollUrl mustBe None
+    }
+
+    "correctly encode the pollUrl query parameter" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("pollUrl", equalTo("https%3A%2F%2Fsomeurl.com%3Ftimestamp%3D2025-01-15T10%3A30%3A00Z"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "status": "SUBMITTED" }""")
+          )
+      )
+
+      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      result.status mustBe "SUBMITTED"
+    }
+
+    "fail when BE returns 200 with invalid JSON" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{ "unexpectedField": true }""")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      }
+      ex.getMessage.toLowerCase must include("status")
+    }
+
+    "propagate an upstream error when BE returns 404" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+              .withBody("submission not found")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      }
+      ex.getMessage must include("returned 404")
+    }
+
+    "propagate an upstream error when BE returns 500" in {
+      stubFor(
+        get(urlPathMatching("/cis/submissions/poll"))
+          .withQueryParam("correlationId", equalTo(correlationId))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("internal server error")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      }
+      ex.getMessage must include("returned 500")
+    }
+  }
+
 }
