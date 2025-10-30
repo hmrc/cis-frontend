@@ -20,17 +20,17 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.libs.json.*
 
-class CreateAndTrackSubmissionResponseSpec extends AnyWordSpec with Matchers {
+class CreateSubmissionResponseSpec extends AnyWordSpec with Matchers {
 
   "read when required field is present" in {
     val js = Json.parse("""{ "submissionId": "sub-123" }""")
-    js.as[CreateAndTrackSubmissionResponse] mustBe
-      CreateAndTrackSubmissionResponse("sub-123")
+    js.as[CreateSubmissionResponse] mustBe
+      CreateSubmissionResponse("sub-123")
   }
 
   "fail to read when submissionId is missing" in {
     val js  = Json.parse("""{ }""")
-    val res = js.validate[CreateAndTrackSubmissionResponse]
+    val res = js.validate[CreateSubmissionResponse]
 
     res.asEither.fold(
       errs => errs.exists { case (path, _) => path.toString == "/submissionId" } mustBe true,
@@ -48,12 +48,12 @@ class CreateAndTrackSubmissionResponseSpec extends AnyWordSpec with Matchers {
         |}
       """.stripMargin
     )
-    js.as[CreateAndTrackSubmissionResponse] mustBe
-      CreateAndTrackSubmissionResponse("sub-123")
+    js.as[CreateSubmissionResponse] mustBe
+      CreateSubmissionResponse("sub-123")
   }
 
   "write to expected JSON" in {
-    val model = CreateAndTrackSubmissionResponse("sub-123")
+    val model = CreateSubmissionResponse("sub-123")
     val js    = Json.toJson(model)
 
     (js \ "submissionId").as[String] mustBe "sub-123"
@@ -61,8 +61,8 @@ class CreateAndTrackSubmissionResponseSpec extends AnyWordSpec with Matchers {
   }
 
   "round-trip (write then read) preserves values" in {
-    val model = CreateAndTrackSubmissionResponse("sub-123")
-    Json.toJson(model).as[CreateAndTrackSubmissionResponse] mustBe model
+    val model = CreateSubmissionResponse("sub-123")
+    Json.toJson(model).as[CreateSubmissionResponse] mustBe model
   }
 
 }

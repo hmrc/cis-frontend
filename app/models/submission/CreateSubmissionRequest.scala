@@ -18,8 +18,13 @@ package models.submission
 
 import play.api.libs.json.{Json, OFormat}
 
-final case class CreateAndTrackSubmissionResponse(submissionId: String)
+case class CreateSubmissionRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int,
+  emailRecipient: Option[String] = None
+)
 
-object CreateAndTrackSubmissionResponse {
-  implicit val format: OFormat[CreateAndTrackSubmissionResponse] = Json.format[CreateAndTrackSubmissionResponse]
+object CreateSubmissionRequest {
+  implicit val format: OFormat[CreateSubmissionRequest] = Json.format[CreateSubmissionRequest]
 }
