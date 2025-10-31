@@ -33,7 +33,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         aoReference = "123/AB456",
         informationCorrect = true,
         inactivity = false,
-        monthYear = yearMonth
+        monthYear = yearMonth,
+        email = "test@test.com"
       )
 
       dto.utr mustBe "1234567890"
@@ -41,6 +42,7 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       dto.informationCorrect mustBe "yes"
       dto.inactivity mustBe "no"
       dto.monthYear mustBe "2025-03"
+      dto.email mustBe "test@test.com"
     }
   }
 
@@ -51,7 +53,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         aoReference = "123/AB456",
         informationCorrect = "yes",
         inactivity = "no",
-        monthYear = "2025-03"
+        monthYear = "2025-03",
+        email = "test@test.com"
       )
 
       val json     = Json.toJson(dto)
@@ -60,7 +63,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "aoReference": "123/AB456",
           |  "informationCorrect": "yes",
           |  "inactivity": "no",
-          |  "monthYear": "2025-03"
+          |  "monthYear": "2025-03",
+          |  "email": "test@test.com"
           |}""".stripMargin)
 
       json mustBe expected
@@ -72,7 +76,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "aoReference": "123/AB456",
           |  "informationCorrect": "yes",
           |  "inactivity": "no",
-          |  "monthYear": "2025-03"
+          |  "monthYear": "2025-03",
+          |  "email": "test@test.com"
           |}""".stripMargin)
 
       val result = json.validate[ChrisSubmissionRequest]
@@ -84,6 +89,7 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       dto.informationCorrect mustBe "yes"
       dto.inactivity mustBe "no"
       dto.monthYear mustBe "2025-03"
+      dto.email mustBe "test@test.com"
     }
   }
 }

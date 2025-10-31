@@ -24,7 +24,8 @@ case class ChrisSubmissionRequest(
   aoReference: String,
   informationCorrect: String,
   inactivity: String,
-  monthYear: String
+  monthYear: String,
+  email: String
 )
 
 object ChrisSubmissionRequest {
@@ -38,13 +39,15 @@ object ChrisSubmissionRequest {
     aoReference: String,
     informationCorrect: Boolean,
     inactivity: Boolean,
-    monthYear: YearMonth
+    monthYear: YearMonth,
+    email: String
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
       utr = utr,
       aoReference = aoReference,
       informationCorrect = yesNo(informationCorrect),
       inactivity = yesNo(inactivity),
-      monthYear = toYearMonthString(monthYear)
+      monthYear = toYearMonthString(monthYear),
+      email = email.trim
     )
 }
