@@ -18,7 +18,7 @@ package models.submission
 
 import play.api.libs.json.{Json, OFormat}
 
-case class ChrisPollResponse(status: String, pollUrl: Option[String])
+case class ChrisPollResponse(status: String, pollUrl: Option[String], intervalSeconds: Option[Int])
 
 object ChrisPollResponse {
   implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]

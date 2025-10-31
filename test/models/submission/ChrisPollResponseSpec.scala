@@ -29,13 +29,14 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
         """
           |{
           |  "status": "PENDING",
-          |  "pollUrl": "https://poll.example.com/submission/123"
+          |  "pollUrl": "https://poll.example.com/submission/123",
+          |  "intervalSeconds": 1
           |}
         """.stripMargin
       )
 
       js.validate[ChrisPollResponse] mustBe JsSuccess(
-        ChrisPollResponse("PENDING", Some("https://poll.example.com/submission/123"))
+        ChrisPollResponse("PENDING", Some("https://poll.example.com/submission/123"), Some(1))
       )
     }
 
@@ -54,23 +55,25 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "write to expected JSON with pollUrl present" in {
-      val model = ChrisPollResponse("SUBMITTED", Some("https://poll.example.com/submission/456"))
+      val model = ChrisPollResponse("SUBMITTED", Some("https://poll.example.com/submission/456"), Some(1))
       val js    = Json.toJson(model)
 
       (js \ "status").as[String] mustBe "SUBMITTED"
       (js \ "pollUrl").as[String] mustBe "https://poll.example.com/submission/456"
+      (js \ "intervalSeconds").as[Int] mustBe 1
     }
 
     "write to expected JSON when pollUrl is None" in {
-      val model = ChrisPollResponse("SUBMITTED", None)
+      val model = ChrisPollResponse("SUBMITTED", None, None)
       val js    = Json.toJson(model)
 
       (js \ "status").as[String] mustBe "SUBMITTED"
       (js \ "pollUrl").asOpt[String] mustBe None
+      (js \ "intervalSeconds").asOpt[Int] mustBe None
     }
 
     "round-trip (write then read) preserves values with pollUrl" in {
-      val model = ChrisPollResponse("ACCEPTED", Some("https://poll.example.com/submission/789"))
+      val model = ChrisPollResponse("ACCEPTED", Some("https://poll.example.com/submission/789"), Some(1))
 
       val js  = Json.toJson(model)
       val out = js.as[ChrisPollResponse]
@@ -79,7 +82,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "round-trip (write then read) preserves values without pollUrl" in {
-      val model = ChrisPollResponse("ACCEPTED", None)
+      val model = ChrisPollResponse("ACCEPTED", None, None)
 
       val js  = Json.toJson(model)
       val out = js.as[ChrisPollResponse]
@@ -92,13 +95,15 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
 
       statuses.foreach { status =>
         val js = Json.obj(
-          "status"  -> status,
-          "pollUrl" -> "https://example.com/poll"
+          "status"          -> status,
+          "pollUrl"         -> "https://example.com/poll",
+          "intervalSeconds" -> 1
         )
 
         val out = js.as[ChrisPollResponse]
         out.status mustBe status
         out.pollUrl mustBe Some("https://example.com/poll")
+        out.intervalSeconds mustBe Some(1)
       }
     }
 
@@ -113,6 +118,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
         val out = js.as[ChrisPollResponse]
         out.status mustBe status
         out.pollUrl mustBe None
+        out.intervalSeconds mustBe None
       }
     }
 
@@ -120,7 +126,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
       val jsMissing = Json.parse(
         """
           |{
-          |  "pollUrl": "https://poll.example.com/submission/123"
+          |  "pollUrl": "https://poll.example.com/submission/123",
+          |  "intervalSeconds": 1
           |}
         """.stripMargin
       )
@@ -128,7 +135,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
       val res = jsMissing.validate[ChrisPollResponse]
       res.isError mustBe true
       res.asEither.swap.exists(_.exists { case (path, errs) =>
-        path.toString() == "/status" && errs.nonEmpty
+        path.toString == "/status" && errs.nonEmpty
       }) mustBe true
     }
 
@@ -138,6 +145,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
           |{
           |  "status": "SUBMITTED",
           |  "pollUrl": "https://poll.example.com/submission/123",
+          |  "intervalSeconds": 1,
           |  "extraField": "ignored",
           |  "anotherField": 123
           |}
@@ -147,6 +155,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
       val out = js.as[ChrisPollResponse]
       out.status mustBe "SUBMITTED"
       out.pollUrl mustBe Some("https://poll.example.com/submission/123")
+      out.intervalSeconds mustBe Some(1)
     }
   }
 }
