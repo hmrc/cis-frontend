@@ -17,6 +17,8 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.submission.SubmissionDetails
+import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -24,9 +26,10 @@ import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import views.html.monthlyreturns.SubmissionSendingView
 
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class SubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
@@ -35,6 +38,7 @@ class SubmissionSendingController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   submissionService: SubmissionService,
+  view: SubmissionSendingView,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -54,7 +58,7 @@ class SubmissionSendingController @Inject() (
       } yield redirectForStatus(submitted.status))
         .recover { case ex =>
           logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
         }
     }
 
@@ -64,9 +68,23 @@ class SubmissionSendingController @Inject() (
     case "FATAL_ERROR" | "DEPARTMENTAL_ERROR" =>
       Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
     case "PENDING" | "ACCEPTED"               =>
-      Redirect(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad)
+      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
     case _                                    =>
       Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
   }
 
+  def onPollAndRedirect: Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(SubmissionDetailsPage) match {
+        case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case Some(submissionStatus) =>
+          submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).map {
+            case "PENDING" | "ACCEPTED"               => Ok(view()).withHeaders("Refresh" -> "10")
+            case "TIMED_OUT"                          => Redirect(routes.SubmissionAwaitingController.onPageLoad)
+            case "SUBMITTED" | "SUBMITTED_NO_RECEIPT" => Redirect(routes.SubmissionSuccessController.onPageLoad)
+            case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" => Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
+            case _                                    => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      }
+    }
 }

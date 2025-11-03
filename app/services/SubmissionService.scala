@@ -16,6 +16,7 @@
 
 package services
 
+import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
@@ -25,8 +26,9 @@ import pages.submission.*
 import play.api.Logging
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.TypeUtils.*
 
-import java.time.YearMonth
+import java.time.{Instant, YearMonth}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -34,6 +36,7 @@ import scala.util.{Success, Try}
 @Singleton
 class SubmissionService @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector,
+  appConfig: FrontendAppConfig,
   sessionRepository: SessionRepository
 )(implicit ec: ExecutionContext)
     extends Logging {
@@ -53,6 +56,36 @@ class SubmissionService @Inject() (
       response <- cisConnector.submitToChris(submissionId, csr)
       _        <- writeToFeMongo(ua, submissionId, response)
     } yield response
+
+  def checkAndUpdateSubmissionStatus(
+    userAnswers: UserAnswers
+  )(using HeaderCarrier): Future[String] = {
+    val timeout = appConfig.submissionPollTimeoutSeconds
+
+    userAnswers.get(SubmissionDetailsPage) match {
+      case None                    => Future.failed(new IllegalStateException("No submission details present"))
+      case Some(submissionDetails)
+          if userAnswers
+            .get(SubmissionStatusTimedOutPage(submissionDetails.id))
+            .contains(true) =>
+        Future.successful("TIMED_OUT")
+      case Some(submissionDetails) =>
+        val timeoutDateTime = submissionDetails.submittedAt.plusSeconds(timeout)
+
+        for {
+          pollUrl       <- userAnswers.get(PollUrlPage).toFuture
+          correlationId <- userAnswers.get(CorrelationIdPage).toFuture
+          result        <- cisConnector.getSubmissionStatus(pollUrl, correlationId)
+          newStatus      = result.status
+          timedOut       = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
+          newDetails     = submissionDetails.copy(status = newStatus)
+          ua1           <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
+          ua2           <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
+          ua3           <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
+          _             <- sessionRepository.set(ua3)
+        } yield newStatus
+    }
+  }
 
   def updateSubmission(submissionId: String, ua: UserAnswers, chrisResp: ChrisSubmissionResponse)(implicit
     hc: HeaderCarrier
@@ -134,19 +167,28 @@ class SubmissionService @Inject() (
     response: ChrisSubmissionResponse
   ): Future[Boolean] = {
     val updatedUa: Try[UserAnswers] = for {
-      ua1 <- ua.set(SubmissionIdPage, submissionId)
-      ua2 <- ua1.set(SubmissionStatusPage, response.status)
-      ua3 <- ua2.set(IrMarkPage, response.hmrcMarkGenerated)
-      ua4 <- response.responseEndPoint match {
+      ua1 <- ua.set(
+               SubmissionDetailsPage,
+               SubmissionDetails(
+                 id = submissionId,
+                 status = response.status,
+                 irMark = response.hmrcMarkGenerated,
+                 submittedAt = response.gatewayTimestamp
+                   .flatMap(t => Try(Instant.parse(t)).toOption)
+                   .getOrElse(Instant.now)
+               )
+             )
+      ua2 <- response.responseEndPoint match {
                case Some(endpoint) =>
                  for {
-                   u1 <- ua3.set(PollUrlPage, endpoint.url)
+                   u1 <- ua1.set(PollUrlPage, endpoint.url)
                    u2 <- u1.set(PollIntervalPage, endpoint.pollIntervalSeconds)
                  } yield u2
                case None           =>
-                 Success(ua3)
+                 Success(ua1)
              }
-    } yield ua4
+      ua3 <- response.correlationId.toTry.flatMap(c => ua2.set(CorrelationIdPage, c))
+    } yield ua3
 
     updatedUa.fold(
       { err =>

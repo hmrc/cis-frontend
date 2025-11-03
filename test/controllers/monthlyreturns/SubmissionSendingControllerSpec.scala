@@ -51,8 +51,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   private def successRoute      = controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url
   private def awaitingRoute     = controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url
+  private def pollingRoute      = controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
   private def unsuccessfulRoute = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
   private def recoveryRoute     = controllers.routes.JourneyRecoveryController.onPageLoad().url
+  private def systemErrorRoute  = controllers.routes.SystemErrorController.onPageLoad().url
+  given hc: HeaderCarrier       = HeaderCarrier()
 
   private def stubSubmissionFlow(
     service: SubmissionService,
@@ -75,10 +78,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       error = None
     )
 
-    when(service.create(any[UserAnswers])(any[HeaderCarrier]))
+    when(service.create(any[UserAnswers])(using any[HeaderCarrier]))
       .thenReturn(Future.successful(created))
 
-    when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers])(any[HeaderCarrier]))
+    when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers])(using any[HeaderCarrier]))
       .thenReturn(Future.successful(submitted))
 
     when(sessionDb.set(any[UserAnswers]))
@@ -121,7 +124,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe successRoute
     }
 
-    "redirects to Awaiting when status is PENDING" in {
+    "redirects to polling page when status is PENDING" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
@@ -132,10 +135,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe awaitingRoute
+      redirectLocation(result).value mustBe pollingRoute
     }
 
-    "redirects to Awaiting when status is ACCEPTED" in {
+    "redirects to polling page when status is ACCEPTED" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
@@ -146,7 +149,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe awaitingRoute
+      redirectLocation(result).value mustBe pollingRoute
     }
 
     "redirects to Unsuccessful when status is FATAL_ERROR" in {
@@ -191,11 +194,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe recoveryRoute
     }
 
-    "falls back to JourneyRecovery when any step fails (e.g. create fails)" in {
+    "falls back to system error page when any step fails (e.g. create fails)" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
-      when(mockService.create(any[UserAnswers])(any[HeaderCarrier]))
+      when(mockService.create(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
@@ -204,12 +207,265 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe recoveryRoute
+      redirectLocation(result).value mustBe systemErrorRoute
 
       verifyNoInteractions(mockMongoDb)
       verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers])(any[HeaderCarrier])
       verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
     }
 
+  }
+
+  lazy val pollAndRedirectRoute: String =
+    controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
+  private def mkPollRequest             = FakeRequest(GET, pollAndRedirectRoute)
+
+  "SubmissionSendingController.onPollAndRedirect" - {
+
+    "redirects to JourneyRecovery when SubmissionDetailsPage is missing" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+      verifyNoInteractions(mockService)
+    }
+
+    "returns OK with Refresh header when status is PENDING" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("PENDING"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe OK
+      headers(result).get("Refresh").value mustBe "10"
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "returns OK with Refresh header when status is ACCEPTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "ACCEPTED",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("ACCEPTED"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe OK
+      headers(result).get("Refresh").value mustBe "10"
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionAwaiting when status is TIMED_OUT" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("TIMED_OUT"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe awaitingRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionSuccess when status is SUBMITTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("SUBMITTED"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe successRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionSuccess when status is SUBMITTED_NO_RECEIPT" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("SUBMITTED_NO_RECEIPT"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe successRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionUnsuccessful when status is FATAL_ERROR" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("FATAL_ERROR"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionUnsuccessful when status is DEPARTMENTAL_ERROR" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("DEPARTMENTAL_ERROR"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to JourneyRecovery when status is unknown" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("UNKNOWN_STATUS"))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+    }
   }
 }
