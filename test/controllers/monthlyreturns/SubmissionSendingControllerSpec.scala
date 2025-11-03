@@ -54,6 +54,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
   private def pollingRoute      = controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
   private def unsuccessfulRoute = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
   private def recoveryRoute     = controllers.routes.JourneyRecoveryController.onPageLoad().url
+  private def systemErrorRoute  = controllers.routes.SystemErrorController.onPageLoad().url
   given hc: HeaderCarrier       = HeaderCarrier()
 
   private def stubSubmissionFlow(
@@ -193,7 +194,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe recoveryRoute
     }
 
-    "falls back to JourneyRecovery when any step fails (e.g. create fails)" in {
+    "falls back to system error page when any step fails (e.g. create fails)" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
@@ -206,7 +207,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe recoveryRoute
+      redirectLocation(result).value mustBe systemErrorRoute
 
       verifyNoInteractions(mockMongoDb)
       verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers])(any[HeaderCarrier])

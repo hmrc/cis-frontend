@@ -144,7 +144,6 @@ monthlyreturns.dateConfirmNilPayments.error.invalid.year = Please enter a valid 
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Your entry for ‘Tax month ending’ is incorrect. It cannot be before {0} {1} {2}. Please amend.
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = ‘Tax month ending’ cannot be more than 3 return periods ahead of the current date.
 monthlyreturns.dateConfirmNilPayments.error.duplicate = You already have an existing monthly return for the return period selected. Please amend.
-monthlyreturns.dateConfirmNilPayments.error.technical = Sorry, we’re having technical difficulties. Try again later.
 
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
