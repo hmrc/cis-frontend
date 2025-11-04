@@ -75,11 +75,13 @@ class SubmissionSendingController @Inject() (
 
   def onPollAndRedirect: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
+
       request.userAnswers.get(SubmissionDetailsPage) match {
         case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case Some(submissionStatus) =>
           submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).map {
-            case "PENDING" | "ACCEPTED"               => Ok(view()).withHeaders("Refresh" -> "10")
+            case "PENDING" | "ACCEPTED"               => Ok(view()).withHeaders("Refresh" -> pollInterval)
             case "TIMED_OUT"                          => Redirect(routes.SubmissionAwaitingController.onPageLoad)
             case "SUBMITTED" | "SUBMITTED_NO_RECEIPT" => Redirect(routes.SubmissionSuccessController.onPageLoad)
             case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" => Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
