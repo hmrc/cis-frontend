@@ -32,7 +32,7 @@ import java.time.{Clock, ZoneId, ZonedDateTime}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class SubmittedNoReceiptController @Inject()(
+class SubmittedNoReceiptController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -42,11 +42,10 @@ class SubmittedNoReceiptController @Inject()(
   view: SubmittedNoReceiptView,
   clock: Clock,
   monthlyReturnService: MonthlyReturnService
-) (implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
-
 
   private def formatEmployerRef(er: EmployerReference): String =
     s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
@@ -66,45 +65,43 @@ class SubmittedNoReceiptController @Inject()(
         throw new IllegalStateException("contractorName missing from userAnswers")
       }
 
-      val employerRef: String =
-        request.employerReference
-          .map(formatEmployerRef)
-          .getOrElse {
-            val msg = s"SubmissionSuccess: employerReference missing for userId=${request.userId}"
-            logger.error(msg)
-            throw new IllegalStateException(msg)
-          }
-
       val emailFromSession = request.userAnswers.get(ConfirmEmailAddressPage)
 
       val emailFuture = emailFromSession match {
         case Some(email) => Future.successful(email)
-        case None => monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse(""))
+        case None        => monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse(""))
       }
 
       emailFuture.map { email =>
-        val dmyFmt = DateTimeFormatter.ofPattern("d MMM uuuu")
-        val periodEnd = request.userAnswers
+        val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
+        val periodEnd     = request.userAnswers
           .get(DateConfirmNilPaymentsPage)
           .map(_.format(dmyFmt))
           .getOrElse {
             logger.error("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
             throw new IllegalStateException("taxPeriodEnd missing from userAnswers")
           }
-        val ukNow = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+        val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
         val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
         val submittedDate = ukNow.format(dmyFmt)
 
-        Ok(
-          view(
-            periodEnd = periodEnd,
-            submittedTime = submittedTime,
-            submittedDate = submittedDate,
-            contractorName = contractorName,
-            empRef = employerRef,
-            email = email
-          )
-        )
+        request.employerReference.map(formatEmployerRef) match {
+          case Some(employerRef) =>
+            Ok(
+              view(
+                periodEnd = periodEnd,
+                submittedTime = submittedTime,
+                submittedDate = submittedDate,
+                contractorName = contractorName,
+                empRef = employerRef,
+                email = email
+              )
+            )
+          case None              =>
+            val msg = s"SubmissionSuccess: employerReference missing for userId=${request.userId}"
+            logger.error(msg)
+            Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
       }
   }
 }

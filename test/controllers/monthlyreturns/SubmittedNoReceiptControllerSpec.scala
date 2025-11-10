@@ -18,7 +18,6 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
   "SubmittedNoReceipt Controller" - {
 
-
     "must return OK and render the expected view" in new Setup {
       running(app) {
         val result = route(app, request).value
@@ -77,14 +76,14 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
         .success
         .value
 
-
     lazy val app: Application =
       applicationBuilder(userAnswers = Some(ua))
         .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
         .build()
 
-    lazy val request: FakeRequest[AnyContentAsEmpty.type]  = FakeRequest(GET, routes.SubmittedNoReceiptController.onPageLoad().url)
-    lazy val view: SubmittedNoReceiptView                  = app.injector.instanceOf[SubmittedNoReceiptView]
+    lazy val request: FakeRequest[AnyContentAsEmpty.type] =
+      FakeRequest(GET, routes.SubmittedNoReceiptController.onPageLoad().url)
+    lazy val view: SubmittedNoReceiptView                 = app.injector.instanceOf[SubmittedNoReceiptView]
 
     lazy val expectedHtml: String =
       view(
