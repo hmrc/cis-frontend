@@ -396,6 +396,44 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     }
   }
 
+  "getPollInterval" - {
+    "return the poll interval from UserAnswers when present" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      val ua = uaBase.set(PollIntervalPage, 25).success.value
+
+      val result = service.getPollInterval(ua)
+
+      result mustBe 25
+    }
+
+    "return the default poll interval from config when not present in UserAnswers" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "15"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      val ua = uaBase
+
+      val result = service.getPollInterval(ua)
+
+      result mustBe 15
+    }
+  }
+
   "checkAndUpdateSubmissionStatus" - {
     "fail when SubmissionDetailsPage is not present" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
@@ -410,7 +448,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = uaBase
 
       when(connector.getSubmissionStatus(any, any)(any))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"))))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).failed.futureValue
 
@@ -489,7 +527,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"))))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -503,6 +541,58 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val savedUa = captor.getValue
       savedUa.get(SubmissionDetailsPage).value.status mustBe "SUBMITTED"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
+    }
+
+    "update status and save PollUrl and PollInterval when present in poll response" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "3600"
+        )
+      )
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      import models.submission.SubmissionDetails
+      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+
+      val submittedAt       = Instant.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "oldUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30))))
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "PENDING"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "PENDING"
+      savedUa.get(PollUrlPage).value mustBe "newPollUrl"
+      savedUa.get(PollIntervalPage).value mustBe 30
       savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
     }
 
@@ -539,7 +629,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"))))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -590,7 +680,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"))))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -641,7 +731,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"))))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -692,7 +782,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"))))
+        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"), None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))

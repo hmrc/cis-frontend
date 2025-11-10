@@ -225,6 +225,8 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to JourneyRecovery when SubmissionDetailsPage is missing" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
+      when(mockService.getPollInterval(any[UserAnswers]))
+        .thenReturn(10)
 
       val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
@@ -233,7 +235,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
-      verifyNoInteractions(mockService)
+      verify(mockService).getPollInterval(any[UserAnswers])
     }
 
     "returns OK with Refresh header when status is PENDING" in {
@@ -252,6 +254,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
+      when(mockService.getPollInterval(any[UserAnswers]))
+        .thenReturn(10)
+
       when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.successful("PENDING"))
 
@@ -262,6 +267,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
+      verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
     }
 
@@ -281,6 +287,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
+      when(mockService.getPollInterval(any[UserAnswers]))
+        .thenReturn(10)
+
       when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.successful("ACCEPTED"))
 
@@ -291,6 +300,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
+      verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
     }
 

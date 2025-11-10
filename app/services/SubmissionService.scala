@@ -57,6 +57,9 @@ class SubmissionService @Inject() (
       _        <- writeToFeMongo(ua, submissionId, response)
     } yield response
 
+  def getPollInterval(userAnswers: UserAnswers): Int =
+    userAnswers.get(PollIntervalPage).getOrElse(appConfig.submissionPollDefaultIntervalSeconds)
+
   def checkAndUpdateSubmissionStatus(
     userAnswers: UserAnswers
   )(using HeaderCarrier): Future[String] = {
@@ -82,7 +85,8 @@ class SubmissionService @Inject() (
           ua1           <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
           ua2           <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
           ua3           <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
-          _             <- sessionRepository.set(ua3)
+          ua4           <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
+          _             <- sessionRepository.set(ua4)
         } yield newStatus
     }
   }
