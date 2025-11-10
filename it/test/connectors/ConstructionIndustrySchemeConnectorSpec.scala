@@ -43,7 +43,8 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     aoReference = "123/AB456",
     informationCorrect = "yes",
     inactivity = "no",
-    monthYear = "2025-10"
+    monthYear = "2025-10",
+    email = "test@test.com"
   )
 
   "getCisTaxpayer" should {
