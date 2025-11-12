@@ -58,7 +58,7 @@ POST       /monthly-return/submission-unsuccessful                       control
 GET        /monthly-return/submission-awaiting                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 
 GET        /monthly-return/confirmation                       controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
-GET        /monthly-return/submitted-no-receipt-confirmation  controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad()
+GET        /monthly-return/confirmation-no-receipt            controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad()
 GET        /monthly-return/already-submitted                  controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
 
 GET        /page-not-found                                    controllers.PageNotFoundController.onPageLoad()
