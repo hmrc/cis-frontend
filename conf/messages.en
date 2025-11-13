@@ -270,3 +270,16 @@ systemError.p1          = Try again later.
 systemError.p2          = Contact the
 systemError.link        = HMRC Online Services Helpdesk
 systemError.p3          = if you need to speak to someone about Construction Industry Scheme and quote the reference number:
+
+submittedNoReceipt.title = Confirmation
+submittedNoReceipt.heading = Your monthly return has been successfully submitted
+submittedNoReceipt.p1 = Your CIS monthly return for period ended {0} was successfully submitted to HMRC at {1} on {2}.
+submittedNoReceipt.details.h2 = Submission details
+submittedNoReceipt.details.contractorName = Contractor name
+submittedNoReceipt.details.employersReference = Employers Reference
+submittedNoReceipt.details.emailConfirmationSentTo = Email confirmation sent to
+submittedNoReceipt.h2 = What happens next
+submittedNoReceipt.p2 = This verification request has been successfully submitted and received by HMRC. It can be accessed in read-only format from your history.
+submittedNoReceipt.p3 = We were unable to issue a submission receipt at this time. HMRC will contact you shortly. You will receive confirmation of your submission at the following email address: {0}
+submittedNoReceipt.p4 = Your views are important in order to help make improvements to the service, to offer your views please complete our
+submittedNoReceipt.p4.link = feedback form
