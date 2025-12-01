@@ -63,8 +63,10 @@ class SubmissionSendingController @Inject() (
     }
 
   private def redirectForStatus(status: String): Result = status match {
-    case "SUBMITTED" | "SUBMITTED_NO_RECEIPT" =>
+    case "SUBMITTED"                          =>
       Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
+    case "SUBMITTED_NO_RECEIPT"               =>
+      Redirect(controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoad)
     case "FATAL_ERROR" | "DEPARTMENTAL_ERROR" =>
       Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
     case "PENDING" | "ACCEPTED"               =>
@@ -83,7 +85,8 @@ class SubmissionSendingController @Inject() (
           submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).map {
             case "PENDING" | "ACCEPTED"               => Ok(view()).withHeaders("Refresh" -> pollInterval)
             case "TIMED_OUT"                          => Redirect(routes.SubmissionAwaitingController.onPageLoad)
-            case "SUBMITTED" | "SUBMITTED_NO_RECEIPT" => Redirect(routes.SubmissionSuccessController.onPageLoad)
+            case "SUBMITTED"                          => Redirect(routes.SubmissionSuccessController.onPageLoad)
+            case "SUBMITTED_NO_RECEIPT"               => Redirect(routes.SubmittedNoReceiptController.onPageLoad)
             case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" => Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
             case _                                    => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           }
