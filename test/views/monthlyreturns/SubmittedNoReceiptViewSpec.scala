@@ -1,11 +1,30 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package views.monthlyreturns
 
 import base.SpecBase
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
+import play.twirl.api.HtmlFormat
 import views.html.monthlyreturns.SubmittedNoReceiptView
+
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
 
@@ -13,8 +32,8 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
 
   "SubmittedNoReceiptView" - {
     "must render the correct content on the page" in new Setup {
-      val html = view(periodEnd, submittedTime, submittedDate, contractorName, empRef, email)
-      val doc  = Jsoup.parse(html.body)
+      val html: HtmlFormat.Appendable = view(periodEnd, submittedTime, submittedDate, contractorName, empRef, email)
+      val doc: Document = Jsoup.parse(html.body)
 
       doc.title             must include(messages("submittedNoReceipt.title"))
       doc.select("h1").text must include(messages("submittedNoReceipt.heading"))
