@@ -55,25 +55,15 @@ class SubmissionSendingController @Inject() (
         created   <- submissionService.create(request.userAnswers)
         submitted <- submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers)
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
-      } yield redirectForStatus(submitted.status))
-        .recover { case ex =>
-          logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
-          Redirect(controllers.routes.SystemErrorController.onPageLoad())
-        }
+      } yield submitted.status match {
+        case "PENDING" | "ACCEPTED" =>
+          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
+        case _                      => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+      }).recover { case ex =>
+        logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
+        Redirect(controllers.routes.SystemErrorController.onPageLoad())
+      }
     }
-
-  private def redirectForStatus(status: String): Result = status match {
-    case "SUBMITTED"                          =>
-      Redirect(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad)
-    case "SUBMITTED_NO_RECEIPT"               =>
-      Redirect(controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoad)
-    case "FATAL_ERROR" | "DEPARTMENTAL_ERROR" =>
-      Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-    case "PENDING" | "ACCEPTED"               =>
-      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-    case _                                    =>
-      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-  }
 
   def onPollAndRedirect: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>

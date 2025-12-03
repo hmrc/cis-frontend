@@ -33,7 +33,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
   "SubmittedNoReceiptView" - {
     "must render the correct content on the page" in new Setup {
       val html: HtmlFormat.Appendable = view(periodEnd, submittedTime, submittedDate, contractorName, empRef, email)
-      val doc: Document = Jsoup.parse(html.body)
+      val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("submittedNoReceipt.title"))
       doc.select("h1").text must include(messages("submittedNoReceipt.heading"))
