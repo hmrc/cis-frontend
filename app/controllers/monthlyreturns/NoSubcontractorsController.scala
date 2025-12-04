@@ -24,14 +24,14 @@ import views.html.monthlyreturns.NoSubcontractorsView
 
 import javax.inject.Inject
 
-class NoSubcontractorsController @Inject()(
-                                       override val messagesApi: MessagesApi,
-                                       val controllerComponents: MessagesControllerComponents,
-                                       view: NoSubcontractorsView
-                                     ) extends FrontendBaseController with I18nSupport {
+class NoSubcontractorsController @Inject() (
+  override val messagesApi: MessagesApi,
+  val controllerComponents: MessagesControllerComponents,
+  view: NoSubcontractorsView
+) extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = Action {
-    implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = Action { implicit request =>
+    Ok(view())
   }
 }

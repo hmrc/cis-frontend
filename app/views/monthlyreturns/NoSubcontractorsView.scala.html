@@ -16,12 +16,36 @@
 
 @this(
         layout: templates.Layout,
-        govukButton: GovukButton
+        govukButton: GovukButton,
+        govukTable: GovukTable,
+        paragraph: components.Paragraph
 )
 
 @()(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("noSubcontractors.title"))) {
 
-    <h1 class="govuk-heading-xl">@messages("noSubcontractors.heading")</h1>
+    <h1 class="govuk-heading-l">@messages("noSubcontractors.heading")</h1>
+
+@paragraph(
+message = "noSubcontractors.p1"
+)
+
+@paragraph(
+message = "noSubcontractors.p2"
+)
+
+@govukTable(
+  Table(
+     head = Some(
+               Seq(
+                 "noSubcontractors.table.name",
+                 "noSubcontractors.table.verification",
+                 "noSubcontractors.table.verificationNumber",
+                 "noSubcontractors.table.tax",
+                 "noSubcontractors.table.month"
+               ).map { key =>
+        HeadCell(content = Text(messages(key)))
+     }
+)))
 }

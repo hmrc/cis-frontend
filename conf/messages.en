@@ -285,4 +285,12 @@ submittedNoReceipt.p4 = Your views are important in order to help make improveme
 submittedNoReceipt.p4.link = feedback form
 
 noSubcontractors.title = noSubcontractors
-noSubcontractors.heading = noSubcontractors
+noSubcontractors.heading = Select subcontractors
+noSubcontractors.p1 = Use this service to tell us which subcontractors you wish to include in this monthly return.
+noSubcontractors.p2 = You can add and remove subcontractors, and update your list.
+noSubcontractors.table.name = Name
+noSubcontractors.table.verification = Verification required?
+noSubcontractors.table.verificationNumber = Verification number
+noSubcontractors.table.tax = Tax treatment
+noSubcontractors.table.month = Include this month
+noSubcontractors.table.fill = No subcontractors have been added yet
