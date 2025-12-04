@@ -14,38 +14,55 @@
  * limitations under the License.
  *@
 
+@import views.html.components._
+
 @this(
         layout: templates.Layout,
         govukButton: GovukButton,
         govukTable: GovukTable,
-        paragraph: components.Paragraph
+        paragraph: Paragraph
 )
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("noSubcontractors.title"))) {
+@layout(
+    pageTitle = titleNoForm(messages("noSubcontractors.title")),
+    showSignOut = false
+    ){
 
     <h1 class="govuk-heading-l">@messages("noSubcontractors.heading")</h1>
 
-@paragraph(
-message = "noSubcontractors.p1"
-)
+    @paragraph(
+        message = "noSubcontractors.p1"
+    )
 
-@paragraph(
-message = "noSubcontractors.p2"
-)
+    @paragraph(
+        message = "noSubcontractors.p2"
+    )
 
-@govukTable(
-  Table(
-     head = Some(
-               Seq(
-                 "noSubcontractors.table.name",
-                 "noSubcontractors.table.verification",
-                 "noSubcontractors.table.verificationNumber",
-                 "noSubcontractors.table.tax",
-                 "noSubcontractors.table.month"
-               ).map { key =>
-        HeadCell(content = Text(messages(key)))
-     }
-)))
+    @govukTable(
+        Table(
+            head = Some(
+                Seq(
+                    "noSubcontractors.table.name",
+                    "noSubcontractors.table.verification",
+                    "noSubcontractors.table.verificationNumber",
+                    "noSubcontractors.table.tax",
+                    "noSubcontractors.table.month"
+                ).map { key =>
+                    HeadCell(content = Text(messages(key)))
+                }
+            ),
+            rows = Seq(
+                Seq(
+                    TableRow(content = Text(messages("noSubcontractors.table.fill")),
+                    colspan = Some(5))
+                )
+            )
+        )
+    )
+
+    @govukButton(
+        ButtonViewModel(messages("site.continue"))
+    )
 }
