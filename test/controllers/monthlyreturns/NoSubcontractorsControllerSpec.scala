@@ -4,7 +4,7 @@ import base.SpecBase
 import controllers.routes
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.NoSubcontractorsView
+import views.html.monthlyreturns.NoSubcontractorsView
 
 class NoSubcontractorsControllerSpec extends SpecBase {
 
@@ -15,7 +15,7 @@ class NoSubcontractorsControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.NoSubcontractorsController.onPageLoad().url)
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.NoSubcontractorsController.onPageLoad().url)
 
         val result = route(application, request).value
 
