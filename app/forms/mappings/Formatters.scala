@@ -20,7 +20,9 @@ import play.api.data.FormError
 import play.api.data.format.Formatter
 import models.Enumerable
 
+import scala.collection.View.ZipWithIndex
 import scala.util.control.Exception.nonFatalCatch
+import scala.util.matching.Regex
 
 trait Formatters {
 
@@ -58,6 +60,35 @@ trait Formatters {
 
       def unbind(key: String, value: Boolean) = Map(key -> value.toString)
     }
+
+  private[mappings] def booleanListFormatter(
+    requiredKey: String,
+    invalidKey: String,
+    args: Seq[String] = Seq.empty
+  ):  Formatter[List[Boolean]] =
+    new Formatter[List[Boolean]] {
+
+      private val baseFormatter = booleanFormatter(requiredKey, invalidKey, args)
+
+      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], List[Boolean]] = {
+        val values = data
+          .filter((key, _) => key.matches(s"^$key\\.\\d+"))
+          .toList
+          .sortBy((key, _) => key)
+          .map((key, value) => baseFormatter.bind(key, data))
+
+        val x = values
+
+      }
+
+      def unbind(key: String, values: List[Boolean]):  Map[String, String]  = {
+        values
+          .zipWithIndex
+          .map((value, index) => s"$key.$index" -> value.toString)
+          .toMap
+      }
+    }
+  }
 
   private[mappings] def intFormatter(
     requiredKey: String,

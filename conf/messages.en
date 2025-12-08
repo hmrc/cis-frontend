@@ -289,3 +289,17 @@ fileYourMonthlyCisReturn.heading = File your monthly CIS return
 fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
 fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
 fileYourMonthlyCisReturn.startButton = Start
+
+selectSubcontractors.title = Select subcontractors
+selectSubcontractors.heading = Select subcontractors
+selectSubcontractors.p1 = Use this service to tell us which subcontractors you wish to include in this monthly return.
+selectSubcontractors.checkbox.label = Checking this box confirms I have only selected subcontractors used within this reporting period.
+selectSubcontractors.p2 = Where relevant subcontractors are not listed, you can add them to your
+selectSubcontractors.p2.link = subcontractor list
+selectSubcontractors.selectAll.link = Select all
+selectSubcontractors.deselectAll.link = Deselect all
+selectSubcontractors.table.th.name = Name
+selectSubcontractors.table.th.verificationRequired = Verification required?
+selectSubcontractors.table.th.verificationNumber = Verification number
+selectSubcontractors.table.th.taxTreatment = Tax treatment
+selectSubcontractors.table.th.includeThisMonth = Include this month

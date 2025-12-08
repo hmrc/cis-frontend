@@ -65,6 +65,7 @@ GET        /page-not-found                                    controllers.PageNo
 GET        /access-denied                                     controllers.AccessDeniedController.onPageLoad()
 GET        /system-error/there-is-a-problem                   controllers.SystemErrorController.onPageLoad()
 
-
+GET        /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad()
+POST       /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
 GET        /monthly-return/file-your-monthly-return                          controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()
