@@ -65,30 +65,27 @@ trait Formatters {
     requiredKey: String,
     invalidKey: String,
     args: Seq[String] = Seq.empty
-  ):  Formatter[List[Boolean]] =
+  ): Formatter[List[Boolean]] =
     new Formatter[List[Boolean]] {
 
       private val baseFormatter = booleanFormatter(requiredKey, invalidKey, args)
 
-      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], List[Boolean]] = {
-        val values = data
+      override def bind(key: String, data: Map[String, String]): Either[List[FormError], List[Boolean]] =
+        data
           .filter((key, _) => key.matches(s"^$key\\.\\d+"))
           .toList
           .sortBy((key, _) => key)
           .map((key, value) => baseFormatter.bind(key, data))
+          .partitionMap(identity) match {
+          case (Nil, rights) => Right(rights)
+          case (lefts, _)    => Left(lefts.flatten)
+        }
 
-        val x = values
-
-      }
-
-      def unbind(key: String, values: List[Boolean]):  Map[String, String]  = {
-        values
-          .zipWithIndex
+      def unbind(key: String, values: List[Boolean]): Map[String, String] =
+        values.zipWithIndex
           .map((value, index) => s"$key.$index" -> value.toString)
           .toMap
-      }
     }
-  }
 
   private[mappings] def intFormatter(
     requiredKey: String,

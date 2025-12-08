@@ -23,6 +23,7 @@
 
 @this(
     layout: templates.Layout,
+    govukErrorSummary: GovukErrorSummary,
     govukButton: GovukButton,
     govukCheckboxes: GovukCheckboxes,
     govukTable: GovukTable,
@@ -44,6 +45,10 @@
     @paragraph(messages("selectSubcontractors.p1"))
 
     @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()) {
+
+        @if(form.errors.nonEmpty) {
+            @govukErrorSummary(ErrorSummaryViewModel(form))
+        }
 
         @govukCheckboxes(
             Checkboxes(
@@ -67,10 +72,10 @@
 
         @paragraphWithLinks(
             linkTextUrlOne = "selectSubcontractors.selectAll.link",
-            linkUrlOne = "#",
+            linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url,
             suffixTextKey = "|",
             linkTextUrlTwo = "selectSubcontractors.deselectAll.link",
-            linkUrlTwo = "#"
+            linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
         )
 
         @govukTable(
@@ -100,9 +105,8 @@
                                     <input
                                             class="govuk-checkboxes__input"
                                             id="${subcontractor.name.split(',')(0).toLowerCase}"
-                                            name="subcontractors"
+                                            name="subcontractors.includeInMonth"
                                             type="checkbox"
-                                            value="${subcontractor.name.split(',')(0).toLowerCase}"
                                             ${if (subcontractor.includeThisMonth) "checked" else ""}
                                     >
                                     <label class="govuk-label govuk-checkboxes__label" for="${subcontractor.name.split(',')(0).toLowerCase}">

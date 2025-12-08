@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package forms.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import forms.mappings.Mappings
+import models.monthlyreturns.SelectSubcontractorsFormData
+import play.api.data.Form
+import play.api.data.Forms.mapping
 
-case class SelectSubcontractorsFormData(confirmation: Boolean, monthsToInclude: List[Boolean])
-
-object SelectSubcontractorsFormData {
-  given OFormat[SelectSubcontractorsFormData] = Json.format[SelectSubcontractorsFormData]
+class SelectSubcontractorsFormProvider extends Mappings {
+  def apply(): Form[SelectSubcontractorsFormData] =
+    Form(
+      mapping(
+        "confirmation"    -> boolean("monthylreturns.subcontractor.confirmation"),
+        "monthsToInclude" -> booleanList("monthylreturns.subcontractor.includeInMonth")
+      )(SelectSubcontractorsFormData.apply)(x => Some(x.confirmation, x.monthsToInclude))
+    )
 }

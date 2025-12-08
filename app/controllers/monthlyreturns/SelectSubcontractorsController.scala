@@ -17,6 +17,9 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import forms.monthlyreturns.SelectSubcontractorsFormProvider
+import models.monthlyreturns.SelectSubcontractorsFormData
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -25,15 +28,17 @@ import views.html.monthlyreturns.SelectSubcontractorsView
 
 import javax.inject.Inject
 
-class SelectSubcontractorsController @Inject()(
+class SelectSubcontractorsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: SelectSubcontractorsView
+  view: SelectSubcontractorsView,
+  formProvider: SelectSubcontractorsFormProvider
 ) extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   private val subcontractors = Seq(
     SelectSubcontractorsViewModel("Alice, A", "Yes", "Unknown", "Unknown", false),
@@ -44,14 +49,34 @@ class SelectSubcontractorsController @Inject()(
     SelectSubcontractorsViewModel("Frank, F", "Yes", "Unknown", "Unknown", false)
   )
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view(subcontractors))
-  }
+  private val form = formProvider()
 
-  def onSubmit: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
+    (identify andThen getData andThen requireData) { implicit request =>
+      logger.warn(s"DEFAULT: $monthsToIncludeDefault")
+      val filledForm = monthsToIncludeDefault match {
+        case Some(default) => form.fill(SelectSubcontractorsFormData(false, subcontractors.map(_ => default).toList))
+        case None          => form
+      }
+      logger.warn(s"FILLED FORM: $filledForm")
 
-      Ok(view(subcontractors))
+      val monthsToInclude = filledForm.value.toList.flatMap(_.monthsToInclude)
+      logger.warn(s"FILLED FORM MONTHS: $monthsToInclude")
+      logger.warn(s"FILLED VALUES: ${filledForm.value}")
+
+      val subcontractorsWithFormValues = subcontractors.zipWithIndex.map { (subcontractor, index) =>
+        val monthToInclude = monthsToInclude.lift(index).getOrElse(false)
+        subcontractor.copy(includeThisMonth = monthToInclude)
+      }.toList
+      logger.warn(s"SUBCONTRACTORS WITH FORM VALUES: $subcontractorsWithFormValues")
+
+      Ok(view(filledForm, subcontractorsWithFormValues))
+    }
+
+  def onSubmit: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+
+    logger.warn(s"FILLED VALUES: ${form.bindFromRequest().value}")
+
+    Ok(view(form.bindFromRequest(), subcontractors))
   }
 }

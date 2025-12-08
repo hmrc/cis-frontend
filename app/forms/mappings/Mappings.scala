@@ -18,6 +18,7 @@ package forms.mappings
 
 import config.FrontendAppConfig
 import models.Enumerable
+import models.monthlyreturns.SelectSubcontractorsFormData
 import play.api.data.FieldMapping
 import play.api.data.Forms.of
 import play.api.i18n.Messages
@@ -43,6 +44,13 @@ trait Mappings extends Formatters with Constraints {
     args: Seq[String] = Seq.empty
   ): FieldMapping[Boolean] =
     of(booleanFormatter(requiredKey, invalidKey, args))
+
+  protected def booleanList(
+    requiredKey: String = "error.required",
+    invalidKey: String = "error.boolean",
+    args: Seq[String] = Seq.empty
+  ): FieldMapping[List[Boolean]] =
+    of(booleanListFormatter(requiredKey, invalidKey, args))
 
   protected def enumerable[A](
     requiredKey: String = "error.required",
