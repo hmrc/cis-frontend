@@ -18,7 +18,6 @@ package forms.mappings
 
 import config.FrontendAppConfig
 import models.Enumerable
-import models.monthlyreturns.SelectSubcontractorsFormData
 import play.api.data.FieldMapping
 import play.api.data.Forms.of
 import play.api.i18n.Messages

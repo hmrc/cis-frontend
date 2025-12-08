@@ -16,13 +16,11 @@
 
 package forms.mappings
 
+import models.Enumerable
 import play.api.data.FormError
 import play.api.data.format.Formatter
-import models.Enumerable
 
-import scala.collection.View.ZipWithIndex
 import scala.util.control.Exception.nonFatalCatch
-import scala.util.matching.Regex
 
 trait Formatters {
 

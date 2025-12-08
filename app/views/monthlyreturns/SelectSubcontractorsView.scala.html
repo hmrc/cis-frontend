@@ -37,12 +37,12 @@
 @(form: Form[_], subcontractors: Seq[SelectSubcontractorsViewModel])(implicit request: Request[_], messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("selectSubcontractors.title")),
+    pageTitle = titleNoForm(messages("monthlyreturns.selectSubcontractors.title")),
     showSignOut = false
 ) {
 
-    @h1(messages("selectSubcontractors.heading"))
-    @paragraph(messages("selectSubcontractors.p1"))
+    @h1(messages("monthlyreturns.selectSubcontractors.heading"))
+    @paragraph(messages("monthlyreturns.selectSubcontractors.p1"))
 
     @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()) {
 
@@ -57,24 +57,24 @@
                     CheckboxItem(
                         name = Some("commit-selection"),
                         value = "commit",
-                        content = Text(messages("selectSubcontractors.checkbox.label"))
+                        content = Text(messages("monthlyreturns.selectSubcontractors.checkbox.label"))
                     )
                 )
             )
         )
 
         @link(
-            linkTextKey = "selectSubcontractors.p2.link",
+            linkTextKey = "monthlyreturns.selectSubcontractors.p2.link",
             linkUrl = "#",
-            prefixTextKey = "selectSubcontractors.p2",
+            prefixTextKey = "monthlyreturns.selectSubcontractors.p2",
             hasFullStop = true
         )
 
         @paragraphWithLinks(
-            linkTextUrlOne = "selectSubcontractors.selectAll.link",
+            linkTextUrlOne = "monthlyreturns.selectSubcontractors.selectAll.link",
             linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url,
             suffixTextKey = "|",
-            linkTextUrlTwo = "selectSubcontractors.deselectAll.link",
+            linkTextUrlTwo = "monthlyreturns.selectSubcontractors.deselectAll.link",
             linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
         )
 
@@ -82,11 +82,11 @@
             Table(
                 head = Some(
                     Seq(
-                        "selectSubcontractors.table.th.name",
-                        "selectSubcontractors.table.th.verificationRequired",
-                        "selectSubcontractors.table.th.verificationNumber",
-                        "selectSubcontractors.table.th.taxTreatment",
-                        "selectSubcontractors.table.th.includeThisMonth",
+                        "monthlyreturns.selectSubcontractors.table.th.name",
+                        "monthlyreturns.selectSubcontractors.table.th.verificationRequired",
+                        "monthlyreturns.selectSubcontractors.table.th.verificationNumber",
+                        "monthlyreturns.selectSubcontractors.table.th.taxTreatment",
+                        "monthlyreturns.selectSubcontractors.table.th.includeThisMonth",
                     ).map { key =>
                         HeadCell(content = Text(messages(key)))
                     }
