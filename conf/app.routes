@@ -65,9 +65,10 @@ GET        /page-not-found                                    controllers.PageNo
 GET        /access-denied                                     controllers.AccessDeniedController.onPageLoad()
 GET        /system-error/there-is-a-problem                   controllers.SystemErrorController.onPageLoad()
 
-GET        /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(monthsToIncludeDefault: Option[Boolean] = None)
-GET        /monthly-return/select-subcontractors/select-all   controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(monthsToIncludeDefault: Option[Boolean] = Some(true))
-GET        /monthly-return/select-subcontractors/deselect-all controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(monthsToIncludeDefault: Option[Boolean] = Some(false))
+GET        /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None)
+GET        /monthly-return/select-subcontractors/empty        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadEmpty(monthsToIncludeDefault: Option[Boolean] = None)
+GET        /monthly-return/select-subcontractors/select-all   controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = Some(true))
+GET        /monthly-return/select-subcontractors/deselect-all controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = Some(false))
 POST       /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
 GET        /monthly-return/file-your-monthly-return                          controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()

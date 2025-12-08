@@ -72,10 +72,10 @@
 
         @paragraphWithLinks(
             linkTextUrlOne = "monthlyreturns.selectSubcontractors.selectAll.link",
-            linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url,
+            linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadNonEmpty(Some(true)).url,
             suffixTextKey = "|",
             linkTextUrlTwo = "monthlyreturns.selectSubcontractors.deselectAll.link",
-            linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
+            linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadNonEmpty(Some(false)).url
         )
 
         @govukTable(

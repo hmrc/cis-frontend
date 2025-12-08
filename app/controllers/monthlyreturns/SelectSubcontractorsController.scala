@@ -51,11 +51,15 @@ class SelectSubcontractorsController @Inject() (
 
   private val form = formProvider()
 
-  def onPageLoad(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
+  private def onPageLoad(
+    monthsToIncludeDefault: Option[Boolean] = None,
+    subcontractorViewModels: Seq[SelectSubcontractorsViewModel]
+  ): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
       logger.warn(s"DEFAULT: $monthsToIncludeDefault")
       val filledForm = monthsToIncludeDefault match {
-        case Some(default) => form.fill(SelectSubcontractorsFormData(false, subcontractors.map(_ => default).toList))
+        case Some(default) =>
+          form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_ => default).toList))
         case None          => form
       }
       logger.warn(s"FILLED FORM: $filledForm")
@@ -64,7 +68,7 @@ class SelectSubcontractorsController @Inject() (
       logger.warn(s"FILLED FORM MONTHS: $monthsToInclude")
       logger.warn(s"FILLED VALUES: ${filledForm.value}")
 
-      val subcontractorsWithFormValues = subcontractors.zipWithIndex.map { (subcontractor, index) =>
+      val subcontractorsWithFormValues = subcontractorViewModels.zipWithIndex.map { (subcontractor, index) =>
         val monthToInclude = monthsToInclude.lift(index).getOrElse(false)
         subcontractor.copy(includeThisMonth = monthToInclude)
       }.toList
@@ -72,6 +76,12 @@ class SelectSubcontractorsController @Inject() (
 
       Ok(view(filledForm, subcontractorsWithFormValues))
     }
+
+  def onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
+    onPageLoad(monthsToIncludeDefault, subcontractors)
+
+  def onPageLoadEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
+    onPageLoad(monthsToIncludeDefault, Seq())
 
   def onSubmit: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
