@@ -292,14 +292,14 @@ fileYourMonthlyCisReturn.startButton = Start
 
 monthlyreturns.selectSubcontractors.title = Select subcontractors
 monthlyreturns.selectSubcontractors.heading = Select subcontractors
-monthlyreturns.selectSubcontractors.p1 = Use this service to tell us which subcontractors you wish to include in this monthly return.
+monthlyreturns.selectSubcontractors.p1 = Use this service to tell us which subcontractors you want to include in this monthly return.
 monthlyreturns.selectSubcontractors.checkbox.label = Checking this box confirms I have only selected subcontractors used within this reporting period.
 
 monthlyreturns.selectSubcontractors.confirmation = ERROR CONFIRMATION TO BE ADDED
 monthlyreturns.selectSubcontractors.includeInMonth = ERROR INCLUDE IN MONTH TO BE ADDED
 
-monthlyreturns.selectSubcontractors.p2 = Where relevant subcontractors are not listed, you can add them to your
-monthlyreturns.selectSubcontractors.p2.link = subcontractor list
+monthlyreturns.selectSubcontractors.p2 = You can add and remove subcontractors, and
+monthlyreturns.selectSubcontractors.p2.link =  update your list
 monthlyreturns.selectSubcontractors.selectAll.link = Select all
 monthlyreturns.selectSubcontractors.deselectAll.link = Deselect all
 monthlyreturns.selectSubcontractors.table.th.name = Name
