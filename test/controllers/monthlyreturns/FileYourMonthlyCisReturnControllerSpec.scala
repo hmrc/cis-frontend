@@ -4,7 +4,7 @@ import base.SpecBase
 import controllers.routes
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.FileYourMonthlyCisReturnView
+import views.html.monthlyreturns.FileYourMonthlyCisReturnView
 
 class FileYourMonthlyCisReturnControllerSpec extends SpecBase {
 
@@ -15,7 +15,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.FileYourMonthlyCisReturnController.onPageLoad().url)
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url)
 
         val result = route(application, request).value
 
