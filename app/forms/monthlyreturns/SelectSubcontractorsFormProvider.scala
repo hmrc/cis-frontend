@@ -21,12 +21,15 @@ import models.monthlyreturns.SelectSubcontractorsFormData
 import play.api.data.Form
 import play.api.data.Forms.mapping
 
+// TODO: ADD UNIT TESTS
 class SelectSubcontractorsFormProvider extends Mappings {
   def apply(): Form[SelectSubcontractorsFormData] =
     Form(
       mapping(
-        "confirmation"    -> boolean("monthylreturns.subcontractor.confirmation"),
-        "monthsToInclude" -> booleanList("monthylreturns.subcontractor.includeInMonth")
-      )(SelectSubcontractorsFormData.apply)(x => Some(x.confirmation, x.monthsToInclude))
+        "confirmation"    -> boolean("monthlyreturns.selectSubcontractors.confirmation"),
+        "monthsToInclude" -> booleanList("monthlyreturns.selectSubcontractors.includeInMonth")
+      )(SelectSubcontractorsFormData.apply)(selectSubcontractorsFormData =>
+        Some(selectSubcontractorsFormData.confirmation, selectSubcontractorsFormData.monthsToInclude)
+      )
     )
 }

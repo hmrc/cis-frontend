@@ -17,8 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import controllers.routes
-import forms.monthlyreturns.{ConfirmEmailAddressFormProvider, SelectSubcontractorsFormProvider}
+import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.monthlyreturns.SelectSubcontractorsFormData
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -55,7 +54,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
       )
     )
 
-    val formDataDeslected = SelectSubcontractorsFormData(
+    val formDataDeselected = SelectSubcontractorsFormData(
       false,
       List(
         false, false, false, false, false, false
@@ -121,7 +120,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
         val view = application.injector.instanceOf[SelectSubcontractorsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(formDataDeslected), subcontractors)(
+        contentAsString(result) mustEqual view(form.fill(formDataDeselected), subcontractors)(
           request,
           messages(application)
         ).toString

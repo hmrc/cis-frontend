@@ -52,11 +52,10 @@
 
         @govukCheckboxes(
             Checkboxes(
-                name = "commit-selection",
+                name = "confirmation",
                 items = Seq(
                     CheckboxItem(
-                        name = Some("commit-selection"),
-                        value = "commit",
+                        name = Some("confirmation"),
                         content = Text(messages("monthlyreturns.selectSubcontractors.checkbox.label"))
                     )
                 )
