@@ -17,13 +17,10 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import org.apache.pekko.actor.setup.Setup
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import play.twirl.api.HtmlFormat
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
 
 class FileYourMonthlyCisReturnViewSpec extends SpecBase {
