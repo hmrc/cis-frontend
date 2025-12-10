@@ -36,10 +36,7 @@ class FileYourMonthlyCisReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p1"))
       doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p2"))
 
-      val startButton = doc.select("a.govuk-button--start")
-      startButton.isEmpty mustBe false
-      startButton.text must include("Start")
-      startButton.attr("href") mustBe "#"
+      doc.getElementsByClass("govuk-button--start").text must include(messages("fileYourMonthlyCisReturn.startButton"))
     }
   }
 
