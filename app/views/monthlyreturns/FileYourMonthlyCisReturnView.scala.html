@@ -17,32 +17,32 @@
 @import views.html.components._
 
 @this(
-layout: templates.Layout,
-govukButton: GovukButton,
-govukTable: GovukTable,
-paragraph: Paragraph
+   layout: templates.Layout,
+   govukButton: GovukButton,
+   govukTable: GovukTable,
+   paragraph: Paragraph
 )
 
 @()(implicit request: Request[_], messages: Messages)
 
 @layout(
-pageTitle = titleNoForm(messages("noSubcontractors.title")),
-showSignOut = false
+   pageTitle = titleNoForm(messages("fileYourMonthlyCisReturn.title")),
+   showSignOut = false
 ){
 
-<h1 class="govuk-heading-l">@messages("fileYourMonthlyCisReturn.h1")</h1>
+   <h1 class="govuk-heading-l">@messages("fileYourMonthlyCisReturn.heading")</h1>
 
 @paragraph(
-message = "fileYourMonthlyCisReturn.p1"
+   message = "fileYourMonthlyCisReturn.p1"
 )
 
 @paragraph(
-message = "fileYourMonthlyCisReturn.p2"
+   message = "fileYourMonthlyCisReturn.p2"
 )
 
 @govukButton(Button(
-content = Text("Start"),
-href = Some("#"),
-isStartButton = true
+   content = Text("Start"),
+   href = Some("#"),
+   isStartButton = true
 ))
 }
