@@ -16,22 +16,22 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.*
+import controllers.actions.IdentifierAction
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
-
 import javax.inject.Inject
 
 class FileYourMonthlyCisReturnController @Inject() (
   override val messagesApi: MessagesApi,
   val controllerComponents: MessagesControllerComponents,
-  view: FileYourMonthlyCisReturnView
+  view: FileYourMonthlyCisReturnView,
+  identify: IdentifierAction
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = Action { implicit request =>
+  def onPageLoad: Action[AnyContent] = identify { implicit request =>
     Ok(view())
   }
 }

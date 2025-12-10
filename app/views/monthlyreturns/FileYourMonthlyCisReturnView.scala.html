@@ -17,9 +17,10 @@
 @import views.html.components._
 
 @this(
-   layout: templates.Layout,
-   govukButton: GovukButton,
-   paragraph: Paragraph
+    layout: templates.Layout,
+    govukButton: GovukButton,
+    paragraph: Paragraph,
+    h1: H1
 )
 
 @()(implicit request: Request[_], messages: Messages)
@@ -29,7 +30,7 @@
    showSignOut = false
 ){
 
-   <h1 class="govuk-heading-l">@messages("fileYourMonthlyCisReturn.heading")</h1>
+@h1(messages("fileYourMonthlyCisReturn.heading"))
 
 @paragraph(
    message = "fileYourMonthlyCisReturn.p1"
