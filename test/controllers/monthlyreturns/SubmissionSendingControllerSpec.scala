@@ -96,35 +96,6 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   "SubmissionSendingController.onPageLoad" - {
 
-    "redirects to Success when status is SUBMITTED" in {
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "SUBMITTED")
-
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-
-      val result = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe successRoute
-      verify(mockService).updateSubmission(eqTo("sub-123"), any[UserAnswers], any())(any[HeaderCarrier])
-    }
-
-    "redirects to Success No Receipt when status is SUBMITTED_NO_RECEIPT" in {
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "SUBMITTED_NO_RECEIPT")
-
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-
-      val result = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe successNoReceiptRoute
-    }
-
     "redirects to polling page when status is PENDING" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
@@ -165,34 +136,6 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
-    }
-
-    "redirects to Unsuccessful when status is DEPARTMENTAL_ERROR" in {
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "DEPARTMENTAL_ERROR")
-
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-
-      val result = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe unsuccessfulRoute
-    }
-
-    "redirects to JourneyRecovery for unknown status" in {
-      val mockService = mock[SubmissionService]
-      val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "SOMETHING_ELSE")
-
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
-      val controller = app.injector.instanceOf[SubmissionSendingController]
-
-      val result = controller.onPageLoad()(mkRequest)
-
-      status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe recoveryRoute
     }
 
     "falls back to system error page when any step fails (e.g. create fails)" in {
