@@ -10,7 +10,7 @@ import java.time.{LocalDate, ZoneOffset}
 class DateConfirmPaymentsFormProviderSpec extends DateBehaviours {
 
   private implicit val messages: Messages = stubMessages()
-  private val form = new DateConfirmPaymentsFormProvider()()
+  private val form                        = new DateConfirmPaymentsFormProvider()()
 
   ".value" - {
 

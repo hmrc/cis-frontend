@@ -25,7 +25,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
   private implicit val messages: Messages = stubMessages()
 
   private val formProvider = new DateConfirmPaymentsFormProvider()
-  private def form = formProvider()
+  private def form         = formProvider()
 
   def onwardRoute = Call("GET", "/foo")
 
@@ -74,7 +74,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, getRequest()).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode)(getRequest(), messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode)(
+          getRequest(),
+          messages(application)
+        ).toString
       }
     }
 
