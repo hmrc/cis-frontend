@@ -283,3 +283,9 @@ submittedNoReceipt.p2 = This verification request has been successfully submitte
 submittedNoReceipt.p3 = We were unable to issue a submission receipt at this time. HMRC will contact you shortly. You will receive confirmation of your submission at the following email address: {0}
 submittedNoReceipt.p4 = Your views are important in order to help make improvements to the service, to offer your views please complete our
 submittedNoReceipt.p4.link = feedback form
+
+fileYourMonthlyCisReturn.title = File your monthly CIS return
+fileYourMonthlyCisReturn.heading = File your monthly CIS return
+fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
+fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
+fileYourMonthlyCisReturn.startButton = Start
