@@ -59,27 +59,21 @@ trait Formatters {
       def unbind(key: String, value: Boolean) = Map(key -> value.toString)
     }
 
-  private[mappings] def booleanListFormatter(
-    requiredKey: String,
-    invalidKey: String,
-    args: Seq[String] = Seq.empty
-  ): Formatter[List[Boolean]] =
-    new Formatter[List[Boolean]] {
+  private[mappings] def seqFormatter[A](using baseFormatter: Formatter[A]): Formatter[Seq[A]] =
+    new Formatter[Seq[A]] {
 
-      private val baseFormatter = booleanFormatter(requiredKey, invalidKey, args)
-
-      override def bind(key: String, data: Map[String, String]): Either[List[FormError], List[Boolean]] =
+      override def bind(keyPrefix: String, data: Map[String, String]): Either[List[FormError], Seq[A]] =
         data
-          .filter((key, _) => key.matches(s"^$key\\.\\d+"))
+          .filter((key, _) => key.matches(s"^$keyPrefix\\.\\d+"))
           .toList
           .sortBy((key, _) => key)
-          .map((key, value) => baseFormatter.bind(key, data))
+          .map((key, _) => baseFormatter.bind(key, data))
           .partitionMap(identity) match {
           case (Nil, rights) => Right(rights)
           case (lefts, _)    => Left(lefts.flatten)
         }
 
-      def unbind(key: String, values: List[Boolean]): Map[String, String] =
+      def unbind(key: String, values: Seq[A]): Map[String, String] =
         values.zipWithIndex
           .map((value, index) => s"$key.$index" -> value.toString)
           .toMap

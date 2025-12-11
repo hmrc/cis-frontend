@@ -30,35 +30,23 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
     val formProvider   = new SelectSubcontractorsFormProvider()
     val form           = formProvider()
     val subcontractors = Seq(
-      SelectSubcontractorsViewModel("Alice, A", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Bob, B", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Charles, C", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Dave, D", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Elise, E", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Frank, F", "Yes", "Unknown", "Unknown", false)
+      SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
     )
-
-    val subcontractorsChecked = Seq(
-      SelectSubcontractorsViewModel("Alice, A", "Yes", "Unknown", "Unknown", true),
-      SelectSubcontractorsViewModel("Bob, B", "Yes", "Unknown", "Unknown", true),
-      SelectSubcontractorsViewModel("Charles, C", "Yes", "Unknown", "Unknown", true),
-      SelectSubcontractorsViewModel("Dave, D", "Yes", "Unknown", "Unknown", true),
-      SelectSubcontractorsViewModel("Elise, E", "Yes", "Unknown", "Unknown", true),
-      SelectSubcontractorsViewModel("Frank, F", "Yes", "Unknown", "Unknown", true)
-    )
-
-    val formData = SelectSubcontractorsFormData(
+    val formData       = SelectSubcontractorsFormData(
       false,
       List(
-        true, true, true, true, true, true
+        1, 2, 3, 4, 5, 6
       )
     )
 
     val formDataDeselected = SelectSubcontractorsFormData(
       false,
-      List(
-        false, false, false, false, false, false
-      )
+      Nil
     )
 
     "must return OK and the correct view for a GET" in {
@@ -97,7 +85,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
         val view = application.injector.instanceOf[SelectSubcontractorsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(formData), subcontractorsChecked)(
+        contentAsString(result) mustEqual view(form.fill(formData), subcontractors)(
           request,
           messages(application)
         ).toString

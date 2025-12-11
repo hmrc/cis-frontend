@@ -15,6 +15,7 @@
  *@
 
 @import viewmodels.govuk._
+@import models.monthlyreturns.SelectSubcontractorsFormData
 @import views.html.components._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.Checkboxes
@@ -34,7 +35,7 @@
     formHelper: FormWithCSRF
 )
 
-@(form: Form[_], subcontractors: Seq[SelectSubcontractorsViewModel])(implicit request: Request[_], messages: Messages)
+@(form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel])(implicit request: Request[_], messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages("monthlyreturns.selectSubcontractors.title")),
@@ -56,7 +57,9 @@
                 items = Seq(
                     CheckboxItem(
                         name = Some("confirmation"),
-                        content = Text(messages("monthlyreturns.selectSubcontractors.checkbox.label"))
+                        content = Text(messages("monthlyreturns.selectSubcontractors.checkbox.label")),
+                        value = "true",
+                        checked = form("confirmation").value.contains("true")
                     )
                 )
             )
@@ -90,7 +93,7 @@
                         HeadCell(content = Text(messages(key)))
                     }
                 ),
-                rows = subcontractors.map { subcontractor =>
+                rows = subcontractors.zipWithIndex.map { (subcontractor, index) =>
                     Seq(
                         TableRow(content = Text(subcontractor.name),  classes = "govuk-table__header"),
                         TableRow(content = Text(subcontractor.verificationRequired)),
@@ -103,10 +106,11 @@
                                 <div class="govuk-checkboxes__item">
                                     <input
                                             class="govuk-checkboxes__input"
-                                            id="${subcontractor.name.split(',')(0).toLowerCase}"
-                                            name="subcontractors.includeInMonth"
+                                            id="${subcontractor.id}"
+                                            name="subcontractorsToInclude.$index"
                                             type="checkbox"
-                                            ${if (subcontractor.includeThisMonth) "checked" else ""}
+                                            value="${subcontractor.id}"
+                                            ${if (form.value.toList.flatMap(_.subcontractorsToInclude).contains(subcontractor.id)) "checked" else ""}
                                     >
                                     <label class="govuk-label govuk-checkboxes__label" for="${subcontractor.name.split(',')(0).toLowerCase}">
                                         <span class="govuk-visually-hidden">Include ${subcontractor.name}</span>
@@ -122,7 +126,7 @@
         )
 
         @govukButton(
-            ButtonViewModel(messages("site.continue"))
+            ButtonViewModel(messages("site.continue")).asInput("submit")
         )
     }
 }

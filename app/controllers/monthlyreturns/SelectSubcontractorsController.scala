@@ -41,12 +41,12 @@ class SelectSubcontractorsController @Inject() (
     with Logging {
 
   private val subcontractors = Seq(
-    SelectSubcontractorsViewModel("Alice, A", "Yes", "Unknown", "Unknown", false),
-    SelectSubcontractorsViewModel("Bob, B", "Yes", "Unknown", "Unknown", false),
-    SelectSubcontractorsViewModel("Charles, C", "Yes", "Unknown", "Unknown", false),
-    SelectSubcontractorsViewModel("Dave, D", "Yes", "Unknown", "Unknown", false),
-    SelectSubcontractorsViewModel("Elise, E", "Yes", "Unknown", "Unknown", false),
-    SelectSubcontractorsViewModel("Frank, F", "Yes", "Unknown", "Unknown", false)
+    SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
+    SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
+    SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
+    SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
+    SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
+    SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
   )
 
   private val form = formProvider()
@@ -56,25 +56,13 @@ class SelectSubcontractorsController @Inject() (
     subcontractorViewModels: Seq[SelectSubcontractorsViewModel]
   ): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
-      logger.warn(s"DEFAULT: $monthsToIncludeDefault")
       val filledForm = monthsToIncludeDefault match {
-        case Some(default) =>
-          form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_ => default).toList))
-        case None          => form
+        case Some(true) =>
+          form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
+        case _          => form
       }
-      logger.warn(s"FILLED FORM: $filledForm")
 
-      val monthsToInclude = filledForm.value.toList.flatMap(_.monthsToInclude)
-      logger.warn(s"FILLED FORM MONTHS: $monthsToInclude")
-      logger.warn(s"FILLED VALUES: ${filledForm.value}")
-
-      val subcontractorsWithFormValues = subcontractorViewModels.zipWithIndex.map { (subcontractor, index) =>
-        val monthToInclude = monthsToInclude.lift(index).getOrElse(false)
-        subcontractor.copy(includeThisMonth = monthToInclude)
-      }.toList
-      logger.warn(s"SUBCONTRACTORS WITH FORM VALUES: $subcontractorsWithFormValues")
-
-      Ok(view(filledForm, subcontractorsWithFormValues))
+      Ok(view(filledForm, subcontractors))
     }
 
   def onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
@@ -84,9 +72,15 @@ class SelectSubcontractorsController @Inject() (
     onPageLoad(monthsToIncludeDefault, Seq())
 
   def onSubmit: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    form
+      .bindFromRequest()
+      .fold(
+        formWithErrors => BadRequest(view(formWithErrors, subcontractors)),
+        data =>
+          Ok(
+            view(form.bindFromRequest(), subcontractors)
+          )
+      )
 
-    logger.warn(s"FILLED VALUES: ${form.bindFromRequest().value}")
-
-    Ok(view(form.bindFromRequest(), subcontractors))
   }
 }

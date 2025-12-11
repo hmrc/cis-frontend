@@ -18,7 +18,7 @@ package models.monthlyreturns
 
 import play.api.libs.json.{Json, OFormat}
 
-case class SelectSubcontractorsFormData(confirmation: Boolean, monthsToInclude: List[Boolean])
+case class SelectSubcontractorsFormData(confirmation: Boolean, subcontractorsToInclude: Seq[Int])
 
 object SelectSubcontractorsFormData {
   given OFormat[SelectSubcontractorsFormData] = Json.format[SelectSubcontractorsFormData]

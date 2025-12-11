@@ -26,10 +26,14 @@ class SelectSubcontractorsFormProvider extends Mappings {
   def apply(): Form[SelectSubcontractorsFormData] =
     Form(
       mapping(
-        "confirmation"    -> boolean("monthlyreturns.selectSubcontractors.confirmation"),
-        "monthsToInclude" -> booleanList("monthlyreturns.selectSubcontractors.includeInMonth")
+        "confirmation"            -> boolean("monthlyreturns.selectSubcontractors.confirmation.required"),
+        "subcontractorsToInclude" -> intSeq(
+          "monthlyreturns.selectSubcontractors.subcontractorsToInclude.required",
+          "monthlyreturns.selectSubcontractors.subcontractorsToInclude.wholeNumber",
+          "monthlyreturns.selectSubcontractors.subcontractorsToInclude.nonNumeric"
+        )
       )(SelectSubcontractorsFormData.apply)(selectSubcontractorsFormData =>
-        Some(selectSubcontractorsFormData.confirmation, selectSubcontractorsFormData.monthsToInclude)
+        Some(selectSubcontractorsFormData.confirmation, selectSubcontractorsFormData.subcontractorsToInclude)
       )
     )
 }

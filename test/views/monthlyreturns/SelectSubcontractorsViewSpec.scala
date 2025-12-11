@@ -94,12 +94,12 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     )
 
     val subcontractors = Seq(
-      SelectSubcontractorsViewModel("Alice, A", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Bob, B", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Charles, C", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Dave, D", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Elise, E", "Yes", "Unknown", "Unknown", false),
-      SelectSubcontractorsViewModel("Frank, F", "Yes", "Unknown", "Unknown", false)
+      SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
+      SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
     )
   }
 }
