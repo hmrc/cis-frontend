@@ -52,11 +52,11 @@ class SelectSubcontractorsController @Inject() (
   private val form = formProvider()
 
   private def onPageLoad(
-    monthsToIncludeDefault: Option[Boolean] = None,
-    subcontractorViewModels: Seq[SelectSubcontractorsViewModel]
+    includeByDefault: Option[Boolean] = None,
+    subcontractorViewModels: Seq[SelectSubcontractorsViewModel] = subcontractors
   ): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
-      val filledForm = monthsToIncludeDefault match {
+      val filledForm = includeByDefault match {
         case Some(true) =>
           form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
         case _          => form
@@ -75,11 +75,30 @@ class SelectSubcontractorsController @Inject() (
     form
       .bindFromRequest()
       .fold(
-        formWithErrors => BadRequest(view(formWithErrors, subcontractors)),
-        data =>
-          Ok(
-            view(form.bindFromRequest(), subcontractors)
-          )
+        formWithErrors => {
+          logger.warn(s"formWithErrors: $formWithErrors")
+          logger.warn(s"formWithErrors.value: ${formWithErrors.value}")
+          BadRequest(view(formWithErrors, subcontractors))
+        },
+        formData =>
+          if (!formData.confirmation) {
+            logger.warn(s"formUnconfirmed: ${form.bindFromRequest()}")
+            logger.warn(s"formUnconfirmed.value: ${form.fill(formData).value}")
+            BadRequest(
+              view(
+                form
+                  .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+                  .fill(formData),
+                subcontractors
+              )
+            )
+          } else {
+            logger.warn(s"formConfirmed: ${form.bindFromRequest()}")
+            logger.warn(s"formConfirmed.value: $formData")
+            Ok(
+              view(form.fill(formData), subcontractors)
+            )
+          }
       )
 
   }

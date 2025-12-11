@@ -59,6 +59,21 @@ trait Formatters {
       def unbind(key: String, value: Boolean) = Map(key -> value.toString)
     }
 
+  private[mappings] def booleanDefaultFalseFormatter(
+    requiredKey: String,
+    invalidKey: String,
+    args: Seq[String] = Seq.empty
+  ): Formatter[Boolean] = new Formatter[Boolean] {
+
+    override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Boolean] =
+      data.get(key) match {
+        case Some("true") => Right(true)
+        case _            => Right(false)
+      }
+
+    def unbind(key: String, value: Boolean) = Map(key -> value.toString)
+  }
+
   private[mappings] def seqFormatter[A](using baseFormatter: Formatter[A]): Formatter[Seq[A]] =
     new Formatter[Seq[A]] {
 

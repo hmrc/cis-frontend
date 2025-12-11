@@ -41,21 +41,24 @@ class SelectSubcontractorsFormProviderSpec extends FieldBehaviours {
       result.value.value.confirmation mustBe false
     }
 
-    "not bind non-booleans" in {
+    "default to false for non-booleans" in {
       val data   = Map(fieldName -> "invalid")
-      val result = form.bind(data).apply(fieldName)
-      result.errors mustBe Seq(FormError(fieldName, "error.boolean"))
+      val result = form.bind(data)
+      result.errors mustBe empty
+      result.value.value.confirmation mustBe false
     }
 
-    "not bind when key is not present at all" in {
-      val result = form.bind(Map.empty[String, String]).apply(fieldName)
-      result.errors mustBe Seq(FormError(fieldName, "monthlyreturns.selectSubcontractors.confirmation.required"))
+    "default to false when key is not present at all" in {
+      val result = form.bind(Map.empty[String, String])
+      result.errors mustBe empty
+      result.value.value.confirmation mustBe false
     }
 
-    "not bind blank values" in {
+    "default to false for blank values" in {
       val data   = Map(fieldName -> "")
-      val result = form.bind(data).apply(fieldName)
-      result.errors mustBe Seq(FormError(fieldName, "monthlyreturns.selectSubcontractors.confirmation.required"))
+      val result = form.bind(data)
+      result.errors mustBe empty
+      result.value.value.confirmation mustBe false
     }
   }
 
