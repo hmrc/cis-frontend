@@ -289,3 +289,13 @@ fileYourMonthlyCisReturn.heading = File your monthly CIS return
 fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
 fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
 fileYourMonthlyCisReturn.startButton = Start
+
+dateConfirmPayments.title = DateConfirmPayments
+dateConfirmPayments.heading = DateConfirmPayments
+dateConfirmPayments.hint = For example, 12 11 2007.
+dateConfirmPayments.checkYourAnswersLabel = DateConfirmPayments
+dateConfirmPayments.error.required.all = Enter the dateConfirmPayments
+dateConfirmPayments.error.required.two = The dateConfirmPayments must include {0} and {1}
+dateConfirmPayments.error.required = The dateConfirmPayments must include {0}
+dateConfirmPayments.error.invalid = Enter a real DateConfirmPayments
+dateConfirmPayments.change.hidden = DateConfirmPayments
