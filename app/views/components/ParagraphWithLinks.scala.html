@@ -19,28 +19,33 @@
 @this()
 
 @(
-    linkTextKey: String,
-    linkUrl: String,
+    linkTextUrlOne: String,
+    linkUrlOne: String,
+    linkTextUrlTwo: String,
+    linkUrlTwo: String,
     isNewTab: Boolean = false,
     prefixTextKey: String = emptyString,
     suffixTextKey: String = emptyString,
     extraClasses: String = emptyString,
-    bold: Boolean = false,
-    hasFullStop: Boolean = false,
+    bold: Boolean = false
 )(implicit messages: Messages)
+
+@link(href: String, textKey: String) = {
+    <a href="@href" class="govuk-link @if(bold){govuk-!-font-weight-bold}" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>
+        @{Html(messages(textKey))}
+    </a>
+}
 
 <p class="govuk-body @if(extraClasses.nonEmpty){@extraClasses}">
     @if(prefixTextKey.nonEmpty) {
         @{Html(messages(prefixTextKey))}
     }
 
-    @if(hasFullStop) {
-        <a href="@linkUrl" class="govuk-link @if(bold){govuk-!-font-weight-bold}" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>.
-    } else {
-        <a href="@linkUrl" class="govuk-link @if(bold){govuk-!-font-weight-bold}" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>
-    }
+    @link(linkUrlOne, linkTextUrlOne)
 
     @if(suffixTextKey.nonEmpty) {
         @{Html(messages(suffixTextKey))}
     }
+
+    @link(linkUrlTwo, linkTextUrlTwo)
 </p>

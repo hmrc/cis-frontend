@@ -168,6 +168,146 @@ class MappingsSpec extends AnyFreeSpec with Matchers with OptionValues with Mapp
     }
   }
 
+  "booleanWithDefaultOfFalse" - {
+
+    val testForm: Form[Boolean] =
+      Form(
+        "value" -> booleanWithDefaultOfFalse()
+      )
+
+    "must bind true" in {
+      val result = testForm.bind(Map("value" -> "true"))
+      result.get mustEqual true
+    }
+
+    "must bind false" in {
+      val result = testForm.bind(Map("value" -> "false"))
+      result.get mustEqual false
+    }
+
+    "must default to false for non-boolean values" in {
+      val result = testForm.bind(Map("value" -> "not a boolean"))
+      result.get mustEqual false
+    }
+
+    "must default to false for empty value" in {
+      val result = testForm.bind(Map("value" -> ""))
+      result.get mustEqual false
+    }
+
+    "must default to false for empty map" in {
+      val result = testForm.bind(Map.empty[String, String])
+      result.get mustEqual false
+    }
+
+    "must unbind true" in {
+      val result = testForm.fill(true)
+      result.apply("value").value.value mustEqual "true"
+    }
+
+    "must unbind false" in {
+      val result = testForm.fill(false)
+      result.apply("value").value.value mustEqual "false"
+    }
+  }
+
+  "intSeq" - {
+
+    val testForm: Form[Seq[Int]] =
+      Form(
+        "value" -> intSeq()
+      )
+
+    "must bind a valid sequence of integers" in {
+      val result = testForm.bind(
+        Map(
+          "value.0" -> "1",
+          "value.1" -> "2",
+          "value.2" -> "3"
+        )
+      )
+      result.get mustEqual Seq(1, 2, 3)
+    }
+
+    "must bind a single integer" in {
+      val result = testForm.bind(Map("value.0" -> "42"))
+      result.get mustEqual Seq(42)
+    }
+
+    "must bind an empty sequence when no values provided" in {
+      val result = testForm.bind(Map.empty[String, String])
+      result.get mustEqual Seq.empty
+    }
+
+    "must bind integers in correct order" in {
+      val result = testForm.bind(
+        Map(
+          "value.2" -> "30",
+          "value.0" -> "10",
+          "value.1" -> "20"
+        )
+      )
+      result.get mustEqual Seq(10, 20, 30)
+    }
+
+    "must not bind non-numeric values" in {
+      val result = testForm.bind(Map("value.0" -> "abc"))
+      result.errors must contain(FormError("value.0", "error.nonNumeric"))
+    }
+
+    "must not bind decimal values" in {
+      val result = testForm.bind(Map("value.0" -> "1.5"))
+      result.errors must contain(FormError("value.0", "error.wholeNumber"))
+    }
+
+    "must not bind values with commas in invalid positions" in {
+      val result = testForm.bind(Map("value.0" -> "1,23"))
+      result.get mustEqual Seq(123)
+    }
+
+    "must handle multiple errors in sequence" in {
+      val result = testForm.bind(
+        Map(
+          "value.0" -> "1.5",
+          "value.1" -> "abc"
+        )
+      )
+      result.errors.size mustBe 2
+      result.errors must contain(FormError("value.0", "error.wholeNumber"))
+      result.errors must contain(FormError("value.1", "error.nonNumeric"))
+    }
+
+    "must unbind a valid sequence" in {
+      val result = testForm.fill(Seq(10, 20, 30))
+      result.data mustEqual Map(
+        "value.0" -> "10",
+        "value.1" -> "20",
+        "value.2" -> "30"
+      )
+    }
+
+    "must unbind an empty sequence" in {
+      val result = testForm.fill(Seq.empty)
+      result.data mustEqual Map.empty
+    }
+
+    "must return custom error messages" in {
+      val customForm = Form(
+        "value" -> intSeq(
+          requiredKey = "custom.required",
+          wholeNumberKey = "custom.wholeNumber",
+          nonNumericKey = "custom.nonNumeric"
+        )
+      )
+
+      val decimalResult = customForm.bind(Map("value.0" -> "1.5"))
+      decimalResult.errors must contain(FormError("value.0", "custom.wholeNumber"))
+
+      val nonNumericResult = customForm.bind(Map("value.0" -> "abc"))
+      nonNumericResult.errors must contain(FormError("value.0", "custom.nonNumeric"))
+    }
+  }
+
   "currency" - {
 
     val testForm: Form[BigDecimal] =

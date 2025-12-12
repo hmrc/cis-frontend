@@ -44,6 +44,21 @@ trait Mappings extends Formatters with Constraints {
   ): FieldMapping[Boolean] =
     of(booleanFormatter(requiredKey, invalidKey, args))
 
+  protected def booleanWithDefaultOfFalse(
+    requiredKey: String = "error.required",
+    invalidKey: String = "error.boolean",
+    args: Seq[String] = Seq.empty
+  ): FieldMapping[Boolean] =
+    of(booleanDefaultFalseFormatter(requiredKey, invalidKey, args))
+
+  protected def intSeq(
+    requiredKey: String = "error.required",
+    wholeNumberKey: String = "error.wholeNumber",
+    nonNumericKey: String = "error.nonNumeric",
+    args: Seq[String] = Seq.empty
+  ): FieldMapping[Seq[Int]] =
+    of(seqFormatter[Int](using intFormatter(requiredKey, wholeNumberKey, nonNumericKey, args)))
+
   protected def enumerable[A](
     requiredKey: String = "error.required",
     invalidKey: String = "error.invalid",
