@@ -19,7 +19,9 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.monthlyreturns.SelectSubcontractorsFormData
-import play.api.test.FakeRequest
+import play.api.http.HeaderNames
+import play.api.mvc.AnyContentAsFormUrlEncoded
+import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.test.Helpers.*
 import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
@@ -69,6 +71,26 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
       }
     }
 
+    "must return OK with no data for a GET /empty" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadEmpty().url
+          )
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[SelectSubcontractorsView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, Nil)(request, messages(application)).toString
+      }
+    }
+
     "must return OK with all checkboxes selected" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
@@ -109,6 +131,43 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form.fill(formDataDeselected), subcontractors)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "onSubmit must return view and retain form data" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url
+          ).withBody(
+            AnyContentAsFormUrlEncoded(
+              Map(
+                "confirmation"              -> Seq("true"),
+                "subcontractorsToInclude.0" -> Seq("1"),
+                "subcontractorsToInclude.1" -> Seq("2"),
+                "subcontractorsToInclude.2" -> Seq("3"),
+                "subcontractorsToInclude.3" -> Seq("4"),
+                "subcontractorsToInclude.4" -> Seq("5"),
+                "subcontractorsToInclude.5" -> Seq("6")
+              )
+            )
+          )
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[SelectSubcontractorsView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(
+          form.fill(formData.copy(confirmation = true)),
+          subcontractors
+        )(
           request,
           messages(application)
         ).toString

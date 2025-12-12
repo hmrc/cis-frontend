@@ -21,7 +21,6 @@ import models.monthlyreturns.SelectSubcontractorsFormData
 import play.api.data.Form
 import play.api.data.Forms.mapping
 
-// TODO: ADD UNIT TESTS
 class SelectSubcontractorsFormProvider extends Mappings {
   def apply(): Form[SelectSubcontractorsFormData] =
     Form(

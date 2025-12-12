@@ -62,14 +62,14 @@ class SelectSubcontractorsController @Inject() (
         case _          => form
       }
 
-      Ok(view(filledForm, subcontractors))
+      Ok(view(filledForm, subcontractorViewModels))
     }
 
   def onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
     onPageLoad(monthsToIncludeDefault, subcontractors)
 
   def onPageLoadEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
-    onPageLoad(monthsToIncludeDefault, Seq())
+    onPageLoad(monthsToIncludeDefault, Nil)
 
   def onSubmit: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     form
