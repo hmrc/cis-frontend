@@ -290,8 +290,8 @@ fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for t
 fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
 fileYourMonthlyCisReturn.startButton = Start
 
-monthlyreturns.selectSubcontractors.title = Select subcontractors
-monthlyreturns.selectSubcontractors.heading = Select subcontractors
+monthlyreturns.selectSubcontractors.title = Select Subcontractors
+monthlyreturns.selectSubcontractors.heading = Select Subcontractors
 monthlyreturns.selectSubcontractors.p1 = Use this service to tell us which subcontractors you want to include in this monthly return.
 monthlyreturns.selectSubcontractors.checkbox.label = Checking this box confirms I have only selected subcontractors used within this reporting period.
 
