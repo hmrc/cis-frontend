@@ -306,3 +306,4 @@ monthlyreturns.selectSubcontractors.table.th.verificationRequired = Verification
 monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification number
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
+monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet

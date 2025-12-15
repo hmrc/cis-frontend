@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.monthlyreturns.SelectSubcontractorsFormData
@@ -35,7 +36,8 @@ class SelectSubcontractorsController @Inject() (
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
-  formProvider: SelectSubcontractorsFormProvider
+  formProvider: SelectSubcontractorsFormProvider,
+  config: FrontendAppConfig
 ) extends FrontendBaseController
     with I18nSupport
     with Logging {
@@ -62,7 +64,7 @@ class SelectSubcontractorsController @Inject() (
         case _          => form
       }
 
-      Ok(view(filledForm, subcontractorViewModels))
+      Ok(view(filledForm, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration))
     }
 
   def onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
@@ -78,7 +80,7 @@ class SelectSubcontractorsController @Inject() (
         formWithErrors => {
           logger.warn(s"formWithErrors: $formWithErrors")
           logger.warn(s"formWithErrors.value: ${formWithErrors.value}")
-          BadRequest(view(formWithErrors, subcontractors))
+          BadRequest(view(formWithErrors, subcontractors, config.selectSubcontractorsUpfrontDeclaration))
         },
         formData =>
           if (!formData.confirmation) {
@@ -89,14 +91,15 @@ class SelectSubcontractorsController @Inject() (
                 form
                   .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
                   .fill(formData),
-                subcontractors
+                subcontractors,
+                config.selectSubcontractorsUpfrontDeclaration
               )
             )
           } else {
             logger.warn(s"formConfirmed: ${form.bindFromRequest()}")
             logger.warn(s"formConfirmed.value: $formData")
             Ok(
-              view(form.fill(formData), subcontractors)
+              view(form.fill(formData), subcontractors, config.selectSubcontractorsUpfrontDeclaration)
             )
           }
       )

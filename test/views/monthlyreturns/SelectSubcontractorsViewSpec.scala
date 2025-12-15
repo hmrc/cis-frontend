@@ -38,8 +38,8 @@ class SelectSubcontractorsViewSpec extends SpecBase {
       doc.select("h1").text mustBe messages("monthlyreturns.selectSubcontractors.heading")
     }
 
-    "must render the introductory paragraphs and the commit-selection checkbox label" in new Setup {
-      val html = view(form, subcontractors)
+    "must render the introductory paragraphs and the confirmation checkbox label" in new Setup {
+      val html = view(form, subcontractors, upfrontDeclaration = true)
       val doc  = Jsoup.parse(html.body)
 
       doc.select("p").text must include(messages("monthlyreturns.selectSubcontractors.p1"))
@@ -79,6 +79,17 @@ class SelectSubcontractorsViewSpec extends SpecBase {
 
       val rows = doc.select("table tbody tr")
       rows.size mustBe subcontractors.size
+    }
+
+    "must render empty subcontractor list with message" in new Setup {
+      val html = view(form, Nil)
+      val doc  = Jsoup.parse(html.body)
+
+      val rows = doc.select("table tbody tr")
+      rows.size mustBe 1
+
+      val td = rows.select("td")
+      td.text() mustBe messages("monthlyreturns.selectSubcontractors.noSubcontractors")
     }
   }
 
