@@ -1,0 +1,132 @@
+@*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import viewmodels.govuk._
+@import models.monthlyreturns.SelectSubcontractorsFormData
+@import views.html.components._
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.Checkboxes
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.CheckboxItem
+@import viewmodels.SelectSubcontractorsViewModel
+
+@this(
+    layout: templates.Layout,
+    govukErrorSummary: GovukErrorSummary,
+    govukButton: GovukButton,
+    govukCheckboxes: GovukCheckboxes,
+    govukTable: GovukTable,
+    h1: H1,
+    paragraph: Paragraph,
+    link: Link,
+    paragraphWithLinks: ParagraphWithLinks,
+    formHelper: FormWithCSRF
+)
+
+@(form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel])(implicit request: Request[_], messages: Messages)
+
+@layout(
+    pageTitle = titleNoForm(messages("monthlyreturns.selectSubcontractors.title")),
+    showSignOut = false
+) {
+
+    @h1(messages("monthlyreturns.selectSubcontractors.heading"))
+    @paragraph(messages("monthlyreturns.selectSubcontractors.p1"))
+
+    @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()) {
+
+        @if(form.errors.nonEmpty) {
+            @govukErrorSummary(ErrorSummaryViewModel(form))
+        }
+
+        @govukCheckboxes(
+            Checkboxes(
+                name = "confirmation",
+                items = Seq(
+                    CheckboxItem(
+                        name = Some("confirmation"),
+                        content = Text(messages("monthlyreturns.selectSubcontractors.checkbox.label")),
+                        value = "true",
+                        checked = form("confirmation").value.contains("true")
+                    )
+                )
+            )
+        )
+
+        @link(
+            linkTextKey = "monthlyreturns.selectSubcontractors.p2.link",
+            linkUrl = "#",
+            prefixTextKey = "monthlyreturns.selectSubcontractors.p2",
+            hasFullStop = true
+        )
+
+        @paragraphWithLinks(
+            linkTextUrlOne = "monthlyreturns.selectSubcontractors.selectAll.link",
+            linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadNonEmpty(Some(true)).url,
+            suffixTextKey = "|",
+            linkTextUrlTwo = "monthlyreturns.selectSubcontractors.deselectAll.link",
+            linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadNonEmpty(Some(false)).url
+        )
+
+        @govukTable(
+            Table(
+                head = Some(
+                    Seq(
+                        "monthlyreturns.selectSubcontractors.table.th.name",
+                        "monthlyreturns.selectSubcontractors.table.th.verificationRequired",
+                        "monthlyreturns.selectSubcontractors.table.th.verificationNumber",
+                        "monthlyreturns.selectSubcontractors.table.th.taxTreatment",
+                        "monthlyreturns.selectSubcontractors.table.th.includeThisMonth",
+                    ).map { key =>
+                        HeadCell(content = Text(messages(key)))
+                    }
+                ),
+                rows = subcontractors.zipWithIndex.map { (subcontractor, index) =>
+                    Seq(
+                        TableRow(content = Text(subcontractor.name),  classes = "govuk-table__header"),
+                        TableRow(content = Text(subcontractor.verificationRequired)),
+                        TableRow(content = Text(subcontractor.verificationNumber)),
+                        TableRow(content = Text(subcontractor.taxTreatment)),
+                        TableRow(
+                        content = HtmlContent(
+                            s"""
+                            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                                <div class="govuk-checkboxes__item">
+                                    <input
+                                            class="govuk-checkboxes__input"
+                                            id="${subcontractor.id}"
+                                            name="subcontractorsToInclude.$index"
+                                            type="checkbox"
+                                            value="${subcontractor.id}"
+                                            ${if (form.value.toList.flatMap(_.subcontractorsToInclude).contains(subcontractor.id)) "checked" else ""}
+                                    >
+                                    <label class="govuk-label govuk-checkboxes__label" for="${subcontractor.name.split(',')(0).toLowerCase}">
+                                        <span class="govuk-visually-hidden">Include ${subcontractor.name}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            """
+                            )
+                        )
+                    )
+                }
+            )
+        )
+
+        @govukButton(
+            ButtonViewModel(messages("site.continue")).asInput("submit")
+        )
+    }
+}

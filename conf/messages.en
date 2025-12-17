@@ -283,3 +283,26 @@ submittedNoReceipt.p2 = This verification request has been successfully submitte
 submittedNoReceipt.p3 = We were unable to issue a submission receipt at this time. HMRC will contact you shortly. You will receive confirmation of your submission at the following email address: {0}
 submittedNoReceipt.p4 = Your views are important in order to help make improvements to the service, to offer your views please complete our
 submittedNoReceipt.p4.link = feedback form
+
+fileYourMonthlyCisReturn.title = File your monthly CIS return
+fileYourMonthlyCisReturn.heading = File your monthly CIS return
+fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
+fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
+fileYourMonthlyCisReturn.startButton = Start
+
+monthlyreturns.selectSubcontractors.title = Select subcontractors
+monthlyreturns.selectSubcontractors.heading = Select subcontractors
+monthlyreturns.selectSubcontractors.p1 = Use this service to tell us which subcontractors you want to include in this monthly return.
+monthlyreturns.selectSubcontractors.checkbox.label = Checking this box confirms I have only selected subcontractors used within this reporting period.
+
+monthlyreturns.selectSubcontractors.confirmation.required = MUST CHECK CONFIRMATION
+
+monthlyreturns.selectSubcontractors.p2 = You can add and remove subcontractors, and
+monthlyreturns.selectSubcontractors.p2.link =  update your list
+monthlyreturns.selectSubcontractors.selectAll.link = Select all
+monthlyreturns.selectSubcontractors.deselectAll.link = Deselect all
+monthlyreturns.selectSubcontractors.table.th.name = Name
+monthlyreturns.selectSubcontractors.table.th.verificationRequired = Verification required?
+monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification number
+monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
+monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
