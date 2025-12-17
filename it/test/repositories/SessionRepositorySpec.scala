@@ -72,7 +72,7 @@ class SessionRepositorySpec
       updatedRecord mustEqual expectedResult
     }
 
-//    mustPreserveMdc(repository.set(userAnswers))
+    mustPreserveMdc(repository.set(userAnswers))
   }
 
   ".get" - {
@@ -98,7 +98,7 @@ class SessionRepositorySpec
       }
     }
 
-//    mustPreserveMdc(repository.get(userAnswers.id))
+    mustPreserveMdc(repository.get(userAnswers.id))
   }
 
   ".clear" - {
@@ -118,7 +118,7 @@ class SessionRepositorySpec
       result mustEqual true
     }
 
-//    mustPreserveMdc(repository.clear(userAnswers.id))
+    mustPreserveMdc(repository.clear(userAnswers.id))
   }
 
   ".keepAlive" - {

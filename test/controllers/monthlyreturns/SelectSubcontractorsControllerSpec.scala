@@ -207,5 +207,46 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
         ).toString
       }
     }
+
+    "onSubmit must return BAD_REQUEST with error when confirmation is false" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url
+          ).withBody(
+            AnyContentAsFormUrlEncoded(
+              Map(
+                "confirmation"              -> Seq("false"),
+                "subcontractorsToInclude.0" -> Seq("1"),
+                "subcontractorsToInclude.1" -> Seq("2"),
+                "subcontractorsToInclude.2" -> Seq("3")
+              )
+            )
+          )
+
+        val result = route(application, request).value
+
+        val view             = application.injector.instanceOf[SelectSubcontractorsView]
+        val expectedFormData = SelectSubcontractorsFormData(
+          confirmation = false,
+          subcontractorsToInclude = List(1, 2, 3)
+        )
+        val formWithError    = form
+          .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+          .fill(expectedFormData)
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual view(
+          formWithError,
+          subcontractors
+        )(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
   }
 }
