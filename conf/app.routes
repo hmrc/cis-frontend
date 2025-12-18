@@ -69,7 +69,7 @@ GET        /system-error/there-is-a-problem                   controllers.System
 
 GET        /monthly-return/file-your-monthly-return             controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()
 
-GET        /monthly-return/dateConfirmPayments                  controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/dateConfirmPayments                  controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/changeDateConfirmPayments            controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/changeDateConfirmPayments            controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/date-confirm-payments                controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-payments                controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)

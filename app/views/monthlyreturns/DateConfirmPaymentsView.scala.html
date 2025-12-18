@@ -14,12 +14,17 @@
  * limitations under the License.
  *@
 
+@import views.html.components._
+
 @this(
     layout: templates.Layout,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
-    govukDateInput: GovukDateInput,
-    govukButton: GovukButton
+    govukInput: GovukInput,
+    govukButton: GovukButton,
+    govukWarningText: GovukWarningText,
+    fieldSet: FieldSet,
+    paragraph: Paragraph
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
@@ -32,16 +37,37 @@
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.day")))
         }
 
-        @govukDateInput(
-            DateViewModel(
-                field  = form("value"),
-                legend = LegendViewModel(messages("dateConfirmPayments.heading")).asPageHeading()
+@fieldSet("dateConfirmPayments.heading", asHeading = true, describedBy = None){
+
+@paragraph(messages("dateConfirmPayments.p1"))
+
+
+@govukWarningText(
+    WarningText(
+        iconFallbackText = Some(messages("Warning")),
+        content = Text(messages("dateConfirmPayments.warningText"))
+    )
+)
+
+        @govukInput(
+            InputViewModel(
+                field = form("value"),
+                label = LabelViewModel(messages("Tax Month"))
             )
-            .withHint(HintViewModel(messages("dateConfirmPayments.hint")))
+            .withWidth(viewmodels.InputWidth.Fixed10)
+        )
+
+        @govukInput(
+            InputViewModel(
+        field = form("value"),
+        label = LabelViewModel(messages("Tax Year"))
+        )
+        .withWidth(viewmodels.InputWidth.Fixed4)
         )
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))
         )
+}
     }
 }
