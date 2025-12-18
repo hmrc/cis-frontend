@@ -19,9 +19,8 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.monthlyreturns.SelectSubcontractorsFormData
-import play.api.http.HeaderNames
 import play.api.mvc.AnyContentAsFormUrlEncoded
-import play.api.test.{FakeHeaders, FakeRequest}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
@@ -166,6 +165,82 @@ class SelectSubcontractorsControllerSpec extends SpecBase {
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(
           form.fill(formData.copy(confirmation = true)),
+          subcontractors
+        )(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "onSubmit must return BAD_REQUEST and the view with errors when invalid data is submitted" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url
+          ).withBody(
+            AnyContentAsFormUrlEncoded(
+              Map(
+                "confirmation"              -> Seq("false"),
+                "subcontractorsToInclude.0" -> Seq("invalid")
+              )
+            )
+          )
+
+        val result = route(application, request).value
+
+        val view      = application.injector.instanceOf[SelectSubcontractorsView]
+        val boundForm = form.bind(
+          Map(
+            "confirmation"              -> "false",
+            "subcontractorsToInclude.0" -> "invalid"
+          )
+        )
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual view(boundForm, subcontractors)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "onSubmit must return BAD_REQUEST with error when confirmation is false" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url
+          ).withBody(
+            AnyContentAsFormUrlEncoded(
+              Map(
+                "confirmation"              -> Seq("false"),
+                "subcontractorsToInclude.0" -> Seq("1"),
+                "subcontractorsToInclude.1" -> Seq("2"),
+                "subcontractorsToInclude.2" -> Seq("3")
+              )
+            )
+          )
+
+        val result = route(application, request).value
+
+        val view             = application.injector.instanceOf[SelectSubcontractorsView]
+        val expectedFormData = SelectSubcontractorsFormData(
+          confirmation = false,
+          subcontractorsToInclude = List(1, 2, 3)
+        )
+        val formWithError    = form
+          .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+          .fill(expectedFormData)
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual view(
+          formWithError,
           subcontractors
         )(
           request,
