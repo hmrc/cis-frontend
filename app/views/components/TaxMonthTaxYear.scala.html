@@ -1,0 +1,58 @@
+@*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import utils.Utils.emptyString
+@import uk.gov.hmrc.govukfrontend.views.html.components._
+@import play.api.data.Field
+
+@this()
+
+@(
+monthField: Field,
+yearField: Field,
+monthLabel: String,
+yearLabel: String
+)(implicit messages: Messages)
+
+<div class="govuk-date-input">
+
+    <div class="govuk-date-input__item">
+        <div class="govuk-form-group">
+            <label class="govuk-label govuk-date-input__label" for="@monthField.id">
+                @monthLabel
+            </label>
+            <input class="govuk-input govuk-date-input__input govuk-input--width-10"
+                   id="@monthField.id"
+                   name="@monthField.name"
+                   type="text"
+                   inputmode="numeric"
+                   value="@monthField.value">
+        </div>
+    </div>
+    <div class="govuk-date-input__item">
+        <div class="govuk-form-group">
+            <label class="govuk-label govuk-date-input__label" for="@yearField.id">
+                @yearLabel
+            </label>
+            <input class="govuk-input govuk-date-input__input govuk-input--width-4"
+                   id="@yearField.id"
+                   name="@yearField.name"
+                   type="text"
+                   inputmode="numeric"
+                   value="@yearField.value">
+        </div>
+    </div>
+</div>

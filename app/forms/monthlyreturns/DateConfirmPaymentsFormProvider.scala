@@ -18,6 +18,7 @@ package forms.monthlyreturns
 
 import forms.mappings.Mappings
 import play.api.data.Form
+import play.api.data.Forms._
 import play.api.i18n.Messages
 
 import java.time.LocalDate
@@ -27,11 +28,17 @@ class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
 
   def apply()(implicit messages: Messages): Form[LocalDate] =
     Form(
-      "value" -> localDate(
-        invalidKey = "dateConfirmPayments.error.invalid",
-        allRequiredKey = "dateConfirmPayments.error.required.all",
-        twoRequiredKey = "dateConfirmPayments.error.required.two",
-        requiredKey = "dateConfirmPayments.error.required"
-      )
+      mapping(
+        "taxMonth" -> int(
+          requiredKey = "dateConfirmPayments.taxMonth.error.required",
+          wholeNumberKey = "dateConfirmPayments.taxMonth.error.wholeNumber",
+          nonNumericKey = "dateConfirmPayments.taxMonth.error.nonNumeric"
+        ).verifying("dateConfirmPayments.taxMonth.error.range", month => month >= 1 && month <= 12),
+        "taxYear"  -> int(
+          requiredKey = "dateConfirmPayments.taxYear.error.required",
+          wholeNumberKey = "dateConfirmPayments.taxYear.error.wholeNumber",
+          nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
+        ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= 2000 && year <= 9999)
+      )((month, year) => LocalDate.of(year, month, 1))(date => Some((date.getMonthValue, date.getYear)))
     )
 }

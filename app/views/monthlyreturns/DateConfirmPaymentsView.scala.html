@@ -24,50 +24,47 @@
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
     fieldSet: FieldSet,
-    paragraph: Paragraph
+    paragraph: Paragraph,
+    h2: H2,
+    taxMonthTaxYear: TaxMonthTaxYear
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("dateConfirmPayments.title"))) {
+@layout(
+    pageTitle = title(form, messages("dateConfirmPayments.title")),
+    showSignOut = false
+) {
 
-@formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.day")))
         }
 
-@fieldSet("dateConfirmPayments.heading", asHeading = true, describedBy = None){
+        @fieldSet("dateConfirmPayments.heading", asHeading = true, describedBy = None) {
 
-@paragraph(messages("dateConfirmPayments.p1"))
+            @paragraph(messages("dateConfirmPayments.p1"))
 
-
-@govukWarningText(
-    WarningText(
-        iconFallbackText = Some(messages("Warning")),
-        content = Text(messages("dateConfirmPayments.warningText"))
-    )
-)
-
-        @govukInput(
-            InputViewModel(
-                field = form("value"),
-                label = LabelViewModel(messages("Tax Month"))
+            @govukWarningText(
+                WarningText(
+                    iconFallbackText = Some(messages("Warning")),
+                    content = Text(messages("dateConfirmPayments.warningText"))
+                )
             )
-            .withWidth(viewmodels.InputWidth.Fixed10)
-        )
 
-        @govukInput(
-            InputViewModel(
-        field = form("value"),
-        label = LabelViewModel(messages("Tax Year"))
-        )
-        .withWidth(viewmodels.InputWidth.Fixed4)
-        )
+            @h2(messages("dateConfirmPayments.legendText"))
 
-        @govukButton(
-            ButtonViewModel(messages("site.continue"))
-        )
-}
+            @taxMonthTaxYear(
+                monthField = form("taxMonth"),
+                yearField = form("taxYear"),
+                monthLabel = messages("dateConfirmPayments.labelMonth"),
+                yearLabel = messages("dateConfirmPayments.labelYear")
+            )
+
+            @govukButton(
+                ButtonViewModel(messages("site.continue"))
+            )
+        }
     }
 }
