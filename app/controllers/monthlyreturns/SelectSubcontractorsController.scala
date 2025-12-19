@@ -16,7 +16,6 @@
 
 package controllers.monthlyreturns
 
-import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.monthlyreturns.SelectSubcontractorsFormData
@@ -36,8 +35,7 @@ class SelectSubcontractorsController @Inject() (
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
-  formProvider: SelectSubcontractorsFormProvider,
-  config: FrontendAppConfig
+  formProvider: SelectSubcontractorsFormProvider
 ) extends FrontendBaseController
     with I18nSupport
     with Logging {
@@ -60,11 +58,11 @@ class SelectSubcontractorsController @Inject() (
     (identify andThen getData andThen requireData) { implicit request =>
       val filledForm = includeByDefault match {
         case Some(true) =>
-          form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
+          form.fill(SelectSubcontractorsFormData(subcontractorViewModels.map(_.id)))
         case _          => form
       }
 
-      Ok(view(filledForm, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration))
+      Ok(view(filledForm, subcontractorViewModels))
     }
 
   def onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None): Action[AnyContent] =
@@ -77,31 +75,8 @@ class SelectSubcontractorsController @Inject() (
     form
       .bindFromRequest()
       .fold(
-        formWithErrors => {
-          logger.warn(s"formWithErrors: $formWithErrors")
-          logger.warn(s"formWithErrors.value: ${formWithErrors.value}")
-          BadRequest(view(formWithErrors, subcontractors, config.selectSubcontractorsUpfrontDeclaration))
-        },
-        formData =>
-          if (!formData.confirmation) {
-            logger.warn(s"formUnconfirmed: ${form.bindFromRequest()}")
-            logger.warn(s"formUnconfirmed.value: ${form.fill(formData).value}")
-            BadRequest(
-              view(
-                form
-                  .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                  .fill(formData),
-                subcontractors,
-                config.selectSubcontractorsUpfrontDeclaration
-              )
-            )
-          } else {
-            logger.warn(s"formConfirmed: ${form.bindFromRequest()}")
-            logger.warn(s"formConfirmed.value: $formData")
-            Ok(
-              view(form.fill(formData), subcontractors, config.selectSubcontractorsUpfrontDeclaration)
-            )
-          }
+        formWithErrors => BadRequest(view(formWithErrors, subcontractors)),
+        formData => Ok(view(form.fill(formData), subcontractors))
       )
 
   }
