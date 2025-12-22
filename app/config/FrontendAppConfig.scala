@@ -64,5 +64,7 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val hmrcOnlineServicesHelpdeskUrl: String = configuration.get[String]("links.hmrc-online-services-helpdesk")
 
-  lazy val stubSendingEnabled: Boolean = configuration.get[Boolean]("features.stub-sending-enabled")
+  lazy val stubSendingEnabled: Boolean                     = configuration.get[Boolean]("features.stub-sending-enabled")
+  lazy val selectSubcontractorsUpfrontDeclaration: Boolean =
+    configuration.get[Boolean]("features.select-subcontractors-upfront-declaration")
 }

@@ -16,9 +16,9 @@
 
 package forms.mappings
 
+import models.Enumerable
 import play.api.data.FormError
 import play.api.data.format.Formatter
-import models.Enumerable
 
 import scala.util.control.Exception.nonFatalCatch
 
@@ -57,6 +57,41 @@ trait Formatters {
           }
 
       def unbind(key: String, value: Boolean) = Map(key -> value.toString)
+    }
+
+  private[mappings] def booleanDefaultFalseFormatter(
+    requiredKey: String,
+    invalidKey: String,
+    args: Seq[String] = Seq.empty
+  ): Formatter[Boolean] = new Formatter[Boolean] {
+
+    override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Boolean] =
+      data.get(key) match {
+        case Some("true") => Right(true)
+        case _            => Right(false)
+      }
+
+    def unbind(key: String, value: Boolean) = Map(key -> value.toString)
+  }
+
+  private[mappings] def seqFormatter[A](using baseFormatter: Formatter[A]): Formatter[Seq[A]] =
+    new Formatter[Seq[A]] {
+
+      override def bind(keyPrefix: String, data: Map[String, String]): Either[List[FormError], Seq[A]] =
+        data
+          .filter((key, _) => key.matches(s"^$keyPrefix\\.\\d+"))
+          .toList
+          .sortBy((key, _) => key)
+          .map((key, _) => baseFormatter.bind(key, data))
+          .partitionMap(identity) match {
+          case (Nil, rights) => Right(rights)
+          case (lefts, _)    => Left(lefts.flatten)
+        }
+
+      def unbind(key: String, values: Seq[A]): Map[String, String] =
+        values.zipWithIndex
+          .map((value, index) => s"$key.$index" -> value.toString)
+          .toMap
     }
 
   private[mappings] def intFormatter(
