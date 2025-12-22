@@ -303,6 +303,7 @@ dateConfirmPayments.taxYear.error.nonNumeric = Enter the year you are reporting 
 dateConfirmPayments.taxYear.error.range = Enter the year you are reporting nil payments for, like 2024, 2025
 dateConfirmPayments.change.hidden = Date Confirm Payments
 dateConfirmPayments.p1 = A tax month runs from the 6th of a month, to the 5th of the next month. For example, 6 May to 5 June should be inputted as June. The 6th of June to the 5th of July should inputted as July, and so on.
+dateConfirmPayments.WarningIcon = Warning
 dateConfirmPayments.warningText = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
 dateConfirmPayments.legendText = Tax month and tax year
 dateConfirmPayments.labelMonth = Tax month

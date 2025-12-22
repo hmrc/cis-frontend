@@ -65,7 +65,7 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators {
     }
 
     "must fail when year is out of range" in {
-      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "1999"))
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "10000"))
       result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
     }
   }

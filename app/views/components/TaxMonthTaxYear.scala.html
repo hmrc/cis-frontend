@@ -15,44 +15,57 @@
  *@
 
 @import utils.Utils.emptyString
-@import uk.gov.hmrc.govukfrontend.views.html.components._
-@import play.api.data.Field
-
-@this()
-
+@this(govukDateInput: GovukDateInput)
 @(
-monthField: Field,
-yearField: Field,
-monthLabel: String,
-yearLabel: String
+    monthField: Field,
+    yearField: Field,
+    monthLabel: String,
+    yearLabel: String,
+    legendContent: Option[String] = None,
+    legendClasses: String = "",
+    id: String = "value",
+    hintText: Option[String] = None,
+    legendAsPageHeading: Boolean = false
 )(implicit messages: Messages)
 
-<div class="govuk-date-input">
+@monthFieldErrors = @{if(monthField.hasErrors) "govuk-input--error" else ""}
+@yearFieldErrors = @{if(yearField.hasErrors) "govuk-input--error" else ""}
 
-    <div class="govuk-date-input__item">
-        <div class="govuk-form-group">
-            <label class="govuk-label govuk-date-input__label" for="@monthField.id">
-                @monthLabel
-            </label>
-            <input class="govuk-input govuk-date-input__input govuk-input--width-10"
-                   id="@monthField.id"
-                   name="@monthField.name"
-                   type="text"
-                   inputmode="numeric"
-                   value="@monthField.value">
-        </div>
-    </div>
-    <div class="govuk-date-input__item">
-        <div class="govuk-form-group">
-            <label class="govuk-label govuk-date-input__label" for="@yearField.id">
-                @yearLabel
-            </label>
-            <input class="govuk-input govuk-date-input__input govuk-input--width-4"
-                   id="@yearField.id"
-                   name="@yearField.name"
-                   type="text"
-                   inputmode="numeric"
-                   value="@yearField.value">
-        </div>
-    </div>
-</div>
+@govukDateInput(DateInput(
+    fieldset = legendContent.map(content => Fieldset(
+        legend = Some(
+            Legend(
+                content = Text(messages(content)),
+                isPageHeading = legendAsPageHeading,
+                classes = legendClasses
+            )
+        )
+    )),
+    id = id,
+    items = Seq(
+        InputItem(
+            id = monthField.id,
+            classes = s"govuk-input--width-10 ${monthFieldErrors}",
+            name = monthField.name,
+            label = Some(monthLabel),
+            value = monthField.value
+        ),
+        InputItem(
+            id = yearField.id,
+            classes = s"govuk-input--width-4 ${yearFieldErrors}",
+            name = yearField.name,
+            label = Some(yearLabel),
+            value = yearField.value
+        )
+    ),
+
+    hint = hintText.map(hint => Hint(content = Text(messages(hint)))),
+    errorMessage = {
+        monthField.error
+            .orElse(yearField.error)
+            .map(err => ErrorMessage(
+                content = Text(messages(err.message, err.args: _*)),
+                visuallyHiddenText = Some(messages("site.error"))
+            ))
+    }
+))

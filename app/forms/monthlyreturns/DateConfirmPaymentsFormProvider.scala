@@ -18,13 +18,18 @@ package forms.monthlyreturns
 
 import forms.mappings.Mappings
 import play.api.data.Form
-import play.api.data.Forms._
+import play.api.data.Forms.mapping
 import play.api.i18n.Messages
 
 import java.time.LocalDate
 import javax.inject.Inject
 
 class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
+
+  private val MinMonth: Int        = 1
+  private val MaxMonth: Int        = 12
+  private val MaxYear: Int         = 9999
+  private val FirstDayOfMonth: Int = 1
 
   def apply()(implicit messages: Messages): Form[LocalDate] =
     Form(
@@ -33,12 +38,12 @@ class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
           requiredKey = "dateConfirmPayments.taxMonth.error.required",
           wholeNumberKey = "dateConfirmPayments.taxMonth.error.wholeNumber",
           nonNumericKey = "dateConfirmPayments.taxMonth.error.nonNumeric"
-        ).verifying("dateConfirmPayments.taxMonth.error.range", month => month >= 1 && month <= 12),
+        ).verifying("dateConfirmPayments.taxMonth.error.range", month => month >= MinMonth && month <= MaxMonth),
         "taxYear"  -> int(
           requiredKey = "dateConfirmPayments.taxYear.error.required",
           wholeNumberKey = "dateConfirmPayments.taxYear.error.wholeNumber",
           nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
-        ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= 2000 && year <= 9999)
-      )((month, year) => LocalDate.of(year, month, 1))(date => Some((date.getMonthValue, date.getYear)))
+        ).verifying("dateConfirmPayments.taxYear.error.range", year => year <= MaxYear)
+      )((month, year) => LocalDate.of(year, month, FirstDayOfMonth))(date => Some((date.getMonthValue, date.getYear)))
     )
 }
