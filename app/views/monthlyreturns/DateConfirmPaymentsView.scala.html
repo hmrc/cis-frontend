@@ -39,7 +39,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.day")))
+            @govukErrorSummary(ErrorSummaryViewModel(form))
         }
 
         @fieldSet("dateConfirmPayments.heading", asHeading = true, describedBy = None) {

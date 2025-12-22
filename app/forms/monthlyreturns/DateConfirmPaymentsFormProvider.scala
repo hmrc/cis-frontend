@@ -28,7 +28,8 @@ class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
 
   private val MinMonth: Int        = 1
   private val MaxMonth: Int        = 12
-  private val MaxYear: Int         = 9999
+  private val MinYear: Int         = 2007
+  private val MaxYear: Int         = 3000
   private val FirstDayOfMonth: Int = 1
 
   def apply()(implicit messages: Messages): Form[LocalDate] =
@@ -43,7 +44,7 @@ class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
           requiredKey = "dateConfirmPayments.taxYear.error.required",
           wholeNumberKey = "dateConfirmPayments.taxYear.error.wholeNumber",
           nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
-        ).verifying("dateConfirmPayments.taxYear.error.range", year => year <= MaxYear)
+        ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= MinYear && year <= MaxYear)
       )((month, year) => LocalDate.of(year, month, FirstDayOfMonth))(date => Some((date.getMonthValue, date.getYear)))
     )
 }

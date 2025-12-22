@@ -14,18 +14,14 @@
  * limitations under the License.
  *@
 
-@import utils.Utils.emptyString
 @this(govukDateInput: GovukDateInput)
 @(
     monthField: Field,
     yearField: Field,
     monthLabel: String,
     yearLabel: String,
-    legendContent: Option[String] = None,
-    legendClasses: String = "",
     id: String = "value",
-    hintText: Option[String] = None,
-    legendAsPageHeading: Boolean = false
+    hintText: Option[String] = None
 )(implicit messages: Messages)
 
 @monthFieldErrors = @{if(monthField.hasErrors) "govuk-input--error" else ""}

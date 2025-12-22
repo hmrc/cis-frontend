@@ -54,6 +54,18 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators {
 
   ".taxYear" - {
 
+    "must bind valid year at minimum boundary" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2007"))
+      result.errors mustBe empty
+      result.value.value mustBe LocalDate.of(2007, 6, 1)
+    }
+
+    "must bind valid year at maximum boundary" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "3000"))
+      result.errors mustBe empty
+      result.value.value mustBe LocalDate.of(3000, 6, 1)
+    }
+
     "must fail when year is missing" in {
       val result = form.bind(Map("taxMonth" -> "6"))
       result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.required")
@@ -64,8 +76,13 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators {
       result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.nonNumeric")
     }
 
-    "must fail when year is out of range" in {
-      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "10000"))
+    "must fail when year is below minimum range" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2006"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+    }
+
+    "must fail when year is above maximum range" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "3001"))
       result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
     }
   }
