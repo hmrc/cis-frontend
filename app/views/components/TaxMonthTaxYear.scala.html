@@ -32,15 +32,6 @@
 @yearFieldErrors = @{if(yearField.hasErrors) "govuk-input--error" else ""}
 
 @govukDateInput(DateInput(
-    fieldset = legendContent.map(content => Fieldset(
-        legend = Some(
-            Legend(
-                content = Text(messages(content)),
-                isPageHeading = legendAsPageHeading,
-                classes = legendClasses
-            )
-        )
-    )),
     id = id,
     items = Seq(
         InputItem(
