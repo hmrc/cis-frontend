@@ -170,7 +170,7 @@ monthlyreturns.declaration.paragraph = By submitting this declaration I confirm 
 monthlyreturns.declaration.warning = If you give any false information you may face financial penalties and prosecution.
 monthlyreturns.declaration.checkbox = I confirm that the information given on this return is correct and complete to the best of my knowledge.
 monthlyreturns.declaration.checkYourAnswersLabel = Declaration
-monthlyreturns.declaration.error.required = You must complete the declaration: ‘I confirm that the information given on this return is correct and complete to the best of my knowledge and belief.’
+monthlyreturns.declaration.error.required = Check the box to confirm that the information given on this return is correct and complete to the best of your knowledge
 monthlyreturns.declaration.change.hidden = Declaration
 monthlyreturns.declaration.submit = Confirm and submit
 
