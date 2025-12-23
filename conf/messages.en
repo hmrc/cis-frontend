@@ -160,7 +160,7 @@ monthlyreturns.confirmEmailAddress.paragraph = HMRC will send a confirmation of 
 monthlyreturns.confirmEmailAddress.input.label = Email address
 monthlyreturns.confirmEmailAddress.checkYourAnswersLabel = Email address
 monthlyreturns.confirmEmailAddress.error.required = Enter the contact person’s email address to send confirmation of the successful submission
-monthlyreturns.confirmEmailAddress.error.length = Email address must be 132 characters or fewer
+monthlyreturns.confirmEmailAddress.error.length = Email address must be 254 characters or fewer
 monthlyreturns.confirmEmailAddress.error.invalid = Enter the email address in the correct format, using letters a to z, numbers, full stops, hyphens, underscores and @ signs, name@example.com
 monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
