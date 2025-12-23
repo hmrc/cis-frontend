@@ -21,7 +21,7 @@ import play.api.data.FormError
 
 class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
-  private val MaxEmailLength = 132
+  private val MaxEmailLength = 254
 
   val requiredKey    = "monthlyreturns.confirmEmailAddress.error.required"
   val lengthKey      = "monthlyreturns.confirmEmailAddress.error.length"
