@@ -21,11 +21,11 @@ import play.api.data.FormError
 
 class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
-  private val MaxEmailLength = 254
+  private val MaxEmailLength = 132
 
   val requiredKey = "monthlyreturns.confirmEmailAddress.error.required"
   val lengthKey   = "monthlyreturns.confirmEmailAddress.error.length"
-  val maxLength   = MaxEmailLength
+  val maxLength: Int = MaxEmailLength
   val invalidKey  = "monthlyreturns.confirmEmailAddress.error.invalid"
 
   val form = new ConfirmEmailAddressFormProvider()()
@@ -51,8 +51,8 @@ class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
       }
     }
 
-    "must not bind strings longer than 254 characters" in {
-      val longEmail = "a" * 255 + "@domain.com"
+    "must not bind strings longer than 132 characters" in {
+      val longEmail = "a" * 122 + "@domain.com"
       val result    = form.bind(Map(fieldName -> longEmail))
       result.errors must contain(FormError(fieldName, lengthKey, Seq(maxLength)))
     }

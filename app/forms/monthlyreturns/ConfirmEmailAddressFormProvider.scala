@@ -24,7 +24,7 @@ import play.api.data.Form
 class ConfirmEmailAddressFormProvider @Inject() extends Mappings {
 
   private val EmailRegex     = "^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"
-  private val MaxEmailLength = 254
+  private val MaxEmailLength = 132
 
   def apply(): Form[String] =
     Form(
