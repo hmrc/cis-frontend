@@ -23,10 +23,10 @@ class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
   private val MaxEmailLength = 254
 
-  val requiredKey = "monthlyreturns.confirmEmailAddress.error.required"
-  val lengthKey   = "monthlyreturns.confirmEmailAddress.error.length"
-  val maxLength   = MaxEmailLength
-  val invalidKey  = "monthlyreturns.confirmEmailAddress.error.invalid"
+  val requiredKey    = "monthlyreturns.confirmEmailAddress.error.required"
+  val lengthKey      = "monthlyreturns.confirmEmailAddress.error.length"
+  val maxLength: Int = MaxEmailLength
+  val invalidKey     = "monthlyreturns.confirmEmailAddress.error.invalid"
 
   val form = new ConfirmEmailAddressFormProvider()()
 
@@ -52,7 +52,7 @@ class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
     }
 
     "must not bind strings longer than 254 characters" in {
-      val longEmail = "a" * 255 + "@domain.com"
+      val longEmail = "a" * 244 + "@domain.com"
       val result    = form.bind(Map(fieldName -> longEmail))
       result.errors must contain(FormError(fieldName, lengthKey, Seq(maxLength)))
     }
