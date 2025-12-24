@@ -307,7 +307,7 @@ dateConfirmPayments.WarningIcon = Warning
 dateConfirmPayments.warningText = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
 dateConfirmPayments.legendText = Tax month and tax year
 dateConfirmPayments.labelMonth = Tax month
-dateConfirmPayments.labelYear = Tax Year
+dateConfirmPayments.labelYear = tax Year
 
 monthlyreturns.selectSubcontractors.title = Select subcontractors
 monthlyreturns.selectSubcontractors.heading = Select subcontractors
