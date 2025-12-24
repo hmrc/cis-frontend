@@ -1,0 +1,58 @@
+@*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@this(govukDateInput: GovukDateInput)
+@(
+    monthField: Field,
+    yearField: Field,
+    monthLabel: String,
+    yearLabel: String,
+    id: String = "value",
+    hintText: Option[String] = None
+)(implicit messages: Messages)
+
+@monthFieldErrors = @{if(monthField.hasErrors) "govuk-input--error" else ""}
+@yearFieldErrors = @{if(yearField.hasErrors) "govuk-input--error" else ""}
+
+@govukDateInput(DateInput(
+    id = id,
+    items = Seq(
+        InputItem(
+            id = monthField.id,
+            classes = s"govuk-input--width-10 ${monthFieldErrors}",
+            name = monthField.name,
+            label = Some(monthLabel),
+            value = monthField.value
+        ),
+        InputItem(
+            id = yearField.id,
+            classes = s"govuk-input--width-4 ${yearFieldErrors}",
+            name = yearField.name,
+            label = Some(yearLabel),
+            value = yearField.value
+        )
+    ),
+
+    hint = hintText.map(hint => Hint(content = Text(messages(hint)))),
+    errorMessage = {
+        monthField.error
+            .orElse(yearField.error)
+            .map(err => ErrorMessage(
+                content = Text(messages(err.message, err.args: _*)),
+                visuallyHiddenText = Some(messages("site.error"))
+            ))
+    }
+))

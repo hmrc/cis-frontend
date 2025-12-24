@@ -71,4 +71,9 @@ GET        /monthly-return/select-subcontractors/select-all   controllers.monthl
 GET        /monthly-return/select-subcontractors/deselect-all controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = Some(false))
 POST       /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
-GET        /monthly-return/file-your-monthly-return                          controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()
+GET        /monthly-return/file-your-monthly-return             controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()
+
+GET        /monthly-return/date-confirm-payments                controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-payments                controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
