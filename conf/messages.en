@@ -329,8 +329,12 @@ monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have be
 
 verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
+verifySubcontractors.warning = One or more subcontractors have not been verified. Not verifyng subcontractors will result in them receiving a higher rate of tax.
+verifySubcontractors.P1 = Do you want to verify your subcontractors now?
 verifySubcontractors.yes = Yes
+verifySubcontractors.yes.p2 = You will be taken to the verification service
 verifySubcontractors.no = No
+verifySubcontractors.no.p2 = Higher-rate tax deductions will apply until verification is complete
 verifySubcontractors.checkYourAnswersLabel = You have unverified subcontractors
 verifySubcontractors.error.required = Select verifySubcontractors
 verifySubcontractors.change.hidden = VerifySubcontractors
