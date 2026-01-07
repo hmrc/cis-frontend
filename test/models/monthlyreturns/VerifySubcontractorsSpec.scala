@@ -16,10 +16,11 @@ class VerifySubcontractorsSpec extends AnyFreeSpec with Matchers with ScalaCheck
 
       val gen = Gen.oneOf(VerifySubcontractors.values.toSeq)
 
-      forAll(gen) {
-        verifySubcontractors =>
-
-          JsString(verifySubcontractors.toString).validate[VerifySubcontractors].asOpt.value mustEqual verifySubcontractors
+      forAll(gen) { verifySubcontractors =>
+        JsString(verifySubcontractors.toString)
+          .validate[VerifySubcontractors]
+          .asOpt
+          .value mustEqual verifySubcontractors
       }
     }
 
@@ -27,10 +28,8 @@ class VerifySubcontractorsSpec extends AnyFreeSpec with Matchers with ScalaCheck
 
       val gen = arbitrary[String] suchThat (!VerifySubcontractors.values.map(_.toString).contains(_))
 
-      forAll(gen) {
-        invalidValue =>
-
-          JsString(invalidValue).validate[VerifySubcontractors] mustEqual JsError("error.invalid")
+      forAll(gen) { invalidValue =>
+        JsString(invalidValue).validate[VerifySubcontractors] mustEqual JsError("error.invalid")
       }
     }
 
@@ -38,10 +37,8 @@ class VerifySubcontractorsSpec extends AnyFreeSpec with Matchers with ScalaCheck
 
       val gen = Gen.oneOf(VerifySubcontractors.values.toSeq)
 
-      forAll(gen) {
-        verifySubcontractors =>
-
-          Json.toJson(verifySubcontractors) mustEqual JsString(verifySubcontractors.toString)
+      forAll(gen) { verifySubcontractors =>
+        Json.toJson(verifySubcontractors) mustEqual JsString(verifySubcontractors.toString)
       }
     }
   }

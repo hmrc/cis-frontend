@@ -11,13 +11,13 @@ class VerifySubcontractorsFormProviderSpec extends OptionFieldBehaviours {
 
   ".value" - {
 
-    val fieldName = "value"
+    val fieldName   = "value"
     val requiredKey = "verifySubcontractors.error.required"
 
     behave like optionsField[VerifySubcontractors](
       form,
       fieldName,
-      validValues  = VerifySubcontractors.values,
+      validValues = VerifySubcontractors.values,
       invalidError = FormError(fieldName, "error.invalid")
     )
 

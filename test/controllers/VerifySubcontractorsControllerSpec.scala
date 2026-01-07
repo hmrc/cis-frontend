@@ -2,7 +2,7 @@ package controllers
 
 import base.SpecBase
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
-import models.{NormalMode, VerifySubcontractors, UserAnswers}
+import models.{NormalMode, UserAnswers, VerifySubcontractors}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -24,7 +24,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   lazy val verifySubcontractorsRoute = routes.VerifySubcontractorsController.onPageLoad(NormalMode).url
 
   val formProvider = new VerifySubcontractorsFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   "VerifySubcontractors Controller" - {
 
@@ -46,7 +46,8 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(VerifySubcontractorsPage, VerifySubcontractors.values.head).success.value
+      val userAnswers =
+        UserAnswers(userAnswersId).set(VerifySubcontractorsPage, VerifySubcontractors.values.head).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -58,7 +59,10 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(VerifySubcontractors.values.head), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(VerifySubcontractors.values.head), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
