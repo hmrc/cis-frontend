@@ -43,8 +43,8 @@
             rows = selectedSubcontractors.map { subcontractor =>
                 Seq(
                     TableRow(content = Text(subcontractor), classes = "govuk-table__header"),
-                    TableRow(content = HtmlContent(link("monthlyreturns.subcontractorsPaidThisMonth.table.link.addDetails", "#"))),
-                    TableRow(content = HtmlContent(link("monthlyreturns.subcontractorsPaidThisMonth.table.link.remove", "#"))),
+                    TableRow(content = HtmlContent(link("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link", "#"))),
+                    TableRow(content = HtmlContent(link("monthlyreturns.subcontractorsPaidThisMonth.table.remove.link", "#"))),
                 )
             }
         )
