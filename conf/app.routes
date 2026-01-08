@@ -78,7 +78,7 @@ POST       /monthly-return/date-confirm-payments                controllers.mont
 GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/verifySubcontractors                 controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/verifySubcontractors                 controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/changeVerifySubcontractors           controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/changeVerifySubcontractors           controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)

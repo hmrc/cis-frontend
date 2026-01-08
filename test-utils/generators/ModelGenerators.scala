@@ -16,8 +16,7 @@
 
 package generators
 
-import models.monthlyreturns.Declaration
-import models.monthlyreturns.InactivityRequest
+import models.monthlyreturns.{Declaration, InactivityRequest, VerifySubcontractors}
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
