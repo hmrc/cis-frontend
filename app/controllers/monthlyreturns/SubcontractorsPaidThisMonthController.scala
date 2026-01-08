@@ -24,17 +24,20 @@ import views.html.monthlyreturns.SubcontractorsPaidThisMonthView
 
 import javax.inject.Inject
 
-class SubcontractorsPaidThisMonthController @Inject()(
-                                       override val messagesApi: MessagesApi,
-                                       identify: IdentifierAction,
-                                       getData: DataRetrievalAction,
-                                       requireData: DataRequiredAction,
-                                       val controllerComponents: MessagesControllerComponents,
-                                       view: SubcontractorsPaidThisMonthView
-                                     ) extends FrontendBaseController with I18nSupport {
+class SubcontractorsPaidThisMonthController @Inject() (
+  override val messagesApi: MessagesApi,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  val controllerComponents: MessagesControllerComponents,
+  view: SubcontractorsPaidThisMonthView
+) extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val schemeRef                           = "Scheme 123, Ref 123/AB456"
+    val periodEnding                        = "Period ending 5 January 2026"
+    val selectedSubcontractors: Seq[String] = Seq("BuildRight Construction", "Northern Trades Ltd", "TyneWear Ltd")
+    Ok(view(schemeRef, periodEnding, selectedSubcontractors))
   }
 }

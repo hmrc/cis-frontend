@@ -14,14 +14,41 @@
  * limitations under the License.
  *@
 
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.table._
+@import views.html.components._
+
 @this(
-        layout: templates.Layout,
-        govukButton: GovukButton
+    layout: templates.Layout,
+    govukButton: GovukButton,
+    govukTable: GovukTable,
+    h1: H1,
+    paragraph: Paragraph,
+    caption: Caption,
+    link: Link
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(schemeRef: String, periodEnding: String, selectedSubcontractors: Seq[String])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.subcontractorsPaidThisMonth.title"))) {
 
-    <h1 class="govuk-heading-xl">@messages("monthlyreturns.subcontractorsPaidThisMonth.heading")</h1>
+    @caption(schemeRef)
+    @caption(periodEnding)
+    @h1(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))
+
+    @paragraph(messages("monthlyreturns.subcontractorsPaidThisMonth.p1"))
+    @paragraph(messages("monthlyreturns.subcontractorsPaidThisMonth.p2"))
+
+    @govukTable(
+        Table(
+            rows = selectedSubcontractors.map { subcontractor =>
+                Seq(
+                    TableRow(content = Text(subcontractor), classes = "govuk-table__header"),
+                    TableRow(content = HtmlContent(link("monthlyreturns.subcontractorsPaidThisMonth.table.link.addDetails", "#"))),
+                    TableRow(content = HtmlContent(link("monthlyreturns.subcontractorsPaidThisMonth.table.link.remove", "#"))),
+                )
+            }
+        )
+    )
+
+    @link("monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link", "#")
 }
