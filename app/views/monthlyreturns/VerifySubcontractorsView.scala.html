@@ -15,30 +15,45 @@
  *@
 
 @import models.monthlyreturns.VerifySubcontractors
+@import views.html.components._
 
 @this(
     layout: templates.Layout,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
+    govukWarningText: GovukWarningText,
+    h1: H1,
+    h2: H2
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("verifySubcontractors.title"))) {
 
-@formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
         }
 
+        @h1(messages("verifySubcontractors.heading"))
+
+        @govukWarningText(
+            WarningText(
+                iconFallbackText = Some(messages("verifySubcontractors.warningIcon")),
+                content = Text(messages("verifySubcontractors.warningText"))
+            )
+        )
+
+        @h2(messages("verifySubcontractors.P1"))
+
         @govukRadios(
             RadiosViewModel(
                 field  = form("value"),
-                legend = LegendViewModel(messages("verifySubcontractors.heading")).asPageHeading(),
-                items  = VerifySubcontractors.options
+                items  = VerifySubcontractors.options,
+                fieldset = Fieldset()
             )
         )
 

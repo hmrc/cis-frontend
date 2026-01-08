@@ -17,9 +17,8 @@
 package models.monthlyreturns
 
 import models.{Enumerable, WithName}
-import models.monthlyreturns.VerifySubcontractors
 import play.api.i18n.Messages
-import uk.gov.hmrc.govukfrontend.views.Aliases.Text
+import uk.gov.hmrc.govukfrontend.views.Aliases.{Hint, Text}
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 
 sealed trait VerifySubcontractors
@@ -38,7 +37,8 @@ object VerifySubcontractors extends Enumerable.Implicits {
     RadioItem(
       content = Text(messages(s"verifySubcontractors.${value.toString}")),
       value = Some(value.toString),
-      id = Some(s"value_$index")
+      id = Some(s"value_$index"),
+      hint = Some(Hint(content = Text(messages(s"verifySubcontractors.${value.toString}.hint"))))
     )
   }
 
