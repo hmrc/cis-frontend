@@ -15,6 +15,9 @@
  *@
 
 @import viewmodels.InputWidth._
+@import viewmodels.govuk._
+@import viewmodels.LabelSize
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 
 @this(
     layout: templates.Layout,
@@ -24,7 +27,7 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, companyName: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("paymentDetails.title"))) {
 
@@ -37,10 +40,11 @@
         @govukInput(
             InputViewModel(
                 field = form("value"),
-                label = LabelViewModel(messages("paymentDetails.heading")).asPageHeading()
+                label = LabelViewModel(messages("paymentDetails.heading", companyName)).asPageHeading(LabelSize.Large)
             )
             .withPrefix(PrefixOrSuffix(content = "£"))
             .withWidth(Fixed10)
+            .withHint(HintViewModel(content = Text(messages("paymentDetails.hint"))))
         )
 
         @govukButton(

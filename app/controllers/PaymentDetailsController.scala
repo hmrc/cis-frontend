@@ -53,7 +53,9 @@ class PaymentDetailsController @Inject() (
       case Some(value) => form.fill(value)
     }
 
-    Ok(view(preparedForm, mode))
+    val companyName = "TyneWear Ltd"
+
+    Ok(view(preparedForm, mode, companyName))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -61,7 +63,10 @@ class PaymentDetailsController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => {
+            val companyName = "TyneWear Ltd"
+            Future.successful(BadRequest(view(formWithErrors, mode, companyName)))
+          },
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(PaymentDetailsPage, value))
