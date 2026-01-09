@@ -326,3 +326,13 @@ monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification n
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
+
+monthlyreturns.costOfMaterials.title = CostOfMaterials
+monthlyreturns.costOfMaterials.heading = CostOfMaterials
+monthlyreturns.costOfMaterials.checkYourAnswersLabel = CostOfMaterials
+monthlyreturns.costOfMaterials.error.nonNumeric = Enter your costOfMaterials using numbers and a decimal point
+monthlyreturns.costOfMaterials.error.required = Enter your costOfMaterials
+monthlyreturns.costOfMaterials.error.invalidNumeric = Enter your costOfMaterials using up to two decimal places
+monthlyreturns.costOfMaterials.error.aboveMaximum = CostOfMaterials must be {0} or less
+monthlyreturns.costOfMaterials.error.belowMinimum = CostOfMaterials must be {0} or more
+monthlyreturns.costOfMaterials.change.hidden = CostOfMaterials
