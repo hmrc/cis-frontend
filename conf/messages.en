@@ -327,7 +327,7 @@ monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 
-verifySubcontractors.title = Subcontractors you paid this month
+verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
 verifySubcontractors.WarningIcon = Warning
 verifySubcontractors.warningText = One or more subcontractors have not been verified. Not verifying subcontractors will result in them receiving a higher rate of tax.
