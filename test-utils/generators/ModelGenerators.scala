@@ -16,14 +16,14 @@
 
 package generators
 
-import models.monthlyreturns.{Declaration, InactivityRequest, VerifySubcontractors}
+import models.monthlyreturns.{Declaration, InactivityRequest}
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
 
-  implicit lazy val arbitraryVerifySubcontractors: Arbitrary[VerifySubcontractors] =
+  implicit lazy val arbitraryVerifySubcontractors: Arbitrary[Boolean] =
     Arbitrary {
-      Gen.oneOf(VerifySubcontractors.values.toSeq)
+      Gen.oneOf(true, false)
     }
 
   implicit lazy val arbitraryDeclaration: Arbitrary[Declaration] =

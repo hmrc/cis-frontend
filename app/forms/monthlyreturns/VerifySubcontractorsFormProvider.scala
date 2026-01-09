@@ -17,15 +17,14 @@
 package forms.monthlyreturns
 
 import forms.mappings.Mappings
-import models.monthlyreturns.VerifySubcontractors
 import play.api.data.Form
 
 import javax.inject.Inject
 
 class VerifySubcontractorsFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[VerifySubcontractors] =
+  def apply(): Form[Boolean] =
     Form(
-      "value" -> enumerable[VerifySubcontractors]("verifySubcontractors.error.required")
+      "value" -> boolean("verifySubcontractors.error.required")
     )
 }

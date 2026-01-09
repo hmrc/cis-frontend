@@ -19,7 +19,6 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
 import models.{NormalMode, UserAnswers}
-import models.monthlyreturns.VerifySubcontractors
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -65,7 +64,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
       val userAnswers =
-        UserAnswers(userAnswersId).set(VerifySubcontractorsPage, VerifySubcontractors.values.head).success.value
+        UserAnswers(userAnswersId).set(VerifySubcontractorsPage, true).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -77,7 +76,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(VerifySubcontractors.values.head), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(
           request,
           messages(application)
         ).toString
@@ -101,7 +100,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       running(application) {
         val request =
           FakeRequest(POST, verifySubcontractorsRoute)
-            .withFormUrlEncodedBody(("value", VerifySubcontractors.values.head.toString))
+            .withFormUrlEncodedBody(("value", "true"))
 
         val result = route(application, request).value
 
@@ -151,7 +150,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       running(application) {
         val request =
           FakeRequest(POST, verifySubcontractorsRoute)
-            .withFormUrlEncodedBody(("value", VerifySubcontractors.values.head.toString))
+            .withFormUrlEncodedBody(("value", "true"))
 
         val result = route(application, request).value
 

@@ -14,7 +14,6 @@
  * limitations under the License.
  *@
 
-@import models.monthlyreturns.VerifySubcontractors
 @import views.html.components._
 
 @this(
@@ -25,40 +24,41 @@
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
     h1: H1,
-    h2: H2
+    h2: H2,
+    fieldSet: FieldSet
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+    @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("verifySubcontractors.title"))) {
+    @layout(pageTitle = title(form, messages("verifySubcontractors.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+        @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
-        @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+            @if(form.errors.nonEmpty) {
+                @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+            }
+
+            @fieldSet("verifySubcontractors.heading", asHeading = true, describedBy = None) {
+
+            @govukWarningText(
+                WarningText(
+                    iconFallbackText = Some(messages("verifySubcontractors.warningIcon")),
+                    content = Text(messages("verifySubcontractors.warningText"))
+                )
+            )
+
+            @h2(messages("verifySubcontractors.P1"))
+
+            @govukRadios(
+                RadiosViewModel.yesNo(
+                    field  = form("value"),
+                    legend = Legend()
+                )
+            )
+
+            @govukButton(
+                ButtonViewModel(messages("site.continue"))
+            )
         }
-
-        @h1(messages("verifySubcontractors.heading"))
-
-        @govukWarningText(
-            WarningText(
-                iconFallbackText = Some(messages("verifySubcontractors.warningIcon")),
-                content = Text(messages("verifySubcontractors.warningText"))
-            )
-        )
-
-        @h2(messages("verifySubcontractors.P1"))
-
-        @govukRadios(
-            RadiosViewModel(
-                field  = form("value"),
-                items  = VerifySubcontractors.options,
-                fieldset = Fieldset()
-            )
-        )
-
-        @govukButton(
-            ButtonViewModel(messages("site.continue"))
-        )
     }
 }

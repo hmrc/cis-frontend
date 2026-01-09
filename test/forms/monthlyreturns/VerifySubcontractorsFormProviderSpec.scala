@@ -17,7 +17,6 @@
 package forms.monthlyreturns
 
 import forms.behaviours.OptionFieldBehaviours
-import models.monthlyreturns.VerifySubcontractors
 import play.api.data.FormError
 
 class VerifySubcontractorsFormProviderSpec extends OptionFieldBehaviours {
@@ -29,11 +28,11 @@ class VerifySubcontractorsFormProviderSpec extends OptionFieldBehaviours {
     val fieldName   = "value"
     val requiredKey = "verifySubcontractors.error.required"
 
-    behave like optionsField[VerifySubcontractors](
+    behave like optionsField[Boolean](
       form,
       fieldName,
-      validValues = VerifySubcontractors.values,
-      invalidError = FormError(fieldName, "error.invalid")
+      validValues = Seq(true, false),
+      invalidError = FormError(fieldName, "error.boolean")
     )
 
     behave like mandatoryField(
