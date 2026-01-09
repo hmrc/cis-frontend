@@ -50,8 +50,22 @@
             @h2(messages("verifySubcontractors.P1"))
 
             @govukRadios(
-                RadiosViewModel.yesNo(
-                    field  = form("value"),
+                RadiosViewModel(
+                    field = form("value"),
+                    items = Seq(
+                        RadioItem(
+                            content = Text(messages("verifySubcontractors.yes")),
+                            value = Some("true"),
+                            id = Some("value_0"),
+                            hint = Some(Hint(content = Text(messages("verifySubcontractors.yes.hint"))))
+                        ),
+                        RadioItem(
+                            content = Text(messages("verifySubcontractors.no")),
+                            value = Some("false"),
+                            id = Some("value_1"),
+                            hint = Some(Hint(content = Text(messages("verifySubcontractors.no.hint"))))
+                        )
+                    ),
                     legend = Legend()
                 )
             )

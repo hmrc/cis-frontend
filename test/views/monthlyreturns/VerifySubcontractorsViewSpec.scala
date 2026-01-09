@@ -19,7 +19,6 @@ package views.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
 import models.NormalMode
-import org.apache.pekko.actor.setup.Setup
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
@@ -38,6 +37,38 @@ class VerifySubcontractorsViewSpec extends SpecBase {
       doc.select("h2").text                        must include(messages("verifySubcontractors.P1"))
 
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
+    }
+
+    "must render radio buttons with correct values" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select("input[type=radio][value=true]").size() mustBe 1
+
+      doc.select("input[type=radio][value=false]").size() mustBe 1
+
+      doc.select("label[for=value_0]").text() must include(messages("verifySubcontractors.yes"))
+      doc.select("label[for=value_1]").text() must include(messages("verifySubcontractors.no"))
+
+      doc.select("#value_0-item-hint").text() must include(messages("verifySubcontractors.yes.hint"))
+      doc.select("#value_1-item-hint").text() must include(messages("verifySubcontractors.no.hint"))
+    }
+
+    "must pre-populate the form when user has previously answered 'true'" in new Setup {
+      val filledForm    = form.fill(true)
+      val filledHtml    = view(filledForm, NormalMode)
+      val doc: Document = Jsoup.parse(filledHtml.toString)
+
+      doc.select("input[value=true]").hasAttr("checked") mustBe true
+      doc.select("input[value=false]").hasAttr("checked") mustBe false
+    }
+
+    "must pre-populate the form when user has previously answered 'false'" in new Setup {
+      val filledForm    = form.fill(false)
+      val filledHtml    = view(filledForm, NormalMode)
+      val doc: Document = Jsoup.parse(filledHtml.toString)
+
+      doc.select("input[value=true]").hasAttr("checked") mustBe false
+      doc.select("input[value=false]").hasAttr("checked") mustBe true
     }
   }
 
