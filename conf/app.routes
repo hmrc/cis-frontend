@@ -77,3 +77,8 @@ GET        /monthly-return/date-confirm-payments                controllers.mont
 POST       /monthly-return/date-confirm-payments                controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /payment-details                  controllers.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode)
+POST       /payment-details                  controllers.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
+GET        /change-payment-details                        controllers.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
+POST       /change-payment-details                        controllers.PaymentDetailsController.onSubmit(mode: Mode = CheckMode)

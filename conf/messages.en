@@ -326,3 +326,13 @@ monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification n
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
+
+paymentDetails.title = PaymentDetails
+paymentDetails.heading = PaymentDetails
+paymentDetails.checkYourAnswersLabel = PaymentDetails
+paymentDetails.error.nonNumeric = Enter your paymentDetails using numbers and a decimal point
+paymentDetails.error.required = Enter your paymentDetails
+paymentDetails.error.invalidNumeric = Enter your paymentDetails using up to two decimal places
+paymentDetails.error.aboveMaximum = PaymentDetails must be {0} or less
+paymentDetails.error.belowMinimum = PaymentDetails must be {0} or more
+paymentDetails.change.hidden = PaymentDetails
