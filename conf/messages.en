@@ -329,7 +329,7 @@ monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have be
 
 monthlyreturns.subcontractorsPaidThisMonth.title = Subcontractors you paid this month
 monthlyreturns.subcontractorsPaidThisMonth.heading = Subcontractors you paid this month
-monthlyreturns.subcontractorsPaidThisMonth.p1 = The 3 subcontrators you added to this monthly return are listed below.
+monthlyreturns.subcontractorsPaidThisMonth.p1 = The {0} subcontractors you added to this monthly return are listed below.
 monthlyreturns.subcontractorsPaidThisMonth.p2 = Select ‘Add details’ to add payment details for each subcontractor.
 monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Add details
 monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = Remove
