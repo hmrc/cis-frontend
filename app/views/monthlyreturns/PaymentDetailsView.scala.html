@@ -31,7 +31,7 @@
 
 @layout(pageTitle = title(form, messages("paymentDetails.title"))) {
 
-    @formHelper(action = routes.PaymentDetailsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.PaymentDetailsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

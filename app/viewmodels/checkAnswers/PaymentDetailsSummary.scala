@@ -17,7 +17,7 @@
 package viewmodels.checkAnswers
 
 import utils.CurrencyFormatter.currencyFormat
-import controllers.routes
+import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
 import pages.PaymentDetailsPage
 import play.api.i18n.Messages
