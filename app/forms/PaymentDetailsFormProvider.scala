@@ -24,11 +24,13 @@ class PaymentDetailsFormProvider @Inject() extends Mappings {
 
   def apply(): Form[BigDecimal] =
     Form(
-      "value" -> currency(
+      "value" -> paymentDetailsCurrency(
         "paymentDetails.error.required",
-        "paymentDetails.error.invalidNumeric",
-        "paymentDetails.error.nonNumeric"
+        "paymentDetails.error.invalid",
+        "paymentDetails.error.maxLength"
       )
-        .verifying(maximumCurrency(Int.MaxValue, "paymentDetails.error.aboveMaximum"))
+        .verifying(
+          maximumCurrency(BigDecimal("99999999.00"), "paymentDetails.error.maxValue", includeFormattedValue = false)
+        )
     )
 }
