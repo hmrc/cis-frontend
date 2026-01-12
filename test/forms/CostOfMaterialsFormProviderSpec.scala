@@ -19,7 +19,8 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
     val maximum = Int.MaxValue
 
     val validDataGenerator =
-      Gen.choose[BigDecimal](minimum, maximum)
+      Gen
+        .choose[BigDecimal](minimum, maximum)
         .map(_.setScale(2, RoundingMode.HALF_UP))
         .map(_.toString)
 
@@ -32,7 +33,7 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
     behave like currencyField(
       form,
       fieldName,
-      nonNumericError     = FormError(fieldName, "monthlyreturns.costOfMaterials.error.nonNumeric"),
+      nonNumericError = FormError(fieldName, "monthlyreturns.costOfMaterials.error.nonNumeric"),
       invalidNumericError = FormError(fieldName, "monthlyreturns.costOfMaterials.error.invalidNumeric")
     )
 

@@ -29,6 +29,6 @@ class CostOfMaterialsFormProvider @Inject() extends Mappings {
         "monthlyreturns.costOfMaterials.error.invalidNumeric",
         "monthlyreturns.costOfMaterials.error.nonNumeric"
       )
-      .verifying(maximumCurrency(Int.MaxValue, "costOfMaterials.error.aboveMaximum"))
+        .verifying(maximumCurrency(BigDecimal("99999999.00"), "monthlyreturns.costOfMaterials.error.aboveMaximum"))
     )
 }

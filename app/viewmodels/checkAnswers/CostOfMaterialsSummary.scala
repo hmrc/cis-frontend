@@ -25,19 +25,17 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object CostOfMaterialsSummary  {
+object CostOfMaterialsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(CostOfMaterialsPage).map {
-      answer =>
-
-        SummaryListRowViewModel(
-          key     = "monthlyreturns.costOfMaterials.checkYourAnswersLabel",
-          value   = ValueViewModel(currencyFormat(answer)),
-          actions = Seq(
-            ActionItemViewModel("site.change", routes.CostOfMaterialsController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("monthlyreturns.costOfMaterials.change.hidden"))
-          )
+    answers.get(CostOfMaterialsPage).map { answer =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.costOfMaterials.checkYourAnswersLabel",
+        value = ValueViewModel(currencyFormat(answer)),
+        actions = Seq(
+          ActionItemViewModel("site.change", routes.CostOfMaterialsController.onPageLoad(CheckMode).url)
+            .withVisuallyHiddenText(messages("monthlyreturns.costOfMaterials.change.hidden"))
         )
+      )
     }
 }

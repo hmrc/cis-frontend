@@ -30,43 +30,48 @@ import views.html.CostOfMaterialsView
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CostOfMaterialsController @Inject()(
-                                        override val messagesApi: MessagesApi,
-                                        sessionRepository: SessionRepository,
-                                        navigator: Navigator,
-                                        identify: IdentifierAction,
-                                        getData: DataRetrievalAction,
-                                        requireData: DataRequiredAction,
-                                        formProvider: CostOfMaterialsFormProvider,
-                                        val controllerComponents: MessagesControllerComponents,
-                                        view: CostOfMaterialsView
-                                      )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+class CostOfMaterialsController @Inject() (
+  override val messagesApi: MessagesApi,
+  sessionRepository: SessionRepository,
+  navigator: Navigator,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  formProvider: CostOfMaterialsFormProvider,
+  val controllerComponents: MessagesControllerComponents,
+  view: CostOfMaterialsView
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport {
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(CostOfMaterialsPage) match {
-        case None => form
-        case Some(value) => form.fill(value)
-      }
+    val preparedForm = request.userAnswers.get(CostOfMaterialsPage) match {
+      case None        => form
+      case Some(value) => form.fill(value)
+    }
 
-      Ok(view(preparedForm, mode))
+    val companyName = "TyneWear Ltd"
+
+    Ok(view(preparedForm, mode, companyName))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(CostOfMaterialsPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(CostOfMaterialsPage, mode, updatedAnswers))
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => {
+            val companyName = "TyneWear Ltd"
+            Future.successful(BadRequest(view(formWithErrors, mode, companyName)))
+          },
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(CostOfMaterialsPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(CostOfMaterialsPage, mode, updatedAnswers))
+        )
   }
 }

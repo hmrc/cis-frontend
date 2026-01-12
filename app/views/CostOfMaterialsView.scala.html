@@ -15,6 +15,7 @@
  *@
 
 @import viewmodels.InputWidth._
+@import viewmodels.LabelSize
 
 @this(
     layout: templates.Layout,
@@ -24,10 +25,9 @@
     govukButton: GovukButton
 )
 
-<!--TODO: MOVE FILES INTO THE monthlyreturns folder-->
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, companyName: String)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("monthlyreturns.costOfMaterials.title"))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.costOfMaterials.title", companyName))) {
 
     @formHelper(action = routes.CostOfMaterialsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
@@ -38,10 +38,11 @@
         @govukInput(
             InputViewModel(
                 field = form("value"),
-                label = LabelViewModel(messages("monthlyreturns.costOfMaterials.heading")).asPageHeading()
+                label = LabelViewModel(messages("monthlyreturns.costOfMaterials.heading", companyName)).asPageHeading(LabelSize.Large)
             )
             .withPrefix(PrefixOrSuffix(content = "£"))
             .withWidth(Fixed10)
+            .withHint(HintViewModel(content = Text(messages("monthlyreturns.costOfMaterials.hint"))))
         )
 
         @govukButton(
