@@ -24,37 +24,18 @@
     h1: H1,
     paragraph: Paragraph,
     caption: Caption,
-    link: Link
+    link: Link,
+    customSummaryList: CustomSummaryList
 )
 
 @(schemeRef: String, periodEnding: String, selectedSubcontractors: Seq[String])(implicit request: Request[_], messages: Messages)
 
-@rows = @{
-    selectedSubcontractors.map { subcontractor =>
-
-    SummaryListRow(
-        key = Key(content = Text(subcontractor)),
-        actions = Some(Actions(items = Seq(
-                ActionItem(
-                    href = "#",
-                    content = Text(messages("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link")),
-                    visuallyHiddenText = Some(subcontractor)
-                ),
-                ActionItem(
-                    href = "#",
-                    content = Text(messages("monthlyreturns.subcontractorsPaidThisMonth.table.remove.link")),
-                    visuallyHiddenText = Some(subcontractor)
-                ),
-            )))
-        )
-    }
-}
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.subcontractorsPaidThisMonth.title"))) {
 
     @caption(schemeRef)
     @caption(periodEnding)
-    @h1(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))
+    @h1(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))SubcontractorsPaidThisMonthControllerSpec
 
     @paragraph(
         message = "monthlyreturns.subcontractorsPaidThisMonth.p1",
@@ -62,7 +43,13 @@
     )
     @paragraph(messages("monthlyreturns.subcontractorsPaidThisMonth.p2"))
 
-    @govukSummaryList(SummaryList(rows = rows))
+    @customSummaryList(
+        selectedSubcontractors,
+        Seq(
+            ("#", messages("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link")),
+            ("#", messages("monthlyreturns.subcontractorsPaidThisMonth.table.remove.link"))
+        )
+    )
 
     @link("monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link", "#")
 }

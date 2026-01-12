@@ -28,14 +28,18 @@ import views.html.monthlyreturns.SubcontractorsPaidThisMonthView
 class SubcontractorsPaidThisMonthViewSpec extends SpecBase {
 
   "SubcontractorsPaidThisMonthView" - {
-    "Must render the page with the right header, paragraphs, links and table content" in new Setup {
+    "must render the page with the right header, paragraphs, links and table content" in new Setup {
       val html: HtmlFormat.Appendable = view(schemeRef, periodEnding, selectedSubcontractors)
       val doc: Document               = Jsoup.parse(html.body)
 
-      doc.title                                 must include(messages("monthlyreturns.subcontractorsPaidThisMonth.title"))
-      doc.select("h1").text                     must include(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))
-      doc.select("p").text                      must include(messages("monthlyreturns.subcontractorsPaidThisMonth.p1"))
-      doc.select("p").text                      must include(messages("monthlyreturns.subcontractorsPaidThisMonth.p2"))
+      doc.title             must include(messages("monthlyreturns.subcontractorsPaidThisMonth.title"))
+      doc.select("h1").text must include(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))
+
+      doc.select("p").text must include(
+        messages("monthlyreturns.subcontractorsPaidThisMonth.p1", selectedSubcontractors.size)
+      )
+      doc.select("p").text must include(messages("monthlyreturns.subcontractorsPaidThisMonth.p2"))
+
       doc.getElementsByClass("govuk-link").text must include(
         messages("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link")
       )
