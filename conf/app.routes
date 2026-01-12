@@ -77,3 +77,8 @@ GET        /monthly-return/date-confirm-payments                controllers.mont
 POST       /monthly-return/date-confirm-payments                controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /totalTaxDeducted                                    controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = NormalMode)
+POST       /totalTaxDeducted                                    controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = NormalMode)
+GET        /changeTotalTaxDeducted                              controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode)
+POST       /changeTotalTaxDeducted                              controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode)

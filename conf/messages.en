@@ -326,3 +326,12 @@ monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification n
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
+
+totalTaxDeducted.title = TotalTaxDeducted
+totalTaxDeducted.heading = TotalTaxDeducted
+totalTaxDeducted.checkYourAnswersLabel = TotalTaxDeducted
+totalTaxDeducted.error.nonNumeric = Enter your totalTaxDeducted using numbers
+totalTaxDeducted.error.required = Enter your totalTaxDeducted
+totalTaxDeducted.error.wholeNumber = Enter your totalTaxDeducted using whole numbers
+totalTaxDeducted.error.outOfRange = TotalTaxDeducted must be between {0} and {1}
+totalTaxDeducted.change.hidden = TotalTaxDeducted
