@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
-import controllers.actions._
-import forms.CostOfMaterialsFormProvider
-import javax.inject.Inject
+import controllers.actions.*
+import forms.monthlyreturns.CostOfMaterialsFormProvider
 import models.Mode
 import navigation.Navigator
-import pages.CostOfMaterialsPage
+import pages.monthlyreturns.CostOfMaterialsPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.CostOfMaterialsView
+import views.html.monthlyreturns.CostOfMaterialsView
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class CostOfMaterialsController @Inject() (

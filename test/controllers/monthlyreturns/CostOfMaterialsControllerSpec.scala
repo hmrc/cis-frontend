@@ -1,17 +1,18 @@
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.CostOfMaterialsFormProvider
+import controllers.routes
+import forms.monthlyreturns.CostOfMaterialsFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.CostOfMaterialsPage
+import pages.monthlyreturns.CostOfMaterialsPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.CostOfMaterialsView
 
@@ -25,6 +26,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val validAnswer = 0
+  val companyName = "TyneWear Ltd"
 
   lazy val costOfMaterialsRoute = routes.CostOfMaterialsController.onPageLoad(NormalMode).url
 
@@ -42,7 +44,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[CostOfMaterialsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, companyName)(request, messages(application)).toString
       }
     }
 
@@ -60,7 +62,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName)(
           request,
           messages(application)
         ).toString
@@ -109,7 +111,10 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 

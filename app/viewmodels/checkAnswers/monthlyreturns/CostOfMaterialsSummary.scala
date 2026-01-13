@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
-import utils.CurrencyFormatter.currencyFormat
 import controllers.routes
 import models.{CheckMode, UserAnswers}
-import pages.CostOfMaterialsPage
+import pages.monthlyreturns.CostOfMaterialsPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import viewmodels.govuk.summarylist._
-import viewmodels.implicits._
+import utils.CurrencyFormatter.currencyFormat
+import viewmodels.checkAnswers.monthlyreturns
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
 object CostOfMaterialsSummary {
 
@@ -33,7 +34,10 @@ object CostOfMaterialsSummary {
         key = "monthlyreturns.costOfMaterials.checkYourAnswersLabel",
         value = ValueViewModel(currencyFormat(answer)),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.CostOfMaterialsController.onPageLoad(CheckMode).url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.costOfMaterials.change.hidden"))
         )
       )

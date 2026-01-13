@@ -1,7 +1,8 @@
-package forms
+package forms.monthlyreturns
 
-import config.CurrencyFormatter.currencyFormat
+import utils.CurrencyFormatter.currencyFormat
 import forms.behaviours.CurrencyFieldBehaviours
+import forms.monthlyreturns.CostOfMaterialsFormProvider
 import org.scalacheck.Gen
 import play.api.data.FormError
 
@@ -15,8 +16,8 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
 
     val fieldName = "value"
 
-    val minimum = 0
-    val maximum = Int.MaxValue
+    val minimum = BigDecimal("0")
+    val maximum = BigDecimal("99999999.00")
 
     val validDataGenerator =
       Gen

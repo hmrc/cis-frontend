@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package forms
+package pages.monthlyreturns
 
-import forms.mappings.Mappings
-import javax.inject.Inject
-import play.api.data.Form
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-class CostOfMaterialsFormProvider @Inject() extends Mappings {
+case object CostOfMaterialsPage extends QuestionPage[BigDecimal] {
 
-  def apply(): Form[BigDecimal] =
-    Form(
-      "value" -> currency(
-        "monthlyreturns.costOfMaterials.error.required",
-        "monthlyreturns.costOfMaterials.error.invalidNumeric",
-        "monthlyreturns.costOfMaterials.error.nonNumeric"
-      )
-        .verifying(maximumCurrency(BigDecimal("99999999.00"), "monthlyreturns.costOfMaterials.error.aboveMaximum"))
-    )
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "costOfMaterials"
 }
