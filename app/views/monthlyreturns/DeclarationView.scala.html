@@ -37,14 +37,14 @@
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
-monthlyreturns.declaration.paragraph  }
+        }
 
         @fieldSet(
             legend = "monthlyreturns.declaration.heading",
             asHeading = true,
             describedBy = None
         ) {
-            @paragraph(messages("", formattedDate))
+            @paragraph(messages("monthlyreturns.declaration.paragraph", formattedDate))
             
             @govukWarningText(
                 WarningTextViewModel(
