@@ -118,14 +118,20 @@ trait Constraints {
       }
     }
 
-  protected def maximumCurrency(maximum: BigDecimal, errorKey: String)(implicit
-    ev: Ordering[BigDecimal]
-  ): Constraint[BigDecimal] =
+  protected def maximumCurrency(
+    maximum: BigDecimal,
+    errorKey: String,
+    includeFormattedValue: Boolean = true
+  )(implicit ev: Ordering[BigDecimal]): Constraint[BigDecimal] =
     Constraint { input =>
       if (input <= maximum) {
         Valid
       } else {
-        Invalid(errorKey, CurrencyFormatter.currencyFormat(maximum))
+        if (includeFormattedValue) {
+          Invalid(errorKey, CurrencyFormatter.currencyFormat(maximum))
+        } else {
+          Invalid(errorKey)
+        }
       }
     }
 }
