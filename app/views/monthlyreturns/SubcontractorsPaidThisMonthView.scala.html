@@ -15,12 +15,9 @@
  *@
 
 @import views.html.components._
-@import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryList
 
 @this(
     layout: templates.Layout,
-    govukButton: GovukButton,
-    govukSummaryList : GovukSummaryList,
     h1: H1,
     paragraph: Paragraph,
     caption: Caption,
@@ -35,7 +32,7 @@
 
     @caption(schemeRef)
     @caption(periodEnding)
-    @h1(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))SubcontractorsPaidThisMonthControllerSpec
+    @h1(messages("monthlyreturns.subcontractorsPaidThisMonth.heading"))
 
     @paragraph(
         message = "monthlyreturns.subcontractorsPaidThisMonth.p1",
