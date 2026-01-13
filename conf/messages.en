@@ -333,6 +333,8 @@ monthlyreturns.subcontractorsPaidThisMonth.p1 = The {0} subcontractors you added
 monthlyreturns.subcontractorsPaidThisMonth.p2 = Select ‘Add details’ to add payment details for each subcontractor.
 monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Add details
 monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = Remove
+monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden = for %s
+monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden = %s from this return
 monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add another subcontractor
 
 paymentDetails.title = Total payments made to {0}

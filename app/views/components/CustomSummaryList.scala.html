@@ -16,22 +16,22 @@
 
 @this()
 
-@(items: Seq[String], links: Seq[(String, String)])(implicit messages: Messages)
+@(items: Seq[String],  links: Seq[(String, String, String)])(implicit messages: Messages)
 
 <dl class="govuk-summary-list hmrc-list-with-actions hmrc-list-with-actions--short">
     @for(item <- items) {
     <div class="govuk-summary-list__row">
-        <dt class="govuk-summary-list__key govuk-!-font-weight-bold hmrc-summary-list__key">
+        <dt id="name-label" class="govuk-summary-list__key govuk-!-font-weight-bold hmrc-summary-list__key">
             @item
         </dt>
         <dd class="govuk-summary-list__actions hmrc-summary-list__actions">
             @if(links.nonEmpty) {
             <ul class="govuk-summary-list__actions-list">
-                @for((url, linkText) <- links) {
+                @for((url, linkText, hiddenFormat) <- links) {
                 <li class="govuk-summary-list__actions-list-item">
                     <a class="govuk-link" href="@url">
-                        <span class="item" aria-hidden="true">@linkText</span>
-                        <span class="govuk-visually-hidden">Link to @linkText</span>
+                        <span class="link-text" aria-hidden="true">@linkText</span>
+                        <span class="govuk-visually-hidden">@hiddenFormat.format(item)</span>
                     </a>
                 </li>
                 }

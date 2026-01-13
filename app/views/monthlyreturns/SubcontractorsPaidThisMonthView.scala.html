@@ -43,8 +43,16 @@
     @customSummaryList(
         selectedSubcontractors,
         Seq(
-            ("#", messages("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link")),
-            ("#", messages("monthlyreturns.subcontractorsPaidThisMonth.table.remove.link"))
+            (
+                "#",
+                messages("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link"),
+                messages("monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden")
+            ),
+            (
+                "#",
+                messages("monthlyreturns.subcontractorsPaidThisMonth.table.remove.link"),
+                messages("monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden")
+            )
         )
     )
 

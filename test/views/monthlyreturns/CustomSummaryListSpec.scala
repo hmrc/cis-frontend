@@ -38,23 +38,22 @@ class CustomSummaryListSpec extends SpecBase {
     }
 
     "must render the correct links when provided" in new Setup {
-      val links          = Seq(("http://example.com", "More Info"))
-      val subcontractors = Seq("Mike Jordan")
-      val html           = customSummaryList(subcontractors, links)
-      val doc            = Jsoup.parse(html.body)
+      val links          = Seq(
+        ("http://example.com", "More Info", "for %s")
+      )
+      val subcontractors = Seq("TyneWear Ltd")
 
-      val actions = doc.select(".govuk-summary-list__actions-list-item")
-      actions.size mustBe 1
-      actions.get(0).select("a.govuk-link").attr("href") mustBe "http://example.com"
-      actions.get(0).select("span.govuk-visually-hidden").text mustBe "Link to More Info"
-    }
-
-    "must render no links when an empty list of links is provided" in new Setup {
-      val html = customSummaryList(selectedSubcontractors, Seq.empty)
+      val html = customSummaryList(subcontractors, links)
       val doc  = Jsoup.parse(html.body)
 
       val actions = doc.select(".govuk-summary-list__actions-list-item")
-      actions.size mustBe 0
+      actions.size mustBe 1
+
+      val link = actions.get(0).select("a.govuk-link")
+      link.attr("href") mustBe "http://example.com"
+      link.select("span.link-text").text mustBe "More Info"
+      link.select("span.govuk-visually-hidden").text.trim mustBe
+        "for TyneWear Ltd"
     }
 
     "must render with the correct CSS classes" in new Setup {
