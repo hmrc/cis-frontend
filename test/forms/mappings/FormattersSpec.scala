@@ -172,7 +172,7 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     val formatter        = seqFormatter[Int](using baseIntFormatter)
 
     "must bind a valid sequence" in {
-      val data = Map(
+      val data   = Map(
         "items.0" -> "1",
         "items.1" -> "2",
         "items.2" -> "3"
@@ -182,7 +182,7 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must bind a single item" in {
-      val data = Map("items.0" -> "42")
+      val data   = Map("items.0" -> "42")
       val result = formatter.bind("items", data)
       result mustBe Right(Seq(42))
     }
@@ -193,7 +193,7 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must bind items in correct order" in {
-      val data = Map(
+      val data   = Map(
         "items.2" -> "30",
         "items.0" -> "10",
         "items.1" -> "20"
@@ -203,7 +203,7 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must not bind when items have errors" in {
-      val data = Map(
+      val data   = Map(
         "items.0" -> "1.5",
         "items.1" -> "abc"
       )
@@ -213,7 +213,7 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must ignore keys that don't match the pattern" in {
-      val data = Map(
+      val data   = Map(
         "items.0" -> "1",
         "other.0" -> "2",
         "items.1" -> "3"
@@ -400,7 +400,8 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must use custom error keys with args" in {
-      val customFormatter = currencyFormatter("custom.required", "custom.invalidNumeric", "custom.nonNumeric", Seq("arg1"))
+      val customFormatter =
+        currencyFormatter("custom.required", "custom.invalidNumeric", "custom.nonNumeric", Seq("arg1"))
       val result          = customFormatter.bind("key", Map("key" -> "123.456"))
       result mustBe Left(Seq(FormError("key", "custom.invalidNumeric", Seq("arg1"))))
     }
@@ -420,19 +421,34 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
       result mustBe Right(BigDecimal(123))
     }
 
-    "must bind a valid decimal with 1 decimal place" in {
+    "must not bind a decimal with non-zero decimal part" in {
       val result = formatter.bind("key", Map("key" -> "123.4"))
-      result mustBe Right(BigDecimal("123.4"))
+      result mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
-    "must bind a valid decimal with 2 decimal places" in {
+    "must not bind a decimal with non-zero decimal part (2 places)" in {
       val result = formatter.bind("key", Map("key" -> "123.45"))
-      result mustBe Right(BigDecimal("123.45"))
+      result mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
-    "must bind a number with commas" in {
+    "must bind zero with decimal notation" in {
+      val result = formatter.bind("key", Map("key" -> "0.00"))
+      result mustBe Right(BigDecimal("0.00"))
+    }
+
+    "must bind whole number with zero decimal notation" in {
+      val result = formatter.bind("key", Map("key" -> "123.00"))
+      result mustBe Right(BigDecimal("123.00"))
+    }
+
+    "must bind a number with commas (whole number)" in {
+      val result = formatter.bind("key", Map("key" -> "1,234"))
+      result mustBe Right(BigDecimal("1234"))
+    }
+
+    "must not bind a number with commas and non-zero decimals" in {
       val result = formatter.bind("key", Map("key" -> "1,234.56"))
-      result mustBe Right(BigDecimal("1234.56"))
+      result mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
     "must bind a number without decimal point" in {
@@ -481,14 +497,15 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must use custom error keys with args" in {
-      val customFormatter = paymentDetailsCurrencyFormatter("custom.required", "custom.invalid", "custom.maxLength", Seq("arg1"))
+      val customFormatter =
+        paymentDetailsCurrencyFormatter("custom.required", "custom.invalid", "custom.maxLength", Seq("arg1"))
       val result          = customFormatter.bind("key", Map("key" -> "abc"))
       result mustBe Left(Seq(FormError("key", "custom.invalid", Seq("arg1"))))
     }
 
     "must unbind a valid value" in {
-      val result = formatter.unbind("key", BigDecimal("123.45"))
-      result mustEqual Map("key" -> "123.45")
+      val result = formatter.unbind("key", BigDecimal("123"))
+      result mustEqual Map("key" -> "123")
     }
   }
 }

@@ -36,7 +36,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
     val validDataGenerator =
       Gen
         .choose[BigDecimal](minimum, maximum)
-        .map(_.setScale(2, RoundingMode.HALF_UP))
+        .map(_.setScale(0, RoundingMode.HALF_UP))
         .map(_.toString)
 
     behave like fieldThatBindsValidData(
@@ -51,9 +51,9 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
     }
 
     "must bind when the value is exactly 13 characters" in {
-      val boundForm = form.bind(Map(fieldName -> "99999999.00"))
+      val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999.00")
+      boundForm.get mustBe BigDecimal("99999999")
     }
 
     "must not bind when the value does not match regex pattern" in {
@@ -75,7 +75,22 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       }
     }
 
-    "must bind valid values matching regex pattern" in {
+    "must not bind when the value has non-zero decimal part" in {
+      Seq(
+        ("100.5", "non-zero decimal part"),
+        ("100.50", "non-zero decimal part"),
+        ("100.01", "non-zero decimal part"),
+        ("1,234,567.89", "non-zero decimal part"),
+        ("50.99", "non-zero decimal part")
+      ).foreach { case (invalidValue, description) =>
+        withClue(s"Value '$invalidValue' ($description) should be invalid") {
+          val result = form.bind(Map(fieldName -> invalidValue)).apply(fieldName)
+          result.errors must contain(FormError(fieldName, "paymentDetails.error.invalid"))
+        }
+      }
+    }
+
+    "must bind valid values (whole numbers only)" in {
       val validValues = Seq(
         "100",
         "100.00",
@@ -83,13 +98,12 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
         "100.",
         "1000,000",
         "1,000,000",
+        "99999999",
         "99999999.00",
         "0",
         "0.00",
         "0.0",
-        "0.",
-        "100.5",
-        "100.50"
+        "0."
       )
       validValues.foreach { validValue =>
         val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
@@ -106,34 +120,32 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
     }
 
     "must bind exactly at maximum value boundary" in {
-      val boundForm = form.bind(Map(fieldName -> "99999999.00"))
+      val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999.00")
+      boundForm.get mustBe BigDecimal("99999999")
     }
 
     "must not bind when value exceeds maximum value" in {
-      val boundForm = form.bind(Map(fieldName -> "99999999.01"))
+      val boundForm = form.bind(Map(fieldName -> "100000000"))
       boundForm.errors must contain(FormError(fieldName, "paymentDetails.error.maxValue"))
     }
 
     "must correctly parse values with commas" in {
-      val boundForm = form.bind(Map(fieldName -> "1,234,567.89"))
+      val boundForm = form.bind(Map(fieldName -> "1,234,567"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("1234567.89")
+      boundForm.get mustBe BigDecimal("1234567")
     }
 
     "must correctly unbind values" in {
-      val value  = BigDecimal("12345.67")
+      val value  = BigDecimal("12345")
       val result = form.fill(value)
-      result.data.get(fieldName) mustBe Some("12345.67")
+      result.data.get(fieldName) mustBe Some("12345")
     }
 
-    behave like currencyFieldWithMaximum(
-      form,
-      fieldName,
-      maximum,
-      FormError(fieldName, "paymentDetails.error.maxValue")
-    )
+    "must not bind when the value is greater than the maximum" in {
+      val result = form.bind(Map(fieldName -> "100000000")).apply(fieldName)
+      result.errors must contain(FormError(fieldName, "paymentDetails.error.maxValue"))
+    }
 
     behave like mandatoryField(
       form,
