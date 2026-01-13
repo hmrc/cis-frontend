@@ -334,3 +334,17 @@ monthlyreturns.subcontractorsPaidThisMonth.p2 = Select ‘Add details’ to add 
 monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Add details
 monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = Remove
 monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add another subcontractor
+
+paymentDetails.title = Total payments made to {0}
+paymentDetails.heading = Total payments made to {0}
+paymentDetails.hint = The gross amount paid before any deductions, excluding VAT. Enter pounds and pence, like £300.00, £450.00, £1,200.00
+paymentDetails.checkYourAnswersLabel = Payment Details
+paymentDetails.error.nonNumeric = Enter your paymentDetails using numbers and a decimal point
+paymentDetails.error.required = Enter total payments made
+paymentDetails.error.invalidNumeric = Enter your paymentDetails using up to two decimal places
+paymentDetails.error.aboveMaximum = PaymentDetails must be {0} or less
+paymentDetails.error.belowMinimum = PaymentDetails must be {0} or more
+paymentDetails.error.invalid = Your entry for ‘Total payments made’ is invalid. Please amend.
+paymentDetails.error.maxLength = Your entry for ‘Total payments made’ exceeds the maximum allowable value for this field. Please amend.
+paymentDetails.error.maxValue = Your entry for ‘Total payments made’ is invalid. Please amend.
+paymentDetails.change.hidden = Payment Details
