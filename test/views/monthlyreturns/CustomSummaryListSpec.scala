@@ -39,7 +39,7 @@ class CustomSummaryListSpec extends SpecBase {
 
     "must render the correct links when provided" in new Setup {
       val links          = Seq(
-        ("http://example.com", "More Info", "for %s")
+        ("http://example.com", "More Info", "for TyneWear Ltd")
       )
       val subcontractors = Seq("TyneWear Ltd")
 
