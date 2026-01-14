@@ -200,6 +200,13 @@ trait Formatters {
                 .either(BigDecimal(cleaned))
                 .left
                 .map(_ => Seq(FormError(key, invalidKey, args)))
+                .flatMap { value =>
+                  if (value % 1 != 0) {
+                    Left(Seq(FormError(key, invalidKey, args)))
+                  } else {
+                    Right(value)
+                  }
+                }
             }
           }
 

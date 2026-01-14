@@ -34,7 +34,7 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
       val html        = view(form, NormalMode, companyName)
       val doc         = Jsoup.parse(html.body)
 
-      doc.title must include(messages("paymentDetails.title", companyName))
+      doc.title             must include(messages("paymentDetails.title", companyName))
       doc.select("h1").text must include(messages("paymentDetails.heading", companyName))
 
       doc.select("input[type=text]").size() mustBe 1
@@ -46,10 +46,10 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
     }
 
     "must show error summary and messages when form has errors" in new Setup {
-      val companyName     = "Test Company Ltd"
-      val boundWithError  = form.bind(Map("value" -> ""))
-      val html            = view(boundWithError, NormalMode, companyName)
-      val doc             = Jsoup.parse(html.body)
+      val companyName    = "Test Company Ltd"
+      val boundWithError = form.bind(Map("value" -> ""))
+      val html           = view(boundWithError, NormalMode, companyName)
+      val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
 
@@ -64,14 +64,14 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
       val html1        = view(form, NormalMode, companyName1)
       val doc1         = Jsoup.parse(html1.body)
 
-      doc1.title must include(companyName1)
+      doc1.title             must include(companyName1)
       doc1.select("h1").text must include(companyName1)
 
       val companyName2 = "Company B"
       val html2        = view(form, NormalMode, companyName2)
       val doc2         = Jsoup.parse(html2.body)
 
-      doc2.title must include(companyName2)
+      doc2.title             must include(companyName2)
       doc2.select("h1").text must include(companyName2)
     }
 
