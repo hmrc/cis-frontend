@@ -83,6 +83,14 @@ trait Mappings extends Formatters with Constraints {
   ): FieldMapping[BigDecimal] =
     of(currencyFormatter(requiredKey, invalidNumeric, nonNumericKey, args))
 
+  protected def paymentDetailsCurrency(
+    requiredKey: String = "error.required",
+    invalidKey: String = "error.invalid",
+    maxLengthKey: String = "error.maxLength",
+    args: Seq[String] = Seq.empty
+  ): FieldMapping[BigDecimal] =
+    of(paymentDetailsCurrencyFormatter(requiredKey, invalidKey, maxLengthKey, args))
+
   protected def monthYearPaymentDate(
     invalidKey: String,
     twoRequiredKey: String,
