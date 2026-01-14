@@ -82,3 +82,9 @@ GET        /monthly-return/unverified-subcontractors            controllers.mont
 POST       /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode)
+
