@@ -327,6 +327,16 @@ monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 
+monthlyreturns.subcontractorsPaidThisMonth.title = Subcontractors you paid this month
+monthlyreturns.subcontractorsPaidThisMonth.heading = Subcontractors you paid this month
+monthlyreturns.subcontractorsPaidThisMonth.p1 = The {0} subcontractors you added to this monthly return are listed below.
+monthlyreturns.subcontractorsPaidThisMonth.p2 = Select ‘Add details’ to add payment details for each subcontractor.
+monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Add details
+monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = Remove
+monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden = for {0}
+monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden = {0} from this return
+monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add another subcontractor
+
 paymentDetails.title = Total payments made to {0}
 paymentDetails.heading = Total payments made to {0}
 paymentDetails.hint = The gross amount paid before any deductions, excluding VAT. Enter pounds and pence, like £300.00, £450.00, £1,200.00
