@@ -25,11 +25,17 @@ class CostOfMaterialsFormProvider @Inject() extends Mappings {
 
   def apply(): Form[BigDecimal] =
     Form(
-      "value" -> currency(
+      "value" -> paymentDetailsCurrency(
         "monthlyreturns.costOfMaterials.error.required",
-        "monthlyreturns.costOfMaterials.error.invalidNumeric",
-        "monthlyreturns.costOfMaterials.error.nonNumeric"
+        "monthlyreturns.costOfMaterials.error.invalid",
+        "monthlyreturns.costOfMaterials.error.maxLength"
       )
-        .verifying(maximumCurrency(BigDecimal("99999999.00"), "monthlyreturns.costOfMaterials.error.aboveMaximum"))
+        .verifying(
+          maximumCurrency(
+            BigDecimal("99999999.00"),
+            "monthlyreturns.costOfMaterials.error.maxValue",
+            includeFormattedValue = false
+          )
+        )
     )
 }
