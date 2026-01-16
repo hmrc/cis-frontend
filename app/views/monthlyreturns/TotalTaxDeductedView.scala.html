@@ -15,6 +15,7 @@
  *@
 
 @import viewmodels.InputWidth._
+@import viewmodels.LabelSize
 
 @this(
     layout: templates.Layout,
@@ -37,7 +38,7 @@
         @govukInput(
             InputViewModel(
                 field = form("value"),
-                label = LabelViewModel(messages("totalTaxDeducted.heading", subcontractorName)).asPageHeading()
+                label = LabelViewModel(messages("totalTaxDeducted.heading", subcontractorName)).withCssClass("govuk-label--l")
             )
                 .withHint(HintViewModel(messages("totalTaxDeducted.hintText")))
                 .asNumeric()
