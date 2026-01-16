@@ -68,9 +68,11 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
     }
 
     "must bind valid year at maximum boundary" in {
-      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2024"))
-      result.errors mustBe empty
-      result.value.value mustBe LocalDate.of(2024, 6, 1)
+      val today          = LocalDate.now()
+      val maxAllowedDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+      val maxYear        = maxAllowedDate.getYear + 1
+      val result         = form.bind(Map("taxMonth" -> "6", "taxYear" -> maxYear.toString))
+      result.errors.filter(_.message == "dateConfirmPayments.taxYear.error.range") mustBe empty
     }
 
     "must fail when year is missing" in {
@@ -89,7 +91,10 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
     }
 
     "must fail when year is above maximum range" in {
-      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "3001"))
+      val today          = LocalDate.now()
+      val maxAllowedDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+      val maxYear        = maxAllowedDate.getYear + 1
+      val result         = form.bind(Map("taxMonth" -> "6", "taxYear" -> (maxYear + 1).toString))
       result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
     }
   }

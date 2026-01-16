@@ -34,7 +34,6 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
   private val MinMonth: Int        = 1
   private val MaxMonth: Int        = 12
   private val MinYear: Int         = 2007
-  private val MaxYear: Int         = 3000
   private val FirstDayOfMonth: Int = 1
   private val TaxPeriodEndDay: Int = 5
 
@@ -42,6 +41,10 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
     val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(appConfig.earliestTaxPeriodEndDate)
     val formattedDateInSeq                  =
       earliestTaxPeriodEndDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)).split(" ").toSeq
+
+    val today          = LocalDate.now()
+    val maxAllowedDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+    val MaxYear        = maxAllowedDate.getYear + 1
 
     val earliestDateConstraint: Constraint[LocalDate] = Constraint { date =>
       if (
@@ -54,10 +57,8 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
     }
 
     val maxFutureDateConstraint: Constraint[LocalDate] = Constraint { date =>
-      val today            = LocalDate.now()
-      val maxDate          = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
       val taxPeriodEndDate = LocalDate.of(date.getYear, date.getMonthValue, TaxPeriodEndDay)
-      if (!YearMonth.from(taxPeriodEndDate).isAfter(YearMonth.from(maxDate))) {
+      if (!YearMonth.from(taxPeriodEndDate).isAfter(YearMonth.from(maxAllowedDate))) {
         Valid
       } else {
         Invalid("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
