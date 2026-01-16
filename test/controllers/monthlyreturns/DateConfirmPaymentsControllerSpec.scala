@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.{NormalMode, UserAnswers}
@@ -38,9 +39,12 @@ import scala.concurrent.Future
 
 class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
-  private implicit val messages: Messages = stubMessages()
+  private implicit val messages: Messages      = stubMessages()
+  val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
 
-  private val formProvider = new DateConfirmPaymentsFormProvider()
+  when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+
+  private val formProvider = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)
   private def form         = formProvider()
 
   def onwardRoute = Call("GET", "/foo")
