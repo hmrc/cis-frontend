@@ -84,3 +84,8 @@ GET        /monthly-return/payment-details                  controllers.monthlyr
 POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode)
