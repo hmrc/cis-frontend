@@ -17,16 +17,23 @@
 package forms.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import generators.Generators
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.when
 import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
 
 import java.time.LocalDate
 
-class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators {
+class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with MockitoSugar {
 
-  private implicit val messages: Messages = stubMessages()
-  private val form                        = new DateConfirmPaymentsFormProvider()()
+  private implicit val messages: Messages      = stubMessages()
+  val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
+
+  when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+
+  private val form = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)()
 
   ".taxMonth" - {
 
@@ -61,9 +68,9 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators {
     }
 
     "must bind valid year at maximum boundary" in {
-      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "3000"))
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2024"))
       result.errors mustBe empty
-      result.value.value mustBe LocalDate.of(3000, 6, 1)
+      result.value.value mustBe LocalDate.of(2024, 6, 1)
     }
 
     "must fail when year is missing" in {
@@ -84,6 +91,208 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators {
     "must fail when year is above maximum range" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "3001"))
       result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+    }
+  }
+
+  ".earliestTaxPeriodEndDate" - {
+
+    "must fail when date is before earliest tax period end date" in {
+      val result = form.bind(Map("taxMonth" -> "4", "taxYear" -> "2007"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
+      result.errors
+        .find(_.message == "dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
+        .value
+        .args mustEqual Seq("5", "May", "2007")
+    }
+
+    "must fail when date is in year before earliest tax period end date" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2006"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+    }
+
+    "must fail when date is January in year before earliest tax period end date" in {
+      val result = form.bind(Map("taxMonth" -> "1", "taxYear" -> "2006"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+    }
+
+    "must fail when date is December in year before earliest tax period end date" in {
+      val result = form.bind(Map("taxMonth" -> "12", "taxYear" -> "2006"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+    }
+
+    "must pass when date is equal to earliest tax period end date" in {
+      val result = form.bind(Map("taxMonth" -> "5", "taxYear" -> "2007"))
+      result.errors.filter(_.message == "dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate") mustBe empty
+    }
+
+    "must pass when date is after earliest tax period end date" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2007"))
+      result.errors.filter(_.message == "dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate") mustBe empty
+    }
+
+    "must pass when date is in a later year" in {
+      val result = form.bind(Map("taxMonth" -> "1", "taxYear" -> "2008"))
+      result.errors.filter(_.message == "dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate") mustBe empty
+    }
+
+    "must pass when date is many years later" in {
+      val result = form.bind(Map("taxMonth" -> "12", "taxYear" -> "2024"))
+      result.errors.filter(_.message == "dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate") mustBe empty
+    }
+  }
+
+  ".maxAllowedFutureReturnPeriod" - {
+
+    "must fail when date is more than 3 return periods ahead (when current day is 1-5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth <= 5) {
+        val futureDate = today.plusMonths(4)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
+      }
+    }
+
+    "must fail when date is more than 4 return periods ahead (when current day is > 5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth > 5) {
+        val futureDate = today.plusMonths(5)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
+      }
+    }
+
+    "must fail when date is exactly 4 months ahead (when current day is 1-5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth <= 5) {
+        val futureDate = today.plusMonths(4)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
+      }
+    }
+
+    "must fail when date is exactly 5 months ahead (when current day is > 5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth > 5) {
+        val futureDate = today.plusMonths(5)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
+      }
+    }
+
+    "must pass when date is exactly 3 months ahead (when current day is 1-5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth <= 5) {
+        val futureDate = today.plusMonths(3)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.filter(
+          _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+        ) mustBe empty
+      }
+    }
+
+    "must pass when date is exactly 4 months ahead (when current day is > 5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth > 5) {
+        val futureDate = today.plusMonths(4)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.filter(
+          _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+        ) mustBe empty
+      }
+    }
+
+    "must pass when date is within allowed future return periods (3 months when day is 1-5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth <= 5) {
+        val futureDate = today.plusMonths(3)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.filter(
+          _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+        ) mustBe empty
+      }
+    }
+
+    "must pass when date is within allowed future return periods (4 months when day is > 5)" in {
+      val today = LocalDate.now()
+      if (today.getDayOfMonth > 5) {
+        val futureDate = today.plusMonths(4)
+        val result     =
+          form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+        result.errors.filter(
+          _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+        ) mustBe empty
+      }
+    }
+
+    "must pass when date is in the past" in {
+      val pastDate = LocalDate.now().minusMonths(6)
+      val result   =
+        form.bind(Map("taxMonth" -> pastDate.getMonthValue.toString, "taxYear" -> pastDate.getYear.toString))
+      result.errors.filter(
+        _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+      ) mustBe empty
+    }
+
+    "must pass when date is current month" in {
+      val today  = LocalDate.now()
+      val result =
+        form.bind(Map("taxMonth" -> today.getMonthValue.toString, "taxYear" -> today.getYear.toString))
+      result.errors.filter(
+        _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+      ) mustBe empty
+    }
+
+    "must pass when date is 1 month ahead" in {
+      val futureDate = LocalDate.now().plusMonths(1)
+      val result     =
+        form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+      result.errors.filter(
+        _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+      ) mustBe empty
+    }
+
+    "must pass when date is 2 months ahead" in {
+      val futureDate = LocalDate.now().plusMonths(2)
+      val result     =
+        form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+      result.errors.filter(
+        _.message == "dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod"
+      ) mustBe empty
+    }
+  }
+
+  ".combinedValidations" - {
+
+    "must pass when all validations pass" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2024"))
+      result.errors mustBe empty
+      result.value.value mustBe LocalDate.of(2024, 6, 1)
+    }
+
+    "must fail with earliest date error when date is before earliest and within year range" in {
+      val result = form.bind(Map("taxMonth" -> "4", "taxYear" -> "2007"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
+      result.errors.map(_.message) must not contain "dateConfirmPayments.taxYear.error.range"
+    }
+
+    "must fail with year range error when year is before earliest date year" in {
+      val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2006"))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+    }
+
+    "must fail with max future date error when date is too far in future" in {
+      val today      = LocalDate.now()
+      val futureDate = if (today.getDayOfMonth <= 5) today.plusMonths(4) else today.plusMonths(5)
+      val result     =
+        form.bind(Map("taxMonth" -> futureDate.getMonthValue.toString, "taxYear" -> futureDate.getYear.toString))
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
     }
   }
 }

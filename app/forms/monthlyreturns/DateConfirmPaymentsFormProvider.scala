@@ -16,23 +16,54 @@
 
 package forms.monthlyreturns
 
+import config.FrontendAppConfig
 import forms.mappings.Mappings
 import play.api.data.Form
 import play.api.data.Forms.mapping
+import play.api.data.validation.{Constraint, Invalid, Valid}
 import play.api.i18n.Messages
 
-import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, YearMonth}
+import java.util.Locale
 import javax.inject.Inject
+import scala.math.Ordering.Implicits.infixOrderingOps
 
-class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
+class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) extends Mappings {
 
   private val MinMonth: Int        = 1
   private val MaxMonth: Int        = 12
   private val MinYear: Int         = 2007
   private val MaxYear: Int         = 3000
   private val FirstDayOfMonth: Int = 1
+  private val TaxPeriodEndDay: Int = 5
 
-  def apply()(implicit messages: Messages): Form[LocalDate] =
+  def apply()(implicit messages: Messages): Form[LocalDate] = {
+    val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(appConfig.earliestTaxPeriodEndDate)
+    val formattedDateInSeq                  =
+      earliestTaxPeriodEndDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)).split(" ").toSeq
+
+    val earliestDateConstraint: Constraint[LocalDate] = Constraint { date =>
+      if (
+        (date.getYear, date.getMonthValue) >= (earliestTaxPeriodEndDate.getYear, earliestTaxPeriodEndDate.getMonthValue)
+      ) {
+        Valid
+      } else {
+        Invalid("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate", formattedDateInSeq: _*)
+      }
+    }
+
+    val maxFutureDateConstraint: Constraint[LocalDate] = Constraint { date =>
+      val today            = LocalDate.now()
+      val maxDate          = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+      val taxPeriodEndDate = LocalDate.of(date.getYear, date.getMonthValue, TaxPeriodEndDay)
+      if (!YearMonth.from(taxPeriodEndDate).isAfter(YearMonth.from(maxDate))) {
+        Valid
+      } else {
+        Invalid("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
+      }
+    }
+
     Form(
       mapping(
         "taxMonth" -> int(
@@ -46,5 +77,8 @@ class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
           nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
         ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= MinYear && year <= MaxYear)
       )((month, year) => LocalDate.of(year, month, FirstDayOfMonth))(date => Some((date.getMonthValue, date.getYear)))
+        .verifying(earliestDateConstraint)
+        .verifying(maxFutureDateConstraint)
     )
+  }
 }
