@@ -31,6 +31,7 @@ import play.api.mvc.{AnyContentAsEmpty, AnyContentAsFormUrlEncoded, Call}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{LocalDate, ZoneOffset}
@@ -97,17 +98,25 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to the next page when valid data is submitted" in {
+    "must redirect to the next page when valid data is submitted and no duplicate exists" in {
 
-      val mockSessionRepository = mock[SessionRepository]
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val cisId = "testCisId"
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any())(any())) thenReturn Future.successful(
+        (cisId, emptyUserAnswers)
+      )
+      when(mockMonthlyReturnService.isDuplicate(any(), any(), any())(any())) thenReturn Future.successful(false)
 
       val application =
         applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
           )
           .build()
 
@@ -136,6 +145,67 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual BAD_REQUEST
         contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+      }
+    }
+
+    "must return a Bad Request with duplicate error when a duplicate month/year is detected" in {
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val cisId = "testCisId"
+
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any())(any())) thenReturn Future.successful(
+        (cisId, emptyUserAnswers)
+      )
+      when(mockMonthlyReturnService.isDuplicate(any(), any(), any())(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        val view      = application.injector.instanceOf[DateConfirmPaymentsView]
+        val boundForm = form.fill(validAnswer).withError("value", "dateConfirmPayments.taxYear.error.duplicate")
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual view(boundForm, NormalMode)(postRequest(), messages(application)).toString
+      }
+    }
+
+    "must redirect to System Error page when duplicate check fails with an exception" in {
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val cisId = "testCisId"
+
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any())(any())) thenReturn Future.successful(
+        (cisId, emptyUserAnswers)
+      )
+      when(mockMonthlyReturnService.isDuplicate(any(), any(), any())(any())) thenReturn Future.failed(
+        new RuntimeException("Test exception")
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
 

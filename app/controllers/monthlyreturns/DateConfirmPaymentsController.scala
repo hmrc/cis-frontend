@@ -21,9 +21,11 @@ import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmPaymentsPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
@@ -38,11 +40,13 @@ class DateConfirmPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   formProvider: DateConfirmPaymentsFormProvider,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: DateConfirmPaymentsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
@@ -65,11 +69,41 @@ class DateConfirmPaymentsController @Inject() (
         .bindFromRequest()
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+          value => {
+            val year  = value.getYear
+            val month = value.getMonthValue
+
+            monthlyReturnService
+              .resolveAndStoreCisId(request.userAnswers)
+              .flatMap { case (cisId, _) =>
+                monthlyReturnService
+                  .isDuplicate(cisId, year, month)
+                  .flatMap {
+                    case true =>
+                      val dupForm =
+                        form
+                          .fill(value)
+                          .withError(
+                            "value",
+                            "dateConfirmPayments.taxYear.error.duplicate"
+                          )
+                      Future.successful(BadRequest(view(dupForm, mode)))
+
+                    case false =>
+                      for {
+                        updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
+                        _              <- sessionRepository.set(updatedAnswers)
+                      } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+                  }
+              }
+              .recover { exception =>
+                logger.error(
+                  s"[DateConfirmPaymentsController] duplicate check fails unexpectedly: ${exception.getMessage}",
+                  exception
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+              }
+          }
         )
   }
 }
