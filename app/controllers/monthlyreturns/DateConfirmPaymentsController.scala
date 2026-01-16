@@ -21,6 +21,7 @@ import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmPaymentsPage
+import play.api.data.FormError
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -64,7 +65,14 @@ class DateConfirmPaymentsController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => {
+            val formLevelErrors     = formWithErrors.errors.filter(_.key.isEmpty)
+            val fieldErrors         = formWithErrors.errors.filter(_.key.nonEmpty)
+            val taxMonthErrors      = formLevelErrors.map(error => FormError("taxMonth", error.message, error.args))
+            val allErrors           = fieldErrors ++ taxMonthErrors
+            val formWithFieldErrors = formWithErrors.copy(errors = allErrors)
+            Future.successful(BadRequest(view(formWithFieldErrors, mode)))
+          },
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
