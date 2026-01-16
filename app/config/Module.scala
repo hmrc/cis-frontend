@@ -17,6 +17,7 @@
 package config
 
 import com.google.inject.AbstractModule
+import com.google.inject.name.Names
 import controllers.actions.*
 import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl}
@@ -34,8 +35,15 @@ class Module extends AbstractModule {
 
     // For session based storage instead of cred based, change to SessionIdentifierAction
     bind(classOf[IdentifierAction]).to(classOf[AuthenticatedIdentifierAction]).asEagerSingleton()
+    bind(classOf[IdentifierAction])
+      .annotatedWith(Names.named("ContractorIdentifier"))
+      .to(classOf[ContractorIdentifierAction])
+      .asEagerSingleton()
+    bind(classOf[IdentifierAction])
+      .annotatedWith(Names.named("AgentIdentifier"))
+      .to(classOf[AgentIdentifierAction])
+      .asEagerSingleton()
     bind(classOf[DuplicateMRCreationGuard]).to(classOf[DuplicateMRCreationGuardImpl])
-
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
   }
 }

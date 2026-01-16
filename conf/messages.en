@@ -58,24 +58,35 @@ signedOut.guidance = We did not save your answers.
 unauthorised.title = You can’t access this service with this account
 unauthorised.heading = You can’t access this service with this account
 
-monthlyreturns.unauthorised.org.title = You need to register to use this service
-monthlyreturns.unauthorised.org.heading = You need to register to use this service
-monthlyreturns.unauthorised.org.guidance.p1 = Register with the
-monthlyreturns.unauthorised.org.guidance.link = Construction Industry Scheme
-monthlyreturns.unauthorised.org.guidance.p2 = to set up an account.
+unauthorised.guidance.org.p1.prefix = If you are a contractor or subcontractor, you will need to register with
+unauthorised.guidance.org.p1.link = Construction Industry Scheme
+unauthorised.guidance.org.p1.suffix = to access this service.
+unauthorised.guidance.agent.p2.prefix = If you are an agent, you will need to request access to
+unauthorised.guidance.agent.p2.link = PAYE for Agents
+unauthorised.guidance.agent.p2.suffix = to use this service.
 
-monthlyreturns.unauthorised.org.standard.title = Sorry, you are unable to use this service
-monthlyreturns.unauthorised.org.standard.heading = Sorry, you are unable to use this service
-monthlyreturns.unauthorised.org.standard.paragraph = Return to
-monthlyreturns.unauthorised.org.standard.guidance.link = Construction Industry Scheme
+unauthorised.org.title = You need to register to use this service
+unauthorised.org.heading = You need to register to use this service
+unauthorised.org.p1 = You are signed in with an organisation account.
+unauthorised.org.guidance.p2.prefix = Register with the
+unauthorised.org.guidance.p2.link = Construction Industry Scheme
+unauthorised.org.guidance.p2.suffix = to access this service.
 
-monthlyreturns.unauthorised.individual.title = Sorry, you are unable to use this service
-monthlyreturns.unauthorised.individual.heading = Sorry, you are unable to use this service
-monthlyreturns.unauthorised.individual.p1 = You are signed in with an individual account. You need an organisation account to use this service.
+unauthorised.org.standard.title = Sorry, you are unable to use this service
+unauthorised.org.standard.heading = Sorry, you are unable to use this service
+unauthorised.org.standard.paragraph = Return to
+unauthorised.org.standard.guidance.link = Construction Industry Scheme
 
-monthlyreturns.unauthorised.agent.title = Sorry, you are unable to use this service
-monthlyreturns.unauthorised.agent.heading = Sorry, you are unable to use this service
-monthlyreturns.unauthorised.agent.p1 = You are signed in with an agent account. You need an organisation account to use this service.
+unauthorised.individual.title = Sorry, you are unable to use this service
+unauthorised.individual.heading = Sorry, you are unable to use this service
+unauthorised.individual.p1 = You are signed in with an individual account. Only users with an organisation or agent services accounts can use this service.
+
+unauthorised.agent.title = Sorry, you are unable to use this service
+unauthorised.agent.heading = Sorry, you are unable to use this service
+unauthorised.agent.p1 = You are signed in with an agent account.
+unauthorised.agent.p2.prefix = You need to request access to
+unauthorised.agent.p2.link = PAYE for Agents
+unauthorised.agent.p2.suffix = to use this service.
 
 monthlyreturns.dateConfirmNilPayments.title = Confirm nil return payments to subcontractors this month
 monthlyreturns.dateConfirmNilPayments.heading.h1 = Confirm nil return payments to subcontractors this month

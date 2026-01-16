@@ -40,7 +40,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
   class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
 
-    private val blockGuard = new DuplicateMRCreationGuard {
+    private val blockGuard: DuplicateMRCreationGuard = new DuplicateMRCreationGuard {
       def check(implicit r: DataRequest[_]) = Future.successful(DuplicateFound)
     }
 
@@ -83,7 +83,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
           redirectLocation(
             result
-          ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController
+          ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
             .onPageLoad()
             .url
         }

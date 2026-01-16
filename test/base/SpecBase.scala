@@ -26,10 +26,12 @@ import org.scalatest.{OptionValues, TryValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Messages, MessagesApi}
-import play.api.inject.bind
+import play.api.inject.{Binding, bind}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.libs.json.Json
+import play.api.mvc.PlayBodyParsers
+import play.api.test.Helpers.stubControllerComponents
 
 trait SpecBase
     extends AnyFreeSpec
@@ -42,7 +44,8 @@ trait SpecBase
 
   implicit lazy val applicationConfig: FrontendAppConfig = app.injector.instanceOf[FrontendAppConfig]
 
-  val userAnswersId: String = "id"
+  val userAnswersId: String    = "id"
+  val parsers: PlayBodyParsers = stubControllerComponents().parsers
 
   def emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
 
@@ -54,11 +57,20 @@ trait SpecBase
 
   def messages(app: Application): Messages = app.injector.instanceOf[MessagesApi].preferred(FakeRequest())
 
-  protected def applicationBuilder(userAnswers: Option[UserAnswers] = None): GuiceApplicationBuilder =
+  protected def applicationBuilder(
+    userAnswers: Option[UserAnswers] = None,
+    additionalBindings: Seq[Binding[_]] = Nil,
+    isAgent: Boolean = false
+  ): GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
+      .configure("play.http.router" -> "app.Routes")
       .overrides(
-        bind[DataRequiredAction].to[DataRequiredActionImpl],
-        bind[IdentifierAction].to[FakeIdentifierAction],
-        bind[DataRetrievalAction].toInstance(new FakeDataRetrievalAction(userAnswers))
+        Seq(
+          bind[DataRequiredAction].to[DataRequiredActionImpl],
+          bind[IdentifierAction].to(new FakeIdentifierAction(isAgent)(parsers)),
+          bind[IdentifierAction].qualifiedWith("AgentIdentifier").to(new FakeIdentifierAction(true)(parsers)),
+          bind[IdentifierAction].qualifiedWith("ContractorIdentifier").to(new FakeIdentifierAction(false)(parsers)),
+          bind[DataRetrievalAction].toInstance(new FakeDataRetrievalAction(userAnswers))
+        ) ++ additionalBindings
       )
 }

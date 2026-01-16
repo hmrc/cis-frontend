@@ -14,37 +14,22 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers
 
 import base.SpecBase
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
-import org.scalatestplus.mockito.MockitoSugar
-import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import services.AuditService
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import views.html.monthlyreturns.UnauthorisedOrgView
-
-import scala.concurrent.Future
+import views.html.UnauthorisedOrgView
 
 class UnauthorisedOrganisationAffinityControllerSpec extends SpecBase {
-
-  private val mockAuditService: AuditService = MockitoSugar.mock[AuditService]
-
+  
   "UnauthorisedOrganisationAffinity Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
-        .overrides(
-          bind[AuditService].toInstance(mockAuditService)
-        )
         .build()
-
-      when(mockAuditService.sendEvent(any())(any(), any(), any())).thenReturn(Future.successful(AuditResult.Success))
-
+      
       running(application) {
         val request = FakeRequest(GET, routes.UnauthorisedOrganisationAffinityController.onPageLoad().url)
 

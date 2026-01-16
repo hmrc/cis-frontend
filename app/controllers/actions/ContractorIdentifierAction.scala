@@ -21,8 +21,8 @@ import config.FrontendAppConfig
 import controllers.routes
 import models.requests.IdentifierRequest
 import play.api.Logging
-import play.api.mvc.Results.*
 import play.api.mvc.*
+import play.api.mvc.Results.*
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
@@ -31,15 +31,13 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import utils.AuthUtils.{hasCisAgentEnrolment, hasCisOrgEnrolment}
+import utils.AuthUtils.hasCisOrgEnrolment
 
+import javax.inject.Named
 import scala.concurrent.{ExecutionContext, Future}
 
-trait IdentifierAction
-    extends ActionBuilder[IdentifierRequest, AnyContent]
-    with ActionFunction[Request, IdentifierRequest]
-
-class AuthenticatedIdentifierAction @Inject() (
+@Named("ContractorIdentifier")
+class ContractorIdentifierAction @Inject()(
   override val authConnector: AuthConnector,
   config: FrontendAppConfig,
   val parser: BodyParsers.Default
@@ -67,31 +65,26 @@ class AuthenticatedIdentifierAction @Inject() (
               )
             )
         case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant)                          =>
-          logger.info("EnrolmentAuthIdentifierAction - Organisation: Assistant login attempt")
+          logger.info("ContractorIdentifierAction - Organisation: Assistant login attempt")
           Future.successful(Redirect(controllers.routes.UnauthorisedWrongRoleController.onPageLoad()))
         case Some(_) ~ _ ~ Some(Individual) ~ _                                          =>
-          logger.info("EnrolmentAuthIdentifierAction - Individual login attempt")
+          logger.info("ContractorIdentifierAction - Individual login attempt")
           Future.successful(
             Redirect(controllers.routes.UnauthorisedIndividualAffinityController.onPageLoad())
           )
         case Some(internalId) ~ Enrolments(enrolments) ~ Some(Agent) ~ _                 =>
-          hasCisAgentEnrolment(enrolments)
-            .map { agentReference =>
-              block(IdentifierRequest(request, internalId, None, Some(agentReference), true))
-            }
-            .getOrElse(
-              Future.successful(
-                Redirect(controllers.routes.UnauthorisedAgentAffinityController.onPageLoad())
-              )
-            )
+          logger.warn("ContractorIdentifierAction - Agent login attempt")
+          Future.successful(
+            Redirect(controllers.routes.UnauthorisedController.onPageLoad())
+          )
         case _                                                                           =>
-          logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve internal id or affinity group")
+          logger.warn("ContractorIdentifierAction - Unable to retrieve internal id or affinity group")
           Future.successful(Redirect(routes.UnauthorisedController.onPageLoad()))
       } recover {
       case _: NoActiveSession        =>
         Redirect(config.loginUrl, Map("continue" -> Seq(config.loginContinueUrl)))
       case _: AuthorisationException =>
-        logger.warn("EnrolmentAuthIdentifierAction - AuthorisationException")
+        logger.warn("ContractorIdentifierAction - AuthorisationException")
         Redirect(routes.UnauthorisedController.onPageLoad())
     }
   }

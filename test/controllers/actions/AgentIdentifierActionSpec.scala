@@ -17,7 +17,6 @@
 package controllers.actions
 
 import base.SpecBase
-import com.google.inject.Inject
 import config.FrontendAppConfig
 import controllers.actions.TestAuthRetrievals.Ops
 import controllers.routes
@@ -30,15 +29,13 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
-import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.auth.core.retrieve.~
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthActionSpec extends SpecBase {
+class AgentIdentifierActionSpec extends SpecBase {
 
   private val mockAuthConnector: AuthConnector = mock[AuthConnector]
   private val application                      = applicationBuilder(userAnswers = None)
@@ -55,12 +52,12 @@ class AuthActionSpec extends SpecBase {
     def onPageLoad(): Action[AnyContent] = authAction(_ => Results.Ok)
   }
 
-  "Auth Action" - {
+  "Agent Identifier Action" - {
 
     "when the user hasn't logged in" - {
       "must redirect the user to log in " in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new MissingBearerToken),
             appConfig,
             bodyParsers
@@ -77,7 +74,7 @@ class AuthActionSpec extends SpecBase {
     "the user's session has expired" - {
       "must redirect the user to log in " in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new BearerTokenExpired),
             appConfig,
             bodyParsers
@@ -94,7 +91,7 @@ class AuthActionSpec extends SpecBase {
     "the user doesn't have sufficient enrolments" - {
       "must redirect the user to the unauthorised page" in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new InsufficientEnrolments),
             appConfig,
             bodyParsers
@@ -111,7 +108,7 @@ class AuthActionSpec extends SpecBase {
     "the user doesn't have sufficient confidence level" - {
       "must redirect the user to the unauthorised page" in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new InsufficientConfidenceLevel),
             appConfig,
             bodyParsers
@@ -128,7 +125,7 @@ class AuthActionSpec extends SpecBase {
     "the user used an unaccepted auth provider" - {
       "must redirect the user to the unauthorised page" in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new UnsupportedAuthProvider),
             appConfig,
             bodyParsers
@@ -145,7 +142,7 @@ class AuthActionSpec extends SpecBase {
     "the user has an unsupported affinity group" - {
       "must redirect the user to the unauthorised page" in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new UnsupportedAffinityGroup),
             appConfig,
             bodyParsers
@@ -162,7 +159,7 @@ class AuthActionSpec extends SpecBase {
     "the user has an unsupported credential role" - {
       "must redirect the user to the unauthorised page" in {
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(
+          val authAction = new AgentIdentifierAction(
             new FakeFailingAuthConnector(new UnsupportedCredentialRole),
             appConfig,
             bodyParsers
@@ -197,7 +194,7 @@ class AuthActionSpec extends SpecBase {
                 Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None)
               )
             running(application) {
-              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+              val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
               val controller = new Harness(authAction)
               val result     = controller.onPageLoad()(FakeRequest())
 
@@ -212,7 +209,7 @@ class AuthActionSpec extends SpecBase {
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(Future.successful(Some(id) ~ emptyEnrolments ~ Some(Agent) ~ None))
             running(application) {
-              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+              val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
               val controller = new Harness(authAction)
               val result     = controller.onPageLoad()(FakeRequest())
 
@@ -242,7 +239,7 @@ class AuthActionSpec extends SpecBase {
                 Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None)
               )
             running(application) {
-              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+              val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
               val controller = new Harness(authAction)
               val result     = controller.onPageLoad()(FakeRequest())
               status(result) mustBe SEE_OTHER
@@ -264,7 +261,7 @@ class AuthActionSpec extends SpecBase {
             Future.successful(Some(id) ~ emptyEnrolments ~ Some(Individual) ~ Some(Assistant))
           )
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+          val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
           val controller = new Harness(authAction)
           val result     = controller.onPageLoad()(FakeRequest())
 
@@ -283,7 +280,7 @@ class AuthActionSpec extends SpecBase {
             Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(Assistant))
           )
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+          val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
           val controller = new Harness(authAction)
           val result     = controller.onPageLoad()(FakeRequest())
 
@@ -296,89 +293,21 @@ class AuthActionSpec extends SpecBase {
     }
 
     "the user is logged in as an organisation User" - {
-      "and is allowed into the service" - {
-        "must succeed" - {
-          "when the user has a HMRC-CIS-ORG enrolment with the correct activated identifiers" in {
-            val enrolments = Enrolments(
-              Set(
-                Enrolment(
-                  "HMRC-CIS-ORG",
-                  Seq(
-                    EnrolmentIdentifier("TaxOfficeNumber", "754"),
-                    EnrolmentIdentifier("TaxOfficeReference", "EZ00047")
-                  ),
-                  "activated",
-                  None
-                )
-              )
-            )
-            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(
-                Future.successful(Some(id) ~ enrolments ~ Some(Organisation) ~ Some(User))
-              )
-            running(application) {
-              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
-              val controller = new Harness(authAction)
-              val result     = controller.onPageLoad()(FakeRequest())
-
-              status(result) mustBe OK
-            }
-          }
-        }
-      }
-
-      "and is not allowed into the service" - {
-        "when there is no HMRC-CIS-ORG enrolment" - {
-          "must redirect to unauthorised organisation affinity screen" in {
-            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(
-                Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(User))
-              )
-            running(application) {
-              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
-              val controller = new Harness(authAction)
-              val result     = controller.onPageLoad()(FakeRequest())
-
-              status(result) mustBe SEE_OTHER
-              redirectLocation(
-                result
-              ).value mustBe controllers.routes.UnauthorisedOrganisationAffinityController
-                .onPageLoad()
-                .url
-            }
-          }
-        }
-        "when there is an inactive HMRC-CIS-ORG enrolment" - {
-          "must redirect to unauthorised organisation affinity screen" in {
-            val enrolments = Enrolments(
-              Set(
-                Enrolment(
-                  "HMRC-CIS-ORG",
-                  Seq(
-                    EnrolmentIdentifier("TaxOfficeNumber", "754"),
-                    EnrolmentIdentifier("TaxOfficeReference", "EZ00047")
-                  ),
-                  "inactivated",
-                  None
-                )
-              )
-            )
-            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(
-                Future.successful(Some(id) ~ enrolments ~ Some(Organisation) ~ Some(User))
-              )
-            running(application) {
-              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
-              val controller = new Harness(authAction)
-              val result     = controller.onPageLoad()(FakeRequest())
-              status(result) mustBe SEE_OTHER
-              redirectLocation(
-                result
-              ).value mustBe controllers.routes.UnauthorisedOrganisationAffinityController
-                .onPageLoad()
-                .url
-            }
-          }
+      "must redirect to unauthorised screen" in {
+        when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
+          .thenReturn(
+            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(User))
+          )
+        running(application) {
+          val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+          val controller = new Harness(authAction)
+          val result     = controller.onPageLoad()(FakeRequest())
+          status(result) mustBe SEE_OTHER
+          redirectLocation(
+            result
+          ).value mustBe controllers.routes.UnauthorisedController
+            .onPageLoad()
+            .url
         }
       }
     }
@@ -388,7 +317,7 @@ class AuthActionSpec extends SpecBase {
         when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
           .thenReturn(Future.successful(None ~ emptyEnrolments ~ None ~ None))
         running(application) {
-          val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+          val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
           val controller = new Harness(authAction)
           val result     = controller.onPageLoad()(FakeRequest())
 
@@ -399,14 +328,4 @@ class AuthActionSpec extends SpecBase {
     }
 
   }
-}
-
-class FakeFailingAuthConnector @Inject() (exceptionToReturn: Throwable) extends AuthConnector {
-  val serviceUrl: String = ""
-
-  override def authorise[A](predicate: Predicate, retrieval: Retrieval[A])(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
-  ): Future[A] =
-    Future.failed(exceptionToReturn)
 }

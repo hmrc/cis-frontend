@@ -25,10 +25,11 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.DeclarationView
 
@@ -37,12 +38,12 @@ import scala.concurrent.Future
 
 class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
-  lazy val declarationRoute = routes.DeclarationController.onPageLoad(NormalMode).url
+  lazy val declarationRoute: String = routes.DeclarationController.onPageLoad(NormalMode).url
 
-  val formProvider = new DeclarationFormProvider()
-  val form         = formProvider()
+  val formProvider            = new DeclarationFormProvider()
+  val form: Form[Declaration] = formProvider()
 
   "Declaration Controller" - {
 
@@ -76,7 +77,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
         redirectLocation(
           result
-        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
       }
     }
 
