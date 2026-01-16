@@ -421,19 +421,34 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
       result mustBe Right(BigDecimal(123))
     }
 
-    "must bind a valid decimal with 1 decimal place" in {
+    "must not bind a decimal with non-zero decimal part" in {
       val result = formatter.bind("key", Map("key" -> "123.4"))
-      result mustBe Right(BigDecimal("123.4"))
+      result mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
-    "must bind a valid decimal with 2 decimal places" in {
+    "must not bind a decimal with non-zero decimal part (2 places)" in {
       val result = formatter.bind("key", Map("key" -> "123.45"))
-      result mustBe Right(BigDecimal("123.45"))
+      result mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
-    "must bind a number with commas" in {
+    "must bind zero with decimal notation" in {
+      val result = formatter.bind("key", Map("key" -> "0.00"))
+      result mustBe Right(BigDecimal("0.00"))
+    }
+
+    "must bind whole number with zero decimal notation" in {
+      val result = formatter.bind("key", Map("key" -> "123.00"))
+      result mustBe Right(BigDecimal("123.00"))
+    }
+
+    "must bind a number with commas (whole number)" in {
+      val result = formatter.bind("key", Map("key" -> "1,234"))
+      result mustBe Right(BigDecimal("1234"))
+    }
+
+    "must not bind a number with commas and non-zero decimals" in {
       val result = formatter.bind("key", Map("key" -> "1,234.56"))
-      result mustBe Right(BigDecimal("1234.56"))
+      result mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
     "must bind a number without decimal point" in {
@@ -489,8 +504,8 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must unbind a valid value" in {
-      val result = formatter.unbind("key", BigDecimal("123.45"))
-      result mustEqual Map("key" -> "123.45")
+      val result = formatter.unbind("key", BigDecimal("123"))
+      result mustEqual Map("key" -> "123")
     }
   }
 }
