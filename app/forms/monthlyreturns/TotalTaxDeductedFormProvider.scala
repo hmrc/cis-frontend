@@ -28,7 +28,8 @@ class TotalTaxDeductedFormProvider @Inject() extends Mappings {
       "value" -> int(
         "totalTaxDeducted.error.required",
         "totalTaxDeducted.error.wholeNumber",
-        "totalTaxDeducted.error.nonNumeric")
-        .verifying(inRange(0, 99999999, "totalTaxDeducted.error.outOfRange"))
+        "totalTaxDeducted.error.nonNumeric"
+      )
+        .verifying(inRange(1, 99999999, "totalTaxDeducted.error.outOfRange"))
     )
 }

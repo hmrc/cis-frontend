@@ -23,19 +23,20 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object TotalTaxDeductedSummary  {
+object TotalTaxDeductedSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(TotalTaxDeductedPage).map {
-      answer =>
-
-        SummaryListRowViewModel(
-          key     = "totalTaxDeducted.checkYourAnswersLabel",
-          value   = ValueViewModel(answer.toString),
-          actions = Seq(
-            ActionItemViewModel("site.change", controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("totalTaxDeducted.change.hidden"))
+    answers.get(TotalTaxDeductedPage).map { answer =>
+      SummaryListRowViewModel(
+        key = "totalTaxDeducted.checkYourAnswersLabel",
+        value = ValueViewModel(answer.toString),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
           )
+            .withVisuallyHiddenText(messages("totalTaxDeducted.change.hidden"))
         )
+      )
     }
 }

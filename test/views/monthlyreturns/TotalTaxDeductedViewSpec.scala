@@ -1,0 +1,88 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package views.monthlyreturns
+
+import base.SpecBase
+import forms.monthlyreturns.TotalTaxDeductedFormProvider
+import models.NormalMode
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import play.api.i18n.Messages
+import play.api.test.FakeRequest
+import views.html.monthlyreturns.TotalTaxDeductedView
+
+class TotalTaxDeductedViewSpec extends SpecBase {
+
+  val subcontractorName = "Test Subcontractor"
+
+  "TotalTaxDeductedView" - {
+    "must render the page with the correct html elements" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.title                      must include(messages("totalTaxDeducted.title", subcontractorName))
+      doc.select("h1").text          must include(messages("totalTaxDeducted.heading", subcontractorName))
+      doc.select(".govuk-hint").text must include(messages("totalTaxDeducted.hintText"))
+
+      doc.select("label[for=value]").text must include(messages("totalTaxDeducted.heading", subcontractorName))
+
+      doc.select("input[name=value]").attr("type") mustBe "text"
+      doc.select("input[name=value]").hasClass("govuk-input--width-10") mustBe true
+
+      doc.select(".govuk-input__prefix").text must include("£")
+
+      doc.getElementsByClass("govuk-button").text must include(messages("site.saveAndContinue"))
+    }
+
+    "must display the subcontractor name in the title and heading" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.title             must include(subcontractorName)
+      doc.select("h1").text must include(subcontractorName)
+    }
+
+    "must display error summary when form has errors" in new Setup {
+      val formWithErrors = form.bind(Map("value" -> ""))
+      val htmlWithErrors = view(formWithErrors, NormalMode, subcontractorName)
+      val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
+
+      doc.select(".govuk-error-summary").size mustBe 1
+      doc.select(".govuk-error-summary__title").text must include("There is a problem")
+    }
+
+    "must display field error when value is invalid" in new Setup {
+      val formWithErrors = form.bind(Map("value" -> "invalid"))
+      val htmlWithErrors = view(formWithErrors, NormalMode, subcontractorName)
+      val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
+
+      doc.select(".govuk-error-message").size mustBe 1
+    }
+  }
+
+  trait Setup {
+    val app                                       = applicationBuilder().build()
+    val view                                      = app.injector.instanceOf[TotalTaxDeductedView]
+    val formProvider                              = new TotalTaxDeductedFormProvider()
+    val form                                      = formProvider()
+    implicit val request: play.api.mvc.Request[_] = FakeRequest()
+    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
+      play.api.i18n.Lang.defaultLang,
+      app.injector.instanceOf[play.api.i18n.MessagesApi]
+    )
+
+    val html = view(form, NormalMode, subcontractorName)
+  }
+}
