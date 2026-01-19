@@ -53,20 +53,15 @@ class TotalTaxDeductedController @Inject() (
       case Some(value) => form.fill(value)
     }
 
-    val subcontractorName = "Test Subcontractor"
-
-    Ok(view(preparedForm, mode, subcontractorName))
+    Ok(view(preparedForm, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      val subcontractorName = "Test Subcontractor"
-
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, subcontractorName))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(TotalTaxDeductedPage, value))

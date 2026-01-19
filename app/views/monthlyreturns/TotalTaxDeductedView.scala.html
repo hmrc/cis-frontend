@@ -25,9 +25,9 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, subcontractorName: String)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("totalTaxDeducted.title", subcontractorName))) {
+@layout(pageTitle = title(form, messages("totalTaxDeducted.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
@@ -38,7 +38,7 @@
         @govukInput(
             InputViewModel(
                 field = form("value"),
-                label = LabelViewModel(messages("totalTaxDeducted.heading", subcontractorName)).withCssClass("govuk-label--l")
+                label = LabelViewModel(messages("totalTaxDeducted.heading")).withCssClass("govuk-label--l")
             )
                 .withHint(HintViewModel(messages("totalTaxDeducted.hintText")))
                 .asNumeric()

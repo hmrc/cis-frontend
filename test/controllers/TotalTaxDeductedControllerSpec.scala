@@ -40,8 +40,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  val validAnswer                = 1
-  val subcontractorName          = "Test Subcontractor"
+  val validAnswer                = BigDecimal(1)
   lazy val totalTaxDeductedRoute =
     controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode).url
 
@@ -59,7 +58,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[TotalTaxDeductedView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, subcontractorName)(
+        contentAsString(result) mustEqual view(form, NormalMode)(
           request,
           messages(application)
         ).toString
@@ -83,7 +82,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, subcontractorName)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode)(
           request,
           messages(application)
         ).toString
@@ -132,7 +131,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, subcontractorName)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode)(
           request,
           messages(application)
         ).toString
@@ -167,21 +166,6 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must display the hardcoded subcontractor name in the heading" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode).url)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual OK
-        contentAsString(result) must include(subcontractorName)
       }
     }
   }

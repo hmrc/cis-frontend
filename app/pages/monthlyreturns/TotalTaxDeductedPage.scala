@@ -19,7 +19,7 @@ package pages.monthlyreturns
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object TotalTaxDeductedPage extends QuestionPage[Int] {
+case object TotalTaxDeductedPage extends QuestionPage[BigDecimal] {
 
   override def path: JsPath = JsPath \ toString
 

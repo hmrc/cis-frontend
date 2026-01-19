@@ -23,13 +23,15 @@ import javax.inject.Inject
 
 class TotalTaxDeductedFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[Int] =
+  def apply(): Form[BigDecimal] =
     Form(
-      "value" -> int(
+      "value" -> paymentDetailsCurrency(
         "totalTaxDeducted.error.required",
-        "totalTaxDeducted.error.wholeNumber",
-        "totalTaxDeducted.error.nonNumeric"
+        "totalTaxDeducted.error.invalid",
+        "totalTaxDeducted.error.maxLength"
       )
-        .verifying(inRange(1, 99999999, "totalTaxDeducted.error.outOfRange"))
+        .verifying(
+          maximumCurrency(BigDecimal("99999999.00"), "totalTaxDeducted.error.maxValue", includeFormattedValue = false)
+        )
     )
 }
