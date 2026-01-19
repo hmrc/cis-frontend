@@ -35,9 +35,9 @@
     @heading((messages("monthlyreturns.alreadySubmitted.heading")), classes = "govuk-heading-xl")
 
     @link(
-        "monthlyreturns.alreadySubmitted.link",
-        appConfig.constructionIndustryAccountUrl,
-        false,
-        "monthlyreturns.alreadySubmitted.paragraph"
+        linkTextKey = "monthlyreturns.alreadySubmitted.link",
+        linkUrl = appConfig.constructionIndustryAccountUrl,
+        isNewTab = false,
+        prefixTextKey = "monthlyreturns.alreadySubmitted.paragraph"
     )
 }

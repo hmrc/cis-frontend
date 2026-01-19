@@ -21,15 +21,25 @@
   layout: templates.Layout,
   heading: H1,
   paragraph: Paragraph,
+  bulletListWithLinks: BulletListWithLinks,
+  link: Link,
+  paragraphWithLink: ParagraphWithLink
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-  pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.individual.title")),
+  pageTitle = titleNoForm(messages("unauthorised.agent.title")),
   showSignOut = false,
   showBackLink = false
 ) {
-    @heading(messages("monthlyreturns.unauthorised.individual.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("monthlyreturns.unauthorised.individual.p1"), extraClasses = "govuk-!-margin-bottom-5")
+    @heading(messages("unauthorised.agent.heading"), classes = "govuk-heading-xl")
+    @paragraph(messages("unauthorised.agent.p1"), extraClasses = "govuk-!-margin-bottom-5")
+    @link(
+        linkTextKey = "unauthorised.agent.p2.link",
+        linkUrl = appConfig.payeCisForAgentsOnlineService,
+        paragraphWrapped = true,
+        prefixTextKey = "unauthorised.agent.p2.prefix",
+        suffixTextKey = "unauthorised.agent.p2.suffix"
+    )
 }

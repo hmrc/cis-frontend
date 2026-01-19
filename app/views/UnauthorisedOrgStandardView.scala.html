@@ -18,18 +18,19 @@
 @import views.html.components._
 
 @this(
-  layout: templates.Layout,
-  heading: H1,
-  paragraph: Paragraph,
+    layout: templates.Layout,
+    heading: H1,
+    link: Link,
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-  pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.agent.title")),
-  showSignOut = false,
-  showBackLink = false
+    pageTitle = titleNoForm(messages("unauthorised.org.standard.title")),
+    showSignOut = false,
+    showBackLink = false
 ) {
-    @heading(messages("monthlyreturns.unauthorised.agent.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("monthlyreturns.unauthorised.agent.p1"), extraClasses = "govuk-!-margin-bottom-5")
+    @heading(messages("unauthorised.org.standard.heading"), classes = "govuk-heading-xl")
+    @link("unauthorised.org.standard.guidance.link", appConfig.govUkCISGuidanceUrl, prefixTextKey = "unauthorised.org.standard.paragraph")
+
 }
