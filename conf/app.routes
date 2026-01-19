@@ -82,3 +82,15 @@ GET        /monthly-return/tax-deducted                                   contro
 POST       /monthly-return/tax-deducted                                    controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-tax-deducted                              controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-tax-deducted                              controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/subcontractors-paid-this-month       controllers.monthlyreturns.SubcontractorsPaidThisMonthController.onPageLoad()
+
+GET        /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode)
