@@ -64,7 +64,7 @@ class DateConfirmNilPaymentsController @Inject() (
       }
 
       monthlyReturnService
-        .resolveAndStoreCisId(request.userAnswers)
+        .resolveAndStoreCisId(request.userAnswers, request.isAgent)
         .map { _ =>
           Ok(view(preparedForm, mode))
         }
@@ -97,7 +97,7 @@ class DateConfirmNilPaymentsController @Inject() (
             val month = value.getMonthValue
 
             monthlyReturnService
-              .resolveAndStoreCisId(request.userAnswers)
+              .resolveAndStoreCisId(request.userAnswers, request.isAgent)
               .flatMap { case (cisId, _) =>
                 monthlyReturnService
                   .isDuplicate(cisId, year, month)

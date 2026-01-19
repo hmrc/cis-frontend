@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package models.requests
+package models.monthlyreturns
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import play.api.libs.json.{Json, OFormat}
 
-case class IdentifierRequest[A](
-  request: Request[A],
-  userId: String,
-  employerReference: Option[EmployerReference],
-  agentReference: Option[String],
-  isAgent: Boolean = false
-) extends WrappedRequest[A](request)
+final case class MonthlyReturnRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int
+)
+
+object MonthlyReturnRequest {
+  given format: OFormat[MonthlyReturnRequest] = Json.format[MonthlyReturnRequest]
+}

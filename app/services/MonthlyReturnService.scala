@@ -19,10 +19,9 @@ package services
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
-import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.monthlyreturns.{Declaration, InactivityRequest, MonthlyReturnRequest, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.UserAnswers
-import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -36,10 +35,16 @@ class MonthlyReturnService @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  def resolveAndStoreCisId(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(String, UserAnswers)] =
+  def resolveAndStoreCisId(ua: UserAnswers, isAgent: Boolean)(implicit
+    hc: HeaderCarrier
+  ): Future[(String, UserAnswers)] =
     ua.get(CisIdPage) match {
       case Some(cisId) => Future.successful((cisId, ua))
-      case None        =>
+
+      case None if isAgent =>
+        Future.failed(new RuntimeException("Missing cisId for agent journey"))
+
+      case None =>
         logger.info("[resolveAndStoreCisId] cache-miss: fetching CIS taxpayer from backend")
         cisConnector.getCisTaxpayer().flatMap { tp =>
           logger.info(s"[resolveAndStoreCisId] taxpayer payload:\n${Json.prettyPrint(Json.toJson(tp))}")
@@ -68,6 +73,9 @@ class MonthlyReturnService @Inject() (
       res.monthlyReturnList.exists(mr => mr.taxYear == year && mr.taxMonth == month)
     }
 
+  def hasClient(taxOfficenumber: String, taxOfficeReference: String)(implicit hc: HeaderCarrier): Future[Boolean] =
+    cisConnector.hasClient(taxOfficenumber, taxOfficeReference)
+
   def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")
 
@@ -81,6 +89,9 @@ class MonthlyReturnService @Inject() (
       saved         <- persistStatus(userAnswers, resp.status)
     } yield saved
   }
+
+  def createMonthlyReturn(request: MonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.createMonthlyReturn(request)
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
