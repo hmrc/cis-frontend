@@ -37,7 +37,7 @@ import javax.inject.Named
 import scala.concurrent.{ExecutionContext, Future}
 
 @Named("ContractorIdentifier")
-class ContractorIdentifierAction @Inject()(
+class ContractorIdentifierAction @Inject() (
   override val authConnector: AuthConnector,
   config: FrontendAppConfig,
   val parser: BodyParsers.Default

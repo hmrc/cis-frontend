@@ -24,7 +24,7 @@ import views.html.UnauthorisedOrgView
 
 import javax.inject.Inject
 
-class UnauthorisedOrganisationAffinityController @Inject()(
+class UnauthorisedOrganisationAffinityController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: UnauthorisedOrgView
 )(implicit appConfig: FrontendAppConfig)

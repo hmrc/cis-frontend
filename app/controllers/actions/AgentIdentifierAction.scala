@@ -37,7 +37,7 @@ import javax.inject.Named
 import scala.concurrent.{ExecutionContext, Future}
 
 @Named("AgentIdentifier")
-class AgentIdentifierAction @Inject()(
+class AgentIdentifierAction @Inject() (
   override val authConnector: AuthConnector,
   config: FrontendAppConfig,
   val parser: BodyParsers.Default

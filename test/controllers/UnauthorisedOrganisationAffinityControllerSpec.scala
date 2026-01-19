@@ -22,14 +22,14 @@ import play.api.test.Helpers.*
 import views.html.UnauthorisedOrgView
 
 class UnauthorisedOrganisationAffinityControllerSpec extends SpecBase {
-  
+
   "UnauthorisedOrganisationAffinity Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
         .build()
-      
+
       running(application) {
         val request = FakeRequest(GET, routes.UnauthorisedOrganisationAffinityController.onPageLoad().url)
 
