@@ -76,7 +76,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return OK and the correct view for a GET" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
@@ -96,7 +96,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to Journey Recovery when service return NOT_FOUND" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND)))
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
@@ -115,7 +115,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to system error page if unable to retrieve cisId" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
@@ -134,7 +134,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
 
       val userAnswers = UserAnswers(userAnswersId).set(DateConfirmNilPaymentsPage, validAnswer).success.value
@@ -163,7 +163,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
       when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(false))
@@ -242,7 +242,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
       when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(true))
@@ -287,7 +287,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
         .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
       when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
         .thenReturn(Future.failed(new RuntimeException("boom")))

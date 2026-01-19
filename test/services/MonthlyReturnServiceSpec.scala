@@ -95,7 +95,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val emptyUa     = UserAnswers("test-user")
       val uaWithCisId = emptyUa.set(CisIdPage, existing).get
 
-      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId).futureValue
+      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId, false).futureValue
       cisId mustBe existing
       savedUa mustBe uaWithCisId
 
@@ -114,7 +114,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa).futureValue
+      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa, false).futureValue
 
       cisId mustBe "CIS-123"
       savedUa.get(CisIdPage) mustBe Some("CIS-123")
@@ -137,7 +137,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .thenReturn(Future.successful(emptyTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.resolveAndStoreCisId(emptyUa).futureValue
+        service.resolveAndStoreCisId(emptyUa, false).futureValue
       }
       ex.getMessage must include("Empty cisId (uniqueId) returned from /cis/taxpayer")
 
@@ -158,7 +158,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .thenReturn(Failure(new RuntimeException("UA set failed")))
 
       val ex = intercept[RuntimeException] {
-        service.resolveAndStoreCisId(ua).futureValue
+        service.resolveAndStoreCisId(ua, false).futureValue
       }
       ex.getMessage must include("UA set failed")
 
