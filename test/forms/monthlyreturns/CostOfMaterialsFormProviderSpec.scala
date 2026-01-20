@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package forms
+package forms.monthlyreturns
 
+import utils.CurrencyFormatter.currencyFormat
 import forms.behaviours.CurrencyFieldBehaviours
+import forms.monthlyreturns.CostOfMaterialsFormProvider
 import org.scalacheck.Gen
 import play.api.data.FormError
 
 import scala.math.BigDecimal.RoundingMode
 
-class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
+class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
 
-  val form = new PaymentDetailsFormProvider()()
+  val form = new CostOfMaterialsFormProvider()()
 
   ".value" - {
 
@@ -45,9 +47,15 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
+    behave like mandatoryField(
+      form,
+      fieldName,
+      requiredError = FormError(fieldName, "monthlyreturns.costOfMaterials.error.required")
+    )
+
     "must not bind when the value exceeds maxLength of 13" in {
       val result = form.bind(Map(fieldName -> "12345678901234")).apply(fieldName)
-      result.errors mustEqual Seq(FormError(fieldName, "paymentDetails.error.maxLength"))
+      result.errors mustEqual Seq(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxLength"))
     }
 
     "must bind when the value is exactly 13 characters" in {
@@ -70,7 +78,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       ).foreach { case (invalidValue, description) =>
         withClue(s"Value '$invalidValue' ($description) should be invalid") {
           val result = form.bind(Map(fieldName -> invalidValue)).apply(fieldName)
-          result.errors must contain(FormError(fieldName, "paymentDetails.error.invalid"))
+          result.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.invalid"))
         }
       }
     }
@@ -85,7 +93,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       ).foreach { case (invalidValue, description) =>
         withClue(s"Value '$invalidValue' ($description) should be invalid") {
           val result = form.bind(Map(fieldName -> invalidValue)).apply(fieldName)
-          result.errors must contain(FormError(fieldName, "paymentDetails.error.invalid"))
+          result.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.invalid"))
         }
       }
     }
@@ -127,7 +135,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
 
     "must not bind when value exceeds maximum value" in {
       val boundForm = form.bind(Map(fieldName -> "100000000"))
-      boundForm.errors must contain(FormError(fieldName, "paymentDetails.error.maxValue"))
+      boundForm.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
     }
 
     "must correctly parse values with commas" in {
@@ -144,13 +152,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
 
     "must not bind when the value is greater than the maximum" in {
       val result = form.bind(Map(fieldName -> "100000000")).apply(fieldName)
-      result.errors must contain(FormError(fieldName, "paymentDetails.error.maxValue"))
+      result.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
     }
-
-    behave like mandatoryField(
-      form,
-      fieldName,
-      requiredError = FormError(fieldName, "paymentDetails.error.required")
-    )
   }
 }

@@ -17,31 +17,28 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import forms.PaymentDetailsFormProvider
+import forms.monthlyreturns.CostOfMaterialsFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
-import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.monthlyreturns.PaymentDetailsView
+import views.html.monthlyreturns.CostOfMaterialsView
 
-class PaymentDetailsViewSpec extends SpecBase with Matchers {
+class CostOfMaterialsViewSpec extends SpecBase {
 
-  "PaymentDetailsView" - {
+  "CostOfMaterialsView" - {
 
     "must render the page with the correct html elements" in new Setup {
       val companyName = "Test Company Ltd"
       val html        = view(form, NormalMode, companyName)
       val doc         = Jsoup.parse(html.body)
 
-      doc.title             must include(messages("paymentDetails.title", companyName))
-      doc.select("h1").text must include(messages("paymentDetails.heading", companyName))
+      doc.title             must include(messages("monthlyreturns.costOfMaterials.title", companyName))
+      doc.select("h1").text must include(messages("monthlyreturns.costOfMaterials.heading", companyName))
 
       doc.select("input[type=text]").size() mustBe 1
       doc.select(".govuk-input__prefix").text mustBe "£"
-
-      doc.select(".govuk-hint").text must include(messages("paymentDetails.hint"))
-
+      doc.select(".govuk-hint").text must include(messages("monthlyreturns.costOfMaterials.hint"))
       doc.select("button[type=submit]").text mustBe messages("site.continue")
     }
 
@@ -55,7 +52,7 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
 
       doc.select(".govuk-error-summary").size() mustBe 1
 
-      val expected = messages("paymentDetails.error.required")
+      val expected = messages("monthlyreturns.costOfMaterials.error.required")
       doc.text() must include(expected)
     }
 
@@ -81,14 +78,14 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
       val doc         = Jsoup.parse(html.body)
 
       val formElement = doc.select("form").first()
-      formElement.attr("action") must include("/payment-details")
+      formElement.attr("action") must include("/materials-cost")
     }
   }
 
   trait Setup {
     val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[PaymentDetailsView]
-    val formProvider                              = app.injector.instanceOf[PaymentDetailsFormProvider]
+    val view                                      = app.injector.instanceOf[CostOfMaterialsView]
+    val formProvider                              = app.injector.instanceOf[CostOfMaterialsFormProvider]
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(

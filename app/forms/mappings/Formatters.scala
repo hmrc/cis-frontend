@@ -189,7 +189,8 @@ trait Formatters {
       override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], BigDecimal] =
         baseFormatter
           .bind(key, data)
-          .flatMap { input =>
+          .flatMap { rawInput =>
+            val input = rawInput.trim
             if (input.length > maxLength) {
               Left(Seq(FormError(key, maxLengthKey, args)))
             } else if (!input.matches(paymentDetailsRegex)) {
@@ -200,6 +201,13 @@ trait Formatters {
                 .either(BigDecimal(cleaned))
                 .left
                 .map(_ => Seq(FormError(key, invalidKey, args)))
+                .flatMap { value =>
+                  if (value % 1 != 0) {
+                    Left(Seq(FormError(key, invalidKey, args)))
+                  } else {
+                    Right(value)
+                  }
+                }
             }
           }
 
