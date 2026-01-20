@@ -206,5 +206,29 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must redirect to SystemErrorController when an exception is thrown (recover block)" in {
+
+      val mockSessionRepository     = mock[SessionRepository]
+      val mockMonthlyReturnsService = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnsService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnsService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
   }
 }

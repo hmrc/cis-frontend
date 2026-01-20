@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnRequest, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import models.UserAnswers
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -165,6 +165,19 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verifyNoInteractions(sessionRepo)
       verify(connector).getCisTaxpayer()(any[HeaderCarrier])
       verifyNoMoreInteractions(connector)
+    }
+
+    "fail when cisId is missing and isAgent=true (agent journey requires instanceId)" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val ua = UserAnswers("test-user")
+
+      val ex = service.resolveAndStoreCisId(ua, isAgent = true).failed.futureValue
+      ex mustBe a[RuntimeException]
+      ex.getMessage must include("Missing cisId for agent journey")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
   }
 
@@ -441,6 +454,38 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       ex.getMessage must include("C2 (InactivityRequest) missing")
 
       verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "hasClient" should {
+
+    "delegate to connector and return the boolean" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(connector.hasClient(eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
+
+      service.hasClient("163", "AB0063").futureValue mustBe true
+
+      verify(connector).hasClient(eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "createMonthlyReturn" should {
+
+    "delegate to connector and complete successfully" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val req = MonthlyReturnRequest(instanceId = "CIS-123", taxYear = 2024, taxMonth = 10)
+
+      when(connector.createMonthlyReturn(eqTo(req))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.createMonthlyReturn(req).futureValue mustBe ()
+
+      verify(connector).createMonthlyReturn(eqTo(req))(any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
     }
   }
