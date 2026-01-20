@@ -28,14 +28,14 @@ object TotalTaxDeductedSummary {
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(TotalTaxDeductedPage).map { answer =>
       SummaryListRowViewModel(
-        key = "totalTaxDeducted.checkYourAnswersLabel",
+        key = "monthlyreturns.totalTaxDeducted.checkYourAnswersLabel",
         value = ValueViewModel(answer.toString),
         actions = Seq(
           ActionItemViewModel(
             "site.change",
             controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
           )
-            .withVisuallyHiddenText(messages("totalTaxDeducted.change.hidden"))
+            .withVisuallyHiddenText(messages("monthlyreturns.totalTaxDeducted.change.hidden"))
         )
       )
     }

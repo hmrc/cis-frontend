@@ -31,9 +31,9 @@ class TotalTaxDeductedViewSpec extends SpecBase {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title                               must include(messages("totalTaxDeducted.title"))
-      doc.select("label.govuk-label--l").text must include(messages("totalTaxDeducted.heading"))
-      doc.select(".govuk-hint").text          must include(messages("totalTaxDeducted.hintText"))
+      doc.title                               must include(messages("monthlyreturns.totalTaxDeducted.title"))
+      doc.select("label.govuk-label--l").text must include(messages("monthlyreturns.totalTaxDeducted.heading"))
+      doc.select(".govuk-hint").text          must include(messages("monthlyreturns.totalTaxDeducted.hintText"))
 
       doc.select("input[name=value]").attr("type") mustBe "text"
       doc.select("input[name=value]").hasClass("govuk-input--width-10") mustBe true

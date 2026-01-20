@@ -328,15 +328,15 @@ monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 
-totalTaxDeducted.title = Total tax deducted from TyneWear Ltd
-totalTaxDeducted.heading = Total tax deducted from TyneWear Ltd
-totalTaxDeducted.hintText = CIS deductions you made from the subcontractor's payment. Enter pounds and pence, like £300.00, £450.00, £1,200.00
-totalTaxDeducted.checkYourAnswersLabel = TotalTaxDeducted
-totalTaxDeducted.error.maxValue = Enter the amount for 'Total tax deducted', using the correct format of pound and pence, like £458.12
-totalTaxDeducted.error.maxLength = Enter the 'Total tax deducted', up to 13 characters
-totalTaxDeducted.change.hidden = TotalTaxDeducted
-totalTaxDeducted.error.invalid = Enter the amount for 'Total tax deducted', using the correct format of pound and pence, like £458.12
-totalTaxDeducted.error.required = Enter the 'Total tax deducted', up to 13 characters
+monthlyreturns.totalTaxDeducted.title = Total tax deducted from TyneWear Ltd
+monthlyreturns.totalTaxDeducted.heading = Total tax deducted from TyneWear Ltd
+monthlyreturns.totalTaxDeducted.hintText = CIS deductions you made from the subcontractor's payment. Enter pounds and pence, like £300.00, £450.00, £1,200.00
+monthlyreturns.totalTaxDeducted.checkYourAnswersLabel = TotalTaxDeducted
+monthlyreturns.totalTaxDeducted.error.maxValue = Enter the amount for 'Total tax deducted', using the correct format of pound and pence, like £458.12
+monthlyreturns.totalTaxDeducted.error.maxLength = Enter the 'Total tax deducted', up to 13 characters
+monthlyreturns.totalTaxDeducted.change.hidden = TotalTaxDeducted
+monthlyreturns.totalTaxDeducted.error.invalid = Enter the amount for 'Total tax deducted', using the correct format of pound and pence, like £458.12
+monthlyreturns.totalTaxDeducted.error.required = Enter the 'Total tax deducted', up to 13 characters
 
 monthlyreturns.subcontractorsPaidThisMonth.title = Subcontractors you paid this month
 monthlyreturns.subcontractorsPaidThisMonth.heading = Subcontractors you paid this month

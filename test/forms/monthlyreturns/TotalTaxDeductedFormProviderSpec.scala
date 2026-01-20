@@ -47,7 +47,7 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
 
     "must not bind when the value exceeds maxLength of 13" in {
       val result = form.bind(Map(fieldName -> "12345678901234")).apply(fieldName)
-      result.errors mustEqual Seq(FormError(fieldName, "totalTaxDeducted.error.maxLength"))
+      result.errors mustEqual Seq(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.maxLength"))
     }
 
     "must bind when the value is exactly 13 characters" in {
@@ -70,7 +70,7 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
       ).foreach { case (invalidValue, description) =>
         withClue(s"Value '$invalidValue' ($description) should be invalid") {
           val result = form.bind(Map(fieldName -> invalidValue)).apply(fieldName)
-          result.errors must contain(FormError(fieldName, "totalTaxDeducted.error.invalid"))
+          result.errors must contain(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.invalid"))
         }
       }
     }
@@ -137,7 +137,7 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
 
     "must not bind when value exceeds maximum value" in {
       val boundForm = form.bind(Map(fieldName -> "100000000"))
-      boundForm.errors must contain(FormError(fieldName, "totalTaxDeducted.error.maxValue"))
+      boundForm.errors must contain(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.maxValue"))
     }
 
     "must correctly parse values with commas" in {
