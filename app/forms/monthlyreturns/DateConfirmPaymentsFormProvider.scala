@@ -18,6 +18,7 @@ package forms.monthlyreturns
 
 import config.FrontendAppConfig
 import forms.mappings.Mappings
+import forms.mappings.TaxPeriodEndDateRules
 import play.api.data.Form
 import play.api.data.Forms.mapping
 import play.api.data.validation.{Constraint, Invalid, Valid}
@@ -35,7 +36,6 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
   private val MaxMonth: Int        = 12
   private val MinYear: Int         = 2007
   private val FirstDayOfMonth: Int = 1
-  private val TaxPeriodEndDay: Int = 5
 
   def apply()(implicit messages: Messages): Form[LocalDate] = {
     val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(appConfig.earliestTaxPeriodEndDate)
@@ -43,12 +43,17 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
       earliestTaxPeriodEndDate.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.UK)).split(" ").toSeq
 
     val today          = LocalDate.now()
-    val maxAllowedDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+    val maxAllowedDate =
+      if (today.getDayOfMonth <= TaxPeriodEndDateRules.TaxPeriodEndDay) today.plusMonths(3) else today.plusMonths(4)
     val MaxYear        = maxAllowedDate.getYear + 1
 
     val earliestDateConstraint: Constraint[LocalDate] = Constraint { date =>
       if (
-        (date.getYear, date.getMonthValue) >= (earliestTaxPeriodEndDate.getYear, earliestTaxPeriodEndDate.getMonthValue)
+        TaxPeriodEndDateRules.isOnOrAfterEarliest(
+          earliestTaxPeriodEndDate,
+          date.getYear,
+          date.getMonthValue
+        )
       ) {
         Valid
       } else {
@@ -57,8 +62,13 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
     }
 
     val maxFutureDateConstraint: Constraint[LocalDate] = Constraint { date =>
-      val taxPeriodEndDate = LocalDate.of(date.getYear, date.getMonthValue, TaxPeriodEndDay)
-      if (!YearMonth.from(taxPeriodEndDate).isAfter(YearMonth.from(maxAllowedDate))) {
+      if (
+        TaxPeriodEndDateRules.isWithinMaxFuturePeriod(
+          maxAllowedDate,
+          date.getYear,
+          date.getMonthValue
+        )
+      ) {
         Valid
       } else {
         Invalid("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
