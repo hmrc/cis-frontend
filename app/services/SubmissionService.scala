@@ -143,30 +143,10 @@ class SubmissionService @Inject() (
       .map(_.trim)
       .filter(_.nonEmpty)
       .getOrElse(throw new RuntimeException("CIS taxpayer UTR missing"))
-
-    val aoDistrict = taxpayer.aoDistrict
+    val ao  = taxpayer.aoReference
       .map(_.trim)
       .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoDistrict missing"))
-
-    val aoPayType = taxpayer.aoPayType
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoPayType missing"))
-
-    val aoCheckCode = taxpayer.aoCheckCode
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoCheckCode missing"))
-
-    val aoReference = taxpayer.aoReference
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoReference missing"))
-
-    // AO reference = aoDistrict + aoPayType + aoCheckCode + aoReference
-    val accountsOfficeRef: String =
-      List(aoDistrict, aoPayType, aoCheckCode, aoReference).flatten.mkString
+      .getOrElse(throw new RuntimeException("CIS taxpayer AOref missing"))
 
     val inactivity = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
     val ym         = ua
@@ -177,7 +157,7 @@ class SubmissionService @Inject() (
 
     ChrisSubmissionRequest.from(
       utr = utr,
-      aoReference = accountsOfficeRef,
+      aoReference = ao,
       informationCorrect = true,
       inactivity = inactivity,
       monthYear = ym,

@@ -49,10 +49,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       taxOfficeRef = "AB456",
       employerName1 = Some("TEST LTD"),
       utr = Some("1234567890"),
-      aoReference = Some("12345678"),
-      aoDistrict = Some("123"),
-      aoPayType = Some("P"),
-      aoCheckCode = Some("A"),
+      aoReference = Some("123/AB456"),
+      aoDistrict = None,
+      aoPayType = None,
+      aoCheckCode = None,
       validBusinessAddr = None,
       correlation = None,
       ggAgentId = None,
@@ -148,7 +148,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val expectedCsr = ChrisSubmissionRequest.from(
         utr = "1234567890",
-        aoReference = "123PA12345678",
+        aoReference = "123/AB456",
         informationCorrect = true,
         inactivity = true,
         monthYear = YearMonth.parse("2025-10"),
@@ -193,70 +193,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
     }
 
-    "fail when taxpayer aoDistrict is missing" in {
-      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration(
-          "submission-poll-timeout-seconds" -> "60"
-        )
-      )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-      val badTaxpayer = taxpayer.copy(aoDistrict = None)
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(badTaxpayer))
-
-      val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
-      }
-      ex.getMessage must include("CIS taxpayer aoDistrict missing")
-      verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-    }
-
-    "fail when taxpayer aoPayType is missing" in {
-      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration(
-          "submission-poll-timeout-seconds" -> "60"
-        )
-      )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-      val badTaxpayer = taxpayer.copy(aoPayType = None)
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(badTaxpayer))
-
-      val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
-      }
-      ex.getMessage must include("CIS taxpayer aoPayType missing")
-      verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-    }
-
-    "fail when taxpayer aoCheckCode is missing" in {
-      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration(
-          "submission-poll-timeout-seconds" -> "60"
-        )
-      )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-      val badTaxpayer = taxpayer.copy(aoCheckCode = None)
-      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(badTaxpayer))
-
-      val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
-      }
-      ex.getMessage must include("CIS taxpayer aoCheckCode missing")
-      verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-    }
-
-    "fail when taxpayer aoReference is missing" in {
+    "fail when taxpayer AO reference is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
@@ -273,7 +210,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ex = intercept[RuntimeException] {
         service.submitToChrisAndPersist("sub-123", uaBase).futureValue
       }
-      ex.getMessage must include("CIS taxpayer aoReference missing")
+      ex.getMessage must include("CIS taxpayer AOref missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
     }
 
