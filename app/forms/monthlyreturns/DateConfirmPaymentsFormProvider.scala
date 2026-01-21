@@ -26,11 +26,11 @@ import javax.inject.Inject
 
 class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
 
-  private val MinMonth: Int        = 1
-  private val MaxMonth: Int        = 12
-  private val MinYear: Int         = 2007
-  private val MaxYear: Int         = 3000
-  private val FirstDayOfMonth: Int = 1
+  private val MinMonth: Int           = 1
+  private val MaxMonth: Int           = 12
+  private val MinYear: Int            = 2007
+  private val MaxYear: Int            = 3000
+  private val FirstDayOfTaxMonth: Int = 5
 
   def apply()(implicit messages: Messages): Form[LocalDate] =
     Form(
@@ -45,6 +45,8 @@ class DateConfirmPaymentsFormProvider @Inject() extends Mappings {
           wholeNumberKey = "dateConfirmPayments.taxYear.error.wholeNumber",
           nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
         ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= MinYear && year <= MaxYear)
-      )((month, year) => LocalDate.of(year, month, FirstDayOfMonth))(date => Some((date.getMonthValue, date.getYear)))
+      )((month, year) => LocalDate.of(year, month, FirstDayOfTaxMonth))(date =>
+        Some((date.getMonthValue, date.getYear))
+      )
     )
 }

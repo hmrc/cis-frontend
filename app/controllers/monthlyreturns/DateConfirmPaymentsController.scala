@@ -85,7 +85,7 @@ class DateConfirmPaymentsController @Inject() (
                         form
                           .fill(value)
                           .withError(
-                            "value",
+                            "taxMonthAndYear",
                             "dateConfirmPayments.taxYear.error.duplicate"
                           )
                       Future.successful(BadRequest(view(dupForm, mode)))
