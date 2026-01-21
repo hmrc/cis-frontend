@@ -21,6 +21,7 @@ import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.TotalTaxDeductedPage
+import pages.monthlyreturns.ContractorNamePage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -47,21 +48,25 @@ class TotalTaxDeductedController @Inject() (
   val form = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val contractorName =
+      request.userAnswers.get(ContractorNamePage).getOrElse("contractorName")
 
     val preparedForm = request.userAnswers.get(TotalTaxDeductedPage) match {
       case None        => form
       case Some(value) => form.fill(value)
     }
 
-    Ok(view(preparedForm, mode))
+    Ok(view(preparedForm, mode, contractorName))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
+      val contractorName = request.userAnswers.get(ContractorNamePage).getOrElse("contractorName")
+
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, contractorName))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(TotalTaxDeductedPage, value))
