@@ -25,10 +25,9 @@ import play.api.data.validation.{Constraint, Invalid, Valid}
 import play.api.i18n.Messages
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, YearMonth}
+import java.time.LocalDate
 import java.util.Locale
 import javax.inject.Inject
-import scala.math.Ordering.Implicits.infixOrderingOps
 
 class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) extends Mappings {
 
