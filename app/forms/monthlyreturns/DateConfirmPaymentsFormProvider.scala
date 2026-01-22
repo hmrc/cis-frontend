@@ -33,7 +33,7 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
 
   private val MinMonth: Int        = 1
   private val MaxMonth: Int        = 12
-  private val MinYear: Int         = 2007
+  private val MinYear: Int         = 1900
   private val FirstDayOfMonth: Int = 1
 
   def apply()(implicit messages: Messages): Form[LocalDate] = {
