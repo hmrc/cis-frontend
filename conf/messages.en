@@ -338,6 +338,19 @@ monthlyreturns.totalTaxDeducted.change.hidden = Total tax deducted from {0}
 monthlyreturns.totalTaxDeducted.error.invalid = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
 monthlyreturns.totalTaxDeducted.error.required = Enter the ‘Total tax deducted’, up to 13 characters
 
+verifySubcontractors.title = You have unverified subcontractors
+verifySubcontractors.heading = You have unverified subcontractors
+verifySubcontractors.WarningIcon = Warning
+verifySubcontractors.warningText = One or more subcontractors have not been verified. Not verifying subcontractors will result in them receiving a higher rate of tax.
+verifySubcontractors.P1 = Do you want to verify your subcontractors now?
+verifySubcontractors.yes = Yes
+verifySubcontractors.yes.hint = You will be taken to the verification service
+verifySubcontractors.no = No
+verifySubcontractors.no.hint = Higher-rate tax deductions will apply until verification is complete
+verifySubcontractors.checkYourAnswersLabel = You have unverified subcontractors
+verifySubcontractors.error.required = Select yes if you want to verify your subcontractors now
+verifySubcontractors.change.hidden = VerifySubcontractors
+
 monthlyreturns.subcontractorsPaidThisMonth.title = Subcontractors you paid this month
 monthlyreturns.subcontractorsPaidThisMonth.heading = Subcontractors you paid this month
 monthlyreturns.subcontractorsPaidThisMonth.p1 = The {0} subcontractors you added to this monthly return are listed below.
