@@ -17,6 +17,7 @@
 package connectors
 
 import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.*
 import play.api.Logging
 import play.api.libs.json.Json
@@ -54,7 +55,8 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
     http
-      .get(url"$cisBaseUrl/monthly-returns/$instanceId/for-edit/$taxMonth/$taxYear")
+      .post(url"$cisBaseUrl/monthly-returns-edit/")
+      .withBody(Json.toJson(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear)))
       .execute[GetAllMonthlyReturnDetailsResponse]
 
   def createNilMonthlyReturn(

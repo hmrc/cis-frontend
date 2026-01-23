@@ -110,7 +110,8 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       val taxYear    = 2025
 
       stubFor(
-        get(urlPathEqualTo(s"/cis/monthly-returns/$instanceId/for-edit/$taxMonth/$taxYear"))
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
+          .withHeader("Content-Type", equalTo("application/json"))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -174,12 +175,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     }
 
     "return empty collections when BE returns 200 with empty arrays" in {
-      val instanceId = "CIS-456"
-      val taxMonth   = 5
-      val taxYear    = 2024
-
       stubFor(
-        get(urlPathEqualTo(s"/cis/monthly-returns/$instanceId/for-edit/$taxMonth/$taxYear"))
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
+          .withHeader("Content-Type", equalTo("application/json"))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -196,7 +194,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear).futureValue
+      val result = connector.retrieveAllMonthlyReturnDetails("CIS-456", 5, 2024).futureValue
 
       result.scheme mustBe empty
       result.monthlyReturn mustBe empty
@@ -206,12 +204,8 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     }
 
     "propagate an upstream error when BE returns 500" in {
-      val instanceId = "CIS-ERR"
-      val taxMonth   = 1
-      val taxYear    = 2025
-
       stubFor(
-        get(urlPathEqualTo(s"/cis/monthly-returns/$instanceId/for-edit/$taxMonth/$taxYear"))
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
           .willReturn(
             aResponse()
               .withStatus(INTERNAL_SERVER_ERROR)
@@ -220,18 +214,14 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear).futureValue
+        connector.retrieveAllMonthlyReturnDetails("CIS-ERR", 1, 2025).futureValue
       }
       ex.getMessage must include("returned 500")
     }
 
     "propagate an upstream error when BE returns 404" in {
-      val instanceId = "CIS-NOTFOUND"
-      val taxMonth   = 3
-      val taxYear    = 2025
-
       stubFor(
-        get(urlPathEqualTo(s"/cis/monthly-returns/$instanceId/for-edit/$taxMonth/$taxYear"))
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
           .willReturn(
             aResponse()
               .withStatus(NOT_FOUND)
@@ -240,7 +230,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear).futureValue
+        connector.retrieveAllMonthlyReturnDetails("CIS-NOTFOUND", 3, 2025).futureValue
       }
       ex.getMessage must include("returned 404")
     }
