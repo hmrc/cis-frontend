@@ -25,7 +25,7 @@ class TotalTaxDeductedFormProvider @Inject() extends Mappings {
 
   def apply(): Form[BigDecimal] =
     Form(
-      "value" -> paymentDetailsCurrency(
+      "value" -> taxDeductedCurrency(
         "totalTaxDeducted.error.required",
         "totalTaxDeducted.error.invalid",
         "totalTaxDeducted.error.maxLength"
