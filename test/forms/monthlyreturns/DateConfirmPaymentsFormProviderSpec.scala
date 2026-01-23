@@ -87,7 +87,7 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
 
     "must fail when year is below minimum range" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2006"))
-      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
     }
 
     "must fail when year is above maximum range" in {
@@ -95,7 +95,7 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
       val maxAllowedDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
       val maxYear        = maxAllowedDate.getYear + 1
       val result         = form.bind(Map("taxMonth" -> "6", "taxYear" -> (maxYear + 1).toString))
-      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod")
     }
   }
 
@@ -112,17 +112,17 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
 
     "must fail when date is in year before earliest tax period end date" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2006"))
-      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
     }
 
     "must fail when date is January in year before earliest tax period end date" in {
       val result = form.bind(Map("taxMonth" -> "1", "taxYear" -> "2006"))
-      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
     }
 
     "must fail when date is December in year before earliest tax period end date" in {
       val result = form.bind(Map("taxMonth" -> "12", "taxYear" -> "2006"))
-      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
     }
 
     "must pass when date is equal to earliest tax period end date" in {
@@ -287,9 +287,10 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
       result.errors.map(_.message) must not contain "dateConfirmPayments.taxYear.error.range"
     }
 
-    "must fail with year range error when year is before earliest date year" in {
+    "must fail with earliest date error when year is before earliest date year" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2006"))
-      result.errors.map(_.message) must contain("dateConfirmPayments.taxYear.error.range")
+      result.errors.map(_.message) must contain("dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate")
+      result.errors.map(_.message) must not contain "dateConfirmPayments.taxYear.error.range"
     }
 
     "must fail with max future date error when date is too far in future" in {

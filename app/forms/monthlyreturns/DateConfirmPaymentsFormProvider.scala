@@ -44,8 +44,6 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
     val today          = LocalDate.now()
     val maxAllowedDate =
       if (today.getDayOfMonth <= TaxPeriodEndDateRules.TaxPeriodEndDay) today.plusMonths(3) else today.plusMonths(4)
-    val MaxYear        = maxAllowedDate.getYear + 1
-    val EarliestYear   = earliestTaxPeriodEndDate.getYear
 
     val earliestDateConstraint: Constraint[LocalDate] = Constraint { date =>
       if (
@@ -86,8 +84,7 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
           requiredKey = "dateConfirmPayments.taxYear.error.required",
           wholeNumberKey = "dateConfirmPayments.taxYear.error.wholeNumber",
           nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
-        ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= MinYear && year <= MaxYear)
-          .verifying("dateConfirmPayments.taxYear.error.range", year => year >= EarliestYear)
+        ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= MinYear)
       )((month, year) => LocalDate.of(year, month, FirstDayOfMonth))(date => Some((date.getMonthValue, date.getYear)))
         .verifying(earliestDateConstraint)
         .verifying(maxFutureDateConstraint)
