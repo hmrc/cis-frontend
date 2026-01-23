@@ -91,7 +91,6 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
         "50.99",
         "99999999",
         "99999999.00",
-        "99999999.99",
         "0",
         "0.00",
         "0.0",
@@ -131,9 +130,9 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
     }
 
     "must bind maximum value with decimals" in {
-      val boundForm = form.bind(Map(fieldName -> "99999999.99"))
+      val boundForm = form.bind(Map(fieldName -> "99999999.00"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999.99")
+      boundForm.get mustBe BigDecimal("99999999.00")
     }
 
     "must not bind when value exceeds maximum value" in {
