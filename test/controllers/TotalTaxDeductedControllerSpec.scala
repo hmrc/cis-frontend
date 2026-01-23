@@ -42,7 +42,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val validAnswer                = BigDecimal(1)
-  val contractorName             = "Test Contractor Ltd"
+  val companyName                = "TyneWear Ltd"
   lazy val totalTaxDeductedRoute =
     controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode).url
 
@@ -50,7 +50,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
     "must return OK and the correct view for a GET" in {
 
-      val userAnswers = emptyUserAnswers.set(ContractorNamePage, contractorName).success.value
+      val userAnswers = emptyUserAnswers.set(ContractorNamePage, companyName).success.value
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
@@ -61,7 +61,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[TotalTaxDeductedView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, contractorName)(
+        contentAsString(result) mustEqual view(form, NormalMode, companyName)(
           request,
           messages(application)
         ).toString
@@ -71,7 +71,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
       val userAnswers = UserAnswers(userAnswersId)
-        .set(ContractorNamePage, contractorName)
+        .set(ContractorNamePage, companyName)
         .success
         .value
         .set(TotalTaxDeductedPage, validAnswer)
@@ -88,7 +88,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, contractorName)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName)(
           request,
           messages(application)
         ).toString
@@ -101,7 +101,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-      val userAnswers = emptyUserAnswers.set(ContractorNamePage, contractorName).success.value
+      val userAnswers = emptyUserAnswers.set(ContractorNamePage, companyName).success.value
 
       val application =
         applicationBuilder(userAnswers = Some(userAnswers))
@@ -152,7 +152,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val userAnswers = emptyUserAnswers.set(ContractorNamePage, contractorName).success.value
+      val userAnswers = emptyUserAnswers.set(ContractorNamePage, companyName).success.value
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
@@ -167,7 +167,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, contractorName)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName)(
           request,
           messages(application)
         ).toString

@@ -110,7 +110,7 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
       ).foreach { case (invalidValue, description) =>
         withClue(s"Value '$invalidValue' ($description) should be invalid") {
           val result = form.bind(Map(fieldName -> invalidValue)).apply(fieldName)
-          result.errors must contain(FormError(fieldName, "totalTaxDeducted.error.invalid"))
+          result.errors must contain(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.invalid"))
         }
       }
     }
@@ -130,9 +130,9 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
     }
 
     "must bind maximum value with decimals" in {
-      val boundForm = form.bind(Map(fieldName -> "99999999.00"))
+      val boundForm = form.bind(Map(fieldName -> "99999999.99"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999.00")
+      boundForm.get mustBe BigDecimal("99999999.99")
     }
 
     "must not bind when value exceeds maximum value" in {
@@ -178,13 +178,13 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
 
     "must not bind when the value is greater than the maximum" in {
       val result = form.bind(Map(fieldName -> "100000000")).apply(fieldName)
-      result.errors must contain(FormError(fieldName, "totalTaxDeducted.error.maxValue"))
+      result.errors must contain(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.maxValue"))
     }
 
     behave like mandatoryField(
       form,
       fieldName,
-      requiredError = FormError(fieldName, "totalTaxDeducted.error.required")
+      requiredError = FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.required")
     )
   }
 }

@@ -28,12 +28,13 @@ import views.html.monthlyreturns.TotalTaxDeductedView
 class TotalTaxDeductedViewSpec extends SpecBase {
 
   "TotalTaxDeductedView" - {
+
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title                               must include(messages("monthlyreturns.totalTaxDeducted.title", contractorName))
+      doc.title                               must include(messages("monthlyreturns.totalTaxDeducted.title", companyName))
       doc.select("label.govuk-label--l").text must include(
-        messages("monthlyreturns.totalTaxDeducted.heading", contractorName)
+        messages("monthlyreturns.totalTaxDeducted.heading", companyName)
       )
       doc.select(".govuk-hint").text          must include(messages("monthlyreturns.totalTaxDeducted.hintText"))
 
@@ -47,7 +48,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
     "must display error summary when form has errors" in new Setup {
       val formWithErrors = form.bind(Map("value" -> ""))
-      val htmlWithErrors = view(formWithErrors, NormalMode, contractorName)
+      val htmlWithErrors = view(formWithErrors, NormalMode, companyName)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-summary").size mustBe 1
@@ -56,7 +57,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
     "must display field error when value is invalid" in new Setup {
       val formWithErrors = form.bind(Map("value" -> "invalid"))
-      val htmlWithErrors = view(formWithErrors, NormalMode, contractorName)
+      val htmlWithErrors = view(formWithErrors, NormalMode, companyName)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-message").size mustBe 1
@@ -68,13 +69,13 @@ class TotalTaxDeductedViewSpec extends SpecBase {
     val view                                      = app.injector.instanceOf[TotalTaxDeductedView]
     val formProvider                              = new TotalTaxDeductedFormProvider()
     val form                                      = formProvider()
-    val contractorName                            = "Test Contractor Ltd"
+    val companyName                               = "TyneWear Ltd"
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode, contractorName)
+    val html = view(form, NormalMode, companyName)
   }
 }
