@@ -59,6 +59,26 @@ class SelectSubcontractorsViewSpec extends SpecBase {
       linkText must contain(messages("monthlyreturns.selectSubcontractors.deselectAll.link"))
     }
 
+    "must render select all link with correct URL" in new Setup {
+      val html = view(form, subcontractors)
+      val doc  = Jsoup.parse(html.body)
+
+      val selectAllLink = doc.select(s"a:contains(${messages("monthlyreturns.selectSubcontractors.selectAll.link")})")
+      selectAllLink
+        .attr("href") mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url
+    }
+
+    "must render deselect all link with correct URL" in new Setup {
+      val html = view(form, subcontractors)
+      val doc  = Jsoup.parse(html.body)
+
+      val deselectAllLink =
+        doc.select(s"a:contains(${messages("monthlyreturns.selectSubcontractors.deselectAll.link")})")
+      deselectAllLink.attr("href") mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController
+        .onPageLoad(Some(false))
+        .url
+    }
+
     "must render the table headers in the correct order" in new Setup {
       val html    = view(form, subcontractors)
       val doc     = Jsoup.parse(html.body)

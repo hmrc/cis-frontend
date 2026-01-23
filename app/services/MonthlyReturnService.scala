@@ -19,10 +19,9 @@ package services
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
-import models.monthlyreturns.{Declaration, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.monthlyreturns.{Declaration, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.UserAnswers
-import models.monthlyreturns.{InactivityRequest, MonthlyReturnResponse}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -59,6 +58,15 @@ class MonthlyReturnService @Inject() (
 
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
+
+  def retrieveAllMonthlyReturnDetails(
+    instanceId: String,
+    taxMonth: Int,
+    taxYear: Int
+  )(implicit
+    hc: HeaderCarrier
+  ): Future[GetAllMonthlyReturnDetailsResponse] =
+    cisConnector.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear)
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)
