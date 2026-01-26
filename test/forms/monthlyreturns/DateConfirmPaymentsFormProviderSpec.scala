@@ -40,7 +40,7 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
     "must bind valid month values" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2024"))
       result.errors mustBe empty
-      result.value.value mustBe LocalDate.of(2024, 6, 1)
+      result.value.value mustBe LocalDate.of(2024, 6, 5)
     }
 
     "must fail when month is missing" in {
@@ -64,7 +64,7 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
     "must bind valid year at minimum boundary" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2007"))
       result.errors mustBe empty
-      result.value.value mustBe LocalDate.of(2007, 6, 1)
+      result.value.value mustBe LocalDate.of(2007, 6, 5)
     }
 
     "must bind valid year at maximum boundary" in {
@@ -278,7 +278,7 @@ class DateConfirmPaymentsFormProviderSpec extends SpecBase with Generators with 
     "must pass when all validations pass" in {
       val result = form.bind(Map("taxMonth" -> "6", "taxYear" -> "2024"))
       result.errors mustBe empty
-      result.value.value mustBe LocalDate.of(2024, 6, 1)
+      result.value.value mustBe LocalDate.of(2024, 6, 5)
     }
 
     "must fail with earliest date error when date is before earliest and within year range" in {

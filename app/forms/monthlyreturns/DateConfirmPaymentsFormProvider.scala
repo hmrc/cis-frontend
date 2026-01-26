@@ -31,10 +31,9 @@ import javax.inject.Inject
 
 class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) extends Mappings {
 
-  private val MinMonth: Int        = 1
-  private val MaxMonth: Int        = 12
-  private val MinYear: Int         = 1900
-  private val FirstDayOfMonth: Int = 1
+  private val MinMonth: Int = 1
+  private val MaxMonth: Int = 12
+  private val MinYear: Int  = 1900
 
   def apply()(implicit messages: Messages): Form[LocalDate] = {
     val earliestTaxPeriodEndDate: LocalDate = LocalDate.parse(appConfig.earliestTaxPeriodEndDate)
@@ -85,7 +84,9 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
           wholeNumberKey = "dateConfirmPayments.taxYear.error.wholeNumber",
           nonNumericKey = "dateConfirmPayments.taxYear.error.nonNumeric"
         ).verifying("dateConfirmPayments.taxYear.error.range", year => year >= MinYear)
-      )((month, year) => LocalDate.of(year, month, FirstDayOfMonth))(date => Some((date.getMonthValue, date.getYear)))
+      )((month, year) => LocalDate.of(year, month, TaxPeriodEndDateRules.TaxPeriodEndDay))(date =>
+        Some((date.getMonthValue, date.getYear))
+      )
         .verifying(earliestDateConstraint)
         .verifying(maxFutureDateConstraint)
     )
