@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
 import controllers.routes
 import models.{CheckMode, UserAnswers}
-import pages.ConfirmSubcontractorRemovalPage
+import pages.monthlyreturns.ConfirmSubcontractorRemovalPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import viewmodels.govuk.summarylist._
-import viewmodels.implicits._
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
-object ConfirmSubcontractorRemovalSummary  {
+object ConfirmSubcontractorRemovalSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(ConfirmSubcontractorRemovalPage).map {
-      answer =>
+    answers.get(ConfirmSubcontractorRemovalPage).map { answer =>
 
-        val value = if (answer) "site.yes" else "site.no"
+      val value = if (answer) "site.yes" else "site.no"
 
-        SummaryListRowViewModel(
-          key     = "monthlyreturns.confirmSubcontractorRemoval.checkYourAnswersLabel",
-          value   = ValueViewModel(value),
-          actions = Seq(
-            ActionItemViewModel("site.change", routes.ConfirmSubcontractorRemovalController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("monthlyreturns.confirmSubcontractorRemoval.change.hidden"))
+      SummaryListRowViewModel(
+        key = "monthlyreturns.confirmSubcontractorRemoval.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(CheckMode).url
           )
+            .withVisuallyHiddenText(messages("monthlyreturns.confirmSubcontractorRemoval.change.hidden"))
         )
+      )
     }
 }

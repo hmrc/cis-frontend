@@ -1,12 +1,13 @@
-package forms
+package forms.monthlyreturns
 
 import forms.behaviours.BooleanFieldBehaviours
+import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import play.api.data.FormError
 
 class ConfirmSubcontractorRemovalFormProviderSpec extends BooleanFieldBehaviours {
 
   val requiredKey = "monthlyreturns.confirmSubcontractorRemoval.error.required"
-  val invalidKey = "error.boolean"
+  val invalidKey  = "error.boolean"
 
   val form = new ConfirmSubcontractorRemovalFormProvider()()
 

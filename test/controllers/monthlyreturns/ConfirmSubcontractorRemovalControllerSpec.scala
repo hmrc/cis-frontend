@@ -1,19 +1,20 @@
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.ConfirmSubcontractorRemovalFormProvider
+import controllers.routes
+import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.ConfirmSubcontractorRemovalPage
+import pages.monthlyreturns.ConfirmSubcontractorRemovalPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.ConfirmSubcontractorRemovalView
+import views.html.monthlyreturns.ConfirmSubcontractorRemovalView
 
 import scala.concurrent.Future
 
@@ -22,9 +23,9 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new ConfirmSubcontractorRemovalFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
-  lazy val confirmSubcontractorRemovalRoute = routes.ConfirmSubcontractorRemovalController.onPageLoad(NormalMode).url
+  lazy val confirmSubcontractorRemovalRoute = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(NormalMode).url
 
   "ConfirmSubcontractorRemoval Controller" - {
 

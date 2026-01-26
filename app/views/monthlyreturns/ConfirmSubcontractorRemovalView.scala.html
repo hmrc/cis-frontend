@@ -29,7 +29,7 @@
 
 @layout(pageTitle = title(form, messages("monthlyreturns.confirmSubcontractorRemoval.title"))) {
 
-    @formHelper(action = routes.ConfirmSubcontractorRemovalController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))
