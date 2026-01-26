@@ -17,15 +17,18 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.when
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
-class DateConfirmPaymentsViewSpec extends SpecBase {
+class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
   "DateConfirmPaymentsView" - {
     "must render the page with the correct html elements" in new Setup {
@@ -46,7 +49,9 @@ class DateConfirmPaymentsViewSpec extends SpecBase {
   trait Setup {
     val app                                       = applicationBuilder().build()
     val view                                      = app.injector.instanceOf[DateConfirmPaymentsView]
-    val formProvider                              = new DateConfirmPaymentsFormProvider()
+    val mockFrontendAppConfig: FrontendAppConfig  = mock[FrontendAppConfig]
+    when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+    val formProvider                              = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
