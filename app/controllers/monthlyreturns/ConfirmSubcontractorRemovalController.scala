@@ -53,7 +53,9 @@ class ConfirmSubcontractorRemovalController @Inject() (
       case Some(value) => form.fill(value)
     }
 
-    Ok(view(preparedForm, mode))
+    val subcontractorName = "TyneWear Ltd"
+
+    Ok(view(preparedForm, mode, subcontractorName))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -61,7 +63,10 @@ class ConfirmSubcontractorRemovalController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => {
+            val subcontractorName = "TyneWear Ltd"
+            Future.successful(BadRequest(view(formWithErrors, mode, subcontractorName)))
+          },
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmSubcontractorRemovalPage, value))

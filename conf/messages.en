@@ -376,8 +376,8 @@ monthlyreturns.costOfMaterials.error.maxLength = Enter the ‘Cost of materials�
 monthlyreturns.costOfMaterials.error.maxValue = Enter the amount for ‘Cost of materials’, using the correct format of pounds only, like £458
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
 
-monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove TyneWear Ltd?
-monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove TyneWear Ltd?
+monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
+monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.checkYourAnswersLabel = confirmSubcontractorRemoval
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if confirmSubcontractorRemoval
 monthlyreturns.confirmSubcontractorRemoval.change.hidden = ConfirmSubcontractorRemoval
