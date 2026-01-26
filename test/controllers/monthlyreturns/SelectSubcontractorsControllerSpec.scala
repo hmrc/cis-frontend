@@ -119,7 +119,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       "must return OK and the correct view when required user answers are present" in {
         val mockService = mock[MonthlyReturnService]
         when(
-          mockService.retrieveAllMonthlyReturnDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
@@ -151,7 +151,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       "must return OK with all checkboxes selected when defaultSelection is true" in {
         val mockService = mock[MonthlyReturnService]
         when(
-          mockService.retrieveAllMonthlyReturnDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
@@ -188,7 +188,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       "must return OK with no checkboxes selected when defaultSelection is false" in {
         val mockService = mock[MonthlyReturnService]
         when(
-          mockService.retrieveAllMonthlyReturnDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
@@ -223,7 +223,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       "must return OK with empty subcontractors list when backend returns no subcontractors" in {
         val mockService = mock[MonthlyReturnService]
         when(
-          mockService.retrieveAllMonthlyReturnDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
@@ -256,7 +256,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val subcontractorWithNoName = createSubcontractor(99, None)
         val mockService             = mock[MonthlyReturnService]
         when(
-          mockService.retrieveAllMonthlyReturnDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )

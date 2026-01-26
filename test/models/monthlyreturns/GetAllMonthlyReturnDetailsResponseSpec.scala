@@ -231,11 +231,11 @@ final class GetAllMonthlyReturnDetailsResponseSpec extends AnyFreeSpec with Matc
       val js     = Json.parse(jsonString)
       val result = js.as[GetAllMonthlyReturnDetailsResponse]
 
-      result.scheme must have length 2
-      result.monthlyReturn must have length 2
-      result.subcontractors must have length 3
+      result.scheme             must have length 2
+      result.monthlyReturn      must have length 2
+      result.subcontractors     must have length 3
       result.monthlyReturnItems must have length 2
-      result.submission must have length 1
+      result.submission         must have length 1
 
       result.subcontractors.map(_.tradingName) mustBe Seq(Some("Sub A"), Some("Sub B"), Some("Sub C"))
     }

@@ -69,7 +69,7 @@ class SelectSubcontractorsController @Inject() (
 
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
-          monthlyReturnService.retrieveAllMonthlyReturnDetails(cisId, taxMonth, taxYear).map { data =>
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
             val subcontractorViewModels = data.subcontractors.map(s =>
               SelectSubcontractorsViewModel(
                 id = s.subcontractorId.toInt,

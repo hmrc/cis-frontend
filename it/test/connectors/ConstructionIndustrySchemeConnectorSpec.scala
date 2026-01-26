@@ -102,7 +102,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     }
   }
   
-  "retrieveAllMonthlyReturnDetails" should {
+  "retrieveMonthlyReturnForEditDetails" should {
 
     "return GetAllMonthlyReturnDetailsResponse when BE returns 200 with valid JSON" in {
       val instanceId = "CIS-123"
@@ -153,7 +153,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear).futureValue
+      val result = connector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
 
       result.scheme.length mustBe 1
       result.scheme.head.instanceId mustBe instanceId
@@ -194,7 +194,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveAllMonthlyReturnDetails("CIS-456", 5, 2024).futureValue
+      val result = connector.retrieveMonthlyReturnForEditDetails("CIS-456", 5, 2024).futureValue
 
       result.scheme mustBe empty
       result.monthlyReturn mustBe empty
@@ -214,7 +214,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveAllMonthlyReturnDetails("CIS-ERR", 1, 2025).futureValue
+        connector.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
       }
       ex.getMessage must include("returned 500")
     }
@@ -230,7 +230,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveAllMonthlyReturnDetails("CIS-NOTFOUND", 3, 2025).futureValue
+        connector.retrieveMonthlyReturnForEditDetails("CIS-NOTFOUND", 3, 2025).futureValue
       }
       ex.getMessage must include("returned 404")
     }

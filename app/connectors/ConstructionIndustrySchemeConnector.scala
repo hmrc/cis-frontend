@@ -47,7 +47,7 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
 
-  def retrieveAllMonthlyReturnDetails(
+  def retrieveMonthlyReturnForEditDetails(
     instanceId: String,
     taxMonth: Int,
     taxYear: Int

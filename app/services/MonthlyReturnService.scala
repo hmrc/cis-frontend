@@ -59,14 +59,14 @@ class MonthlyReturnService @Inject() (
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
 
-  def retrieveAllMonthlyReturnDetails(
+  def retrieveMonthlyReturnForEditDetails(
     instanceId: String,
     taxMonth: Int,
     taxYear: Int
   )(implicit
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
-    cisConnector.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear)
+    cisConnector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear)
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)

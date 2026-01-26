@@ -253,7 +253,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "retrieveAllMonthlyReturnDetails" should {
+  "retrieveMonthlyReturnForEditDetails" should {
 
     "delegate to connector and return the payload" in {
       val (service, connector, _) = newService()
@@ -351,14 +351,16 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       )
 
       when(
-        connector.retrieveAllMonthlyReturnDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(any[HeaderCarrier])
+        connector.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+          any[HeaderCarrier]
+        )
       )
         .thenReturn(Future.successful(payload))
 
-      val result = service.retrieveAllMonthlyReturnDetails(instanceId, taxMonth, taxYear).futureValue
+      val result = service.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
       result mustBe payload
 
-      verify(connector).retrieveAllMonthlyReturnDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
         any[HeaderCarrier]
       )
       verifyNoMoreInteractions(connector)
@@ -367,11 +369,11 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     "propagate failures from the connector" in {
       val (service, connector, _) = newService()
 
-      when(connector.retrieveAllMonthlyReturnDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025))(any[HeaderCarrier]))
+      when(connector.retrieveMonthlyReturnForEditDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025))(any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("upstream failed")))
 
       val ex = intercept[RuntimeException] {
-        service.retrieveAllMonthlyReturnDetails("CIS-ERR", 1, 2025).futureValue
+        service.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
       }
       ex.getMessage must include("upstream failed")
     }
