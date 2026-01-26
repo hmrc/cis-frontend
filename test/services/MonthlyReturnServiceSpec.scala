@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.monthlyreturns.{CisTaxpayer, ContractorScheme, Declaration, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn, MonthlyReturnDetails, MonthlyReturnItem, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse, Subcontractor, Submission}
 import models.UserAnswers
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -250,6 +250,173 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         service.isDuplicate("CIS-123", year = 2024, month = 5).futureValue
       }
       ex.getMessage must include("boom")
+    }
+  }
+
+  "retrieveMonthlyReturnForEditDetails" should {
+
+    "delegate to connector and return the payload" in {
+      val (service, connector, _) = newService()
+      val instanceId              = "CIS-123"
+      val taxMonth                = 10
+      val taxYear                 = 2025
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(
+          ContractorScheme(
+            schemeId = 1,
+            instanceId = instanceId,
+            accountsOfficeReference = "123PA12345678",
+            taxOfficeNumber = "123",
+            taxOfficeReference = "AB456"
+          )
+        ),
+        monthlyReturn = Seq(
+          MonthlyReturn(monthlyReturnId = 101, taxYear = taxYear, taxMonth = taxMonth)
+        ),
+        subcontractors = Seq(
+          Subcontractor(
+            subcontractorId = 1001,
+            utr = None,
+            pageVisited = None,
+            partnerUtr = None,
+            crn = None,
+            firstName = Some("John"),
+            nino = None,
+            secondName = None,
+            surname = Some("Doe"),
+            partnershipTradingName = None,
+            tradingName = Some("Test Subcontractor Ltd"),
+            subcontractorType = None,
+            addressLine1 = None,
+            addressLine2 = None,
+            addressLine3 = None,
+            addressLine4 = None,
+            country = None,
+            postCode = None,
+            emailAddress = None,
+            phoneNumber = None,
+            mobilePhoneNumber = None,
+            worksReferenceNumber = None,
+            createDate = None,
+            lastUpdate = None,
+            subbieResourceRef = None,
+            matched = None,
+            autoVerified = None,
+            verified = None,
+            verificationNumber = None,
+            taxTreatment = None,
+            verificationDate = None,
+            version = None,
+            updatedTaxTreatment = None,
+            lastMonthlyReturnDate = None,
+            pendingVerifications = None
+          )
+        ),
+        monthlyReturnItems = Seq(
+          MonthlyReturnItem(
+            monthlyReturnId = 101,
+            monthlyReturnItemId = 2001,
+            totalPayments = None,
+            costOfMaterials = None,
+            totalDeducted = None,
+            unmatchedTaxRateIndicator = None,
+            subcontractorId = Some(1001),
+            subcontractorName = None,
+            verificationNumber = None,
+            itemResourceReference = None
+          )
+        ),
+        submission = Seq(
+          Submission(
+            submissionId = 3001,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = None,
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
+      )
+
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+          any[HeaderCarrier]
+        )
+      )
+        .thenReturn(Future.successful(payload))
+
+      val result = service.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
+      result mustBe payload
+
+      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+        any[HeaderCarrier]
+      )
+      verifyNoMoreInteractions(connector)
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, _) = newService()
+
+      when(connector.retrieveMonthlyReturnForEditDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+
+      val ex = intercept[RuntimeException] {
+        service.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
+      }
+      ex.getMessage must include("upstream failed")
+    }
+  }
+
+  "getSchemeEmail" should {
+
+    "delegate to connector and return the email when present" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
+
+      when(connector.getSchemeEmail(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some("test@example.com")))
+
+      val result = service.getSchemeEmail(cisId).futureValue
+      result mustBe Some("test@example.com")
+
+      verify(connector).getSchemeEmail(eqTo(cisId))(any[HeaderCarrier])
+    }
+
+    "delegate to connector and return None when email is not present" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
+
+      when(connector.getSchemeEmail(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(None))
+
+      val result = service.getSchemeEmail(cisId).futureValue
+      result mustBe None
+
+      verify(connector).getSchemeEmail(eqTo(cisId))(any[HeaderCarrier])
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getSchemeEmail(eqTo("CIS-ERR"))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+
+      val ex = intercept[RuntimeException] {
+        service.getSchemeEmail("CIS-ERR").futureValue
+      }
+      ex.getMessage must include("upstream failed")
     }
   }
 
