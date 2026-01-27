@@ -18,6 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
 import itutil.ApplicationWithWiremock
+import models.requests.SendSuccessEmailRequest
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -26,6 +27,8 @@ import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import scala.concurrent.ExecutionContext
+
 class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
   with Matchers
   with ScalaFutures
@@ -33,6 +36,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
   with ApplicationWithWiremock {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   val connector: ConstructionIndustrySchemeConnector = app.injector.instanceOf[ConstructionIndustrySchemeConnector]
 
@@ -644,6 +648,44 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         connector.getSubmissionStatus(pollUrl, correlationId).futureValue
       }
       ex.getMessage must include("returned 500")
+    }
+  }
+
+  "sendSuccessfulEmail" should {
+
+    "POST to /cis/submissions/:submissionId/send-success-email and succeed on 202" in {
+      val submissionId = "sub-123"
+      val req = SendSuccessEmailRequest(
+        email = "test@test.com",
+        month = "September",
+        year = "2025"
+      )
+
+      stubFor(
+        post(urlPathEqualTo(s"/cis/submissions/$submissionId/send-success-email"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(aResponse().withStatus(ACCEPTED))
+      )
+
+      connector.sendSuccessfulEmail(submissionId, req).futureValue mustBe (())
+    }
+
+    "fail the future when BE returns non-202 (e.g. 500)" in {
+      val submissionId = "sub-err"
+      val req = SendSuccessEmailRequest("test@test.com", "September", "2025")
+
+      stubFor(
+        post(urlPathEqualTo(s"/cis/submissions/$submissionId/send-success-email"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[RuntimeException] {
+        connector.sendSuccessfulEmail(submissionId, req).futureValue
+      }
+
+      ex.getMessage must include("Send email failed")
+      ex.getMessage must include("status: 500")
+      ex.getMessage must include("boom")
     }
   }
 
