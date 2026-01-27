@@ -667,7 +667,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           .willReturn(aResponse().withStatus(ACCEPTED))
       )
 
-      connector.sendSuccessfulEmail(submissionId, req).futureValue mustBe (())
+      connector.sendSuccessfulEmail(submissionId, req).futureValue mustBe ()
     }
 
     "fail the future when BE returns non-202 (e.g. 500)" in {
