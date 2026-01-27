@@ -108,13 +108,5 @@ trait RadiosFluency {
 
     def inline(): Radios =
       radios.withCssClass("govuk-radios--inline")
-
-    def block(): Radios =
-      radios.copy(
-        classes = radios.classes
-          .split("\\s+")
-          .filter(className => className != "govuk-radios--inline")
-          .mkString(" ")
-      )
   }
 }

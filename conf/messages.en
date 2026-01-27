@@ -380,6 +380,4 @@ monthlyreturns.costOfMaterials.change.hidden = cost of materials
 
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
-monthlyreturns.confirmSubcontractorRemoval.checkYourAnswersLabel = Confirm Subcontractor Removal
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if you want to remove this subcontractor
-monthlyreturns.confirmSubcontractorRemoval.change.hidden = confirm subcontractor removal
