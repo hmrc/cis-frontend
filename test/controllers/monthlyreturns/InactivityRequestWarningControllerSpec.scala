@@ -1,10 +1,9 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import controllers.routes
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.InactivityRequestWarningView
+import views.html.monthlyreturns.InactivityRequestWarningView
 
 class InactivityRequestWarningControllerSpec extends SpecBase {
 
@@ -15,7 +14,8 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.InactivityRequestWarningController.onPageLoad().url)
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad().url)
 
         val result = route(application, request).value
 

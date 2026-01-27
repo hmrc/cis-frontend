@@ -15,13 +15,28 @@
  *@
 
 @this(
-        layout: templates.Layout,
-        govukButton: GovukButton
+    layout: templates.Layout,
+    govukButton: GovukButton,
+    govukWarningText: GovukWarningText,
+    h1: components.H1,
+    paragraph: components.Paragraph
 )
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("inactivityRequestWarning.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.inactivityRequestWarning.title"))) {
 
-    <h1 class="govuk-heading-xl">@messages("inactivityRequestWarning.heading")</h1>
+    @h1(messages("monthlyreturns.inactivityRequestWarning.heading"))
+    @paragraph(messages("monthlyreturns.inactivityRequestWarning.p"))
+
+    @govukWarningText(
+        WarningTextViewModel(
+            content = Text(messages("monthlyreturns.inactivityRequestWarning.warning"))
+        )
+    )
+    @govukButton(
+        ButtonViewModel(
+            messages("monthlyreturns.inactivityRequestWarning.submit")
+        )
+    )
 }
