@@ -377,3 +377,6 @@ monthlyreturns.costOfMaterials.error.invalid = Enter the amount for ‘Cost of m
 monthlyreturns.costOfMaterials.error.maxLength = Enter the ‘Cost of materials’, up to 13 characters
 monthlyreturns.costOfMaterials.error.maxValue = Enter the amount for ‘Cost of materials’, using the correct format of pounds only, like £458
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
+
+inactivityRequestWarning.title = inactivityRequestWarning
+inactivityRequestWarning.heading = inactivityRequestWarning
