@@ -47,15 +47,6 @@ class SelectSubcontractorsController @Inject() (
     with I18nSupport
     with Logging {
 
-  private val subcontractors = Seq(
-    SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
-  )
-
   private val form = formProvider()
   def onPageLoad(
     defaultSelection: Option[Boolean] = None
@@ -119,39 +110,60 @@ class SelectSubcontractorsController @Inject() (
     }
 
   def onSubmit(): Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors =>
-            BadRequest(
-              view(
-                formWithErrors,
-                subcontractors,
-                config.selectSubcontractorsUpfrontDeclaration
+    (identify andThen getData andThen requireData).async { implicit request =>
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+      requiredAnswers
+        .map { (cisId, taxMonth, taxYear) =>
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+            val subcontractorViewModels = data.subcontractors.map(s =>
+              SelectSubcontractorsViewModel(
+                id = s.subcontractorId.toInt,
+                name = s.tradingName.getOrElse("Unknown"),
+                verificationRequired = "Yes",
+                verificationNumber = "Unknown",
+                taxTreatment = "Unknown"
               )
-            ),
-          formData =>
-            if (!formData.confirmation) {
-              BadRequest(
-                view(
-                  form
-                    .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                    .fill(formData),
-                  subcontractors,
-                  config.selectSubcontractorsUpfrontDeclaration
-                )
+            )
+
+            form
+              .bindFromRequest()
+              .fold(
+                formWithErrors =>
+                  BadRequest(
+                    view(
+                      formWithErrors,
+                      subcontractorViewModels,
+                      config.selectSubcontractorsUpfrontDeclaration
+                    )
+                  ),
+                formData =>
+                  if (!formData.confirmation) {
+                    BadRequest(
+                      view(
+                        form
+                          .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+                          .fill(formData),
+                        subcontractorViewModels,
+                        config.selectSubcontractorsUpfrontDeclaration
+                      )
+                    )
+                  } else {
+                    Ok(
+                      view(
+                        form.fill(formData),
+                        subcontractorViewModels,
+                        config.selectSubcontractorsUpfrontDeclaration
+                      )
+                    )
+                  }
               )
-            } else {
-              Ok(
-                view(
-                  form.fill(formData),
-                  subcontractors,
-                  config.selectSubcontractorsUpfrontDeclaration
-                )
-              )
-            }
-        )
+          }
+        }
+        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
 
     }
 }

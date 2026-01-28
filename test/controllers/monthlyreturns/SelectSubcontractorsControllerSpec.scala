@@ -393,17 +393,23 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "onSubmit" - {
 
-      val staticSubcontractors = Seq(
-        SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-        SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-        SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-        SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-        SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-        SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
-      )
-
       "must return OK and retain form data when form is valid and confirmation is true" in {
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+        val mockService = mock[MonthlyReturnService]
+        when(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors)))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            new AbstractModule {
+              override def configure(): Unit =
+                bind(classOf[MonthlyReturnService]).toInstance(mockService)
+            }
+          )
+          .build()
 
         running(application) {
           val request = FakeRequest(
@@ -426,7 +432,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val expectedFilledForm = form.fill(expectedFormData)
 
           status(result) mustEqual OK
-          contentAsString(result) mustEqual view(expectedFilledForm, staticSubcontractors)(
+          contentAsString(result) mustEqual view(expectedFilledForm, expectedViewModels)(
             request,
             messages(application)
           ).toString
@@ -434,7 +440,22 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "must return BAD_REQUEST when form has binding errors" in {
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+        val mockService = mock[MonthlyReturnService]
+        when(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors)))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            new AbstractModule {
+              override def configure(): Unit =
+                bind(classOf[MonthlyReturnService]).toInstance(mockService)
+            }
+          )
+          .build()
 
         running(application) {
           val request = FakeRequest(
@@ -459,7 +480,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           )
 
           status(result) mustEqual BAD_REQUEST
-          contentAsString(result) mustEqual view(boundForm, staticSubcontractors)(
+          contentAsString(result) mustEqual view(boundForm, expectedViewModels)(
             request,
             messages(application)
           ).toString
@@ -467,7 +488,22 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "must return BAD_REQUEST with error when confirmation is false" in {
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+        val mockService = mock[MonthlyReturnService]
+        when(
+          mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors)))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            new AbstractModule {
+              override def configure(): Unit =
+                bind(classOf[MonthlyReturnService]).toInstance(mockService)
+            }
+          )
+          .build()
 
         running(application) {
           val request = FakeRequest(
@@ -495,7 +531,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
             .fill(expectedFormData)
 
           status(result) mustEqual BAD_REQUEST
-          contentAsString(result) mustEqual view(formWithError, staticSubcontractors)(
+          contentAsString(result) mustEqual view(formWithError, expectedViewModels)(
             request,
             messages(application)
           ).toString
