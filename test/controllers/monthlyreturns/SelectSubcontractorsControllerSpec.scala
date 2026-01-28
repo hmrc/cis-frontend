@@ -46,7 +46,11 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
     val testTaxMonth = testTaxDate.getMonthValue
     val testTaxYear  = testTaxDate.getYear
 
-    def createSubcontractor(id: Long, tradingName: Option[String]): Subcontractor =
+    def createSubcontractor(
+      id: Long,
+      tradingName: Option[String],
+      subbieResourceRef: Option[Long] = None
+    ): Subcontractor =
       Subcontractor(
         subcontractorId = id,
         utr = None,
@@ -72,7 +76,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         worksReferenceNumber = None,
         createDate = None,
         lastUpdate = None,
-        subbieResourceRef = None,
+        subbieResourceRef = subbieResourceRef,
         matched = None,
         autoVerified = None,
         verified = None,
@@ -85,19 +89,39 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         pendingVerifications = None
       )
 
-    def mockGetAllMonthlyReturnDetailsResponse(subcontractors: Seq[Subcontractor]): GetAllMonthlyReturnDetailsResponse =
+    def createMonthlyReturnItem(
+      monthlyReturnItemId: Long,
+      itemResourceReference: Option[Long]
+    ): MonthlyReturnItem =
+      MonthlyReturnItem(
+        monthlyReturnId = 1L,
+        monthlyReturnItemId = monthlyReturnItemId,
+        totalPayments = None,
+        costOfMaterials = None,
+        totalDeducted = None,
+        unmatchedTaxRateIndicator = None,
+        subcontractorId = None,
+        subcontractorName = None,
+        verificationNumber = None,
+        itemResourceReference = itemResourceReference
+      )
+
+    def mockGetAllMonthlyReturnDetailsResponse(
+      subcontractors: Seq[Subcontractor],
+      monthlyReturnItems: Seq[MonthlyReturnItem] = Seq.empty
+    ): GetAllMonthlyReturnDetailsResponse =
       GetAllMonthlyReturnDetailsResponse(
         scheme = Seq.empty,
         monthlyReturn = Seq.empty,
         subcontractors = subcontractors,
-        monthlyReturnItems = Seq.empty,
+        monthlyReturnItems = monthlyReturnItems,
         submission = Seq.empty
       )
 
     val backendSubcontractors = Seq(
-      createSubcontractor(1, Some("Alice, A")),
-      createSubcontractor(2, Some("Bob, B")),
-      createSubcontractor(3, Some("Charles, C"))
+      createSubcontractor(1, Some("Alice, A"), Some(1L)),
+      createSubcontractor(2, Some("Bob, B"), Some(2L)),
+      createSubcontractor(3, Some("Charles, C"), Some(3L))
     )
 
     val expectedViewModels = Seq(
@@ -116,14 +140,20 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "onPageLoad" - {
 
-      "must return OK and the correct view when required user answers are present" in {
-        val mockService = mock[MonthlyReturnService]
+      "must return OK and pre-select subcontractors included in the last submitted monthly return when required user answers are present" in {
+        val mockService        = mock[MonthlyReturnService]
+        val monthlyReturnItems = Seq(
+          createMonthlyReturnItem(1L, Some(1L)),
+          createMonthlyReturnItem(2L, Some(3L))
+        )
         when(
           mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
-          .thenReturn(Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors)))
+          .thenReturn(
+            Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors, monthlyReturnItems))
+          )
 
         val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(
@@ -140,22 +170,33 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
             controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
           )
 
-          val result = route(application, request).value
-          val view   = application.injector.instanceOf[SelectSubcontractorsView]
+          val result           = route(application, request).value
+          val view             = application.injector.instanceOf[SelectSubcontractorsView]
+          val expectedFormData =
+            SelectSubcontractorsFormData(confirmation = false, subcontractorsToInclude = List(1, 3))
+          val expectedForm     = form.fill(expectedFormData)
 
           status(result) mustEqual OK
-          contentAsString(result) mustEqual view(form, expectedViewModels)(request, messages(application)).toString
+          contentAsString(result) mustEqual view(expectedForm, expectedViewModels)(
+            request,
+            messages(application)
+          ).toString
         }
       }
 
       "must return OK with all checkboxes selected when defaultSelection is true" in {
-        val mockService = mock[MonthlyReturnService]
+        val mockService        = mock[MonthlyReturnService]
+        val monthlyReturnItems = Seq(
+          createMonthlyReturnItem(1L, Some(1L))
+        )
         when(
           mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
-          .thenReturn(Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors)))
+          .thenReturn(
+            Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors, monthlyReturnItems))
+          )
 
         val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(
@@ -186,13 +227,18 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "must return OK with no checkboxes selected when defaultSelection is false" in {
-        val mockService = mock[MonthlyReturnService]
+        val mockService        = mock[MonthlyReturnService]
+        val monthlyReturnItems = Seq(
+          createMonthlyReturnItem(1L, Some(1L))
+        )
         when(
           mockService.retrieveMonthlyReturnForEditDetails(eqTo(testCisId), eqTo(testTaxMonth), eqTo(testTaxYear))(
             any[HeaderCarrier]
           )
         )
-          .thenReturn(Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors)))
+          .thenReturn(
+            Future.successful(mockGetAllMonthlyReturnDetailsResponse(backendSubcontractors, monthlyReturnItems))
+          )
 
         val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(

@@ -70,21 +70,41 @@ class SelectSubcontractorsController @Inject() (
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
           monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
-            val subcontractorViewModels = data.subcontractors.map(s =>
-              SelectSubcontractorsViewModel(
-                id = s.subcontractorId.toInt,
-                name = s.tradingName.getOrElse("Unknown"),
-                verificationRequired = "Yes",
-                verificationNumber = "Unknown",
-                taxTreatment = "Unknown"
-              )
-            )
+            val previouslyIncludedResourceRefs =
+              data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
 
-            val filledForm = defaultSelection match {
-              case Some(true) =>
-                form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
-              case _          => form
+            val (subcontractorViewModels, includedLastMonthFlags) =
+              data.subcontractors.map { s =>
+                val includedLastMonth = s.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
+                val viewModel         = SelectSubcontractorsViewModel(
+                  id = s.subcontractorId.toInt,
+                  name = s.tradingName.getOrElse("Unknown"),
+                  verificationRequired = "Yes",
+                  verificationNumber = "Unknown",
+                  taxTreatment = "Unknown"
+                )
+                (viewModel, includedLastMonth)
+              }.unzip
+
+            val initiallySelectedIds: Seq[Int] = defaultSelection match {
+              case Some(true)  =>
+                subcontractorViewModels.map(_.id)
+              case Some(false) =>
+                Seq.empty
+              case None        =>
+                subcontractorViewModels
+                  .zip(includedLastMonthFlags)
+                  .collect { case (vm, true) => vm.id }
             }
+
+            val filledForm =
+              if (initiallySelectedIds.nonEmpty) {
+                form.fill(
+                  SelectSubcontractorsFormData(confirmation = false, subcontractorsToInclude = initiallySelectedIds)
+                )
+              } else {
+                form
+              }
 
             Ok(
               view(
