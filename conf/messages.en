@@ -334,7 +334,7 @@ monthlyreturns.totalTaxDeducted.hintText = CIS deductions you made from the subc
 monthlyreturns.totalTaxDeducted.checkYourAnswersLabel = Total tax deducted from {0}
 monthlyreturns.totalTaxDeducted.error.maxValue = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
 monthlyreturns.totalTaxDeducted.error.maxLength = Enter the ‘Total tax deducted’, up to 13 characters
-monthlyreturns.totalTaxDeducted.change.hidden = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.change.hidden = total tax deducted from {0}
 monthlyreturns.totalTaxDeducted.error.invalid = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
 monthlyreturns.totalTaxDeducted.error.required = Enter the ‘Total tax deducted’, up to 13 characters
 

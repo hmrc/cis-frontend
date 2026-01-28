@@ -21,7 +21,7 @@ import play.api.libs.json.JsPath
 
 class TotalTaxDeductedPageSpec extends SpecBase {
 
-  "CostOfMaterialsPage" - {
+  "TotalTaxDeductedPage" - {
 
     "have the correct path" in {
       TotalTaxDeductedPage.path mustBe (JsPath \ "totalTaxDeducted")
