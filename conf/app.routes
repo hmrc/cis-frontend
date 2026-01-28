@@ -97,3 +97,5 @@ GET        /monthly-return/remove-subcontractor            controllers.monthlyre
 POST       /monthly-return/remove-subcontractor            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/inactivity-request-warning      controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
