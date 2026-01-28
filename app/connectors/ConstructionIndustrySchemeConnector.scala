@@ -17,9 +17,10 @@
 package connectors
 
 import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import play.api.Logging
+import play.api.http.Status.ACCEPTED
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
@@ -111,4 +112,20 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/scheme/email/$cisId")
       .execute[Option[String]]
+
+  def sendSuccessfulEmail(submissionId: String, request: SendSuccessEmailRequest)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/send-success-email")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { result =>
+        if (result.status == ACCEPTED) {
+          Future.unit
+        } else {
+          Future.failed(new RuntimeException(s"Send email failed: status: ${result.status} body: ${result.body}"))
+        }
+      }
 }
