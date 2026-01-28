@@ -214,4 +214,38 @@ trait Formatters {
       override def unbind(key: String, value: BigDecimal): Map[String, String] =
         baseFormatter.unbind(key, value.toString)
     }
+
+  private[mappings] def taxDeductedCurrencyFormatter(
+    requiredKey: String,
+    invalidKey: String,
+    maxLengthKey: String,
+    args: Seq[String] = Seq.empty
+  ): Formatter[BigDecimal] =
+    new Formatter[BigDecimal] {
+      val taxDeductedRegex = """^[0-9,]+(\.[0-9]{1,2})?$"""
+      val maxLength        = 13
+
+      private val baseFormatter = stringFormatter(requiredKey, args)
+
+      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], BigDecimal] =
+        baseFormatter
+          .bind(key, data)
+          .flatMap { rawInput =>
+            val input = rawInput.trim
+            if (input.length > maxLength) {
+              Left(Seq(FormError(key, maxLengthKey, args)))
+            } else if (!input.matches(taxDeductedRegex)) {
+              Left(Seq(FormError(key, invalidKey, args)))
+            } else {
+              val cleaned = input.replace(",", "")
+              nonFatalCatch
+                .either(BigDecimal(cleaned))
+                .left
+                .map(_ => Seq(FormError(key, invalidKey, args)))
+            }
+          }
+
+      override def unbind(key: String, value: BigDecimal): Map[String, String] =
+        baseFormatter.unbind(key, value.toString)
+    }
 }
