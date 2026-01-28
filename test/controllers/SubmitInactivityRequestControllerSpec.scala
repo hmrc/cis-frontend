@@ -1,13 +1,13 @@
 package controllers
 
 import base.SpecBase
-import forms.SubmitInactivityRequestFormProvider
+import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.SubmitInactivityRequestPage
+import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -22,7 +22,7 @@ class SubmitInactivityRequestControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new SubmitInactivityRequestFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   lazy val submitInactivityRequestRoute = routes.SubmitInactivityRequestController.onPageLoad(NormalMode).url
 

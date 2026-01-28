@@ -1,12 +1,13 @@
 package forms
 
 import forms.behaviours.BooleanFieldBehaviours
+import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import play.api.data.FormError
 
 class SubmitInactivityRequestFormProviderSpec extends BooleanFieldBehaviours {
 
   val requiredKey = "submitInactivityRequest.error.required"
-  val invalidKey = "error.boolean"
+  val invalidKey  = "error.boolean"
 
   val form = new SubmitInactivityRequestFormProvider()()
 
