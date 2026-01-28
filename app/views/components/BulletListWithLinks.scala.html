@@ -1,4 +1,4 @@
-/*
+@*
  * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ *@
 
-package models.requests
+@import utils.Utils.emptyString
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+@this()
 
-case class IdentifierRequest[A](
-  request: Request[A],
-  userId: String,
-  employerReference: Option[EmployerReference],
-  agentReference: Option[String],
-  isAgent: Boolean = false
-) extends WrappedRequest[A](request)
+@(items: Seq[Html], classes: String = "govuk-list govuk-list--bullet", id: Option[String] = None)(implicit messages: Messages)
+
+<ul @{id.fold(emptyString)(id => s"id=$id")} class="@classes">
+    @for(item <- items) {
+        <li>@item</li>
+    }
+</ul>

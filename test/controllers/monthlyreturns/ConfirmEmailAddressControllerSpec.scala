@@ -24,10 +24,11 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.ConfirmEmailAddressPage
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.ConfirmEmailAddressView
 
@@ -35,12 +36,12 @@ import scala.concurrent.Future
 
 class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
-  val formProvider = new ConfirmEmailAddressFormProvider()
-  val form         = formProvider()
+  val formProvider       = new ConfirmEmailAddressFormProvider()
+  val form: Form[String] = formProvider()
 
-  lazy val confirmEmailAddressRoute = routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
+  lazy val confirmEmailAddressRoute: String = routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
 
   "ConfirmEmailAddress Controller" - {
 
@@ -73,7 +74,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
         redirectLocation(
           result
-        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
       }
     }
 

@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.monthlyreturns.{CisTaxpayer, ContractorScheme, Declaration, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn, MonthlyReturnDetails, MonthlyReturnItem, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse, Subcontractor, Submission}
+import models.monthlyreturns.*
 import models.UserAnswers
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -95,7 +95,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val emptyUa     = UserAnswers("test-user")
       val uaWithCisId = emptyUa.set(CisIdPage, existing).get
 
-      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId).futureValue
+      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId, false).futureValue
       cisId mustBe existing
       savedUa mustBe uaWithCisId
 
@@ -114,7 +114,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa).futureValue
+      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa, false).futureValue
 
       cisId mustBe "CIS-123"
       savedUa.get(CisIdPage) mustBe Some("CIS-123")
@@ -137,7 +137,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .thenReturn(Future.successful(emptyTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.resolveAndStoreCisId(emptyUa).futureValue
+        service.resolveAndStoreCisId(emptyUa, false).futureValue
       }
       ex.getMessage must include("Empty cisId (uniqueId) returned from /cis/taxpayer")
 
@@ -158,13 +158,26 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .thenReturn(Failure(new RuntimeException("UA set failed")))
 
       val ex = intercept[RuntimeException] {
-        service.resolveAndStoreCisId(ua).futureValue
+        service.resolveAndStoreCisId(ua, false).futureValue
       }
       ex.getMessage must include("UA set failed")
 
       verifyNoInteractions(sessionRepo)
       verify(connector).getCisTaxpayer()(any[HeaderCarrier])
       verifyNoMoreInteractions(connector)
+    }
+
+    "fail when cisId is missing and isAgent=true (agent journey requires instanceId)" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val ua = UserAnswers("test-user")
+
+      val ex = service.resolveAndStoreCisId(ua, isAgent = true).failed.futureValue
+      ex mustBe a[RuntimeException]
+      ex.getMessage must include("Missing cisId for agent journey")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
   }
 
@@ -608,6 +621,38 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       ex.getMessage must include("C2 (InactivityRequest) missing")
 
       verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "hasClient" should {
+
+    "delegate to connector and return the boolean" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(connector.hasClient(eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
+
+      service.hasClient("163", "AB0063").futureValue mustBe true
+
+      verify(connector).hasClient(eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "createMonthlyReturn" should {
+
+    "delegate to connector and complete successfully" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val req = MonthlyReturnRequest(instanceId = "CIS-123", taxYear = 2024, taxMonth = 10)
+
+      when(connector.createMonthlyReturn(eqTo(req))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.createMonthlyReturn(req).futureValue mustBe ()
+
+      verify(connector).createMonthlyReturn(eqTo(req))(any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
     }
   }

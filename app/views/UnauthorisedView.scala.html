@@ -14,18 +14,39 @@
  * limitations under the License.
  *@
 
+@import config.FrontendAppConfig
+@import views.html.components._
+
 @this(
-    layout: templates.Layout
+    layout: templates.Layout,
+    heading: H1,
+    link: Link,
+    paragraph: Paragraph
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages("unauthorised.title")),
     timeout   = false
 ) {
 
-    <h1 class="govuk-heading-xl">@messages("unauthorised.heading")</h1>
+    @heading(messages("unauthorised.heading"), classes = "govuk-heading-xl")
 
-    <p class="govuk-body">@messages("unauthorised.guidance")</p>
+    @link(
+        linkTextKey = "unauthorised.guidance.org.p1.link",
+        linkUrl = appConfig.govUkCISGuidanceUrl,
+        isNewTab = false,
+        prefixTextKey = "unauthorised.guidance.org.p1.prefix",
+        suffixTextKey = "unauthorised.guidance.org.p1.suffix"
+    )
+
+    @link(
+        linkTextKey = "unauthorised.guidance.agent.p2.link",
+        linkUrl = appConfig.payeCisForAgentsOnlineService,
+        paragraphWrapped = true,
+        isNewTab = false,
+        prefixTextKey = "unauthorised.guidance.agent.p2.prefix",
+        suffixTextKey = "unauthorised.guidance.agent.p2.suffix"
+    )
 }

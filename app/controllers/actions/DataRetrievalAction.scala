@@ -30,7 +30,14 @@ class DataRetrievalActionImpl @Inject() (
 
   override protected def transform[A](request: IdentifierRequest[A]): Future[OptionalDataRequest[A]] =
     sessionRepository.get(request.userId).map {
-      OptionalDataRequest(request.request, request.userId, _, Some(request.employerReference), request.isAgent)
+      OptionalDataRequest(
+        request.request,
+        request.userId,
+        _,
+        request.employerReference,
+        request.agentReference,
+        request.isAgent
+      )
     }
 }
 

@@ -63,6 +63,7 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
     configuration.get[Int]("submission-poll-default-interval-seconds")
 
   lazy val hmrcOnlineServicesHelpdeskUrl: String = configuration.get[String]("links.hmrc-online-services-helpdesk")
+  lazy val payeCisForAgentsOnlineService: String = configuration.get[String]("urls.payeCisForAgentsOnlineService")
 
   lazy val stubSendingEnabled: Boolean                     = configuration.get[Boolean]("features.stub-sending-enabled")
   lazy val selectSubcontractorsUpfrontDeclaration: Boolean =
