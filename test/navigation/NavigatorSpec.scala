@@ -81,6 +81,14 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
       }
 
+      "must go from DateConfirmPaymentsPage to SelectSubcontractorsController" in {
+        navigator.nextPage(
+          DateConfirmPaymentsPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+      }
+
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page

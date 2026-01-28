@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.monthlyreturns.{CisTaxpayer, Declaration, InactivityRequest, MonthlyReturnDetails, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.monthlyreturns.*
 import models.UserAnswers
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -95,7 +95,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val emptyUa     = UserAnswers("test-user")
       val uaWithCisId = emptyUa.set(CisIdPage, existing).get
 
-      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId).futureValue
+      val (cisId, savedUa) = service.resolveAndStoreCisId(uaWithCisId, false).futureValue
       cisId mustBe existing
       savedUa mustBe uaWithCisId
 
@@ -114,7 +114,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa).futureValue
+      val (cisId, savedUa) = service.resolveAndStoreCisId(emptyUa, false).futureValue
 
       cisId mustBe "CIS-123"
       savedUa.get(CisIdPage) mustBe Some("CIS-123")
@@ -137,7 +137,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .thenReturn(Future.successful(emptyTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.resolveAndStoreCisId(emptyUa).futureValue
+        service.resolveAndStoreCisId(emptyUa, false).futureValue
       }
       ex.getMessage must include("Empty cisId (uniqueId) returned from /cis/taxpayer")
 
@@ -158,13 +158,26 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         .thenReturn(Failure(new RuntimeException("UA set failed")))
 
       val ex = intercept[RuntimeException] {
-        service.resolveAndStoreCisId(ua).futureValue
+        service.resolveAndStoreCisId(ua, false).futureValue
       }
       ex.getMessage must include("UA set failed")
 
       verifyNoInteractions(sessionRepo)
       verify(connector).getCisTaxpayer()(any[HeaderCarrier])
       verifyNoMoreInteractions(connector)
+    }
+
+    "fail when cisId is missing and isAgent=true (agent journey requires instanceId)" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val ua = UserAnswers("test-user")
+
+      val ex = service.resolveAndStoreCisId(ua, isAgent = true).failed.futureValue
+      ex mustBe a[RuntimeException]
+      ex.getMessage must include("Missing cisId for agent journey")
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
   }
 
@@ -250,6 +263,173 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         service.isDuplicate("CIS-123", year = 2024, month = 5).futureValue
       }
       ex.getMessage must include("boom")
+    }
+  }
+
+  "retrieveMonthlyReturnForEditDetails" should {
+
+    "delegate to connector and return the payload" in {
+      val (service, connector, _) = newService()
+      val instanceId              = "CIS-123"
+      val taxMonth                = 10
+      val taxYear                 = 2025
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(
+          ContractorScheme(
+            schemeId = 1,
+            instanceId = instanceId,
+            accountsOfficeReference = "123PA12345678",
+            taxOfficeNumber = "123",
+            taxOfficeReference = "AB456"
+          )
+        ),
+        monthlyReturn = Seq(
+          MonthlyReturn(monthlyReturnId = 101, taxYear = taxYear, taxMonth = taxMonth)
+        ),
+        subcontractors = Seq(
+          Subcontractor(
+            subcontractorId = 1001,
+            utr = None,
+            pageVisited = None,
+            partnerUtr = None,
+            crn = None,
+            firstName = Some("John"),
+            nino = None,
+            secondName = None,
+            surname = Some("Doe"),
+            partnershipTradingName = None,
+            tradingName = Some("Test Subcontractor Ltd"),
+            subcontractorType = None,
+            addressLine1 = None,
+            addressLine2 = None,
+            addressLine3 = None,
+            addressLine4 = None,
+            country = None,
+            postCode = None,
+            emailAddress = None,
+            phoneNumber = None,
+            mobilePhoneNumber = None,
+            worksReferenceNumber = None,
+            createDate = None,
+            lastUpdate = None,
+            subbieResourceRef = None,
+            matched = None,
+            autoVerified = None,
+            verified = None,
+            verificationNumber = None,
+            taxTreatment = None,
+            verificationDate = None,
+            version = None,
+            updatedTaxTreatment = None,
+            lastMonthlyReturnDate = None,
+            pendingVerifications = None
+          )
+        ),
+        monthlyReturnItems = Seq(
+          MonthlyReturnItem(
+            monthlyReturnId = 101,
+            monthlyReturnItemId = 2001,
+            totalPayments = None,
+            costOfMaterials = None,
+            totalDeducted = None,
+            unmatchedTaxRateIndicator = None,
+            subcontractorId = Some(1001),
+            subcontractorName = None,
+            verificationNumber = None,
+            itemResourceReference = None
+          )
+        ),
+        submission = Seq(
+          Submission(
+            submissionId = 3001,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = None,
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
+      )
+
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+          any[HeaderCarrier]
+        )
+      )
+        .thenReturn(Future.successful(payload))
+
+      val result = service.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
+      result mustBe payload
+
+      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+        any[HeaderCarrier]
+      )
+      verifyNoMoreInteractions(connector)
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, _) = newService()
+
+      when(connector.retrieveMonthlyReturnForEditDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+
+      val ex = intercept[RuntimeException] {
+        service.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
+      }
+      ex.getMessage must include("upstream failed")
+    }
+  }
+
+  "getSchemeEmail" should {
+
+    "delegate to connector and return the email when present" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
+
+      when(connector.getSchemeEmail(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some("test@example.com")))
+
+      val result = service.getSchemeEmail(cisId).futureValue
+      result mustBe Some("test@example.com")
+
+      verify(connector).getSchemeEmail(eqTo(cisId))(any[HeaderCarrier])
+    }
+
+    "delegate to connector and return None when email is not present" in {
+      val (service, connector, _) = newService()
+      val cisId                   = "CIS-123"
+
+      when(connector.getSchemeEmail(eqTo(cisId))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(None))
+
+      val result = service.getSchemeEmail(cisId).futureValue
+      result mustBe None
+
+      verify(connector).getSchemeEmail(eqTo(cisId))(any[HeaderCarrier])
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getSchemeEmail(eqTo("CIS-ERR"))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+
+      val ex = intercept[RuntimeException] {
+        service.getSchemeEmail("CIS-ERR").futureValue
+      }
+      ex.getMessage must include("upstream failed")
     }
   }
 
@@ -441,6 +621,38 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       ex.getMessage must include("C2 (InactivityRequest) missing")
 
       verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "hasClient" should {
+
+    "delegate to connector and return the boolean" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(connector.hasClient(eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
+
+      service.hasClient("163", "AB0063").futureValue mustBe true
+
+      verify(connector).hasClient(eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "createMonthlyReturn" should {
+
+    "delegate to connector and complete successfully" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val req = MonthlyReturnRequest(instanceId = "CIS-123", taxYear = 2024, taxMonth = 10)
+
+      when(connector.createMonthlyReturn(eqTo(req))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.createMonthlyReturn(req).futureValue mustBe ()
+
+      verify(connector).createMonthlyReturn(eqTo(req))(any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
     }
   }
