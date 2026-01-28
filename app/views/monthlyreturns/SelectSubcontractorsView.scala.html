@@ -87,6 +87,7 @@
 
         @govukTable(
             Table(
+                classes = "cis-select-subcontractors-table",
                 head = Some(
                     Seq(
                         "monthlyreturns.selectSubcontractors.table.th.name",
@@ -99,7 +100,7 @@
                     }
                 ),
                 rows = if (subcontractors == Nil) Seq(Seq(TableRow(
-                    content = "monthlyreturns.selectSubcontractors.noSubcontractors",
+                    content = messages("monthlyreturns.selectSubcontractors.noSubcontractors"),
                     colspan = Some(5)
                 ))) else {
                     subcontractors.zipWithIndex.map { (subcontractor, index) =>
@@ -110,23 +111,29 @@
                             TableRow(content = Text(subcontractor.taxTreatment)),
                             TableRow(
                                 content = HtmlContent(
-                                    s"""
-                                    <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-                                        <div class="govuk-checkboxes__item">
-                                            <input
-                                                    class="govuk-checkboxes__input"
-                                                    id="${subcontractor.id}"
-                                                    name="subcontractorsToInclude.$index"
-                                                    type="checkbox"
-                                                    value="${subcontractor.id}"
-                                                    ${if (form.value.toList.flatMap(_.subcontractorsToInclude).contains(subcontractor.id)) "checked" else ""}
-                                            >
-                                            <label class="govuk-label govuk-checkboxes__label" for="${subcontractor.name.split(',')(0).toLowerCase}">
-                                                <span class="govuk-visually-hidden">Include ${subcontractor.name}</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    """
+                                    govukCheckboxes(
+                                        Checkboxes(
+                                            name = s"subcontractorsToInclude.$index",
+                                            idPrefix = Some(s"subcontractor-${subcontractor.id}"),
+                                            classes = "govuk-checkboxes--small",
+                                            items = Seq(
+                                                CheckboxItem(
+                                                    value = subcontractor.id.toString,
+                                                    content = HtmlContent(
+                                                        s"""<span class="govuk-visually-hidden">${
+                                                          messages(
+                                                            "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
+                                                            subcontractor.name
+                                                          )
+                                                        }</span>"""
+                                                    ),
+                                                    checked = form.value.toList
+                                                      .flatMap(_.subcontractorsToInclude)
+                                                      .contains(subcontractor.id)
+                                                )
+                                            )
+                                        )
+                                    )
                                 )
                             )
                         )
