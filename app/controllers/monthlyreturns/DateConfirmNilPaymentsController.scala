@@ -61,7 +61,7 @@ class DateConfirmNilPaymentsController @Inject() (
 
       val form = formProvider()
 
-      bootstrapUserAnswers(ua0, request)
+      prepareUserAnswers(ua0, request)
         .flatMap { ua1 =>
           val preparedForm = ua1.get(DateConfirmNilPaymentsPage) match {
             case None        => form
@@ -99,7 +99,7 @@ class DateConfirmNilPaymentsController @Inject() (
 
           val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
 
-          bootstrapUserAnswers(ua0, request)
+          prepareUserAnswers(ua0, request)
             .flatMap { ua1 =>
               monthlyReturnService
                 .resolveAndStoreCisId(ua1, request.isAgent)
@@ -132,7 +132,7 @@ class DateConfirmNilPaymentsController @Inject() (
       )
   }
 
-  private def bootstrapUserAnswers(ua: UserAnswers, request: OptionalDataRequest[_])(implicit
+  private def prepareUserAnswers(ua: UserAnswers, request: OptionalDataRequest[_])(implicit
     hc: HeaderCarrier
   ): Future[UserAnswers] = {
 
