@@ -64,10 +64,7 @@ GET        /page-not-found                                    controllers.PageNo
 GET        /access-denied                                     controllers.AccessDeniedController.onPageLoad()
 GET        /system-error/there-is-a-problem                   controllers.SystemErrorController.onPageLoad()
 
-GET        /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = None)
-GET        /monthly-return/select-subcontractors/empty        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadEmpty(monthsToIncludeDefault: Option[Boolean] = None)
-GET        /monthly-return/select-subcontractors/select-all   controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = Some(true))
-GET        /monthly-return/select-subcontractors/deselect-all controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadNonEmpty(monthsToIncludeDefault: Option[Boolean] = Some(false))
+GET        /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(defaultSelection: Option[Boolean])
 POST       /monthly-return/select-subcontractors              controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
 GET        /monthly-return/file-your-monthly-return             controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()
@@ -77,14 +74,26 @@ POST       /monthly-return/date-confirm-payments                controllers.mont
 GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
+
 GET        /monthly-return/subcontractors-paid-this-month       controllers.monthlyreturns.SubcontractorsPaidThisMonthController.onPageLoad()
+
 
 GET        /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode)
 
+
 GET        /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/remove-subcontractor            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/remove-subcontractor            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode)

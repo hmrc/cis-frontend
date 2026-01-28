@@ -19,7 +19,7 @@ package services
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
-import models.monthlyreturns.{Declaration, InactivityRequest, MonthlyReturnRequest, MonthlyReturnResponse, NilMonthlyReturnRequest, NilMonthlyReturnResponse}
+import models.monthlyreturns.*
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
 import models.UserAnswers
 import play.api.libs.json.Json
@@ -64,6 +64,15 @@ class MonthlyReturnService @Inject() (
 
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
+
+  def retrieveMonthlyReturnForEditDetails(
+    instanceId: String,
+    taxMonth: Int,
+    taxYear: Int
+  )(implicit
+    hc: HeaderCarrier
+  ): Future[GetAllMonthlyReturnDetailsResponse] =
+    cisConnector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear)
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)

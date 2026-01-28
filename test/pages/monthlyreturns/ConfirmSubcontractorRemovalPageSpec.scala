@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-package generators
+package pages.monthlyreturns
 
-import models.monthlyreturns.{Declaration, InactivityRequest}
-import org.scalacheck.{Arbitrary, Gen}
+import base.SpecBase
+import play.api.libs.json.JsPath
 
-trait ModelGenerators {
+class ConfirmSubcontractorRemovalPageSpec extends SpecBase {
 
-  implicit lazy val arbitraryVerifySubcontractors: Arbitrary[Boolean] =
-    Arbitrary {
-      Gen.oneOf(true, false)
+  "ConfirmSubcontractorRemovalPage" - {
+    "have the correct path" in {
+      ConfirmSubcontractorRemovalPage.path mustBe (JsPath \ "confirmSubcontractorRemoval")
     }
 
-  implicit lazy val arbitraryDeclaration: Arbitrary[Declaration] =
-    Arbitrary {
-      Gen.oneOf(Declaration.values)
+    "have the correct toString" in {
+      ConfirmSubcontractorRemovalPage.toString mustBe "confirmSubcontractorRemoval"
     }
-
-  implicit lazy val arbitraryInactivityRequest: Arbitrary[InactivityRequest] =
-    Arbitrary {
-      Gen.oneOf(InactivityRequest.values.toSeq)
-    }
+  }
 }

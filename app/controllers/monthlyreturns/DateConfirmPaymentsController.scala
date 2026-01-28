@@ -23,6 +23,7 @@ import models.monthlyreturns.MonthlyReturnRequest
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.Logging
+import play.api.data.FormError
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -69,7 +70,14 @@ class DateConfirmPaymentsController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => {
+            val formLevelErrors     = formWithErrors.errors.filter(_.key.isEmpty)
+            val fieldErrors         = formWithErrors.errors.filter(_.key.nonEmpty)
+            val taxMonthErrors      = formLevelErrors.map(error => FormError("taxMonth", error.message, error.args))
+            val allErrors           = fieldErrors ++ taxMonthErrors
+            val formWithFieldErrors = formWithErrors.copy(errors = allErrors)
+            Future.successful(BadRequest(view(formWithFieldErrors, mode)))
+          },
           value => {
             val year  = value.getYear
             val month = value.getMonthValue
@@ -84,10 +92,7 @@ class DateConfirmPaymentsController @Inject() (
                       val dupForm =
                         form
                           .fill(value)
-                          .withError(
-                            "value",
-                            "dateConfirmPayments.taxYear.error.duplicate"
-                          )
+                          .withError("value", "dateConfirmPayments.taxYear.error.duplicate")
                       Future.successful(BadRequest(view(dupForm, mode)))
 
                     case false =>
