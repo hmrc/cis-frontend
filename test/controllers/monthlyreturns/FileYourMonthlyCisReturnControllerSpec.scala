@@ -61,12 +61,38 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Org: without instanceId => returns OK and does not store" in {
-      val mockRepo    = mock[SessionRepository]
+    "Org: without instanceId => returns OK and stores empty UA when none exists" in {
+      val mockRepo = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+
+      val app =
+        applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url)
+
+        val result = route(app, request).value
+        status(result) mustBe OK
+
+        verify(mockRepo).set(any())
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "Org: without instanceId and UA exists => returns OK and does not store" in {
+      val mockRepo = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
       val app =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = false)
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockRepo),
             bind[MonthlyReturnService].toInstance(mockService)
