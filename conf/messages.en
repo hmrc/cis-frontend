@@ -10,6 +10,7 @@ site.start = Start now
 site.startAgain = Start again
 site.signIn = Sign in
 site.govuk = GOV.UK
+site.acceptAndContinue = Accept and continue
 
 date.day = Day
 date.month = Month
@@ -398,4 +399,4 @@ monthlyreturns.inactivityRequestWarning.title = Inactivity request
 monthlyreturns.inactivityRequestWarning.heading = Inactivity request
 monthlyreturns.inactivityRequestWarning.p = You are submitting a request for inactivity. If it is accepted it is only valid for six months.
 monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
-monthlyreturns.inactivityRequestWarning.submit = Accept and continue
+
