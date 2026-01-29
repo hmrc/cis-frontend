@@ -44,6 +44,15 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
+
+    "must display error message when form has taxMonthAndYear error" in new Setup {
+      val formWithError = form.withError("taxMonthAndYear", "dateConfirmPayments.taxYear.error.duplicate")
+      val htmlWithError = view(formWithError, NormalMode)
+      val doc: Document = Jsoup.parse(htmlWithError.toString)
+
+      doc.select(".govuk-error-summary").size mustBe 1
+      doc.select(".govuk-error-message").size mustBe 1
+    }
   }
 
   trait Setup {

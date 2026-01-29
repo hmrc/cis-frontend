@@ -195,6 +195,58 @@ class TaxMonthTaxYearSpec extends PlaySpec with GuiceOneAppPerSuite {
       html.getElementsByClass("govuk-hint").size() mustBe 1
     }
 
+    "render error message when formError is provided" in new Setup {
+      val formWithValues: Form[TestModel] = form.bind(
+        Map(
+          "taxMonth" -> "3",
+          "taxYear"  -> "2024"
+        )
+      )
+
+      val taxMonthTaxYearView = app.injector.instanceOf[TaxMonthTaxYear]
+
+      val formError = play.api.data.FormError("taxMonthAndYear", "error.duplicate")
+
+      val output: HtmlFormat.Appendable = taxMonthTaxYearView(
+        monthField = formWithValues("taxMonth"),
+        yearField = formWithValues("taxYear"),
+        monthLabel = monthLabel,
+        yearLabel = yearLabel,
+        formError = Some(formError)
+      )(messages)
+
+      val html: Document = Jsoup.parse(output.toString)
+
+      html.getElementsByClass("govuk-error-message").size() mustBe 1
+    }
+
+    "prioritise field errors over formError" in new Setup {
+      val formWithErrors: Form[TestModel] = form.bind(
+        Map(
+          "taxMonth" -> "",
+          "taxYear"  -> "2024"
+        )
+      )
+
+      val taxMonthTaxYearView = app.injector.instanceOf[TaxMonthTaxYear]
+
+      val formError = play.api.data.FormError("taxMonthAndYear", "error.duplicate")
+
+      val output: HtmlFormat.Appendable = taxMonthTaxYearView(
+        monthField = formWithErrors("taxMonth"),
+        yearField = formWithErrors("taxYear"),
+        monthLabel = monthLabel,
+        yearLabel = yearLabel,
+        formError = Some(formError)
+      )(messages)
+
+      val html: Document = Jsoup.parse(output.toString)
+
+      // Should show field error, not formError
+      html.getElementsByClass("govuk-error-message").size() mustBe 1
+      html.getElementById("taxMonth").attr("class") must include("govuk-input--error")
+    }
+
     trait Setup {
       val messagesApi: MessagesApi    = app.injector.instanceOf[MessagesApi]
       implicit val messages: Messages = messagesApi.preferred(Seq.empty)

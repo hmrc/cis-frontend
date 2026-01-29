@@ -164,6 +164,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       running(application) {
         val result = route(application, postRequest()).value
         status(result) mustEqual BAD_REQUEST
+        contentAsString(result) must include(messages(application)("dateConfirmPayments.taxYear.error.duplicate"))
       }
     }
 
