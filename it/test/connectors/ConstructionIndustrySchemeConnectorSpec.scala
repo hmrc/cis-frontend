@@ -688,5 +688,4 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       ex.getMessage must include("boom")
     }
   }
-
 }

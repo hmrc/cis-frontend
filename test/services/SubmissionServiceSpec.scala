@@ -879,7 +879,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua           = uaBase
         .set(
           SubmissionDetailsPage,
-          models.submission.SubmissionDetails(
+          SubmissionDetails(
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
@@ -902,9 +902,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     "send email, set SuccessEmailSentPage to true and persist" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration("submission-poll-timeout-seconds" -> "60")
-      )
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
 
       val submissionId = "sub-123"
@@ -912,7 +910,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = uaBase
         .set(
           SubmissionDetailsPage,
-          models.submission.SubmissionDetails(
+          SubmissionDetails(
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
@@ -943,6 +941,86 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector)
         .sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
       verify(sessionRepository).set(any[UserAnswers])
+    }
+
+    "throw IllegalStateException when SubmissionDetailsPage missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      val ex = intercept[IllegalStateException] {
+        service.sendSuccessEmail(uaBase).futureValue
+      }
+      ex.getMessage mustBe "Submission details missing"
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "throw IllegalStateException when ConfirmEmailAddressPage missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      val submissionId = "sub-123"
+      val details      = SubmissionDetails(
+        id = submissionId,
+        status = "SUBMITTED",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+
+      val ua = UserAnswers("id", Json.obj())
+        .set(SubmissionDetailsPage, details)
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+
+      val ex = intercept[IllegalStateException] {
+        service.sendSuccessEmail(ua)
+      }
+      ex.getMessage mustBe "Email address missing"
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "throw IllegalStateException when DateConfirmNilPaymentsPage missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+
+      val submissionId = "sub-123"
+      val details      = SubmissionDetails(
+        id = submissionId,
+        status = "SUBMITTED",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+
+      val ua = UserAnswers("id", Json.obj())
+        .set(SubmissionDetailsPage, details)
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+        .set(ConfirmEmailAddressPage, "test@example.com")
+        .success
+        .value
+
+      val ex = intercept[IllegalStateException] {
+        service.sendSuccessEmail(ua)
+      }
+      ex.getMessage mustBe "Month/Year not selected"
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
     }
   }
 
