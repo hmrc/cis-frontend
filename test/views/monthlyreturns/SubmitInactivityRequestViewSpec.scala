@@ -30,7 +30,7 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
   "SubmitInactivityRequestView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title                              must include(messages("submitInactivityRequest.title"))
+      doc.title                              must include(messages("monthlyreturns.submitInactivityRequest.title"))
       doc.select("h1").text                  must include(messages("monthlyreturns.submitInactivityRequest.heading"))
       doc.select("p.govuk-body").get(0).text must include(messages("monthlyreturns.submitInactivityRequest.p1"))
       doc.select("p.govuk-body").get(1).text must include(messages("monthlyreturns.submitInactivityRequest.p2"))
