@@ -19,16 +19,18 @@ package controllers.monthlyreturns
 import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
-import models.monthlyreturns.SelectSubcontractorsFormData
+import models.monthlyreturns.{SelectSubcontractorsFormData, Subcontractor}
+import models.requests.DataRequest
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.MonthlyReturnService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
 
+import java.time.LocalDate
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,97 +43,119 @@ class SelectSubcontractorsController @Inject() (
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
   config: FrontendAppConfig,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  subcontractorService: SubcontractorService
 )(using ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
 
-  private val subcontractors = Seq(
-    SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
-  )
+//  private val subcontractors = Seq(
+//    SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
+//    SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
+//    SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
+//    SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
+//    SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
+//    SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
+//  )
 
   private val form = formProvider()
+
   def onPageLoad(
     defaultSelection: Option[Boolean] = None
   ): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
-
-      val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
-
-      requiredAnswers
-        .map { (cisId, taxMonth, taxYear) =>
+      requiredAnswers(request) match {
+        case Some((cisId, taxMonth, taxYear)) =>
           monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
-            val subcontractorViewModels = data.subcontractors.map(s =>
-              SelectSubcontractorsViewModel(
-                id = s.subcontractorId.toInt,
-                name = s.tradingName.getOrElse("Unknown"),
-                verificationRequired = "Yes",
-                verificationNumber = "Unknown",
-                taxTreatment = "Unknown"
-              )
-            )
+            val verificationPeriodStart = subcontractorService.verificationPeriodStart(LocalDate.now())
+            val subcontractorViewModels = data.subcontractors.map(s => toViewModel(s, verificationPeriodStart))
 
             val filledForm = defaultSelection match {
               case Some(true) =>
                 form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
-              case _          => form
+              case _          =>
+                form
             }
 
-            Ok(
-              view(
-                filledForm,
-                subcontractorViewModels,
-                config.selectSubcontractorsUpfrontDeclaration
-              )
-            )
+            Ok(view(filledForm, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration))
           }
-        }
-        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
+        case None                             =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
     }
 
   def onSubmit(): Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors =>
-            BadRequest(
-              view(
-                formWithErrors,
-                subcontractors,
-                config.selectSubcontractorsUpfrontDeclaration
-              )
-            ),
-          formData =>
-            if (!formData.confirmation) {
-              BadRequest(
-                view(
-                  form
-                    .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                    .fill(formData),
-                  subcontractors,
-                  config.selectSubcontractorsUpfrontDeclaration
-                )
-              )
-            } else {
-              Ok(
-                view(
-                  form.fill(formData),
-                  subcontractors,
-                  config.selectSubcontractorsUpfrontDeclaration
-                )
-              )
-            }
-        )
+    (identify andThen getData andThen requireData).async { implicit request =>
+      requiredAnswers(request) match {
+        case Some((cisId, taxMonth, taxYear)) =>
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).flatMap { data =>
 
+            val verificationPeriodStart = subcontractorService.verificationPeriodStart(LocalDate.now())
+            val subcontractorViewModels = data.subcontractors.map(s => toViewModel(s, verificationPeriodStart))
+
+            form
+              .bindFromRequest()
+              .fold(
+                formWithErrors =>
+                  Future.successful(
+                    BadRequest(
+                      view(formWithErrors, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration)
+                    )
+                  ),
+                formData =>
+                  if (!formData.confirmation) {
+                    val formWithError = form
+                      .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+                      .fill(formData)
+
+                    Future.successful(
+                      BadRequest(
+                        view(formWithError, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration)
+                      )
+                    )
+                  } else {
+                    Future.successful(
+                      Ok(
+                        view(
+                          form.fill(formData),
+                          subcontractorViewModels,
+                          config.selectSubcontractorsUpfrontDeclaration
+                        )
+                      )
+                    )
+                  }
+              )
+          }
+
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
     }
+
+  private def requiredAnswers(request: DataRequest[AnyContent]): Option[(String, Int, Int)] =
+    for {
+      cisId   <- request.userAnswers.get(CisIdPage)
+      taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+    } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+  private def toViewModel(
+    subcontractor: Subcontractor,
+    verificationPeriodStart: LocalDate
+  ): SelectSubcontractorsViewModel = {
+    val required = subcontractorService.verificationRequired(
+      subcontractor.verified,
+      subcontractor.verificationDate,
+      subcontractor.lastMonthlyReturnDate,
+      verificationPeriodStart
+    )
+
+    SelectSubcontractorsViewModel(
+      id = subcontractor.subcontractorId.toInt,
+      name = "Unknown",
+      verificationRequired = if (required) "Yes" else "No",
+      verificationNumber = "Unknown",
+      taxTreatment = "Unknown"
+    )
+  }
 }
