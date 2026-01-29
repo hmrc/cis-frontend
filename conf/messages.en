@@ -385,6 +385,5 @@ monthlyreturns.submitInactivityRequest.question = Are you submitting an inactivi
 monthlyreturns.submitInactivityRequest.yes = Yes
 monthlyreturns.submitInactivityRequest.no = No
 monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = submitInactivityRequest
-submitInactivityRequest.error.required = You must select either yes or no
 monthlyreturns.submitInactivityRequest.error.required = You must select either yes or no
 monthlyreturns.submitInactivityRequest.change.hidden = SubmitInactivityRequest

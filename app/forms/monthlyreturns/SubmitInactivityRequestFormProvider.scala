@@ -25,6 +25,6 @@ class SubmitInactivityRequestFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Boolean] =
     Form(
-      "value" -> boolean("submitInactivityRequest.error.required")
+      "value" -> boolean("monthlyreturns.submitInactivityRequest.error.required")
     )
 }

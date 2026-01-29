@@ -16,23 +16,25 @@
 
 package forms.monthlyreturns
 
-import forms.behaviours.OptionFieldBehaviours
+import forms.behaviours.BooleanFieldBehaviours
+import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import play.api.data.FormError
 
-class SubmitInactivityRequestFormProviderSpec extends OptionFieldBehaviours {
+class SubmitInactivityRequestFormProviderSpec extends BooleanFieldBehaviours {
+
+  val requiredKey = "monthlyreturns.submitInactivityRequest.error.required"
+  val invalidKey  = "error.boolean"
 
   val form = new SubmitInactivityRequestFormProvider()()
 
   ".value" - {
 
-    val fieldName   = "value"
-    val requiredKey = "submitInactivityRequest.error.required"
+    val fieldName = "value"
 
-    behave like optionsField[Boolean](
+    behave like booleanField(
       form,
       fieldName,
-      validValues = Seq(true, false),
-      invalidError = FormError(fieldName, "error.boolean")
+      invalidError = FormError(fieldName, invalidKey)
     )
 
     behave like mandatoryField(
