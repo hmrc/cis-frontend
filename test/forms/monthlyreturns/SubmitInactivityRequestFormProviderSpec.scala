@@ -17,7 +17,6 @@
 package forms.monthlyreturns
 
 import forms.behaviours.BooleanFieldBehaviours
-import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import play.api.data.FormError
 
 class SubmitInactivityRequestFormProviderSpec extends BooleanFieldBehaviours {
