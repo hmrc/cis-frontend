@@ -538,6 +538,56 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
+      "must redirect to JourneyRecovery when CisIdPage is missing" in {
+        val userAnswersMissingCisId = emptyUserAnswers
+          .set(DateConfirmPaymentsPage, testTaxDate)
+          .success
+          .value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersMissingCisId)).build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url
+          ).withBody(
+            AnyContentAsFormUrlEncoded(
+              Map("confirmation" -> Seq("true"))
+            )
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to JourneyRecovery when DateConfirmPaymentsPage is missing" in {
+        val userAnswersMissingDate = emptyUserAnswers
+          .set(CisIdPage, testCisId)
+          .success
+          .value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersMissingDate)).build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url
+          ).withBody(
+            AnyContentAsFormUrlEncoded(
+              Map("confirmation" -> Seq("true"))
+            )
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
       "must redirect to JourneyRecovery when no user answers exist" in {
         val application = applicationBuilder(userAnswers = None).build()
 
