@@ -22,6 +22,7 @@ import play.api.mvc.{Request, WrappedRequest}
 case class IdentifierRequest[A](
   request: Request[A],
   userId: String,
-  employerReference: EmployerReference,
+  employerReference: Option[EmployerReference],
+  agentReference: Option[String],
   isAgent: Boolean = false
 ) extends WrappedRequest[A](request)

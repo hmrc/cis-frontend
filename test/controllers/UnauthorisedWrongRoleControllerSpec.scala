@@ -14,44 +14,29 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers
 
 import base.SpecBase
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
-import org.scalatestplus.mockito.MockitoSugar
-import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import services.AuditService
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import views.html.monthlyreturns.UnauthorisedIndividualView
+import views.html.UnauthorisedOrgStandardView
 
-import scala.concurrent.Future
+class UnauthorisedWrongRoleControllerSpec extends SpecBase {
 
-class UnauthorisedIndividualAffinityControllerSpec extends SpecBase {
-
-  private val mockAuditService: AuditService = MockitoSugar.mock[AuditService]
-
-  "UnauthorisedIndividualAffinity Controller" - {
+  "UnauthorisedWrongRole Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val application = applicationBuilder(userAnswers = None)
-        .overrides(
-          bind[AuditService].toInstance(mockAuditService)
-        )
         .build()
-
-      when(mockAuditService.sendEvent(any())(any(), any(), any())).thenReturn(Future.successful(AuditResult.Success))
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad().url)
+          FakeRequest(GET, controllers.routes.UnauthorisedWrongRoleController.onPageLoad().url)
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[UnauthorisedIndividualView]
+        val view = application.injector.instanceOf[UnauthorisedOrgStandardView]
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view()(request, applicationConfig, messages(application)).toString

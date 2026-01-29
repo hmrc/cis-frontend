@@ -16,10 +16,11 @@
 
 package connectors
 
-import models.monthlyreturns.{NilMonthlyReturnRequest, NilMonthlyReturnResponse}
-import models.monthlyreturns.{CisTaxpayer, MonthlyReturnResponse}
+import models.monthlyreturns.*
+import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.*
 import play.api.Logging
+import play.api.http.Status.OK
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
@@ -47,6 +48,18 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/monthly-returns?cisId=$cisId")
       .execute[MonthlyReturnResponse]
 
+  def retrieveMonthlyReturnForEditDetails(
+    instanceId: String,
+    taxMonth: Int,
+    taxYear: Int
+  )(implicit
+    hc: HeaderCarrier
+  ): Future[GetAllMonthlyReturnDetailsResponse] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns-edit/")
+      .withBody(Json.toJson(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear)))
+      .execute[GetAllMonthlyReturnDetailsResponse]
+
   def createNilMonthlyReturn(
     payload: NilMonthlyReturnRequest
   )(implicit hc: HeaderCarrier): Future[NilMonthlyReturnResponse] =
@@ -54,6 +67,37 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .post(url"$cisBaseUrl/monthly-returns/nil/create")
       .withBody(Json.toJson(payload))
       .execute[NilMonthlyReturnResponse]
+
+  def createMonthlyReturn(
+    payload: MonthlyReturnRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns/standard/create")
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
+      .map { response =>
+        if (response.status == 201) {
+          ()
+        } else {
+          throw UpstreamErrorResponse(response.body, response.status, response.status)
+        }
+      }
+
+  def hasClient(taxOfficeNumber: String, taxOfficeReference: String)(implicit
+    hc: HeaderCarrier
+  ): Future[Boolean] =
+    http
+      .get(url"$cisBaseUrl/agent/has-client/$taxOfficeNumber/$taxOfficeReference")
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case OK =>
+            (response.json \ "hasClient").as[Boolean]
+
+          case status =>
+            throw UpstreamErrorResponse(response.body, status, status)
+        }
+      }
 
   def createSubmission(
     req: CreateSubmissionRequest

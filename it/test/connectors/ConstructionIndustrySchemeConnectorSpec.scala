@@ -16,14 +16,16 @@
 
 package connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
+import models.monthlyreturns.MonthlyReturnRequest
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
@@ -102,6 +104,140 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     }
   }
   
+  "retrieveMonthlyReturnForEditDetails" should {
+
+    "return GetAllMonthlyReturnDetailsResponse when BE returns 200 with valid JSON" in {
+      val instanceId = "CIS-123"
+      val taxMonth   = 10
+      val taxYear    = 2025
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                s"""{
+                   |  "scheme": [{
+                   |    "schemeId": 1,
+                   |    "instanceId": "$instanceId",
+                   |    "accountsOfficeReference": "123PA12345678",
+                   |    "taxOfficeNumber": "123",
+                   |    "taxOfficeReference": "AB456"
+                   |  }],
+                   |  "monthlyReturn": [{
+                   |    "monthlyReturnId": 101,
+                   |    "taxYear": $taxYear,
+                   |    "taxMonth": $taxMonth
+                   |  }],
+                   |  "subcontractors": [{
+                   |    "subcontractorId": 1001,
+                   |    "tradingName": "Test Subcontractor Ltd"
+                   |  }, {
+                   |    "subcontractorId": 1002,
+                   |    "firstName": "John",
+                   |    "surname": "Doe"
+                   |  }],
+                   |  "monthlyReturnItems": [{
+                   |    "monthlyReturnId": 101,
+                   |    "monthlyReturnItemId": 2001,
+                   |    "subcontractorId": 1001
+                   |  }],
+                   |  "submission": [{
+                   |    "submissionId": 3001,
+                   |    "submissionType": "MONTHLY_RETURN",
+                   |    "schemeId": 1
+                   |  }]
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
+
+      result.scheme.length mustBe 1
+      result.scheme.head.instanceId mustBe instanceId
+
+      result.monthlyReturn.length mustBe 1
+      result.monthlyReturn.head.taxYear mustBe taxYear
+      result.monthlyReturn.head.taxMonth mustBe taxMonth
+
+      result.subcontractors.length mustBe 2
+      result.subcontractors.head.subcontractorId mustBe 1001
+      result.subcontractors.head.tradingName mustBe Some("Test Subcontractor Ltd")
+      result.subcontractors(1).subcontractorId mustBe 1002
+
+      result.monthlyReturnItems.length mustBe 1
+      result.monthlyReturnItems.head.subcontractorId mustBe Some(1001)
+
+      result.submission.length mustBe 1
+      result.submission.head.submissionType mustBe "MONTHLY_RETURN"
+    }
+
+    "return empty collections when BE returns 200 with empty arrays" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """{
+                  |  "scheme": [],
+                  |  "monthlyReturn": [],
+                  |  "subcontractors": [],
+                  |  "monthlyReturnItems": [],
+                  |  "submission": []
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.retrieveMonthlyReturnForEditDetails("CIS-456", 5, 2024).futureValue
+
+      result.scheme mustBe empty
+      result.monthlyReturn mustBe empty
+      result.subcontractors mustBe empty
+      result.monthlyReturnItems mustBe empty
+      result.submission mustBe empty
+    }
+
+    "propagate an upstream error when BE returns 500" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("Internal Server Error")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
+      }
+      ex.getMessage must include("returned 500")
+    }
+
+    "propagate an upstream error when BE returns 404" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-edit/"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+              .withBody("Not Found")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.retrieveMonthlyReturnForEditDetails("CIS-NOTFOUND", 3, 2025).futureValue
+      }
+      ex.getMessage must include("returned 404")
+    }
+  }
+
   "retrieveMonthlyReturns(cisId)" should {
 
     "return an MonthlyReturnResponse when BE returns 200 with valid JSON" in {
@@ -510,6 +646,71 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         connector.getSubmissionStatus(pollUrl, correlationId).futureValue
       }
       ex.getMessage must include("returned 500")
+    }
+  }
+
+  "createMonthlyReturn(payload)" should {
+
+    "POST /cis/monthly-returns/standard/create and return Unit on 201" in {
+      val req = MonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/standard/create"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(CREATED))
+      )
+
+      connector.createMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-201 (e.g. 500)" in {
+      val req = MonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/standard/create"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.createMonthlyReturn(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "hasClient(taxOfficeNumber, taxOfficeReference)" should {
+
+    "GET /cis/agent/has-client/:ton/:tor and return true when BE returns 200" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/has-client/163/AB0063"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "hasClient": true }""")
+          )
+      )
+
+      connector.hasClient("163", "AB0063").futureValue mustBe true
+    }
+
+    "fail the future when BE returns non-200 (e.g. 403)" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/has-client/163/AB0063"))
+          .willReturn(aResponse().withStatus(FORBIDDEN).withBody("""{"error":"nope"}"""))
+      )
+
+      val ex = connector.hasClient("163", "AB0063").failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe FORBIDDEN
     }
   }
 

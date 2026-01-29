@@ -19,7 +19,6 @@ package controllers.actions
 import com.google.inject.Inject
 import config.FrontendAppConfig
 import controllers.routes
-import models.EmployerReference
 import models.requests.IdentifierRequest
 import play.api.Logging
 import play.api.mvc.Results.*
@@ -29,9 +28,10 @@ import uk.gov.hmrc.auth.core.AffinityGroup.{Agent, Individual, Organisation}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import uk.gov.hmrc.auth.core.retrieve.~
+import utils.AuthUtils.{hasCisAgentEnrolment, hasCisOrgEnrolment}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -59,26 +59,31 @@ class AuthenticatedIdentifierAction @Inject() (
         case Some(internalId) ~ Enrolments(enrolments) ~ Some(Organisation) ~ Some(User) =>
           hasCisOrgEnrolment(enrolments)
             .map { employerReference =>
-              block(IdentifierRequest(request, internalId, employerReference))
+              block(IdentifierRequest(request, internalId, Some(employerReference), None))
             }
             .getOrElse(
               Future.successful(
-                Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+                Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
               )
             )
         case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant)                          =>
           logger.info("EnrolmentAuthIdentifierAction - Organisation: Assistant login attempt")
-          Future.successful(Redirect(controllers.monthlyreturns.routes.UnauthorisedWrongRoleController.onPageLoad()))
+          Future.successful(Redirect(controllers.routes.UnauthorisedWrongRoleController.onPageLoad()))
         case Some(_) ~ _ ~ Some(Individual) ~ _                                          =>
           logger.info("EnrolmentAuthIdentifierAction - Individual login attempt")
           Future.successful(
-            Redirect(controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad())
+            Redirect(controllers.routes.UnauthorisedIndividualAffinityController.onPageLoad())
           )
-        case Some(_) ~ _ ~ Some(Agent) ~ _                                               =>
-          logger.info("EnrolmentAuthIdentifierAction - Unauthorised Agent login attempt")
-          Future.successful(
-            Redirect(controllers.monthlyreturns.routes.UnauthorisedAgentAffinityController.onPageLoad())
-          )
+        case Some(internalId) ~ Enrolments(enrolments) ~ Some(Agent) ~ _                 =>
+          hasCisAgentEnrolment(enrolments)
+            .map { agentReference =>
+              block(IdentifierRequest(request, internalId, None, Some(agentReference), true))
+            }
+            .getOrElse(
+              Future.successful(
+                Redirect(controllers.routes.UnauthorisedAgentAffinityController.onPageLoad())
+              )
+            )
         case _                                                                           =>
           logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve internal id or affinity group")
           Future.successful(Redirect(routes.UnauthorisedController.onPageLoad()))
@@ -90,21 +95,5 @@ class AuthenticatedIdentifierAction @Inject() (
         Redirect(routes.UnauthorisedController.onPageLoad())
     }
   }
-
-  private def hasCisOrgEnrolment[A](enrolments: Set[Enrolment]): Option[EmployerReference] =
-    enrolments.find(_.key == "HMRC-CIS-ORG") match {
-      case Some(enrolment) =>
-        val taxOfficeNumber    = enrolment.identifiers.find(id => id.key == "TaxOfficeNumber").map(_.value)
-        val taxOfficeReference = enrolment.identifiers.find(id => id.key == "TaxOfficeReference").map(_.value)
-        val isActivated        = enrolment.isActivated
-        (taxOfficeNumber, taxOfficeReference, isActivated) match {
-          case (Some(number), Some(reference), true) =>
-            Some(EmployerReference(number, reference))
-          case _                                     =>
-            logger.warn("EnrolmentAuthIdentifierAction - Unable to retrieve cis enrolments")
-            None
-        }
-      case _               => None
-    }
 
 }

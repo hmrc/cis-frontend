@@ -21,9 +21,8 @@ import play.api.data.FormError
 import play.api.i18n.Messages
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, YearMonth}
+import java.time.LocalDate
 import java.util.Locale
-import scala.math.Ordering.Implicits.infixOrderingOps
 import scala.util.{Failure, Success, Try}
 
 case class DateFormat(dateType: String, errorKey: String, regex: String)
@@ -77,10 +76,11 @@ class MonthYearDateFormatter(
 
     (fields.get("month").flatten, fields.get("year").flatten) match {
       case (Some(month), Some(year))
-          if !((
+          if !TaxPeriodEndDateRules.isOnOrAfterEarliest(
+            earliestTaxPeriodEndDate,
             year.toInt,
             month.toInt
-          ) >= (earliestTaxPeriodEndDate.getYear, earliestTaxPeriodEndDate.getMonthValue)) =>
+          ) =>
         Some(
           FormError(
             s"$key.month",
@@ -99,12 +99,17 @@ class MonthYearDateFormatter(
     val oMonth = fields.get("month").flatten
     val oYear  = fields.get("year").flatten
 
-    val today              = LocalDate.now()
-    val maxDate: LocalDate = if (today.getDayOfMonth <= 5) today.plusMonths(3) else today.plusMonths(4)
+    val today                        = LocalDate.now()
+    val maxAllowedEndDate: LocalDate =
+      if (today.getDayOfMonth <= TaxPeriodEndDateRules.TaxPeriodEndDay) today.plusMonths(3) else today.plusMonths(4)
 
     (oMonth, oYear) match {
       case (Some(month), Some(year))
-          if YearMonth.from(LocalDate.of(year.toInt, month.toInt, 5)).isAfter(YearMonth.from(maxDate)) =>
+          if !TaxPeriodEndDateRules.isWithinMaxFuturePeriod(
+            maxAllowedEndDate,
+            year.toInt,
+            month.toInt
+          ) =>
         Some(
           FormError(s"$key.month", "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")
         )

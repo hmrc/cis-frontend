@@ -52,7 +52,7 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
 
           redirectLocation(
             result
-          ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController
+          ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
             .onPageLoad()
             .url
         }

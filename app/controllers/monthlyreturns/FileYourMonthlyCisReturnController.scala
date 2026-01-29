@@ -16,22 +16,83 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.IdentifierAction
+import controllers.actions.{DataRetrievalAction, IdentifierAction}
+import models.UserAnswers
+import pages.monthlyreturns.CisIdPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
+import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
+
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class FileYourMonthlyCisReturnController @Inject() (
   override val messagesApi: MessagesApi,
   val controllerComponents: MessagesControllerComponents,
   view: FileYourMonthlyCisReturnView,
-  identify: IdentifierAction
-) extends FrontendBaseController
-    with I18nSupport {
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  sessionRepository: SessionRepository,
+  monthlyReturnService: MonthlyReturnService
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport
+    with Logging {
 
-  def onPageLoad: Action[AnyContent] = identify { implicit request =>
-    Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData).async { implicit request =>
+
+    val instanceIdOpt         = request.getQueryString("instanceId")
+    val taxOfficeNumberOpt    = request.getQueryString("taxOfficeNumber")
+    val taxOfficeReferenceOpt = request.getQueryString("taxOfficeReference")
+
+    def storeInstanceId(instanceId: String): Future[Result] = {
+      val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
+      for {
+        updated <- Future.fromTry(ua0.set(CisIdPage, instanceId))
+        _       <- sessionRepository.set(updated)
+      } yield Ok(view())
+    }
+
+    (request.isAgent, instanceIdOpt) match {
+      case (true, Some(instanceId)) =>
+        (taxOfficeNumberOpt, taxOfficeReferenceOpt) match {
+          case (Some(taxOfficeNumber), Some(taxOfficeReference)) =>
+            monthlyReturnService
+              .hasClient(taxOfficeNumber, taxOfficeReference)
+              .flatMap {
+                case true  => storeInstanceId(instanceId)
+                case false =>
+                  logger.warn(
+                    s"[FileYourMonthlyCisReturnController] hasClient = false for " +
+                      s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
+              .recover { case NonFatal(e) =>
+                logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
+          case _                                                 =>
+            logger.warn(
+              s"[FileYourMonthlyCisReturnController] Missing taxOfficeNumber or taxOfficeReference for agent request"
+            )
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
+
+      case (false, Some(instanceId)) =>
+        storeInstanceId(instanceId)
+
+      case (false, None) =>
+        Future.successful(Ok(view()))
+
+      case (true, None) =>
+        logger.warn(s"[FileYourMonthlyCisReturnController] Missing instanceId for agent request")
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+    }
   }
 }

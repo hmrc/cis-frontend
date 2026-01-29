@@ -17,12 +17,12 @@
 package views.components
 
 import base.SpecBase
-import org.scalatest.matchers.must.Matchers
-import views.html.components.Link
-import play.api.test.FakeRequest
-import play.api.i18n.Messages
 import org.jsoup.Jsoup
 import org.jsoup.select.Elements
+import org.scalatest.matchers.must.Matchers
+import play.api.i18n.Messages
+import play.api.test.FakeRequest
+import views.html.components.Link
 
 class LinkSpec extends SpecBase with Matchers {
 
@@ -41,6 +41,22 @@ class LinkSpec extends SpecBase with Matchers {
 
       linkElement.size mustBe 1
       linkElement.text mustBe linkText
+    }
+
+    "must render the link with the correct suffix" in new Setup {
+      val html        = link(linkText, linkUrl, suffixTextKey = suffixText)
+      val linkElement = getLinkElement(html)
+
+      linkElement.size mustBe 1
+      linkElement.text mustBe linkText + " " + suffixText
+    }
+
+    "must render the link with the correct prefix and suffix" in new Setup {
+      val html        = link(linkText, linkUrl, prefixTextKey = prefixText, suffixTextKey = suffixText)
+      val linkElement = getLinkElement(html)
+
+      linkElement.size mustBe 1
+      linkElement.text mustBe prefixText + " " + linkText + " " + suffixText
     }
 
     "must render with default class when extraClasses are empty" in new Setup {
@@ -85,6 +101,13 @@ class LinkSpec extends SpecBase with Matchers {
       linkRefElement.attr("target") must include("_blank")
     }
 
+    "must render the link with the full stop if true" in new Setup {
+      val html        = link(linkText, linkUrl, prefixTextKey = prefixText, hasFullStop = true)
+      val linkElement = getLinkElement(html)
+
+      linkElement.size mustBe 1
+      linkElement.text mustBe prefixText + " " + linkText + "."
+    }
   }
 
   trait Setup {
@@ -99,6 +122,7 @@ class LinkSpec extends SpecBase with Matchers {
     val linkText     = "link text"
     val linkUrl      = "https://www.gov.uk/find-hmrc-contacts/technical-support-with-hmrc-online-services"
     val prefixText   = "Jump to"
+    val suffixText   = "After link text"
     val extraClasses = "govuk-link--inverse govuk-link--no-underline"
 
     def getLinkElement(html: play.twirl.api.Html): org.jsoup.select.Elements = {

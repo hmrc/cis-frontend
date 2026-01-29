@@ -19,11 +19,15 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.Mode
+import models.monthlyreturns.MonthlyReturnRequest
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmPaymentsPage
+import play.api.Logging
+import play.api.data.FormError
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
@@ -38,11 +42,13 @@ class DateConfirmPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   formProvider: DateConfirmPaymentsFormProvider,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: DateConfirmPaymentsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
@@ -58,18 +64,55 @@ class DateConfirmPaymentsController @Inject() (
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
       val form = formProvider()
-
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+          formWithErrors => {
+            val formLevelErrors     = formWithErrors.errors.filter(_.key.isEmpty)
+            val fieldErrors         = formWithErrors.errors.filter(_.key.nonEmpty)
+            val taxMonthErrors      = formLevelErrors.map(error => FormError("taxMonth", error.message, error.args))
+            val allErrors           = fieldErrors ++ taxMonthErrors
+            val formWithFieldErrors = formWithErrors.copy(errors = allErrors)
+            Future.successful(BadRequest(view(formWithFieldErrors, mode)))
+          },
+          value => {
+            val year  = value.getYear
+            val month = value.getMonthValue
+
+            monthlyReturnService
+              .resolveAndStoreCisId(request.userAnswers, request.isAgent)
+              .flatMap { case (cisId, _) =>
+                monthlyReturnService
+                  .isDuplicate(cisId, year, month)
+                  .flatMap {
+                    case true =>
+                      val dupForm =
+                        form
+                          .fill(value)
+                          .withError("value", "dateConfirmPayments.taxYear.error.duplicate")
+                      Future.successful(BadRequest(view(dupForm, mode)))
+
+                    case false =>
+                      val createRequest = MonthlyReturnRequest(cisId, year, month)
+                      monthlyReturnService
+                        .createMonthlyReturn(createRequest)
+                        .flatMap { _ =>
+                          for {
+                            updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
+                            _              <- sessionRepository.set(updatedAnswers)
+                          } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+                        }
+                  }
+              }
+              .recover { exception =>
+                logger.error(
+                  s"[DateConfirmPaymentsController] duplicate check fails unexpectedly: ${exception.getMessage}",
+                  exception
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+              }
+          }
         )
   }
 }

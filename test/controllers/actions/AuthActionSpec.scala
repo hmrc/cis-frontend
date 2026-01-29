@@ -16,10 +16,10 @@
 
 package controllers.actions
 
-import controllers.actions.TestAuthRetrievals.Ops
 import base.SpecBase
 import com.google.inject.Inject
 import config.FrontendAppConfig
+import controllers.actions.TestAuthRetrievals.Ops
 import controllers.routes
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -37,7 +37,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class AuthActionSpec extends SpecBase {
 
@@ -177,19 +176,83 @@ class AuthActionSpec extends SpecBase {
       }
     }
 
-    "when the user is an agent" - {
-      "must redirect the user to unauthorised agent affinity screen" in {
-        when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-          .thenReturn(Future.successful(Some(id) ~ emptyEnrolments ~ Some(Agent) ~ None))
-        running(application) {
-          val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
-          val controller = new Harness(authAction)
-          val result     = controller.onPageLoad()(FakeRequest())
+    "the user is logged in as an  agent" - {
+      "and is allowed into the service" - {
+        "must succeed" - {
+          "when the user has a IR-PAYE-AGENT enrolment with the correct activated identifiers" in {
+            val enrolments = Enrolments(
+              Set(
+                Enrolment(
+                  "IR-PAYE-AGENT",
+                  Seq(
+                    EnrolmentIdentifier("IRAgentReference", "123456")
+                  ),
+                  "activated",
+                  None
+                )
+              )
+            )
+            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
+              .thenReturn(
+                Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None)
+              )
+            running(application) {
+              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+              val controller = new Harness(authAction)
+              val result     = controller.onPageLoad()(FakeRequest())
 
-          status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.monthlyreturns.routes.UnauthorisedAgentAffinityController
-            .onPageLoad()
-            .url
+              status(result) mustBe OK
+            }
+          }
+        }
+      }
+      "and is not allowed into the service" - {
+        "when there is no IR-PAYE-AGENT enrolment" - {
+          "must redirect the user to unauthorised agent affinity screen" in {
+            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
+              .thenReturn(Future.successful(Some(id) ~ emptyEnrolments ~ Some(Agent) ~ None))
+            running(application) {
+              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+              val controller = new Harness(authAction)
+              val result     = controller.onPageLoad()(FakeRequest())
+
+              status(result) mustBe SEE_OTHER
+              redirectLocation(result).value mustBe controllers.routes.UnauthorisedAgentAffinityController
+                .onPageLoad()
+                .url
+            }
+          }
+        }
+        "when there is an inactive IR-PAYE-AGENT enrolment" - {
+          "must redirect to unauthorised agent affinity screen" in {
+            val enrolments = Enrolments(
+              Set(
+                Enrolment(
+                  "IR-PAYE-AGENT",
+                  Seq(
+                    EnrolmentIdentifier("IRAgentReference", "123456")
+                  ),
+                  "inactivated",
+                  None
+                )
+              )
+            )
+            when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
+              .thenReturn(
+                Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None)
+              )
+            running(application) {
+              val authAction = new AuthenticatedIdentifierAction(mockAuthConnector, appConfig, bodyParsers)
+              val controller = new Harness(authAction)
+              val result     = controller.onPageLoad()(FakeRequest())
+              status(result) mustBe SEE_OTHER
+              redirectLocation(
+                result
+              ).value mustBe controllers.routes.UnauthorisedAgentAffinityController
+                .onPageLoad()
+                .url
+            }
+          }
         }
       }
     }
@@ -208,7 +271,7 @@ class AuthActionSpec extends SpecBase {
           status(result) mustBe SEE_OTHER
           redirectLocation(
             result
-          ).value mustBe controllers.monthlyreturns.routes.UnauthorisedIndividualAffinityController.onPageLoad().url
+          ).value mustBe controllers.routes.UnauthorisedIndividualAffinityController.onPageLoad().url
         }
       }
     }
@@ -225,7 +288,7 @@ class AuthActionSpec extends SpecBase {
           val result     = controller.onPageLoad()(FakeRequest())
 
           status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.monthlyreturns.routes.UnauthorisedWrongRoleController
+          redirectLocation(result).value mustBe controllers.routes.UnauthorisedWrongRoleController
             .onPageLoad()
             .url
         }
@@ -279,7 +342,7 @@ class AuthActionSpec extends SpecBase {
               status(result) mustBe SEE_OTHER
               redirectLocation(
                 result
-              ).value mustBe controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController
+              ).value mustBe controllers.routes.UnauthorisedOrganisationAffinityController
                 .onPageLoad()
                 .url
             }
@@ -311,7 +374,7 @@ class AuthActionSpec extends SpecBase {
               status(result) mustBe SEE_OTHER
               redirectLocation(
                 result
-              ).value mustBe controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController
+              ).value mustBe controllers.routes.UnauthorisedOrganisationAffinityController
                 .onPageLoad()
                 .url
             }
@@ -336,14 +399,6 @@ class AuthActionSpec extends SpecBase {
     }
 
   }
-}
-
-class FakeAuthConnector[T](value: T) extends AuthConnector {
-  override def authorise[A](predicate: Predicate, retrieval: Retrieval[A])(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
-  ): Future[A] =
-    Future.fromTry(Try(value.asInstanceOf[A]))
 }
 
 class FakeFailingAuthConnector @Inject() (exceptionToReturn: Throwable) extends AuthConnector {

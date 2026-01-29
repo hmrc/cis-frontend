@@ -28,22 +28,23 @@ import pages.monthlyreturns.InactivityRequestPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.InactivityRequestView
 import controllers.routes
+import play.api.data.Form
 
 import scala.concurrent.Future
 
 class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
-  lazy val inactivityRequestRoute =
+  lazy val inactivityRequestRoute: String =
     controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode).url
 
-  val formProvider = new InactivityRequestFormProvider()
-  val form         = formProvider()
+  val formProvider                  = new InactivityRequestFormProvider()
+  val form: Form[InactivityRequest] = formProvider()
 
   "InactivityRequest Controller" - {
 
@@ -76,7 +77,7 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
 
         redirectLocation(
           result
-        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
       }
     }
 
