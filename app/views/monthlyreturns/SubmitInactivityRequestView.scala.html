@@ -41,36 +41,36 @@
 
         @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None) {
 
-        @paragraph(messages("monthlyreturns.submitInactivityRequest.p1"))
+            @paragraph(messages("monthlyreturns.submitInactivityRequest.p1"))
 
-        @paragraph(messages("monthlyreturns.submitInactivityRequest.p2"))
+            @paragraph(messages("monthlyreturns.submitInactivityRequest.p2"))
 
-        @govukInsetText(InsetText(content = Text(messages("monthlyreturns.submitInactivityRequest.insetText"))))
+            @govukInsetText(InsetText(content = Text(messages("monthlyreturns.submitInactivityRequest.insetText"))))
 
-        @h2(messages("monthlyreturns.submitInactivityRequest.question"))
+            @h2(messages("monthlyreturns.submitInactivityRequest.question"))
 
-            @govukRadios(
-                RadiosViewModel(
-                    field = form("value"),
-                    items = Seq(
-                        RadioItem(
-                            content = Text(messages("monthlyreturns.submitInactivityRequest.yes")),
-                            value = Some("true"),
-                            id = Some("value_0")
+                @govukRadios(
+                    RadiosViewModel(
+                        field = form("value"),
+                        items = Seq(
+                            RadioItem(
+                                content = Text(messages("monthlyreturns.submitInactivityRequest.yes")),
+                                value = Some("true"),
+                                id = Some("value_0")
+                            ),
+                            RadioItem(
+                                content = Text(messages("monthlyreturns.submitInactivityRequest.no")),
+                                value = Some("false"),
+                                id = Some("value_1")
+                            )
                         ),
-                        RadioItem(
-                            content = Text(messages("monthlyreturns.submitInactivityRequest.no")),
-                            value = Some("false"),
-                            id = Some("value_1")
-                        )
-                    ),
-                    legend = Legend()
+                        legend = Legend()
+                    )
                 )
-            )
 
-        @govukButton(
-            ButtonViewModel(messages("site.continue"))
-        )
-    }
+            @govukButton(
+                ButtonViewModel(messages("site.continue"))
+            )
+        }
     }
 }
