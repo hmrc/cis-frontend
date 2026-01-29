@@ -22,25 +22,33 @@
     linkTextKey: String,
     linkUrl: String,
     isNewTab: Boolean = false,
+    hasFullStop: Boolean = false,
+    paragraphWrapped: Boolean = true,
     prefixTextKey: String = emptyString,
     suffixTextKey: String = emptyString,
     extraClasses: String = emptyString,
-    bold: Boolean = false,
-    hasFullStop: Boolean = false,
+    bold: Boolean = false
 )(implicit messages: Messages)
 
-<p class="govuk-body @if(extraClasses.nonEmpty){@extraClasses}">
+@defining {
     @if(prefixTextKey.nonEmpty) {
         @{Html(messages(prefixTextKey))}
     }
-
     @if(hasFullStop) {
         <a href="@linkUrl" class="govuk-link @if(bold){govuk-!-font-weight-bold}" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>.
     } else {
         <a href="@linkUrl" class="govuk-link @if(bold){govuk-!-font-weight-bold}" @if(isNewTab){rel="noreferrer noopener" target="_blank"}>@{Html(messages(linkTextKey))}</a>
     }
-
+    
     @if(suffixTextKey.nonEmpty) {
         @{Html(messages(suffixTextKey))}
     }
-</p>
+} { content =>
+    @if(paragraphWrapped){
+        <p class="govuk-body @if(extraClasses.nonEmpty){@extraClasses}">
+            @content
+        </p>
+    } else {
+        @content
+    }
+}

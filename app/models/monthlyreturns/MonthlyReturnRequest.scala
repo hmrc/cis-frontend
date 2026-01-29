@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package controllers
+package models.monthlyreturns
 
-import config.FrontendAppConfig
+import play.api.libs.json.{Json, OFormat}
 
-import javax.inject.Inject
-import play.api.i18n.I18nSupport
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.UnauthorisedView
+final case class MonthlyReturnRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int
+)
 
-class UnauthorisedController @Inject() (
-  val controllerComponents: MessagesControllerComponents,
-  view: UnauthorisedView
-)(implicit appConfig: FrontendAppConfig)
-    extends FrontendBaseController
-    with I18nSupport {
-
-  def onPageLoad(): Action[AnyContent] = Action { implicit request =>
-    Ok(view())
-  }
+object MonthlyReturnRequest {
+  given format: OFormat[MonthlyReturnRequest] = Json.format[MonthlyReturnRequest]
 }

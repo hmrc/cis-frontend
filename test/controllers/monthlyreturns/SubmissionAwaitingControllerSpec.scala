@@ -56,7 +56,7 @@ class SubmissionAwaitingControllerSpec extends SpecBase {
 
         redirectLocation(
           result
-        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
       }
     }
 

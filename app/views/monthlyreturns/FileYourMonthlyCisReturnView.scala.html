@@ -15,6 +15,7 @@
  *@
 
 @import views.html.components._
+@import models.NormalMode
 
 @this(
     layout: templates.Layout,
@@ -42,7 +43,7 @@
 
 @govukButton(Button(
    content = Text(messages(("fileYourMonthlyCisReturn.startButton"))),
-   href = Some("#"),
+   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url),
    isStartButton = true
 ))
 }

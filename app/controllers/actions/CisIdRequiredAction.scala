@@ -32,7 +32,7 @@ class CisIdRequiredActionImpl @Inject() (implicit val executionContext: Executio
         Future.successful(Right(request))
       case None        =>
         Future.successful(
-          Left(Redirect(controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+          Left(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
         )
     }
 }

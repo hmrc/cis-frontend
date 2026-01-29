@@ -24,6 +24,7 @@ case class OptionalDataRequest[A](
   userId: String,
   userAnswers: Option[UserAnswers],
   employerReference: Option[EmployerReference] = None,
+  agentReference: Option[String] = None,
   isAgent: Boolean = false
 ) extends WrappedRequest[A](request)
 
@@ -32,5 +33,6 @@ case class DataRequest[A](
   userId: String,
   userAnswers: UserAnswers,
   employerReference: Option[EmployerReference] = None,
+  agentReference: Option[String] = None,
   isAgent: Boolean = false
 ) extends WrappedRequest[A](request)

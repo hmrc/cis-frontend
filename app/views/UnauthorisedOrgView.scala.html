@@ -20,6 +20,7 @@
 @this(
     layout: templates.Layout,
     link: Link,
+    paragraph: Paragraph,
     heading: H1,
 )
 
@@ -27,18 +28,18 @@
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("monthlyreturns.unauthorised.org.title")),
+    pageTitle = titleNoForm(messages("unauthorised.org.title")),
     showBackLink = false,
     timeout = false
 ) {
 
-    @heading(messages("monthlyreturns.unauthorised.org.heading"), classes = "govuk-heading-xl")
-
+    @heading(messages("unauthorised.org.heading"), classes = "govuk-heading-xl")
+    @paragraph(messages("unauthorised.org.p1"), extraClasses = "govuk-!-margin-bottom-5")
     @link(
-        "monthlyreturns.unauthorised.org.guidance.link",
-        appConfig.govUkCISGuidanceUrl,
-        false,
-        "monthlyreturns.unauthorised.org.guidance.p1",
-        suffixTextKey = "monthlyreturns.unauthorised.org.guidance.p2"
+        linkTextKey = "unauthorised.org.guidance.p2.link",
+        linkUrl = appConfig.govUkCISGuidanceUrl,
+        isNewTab = false,
+        prefixTextKey = "unauthorised.org.guidance.p2.prefix",
+        suffixTextKey = "unauthorised.org.guidance.p2.suffix"
     )
 }
