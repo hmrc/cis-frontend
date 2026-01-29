@@ -18,6 +18,7 @@
     layout: templates.Layout,
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
+    warningInsetText: components.WarningInsetText,
     h1: components.H1,
     paragraph: components.Paragraph
 )
@@ -29,11 +30,8 @@
     @h1(messages("monthlyreturns.inactivityRequestWarning.heading"))
     @paragraph(messages("monthlyreturns.inactivityRequestWarning.p"))
 
-    @govukWarningText(
-        WarningTextViewModel(
-            content = Text(messages("monthlyreturns.inactivityRequestWarning.warning"))
-        )
-    )
+    @warningInsetText(messages("monthlyreturns.inactivityRequestWarning.warning"))
+
     @govukButton(
         ButtonViewModel(
             messages("monthlyreturns.inactivityRequestWarning.submit")
