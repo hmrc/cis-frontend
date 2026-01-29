@@ -16,15 +16,17 @@
 
 package connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, get, post, stubFor, urlPathEqualTo, urlPathMatching}
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.requests.SendSuccessEmailRequest
+import models.monthlyreturns.MonthlyReturnRequest
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.ExecutionContext
@@ -648,6 +650,71 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         connector.getSubmissionStatus(pollUrl, correlationId).futureValue
       }
       ex.getMessage must include("returned 500")
+    }
+  }
+
+  "createMonthlyReturn(payload)" should {
+
+    "POST /cis/monthly-returns/standard/create and return Unit on 201" in {
+      val req = MonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/standard/create"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(CREATED))
+      )
+
+      connector.createMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-201 (e.g. 500)" in {
+      val req = MonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/standard/create"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.createMonthlyReturn(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "hasClient(taxOfficeNumber, taxOfficeReference)" should {
+
+    "GET /cis/agent/has-client/:ton/:tor and return true when BE returns 200" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/has-client/163/AB0063"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "hasClient": true }""")
+          )
+      )
+
+      connector.hasClient("163", "AB0063").futureValue mustBe true
+    }
+
+    "fail the future when BE returns non-200 (e.g. 403)" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/has-client/163/AB0063"))
+          .willReturn(aResponse().withStatus(FORBIDDEN).withBody("""{"error":"nope"}"""))
+      )
+
+      val ex = connector.hasClient("163", "AB0063").failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe FORBIDDEN
     }
   }
 

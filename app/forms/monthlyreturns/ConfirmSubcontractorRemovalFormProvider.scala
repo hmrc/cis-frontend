@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package models.requests
+package forms.monthlyreturns
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import forms.mappings.Mappings
+import play.api.data.Form
 
-case class IdentifierRequest[A](
-  request: Request[A],
-  userId: String,
-  employerReference: Option[EmployerReference],
-  agentReference: Option[String],
-  isAgent: Boolean = false
-) extends WrappedRequest[A](request)
+import javax.inject.Inject
+
+class ConfirmSubcontractorRemovalFormProvider @Inject() extends Mappings {
+
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("monthlyreturns.confirmSubcontractorRemoval.error.required")
+    )
+}

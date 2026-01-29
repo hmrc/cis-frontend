@@ -59,7 +59,7 @@ class InactivityWarningControllerSpec extends SpecBase with MockitoSugar {
 
         redirectLocation(
           result
-        ).value mustEqual controllers.monthlyreturns.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
       }
     }
 

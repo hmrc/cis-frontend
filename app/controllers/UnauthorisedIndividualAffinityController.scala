@@ -14,28 +14,25 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers
 
 import config.FrontendAppConfig
-import models.audit.AuthFailureAuditEventModel
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.AuditService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.UnauthorisedAgentView
+import views.html.UnauthorisedIndividualView
 
 import javax.inject.Inject
 
-class UnauthorisedAgentAffinityController @Inject() (
+class UnauthorisedIndividualAffinityController @Inject() (
   val controllerComponents: MessagesControllerComponents,
-  auditService: AuditService,
-  view: UnauthorisedAgentView
+  view: UnauthorisedIndividualView
 )(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport {
 
   def onPageLoad: Action[AnyContent] = Action { implicit request =>
-    auditService.sendEvent(AuthFailureAuditEventModel())
     Ok(view())
   }
+
 }

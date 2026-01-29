@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,82 +17,70 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.monthlyreturns.ConfirmEmailAddressFormProvider
-import models.NormalMode
+import controllers.routes
+import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
+import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.ConfirmEmailAddressPage
-import play.api.data.Form
+import pages.monthlyreturns.ConfirmSubcontractorRemovalPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.monthlyreturns.ConfirmEmailAddressView
+import views.html.monthlyreturns.ConfirmSubcontractorRemovalView
 
 import scala.concurrent.Future
 
-class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
+class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSugar {
 
-  def onwardRoute: Call = Call("GET", "/foo")
+  def onwardRoute = Call("GET", "/foo")
 
-  val formProvider       = new ConfirmEmailAddressFormProvider()
-  val form: Form[String] = formProvider()
+  val formProvider      = new ConfirmSubcontractorRemovalFormProvider()
+  val form              = formProvider()
+  val subcontractorName = "TyneWear Ltd"
 
-  lazy val confirmEmailAddressRoute: String = routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
+  lazy val confirmSubcontractorRemovalRoute =
+    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(NormalMode).url
 
-  "ConfirmEmailAddress Controller" - {
+  "ConfirmSubcontractorRemoval Controller" - {
 
     "must return OK and the correct view for a GET" in {
-
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
-
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[ConfirmEmailAddressView]
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
-      }
-    }
-
-    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
+        val request = FakeRequest(GET, confirmSubcontractorRemovalRoute)
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
+        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
 
-        redirectLocation(
-          result
-        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode, subcontractorName)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = userAnswersWithCisId.set(ConfirmEmailAddressPage, "test@example.com").success.value
+      val userAnswers = UserAnswers(userAnswersId).set(ConfirmSubcontractorRemovalPage, true).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
+        val request = FakeRequest(GET, confirmSubcontractorRemovalRoute)
 
-        val view = application.injector.instanceOf[ConfirmEmailAddressView]
+        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill("test@example.com"), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(true), NormalMode, subcontractorName)(
           request,
           messages(application)
         ).toString
@@ -115,8 +103,8 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", "test@example.com"))
+          FakeRequest(POST, confirmSubcontractorRemovalRoute)
+            .withFormUrlEncodedBody(("value", "true"))
 
         val result = route(application, request).value
 
@@ -131,17 +119,20 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
+          FakeRequest(POST, confirmSubcontractorRemovalRoute)
             .withFormUrlEncodedBody(("value", ""))
 
         val boundForm = form.bind(Map("value" -> ""))
 
-        val view = application.injector.instanceOf[ConfirmEmailAddressView]
+        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
 
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, subcontractorName)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -150,12 +141,12 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, confirmEmailAddressRoute)
+        val request = FakeRequest(GET, confirmSubcontractorRemovalRoute)
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -165,13 +156,13 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", "test@example.com"))
+          FakeRequest(POST, confirmSubcontractorRemovalRoute)
+            .withFormUrlEncodedBody(("value", "true"))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }
