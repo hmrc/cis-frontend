@@ -21,7 +21,8 @@
     monthLabel: String,
     yearLabel: String,
     id: String = "value",
-    hintText: Option[String] = None
+    hintText: Option[String] = None,
+    formError: Option[FormError] = None
 )(implicit messages: Messages)
 
 @monthFieldErrors = @{if(monthField.hasErrors) "govuk-input--error" else ""}
@@ -50,6 +51,7 @@
     errorMessage = {
         monthField.error
             .orElse(yearField.error)
+            .orElse(formError)
             .map(err => ErrorMessage(
                 content = Text(messages(err.message, err.args: _*)),
                 visuallyHiddenText = Some(messages("site.error"))

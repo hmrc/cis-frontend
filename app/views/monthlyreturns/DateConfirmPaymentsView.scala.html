@@ -59,7 +59,8 @@
                 monthField = form("taxMonth"),
                 yearField = form("taxYear"),
                 monthLabel = messages("dateConfirmPayments.labelMonth"),
-                yearLabel = messages("dateConfirmPayments.labelYear")
+                yearLabel = messages("dateConfirmPayments.labelYear"),
+                formError = form("taxMonthAndYear").error
             )
 
             @govukButton(
