@@ -14,12 +14,19 @@
  * limitations under the License.
  *@
 
+@import views.html.components._
+
 @this(
     layout: templates.Layout,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
+    govukInsetText: GovukInsetText,
+    fieldSet: FieldSet,
+    h2: H2,
+    paragraph: Paragraph
+
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
@@ -32,15 +39,38 @@
             @govukErrorSummary(ErrorSummaryViewModel(form))
         }
 
-        @govukRadios(
-            RadiosViewModel.yesNo(
-                field = form("value"),
-                legend = LegendViewModel(messages("submitInactivityRequest.heading")).asPageHeading()
+        @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None) {
+
+        @paragraph(messages("monthlyreturns.submitInactivityRequest.p1"))
+
+        @paragraph(messages("monthlyreturns.submitInactivityRequest.p2"))
+
+        @govukInsetText(InsetText(content = Text(messages("monthlyreturns.submitInactivityRequest.insetText"))))
+
+        @h2(messages("monthlyreturns.submitInactivityRequest.question"))
+
+            @govukRadios(
+                RadiosViewModel(
+                    field = form("value"),
+                    items = Seq(
+                        RadioItem(
+                            content = Text(messages("monthlyreturns.submitInactivityRequest.yes")),
+                            value = Some("true"),
+                            id = Some("value_0")
+                        ),
+                        RadioItem(
+                            content = Text(messages("monthlyreturns.submitInactivityRequest.no")),
+                            value = Some("false"),
+                            id = Some("value_1")
+                        )
+                    ),
+                    legend = Legend()
+                )
             )
-        )
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))
         )
+    }
     }
 }

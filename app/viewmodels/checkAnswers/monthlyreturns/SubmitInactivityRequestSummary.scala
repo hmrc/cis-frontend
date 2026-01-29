@@ -29,7 +29,8 @@ object SubmitInactivityRequestSummary {
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(SubmitInactivityRequestPage).map { answer =>
 
-      val value = if (answer) "site.yes" else "site.no"
+      val value =
+        if (answer) "monthlyreturns.submitInactivityRequest.yes" else "monthlyreturns.submitInactivityRequest.no"
 
       SummaryListRowViewModel(
         key = "submitInactivityRequest.checkYourAnswersLabel",
