@@ -39,7 +39,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       when(mockRepo.set(any())).thenReturn(Future.successful(true))
 
       val app =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = false)
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockRepo),
             bind[MonthlyReturnService].toInstance(mockService)
@@ -62,7 +62,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
     }
 
     "Org: without instanceId => returns OK and stores empty UA when none exists" in {
-      val mockRepo = mock[SessionRepository]
+      val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
       when(mockRepo.set(any())).thenReturn(Future.successful(true))
@@ -88,7 +88,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
     }
 
     "Org: without instanceId and UA exists => returns OK and does not store" in {
-      val mockRepo = mock[SessionRepository]
+      val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
       val app =

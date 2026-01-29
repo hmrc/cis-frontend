@@ -40,7 +40,7 @@ class FileYourMonthlyCisReturnController @Inject() (
   sessionRepository: SessionRepository,
   monthlyReturnService: MonthlyReturnService
 )(implicit ec: ExecutionContext)
-  extends FrontendBaseController
+    extends FrontendBaseController
     with I18nSupport
     with Logging {
 
@@ -51,7 +51,9 @@ class FileYourMonthlyCisReturnController @Inject() (
     handleRequest(instanceIdOpt, agentRefOpt)
   }
 
-  private def handleRequest(instanceIdOpt: Option[String], agentRefOpt: Option[(String, String)])(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
+  private def handleRequest(instanceIdOpt: Option[String], agentRefOpt: Option[(String, String)])(implicit
+    request: OptionalDataRequest[AnyContent]
+  ): Future[Result] =
     if (!request.isAgent) {
       instanceIdOpt match {
         case Some(instanceId) => storeInstanceId(instanceId).map(_ => Ok(view()))

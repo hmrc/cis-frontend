@@ -50,15 +50,6 @@ class SelectSubcontractorsController @Inject() (
     with I18nSupport
     with Logging {
 
-//  private val subcontractors = Seq(
-//    SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-//    SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-//    SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-//    SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-//    SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-//    SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
-//  )
-
   private val form = formProvider()
 
   def onPageLoad(
