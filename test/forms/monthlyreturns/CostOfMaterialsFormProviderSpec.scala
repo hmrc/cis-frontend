@@ -16,9 +16,7 @@
 
 package forms.monthlyreturns
 
-import utils.CurrencyFormatter.currencyFormat
 import forms.behaviours.CurrencyFieldBehaviours
-import forms.monthlyreturns.CostOfMaterialsFormProvider
 import org.scalacheck.Gen
 import play.api.data.FormError
 

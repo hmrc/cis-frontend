@@ -74,7 +74,8 @@ final class GetAllMonthlyReturnDetailsResponseSpec extends AnyFreeSpec with Matc
         version = None,
         updatedTaxTreatment = None,
         lastMonthlyReturnDate = None,
-        pendingVerifications = None
+        pendingVerifications = None,
+        displayName = Some("Test Subcontractor Ltd")
       )
 
       val monthlyReturnItem = MonthlyReturnItem(
