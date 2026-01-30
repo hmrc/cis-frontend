@@ -122,7 +122,7 @@ class SelectSubcontractorsController @Inject() (
             val subcontractorViewModels = data.subcontractors.map(s =>
               SelectSubcontractorsViewModel(
                 id = s.subcontractorId.toInt,
-                name = s.tradingName.getOrElse("Unknown"),
+                name = s.displayName.getOrElse("No name provided"),
                 verificationRequired = "Yes",
                 verificationNumber = "Unknown",
                 taxTreatment = "Unknown"

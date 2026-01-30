@@ -48,7 +48,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     def createSubcontractor(
       id: Long,
-      tradingName: Option[String],
+      displayName: Option[String],
       subbieResourceRef: Option[Long] = None
     ): Subcontractor =
       Subcontractor(
@@ -62,7 +62,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         secondName = None,
         surname = None,
         partnershipTradingName = None,
-        tradingName = tradingName,
+        tradingName = displayName,
         subcontractorType = None,
         addressLine1 = None,
         addressLine2 = None,
@@ -86,7 +86,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         version = None,
         updatedTaxTreatment = None,
         lastMonthlyReturnDate = None,
-        pendingVerifications = None
+        pendingVerifications = None,
+        displayName = displayName
       )
 
     def createMonthlyReturnItem(
@@ -298,7 +299,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
-      "must use 'Unknown' for tradingName when subcontractor has no tradingName" in {
+      "must use 'No name provided' for displayName when subcontractor has no tradingName" in {
         val subcontractorWithNoName = createSubcontractor(99, None)
         val mockService             = mock[MonthlyReturnService]
         when(
@@ -325,7 +326,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
           val result            = route(application, request).value
           val view              = application.injector.instanceOf[SelectSubcontractorsView]
-          val expectedViewModel = SelectSubcontractorsViewModel(99, "Unknown", "Yes", "Unknown", "Unknown")
+          val expectedViewModel = SelectSubcontractorsViewModel(99, "No name provided", "Yes", "Unknown", "Unknown")
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual view(form, Seq(expectedViewModel))(request, messages(application)).toString
