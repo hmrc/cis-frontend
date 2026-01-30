@@ -10,6 +10,7 @@ site.start = Start now
 site.startAgain = Start again
 site.signIn = Sign in
 site.govuk = GOV.UK
+site.acceptAndContinue = Accept and continue
 
 date.day = Day
 date.month = Month
@@ -394,3 +395,9 @@ monthlyreturns.costOfMaterials.change.hidden = cost of materials
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if you want to remove this subcontractor
+
+monthlyreturns.inactivityRequestWarning.title = Inactivity request
+monthlyreturns.inactivityRequestWarning.heading = Inactivity request
+monthlyreturns.inactivityRequestWarning.p = You are submitting a request for inactivity. If it is accepted it is only valid for six months.
+monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
+
