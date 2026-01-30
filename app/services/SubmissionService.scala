@@ -20,8 +20,9 @@ import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
+import models.requests.SendSuccessEmailRequest
 import models.submission.*
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
 import pages.submission.*
 import play.api.Logging
 import repositories.SessionRepository
@@ -118,6 +119,46 @@ class SubmissionService @Inject() (
     )
 
     cisConnector.updateSubmission(submissionId, update)
+  }
+
+  def sendSuccessEmail(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    val submissionId = userAnswers
+      .get(SubmissionDetailsPage)
+      .map(_.id)
+      .getOrElse(throw new IllegalStateException("Submission details missing"))
+
+    val alreadySent = userAnswers
+      .get(SuccessEmailSentPage(submissionId))
+      .getOrElse(false)
+
+    if (alreadySent) {
+      Future.successful(userAnswers)
+    } else {
+      val email = userAnswers
+        .get(ConfirmEmailAddressPage)
+        .getOrElse(throw new IllegalStateException("Email address missing"))
+
+      val yearMonth = userAnswers
+        .get(DateConfirmNilPaymentsPage)
+        .map(YearMonth.from)
+        .getOrElse(throw new IllegalStateException("Month/Year not selected"))
+
+      val request = SendSuccessEmailRequest(
+        email = email,
+        month = yearMonth.getMonthValue.toString,
+        year = yearMonth.getYear.toString
+      )
+
+      cisConnector
+        .sendSuccessfulEmail(submissionId, request)
+        .flatMap(_ =>
+          Future
+            .fromTry(userAnswers.set(SuccessEmailSentPage(submissionId), true))
+            .flatMap { updatedUa =>
+              sessionRepository.set(updatedUa).map(_ => updatedUa)
+            }
+        )
+    }
   }
 
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
