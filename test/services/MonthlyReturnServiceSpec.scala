@@ -323,7 +323,8 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
             version = None,
             updatedTaxTreatment = None,
             lastMonthlyReturnDate = None,
-            pendingVerifications = None
+            pendingVerifications = None,
+            displayName = Some("Test Subcontractor Ltd")
           )
         ),
         monthlyReturnItems = Seq(
