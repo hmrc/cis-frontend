@@ -370,4 +370,126 @@ class MappingsSpec extends AnyFreeSpec with Matchers with OptionValues with Mapp
       result.apply("value").value.value mustEqual "1"
     }
   }
+
+  "taxDeductedCurrency" - {
+
+    val testForm: Form[BigDecimal] =
+      Form(
+        "value" -> taxDeductedCurrency()
+      )
+
+    "must bind a valid integer" in {
+      val result = testForm.bind(Map("value" -> "1"))
+      result.get mustEqual 1
+    }
+
+    "must bind a valid decimal with 1 decimal place" in {
+      val result = testForm.bind(Map("value" -> "1.2"))
+      result.get mustEqual 1.2
+    }
+
+    "must bind a valid decimal with 2 decimal places" in {
+      val result = testForm.bind(Map("value" -> "1.23"))
+      result.get mustEqual 1.23
+    }
+
+    "must bind a valid number with commas" in {
+      val result = testForm.bind(Map("value" -> "1,234.01"))
+      result.get mustEqual 1234.01
+    }
+
+    "must bind the maximum length value (13 characters)" in {
+      val result = testForm.bind(Map("value" -> "1,234,567.89"))
+      result.get mustEqual 1234567.89
+    }
+
+    "must not bind values exceeding max length (13 characters)" in {
+      val result = testForm.bind(Map("value" -> "12,345,678.901"))
+      result.errors must contain only FormError("value", "error.maxLength")
+    }
+
+    "must not bind a number with more than 2 decimal places" in {
+      val result = testForm.bind(Map("value" -> "1.234"))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must not bind negative numbers" in {
+      val result = testForm.bind(Map("value" -> "-1"))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must not bind values with `£` characters" in {
+      val result = testForm.bind(Map("value" -> "£123"))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must not bind values with spaces" in {
+      val result = testForm.bind(Map("value" -> "1 234"))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must not bind values with non-numeric characters" in {
+      val result = testForm.bind(Map("value" -> "abc"))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must not bind an empty value" in {
+      val result = testForm.bind(Map("value" -> ""))
+      result.errors must contain(FormError("value", "error.required"))
+    }
+
+    "must not bind a value with only whitespace" in {
+      val result = testForm.bind(Map("value" -> "   "))
+      result.errors must contain(FormError("value", "error.required"))
+    }
+
+    "must not bind an empty map" in {
+      val result = testForm.bind(Map.empty[String, String])
+      result.errors must contain(FormError("value", "error.required"))
+    }
+
+    "must bind values with leading/trailing whitespace" in {
+      val result = testForm.bind(Map("value" -> "  123.45  "))
+      result.get mustEqual 123.45
+    }
+
+    "must not bind a number with only a decimal point" in {
+      val result = testForm.bind(Map("value" -> "."))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must not bind a number with decimal point but no decimal places" in {
+      val result = testForm.bind(Map("value" -> "123."))
+      result.errors must contain only FormError("value", "error.invalid")
+    }
+
+    "must unbind a valid value" in {
+      val result = testForm.fill(123.45)
+      result.apply("value").value.value mustEqual "123.45"
+    }
+
+    "must unbind an integer value" in {
+      val result = testForm.fill(100)
+      result.apply("value").value.value mustEqual "100"
+    }
+
+    "must return custom error messages" in {
+      val customForm = Form(
+        "value" -> taxDeductedCurrency(
+          requiredKey = "custom.required",
+          invalidKey = "custom.invalid",
+          maxLengthKey = "custom.maxLength"
+        )
+      )
+
+      val requiredResult = customForm.bind(Map("value" -> ""))
+      requiredResult.errors must contain(FormError("value", "custom.required"))
+
+      val invalidResult = customForm.bind(Map("value" -> "abc"))
+      invalidResult.errors must contain(FormError("value", "custom.invalid"))
+
+      val maxLengthResult = customForm.bind(Map("value" -> "12,345,678.901"))
+      maxLengthResult.errors must contain(FormError("value", "custom.maxLength"))
+    }
+  }
 }
