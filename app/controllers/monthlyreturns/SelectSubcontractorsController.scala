@@ -19,18 +19,15 @@ package controllers.monthlyreturns
 import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
-import models.monthlyreturns.{SelectSubcontractorsFormData, Subcontractor}
-import models.requests.DataRequest
+import models.monthlyreturns.SelectSubcontractorsFormData
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.{MonthlyReturnService, SubcontractorService}
+import services.SubcontractorService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
 
-import java.time.LocalDate
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,7 +40,6 @@ class SelectSubcontractorsController @Inject() (
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
   config: FrontendAppConfig,
-  monthlyReturnService: MonthlyReturnService,
   subcontractorService: SubcontractorService
 )(using ExecutionContext)
     extends FrontendBaseController
@@ -52,101 +48,76 @@ class SelectSubcontractorsController @Inject() (
 
   private val form = formProvider()
 
-  def onPageLoad(
-    defaultSelection: Option[Boolean] = None
-  ): Action[AnyContent] =
+  def onPageLoad(defaultSelection: Option[Boolean] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
-      requiredAnswers(request) match {
-        case Some((cisId, taxMonth, taxYear)) =>
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
-            val verificationPeriodStart = subcontractorService.verificationPeriodStart(LocalDate.now())
-            val subcontractorViewModels = data.subcontractors.map(s => toViewModel(s, verificationPeriodStart))
 
-            val filledForm = defaultSelection match {
-              case Some(true) =>
-                form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
-              case _          =>
-                form
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+      requiredAnswers
+        .map { (cisId, taxMonth, taxYear) =>
+          subcontractorService
+            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, defaultSelection)
+            .map { model =>
+
+              val filledForm =
+                if (model.initiallySelectedIds.nonEmpty) {
+                  form.fill(
+                    SelectSubcontractorsFormData(
+                      confirmation = false,
+                      subcontractorsToInclude = model.initiallySelectedIds
+                    )
+                  )
+                } else {
+                  form
+                }
+
+              Ok(view(filledForm, model.subcontractors, config.selectSubcontractorsUpfrontDeclaration))
             }
-
-            Ok(view(filledForm, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration))
-          }
-        case None                             =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      }
+        }
+        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
     }
 
   def onSubmit(): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
-      requiredAnswers(request) match {
-        case Some((cisId, taxMonth, taxYear)) =>
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).flatMap { data =>
 
-            val verificationPeriodStart = subcontractorService.verificationPeriodStart(LocalDate.now())
-            val subcontractorViewModels = data.subcontractors.map(s => toViewModel(s, verificationPeriodStart))
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
 
-            form
-              .bindFromRequest()
-              .fold(
-                formWithErrors =>
-                  Future.successful(
+      requiredAnswers
+        .map { (cisId, taxMonth, taxYear) =>
+          subcontractorService
+            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, None)
+            .map { model =>
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors =>
                     BadRequest(
-                      view(formWithErrors, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration)
-                    )
-                  ),
-                formData =>
-                  if (!formData.confirmation) {
-                    val formWithError = form
-                      .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                      .fill(formData)
-
-                    Future.successful(
+                      view(formWithErrors, model.subcontractors, config.selectSubcontractorsUpfrontDeclaration)
+                    ),
+                  formData =>
+                    if (!formData.confirmation) {
                       BadRequest(
-                        view(formWithError, subcontractorViewModels, config.selectSubcontractorsUpfrontDeclaration)
-                      )
-                    )
-                  } else {
-                    Future.successful(
-                      Ok(
                         view(
-                          form.fill(formData),
-                          subcontractorViewModels,
+                          form
+                            .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+                            .fill(formData),
+                          model.subcontractors,
                           config.selectSubcontractorsUpfrontDeclaration
                         )
                       )
-                    )
-                  }
-              )
-          }
-
-        case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      }
+                    } else {
+                      Ok(view(form.fill(formData), model.subcontractors, config.selectSubcontractorsUpfrontDeclaration))
+                    }
+                )
+            }
+        }
+        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
     }
 
-  private def requiredAnswers(request: DataRequest[AnyContent]): Option[(String, Int, Int)] =
-    for {
-      cisId   <- request.userAnswers.get(CisIdPage)
-      taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-    } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
-
-  private def toViewModel(
-    subcontractor: Subcontractor,
-    verificationPeriodStart: LocalDate
-  ): SelectSubcontractorsViewModel = {
-    val required = subcontractorService.verificationRequired(
-      subcontractor.verified,
-      subcontractor.verificationDate,
-      subcontractor.lastMonthlyReturnDate,
-      verificationPeriodStart
-    )
-
-    SelectSubcontractorsViewModel(
-      id = subcontractor.subcontractorId.toInt,
-      name = "Unknown",
-      verificationRequired = if (required) "Yes" else "No",
-      verificationNumber = "Unknown",
-      taxTreatment = "Unknown"
-    )
-  }
 }

@@ -17,12 +17,21 @@
 package services
 
 import base.SpecBase
+import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturnItem, Subcontractor}
+import org.mockito.ArgumentMatchers.any
+import uk.gov.hmrc.http.HeaderCarrier
+import org.mockito.Mockito.*
 
 import java.time.{LocalDate, LocalDateTime}
+import scala.concurrent.{ExecutionContext, Future}
 
 class SubcontractorServiceSpec extends SpecBase {
 
-  private val service = new SubcontractorService()
+  given hc: HeaderCarrier = HeaderCarrier()
+  given ExecutionContext  = ExecutionContext.global
+
+  private val monthlyReturnService = mock(classOf[MonthlyReturnService])
+  private val service              = new SubcontractorService(monthlyReturnService)
 
   "SubcontractorService.verificationPeriodStart" - {
 
@@ -116,4 +125,118 @@ class SubcontractorServiceSpec extends SpecBase {
       ) mustBe true
     }
   }
+
+  "SubcontractorService.buildSelectSubcontractorPage" - {
+
+    "preselects last-month subcontractors and sets verificationRequired Yes/No" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1001L)),
+        subs = Seq(
+          mkSubcontractor(
+            id = 1L,
+            ref = Some(1001L),
+            verified = Some("N"),
+            verificationDate = Some(LocalDateTime.of(2025, 1, 1, 0, 0)),
+            lastMrDate = Some(LocalDateTime.of(2025, 1, 1, 0, 0))
+          ),
+          mkSubcontractor(
+            id = 2L,
+            ref = Some(2002L),
+            verified = Some("Y"),
+            verificationDate = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
+            lastMrDate = None
+          )
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.initiallySelectedIds mustBe Seq(1)
+
+        val byId = model.subcontractors.map(vm => vm.id -> vm).toMap
+        byId(1).verificationRequired mustBe "Yes"
+        byId(2).verificationRequired mustBe "No"
+      }
+    }
+  }
+
+  private def mkResponse(items: Seq[MonthlyReturnItem], subs: Seq[Subcontractor]) =
+    GetAllMonthlyReturnDetailsResponse(
+      scheme = Seq.empty,
+      monthlyReturn = Seq.empty,
+      subcontractors = subs,
+      monthlyReturnItems = items,
+      submission = Seq.empty
+    )
+
+  private def mkItem(ref: Long): MonthlyReturnItem =
+    MonthlyReturnItem(
+      monthlyReturnId = 1L,
+      monthlyReturnItemId = ref,
+      totalPayments = None,
+      costOfMaterials = None,
+      totalDeducted = None,
+      unmatchedTaxRateIndicator = None,
+      subcontractorId = None,
+      subcontractorName = None,
+      verificationNumber = None,
+      itemResourceReference = Some(ref)
+    )
+
+  private def mkSubcontractor(
+    id: Long,
+    ref: Option[Long],
+    verified: Option[String],
+    verificationDate: Option[LocalDateTime],
+    lastMrDate: Option[LocalDateTime]
+  ): Subcontractor =
+    Subcontractor(
+      subcontractorId = id,
+      utr = None,
+      pageVisited = None,
+      partnerUtr = None,
+      crn = None,
+      firstName = None,
+      nino = None,
+      secondName = None,
+      surname = None,
+      partnershipTradingName = None,
+      tradingName = Some(s"Subbie $id"),
+      subcontractorType = None,
+      addressLine1 = None,
+      addressLine2 = None,
+      addressLine3 = None,
+      addressLine4 = None,
+      country = None,
+      postCode = None,
+      emailAddress = None,
+      phoneNumber = None,
+      mobilePhoneNumber = None,
+      worksReferenceNumber = None,
+      createDate = None,
+      lastUpdate = None,
+      subbieResourceRef = ref,
+      matched = None,
+      autoVerified = None,
+      verified = verified,
+      verificationNumber = None,
+      taxTreatment = None,
+      verificationDate = verificationDate,
+      version = None,
+      updatedTaxTreatment = None,
+      lastMonthlyReturnDate = lastMrDate,
+      pendingVerifications = None
+    )
 }

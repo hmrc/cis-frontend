@@ -16,13 +16,18 @@
 
 package services
 
+import models.monthlyreturns.SelectSubcontractorsPageModel
 import services.SubcontractorService.{TAX_YEAR_START_DAY, TAX_YEAR_START_MONTH}
+import uk.gov.hmrc.http.HeaderCarrier
+import viewmodels.SelectSubcontractorsViewModel
 
 import java.time.{LocalDate, LocalDateTime}
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubcontractorService @Inject() {
+class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService)(using ExecutionContext) {
+
   def verificationPeriodStart(today: LocalDate): LocalDate = {
     val dateTwoYearsAgo       = today.minusYears(2)
     val taxYearCandidate      = dateTwoYearsAgo.getYear
@@ -60,6 +65,62 @@ class SubcontractorService @Inject() {
       !(verificationDateOk || lastMonthlyReturnOk)
     }
   }
+
+  // Build the page model for MR-03-02a
+
+  def buildSelectSubcontractorPage(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    defaultSelection: Option[Boolean],
+    today: LocalDate = LocalDate.now()
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
+    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+
+      val previouslyIncludedResourceRefs: Set[Long] =
+        data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+
+      val periodStart = verificationPeriodStart(today)
+
+      val rows: Seq[(SelectSubcontractorsViewModel, Boolean)] =
+        data.subcontractors.map { subcontractor =>
+          val includedLastMonth = subcontractor.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
+
+          val required = verificationRequired(
+            subcontractor.verified,
+            subcontractor.verificationDate,
+            subcontractor.lastMonthlyReturnDate,
+            periodStart
+          )
+
+          val viewModel = SelectSubcontractorsViewModel(
+            id = subcontractor.subcontractorId.toInt,
+            name = subcontractor.tradingName.getOrElse("Unknown"),
+            verificationRequired = if (required) "Yes" else "No",
+            verificationNumber = subcontractor.verificationNumber.getOrElse("Unknown"),
+            taxTreatment = subcontractor.taxTreatment.getOrElse("Unknown")
+          )
+
+          (viewModel, includedLastMonth)
+        }
+
+      val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
+
+      val initiallySelectedIds: Seq[Int] = defaultSelection match {
+        case Some(true)  => subcontractorViewModels.map(_.id)
+        case Some(false) => Seq.empty
+        case None        =>
+          subcontractorViewModels
+            .zip(includedLastMonthFlags)
+            .collect { case (vm, true) => vm.id }
+      }
+
+      SelectSubcontractorsPageModel(
+        subcontractors = subcontractorViewModels,
+        initiallySelectedIds = initiallySelectedIds
+      )
+    }
+
 }
 
 object SubcontractorService {
