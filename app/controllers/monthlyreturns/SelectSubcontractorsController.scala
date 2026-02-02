@@ -47,21 +47,70 @@ class SelectSubcontractorsController @Inject() (
     with I18nSupport
     with Logging {
 
-  private val subcontractors = Seq(
-    SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
-  )
-
   private val form = formProvider()
   def onPageLoad(
     defaultSelection: Option[Boolean] = None
   ): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
 
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+      requiredAnswers
+        .map { (cisId, taxMonth, taxYear) =>
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+            val previouslyIncludedResourceRefs =
+              data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+
+            val (subcontractorViewModels, includedLastMonthFlags) =
+              data.subcontractors.map { s =>
+                val includedLastMonth = s.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
+                val viewModel         = SelectSubcontractorsViewModel(
+                  id = s.subcontractorId.toInt,
+                  name = s.tradingName.getOrElse("Unknown"),
+                  verificationRequired = "Yes",
+                  verificationNumber = "Unknown",
+                  taxTreatment = "Unknown"
+                )
+                (viewModel, includedLastMonth)
+              }.unzip
+
+            val initiallySelectedIds: Seq[Int] = defaultSelection match {
+              case Some(true)  =>
+                subcontractorViewModels.map(_.id)
+              case Some(false) =>
+                Seq.empty
+              case None        =>
+                subcontractorViewModels
+                  .zip(includedLastMonthFlags)
+                  .collect { case (vm, true) => vm.id }
+            }
+
+            val filledForm =
+              if (initiallySelectedIds.nonEmpty) {
+                form.fill(
+                  SelectSubcontractorsFormData(confirmation = false, subcontractorsToInclude = initiallySelectedIds)
+                )
+              } else {
+                form
+              }
+
+            Ok(
+              view(
+                filledForm,
+                subcontractorViewModels,
+                config.selectSubcontractorsUpfrontDeclaration
+              )
+            )
+          }
+        }
+        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
+    }
+
+  def onSubmit(): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
       val requiredAnswers = for {
         cisId   <- request.userAnswers.get(CisIdPage)
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
@@ -80,58 +129,41 @@ class SelectSubcontractorsController @Inject() (
               )
             )
 
-            val filledForm = defaultSelection match {
-              case Some(true) =>
-                form.fill(SelectSubcontractorsFormData(false, subcontractorViewModels.map(_.id)))
-              case _          => form
-            }
-
-            Ok(
-              view(
-                filledForm,
-                subcontractorViewModels,
-                config.selectSubcontractorsUpfrontDeclaration
+            form
+              .bindFromRequest()
+              .fold(
+                formWithErrors =>
+                  BadRequest(
+                    view(
+                      formWithErrors,
+                      subcontractorViewModels,
+                      config.selectSubcontractorsUpfrontDeclaration
+                    )
+                  ),
+                formData =>
+                  if (!formData.confirmation) {
+                    BadRequest(
+                      view(
+                        form
+                          .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+                          .fill(formData),
+                        subcontractorViewModels,
+                        config.selectSubcontractorsUpfrontDeclaration
+                      )
+                    )
+                  } else {
+                    Ok(
+                      view(
+                        form.fill(formData),
+                        subcontractorViewModels,
+                        config.selectSubcontractorsUpfrontDeclaration
+                      )
+                    )
+                  }
               )
-            )
           }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
-    }
-
-  def onSubmit(): Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors =>
-            BadRequest(
-              view(
-                formWithErrors,
-                subcontractors,
-                config.selectSubcontractorsUpfrontDeclaration
-              )
-            ),
-          formData =>
-            if (!formData.confirmation) {
-              BadRequest(
-                view(
-                  form
-                    .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                    .fill(formData),
-                  subcontractors,
-                  config.selectSubcontractorsUpfrontDeclaration
-                )
-              )
-            } else {
-              Ok(
-                view(
-                  form.fill(formData),
-                  subcontractors,
-                  config.selectSubcontractorsUpfrontDeclaration
-                )
-              )
-            }
-        )
 
     }
 }

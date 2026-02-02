@@ -341,6 +341,7 @@ monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification n
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
+monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
 
 verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
