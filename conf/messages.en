@@ -399,7 +399,7 @@ monthlyreturns.submitInactivityRequest.question = Are you submitting an inactivi
 monthlyreturns.submitInactivityRequest.yes = Yes
 monthlyreturns.submitInactivityRequest.no = No
 monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = submitInactivityRequest
-monthlyreturns.submitInactivityRequest.error.required = You must select either yes or no
+monthlyreturns.submitInactivityRequest.error.required = Select ‘Yes’ to submit an inactivity request. Select ‘No’ to continue.
 monthlyreturns.submitInactivityRequest.change.hidden = SubmitInactivityRequest
 
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
