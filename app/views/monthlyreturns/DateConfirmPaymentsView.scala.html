@@ -14,58 +14,58 @@
  * limitations under the License.
  *@
 
-@import views.html.components._
+@import views.html.components.*
+@import viewmodels.govuk._
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+@import uk.gov.hmrc.hmrcfrontend.views.html.components.implicits._
 
 @this(
     layout: templates.Layout,
+    h1: H1,
+    h2: H2,
+    paragraph: Paragraph,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
-    govukInput: GovukInput,
+    govukDateInput: GovukDateInput,
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
-    fieldSet: FieldSet,
-    paragraph: Paragraph,
-    h2: H2,
-    taxMonthTaxYear: TaxMonthTaxYear
+    govukDetails: GovukDetails,
+    taxMonthPeriodsTable: components.TaxMonthPeriodsTable
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(
-    pageTitle = title(form, messages("dateConfirmPayments.title")),
-    showSignOut = false
-) {
+@layout(pageTitle = title(form, messages("monthlyreturns.dateConfirmPayments.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))
         }
 
-        @fieldSet("dateConfirmPayments.heading", asHeading = true, describedBy = None) {
+        @h1("monthlyreturns.dateConfirmPayments.heading")
+        @paragraph("monthlyreturns.dateConfirmPayments.paragraph")
 
-            @paragraph(messages("dateConfirmPayments.p1"))
 
-            @govukWarningText(
-                WarningText(
-                    iconFallbackText = Some(messages("dateConfirmPayments.WarningIcon")),
-                    content = Text(messages("dateConfirmPayments.warningText"))
+        @govukDateInput(
+            WithMonthYearViewModel(
+                field  = form("value"),
+                legend = LegendViewModel(
+                    HtmlContent(
+                        govukWarningText(
+                            WarningTextViewModel(
+                                content = Text(messages("monthlyreturns.dateConfirmPayments.warning"))
+                            )
+                        ).toString +
+                        h2("monthlyreturns.dateConfirmPayments.legendText").toString
+                    )
                 )
             )
+            .withMonthYearFormField(form("value"))
+        )
 
-            @h2(messages("dateConfirmPayments.legendText"))
-
-            @taxMonthTaxYear(
-                monthField = form("taxMonth"),
-                yearField = form("taxYear"),
-                monthLabel = messages("dateConfirmPayments.labelMonth"),
-                yearLabel = messages("dateConfirmPayments.labelYear"),
-                formError = form("taxMonthAndYear").error
-            )
-
-            @govukButton(
-                ButtonViewModel(messages("site.continue"))
-            )
-        }
+        @govukButton(
+            ButtonViewModel(messages("site.continue"))
+        )
     }
 }
