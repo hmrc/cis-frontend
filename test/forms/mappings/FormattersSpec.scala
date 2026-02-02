@@ -507,5 +507,134 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
       val result = formatter.unbind("key", BigDecimal("123"))
       result mustEqual Map("key" -> "123")
     }
+
+    "taxDeductedCurrencyFormatter" - {
+
+      val formatter = taxDeductedCurrencyFormatter("error.required", "error.invalid", "error.maxLength")
+
+      "must bind a valid integer" in {
+        val result = formatter.bind("key", Map("key" -> "123"))
+        result mustBe Right(BigDecimal(123))
+      }
+
+      "must bind a valid decimal with 1 decimal place" in {
+        val result = formatter.bind("key", Map("key" -> "123.4"))
+        result mustBe Right(BigDecimal("123.4"))
+      }
+
+      "must bind a valid decimal with 2 decimal places" in {
+        val result = formatter.bind("key", Map("key" -> "123.45"))
+        result mustBe Right(BigDecimal("123.45"))
+      }
+
+      "must bind a number with commas" in {
+        val result = formatter.bind("key", Map("key" -> "1,234.56"))
+        result mustBe Right(BigDecimal("1234.56"))
+      }
+
+      "must bind a number with multiple commas" in {
+        val result = formatter.bind("key", Map("key" -> "1,234,567.89"))
+        result mustBe Right(BigDecimal("1234567.89"))
+      }
+
+      "must bind a number at max length (13 characters)" in {
+        val result = formatter.bind("key", Map("key" -> "1,234,567.89"))
+        result mustBe Right(BigDecimal("1234567.89"))
+      }
+
+      "must bind a number with leading/trailing whitespace" in {
+        val result = formatter.bind("key", Map("key" -> "  123.45  "))
+        result mustBe Right(BigDecimal("123.45"))
+      }
+
+      "must not bind when key is missing" in {
+        val result = formatter.bind("key", Map.empty[String, String])
+        result mustBe Left(Seq(FormError("key", "error.required")))
+      }
+
+      "must not bind an empty string" in {
+        val result = formatter.bind("key", Map("key" -> ""))
+        result mustBe Left(Seq(FormError("key", "error.required")))
+      }
+
+      "must not bind a string with only whitespace" in {
+        val result = formatter.bind("key", Map("key" -> "   "))
+        result mustBe Left(Seq(FormError("key", "error.required")))
+      }
+
+      "must not bind a number exceeding max length (13 characters)" in {
+        val result = formatter.bind("key", Map("key" -> "12,345,678.901"))
+        result mustBe Left(Seq(FormError("key", "error.maxLength")))
+      }
+
+      "must not bind a number with more than 2 decimal places" in {
+        val result = formatter.bind("key", Map("key" -> "123.456"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a negative number" in {
+        val result = formatter.bind("key", Map("key" -> "-123"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a number with £ symbol" in {
+        val result = formatter.bind("key", Map("key" -> "£123"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a number with spaces" in {
+        val result = formatter.bind("key", Map("key" -> "1 234"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a non-numeric string" in {
+        val result = formatter.bind("key", Map("key" -> "abc"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a number with only a decimal point" in {
+        val result = formatter.bind("key", Map("key" -> "."))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a number starting with decimal point" in {
+        val result = formatter.bind("key", Map("key" -> ".45"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a number with decimal point but no decimal places" in {
+        val result = formatter.bind("key", Map("key" -> "123."))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must not bind a number with multiple decimal points" in {
+        val result = formatter.bind("key", Map("key" -> "123.45.67"))
+        result mustBe Left(Seq(FormError("key", "error.invalid")))
+      }
+
+      "must use custom error keys with args" in {
+        val customFormatter =
+          taxDeductedCurrencyFormatter("custom.required", "custom.invalid", "custom.maxLength", Seq("arg1"))
+
+        val requiredResult = customFormatter.bind("key", Map("key" -> ""))
+        requiredResult mustBe Left(Seq(FormError("key", "custom.required", Seq("arg1"))))
+
+        val invalidResult = customFormatter.bind("key", Map("key" -> "abc"))
+        invalidResult mustBe Left(Seq(FormError("key", "custom.invalid", Seq("arg1"))))
+
+        val maxLengthResult = customFormatter.bind("key", Map("key" -> "12,345,678.901"))
+        maxLengthResult mustBe Left(Seq(FormError("key", "custom.maxLength", Seq("arg1"))))
+      }
+
+      "must unbind a valid value" in {
+        val result = formatter.unbind("key", BigDecimal("123.45"))
+        result mustEqual Map("key" -> "123.45")
+      }
+
+      "must unbind an integer value" in {
+        val result = formatter.unbind("key", BigDecimal(100))
+        result mustEqual Map("key" -> "100")
+      }
+    }
   }
 }
