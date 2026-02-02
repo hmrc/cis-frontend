@@ -39,7 +39,7 @@
             @govukErrorSummary(ErrorSummaryViewModel(form))
         }
 
-        @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None) {
+        @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None, additionalClasses = Some("govuk-!-margin-bottom-6")) {
 
             @paragraph(messages("monthlyreturns.submitInactivityRequest.p1"))
 
