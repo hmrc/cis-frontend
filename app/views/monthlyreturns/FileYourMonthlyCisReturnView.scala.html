@@ -42,8 +42,7 @@
 )
 
 @govukButton(Button(
-   content = Text(messages(("fileYourMonthlyCisReturn.startButton"))),
-   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url),
-   isStartButton = true
+   content = Text(messages(("fileYourMonthlyCisReturn.continueButton"))),
+   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url)
 ))
 }
