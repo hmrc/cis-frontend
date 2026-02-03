@@ -82,15 +82,13 @@ class DateConfirmPaymentsController @Inject() (
 
             monthlyReturnService
               .resolveAndStoreCisId(request.userAnswers, request.isAgent)
-              .flatMap { case (cisId, _) =>
+              .flatMap { case (cisId, uaWithCisId) =>
                 monthlyReturnService
                   .isDuplicate(cisId, year, month)
                   .flatMap {
                     case true =>
                       val dupForm =
-                        form
-                          .fill(value)
-                          .withError("value", "dateConfirmPayments.taxYear.error.duplicate")
+                        form.fill(value).withError("value", "dateConfirmPayments.taxYear.error.duplicate")
                       Future.successful(BadRequest(view(dupForm, mode)))
 
                     case false =>
@@ -99,7 +97,7 @@ class DateConfirmPaymentsController @Inject() (
                         .createMonthlyReturn(createRequest)
                         .flatMap { _ =>
                           for {
-                            updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
+                            updatedAnswers <- Future.fromTry(uaWithCisId.set(DateConfirmPaymentsPage, value))
                             _              <- sessionRepository.set(updatedAnswers)
                           } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
                         }
