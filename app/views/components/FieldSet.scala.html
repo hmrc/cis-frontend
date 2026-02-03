@@ -18,12 +18,12 @@
 
 @this(govukFieldset: GovukFieldset)
 
-@(legend: String, asHeading: Boolean = true, describedBy: Option[String])(content: Html)(implicit messages: Messages)
+@(legend: String, asHeading: Boolean = true, describedBy: Option[String], additionalClasses: Option[String] = None)(content: Html)(implicit messages: Messages)
 
 @govukFieldset(Fieldset(
     legend = Some(Legend(
         content = Text(messages(legend)),
-        classes = if(asHeading) "govuk-fieldset__legend--l" else emptyString,
+        classes = s"${if(asHeading) "govuk-fieldset__legend--l" else emptyString}${additionalClasses.map(" " + _).getOrElse(emptyString)}",
         isPageHeading = asHeading
     )),
     describedBy = describedBy,
