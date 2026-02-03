@@ -6,6 +6,7 @@ site.change = Change
 site.no = No
 site.yes = Yes
 site.continue = Continue
+site.saveAndContinue = Save and continue
 site.start = Start now
 site.startAgain = Start again
 site.signIn = Sign in
@@ -343,6 +344,16 @@ monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this mon
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
 
+monthlyreturns.totalTaxDeducted.title = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.heading = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.hintText = CIS deductions you made from the subcontractor’s payment. Enter pounds and pence, like £300.00, £450.00, £1,200.00
+monthlyreturns.totalTaxDeducted.checkYourAnswersLabel = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.error.maxValue = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
+monthlyreturns.totalTaxDeducted.error.maxLength = Enter the ‘Total tax deducted’, up to 13 characters
+monthlyreturns.totalTaxDeducted.change.hidden = total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.error.invalid = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
+monthlyreturns.totalTaxDeducted.error.required = Enter the ‘Total tax deducted’, up to 13 characters
+
 verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
 verifySubcontractors.WarningIcon = Warning
@@ -391,6 +402,16 @@ monthlyreturns.costOfMaterials.error.invalid = Enter the amount for ‘Cost of m
 monthlyreturns.costOfMaterials.error.maxLength = Enter the ‘Cost of materials’, up to 13 characters
 monthlyreturns.costOfMaterials.error.maxValue = Enter the amount for ‘Cost of materials’, using the correct format of pounds only, like £458
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
+
+monthlyreturns.submitInactivityRequest.title = Submit inactivity request
+monthlyreturns.submitInactivityRequest.heading = Submit inactivity request
+monthlyreturns.submitInactivityRequest.p1 = Tell HMRC that you are not expecting to pay any of your subcontractors in the next six months.
+monthlyreturns.submitInactivityRequest.p2 = If your request is accepted you will not need to submit a monthly return for this subcontractor.
+monthlyreturns.submitInactivityRequest.insetText = You must let HMRC know when you start to pay subcontractors again by phoning the CIS Helpline. Telephone 0300 200 3210
+monthlyreturns.submitInactivityRequest.question = Are you submitting an inactivity request?
+monthlyreturns.submitInactivityRequest.yes = Yes
+monthlyreturns.submitInactivityRequest.no = No
+monthlyreturns.submitInactivityRequest.error.required = Select ‘Yes’ to submit an inactivity request. Select ‘No’ to continue.
 
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
