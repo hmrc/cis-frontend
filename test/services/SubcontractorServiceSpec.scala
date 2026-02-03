@@ -237,6 +237,7 @@ class SubcontractorServiceSpec extends SpecBase {
       version = None,
       updatedTaxTreatment = None,
       lastMonthlyReturnDate = lastMrDate,
-      pendingVerifications = None
+      pendingVerifications = None,
+      displayName = Some("First-name-and-Surname")
     )
 }

@@ -95,7 +95,7 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
 
           val viewModel = SelectSubcontractorsViewModel(
             id = subcontractor.subcontractorId.toInt,
-            name = subcontractor.tradingName.getOrElse("Unknown"),
+            name = subcontractor.displayName.getOrElse("No name provided"),
             verificationRequired = if (required) "Yes" else "No",
             verificationNumber = subcontractor.verificationNumber.getOrElse("Unknown"),
             taxTreatment = subcontractor.taxTreatment.getOrElse("Unknown")
