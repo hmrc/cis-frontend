@@ -30,7 +30,7 @@ import views.html.monthlyreturns.EnterYourEmailAddressView
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class EnterYourEmailAddressController @Inject()(
+class EnterYourEmailAddressController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
@@ -40,33 +40,33 @@ class EnterYourEmailAddressController @Inject()(
   formProvider: EnterYourEmailAddressFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: EnterYourEmailAddressView
-)(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport {
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(EnterYourEmailAddressPage) match {
-        case None => form
-        case Some(value) => form.fill(value)
-      }
+    val preparedForm = request.userAnswers.get(EnterYourEmailAddressPage) match {
+      case None        => form
+      case Some(value) => form.fill(value)
+    }
 
-      Ok(view(preparedForm, mode))
+    Ok(view(preparedForm, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(EnterYourEmailAddressPage, mode, updatedAnswers))
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(EnterYourEmailAddressPage, mode, updatedAnswers))
+        )
   }
 }

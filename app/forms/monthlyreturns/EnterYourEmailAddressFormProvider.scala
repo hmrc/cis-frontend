@@ -22,10 +22,17 @@ import play.api.data.Form
 import javax.inject.Inject
 
 class EnterYourEmailAddressFormProvider @Inject() extends Mappings {
+  private val maxLengthEmailAddress = 132
+  private val emailRegex            = """^(?!\.)""" +
+    """("([^"\r\\]|\\["\r\\])+"""" +
+    """|([-a-zA-Z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)+)""" +
+    """(?<!\.)""" +
+    """@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$"""
 
   def apply(): Form[String] =
     Form(
-      "value" -> text("enterYourEmailAddress.error.required")
-        .verifying(maxLength(132, "enterYourEmailAddress.error.length"))
+      "value" -> text("monthlyreturns.enterYourEmailAddress.error.required")
+        .verifying(maxLength(maxLengthEmailAddress, "monthlyreturns.enterYourEmailAddress.error.length"))
+        .verifying(regexp(emailRegex, "monthlyreturns.enterYourEmailAddress.error.invalid"))
     )
 }

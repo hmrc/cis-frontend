@@ -23,9 +23,10 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new EnterYourEmailAddressFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
-  lazy val enterYourEmailAddressRoute = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode).url
+  lazy val enterYourEmailAddressRoute =
+    controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode).url
 
   "EnterYourEmailAddress Controller" - {
 
@@ -80,7 +81,7 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
       running(application) {
         val request =
           FakeRequest(POST, enterYourEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", "answer"))
+            .withFormUrlEncodedBody(("value", "test@example.com"))
 
         val result = route(application, request).value
 
