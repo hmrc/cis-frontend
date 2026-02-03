@@ -21,7 +21,7 @@ import play.api.libs.json.JsPath
 
 class SubmitInactivityRequestPageSpec extends SpecBase {
 
-  "TotalTaxDeductedPage" - {
+  "SubmitInactivityRequestPage" - {
 
     "have the correct path" in {
       SubmitInactivityRequestPage.path mustBe (JsPath \ "submitInactivityRequest")
