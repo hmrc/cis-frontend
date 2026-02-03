@@ -33,7 +33,7 @@ class FileYourMonthlyCisReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p1"))
       doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p2"))
 
-      doc.getElementsByClass("govuk-button").text must include(messages("fileYourMonthlyCisReturn.continueButton"))
+      doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
   }
 

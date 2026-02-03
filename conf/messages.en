@@ -301,7 +301,6 @@ fileYourMonthlyCisReturn.title = File your monthly CIS return
 fileYourMonthlyCisReturn.heading = File your monthly CIS return
 fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
 fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
-fileYourMonthlyCisReturn.continueButton = Continue
 
 dateConfirmPayments.title = Which tax month and year are you filing a return for?
 dateConfirmPayments.heading = Which tax month and year are you filing a return for?
