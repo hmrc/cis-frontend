@@ -55,7 +55,8 @@ case class Subcontractor(
   version: Option[Int],
   updatedTaxTreatment: Option[String],
   lastMonthlyReturnDate: Option[LocalDateTime],
-  pendingVerifications: Option[Int]
+  pendingVerifications: Option[Int],
+  displayName: Option[String]
 )
 
 object Subcontractor:
