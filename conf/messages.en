@@ -343,7 +343,7 @@ monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this mon
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
 
-monthlyreturns.totalTaxDeducted.title = What is the total tax deducted from {0}?
+monthlyreturns.totalTaxDeducted.title = What is the total tax deducted from your subcontractor?
 monthlyreturns.totalTaxDeducted.heading = What is the total tax deducted from {0}?
 monthlyreturns.totalTaxDeducted.hintText = Enter the total tax deducted rounded up to the nearest pound.
 monthlyreturns.totalTaxDeducted.checkYourAnswersLabel = Total tax deducted from {0}
@@ -376,7 +376,7 @@ monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden = for {0}
 monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden = {0} from this return
 monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add another subcontractor
 
-paymentDetails.title = What are the total payments made to {0}?
+paymentDetails.title = What are the total payments made to your subcontractor?
 paymentDetails.heading = What are the total payments made to {0}?
 paymentDetails.hint = Enter the gross amount you paid to this subcontractor. Exclude VAT and any deductions. Round up to the nearest pound.
 paymentDetails.checkYourAnswersLabel = Payment Details
@@ -390,7 +390,7 @@ paymentDetails.error.maxLength = Your entry for ‘Total payments made’ exceed
 paymentDetails.error.maxValue = Your entry for ‘Total payments made’ is invalid. Please amend.
 paymentDetails.change.hidden = Payment Details
 
-monthlyreturns.costOfMaterials.title = What are the material costs paid by {0}?
+monthlyreturns.costOfMaterials.title = What are the material costs paid by your subcontractor?
 monthlyreturns.costOfMaterials.heading = What are the material costs paid by {0}?
 monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Round up to the nearest pound
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = Cost Of Materials
