@@ -62,7 +62,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         secondName = None,
         surname = None,
         partnershipTradingName = None,
-        tradingName = displayName,
+        tradingName = displayName.orElse(Some("No name provided")),
         subcontractorType = None,
         addressLine1 = None,
         addressLine2 = None,
@@ -87,7 +87,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         updatedTaxTreatment = None,
         lastMonthlyReturnDate = None,
         pendingVerifications = None,
-        displayName = displayName
+        displayName = displayName.orElse(Some("No name provided"))
       )
 
     def createMonthlyReturnItem(

@@ -69,7 +69,7 @@ class SelectSubcontractorsController @Inject() (
                 val includedLastMonth = s.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
                 val viewModel         = SelectSubcontractorsViewModel(
                   id = s.subcontractorId.toInt,
-                  name = s.tradingName.getOrElse("Unknown"),
+                  name = s.displayName.getOrElse("Unknown"),
                   verificationRequired = "Yes",
                   verificationNumber = "Unknown",
                   taxTreatment = "Unknown"
