@@ -93,12 +93,33 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
             periodStart
           )
 
+          val verificationNumber: String =
+            if (!required) {
+              subcontractor.verificationNumber.map(_.trim).filter(_.nonEmpty).getOrElse("Unknown")
+            } else {
+              "Unknown"
+            }
+
+          val taxTreatment: String =
+            if (!required && subcontractor.taxTreatment.isDefined) {
+              subcontractor.taxTreatment
+                .map(_.trim.toLowerCase)
+                .collect {
+                  case "net"       => "Standard rate"
+                  case "unmatched" => "Higher rate"
+                  case "gross"     => "Gross"
+                }
+                .getOrElse("Unknown")
+            } else {
+              "Unknown"
+            }
+
           val viewModel = SelectSubcontractorsViewModel(
             id = subcontractor.subcontractorId.toInt,
             name = subcontractor.displayName.getOrElse("No name provided"),
             verificationRequired = if (required) "Yes" else "No",
-            verificationNumber = subcontractor.verificationNumber.getOrElse("Unknown"),
-            taxTreatment = subcontractor.taxTreatment.getOrElse("Unknown")
+            verificationNumber = verificationNumber,
+            taxTreatment = taxTreatment
           )
 
           (viewModel, includedLastMonth)

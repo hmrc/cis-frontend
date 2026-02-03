@@ -137,14 +137,18 @@ class SubcontractorServiceSpec extends SpecBase {
             ref = Some(1001L),
             verified = Some("N"),
             verificationDate = Some(LocalDateTime.of(2025, 1, 1, 0, 0)),
-            lastMrDate = Some(LocalDateTime.of(2025, 1, 1, 0, 0))
+            lastMrDate = Some(LocalDateTime.of(2025, 1, 1, 0, 0)),
+            verificationNumber = Some("123456"),
+            taxTreatment = Some("net")
           ),
           mkSubcontractor(
             id = 2L,
             ref = Some(2002L),
             verified = Some("Y"),
             verificationDate = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
-            lastMrDate = None
+            lastMrDate = None,
+            verificationNumber = Some("123457"),
+            taxTreatment = Some("gross")
           )
         )
       )
@@ -168,6 +172,12 @@ class SubcontractorServiceSpec extends SpecBase {
         val byId = model.subcontractors.map(vm => vm.id -> vm).toMap
         byId(1).verificationRequired mustBe "Yes"
         byId(2).verificationRequired mustBe "No"
+
+        byId(1).verificationNumber mustBe "Unknown"
+        byId(1).taxTreatment mustBe "Unknown"
+
+        byId(2).verificationNumber mustBe "123457"
+        byId(2).taxTreatment mustBe "Gross"
       }
     }
   }
@@ -200,7 +210,9 @@ class SubcontractorServiceSpec extends SpecBase {
     ref: Option[Long],
     verified: Option[String],
     verificationDate: Option[LocalDateTime],
-    lastMrDate: Option[LocalDateTime]
+    lastMrDate: Option[LocalDateTime],
+    verificationNumber: Option[String] = None,
+    taxTreatment: Option[String] = None
   ): Subcontractor =
     Subcontractor(
       subcontractorId = id,
@@ -231,8 +243,8 @@ class SubcontractorServiceSpec extends SpecBase {
       matched = None,
       autoVerified = None,
       verified = verified,
-      verificationNumber = None,
-      taxTreatment = None,
+      verificationNumber = verificationNumber,
+      taxTreatment = taxTreatment,
       verificationDate = verificationDate,
       version = None,
       updatedTaxTreatment = None,
