@@ -423,8 +423,11 @@ monthlyreturns.inactivityRequestWarning.p = You are submitting a request for ina
 monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
 
 
-confirmationByEmail.title = confirmationByEmail
-confirmationByEmail.heading = confirmationByEmail
-confirmationByEmail.checkYourAnswersLabel = confirmationByEmail
-confirmationByEmail.error.required = Select yes if confirmationByEmail
-confirmationByEmail.change.hidden = ConfirmationByEmail
+monthlyreturns.confirmationByEmail.title = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.heading = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.p = You can use the email we have on file or provide another one.
+monthlyreturns.confirmationByEmail.yes = Yes
+monthlyreturns.confirmationByEmail.no = No
+monthlyreturns.confirmationByEmail.checkYourAnswersLabel = confirmationByEmail
+monthlyreturns.confirmationByEmail.error.required = Select yes if confirmationByEmail
+monthlyreturns.confirmationByEmail.change.hidden = ConfirmationByEmail

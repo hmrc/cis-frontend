@@ -110,7 +110,7 @@ POST       /monthly-return/change-remove-subcontractor     controllers.monthlyre
 
 GET        /monthly-return/inactivity-request-warning      controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
 
-GET        /confirmationByEmail                        controllers.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
-POST       /confirmationByEmail                        controllers.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
-GET        /changeConfirmationByEmail                  controllers.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
-POST       /changeConfirmationByEmail                  controllers.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
