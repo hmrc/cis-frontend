@@ -92,22 +92,10 @@ class MonthlyReturnService @Inject() (
       cisId         <- getCisId(userAnswers)
       year          <- getTaxYear(userAnswers)
       month         <- getTaxMonth(userAnswers)
-      infoCorrect   <- getInfoCorrect(userAnswers)
-      nilNoPayments <- getNilNoPayments(userAnswers)
+      infoCorrect   <- getInfoCorrectOrDefault(userAnswers)
+      nilNoPayments <- getNilNoPaymentsOrDefault(userAnswers)
       resp          <- callBackendToCreate(cisId, year, month, infoCorrect, nilNoPayments)
       saved         <- persistStatus(userAnswers, resp.status)
-    } yield saved
-  }
-
-  def createNilMonthlyReturnAtC1(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
-    logger.info("[MonthlyReturnService] Creating FormP monthly nil return at C1 (started/validated)")
-
-    for {
-      cisId <- getCisId(userAnswers)
-      year  <- getTaxYear(userAnswers)
-      month <- getTaxMonth(userAnswers)
-      resp  <- callBackendToCreate(cisId, year, month, "N", "N")
-      saved <- persistStatus(userAnswers, resp.status)
     } yield saved
   }
 
@@ -132,19 +120,18 @@ class MonthlyReturnService @Inject() (
       case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
     }
 
-  private def getInfoCorrect(ua: UserAnswers): Future[String] =
+  private def getInfoCorrectOrDefault(ua: UserAnswers): Future[String] =
     ua.get(DeclarationPage) match {
-      case Some(selections: Set[Declaration]) =>
-        if (selections.contains(Declaration.Confirmed)) { Future.successful("Y") }
-        else { Future.failed(new IllegalArgumentException("Declaration must be confirmed")) }
-      case None                               =>
-        Future.failed(new IllegalArgumentException("declaration missing"))
+      case Some(selections: Set[Declaration]) if selections.contains(Declaration.Confirmed) =>
+        Future.successful("Y")
+      case _                                                                                =>
+        Future.successful("N")
     }
 
-  private def getNilNoPayments(ua: UserAnswers): Future[String] =
+  private def getNilNoPaymentsOrDefault(ua: UserAnswers): Future[String] =
     ua.get(InactivityRequestPage) match {
       case Some(ir) => Future.successful(mapInactivityRequestToYN(ir))
-      case None     => Future.failed(new IllegalArgumentException("C2 (InactivityRequest) missing"))
+      case None     => Future.successful("N")
     }
 
   private def mapInactivityRequestToYN(ir: InactivityRequest): String = ir match {

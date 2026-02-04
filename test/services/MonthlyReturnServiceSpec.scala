@@ -566,69 +566,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verify(sessionRepo).set(any[UserAnswers])
     }
 
-    "fail when declaration is not confirmed" in {
-      val (service, connector, sessionRepo) = newService()
-
-      val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
-        .get
-        .set(InactivityRequestPage, InactivityRequest.Option1)
-        .get
-        .set(DeclarationPage, Set.empty[Declaration])
-        .get
-
-      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
-      ex mustBe a[IllegalArgumentException]
-      ex.getMessage must include("Declaration must be confirmed")
-
-      verifyNoInteractions(connector)
-      verifyNoInteractions(sessionRepo)
-    }
-
-    "fail when declaration is missing from session" in {
-      val (service, connector, sessionRepo) = newService()
-
-      val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
-        .get
-        .set(InactivityRequestPage, InactivityRequest.Option1)
-        .get
-
-      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
-      ex mustBe a[IllegalArgumentException]
-      ex.getMessage must include("declaration missing")
-
-      verifyNoInteractions(connector)
-      verifyNoInteractions(sessionRepo)
-    }
-
-    "fail when inactivity request is missing from session" in {
-      val (service, connector, sessionRepo) = newService()
-
-      val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
-        .get
-        .set(DeclarationPage, Set(Declaration.Confirmed))
-        .get
-
-      val ex = service.createNilMonthlyReturn(userAnswers).failed.futureValue
-      ex mustBe a[IllegalArgumentException]
-      ex.getMessage must include("C2 (InactivityRequest) missing")
-
-      verifyNoInteractions(connector)
-      verifyNoInteractions(sessionRepo)
-    }
-  }
-
-  "createNilMonthlyReturnAtC1" should {
-
-    "create FormP record with placeholder declaration and persist status" in {
+    "use placeholder N when declaration and inactivity are missing (C1 flow)" in {
       val (service, connector, sessionRepo) = newService()
 
       val cisId    = "CIS-123"
@@ -649,7 +587,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val result = service.createNilMonthlyReturnAtC1(userAnswers).futureValue
+      val result = service.createNilMonthlyReturn(userAnswers).futureValue
 
       val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
         ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
@@ -668,6 +606,32 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val updatedUserAnswers = sessionCaptor.getValue
       updatedUserAnswers.get(NilReturnStatusPage) mustBe Some("STARTED")
       result.get(NilReturnStatusPage) mustBe Some("STARTED")
+    }
+
+    "use N when declaration is not confirmed" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(DeclarationPage, Set.empty[Declaration])
+        .get
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(NilMonthlyReturnResponse(status = "STARTED")))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.createNilMonthlyReturn(userAnswers).futureValue
+
+      val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
+        ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(requestCaptor.capture())(any[HeaderCarrier])
+      requestCaptor.getValue.decInformationCorrect mustBe "N"
     }
   }
 

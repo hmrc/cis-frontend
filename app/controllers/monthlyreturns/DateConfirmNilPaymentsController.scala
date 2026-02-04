@@ -116,7 +116,7 @@ class DateConfirmNilPaymentsController @Inject() (
                       for {
                         updatedAnswers <- Future.fromTry(ua1.set(DateConfirmNilPaymentsPage, value))
                         _              <- sessionRepository.set(updatedAnswers)
-                        withStatus     <- monthlyReturnService.createNilMonthlyReturnAtC1(updatedAnswers)
+                        withStatus     <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
                       } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, withStatus))
                   }
                 }

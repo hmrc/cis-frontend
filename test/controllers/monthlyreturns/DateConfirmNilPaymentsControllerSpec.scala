@@ -156,7 +156,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
       when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(false))
-      when(mockMonthlyReturnService.createNilMonthlyReturnAtC1(any[UserAnswers])(any()))
+      when(mockMonthlyReturnService.createNilMonthlyReturn(any[UserAnswers])(any()))
         .thenReturn(Future.successful(emptyUserAnswers))
 
       val application =
