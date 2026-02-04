@@ -403,6 +403,16 @@ monthlyreturns.costOfMaterials.error.maxLength = Enter the ‘Cost of materials�
 monthlyreturns.costOfMaterials.error.maxValue = Enter the amount for ‘Cost of materials’, using the correct format of pounds only, like £458
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
 
+monthlyreturns.submitInactivityRequest.title = Submit inactivity request
+monthlyreturns.submitInactivityRequest.heading = Submit inactivity request
+monthlyreturns.submitInactivityRequest.p1 = Tell HMRC that you are not expecting to pay any of your subcontractors in the next six months.
+monthlyreturns.submitInactivityRequest.p2 = If your request is accepted you will not need to submit a monthly return for this subcontractor.
+monthlyreturns.submitInactivityRequest.insetText = You must let HMRC know when you start to pay subcontractors again by phoning the CIS Helpline. Telephone 0300 200 3210
+monthlyreturns.submitInactivityRequest.question = Are you submitting an inactivity request?
+monthlyreturns.submitInactivityRequest.yes = Yes
+monthlyreturns.submitInactivityRequest.no = No
+monthlyreturns.submitInactivityRequest.error.required = Select ‘Yes’ to submit an inactivity request. Select ‘No’ to continue.
+
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if you want to remove this subcontractor
