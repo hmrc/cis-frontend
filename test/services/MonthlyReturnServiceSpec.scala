@@ -626,6 +626,51 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
+  "createNilMonthlyReturnAtC1" should {
+
+    "create FormP record with placeholder declaration and persist status" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+      val testDate = java.time.LocalDate.of(taxYear, taxMonth, 15)
+
+      val userAnswers = UserAnswers("test-user")
+        .set(CisIdPage, cisId)
+        .get
+        .set(DateConfirmNilPaymentsPage, testDate)
+        .get
+
+      val backendResponse = NilMonthlyReturnResponse(status = "STARTED")
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(backendResponse))
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.createNilMonthlyReturnAtC1(userAnswers).futureValue
+
+      val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
+        ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(requestCaptor.capture())(any[HeaderCarrier])
+
+      val capturedRequest = requestCaptor.getValue
+      capturedRequest.instanceId mustBe cisId
+      capturedRequest.taxYear mustBe taxYear
+      capturedRequest.taxMonth mustBe taxMonth
+      capturedRequest.decInformationCorrect mustBe "N"
+      capturedRequest.decNilReturnNoPayments mustBe "N"
+
+      val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(sessionCaptor.capture())
+
+      val updatedUserAnswers = sessionCaptor.getValue
+      updatedUserAnswers.get(NilReturnStatusPage) mustBe Some("STARTED")
+      result.get(NilReturnStatusPage) mustBe Some("STARTED")
+    }
+  }
+
   "hasClient" should {
 
     "delegate to connector and return the boolean" in {

@@ -99,6 +99,18 @@ class MonthlyReturnService @Inject() (
     } yield saved
   }
 
+  def createNilMonthlyReturnAtC1(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    logger.info("[MonthlyReturnService] Creating FormP monthly nil return at C1 (started/validated)")
+
+    for {
+      cisId <- getCisId(userAnswers)
+      year  <- getTaxYear(userAnswers)
+      month <- getTaxMonth(userAnswers)
+      resp  <- callBackendToCreate(cisId, year, month, "N", "N")
+      saved <- persistStatus(userAnswers, resp.status)
+    } yield saved
+  }
+
   def createMonthlyReturn(request: MonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.createMonthlyReturn(request)
 
