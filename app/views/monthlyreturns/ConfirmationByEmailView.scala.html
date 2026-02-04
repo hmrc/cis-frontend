@@ -38,12 +38,12 @@
 
         @fieldSet("monthlyreturns.confirmationByEmail.heading", asHeading = true, describedBy = None, additionalClasses = None) {
 
-                @govukRadios(
-                    RadiosViewModel(
-                        field = form("value"),
-                        items = Seq(
-                            RadioItem(
-                                content = Text(messages("monthlyreturns.confirmationByEmail.yes")),
+            @govukRadios(
+                RadiosViewModel(
+                    field = form("value"),
+                    items = Seq(
+                        RadioItem(
+                            content = Text(messages("monthlyreturns.confirmationByEmail.yes")),
                                 value = Some("true"),
                                 id = Some("value_0")
                             ),
@@ -54,12 +54,12 @@
                             )
                         ),
                         legend = Legend()
-                    ).withHint(Hint(content = Text(messages("monthlyreturns.confirmationByEmail.p")))
-                        .withCssClass("govuk-radios--inline")
+                    ).withHint(Hint(content = Text(messages("monthlyreturns.confirmationByEmail.p"))))
+                     .withCssClass("govuk-radios--inline")
                 )
 
             @govukButton(
-                ButtonViewModel(messages("site.continue"))
+            ButtonViewModel(messages("site.continue"))
             )
         }
     }
