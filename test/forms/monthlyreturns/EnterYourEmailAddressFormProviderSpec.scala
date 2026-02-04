@@ -17,21 +17,15 @@
 package forms.monthlyreturns
 
 import forms.behaviours.StringFieldBehaviours
-import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import play.api.data.FormError
+import forms.Validation.emailRegex
 
 class EnterYourEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
-  val requiredKey        = "monthlyreturns.enterYourEmailAddress.error.required"
-  val lengthKey          = "monthlyreturns.enterYourEmailAddress.error.length"
-  val maxLength          = 132
-  val invalidKey         = "monthlyreturns.enterYourEmailAddress.error.invalid"
-  private val emailRegex =
-    """^(?!\.)""" +
-      """("([^"\r\\]|\\["\r\\])+"""" +
-      """|([-a-zA-Z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)+)""" +
-      """(?<!\.)""" +
-      """@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$"""
+  val requiredKey = "monthlyreturns.enterYourEmailAddress.error.required"
+  val lengthKey   = "monthlyreturns.enterYourEmailAddress.error.length"
+  val maxLength   = 132
+  val invalidKey  = "monthlyreturns.enterYourEmailAddress.error.invalid"
 
   val form = new EnterYourEmailAddressFormProvider()()
 

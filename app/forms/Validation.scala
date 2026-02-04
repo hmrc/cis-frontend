@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package forms
 
-import forms.mappings.Mappings
-import play.api.data.Form
-import forms.Validation._
+object Validation {
 
-import javax.inject.Inject
-
-class EnterYourEmailAddressFormProvider @Inject() extends Mappings {
-  private val maxLengthEmailAddress = 132
-
-  def apply(): Form[String] =
-    Form(
-      "value" -> text("monthlyreturns.enterYourEmailAddress.error.required")
-        .verifying(maxLength(maxLengthEmailAddress, "monthlyreturns.enterYourEmailAddress.error.length"))
-        .verifying(regexp(emailRegex, "monthlyreturns.enterYourEmailAddress.error.invalid"))
-    )
+  val emailRegex: String =
+    """^(?!\.)""" +
+      """("([^"\r\\]|\\["\r\\])+"""" +
+      """|([-a-zA-Z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)+)""" +
+      """(?<!\.)""" +
+      """@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$"""
 }
