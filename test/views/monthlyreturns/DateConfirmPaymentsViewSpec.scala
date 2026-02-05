@@ -31,18 +31,24 @@ import views.html.monthlyreturns.DateConfirmPaymentsView
 class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
   "DateConfirmPaymentsView" - {
+
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title                                    must include(messages("dateConfirmPayments.title"))
-      doc.select("h1").text                        must include(messages("dateConfirmPayments.heading"))
-      doc.select("p").text                         must include(messages("dateConfirmPayments.p1"))
-      doc.select(".govuk-warning-text__text").text must include(messages("dateConfirmPayments.warningText"))
-      doc.select("h2").text                        must include(messages("dateConfirmPayments.legendText"))
 
-      doc.select("label").text must include(messages("dateConfirmPayments.labelMonth"))
-      doc.select("label").text must include(messages("dateConfirmPayments.labelYear"))
+      doc.title                                    must include(messages("monthlyreturns.dateConfirmPayments.title"))
+      doc.select("h1").text                        must include(messages("monthlyreturns.dateConfirmPayments.heading"))
+      doc.select(".govuk-warning-text__text").text must include(
+        messages("monthlyreturns.dateConfirmPayments.warning")
+      )
+      doc.getElementsByClass("govuk-button").text  must include(messages("site.continue"))
+    }
 
-      doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
+    "must display error summary when form has errors" in new Setup {
+      val formWithError = form.withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
+      val htmlWithError = view(formWithError, NormalMode)
+      val doc: Document = Jsoup.parse(htmlWithError.toString)
+
+      doc.select(".govuk-error-summary").size mustBe 1
     }
   }
 
