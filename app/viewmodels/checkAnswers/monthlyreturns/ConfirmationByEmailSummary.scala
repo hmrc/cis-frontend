@@ -16,7 +16,6 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import controllers.routes
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.Messages

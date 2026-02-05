@@ -1,6 +1,23 @@
-package controllers
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package controllers.monthlyreturns
 
 import base.SpecBase
+import controllers.routes
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
@@ -11,9 +28,9 @@ import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.ConfirmationByEmailView
+import views.html.monthlyreturns.ConfirmationByEmailView
 
 import scala.concurrent.Future
 
@@ -24,7 +41,8 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
   val formProvider = new ConfirmationByEmailFormProvider()
   val form         = formProvider()
 
-  lazy val confirmationByEmailRoute = routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+  lazy val confirmationByEmailRoute =
+    controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
 
   "ConfirmationByEmail Controller" - {
 
