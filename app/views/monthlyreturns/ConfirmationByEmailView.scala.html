@@ -33,7 +33,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
         }
 
         @fieldSet("monthlyreturns.confirmationByEmail.heading", asHeading = true, describedBy = None, additionalClasses = None) {
