@@ -109,3 +109,5 @@ GET        /monthly-return/change-remove-subcontractor     controllers.monthlyre
 POST       /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/inactivity-request-warning      controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
+
+GET        /monthly-return/check-answers-total-payments    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad()
