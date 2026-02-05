@@ -36,7 +36,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
         }
 
         @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None, additionalClasses = Some("govuk-!-margin-bottom-6")) {
@@ -65,7 +65,7 @@
                             )
                         ),
                         legend = Legend()
-                    )
+                    ).withCssClass("govuk-radios--inline")
                 )
 
             @govukButton(
