@@ -86,7 +86,6 @@ POST       /monthly-return/change-unverified-subcontractors     controllers.mont
 
 GET        /monthly-return/subcontractors-paid-this-month       controllers.monthlyreturns.SubcontractorsPaidThisMonthController.onPageLoad()
 
-
 GET        /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
@@ -109,3 +108,8 @@ GET        /monthly-return/change-remove-subcontractor     controllers.monthlyre
 POST       /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/inactivity-request-warning      controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
+
+GET        /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)
+GET        /changeSubcontractorDetailsAdded                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
+POST       /changeSubcontractorDetailsAdded                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)

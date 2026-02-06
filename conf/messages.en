@@ -420,3 +420,9 @@ monthlyreturns.inactivityRequestWarning.heading = Inactivity request
 monthlyreturns.inactivityRequestWarning.p = You are submitting a request for inactivity. If it is accepted it is only valid for six months.
 monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
 
+
+subcontractorDetailsAdded.title = subcontractorDetailsAdded
+subcontractorDetailsAdded.heading = subcontractorDetailsAdded
+subcontractorDetailsAdded.checkYourAnswersLabel = subcontractorDetailsAdded
+subcontractorDetailsAdded.error.required = Select yes if subcontractorDetailsAdded
+subcontractorDetailsAdded.change.hidden = SubcontractorDetailsAdded
