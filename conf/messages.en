@@ -421,5 +421,9 @@ monthlyreturns.inactivityRequestWarning.p = You are submitting a request for ina
 monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
 
 
-checkAnswersTotalPayments.title = checkAnswersTotalPayments
-checkAnswersTotalPayments.heading = checkAnswersTotalPayments
+monthlyreturns.checkAnswersTotalPayments.title = Check your answers for {0}
+monthlyreturns.checkAnswersTotalPayments.heading = Check your answers for {0}
+monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Total payments to subcontractor
+monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
+monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
+

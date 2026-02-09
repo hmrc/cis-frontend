@@ -24,17 +24,19 @@ import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 import javax.inject.Inject
 
-class CheckAnswersTotalPaymentsController @Inject()(
+class CheckAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckAnswersTotalPaymentsView
-) extends FrontendBaseController with I18nSupport {
+) extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val subcontractorName = "TyneWear Ltd"
+
+    Ok(view(subcontractorName))
   }
 }

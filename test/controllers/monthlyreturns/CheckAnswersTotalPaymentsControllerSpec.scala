@@ -8,6 +8,8 @@ import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
 
+  val subcontractorName = "TyneWear Ltd"
+
   "CheckAnswersTotalPayments Controller" - {
 
     "must return OK and the correct view for a GET" in {
@@ -15,14 +17,15 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad().url)
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad().url)
 
         val result = route(application, request).value
 
         val view = application.injector.instanceOf[CheckAnswersTotalPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(subcontractorName)(request, messages(application)).toString
       }
     }
   }
