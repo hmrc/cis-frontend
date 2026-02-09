@@ -48,33 +48,33 @@ class SelectedSubcontractorPageSpec extends SpecBase {
   "SelectedSubcontractorPaymentsMadePage" - {
 
     "have the correct path" in {
-      SelectedSubcontractorPaymentsMadePage(index).path mustBe (JsPath \ "subcontractors" \ index \ "paymentsMade")
+      SelectedSubcontractorPaymentsMadePage(index).path mustBe (JsPath \ "subcontractors" \ index \ "totalPaymentsMade")
     }
 
     "have the correct toString" in {
-      SelectedSubcontractorPaymentsMadePage(index).toString mustBe "paymentsMade"
+      SelectedSubcontractorPaymentsMadePage(index).toString mustBe "totalPaymentsMade"
     }
   }
 
   "SelectedSubcontractorMaterialCostsPage" - {
 
     "have the correct path" in {
-      SelectedSubcontractorMaterialCostsPage(index).path mustBe (JsPath \ "subcontractors" \ index \ "materialCosts")
+      SelectedSubcontractorMaterialCostsPage(index).path mustBe (JsPath \ "subcontractors" \ index \ "costOfMaterials")
     }
 
     "have the correct toString" in {
-      SelectedSubcontractorMaterialCostsPage(index).toString mustBe "materialCosts"
+      SelectedSubcontractorMaterialCostsPage(index).toString mustBe "costOfMaterials"
     }
   }
 
   "SelectedSubcontractorTaxDeductedPage" - {
 
     "have the correct path" in {
-      SelectedSubcontractorTaxDeductedPage(index).path mustBe (JsPath \ "subcontractors" \ index \ "taxDeducted")
+      SelectedSubcontractorTaxDeductedPage(index).path mustBe (JsPath \ "subcontractors" \ index \ "totalTaxDeducted")
     }
 
     "have the correct toString" in {
-      SelectedSubcontractorTaxDeductedPage(index).toString mustBe "taxDeducted"
+      SelectedSubcontractorTaxDeductedPage(index).toString mustBe "totalTaxDeducted"
     }
   }
 
