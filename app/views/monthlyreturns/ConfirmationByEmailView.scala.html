@@ -22,54 +22,44 @@
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
     govukButton: GovukButton,
-    govukInsetText: GovukInsetText,
     fieldSet: FieldSet,
-    h2: H2,
     paragraph: Paragraph
-
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("monthlyreturns.submitInactivityRequest.title"))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.confirmationByEmail.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
         }
 
-        @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None, additionalClasses = Some("govuk-!-margin-bottom-6")) {
+        @fieldSet("monthlyreturns.confirmationByEmail.heading", asHeading = true, describedBy = None, additionalClasses = None) {
 
-            @paragraph(messages("monthlyreturns.submitInactivityRequest.p1"))
-
-            @paragraph(messages("monthlyreturns.submitInactivityRequest.p2"))
-
-            @govukInsetText(InsetText(content = Text(messages("monthlyreturns.submitInactivityRequest.insetText"))))
-
-            @h2(messages("monthlyreturns.submitInactivityRequest.question"))
-
-                @govukRadios(
-                    RadiosViewModel(
-                        field = form("value"),
-                        items = Seq(
-                            RadioItem(
-                                content = Text(messages("monthlyreturns.submitInactivityRequest.yes")),
+            @govukRadios(
+                RadiosViewModel(
+                    field = form("value"),
+                    items = Seq(
+                        RadioItem(
+                            content = Text(messages("monthlyreturns.confirmationByEmail.yes")),
                                 value = Some("true"),
                                 id = Some("value_0")
                             ),
                             RadioItem(
-                                content = Text(messages("monthlyreturns.submitInactivityRequest.no")),
+                                content = Text(messages("monthlyreturns.confirmationByEmail.no")),
                                 value = Some("false"),
                                 id = Some("value_1")
                             )
                         ),
                         legend = Legend()
-                    ).withCssClass("govuk-radios--inline")
+                    ).withHint(Hint(content = Text(messages("monthlyreturns.confirmationByEmail.p"))))
+                     .withCssClass("govuk-radios--inline")
                 )
 
             @govukButton(
-                ButtonViewModel(messages("site.continue"))
+            ButtonViewModel(messages("site.continue"))
             )
         }
     }

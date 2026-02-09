@@ -114,3 +114,8 @@ GET        /monthly-return/enter-email-address             controllers.monthlyre
 POST       /monthly-return/enter-email-address             controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-enter-email-address      controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-enter-email-address      controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
