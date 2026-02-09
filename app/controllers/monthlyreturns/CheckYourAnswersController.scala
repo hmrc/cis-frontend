@@ -15,11 +15,15 @@
  */
 
 package controllers.monthlyreturns
+
 import controllers.actions.*
 import pages.monthlyreturns.NilReturnStatusPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
@@ -33,6 +37,7 @@ class CheckYourAnswersController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  monthlyReturnService: MonthlyReturnService,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView
@@ -64,14 +69,31 @@ class CheckYourAnswersController @Inject() (
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
     request.userAnswers.get(NilReturnStatusPage) match {
-      case None    =>
+      case None =>
         logger.warn(
           "[CheckYourAnswersController] C6 submit without FormP record (missing NilReturnStatusPage); redirecting to journey recovery"
         )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
       case Some(_) =>
-        logger.info("[CheckYourAnswersController] FormP record already created at C1; redirecting to submission")
-        Future.successful(Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad()))
+        implicit val hc: HeaderCarrier =
+          HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+        monthlyReturnService
+          .updateNilMonthlyReturn(request.userAnswers)
+          .map { _ =>
+            logger.info(
+              "[CheckYourAnswersController] Updated FormP monthly nil return confirmation/nil flags; redirecting to submission"
+            )
+            Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+          }
+          .recover { case ex =>
+            logger.error(
+              s"[CheckYourAnswersController] Failed to update FormP monthly nil return: ${ex.getMessage}",
+              ex
+            )
+            Redirect(controllers.routes.SystemErrorController.onPageLoad())
+          }
     }
   }
 }
