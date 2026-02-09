@@ -67,7 +67,10 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
         changeLinks.get(index).text() must include("Change")
         changeLinks.get(index).text() must include(text)
       }
+
+      doc.getElementsByClass("govuk-button").text() must include(messages("site.continue"))
     }
+
   }
 
   trait Setup {
