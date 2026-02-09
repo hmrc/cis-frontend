@@ -17,26 +17,23 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import forms.monthlyreturns.SubmitInactivityRequestFormProvider
+import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.monthlyreturns.SubmitInactivityRequestView
+import views.html.monthlyreturns.ConfirmationByEmailView
 
-class SubmitInactivityRequestViewSpec extends SpecBase {
+class ConfirmationByEmailViewSpec extends SpecBase {
 
-  "SubmitInactivityRequestView" - {
+  "ConfirmationByEmailView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title                              must include(messages("monthlyreturns.submitInactivityRequest.title"))
-      doc.select("h1").text                  must include(messages("monthlyreturns.submitInactivityRequest.heading"))
-      doc.select("p.govuk-body").get(0).text must include(messages("monthlyreturns.submitInactivityRequest.p1"))
-      doc.select("p.govuk-body").get(1).text must include(messages("monthlyreturns.submitInactivityRequest.p2"))
-      doc.select(".govuk-inset-text").text() must include(messages("monthlyreturns.submitInactivityRequest.insetText"))
-      doc.select("h2").text                  must include(messages("monthlyreturns.submitInactivityRequest.question"))
+      doc.title             must include(messages("monthlyreturns.confirmationByEmail.title"))
+      doc.select("h1").text must include(messages("monthlyreturns.confirmationByEmail.heading"))
 
+      doc.getElementsByClass("govuk-hint").text   must include(messages("monthlyreturns.confirmationByEmail.p"))
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
 
@@ -46,8 +43,8 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
       doc.select("input[type=radio][value=true]").size() mustBe 1
       doc.select("input[type=radio][value=false]").size() mustBe 1
 
-      doc.select("label[for=value_0]").text() must include(messages("monthlyreturns.submitInactivityRequest.yes"))
-      doc.select("label[for=value_1]").text() must include(messages("monthlyreturns.submitInactivityRequest.no"))
+      doc.select("label[for=value_0]").text() must include(messages("monthlyreturns.confirmationByEmail.yes"))
+      doc.select("label[for=value_1]").text() must include(messages("monthlyreturns.confirmationByEmail.no"))
     }
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
@@ -67,21 +64,12 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
       doc.select("input[value=true]").hasAttr("checked") mustBe false
       doc.select("input[value=false]").hasAttr("checked") mustBe true
     }
-
-    "must render error summary with correct link when form has errors" in new Setup {
-      val formWithErrors = form.bind(Map("value" -> ""))
-      val errorHtml      = view(formWithErrors, NormalMode)
-      val doc: Document  = Jsoup.parse(errorHtml.toString)
-
-      doc.select(".govuk-error-summary").size() mustBe 1
-      doc.select(".govuk-error-summary__list a").attr("href") mustBe "#value_0"
-    }
   }
 
   trait Setup {
     val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[SubmitInactivityRequestView]
-    val formProvider                              = new SubmitInactivityRequestFormProvider()
+    val view                                      = app.injector.instanceOf[ConfirmationByEmailView]
+    val formProvider                              = new ConfirmationByEmailFormProvider()
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
