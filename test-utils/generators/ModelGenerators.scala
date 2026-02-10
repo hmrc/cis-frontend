@@ -16,10 +16,16 @@
 
 package generators
 
+import models.monthlyreturns.AddSubcontractorDetails
 import models.monthlyreturns.{Declaration, InactivityRequest}
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
+
+  implicit lazy val arbitraryAddSubcontractorDetails: Arbitrary[AddSubcontractorDetails] =
+    Arbitrary {
+      Gen.oneOf(AddSubcontractorDetails.values.toSeq)
+    }
 
   implicit lazy val arbitraryVerifySubcontractors: Arbitrary[Boolean] =
     Arbitrary {
