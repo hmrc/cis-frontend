@@ -17,12 +17,10 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.{NormalMode, UserAnswers}
+import models.UserAnswers
 import play.api.libs.json.Json
-import play.api.routing.Router
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.monthlyreturns.SubcontractorDetailsAddedView
 
 import java.time.Instant
 

@@ -19,25 +19,29 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.{Mode, UserAnswers}
+import pages.monthlyreturns.SubcontractorDetailsAddedPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
 
 import java.time.Instant
 import javax.inject.Inject
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SubcontractorDetailsAddedController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   formProvider: SubcontractorDetailsAddedFormProvider,
+  sessionRepository: SessionRepository,
   val controllerComponents: MessagesControllerComponents,
   view: SubcontractorDetailsAddedView
-) extends FrontendBaseController
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
     with I18nSupport {
 
   val form = formProvider()
@@ -63,19 +67,23 @@ class SubcontractorDetailsAddedController @Inject() (
           .fold(
             formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
             answer =>
-              if (answer) {
-                if (viewModel.hasIncomplete) {
-                  val withError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
-                  Future.successful(BadRequest(view(withError, mode, viewModel)))
+              val updatedUa = ua.set(SubcontractorDetailsAddedPage, answer).getOrElse(ua)
+
+              sessionRepository.set(updatedUa).flatMap { _ =>
+                if (answer) {
+                  if (viewModel.hasIncomplete) {
+                    val withError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+                    Future.successful(BadRequest(view(withError, mode, viewModel)))
+                  } else {
+                    Future.successful(
+                      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                    )
+                  }
                 } else {
                   Future.successful(
                     Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
                   )
                 }
-              } else {
-                Future.successful(
-                  Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
-                )
               }
           )
     }
