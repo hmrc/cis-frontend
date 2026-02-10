@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
@@ -25,7 +26,7 @@ import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.SubcontractorService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SelectSubcontractorsView
 
@@ -41,7 +42,7 @@ class SelectSubcontractorsController @Inject() (
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
   monthlyReturnService: MonthlyReturnService,
-  sessionRepository: SessionRepository
+  sessionRepository: SessionRepository,
   config: FrontendAppConfig,
   subcontractorService: SubcontractorService
 )(using ExecutionContext)
@@ -94,17 +95,19 @@ class SelectSubcontractorsController @Inject() (
         .map { (cisId, taxMonth, taxYear) =>
           subcontractorService
             .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, None)
-            .map { model =>
+            .flatMap { model =>
               form
                 .bindFromRequest()
                 .fold(
                   formWithErrors =>
-                    BadRequest(
-                      view(formWithErrors, model.subcontractors)
+                    Future.successful(
+                      BadRequest(
+                        view(formWithErrors, model.subcontractors)
+                      )
                     ),
                   formData =>
                     val selectedSubcontractors =
-                      data.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.subcontractorId))
+                      model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))
 
                     val userAnswersNoSelectedSubcontractors = request.userAnswers.remove(SelectedSubcontractorPage.all)
                     val updatedAnswers                      =
@@ -114,8 +117,8 @@ class SelectSubcontractorsController @Inject() (
                             _.set(
                               SelectedSubcontractorPage(index + 1),
                               SelectedSubcontractor(
-                                vm.subcontractorId,
-                                vm.displayName.getOrElse("No name provided"),
+                                vm.id,
+                                vm.name,
                                 None,
                                 None,
                                 None
