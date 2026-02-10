@@ -20,6 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.SubcontractorDetailsAddedPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -42,12 +43,15 @@ class SubcontractorDetailsAddedController @Inject() (
   view: SubcontractorDetailsAddedView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData) { implicit request =>
     val ua = request.userAnswers.getOrElse(seedUserAnswers(request.userId))
+    logger.info(s"UA json = ${ua.data}")
+    logger.info(s"builder = ${SubcontractorDetailsAddedBuilder.build(ua).isDefined}")
     SubcontractorDetailsAddedBuilder.build(ua) match {
       case Some(viewModel) => Ok(view(form, mode, viewModel))
       case None            => Redirect(controllers.routes.SystemErrorController.onPageLoad())
@@ -94,21 +98,21 @@ class SubcontractorDetailsAddedController @Inject() (
       "subcontractors" -> Json.arr(
         // index 0: complete (details added)
         Json.obj(
-          "subcontractorId"  -> 1001L,
-          "name"             -> "TyneWear Ltd",
-          "totalPaymentMade" -> 1000.00,
-          "costOfMaterials"  -> 200.00,
-          "totalTaxDeducted" -> 200.00
+          "subcontractorId"   -> 1001L,
+          "name"              -> "TyneWear Ltd",
+          "totalPaymentsMade" -> 1000.00,
+          "costOfMaterials"   -> 200.00,
+          "totalTaxDeducted"  -> 200.00
         ),
         // index 1: incomplete
         Json.obj(
-          "subcontractorId"  -> 1002L,
-          "name"             -> "Northern Trades  Ltd"
+          "subcontractorId"   -> 1002L,
+          "name"              -> "Northern Trades  Ltd"
         ),
         // index 2: incomplete
         Json.obj(
-          "subcontractorId"  -> 1003L,
-          "name"             -> "BuildRight Construction"
+          "subcontractorId"   -> 1003L,
+          "name"              -> "BuildRight Construction"
         )
       )
     )

@@ -37,7 +37,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
             Json.obj(
               "subcontractorId"  -> 1001L,
               "name"             -> "TyneWear Ltd",
-              "totalPaymentMade" -> 1000.00,
+              "totalPaymentsMade" -> 1000.00,
               "costOfMaterials"  -> 200.00,
               "totalTaxDeducted" -> 200.00
             )
@@ -104,7 +104,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
             Json.obj(
               "subcontractorId"  -> 1001L,
               "name"             -> "Complete Ltd",
-              "totalPaymentMade" -> 1000.00,
+              "totalPaymentsMade" -> 1000.00,
               "costOfMaterials"  -> 200.00,
               "totalTaxDeducted" -> 200.00
             ),

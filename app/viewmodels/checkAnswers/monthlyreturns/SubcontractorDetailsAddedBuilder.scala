@@ -17,10 +17,15 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.*
-import play.api.libs.json.JsArray
+import play.api.libs.json.{JsArray, JsObject}
 
 object SubcontractorDetailsAddedBuilder {
+
+  private def subcontractorsArray(ua: UserAnswers): Vector[JsObject] =
+    (ua.data \ "subcontractors")
+      .asOpt[JsArray]
+      .map(_.value.toVector.collect { case obj: JsObject => obj })
+      .getOrElse(Vector.empty)
 
   private def selectedIndexes(ua: UserAnswers): Seq[Int] = {
     val size =
@@ -28,11 +33,13 @@ object SubcontractorDetailsAddedBuilder {
     0.until(size)
   }
 
-  private def detailsAdded(ua: UserAnswers, index: Int): Boolean =
-    ua.get(SelectedSubcontractorTotalPaymentMadePage(index)).isDefined &&
-      ua.get(SelectedSubcontractorCostOfMaterialsPage(index)).isDefined &&
-      ua.get(SelectedSubcontractorTotalTaxDeductedPage(index)).isDefined
+  private def detailsAdded(sub: JsObject): Boolean                      = {
+    val hasPaymentsMade = (sub \ "totalPaymentsMade").toOption.isDefined
+    val hasMaterials    = (sub \ "costOfMaterials").toOption.isDefined
+    val hasTaxDeducted  = (sub \ "totalTaxDeducted").toOption.isDefined
 
+    hasPaymentsMade && hasMaterials && hasTaxDeducted
+  }
   private def headingKeyAndArgs(addedCount: Int): (String, Seq[AnyRef]) =
     if (addedCount == 1) {
       ("monthlyreturns.subcontractorDetailsAdded.heading.single", Seq.empty)
@@ -41,10 +48,14 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
+    val subs = subcontractorsArray(ua)
+
     val rows = selectedIndexes(ua).map { index =>
-      val id    = ua.get(SelectedSubcontractorIdPage(index)).getOrElse(0L)
-      val name  = ua.get(SelectedSubcontractorNamePage(index)).getOrElse("")
-      val added = detailsAdded(ua, index)
+
+      val sub   = subs(index)
+      val id    = (sub \ "subcontractorId").asOpt[Long].getOrElse(0L)
+      val name  = (sub \ "name").asOpt[String].getOrElse("")
+      val added = detailsAdded(sub)
 
       SubcontractorDetailsAddedRow(
         index = index,
@@ -77,5 +88,5 @@ object SubcontractorDetailsAddedBuilder {
   }
 
   def allSelectedHaveDetails(ua: UserAnswers): Boolean =
-    selectedIndexes(ua).forall(index => detailsAdded(ua, index))
+    subcontractorsArray(ua).forall(detailsAdded)
 }

@@ -33,19 +33,19 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
         data = Json.obj(
           "subcontractors" -> Json.arr(
             Json.obj(
-              "subcontractorId"  -> 1001L,
-              "name"             -> "TyneWear Ltd",
-              "totalPaymentMade" -> 1000.00,
-              "costOfMaterials"  -> 200.00,
-              "totalTaxDeducted" -> 200.00
+              "subcontractorId"   -> 1001L,
+              "name"              -> "TyneWear Ltd",
+              "totalPaymentsMade" -> 1000.00,
+              "costOfMaterials"   -> 200.00,
+              "totalTaxDeducted"  -> 200.00
             ),
             Json.obj(
-              "subcontractorId"  -> 1002L,
-              "name"             -> "Northern Trades Ltd"
+              "subcontractorId" -> 1002L,
+              "name"            -> "Northern Trades Ltd"
             ),
             Json.obj(
-              "subcontractorId"  -> 1003L,
-              "name"             -> "BuildRight Construction"
+              "subcontractorId" -> 1003L,
+              "name"            -> "BuildRight Construction"
             )
           )
         ),
@@ -72,18 +72,18 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
         data = Json.obj(
           "subcontractors" -> Json.arr(
             Json.obj(
-              "subcontractorId"  -> 2001L,
-              "name"             -> "A Ltd",
-              "totalPaymentMade" -> 1.0,
-              "costOfMaterials"  -> 1.0,
-              "totalTaxDeducted" -> 1.0
+              "subcontractorId"   -> 2001L,
+              "name"              -> "A Ltd",
+              "totalPaymentsMade" -> 1.0,
+              "costOfMaterials"   -> 1.0,
+              "totalTaxDeducted"  -> 1.0
             ),
             Json.obj(
-              "subcontractorId"  -> 2002L,
-              "name"             -> "B Ltd",
-              "totalPaymentMade" -> 2.0,
-              "costOfMaterials"  -> 2.0,
-              "totalTaxDeducted" -> 2.0
+              "subcontractorId"   -> 2002L,
+              "name"              -> "B Ltd",
+              "totalPaymentsMade" -> 2.0,
+              "costOfMaterials"   -> 2.0,
+              "totalTaxDeducted"  -> 2.0
             )
           )
         ),
@@ -125,15 +125,15 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
         data = Json.obj(
           "subcontractors" -> Json.arr(
             Json.obj(
-              "subcontractorId"  -> 1L,
-              "name"             -> "Complete",
-              "totalPaymentMade" -> 1.0,
-              "costOfMaterials"  -> 1.0,
-              "totalTaxDeducted" -> 1.0
+              "subcontractorId"   -> 1L,
+              "name"              -> "Complete",
+              "totalPaymentsMade" -> 1.0,
+              "costOfMaterials"   -> 1.0,
+              "totalTaxDeducted"  -> 1.0
             ),
             Json.obj(
-              "subcontractorId"  -> 2L,
-              "name"             -> "Incomplete"
+              "subcontractorId" -> 2L,
+              "name"            -> "Incomplete"
             )
           )
         ),
@@ -141,6 +141,33 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
       )
 
       SubcontractorDetailsAddedBuilder.allSelectedHaveDetails(ua) mustBe false
+    }
+
+    "must return true when all selected subcontractors have details" in {
+      val ua = UserAnswers(
+        id = "test-user",
+        data = Json.obj(
+          "subcontractors" -> Json.arr(
+            Json.obj(
+              "subcontractorId"   -> 1L,
+              "name"              -> "A",
+              "totalPaymentsMade" -> 1.0,
+              "costOfMaterials"   -> 1.0,
+              "totalTaxDeducted"  -> 1.0
+            ),
+            Json.obj(
+              "subcontractorId"   -> 2L,
+              "name"              -> "B",
+              "totalPaymentsMade" -> 2.0,
+              "costOfMaterials"   -> 2.0,
+              "totalTaxDeducted"  -> 2.0
+            )
+          )
+        ),
+        lastUpdated = Instant.now
+      )
+
+      SubcontractorDetailsAddedBuilder.allSelectedHaveDetails(ua) mustBe true
     }
   }
 }
