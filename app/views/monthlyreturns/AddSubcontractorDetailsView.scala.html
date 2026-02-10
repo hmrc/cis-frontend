@@ -15,16 +15,20 @@
  *@
 
 @import models.monthlyreturns.AddSubcontractorDetails
+@import play.twirl.api.Html
 
 @this(
     layout: templates.Layout,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
+    paragraph: components.Paragraph,
+    bulletListWithLinks: components.BulletListWithLinks,
+    fieldSet: components.FieldSet
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, subcontractorsWithDetails: Seq[String], subcontractorsWithoutDetails: Seq[String])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("addSubcontractorDetails.title"))) {
 
@@ -33,14 +37,26 @@
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
         }
+        
+        @fieldSet(
+            legend = "addSubcontractorDetails.heading",
+            describedBy = None
+        ) {
 
-        @govukRadios(
-            RadiosViewModel(
-                field  = form("value"),
-                legend = LegendViewModel(messages("addSubcontractorDetails.heading")).asPageHeading(),
-                items  = AddSubcontractorDetails.options
+            @paragraph("addSubcontractorDetails.alreadyAdded")
+
+            @bulletListWithLinks(
+                subcontractorsWithDetails.map(name => Html(name))
             )
-        )
+
+            @govukRadios(
+                RadiosViewModel(
+                    field  = form("value"),
+                    items  = AddSubcontractorDetails.optionsWithLabels(subcontractorsWithoutDetails),
+                    legend = Legend()
+                )
+            )
+        }
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))

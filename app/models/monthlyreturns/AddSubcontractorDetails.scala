@@ -42,7 +42,15 @@ object AddSubcontractorDetails extends Enumerable.Implicits {
       )
     }
 
+  def optionsWithLabels(labels: Seq[String]): Seq[RadioItem] =
+    values.zip(labels).zipWithIndex.map { case ((value, label), index) =>
+      RadioItem(
+        content = Text(label),
+        value = Some(value.toString),
+        id = Some(s"value_$index")
+      )
+    }
+
   implicit val enumerable: Enumerable[AddSubcontractorDetails] =
     Enumerable(values.map(v => v.toString -> v): _*)
 }
-

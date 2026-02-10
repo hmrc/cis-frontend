@@ -28,6 +28,12 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
   val formProvider = new AddSubcontractorDetailsFormProvider()
   val form         = formProvider()
 
+  private val subcontractorsWithDetails: Seq[String] =
+    Seq("BuildRight Construction")
+
+  private val subcontractorsWithoutDetails: Seq[String] =
+    Seq("Northern Trades Ltd", "TyneWear Ltd")
+
   "AddSubcontractorDetails Controller" - {
 
     "must return OK and the correct view for a GET" in {
@@ -42,7 +48,16 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[AddSubcontractorDetailsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        val content = contentAsString(result)
+
+        content mustEqual view(form, NormalMode, subcontractorsWithDetails, subcontractorsWithoutDetails)(
+          request,
+          messages(application)
+        ).toString
+
+        content must include("BuildRight Construction")
+        content must include("Northern Trades Ltd")
+        content must include("TyneWear Ltd")
       }
     }
 
@@ -61,7 +76,12 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(AddSubcontractorDetails.values.head), NormalMode)(
+        contentAsString(result) mustEqual view(
+          form.fill(AddSubcontractorDetails.values.head),
+          NormalMode,
+          subcontractorsWithDetails,
+          subcontractorsWithoutDetails
+        )(
           request,
           messages(application)
         ).toString
@@ -110,7 +130,15 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(
+          boundForm,
+          NormalMode,
+          subcontractorsWithDetails,
+          subcontractorsWithoutDetails
+        )(
+          request,
+          messages(application)
+        ).toString
       }
     }
 

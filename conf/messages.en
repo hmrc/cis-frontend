@@ -439,8 +439,7 @@ monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide 
 
 addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
 addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
-addSubcontractorDetails.option1 = Option 1
-addSubcontractorDetails.option2 = Option 2
+addSubcontractorDetails.alreadyAdded = You have added details for:
 addSubcontractorDetails.checkYourAnswersLabel = Which subcontractor do you need to add payment details for?
-addSubcontractorDetails.error.required = Select addSubcontractorDetails
-addSubcontractorDetails.change.hidden = AddSubcontractorDetails
+addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for
+addSubcontractorDetails.change.hidden = Which subcontractor do you need to add payment details for?

@@ -29,4 +29,3 @@ class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
       "value" -> enumerable[AddSubcontractorDetails]("addSubcontractorDetails.error.required")
     )
 }
-

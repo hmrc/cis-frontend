@@ -26,4 +26,3 @@ case object AddSubcontractorDetailsPage extends QuestionPage[AddSubcontractorDet
 
   override def toString: String = "addSubcontractorDetails"
 }
-

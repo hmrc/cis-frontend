@@ -46,26 +46,35 @@ class AddSubcontractorDetailsController @Inject() (
 
   private val form = formProvider()
 
+  private val subcontractorsWithDetails: Seq[String] =
+    Seq("BuildRight Construction")
+
+  private val subcontractorsWithoutDetails: Seq[String] =
+    Seq("Northern Trades Ltd", "TyneWear Ltd")
+
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     val preparedForm = request.userAnswers.get(AddSubcontractorDetailsPage) match {
       case None        => form
       case Some(value) => form.fill(value)
     }
 
-    Ok(view(preparedForm, mode))
+    Ok(view(preparedForm, mode, subcontractorsWithDetails, subcontractorsWithoutDetails))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    form
-      .bindFromRequest()
-      .fold(
-        formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(AddSubcontractorDetailsPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(AddSubcontractorDetailsPage, mode, updatedAnswers))
-      )
+  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+    implicit request =>
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors =>
+            Future.successful(
+              BadRequest(view(formWithErrors, mode, subcontractorsWithDetails, subcontractorsWithoutDetails))
+            ),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(AddSubcontractorDetailsPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(AddSubcontractorDetailsPage, mode, updatedAnswers))
+        )
   }
 }
-
