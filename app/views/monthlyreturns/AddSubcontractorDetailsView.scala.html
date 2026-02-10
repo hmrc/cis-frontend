@@ -30,7 +30,7 @@
 
 @(form: Form[_], mode: Mode, subcontractorsWithDetails: Seq[String], subcontractorsWithoutDetails: Seq[String])(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("addSubcontractorDetails.title"))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.addSubcontractorDetails.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.AddSubcontractorDetailsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
@@ -39,11 +39,11 @@
         }
         
         @fieldSet(
-            legend = "addSubcontractorDetails.heading",
+            legend = "monthlyreturns.addSubcontractorDetails.heading",
             describedBy = None
         ) {
 
-            @paragraph("addSubcontractorDetails.alreadyAdded")
+            @paragraph("monthlyreturns.addSubcontractorDetails.alreadyAdded")
 
             @bulletListWithLinks(
                 subcontractorsWithDetails.map(name => Html(name))

@@ -437,9 +437,9 @@ monthlyreturns.confirmationByEmail.yes = Yes
 monthlyreturns.confirmationByEmail.no = No
 monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
 
-addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
-addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
-addSubcontractorDetails.alreadyAdded = You have added details for:
-addSubcontractorDetails.checkYourAnswersLabel = Which subcontractor do you need to add payment details for?
-addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for
-addSubcontractorDetails.change.hidden = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.alreadyAdded = You have added details for:
+monthlyreturns.addSubcontractorDetails.checkYourAnswersLabel = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for
+monthlyreturns.addSubcontractorDetails.change.hidden = Which subcontractor do you need to add payment details for?
