@@ -19,7 +19,7 @@ package navigation
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.Call
 import pages.*
-import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage, SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPaymentsMadePage, SelectedSubcontractorTaxDeductedPage}
 import models.*
 import models.monthlyreturns.InactivityRequest
 
@@ -46,9 +46,15 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
-    case DateConfirmPaymentsPage =>
+    case DateConfirmPaymentsPage                       =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-    case _                       => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case SelectedSubcontractorPaymentsMadePage(index)  =>
+      _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index)
+    case SelectedSubcontractorMaterialCostsPage(index) =>
+      _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index)
+    case SelectedSubcontractorTaxDeductedPage(index)   =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad(None)
+    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   private val checkRouteMap: Page => UserAnswers => Call = {

@@ -16,14 +16,15 @@
 
 package controllers.monthlyreturns
 
-import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
-import models.monthlyreturns.SelectSubcontractorsFormData
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import models.NormalMode
+import models.monthlyreturns.{SelectSubcontractorsFormData, SelectedSubcontractor}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import repositories.SessionRepository
 import services.SubcontractorService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SelectSubcontractorsView
@@ -39,6 +40,8 @@ class SelectSubcontractorsController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
+  monthlyReturnService: MonthlyReturnService,
+  sessionRepository: SessionRepository
   config: FrontendAppConfig,
   subcontractorService: SubcontractorService
 )(using ExecutionContext)
@@ -66,7 +69,6 @@ class SelectSubcontractorsController @Inject() (
                 if (model.initiallySelectedIds.nonEmpty) {
                   form.fill(
                     SelectSubcontractorsFormData(
-                      confirmation = false,
                       subcontractorsToInclude = model.initiallySelectedIds
                     )
                   )
@@ -74,7 +76,7 @@ class SelectSubcontractorsController @Inject() (
                   form
                 }
 
-              Ok(view(filledForm, model.subcontractors, config.selectSubcontractorsUpfrontDeclaration))
+              Ok(view(filledForm, model.subcontractors))
             }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
@@ -98,22 +100,43 @@ class SelectSubcontractorsController @Inject() (
                 .fold(
                   formWithErrors =>
                     BadRequest(
-                      view(formWithErrors, model.subcontractors, config.selectSubcontractorsUpfrontDeclaration)
+                      view(formWithErrors, model.subcontractors)
                     ),
                   formData =>
-                    if (!formData.confirmation) {
-                      BadRequest(
-                        view(
-                          form
-                            .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                            .fill(formData),
-                          model.subcontractors,
-                          config.selectSubcontractorsUpfrontDeclaration
+                    val selectedSubcontractors =
+                      data.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.subcontractorId))
+
+                    val userAnswersNoSelectedSubcontractors = request.userAnswers.remove(SelectedSubcontractorPage.all)
+                    val updatedAnswers                      =
+                      selectedSubcontractors.zipWithIndex.foldLeft(userAnswersNoSelectedSubcontractors) {
+                        case (ua, (vm, index)) =>
+                          ua.flatMap(
+                            _.set(
+                              SelectedSubcontractorPage(index + 1),
+                              SelectedSubcontractor(
+                                vm.subcontractorId,
+                                vm.displayName.getOrElse("No name provided"),
+                                None,
+                                None,
+                                None
+                              )
+                            )
+                          )
+                      }
+
+                    Future
+                      .fromTry(updatedAnswers)
+                      .flatMap(sessionRepository.set)
+                      .map {
+                        case true  => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1))
+                        case false => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                      }
+                      .recover { error =>
+                        logger.error(
+                          s"[SelectSubcontractorsController] Unexpected error storing selected subcontractors into session: ${error.toString}"
                         )
-                      )
-                    } else {
-                      Ok(view(form.fill(formData), model.subcontractors, config.selectSubcontractorsUpfrontDeclaration))
-                    }
+                        Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                      }
                 )
             }
         }
