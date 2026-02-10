@@ -1,5 +1,5 @@
-@*
- * Copyright 2025 HM Revenue & Customs
+/*
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import utils.Utils.emptyString
+package viewmodels.checkAnswers.monthlyreturns
 
-@this()
+import play.api.mvc.Call
 
-@(
-  msg: String,
-  args: Seq[Any] = Nil,
-  classes: String = "govuk-heading-l",
-  id: Option[String] = None
-)(implicit messages: Messages)
+case class SubcontractorDetailsAddedRow(
+  index: Int,
+  subcontractorId: Long,
+  name: String,
+  detailsAdded: Boolean,
+  changeCall: Call,
+  removeCall: Call
+)
 
-<h1 @{id.fold(emptyString)(id => s"id=$id")} class="@classes">
-  @messages(msg, args:_*)
-</h1>
+case class SubcontractorDetailsAddedViewModel(
+  headingKey: String,
+  headingArgs: Seq[AnyRef],
+  rows: Seq[SubcontractorDetailsAddedRow],
+  hasIncomplete: Boolean
+) {
+  def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
+}

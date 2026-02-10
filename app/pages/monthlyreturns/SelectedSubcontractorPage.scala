@@ -30,19 +30,19 @@ case class SelectedSubcontractorNamePage(index: Int) extends QuestionPage[String
   override def toString: String = "name"
 }
 
-case class SelectedSubcontractorPaymentsMadePage(index: Int) extends QuestionPage[Double] {
+case class SelectedSubcontractorTotalPaymentMadePage(index: Int) extends QuestionPage[Double] {
   override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
-  override def toString: String = "paymentsMade"
+  override def toString: String = "totalPaymentMade"
 }
 
-case class SelectedSubcontractorMaterialCostsPage(index: Int) extends QuestionPage[Double] {
+case class SelectedSubcontractorCostOfMaterialsPage(index: Int) extends QuestionPage[Double] {
   override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
-  override def toString: String = "materialCosts"
+  override def toString: String = "costOfMaterials"
 }
 
-case class SelectedSubcontractorTaxDeductedPage(index: Int) extends QuestionPage[Double] {
+case class SelectedSubcontractorTotalTaxDeductedPage(index: Int) extends QuestionPage[Double] {
   override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
-  override def toString: String = "taxDeducted"
+  override def toString: String = "totalTaxDeducted"
 }
 
 case class SelectedSubcontractorPage(index: Int) extends QuestionPage[SelectedSubcontractor] {

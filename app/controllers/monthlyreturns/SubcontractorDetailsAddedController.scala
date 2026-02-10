@@ -18,55 +18,91 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
-import models.Mode
-import navigation.Navigator
-import pages.monthlyreturns.SubcontractorDetailsAddedPage
+import models.{Mode, UserAnswers}
 import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.SubcontractorDetailsAddedView
+import viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder
+import views.html.monthlyreturns.SubcontractorDetailsAddedView
 
+import java.time.Instant
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class SubcontractorDetailsAddedController @Inject()(
-                                         override val messagesApi: MessagesApi,
-                                         sessionRepository: SessionRepository,
-                                         navigator: Navigator,
-                                         identify: IdentifierAction,
-                                         getData: DataRetrievalAction,
-                                         requireData: DataRequiredAction,
-                                         formProvider: SubcontractorDetailsAddedFormProvider,
-                                         val controllerComponents: MessagesControllerComponents,
-                                         view: SubcontractorDetailsAddedView
-                                 )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+class SubcontractorDetailsAddedController @Inject() (
+  override val messagesApi: MessagesApi,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  formProvider: SubcontractorDetailsAddedFormProvider,
+  val controllerComponents: MessagesControllerComponents,
+  view: SubcontractorDetailsAddedView
+) extends FrontendBaseController
+    with I18nSupport {
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData) { implicit request =>
+    val ua = request.userAnswers.getOrElse(seedUserAnswers(request.userId))
+    SubcontractorDetailsAddedBuilder.build(ua) match {
+      case Some(viewModel) => Ok(view(form, mode, viewModel))
+      case None            => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+    }
+  }
+  
+  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData).async { implicit request =>
+    val ua        = request.userAnswers.getOrElse(seedUserAnswers(request.userId))
+    
+    SubcontractorDetailsAddedBuilder.build(ua) match {
+      case None => 
+        Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
-      val preparedForm = request.userAnswers.get(SubcontractorDetailsAddedPage) match {
-        case None => form
-        case Some(value) => form.fill(value)
-      }
-
-      Ok(view(preparedForm, mode))
+      case Some(viewModel) =>
+        form
+          .bindFromRequest().fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
+          answer =>
+            if (answer) {
+              if (viewModel.hasIncomplete) {
+                val withError = form.withError("value", "subcontractorDetailsAdded.error.incomplete")
+                Future.successful(BadRequest(view(withError, mode, viewModel)))
+              } else {
+                Future.successful(Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode)))
+              }
+            } else {
+              Future.successful(Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode)))
+            }
+          )
+    }
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(SubcontractorDetailsAddedPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(SubcontractorDetailsAddedPage, mode, updatedAnswers))
+  private def seedUserAnswers(userId: String): UserAnswers =
+    val data = Json.obj(
+      "subcontractors" -> Json.arr(
+        // index 0: complete (details added)
+        Json.obj(
+          "subcontractorId"  -> 1001L,
+          "name"             -> "TyneWear Ltd",
+          "totalPaymentMade" -> 1000.00,
+          "costOfMaterials"  -> 200.00,
+          "totalTaxDeducted" -> 200.00
+        ),
+        // index 1: incomplete
+        Json.obj(
+          "subcontractorId"  -> 1002L,
+          "name"             -> "Northern Trades  Ltd"
+        ),
+        // index 2: incomplete
+        Json.obj(
+          "subcontractorId"  -> 1003L,
+          "name"             -> "BuildRight Construction"
+        )
       )
-  }
+    )
+
+    UserAnswers(
+      id = userId,
+      data = data,
+      lastUpdated = Instant.now
+    )
 }
