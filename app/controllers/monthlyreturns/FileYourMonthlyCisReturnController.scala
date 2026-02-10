@@ -18,15 +18,15 @@ package controllers.monthlyreturns
 
 import controllers.actions.{DataRetrievalAction, IdentifierAction}
 import models.UserAnswers
+import models.requests.OptionalDataRequest
 import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, RequestHeader, Result}
 import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
-
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -45,54 +45,67 @@ class FileYourMonthlyCisReturnController @Inject() (
     with Logging {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData).async { implicit request =>
+    val instanceIdOpt = request.getQueryString("instanceId")
+    val agentRefOpt   = agentRefFromQuery(request)
 
-    val instanceIdOpt         = request.getQueryString("instanceId")
-    val taxOfficeNumberOpt    = request.getQueryString("taxOfficeNumber")
-    val taxOfficeReferenceOpt = request.getQueryString("taxOfficeReference")
-
-    def storeInstanceId(instanceId: String): Future[Result] = {
-      val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
-      for {
-        updated <- Future.fromTry(ua0.set(CisIdPage, instanceId))
-        _       <- sessionRepository.set(updated)
-      } yield Ok(view())
-    }
-
-    (request.isAgent, instanceIdOpt) match {
-      case (true, Some(instanceId)) =>
-        (taxOfficeNumberOpt, taxOfficeReferenceOpt) match {
-          case (Some(taxOfficeNumber), Some(taxOfficeReference)) =>
-            monthlyReturnService
-              .hasClient(taxOfficeNumber, taxOfficeReference)
-              .flatMap {
-                case true  => storeInstanceId(instanceId)
-                case false =>
-                  logger.warn(
-                    s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-                      s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
-                  )
-                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-              }
-              .recover { case NonFatal(e) =>
-                logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              }
-          case _                                                 =>
-            logger.warn(
-              s"[FileYourMonthlyCisReturnController] Missing taxOfficeNumber or taxOfficeReference for agent request"
-            )
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        }
-
-      case (false, Some(instanceId)) =>
-        storeInstanceId(instanceId)
-
-      case (false, None) =>
-        Future.successful(Ok(view()))
-
-      case (true, None) =>
-        logger.warn(s"[FileYourMonthlyCisReturnController] Missing instanceId for agent request")
-        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-    }
+    handleRequest(instanceIdOpt, agentRefOpt)
   }
+
+  private def handleRequest(instanceIdOpt: Option[String], agentRefOpt: Option[(String, String)])(implicit
+    request: OptionalDataRequest[AnyContent]
+  ): Future[Result] =
+    if (!request.isAgent) {
+      instanceIdOpt match {
+        case Some(instanceId) => storeInstanceId(instanceId).map(_ => Ok(view()))
+        case None             => ensureUserAnswersExists().map(_ => Ok(view()))
+      }
+    } else {
+      (instanceIdOpt, agentRefOpt) match {
+        case (None, _) =>
+          logger.warn(s"[FileYourMonthlyCisReturnController] Missing instanceId for agent request")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case (Some(_), None) =>
+          logger.warn(s"[FileYourMonthlyCisReturnController] Missing agent reference for agent request")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case (Some(instanceId), Some((taxOfficeNumber, taxOfficeReference))) =>
+          monthlyReturnService
+            .hasClient(taxOfficeNumber, taxOfficeReference)
+            .flatMap {
+              case true  => storeInstanceId(instanceId).map(_ => Ok(view()))
+              case false =>
+                logger.warn(
+                  s"[FileYourMonthlyCisReturnController] hasClient = false for " +
+                    s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            }
+            .recover { case NonFatal(e) =>
+              logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            }
+      }
+    }
+
+  private def agentRefFromQuery(request: RequestHeader): Option[(String, String)] =
+    for {
+      taxOfficeNumber    <- request.getQueryString("taxOfficeNumber")
+      taxOfficeReference <- request.getQueryString("taxOfficeReference")
+    } yield (taxOfficeNumber, taxOfficeReference)
+
+  private def ensureUserAnswersExists()(implicit request: OptionalDataRequest[_]): Future[Unit] =
+    request.userAnswers match {
+      case Some(_) => Future.successful(())
+      case None    =>
+        val ua = UserAnswers(request.userId)
+        sessionRepository.set(ua).map(_ => ())
+    }
+
+  private def storeInstanceId(instanceId: String)(implicit request: OptionalDataRequest[_]): Future[Unit] =
+    val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
+    for {
+      updated <- Future.fromTry(ua0.set(CisIdPage, instanceId))
+      _       <- sessionRepository.set(updated)
+    } yield ()
 }

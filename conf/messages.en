@@ -411,11 +411,12 @@ monthlyreturns.inactivityRequestWarning.p = You are submitting a request for ina
 monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
 
 
-subcontractorDetailsAdded.title = subcontractorDetailsAdded
-subcontractorDetailsAdded.heading = subcontractorDetailsAdded
-subcontractorDetailsAdded.checkYourAnswersLabel = subcontractorDetailsAdded
-subcontractorDetailsAdded.error.required = Select yes if subcontractorDetailsAdded
-subcontractorDetailsAdded.change.hidden = SubcontractorDetailsAdded
+monthlyreturns.confirmationByEmail.title = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.heading = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.p = You can use the email we have on file or provide another one.
+monthlyreturns.confirmationByEmail.yes = Yes
+monthlyreturns.confirmationByEmail.no = No
+monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
 
 subcontractorDetailsAdded.error.required= Select 'Yes' to submit your return. Select 'No' to add payment details for more subcontractors.
 subcontractorDetailsAdded.error.incomplete= You have not entered payment details for all of your selected subcontractors

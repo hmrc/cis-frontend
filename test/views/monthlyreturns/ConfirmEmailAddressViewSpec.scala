@@ -18,6 +18,7 @@ import base.SpecBase
 import forms.monthlyreturns.ConfirmEmailAddressFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
@@ -52,6 +53,15 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
 
       val expected = messages("monthlyreturns.confirmEmailAddress.error.required")
       doc.text() must include(expected)
+    }
+
+    "must render error summary with correct link when form has errors" in new Setup {
+      val formWithErrors = form.bind(Map("value" -> ""))
+      val errorHtml      = view(formWithErrors, NormalMode)
+      val doc: Document  = Jsoup.parse(errorHtml.toString)
+
+      doc.select(".govuk-error-summary").size() mustBe 1
+      doc.select(".govuk-error-summary__list a").attr("href") mustBe "#value"
     }
   }
 
