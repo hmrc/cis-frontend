@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package views.monthlyreturns
 
 import models.NormalMode
@@ -24,17 +40,17 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title() must include(messages("subcontractorDetailsAdded.heading"))
+      doc.title() must include(messages("monthlyreturns.subcontractorDetailsAdded.heading"))
 
-      doc.select("h1").text() must include(messages("subcontractorDetailsAdded.heading"))
+      doc.select("h1").text()                       must include(messages("monthlyreturns.subcontractorDetailsAdded.heading"))
       doc.getElementsByClass("govuk-button").text() must include(messages("site.continue"))
 
-      doc.text() must include(messages("subcontractorDetailsAdded.question"))
-      doc.text() must include(messages("subcontractorDetailsAdded.hint"))
+      doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.question"))
+      doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.hint"))
     }
 
     "must display error summary when form has errors" in new Setup {
-      val formWithError = form.withError("value", "subcontractorDetailsAdded.error.incomplete")
+      val formWithError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
       val htmlWithError = view(formWithError, NormalMode, viewModel)
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
@@ -45,14 +61,14 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
   trait Setup {
     val app = new GuiceApplicationBuilder()
       .configure(
-        "host" -> "http://localhost:9000",
-        "timeout-dialog.timeout" -> 900,
-        "timeout-dialog.countdown" -> 120,
+        "host"                          -> "http://localhost:9000",
+        "timeout-dialog.timeout"        -> 900,
+        "timeout-dialog.countdown"      -> 120,
         "timeout-dialog.keep-alive-url" -> "/keep-alive",
-        "timeout-dialog.sign-out-url" -> "/sign-out",
-        "contact-frontend.serviceId" -> "cis-frontend",
-        "contact-frontend.host"      -> "http://localhost:9250",
-        "features.welsh-translation" -> false
+        "timeout-dialog.sign-out-url"   -> "/sign-out",
+        "contact-frontend.serviceId"    -> "cis-frontend",
+        "contact-frontend.host"         -> "http://localhost:9250",
+        "features.welsh-translation"    -> false
       )
       .overrides(
         bind[Router].toInstance(Router.empty)
@@ -60,18 +76,18 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
       .build()
 
     val view: SubcontractorDetailsAddedView = app.injector.instanceOf[SubcontractorDetailsAddedView]
-    val formProvider = new SubcontractorDetailsAddedFormProvider()
-    val form = formProvider()
+    val formProvider                        = new SubcontractorDetailsAddedFormProvider()
+    val form                                = formProvider()
 
     implicit val request: Request[_] = FakeRequest()
-    implicit val messages: Messages = MessagesImpl(
+    implicit val messages: Messages  = MessagesImpl(
       Lang.defaultLang,
       app.injector.instanceOf[MessagesApi]
     )
 
     val viewModel: SubcontractorDetailsAddedViewModel =
       SubcontractorDetailsAddedViewModel(
-        headingKey = "subcontractorDetailsAdded.heading",
+        headingKey = "monthlyreturns.subcontractorDetailsAdded.heading",
         headingArgs = Seq.empty,
         rows = Seq(
           SubcontractorDetailsAddedRow(

@@ -25,6 +25,6 @@ class SubcontractorDetailsAddedFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Boolean] =
     Form(
-      "value" -> boolean("subcontractorDetailsAdded.error.required")
+      "value" -> boolean("monthlyreturns.subcontractorDetailsAdded.error.required")
     )
 }

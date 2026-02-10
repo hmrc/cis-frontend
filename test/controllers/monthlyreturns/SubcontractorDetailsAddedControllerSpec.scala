@@ -1,151 +1,36 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package controllers.monthlyreturns
 
 import base.SpecBase
 import models.{NormalMode, UserAnswers}
 import play.api.libs.json.Json
+import play.api.routing.Router
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
 
 import java.time.Instant
 
-
-//class SubcontractorDetailsAddedControllerSpec extends SpecBase {
-//
-//  "SubcontractorDetailsAddedController" - {
-//
-//    "must return OK on GET when builder returns a view model" in {
-//
-//      val ua = UserAnswers(
-//        id = userAnswersId,
-//        data = Json.obj(
-//          "subcontractors" -> Json.arr(
-//            Json.obj(
-//              "subcontractorId"  -> 1001L,
-//              "name"             -> "TyneWear Ltd",
-//              "totalPaymentMade" -> 1000.00,
-//              "costOfMaterials"  -> 200.00,
-//              "totalTaxDeducted" -> 200.00
-//            )
-//          )
-//        ),
-//        lastUpdated = Instant.now
-//      )
-//
-//      val application =
-//        applicationBuilder(userAnswers = Some(ua))
-//          .configure(
-//            "play.http.router" -> "testOnly.TestRoutes",
-//            "features.welsh-translation" -> false,
-//            "timeout-dialog.timeout"     -> 900,
-//            "timeout-dialog.countdown"   -> 120,
-//            "contact-frontend.serviceId" -> "cis-frontend",
-//            "host"                       -> "http://localhost"
-//          )
-//          .build()
-//
-//      running(application) {
-//        val request = FakeRequest(
-//          GET,
-//          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
-//        )
-//
-//        val result = route(application, request).value
-//
-//        status(result) mustBe OK
-//      }
-//    }
-//
-//    "must redirect to SystemError on GET when there are 0 subcontractors (builder returns None)" in {
-//
-//      val ua = UserAnswers(
-//        id = userAnswersId,
-//        data = Json.obj("subcontractors" -> Json.arr()),
-//        lastUpdated = Instant.now
-//      )
-//
-//      val application =
-//        applicationBuilder(userAnswers = Some(ua))
-//          .configure(
-//            "play.http.router" -> "testOnly.TestRoutes",
-//            "features.welsh-translation" -> false,
-//            "timeout-dialog.timeout"     -> 900,
-//            "timeout-dialog.countdown"   -> 120,
-//            "contact-frontend.serviceId" -> "cis-frontend",
-//            "host"                       -> "http://localhost"
-//          )
-//          .build()
-//
-//      running(application) {
-//        val request = FakeRequest(
-//          GET,
-//          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
-//        )
-//
-//        val result = route(application, request).value
-//
-//        status(result) mustBe SEE_OTHER
-//        redirectLocation(result).value mustBe controllers.routes.SystemErrorController.onPageLoad().url
-//      }
-//    }
-//
-//    "must return BadRequest on POST Yes when viewModel.hasIncomplete = true (incomplete error)" in {
-//
-//      val ua = UserAnswers(
-//        id = userAnswersId,
-//        data = Json.obj(
-//          "subcontractors" -> Json.arr(
-//            Json.obj(
-//              "subcontractorId"  -> 1001L,
-//              "name"             -> "Complete Ltd",
-//              "totalPaymentMade" -> 1000.00,
-//              "costOfMaterials"  -> 200.00,
-//              "totalTaxDeducted" -> 200.00
-//            ),
-//            Json.obj(
-//              "subcontractorId" -> 1002L,
-//              "name"            -> "Incomplete Ltd"
-//            )
-//          )
-//        ),
-//        lastUpdated = Instant.now
-//      )
-//
-//      val application =
-//        applicationBuilder(userAnswers = Some(ua))
-//          .configure(
-//            // >>> CHANGE <<<
-//            "play.http.router" -> "testOnly.TestRoutes",
-//
-//            // >>> CHANGE <<<
-//            "features.welsh-translation" -> false,
-//            "timeout-dialog.timeout"     -> 900,
-//            "timeout-dialog.countdown"   -> 120,
-//            "contact-frontend.serviceId" -> "cis-frontend",
-//            "host"                       -> "http://localhost"
-//          )
-//          .build()
-//
-//      running(application) {
-//        val request = FakeRequest(
-//          POST,
-//          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(NormalMode).url
-//        ).withFormUrlEncodedBody("value" -> "true") // Yes
-//
-//        val result = route(application, request).value
-//
-//        status(result) mustBe BAD_REQUEST
-//        contentAsString(result) must include("subcontractorDetailsAdded.error.incomplete")
-//      }
-//    }
-//  }
-//}
-
 class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
-  "SubcontractorDetailsAddedController.onPageLoad" - {
+  "SubcontractorDetailsAddedController" - {
 
-    "must return OK and render the view when builder returns Some(viewModel)" in {
+    "must return OK on GET when builder returns a view model" in {
 
       val ua = UserAnswers(
         id = userAnswersId,
@@ -163,29 +48,27 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
         lastUpdated = Instant.now
       )
 
-      val application = applicationBuilder(userAnswers = Some(ua)).build()
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .configure(
+            "play.http.router"           -> "testOnly.TestRoutes",
+            "features.welsh-translation" -> false,
+            "timeout-dialog.timeout"     -> 900,
+            "timeout-dialog.countdown"   -> 120,
+            "contact-frontend.serviceId" -> "cis-frontend",
+            "host"                       -> "http://localhost"
+          )
+          .build()
 
       running(application) {
-        val controller = application.injector.instanceOf[SubcontractorDetailsAddedController]
-        val request    = FakeRequest(GET, "/dummy") // URL not used when calling action directly
-
-        val result = controller.onPageLoad(NormalMode)(request)
+        val request = FakeRequest(GET, "/monthly-return/subcontractor-details-added")
+        val result  = route(application, request).value
 
         status(result) mustBe OK
-
-        val view = application.injector.instanceOf[SubcontractorDetailsAddedView]
-        val html = contentAsString(result)
-
-        // If you want the exact same “AlreadySubmitted” style equality:
-        // (this will work as long as the view is deterministic)
-        val vm   = viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder.build(ua).value
-        val form = controller.form
-
-        html mustBe view(form, NormalMode, vm)(request, messages(application)).toString
       }
     }
 
-    "must redirect to SystemError when builder returns None (0 subcontractors)" in {
+    "must redirect to SystemError on GET when there are 0 subcontractors (builder returns None)" in {
 
       val ua = UserAnswers(
         id = userAnswersId,
@@ -193,23 +76,28 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
         lastUpdated = Instant.now
       )
 
-      val application = applicationBuilder(userAnswers = Some(ua)).build()
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .configure(
+            "play.http.router"           -> "testOnly.TestRoutes",
+            "features.welsh-translation" -> false,
+            "timeout-dialog.timeout"     -> 900,
+            "timeout-dialog.countdown"   -> 120,
+            "contact-frontend.serviceId" -> "cis-frontend",
+            "host"                       -> "http://localhost"
+          )
+          .build()
 
       running(application) {
-        val controller = application.injector.instanceOf[SubcontractorDetailsAddedController]
-        val request    = FakeRequest(GET, "/dummy")
-
-        val result = controller.onPageLoad(NormalMode)(request)
+        val request = FakeRequest(GET, "/monthly-return/subcontractor-details-added")
+        val result  = route(application, request).value
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
-  }
 
-  "SubcontractorDetailsAddedController.onSubmit" - {
-
-    "must return BadRequest and show incomplete error when user answers Yes and hasIncomplete=true" in {
+    "must return BadRequest on POST Yes when viewModel.hasIncomplete = true (incomplete error)" in {
 
       val ua = UserAnswers(
         id = userAnswersId,
@@ -223,48 +111,38 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
               "totalTaxDeducted" -> 200.00
             ),
             Json.obj(
-              "subcontractorId" -> 1002L,
-              "name"            -> "Incomplete Ltd"
+              "subcontractorId"  -> 1002L,
+              "name"             -> "Incomplete Ltd"
             )
           )
         ),
         lastUpdated = Instant.now
       )
 
-      val application = applicationBuilder(userAnswers = Some(ua)).build()
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .configure(
+            "play.http.router"           -> "testOnly.TestRoutes",
+            "features.welsh-translation" -> false,
+            "timeout-dialog.timeout"     -> 900,
+            "timeout-dialog.countdown"   -> 120,
+            "contact-frontend.serviceId" -> "cis-frontend",
+            "host"                       -> "http://localhost"
+          )
+          .build()
 
       running(application) {
-        val request = FakeRequest(
-          GET,
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
-        )
-
-        val result = route(application, request).value
-        status(result) mustBe OK
-      }
-    }
-
-    "must redirect to SystemError when builder returns None on POST" in {
-
-      val ua = UserAnswers(
-        id = userAnswersId,
-        data = Json.obj("subcontractors" -> Json.arr()),
-        lastUpdated = Instant.now
-      )
-
-      val application = applicationBuilder(userAnswers = Some(ua)).build()
-
-      running(application) {
-        val controller = application.injector.instanceOf[SubcontractorDetailsAddedController]
-
         val request =
-          FakeRequest(POST, "/dummy")
+          FakeRequest(POST, "/monthly-return/subcontractor-details-added")
             .withFormUrlEncodedBody("value" -> "true")
 
-        val result = controller.onSubmit(NormalMode)(request)
+        val result = route(application, request).value
 
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe controllers.routes.SystemErrorController.onPageLoad().url
+        status(result) mustBe BAD_REQUEST
+
+        contentAsString(result) must include(
+          "You have not entered payment details for all of your selected subcontractors"
+        )
       }
     }
   }

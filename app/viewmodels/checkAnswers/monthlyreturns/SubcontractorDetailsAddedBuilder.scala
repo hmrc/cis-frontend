@@ -35,9 +35,9 @@ object SubcontractorDetailsAddedBuilder {
 
   private def headingKeyAndArgs(addedCount: Int): (String, Seq[AnyRef]) =
     if (addedCount == 1) {
-      ("subcontractorDetailsAdded.heading.single", Seq.empty)
+      ("monthlyreturns.subcontractorDetailsAdded.heading.single", Seq.empty)
     } else {
-      ("subcontractorDetailsAdded.heading.multiple", Seq(addedCount.asInstanceOf[AnyRef]))
+      ("monthlyreturns.subcontractorDetailsAdded.heading.multiple", Seq(addedCount.asInstanceOf[AnyRef]))
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
@@ -64,7 +64,7 @@ object SubcontractorDetailsAddedBuilder {
     if (addedCount == 0) {
       None
     } else {
-      val (key, args)   = headingKeyAndArgs(addedCount)
+      val (key, args) = headingKeyAndArgs(addedCount)
       Some(
         SubcontractorDetailsAddedViewModel(
           headingKey = key,

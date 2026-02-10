@@ -49,29 +49,34 @@ class SubcontractorDetailsAddedController @Inject() (
       case None            => Redirect(controllers.routes.SystemErrorController.onPageLoad())
     }
   }
-  
+
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData).async { implicit request =>
-    val ua        = request.userAnswers.getOrElse(seedUserAnswers(request.userId))
-    
+    val ua = request.userAnswers.getOrElse(seedUserAnswers(request.userId))
+
     SubcontractorDetailsAddedBuilder.build(ua) match {
-      case None => 
+      case None =>
         Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
       case Some(viewModel) =>
         form
-          .bindFromRequest().fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
-          answer =>
-            if (answer) {
-              if (viewModel.hasIncomplete) {
-                val withError = form.withError("value", "subcontractorDetailsAdded.error.incomplete")
-                Future.successful(BadRequest(view(withError, mode, viewModel)))
+          .bindFromRequest()
+          .fold(
+            formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
+            answer =>
+              if (answer) {
+                if (viewModel.hasIncomplete) {
+                  val withError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+                  Future.successful(BadRequest(view(withError, mode, viewModel)))
+                } else {
+                  Future.successful(
+                    Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                  )
+                }
               } else {
-                Future.successful(Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode)))
+                Future.successful(
+                  Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                )
               }
-            } else {
-              Future.successful(Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode)))
-            }
           )
     }
   }

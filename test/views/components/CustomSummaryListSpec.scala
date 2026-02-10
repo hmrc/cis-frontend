@@ -49,12 +49,18 @@ class CustomSummaryListSpec extends SpecBase {
       val first = actionItems.get(0).select("a.govuk-link")
       first.attr("href") mustBe "http://example.com/change"
       first.select("span.link-text").text mustBe messages("site.change")
-      first.select("span.govuk-visually-hidden").text.trim mustBe messages("subcontractorDetailsAdded.change.hidden", "TyneWear Ltd")
+      first.select("span.govuk-visually-hidden").text.trim mustBe messages(
+        "monthlyreturns.subcontractorDetailsAdded.change.hidden",
+        "TyneWear Ltd"
+      )
 
       val second = actionItems.get(1).select("a.govuk-link")
       second.attr("href") mustBe "http://example.com/remove"
       second.select("span.link-text").text mustBe messages("site.remove")
-      second.select("span.govuk-visually-hidden").text.trim mustBe messages("subcontractorDetailsAdded.remove.hidden", "TyneWear Ltd")
+      second.select("span.govuk-visually-hidden").text.trim mustBe messages(
+        "monthlyreturns.subcontractorDetailsAdded.remove.hidden",
+        "TyneWear Ltd"
+      )
     }
 
     "must render with the correct CSS classes" in new Setup {
@@ -106,19 +112,19 @@ class CustomSummaryListSpec extends SpecBase {
     // Rows with no links (per row)
     val selectedRowsNoLinks: Seq[(String, Seq[(String, String, String)])] =
       Seq(
-        "BuildRight Construction"     -> Seq.empty,
-        "Northern Trades Ltd"         -> Seq.empty,
-        "TyneWear Ltd"                -> Seq.empty
+        "BuildRight Construction" -> Seq.empty,
+        "Northern Trades Ltd"     -> Seq.empty,
+        "TyneWear Ltd"            -> Seq.empty
       )
 
     // Only TyneWear Ltd row has two links
     val rowsWithLinks: Seq[(String, Seq[(String, String, String)])] =
       Seq(
-        "TyneWear Ltd" -> Seq(
-          ("http://example.com/change", "site.change", "subcontractorDetailsAdded.change.hidden"),
-          ("http://example.com/remove", "site.remove", "subcontractorDetailsAdded.remove.hidden")
+        "TyneWear Ltd"            -> Seq(
+          ("http://example.com/change", "site.change", "monthlyreturns.subcontractorDetailsAdded.change.hidden"),
+          ("http://example.com/remove", "site.remove", "monthlyreturns.subcontractorDetailsAdded.remove.hidden")
         ),
-        "Northern Trades Ltd" -> Seq.empty,
+        "Northern Trades Ltd"     -> Seq.empty,
         "BuildRight Construction" -> Seq.empty
       )
   }

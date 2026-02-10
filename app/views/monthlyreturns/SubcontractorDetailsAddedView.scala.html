@@ -51,8 +51,8 @@
                 (
                     row.name,
                     Seq(
-                      (row.changeCall.url, "site.change", "subcontractorDetailsAdded.change.hidden"),
-                      (row.removeCall.url, "site.remove", "subcontractorDetailsAdded.remove.hidden")
+                      (row.changeCall.url, "site.change", "monthlyreturns.subcontractorDetailsAdded.change.hidden"),
+                      (row.removeCall.url, "site.remove", "monthlyreturns.subcontractorDetailsAdded.remove.hidden")
                     )
                 )
             }
@@ -62,10 +62,10 @@
             RadiosViewModel
                 .yesNo(
                     field = form("value"),
-                    legend = LegendViewModel(messages("subcontractorDetailsAdded.question"))
+                    legend = LegendViewModel(messages("monthlyreturns.subcontractorDetailsAdded.question"))
                         .withCssClass("govuk-fieldset__legend--m")
                 )
-                .withHint(HintViewModel(messages("subcontractorDetailsAdded.hint")))
+                .withHint(HintViewModel(messages("monthlyreturns.subcontractorDetailsAdded.hint")))
         )
 
         @govukButton(

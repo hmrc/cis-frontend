@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
@@ -7,7 +23,7 @@ import viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder
 
 import java.time.Instant
 
-class SubcontractorDetailsAddedBuilderSpec extends SpecBase{
+class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
 
   "SubcontractorDetailsAddedBuilder.build" - {
 
@@ -24,12 +40,12 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase{
               "totalTaxDeducted" -> 200.00
             ),
             Json.obj(
-              "subcontractorId" -> 1002L,
-              "name"            -> "Northern Trades Ltd"
+              "subcontractorId"  -> 1002L,
+              "name"             -> "Northern Trades Ltd"
             ),
             Json.obj(
-              "subcontractorId" -> 1003L,
-              "name"            -> "BuildRight Construction"
+              "subcontractorId"  -> 1003L,
+              "name"             -> "BuildRight Construction"
             )
           )
         ),
@@ -46,7 +62,7 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase{
       vm.rows.head.name mustBe "TyneWear Ltd"
       vm.rows.head.detailsAdded mustBe true
 
-      vm.headingKey mustBe "subcontractorDetailsAdded.heading.single"
+      vm.headingKey mustBe "monthlyreturns.subcontractorDetailsAdded.heading.single"
       vm.headingArgs mustBe empty
     }
 
@@ -81,7 +97,7 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase{
       vm.hasIncomplete mustBe false
       vm.rows.size mustBe 2
 
-      vm.headingKey mustBe "subcontractorDetailsAdded.heading.multiple"
+      vm.headingKey mustBe "monthlyreturns.subcontractorDetailsAdded.heading.multiple"
       vm.headingArgs mustBe Seq(Integer.valueOf(2))
     }
 
@@ -116,8 +132,8 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase{
               "totalTaxDeducted" -> 1.0
             ),
             Json.obj(
-              "subcontractorId" -> 2L,
-              "name"            -> "Incomplete"
+              "subcontractorId"  -> 2L,
+              "name"             -> "Incomplete"
             )
           )
         ),

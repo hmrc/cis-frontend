@@ -114,5 +114,5 @@ POST       /monthly-return/change-do-you-want-email-confirmation                
 
 GET        /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/change-subcontractor-details-added                 controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-subcontractor-details-added                 controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
