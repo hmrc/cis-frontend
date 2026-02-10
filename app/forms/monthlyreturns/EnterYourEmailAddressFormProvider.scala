@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package forms.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import forms.mappings.Mappings
+import play.api.data.Form
+import forms.Validation._
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
-)
+import javax.inject.Inject
 
-object SelectedSubcontractor {
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
+class EnterYourEmailAddressFormProvider @Inject() extends Mappings {
+  private val maxLengthEmailAddress = 132
+
+  def apply(): Form[String] =
+    Form(
+      "value" -> text("monthlyreturns.enterYourEmailAddress.error.required")
+        .verifying(maxLength(maxLengthEmailAddress, "monthlyreturns.enterYourEmailAddress.error.length"))
+        .verifying(regexp(emailRegex, "monthlyreturns.enterYourEmailAddress.error.invalid"))
+    )
 }

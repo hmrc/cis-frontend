@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package pages.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import base.SpecBase
+import play.api.libs.json.JsPath
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
-)
+class EnterYourEmailAddressPageSpec extends SpecBase {
 
-object SelectedSubcontractor {
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
+  "EnterYourEmailAddressPage" - {
+
+    "have the correct path" in {
+      EnterYourEmailAddressPage.path mustBe (JsPath \ "enterYourEmailAddress")
+    }
+
+    "have the correct toString" in {
+      EnterYourEmailAddressPage.toString mustBe "enterYourEmailAddress"
+    }
+  }
 }

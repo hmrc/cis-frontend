@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package forms
 
-import play.api.libs.json.{Json, OFormat}
+object Validation {
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
-)
-
-object SelectedSubcontractor {
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
+  val emailRegex: String =
+    """^(?!\.)""" +
+      """("([^"\r\\]|\\["\r\\])+"""" +
+      """|([-a-zA-Z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)+)""" +
+      """(?<!\.)""" +
+      """@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$"""
 }

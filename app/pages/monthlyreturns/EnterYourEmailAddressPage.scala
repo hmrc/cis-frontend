@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package pages.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
-)
+case object EnterYourEmailAddressPage extends QuestionPage[String] {
 
-object SelectedSubcontractor {
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "enterYourEmailAddress"
 }

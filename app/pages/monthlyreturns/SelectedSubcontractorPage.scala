@@ -21,32 +21,32 @@ import pages.{IndexedQuestionPage, QuestionPage}
 import play.api.libs.json.JsPath
 
 case class SelectedSubcontractorIdPage(index: Int) extends QuestionPage[Long] {
-  override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "subcontractorId"
 }
 
 case class SelectedSubcontractorNamePage(index: Int) extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "name"
 }
 
-case class SelectedSubcontractorTotalPaymentMadePage(index: Int) extends QuestionPage[Double] {
-  override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
-  override def toString: String = "totalPaymentMade"
+case class SelectedSubcontractorPaymentsMadePage(index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
+  override def toString: String = "totalPaymentsMade"
 }
 
-case class SelectedSubcontractorCostOfMaterialsPage(index: Int) extends QuestionPage[Double] {
-  override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
+case class SelectedSubcontractorMaterialCostsPage(index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "costOfMaterials"
 }
 
-case class SelectedSubcontractorTotalTaxDeductedPage(index: Int) extends QuestionPage[Double] {
-  override def path: JsPath     = JsPath \ "subcontractors" \ index \ toString
+case class SelectedSubcontractorTaxDeductedPage(index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "totalTaxDeducted"
 }
 
 case class SelectedSubcontractorPage(index: Int) extends QuestionPage[SelectedSubcontractor] {
-  override def path: JsPath     = JsPath \ "subcontractors" \ index
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString
   override def toString: String = s"subcontractor-$index"
 }
 
