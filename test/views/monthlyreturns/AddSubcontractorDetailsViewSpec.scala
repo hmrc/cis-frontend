@@ -51,8 +51,8 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
       doc.select("input[type=radio][value=option1]").size() mustBe 1
       doc.select("input[type=radio][value=option2]").size() mustBe 1
 
-      doc.select("label[for=value_0]").text() must include("Northern Trades Ltd")
-      doc.select("label[for=value_1]").text() must include("TyneWear Ltd")
+      doc.select("label[for=option1]").text() must include("Northern Trades Ltd")
+      doc.select("label[for=option2]").text() must include("TyneWear Ltd")
     }
   }
 

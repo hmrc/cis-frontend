@@ -28,7 +28,7 @@ class AddSubcontractorDetailsFormProviderSpec extends OptionFieldBehaviours {
   ".value" - {
 
     val fieldName   = "value"
-    val requiredKey = "addSubcontractorDetails.error.required"
+    val requiredKey = "monthlyreturns.addSubcontractorDetails.error.required"
 
     behave like optionsField[AddSubcontractorDetails](
       form,

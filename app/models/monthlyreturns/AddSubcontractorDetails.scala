@@ -34,20 +34,20 @@ object AddSubcontractorDetails extends Enumerable.Implicits {
   )
 
   def options(implicit messages: Messages): Seq[RadioItem] =
-    values.zipWithIndex.map { case (value, index) =>
+    values.map { value =>
       RadioItem(
-        content = Text(messages(s"addSubcontractorDetails.${value.toString}")),
+        content = Text(messages(s"monthlyreturns.addSubcontractorDetails.${value.toString}")),
         value = Some(value.toString),
-        id = Some(s"value_$index")
+        id = Some(value.toString)
       )
     }
 
   def optionsWithLabels(labels: Seq[String]): Seq[RadioItem] =
-    values.zip(labels).zipWithIndex.map { case ((value, label), index) =>
+    values.zip(labels).map { case (value, label) =>
       RadioItem(
         content = Text(label),
         value = Some(value.toString),
-        id = Some(s"value_$index")
+        id = Some(value.toString)
       )
     }
 

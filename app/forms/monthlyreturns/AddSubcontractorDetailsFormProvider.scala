@@ -26,6 +26,6 @@ class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
 
   def apply(): Form[AddSubcontractorDetails] =
     Form(
-      "value" -> enumerable[AddSubcontractorDetails]("addSubcontractorDetails.error.required")
+      "value" -> enumerable[AddSubcontractorDetails]("monthlyreturns.addSubcontractorDetails.error.required")
     )
 }
