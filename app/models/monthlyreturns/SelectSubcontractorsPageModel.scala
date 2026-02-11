@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package pages
+package models.monthlyreturns
 
-import queries.{Gettable, Settable}
+import viewmodels.SelectSubcontractorsViewModel
 
-trait QuestionPage[A] extends Page with Gettable[A] with Settable[A]
-
-type IndexedQuestionPage[A] = QuestionPage[Map[Int, A]]
+case class SelectSubcontractorsPageModel(
+  subcontractors: Seq[SelectSubcontractorsViewModel],
+  initiallySelectedIds: Seq[Int]
+)

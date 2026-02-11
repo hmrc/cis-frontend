@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
-import queries.{Gettable, Settable}
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-trait QuestionPage[A] extends Page with Gettable[A] with Settable[A]
+case object ConfirmationByEmailPage extends QuestionPage[Boolean] {
 
-type IndexedQuestionPage[A] = QuestionPage[Map[Int, A]]
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "confirmationByEmail"
+}

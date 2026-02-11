@@ -421,6 +421,22 @@ monthlyreturns.inactivityRequestWarning.p = You are submitting a request for ina
 monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
 
 
+monthlyreturns.enterYourEmailAddress.title = Enter your email address
+monthlyreturns.enterYourEmailAddress.heading = Enter your email address
+monthlyreturns.enterYourEmailAddress.hint = Enter an email for HMRC to send confirmation that your return has been submitted.
+monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Enter your email address
+monthlyreturns.enterYourEmailAddress.error.required = Enter an email address in the correct format, like name@example.com
+monthlyreturns.enterYourEmailAddress.error.invalid = Enter an email address in the correct format, like name@example.com
+monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 132 characters or less
+monthlyreturns.enterYourEmailAddress.change.hidden = Enter your email address
+
+monthlyreturns.confirmationByEmail.title = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.heading = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.p = You can use the email we have on file or provide another one.
+monthlyreturns.confirmationByEmail.yes = Yes
+monthlyreturns.confirmationByEmail.no = No
+monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
+
 monthlyreturns.checkAnswersTotalPayments.title = Check your answers for {0}
 monthlyreturns.checkAnswersTotalPayments.heading = Check your answers for {0}
 monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Total payments to subcontractor

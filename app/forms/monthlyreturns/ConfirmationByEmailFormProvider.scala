@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package pages
+package forms.monthlyreturns
 
-import queries.{Gettable, Settable}
+import forms.mappings.Mappings
+import play.api.data.Form
 
-trait QuestionPage[A] extends Page with Gettable[A] with Settable[A]
+import javax.inject.Inject
 
-type IndexedQuestionPage[A] = QuestionPage[Map[Int, A]]
+class ConfirmationByEmailFormProvider @Inject() extends Mappings {
+
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("monthlyreturns.confirmationByEmail.error.required")
+    )
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
-import queries.{Gettable, Settable}
+import base.SpecBase
+import play.api.libs.json.JsPath
 
-trait QuestionPage[A] extends Page with Gettable[A] with Settable[A]
+class EnterYourEmailAddressPageSpec extends SpecBase {
 
-type IndexedQuestionPage[A] = QuestionPage[Map[Int, A]]
+  "EnterYourEmailAddressPage" - {
+
+    "have the correct path" in {
+      EnterYourEmailAddressPage.path mustBe (JsPath \ "enterYourEmailAddress")
+    }
+
+    "have the correct toString" in {
+      EnterYourEmailAddressPage.toString mustBe "enterYourEmailAddress"
+    }
+  }
+}
