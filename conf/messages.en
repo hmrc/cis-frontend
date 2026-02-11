@@ -483,3 +483,5 @@ monthlyreturns.verifiedStatusDeclaration.legend = Has every subcontractor includ
 monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Verified Status Declaration
 monthlyreturns.verifiedStatusDeclaration.error.required = Select ‘Yes’ if your subcontractors have been verified. Select ‘No’ if they have not been verified.
 monthlyreturns.verifiedStatusDeclaration.change.hidden = Verified Status Declaration
+monthlyreturns.summarySubcontractorPayments.title = Summary of payments made
+monthlyreturns.summarySubcontractorPayments.heading = Summary of payments made
