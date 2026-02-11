@@ -21,9 +21,9 @@ import play.api.libs.json.{Json, OFormat}
 case class SelectedSubcontractor(
   id: Long,
   name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
+  totalPaymentsMade: Option[BigDecimal],
+  costOfMaterials: Option[BigDecimal],
+  totalTaxDeducted: Option[BigDecimal]
 )
 
 object SelectedSubcontractor {
