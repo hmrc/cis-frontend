@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package forms
+package forms.monthlyreturns
 
 import javax.inject.Inject
 

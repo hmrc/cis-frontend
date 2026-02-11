@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.PaymentDetailsConfirmationFormProvider
+import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.PaymentDetailsConfirmationPage
+import pages.monthlyreturns.PaymentDetailsConfirmationPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -38,7 +38,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new PaymentDetailsConfirmationFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   lazy val paymentDetailsConfirmationRoute = routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url
 
@@ -134,7 +134,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -150,7 +150,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }
