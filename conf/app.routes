@@ -120,7 +120,7 @@ POST       /monthly-return/do-you-want-email-confirmation                       
 GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
 
-GET        /paymentDetailsConfirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
-POST       /paymentDetailsConfirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
-GET        /changePaymentDetailsConfirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = CheckMode)
-POST       /changePaymentDetailsConfirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/paymentDetailsConfirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/paymentDetailsConfirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/changePaymentDetailsConfirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/changePaymentDetailsConfirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = CheckMode)
