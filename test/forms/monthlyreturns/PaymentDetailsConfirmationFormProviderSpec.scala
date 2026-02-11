@@ -21,7 +21,7 @@ import play.api.data.FormError
 
 class PaymentDetailsConfirmationFormProviderSpec extends BooleanFieldBehaviours {
 
-  val requiredKey = "paymentDetailsConfirmation.error.required"
+  val requiredKey = "monthlyreturns.paymentDetailsConfirmation.error.required"
   val invalidKey  = "error.boolean"
 
   val form = new PaymentDetailsConfirmationFormProvider()()

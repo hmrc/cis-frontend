@@ -32,11 +32,11 @@ object PaymentDetailsConfirmationSummary {
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
-        key = "paymentDetailsConfirmation.checkYourAnswersLabel",
+        key = "monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
           ActionItemViewModel("site.change", routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("paymentDetailsConfirmation.change.hidden"))
+            .withVisuallyHiddenText(messages("monthlyreturns.paymentDetailsConfirmation.change.hidden"))
         )
       )
     }

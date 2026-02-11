@@ -25,6 +25,6 @@ class PaymentDetailsConfirmationFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Boolean] =
     Form(
-      "value" -> boolean("paymentDetailsConfirmation.error.required")
+      "value" -> boolean("monthlyreturns.paymentDetailsConfirmation.error.required")
     )
 }
