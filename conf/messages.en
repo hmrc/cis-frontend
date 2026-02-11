@@ -432,6 +432,6 @@ monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered
 monthlyreturns.subcontractorDetailsAdded.heading.single = You have added details for a single subcontractor
 monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added details for {0} subcontractors
 monthlyreturns.subcontractorDetailsAdded.question = Have you added all the subcontractors you are submitting returns for?
-monthlyreturns.subcontractorDetailsAdded.hint = Select ''Yes' to submit your return, and ''No'' if you need to add more.
+monthlyreturns.subcontractorDetailsAdded.hint = Select ''Yes'' to submit your return, and ''No'' if you need to add more.
 monthlyreturns.subcontractorDetailsAdded.change.hidden = Change {0}
 monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list
