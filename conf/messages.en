@@ -439,3 +439,7 @@ monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide 
 
 monthlyreturns.summarySubcontractorPayments.title = Summary of payments made
 monthlyreturns.summarySubcontractorPayments.heading = Summary of payments made
+monthlyreturns.summarySubcontractorPayments.intro = You have added the payment details of {0} subcontractors.
+monthlyreturns.summarySubcontractorPayments.totalPayments.label = Total payments to subcontractors
+monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label = Total cost of materials
+monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label = Total CIS deductions
