@@ -39,7 +39,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase {
         val view = application.injector.instanceOf[SummarySubcontractorPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(0, BigDecimal(0), BigDecimal(0), BigDecimal(0))(
+        contentAsString(result) mustEqual view(2, BigDecimal(3600), BigDecimal(900), BigDecimal(540))(
           request,
           messages(application)
         ).toString
