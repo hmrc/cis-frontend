@@ -19,7 +19,7 @@ package navigation
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.Call
 import pages.*
-import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage, SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPaymentsMadePage, SelectedSubcontractorTaxDeductedPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage, SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPaymentsMadePage, SelectedSubcontractorTaxDeductedPage, VerifySubcontractorsPage}
 import models.*
 import models.monthlyreturns.InactivityRequest
 
@@ -46,6 +46,8 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
+    case VerifySubcontractorsPage                      =>
+      _ => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1)
     case DateConfirmPaymentsPage                       =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
     case SelectedSubcontractorPaymentsMadePage(index)  =>

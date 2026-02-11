@@ -16,7 +16,6 @@
 
 package controllers.monthlyreturns
 
-import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
@@ -26,7 +25,7 @@ import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.{MonthlyReturnService, SubcontractorService}
+import services.SubcontractorService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SelectSubcontractorsView
 
@@ -41,9 +40,7 @@ class SelectSubcontractorsController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
-  monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
-  config: FrontendAppConfig,
   subcontractorService: SubcontractorService
 )(using ExecutionContext)
     extends FrontendBaseController
@@ -131,8 +128,10 @@ class SelectSubcontractorsController @Inject() (
                       .fromTry(updatedAnswers)
                       .flatMap(sessionRepository.set)
                       .map {
-                        case true  => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1))
-                        case false => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                        case true if selectedSubcontractors.exists(_.verificationRequired == "Yes") =>
+                          Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
+                        case true                                                                   => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1))
+                        case false                                                                  => Redirect(controllers.routes.SystemErrorController.onPageLoad())
                       }
                       .recover { error =>
                         logger.error(

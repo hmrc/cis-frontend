@@ -186,7 +186,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "onSubmit" - {
 
-      "redirects to PaymentDetailsController when valid data is submitted and session save succeeds" in {
+      "redirects to PaymentDetailsController when no selected subcontractor requires verification" in {
         val service         = mock[SubcontractorService]
         val mockSessionRepo = mock[SessionRepository]
         stubBuild(service, pageModelNoneSelected, defaultSel = None)
@@ -198,13 +198,36 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
               .withFormUrlEncodedBody(
-                "subcontractorsToInclude[0]" -> "1"
+                "subcontractorsToInclude.0" -> "2"
               )
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.PaymentDetailsController
             .onPageLoad(models.NormalMode, 1)
+            .url
+        }
+      }
+
+      "redirects to VerifySubcontractorsController when a selected subcontractor requires verification" in {
+        val service         = mock[SubcontractorService]
+        val mockSessionRepo = mock[SessionRepository]
+        stubBuild(service, pageModelNoneSelected, defaultSel = None)
+        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
+
+        val app = applicationWith(service, sessionRepo = Some(mockSessionRepo))
+
+        running(app) {
+          val request =
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+              .withFormUrlEncodedBody(
+                "subcontractorsToInclude.0" -> "1"
+              )
+
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.monthlyreturns.routes.VerifySubcontractorsController
+            .onPageLoad(models.NormalMode)
             .url
         }
       }
@@ -239,7 +262,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
               .withFormUrlEncodedBody(
-                "subcontractorsToInclude[0]" -> "1"
+                "subcontractorsToInclude.0" -> "1"
               )
 
           val result = route(app, request).value
@@ -260,7 +283,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
               .withFormUrlEncodedBody(
-                "subcontractorsToInclude[0]" -> "1"
+                "subcontractorsToInclude.0" -> "1"
               )
 
           val result = route(app, request).value
