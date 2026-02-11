@@ -25,6 +25,8 @@ class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
 
   def apply(): Form[String] =
     Form(
-      "value" -> text("monthlyreturns.addSubcontractorDetails.error.required")
+      "value" ->
+        text("monthlyreturns.addSubcontractorDetails.error.required")
+          .verifying("error.invalid", value => value.forall(_.isDigit))
     )
 }
