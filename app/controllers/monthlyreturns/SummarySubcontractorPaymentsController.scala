@@ -23,17 +23,24 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
 
-class SummarySubcontractorPaymentsController @Inject()(
-                                       override val messagesApi: MessagesApi,
-                                       identify: IdentifierAction,
-                                       getData: DataRetrievalAction,
-                                       requireData: DataRequiredAction,
-                                       val controllerComponents: MessagesControllerComponents,
-                                       view: SummarySubcontractorPaymentsView
-                                     ) extends FrontendBaseController with I18nSupport {
+import scala.math.BigDecimal.RoundingMode
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view())
+class SummarySubcontractorPaymentsController @Inject() (
+  override val messagesApi: MessagesApi,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  val controllerComponents: MessagesControllerComponents,
+  view: SummarySubcontractorPaymentsView
+) extends FrontendBaseController
+    with I18nSupport {
+
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val subcontractorCount = 2
+    val totalPayments      = BigDecimal(3600).setScale(2, RoundingMode.HALF_UP)
+    val totalMaterialsCost = BigDecimal(900).setScale(2, RoundingMode.HALF_UP)
+    val totalCisDeductions = BigDecimal(540).setScale(2, RoundingMode.HALF_UP)
+
+    Ok(view(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
   }
 }

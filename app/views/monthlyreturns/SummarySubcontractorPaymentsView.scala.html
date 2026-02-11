@@ -14,14 +14,49 @@
  * limitations under the License.
  *@
 
+@import views.html.components._
+@import utils.CurrencyFormatter.currencyFormat
+@import viewmodels.govuk.all._
+@import viewmodels.implicits._
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+
 @this(
         layout: templates.Layout,
-        govukButton: GovukButton
+        govukButton: GovukButton,
+        h1: H1,
+        paragraph: Paragraph,
+        govukSummaryList: GovukSummaryList
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(subcontractorCount: Int, totalPayments: BigDecimal, totalMaterialsCost: BigDecimal, totalCisDeductions: BigDecimal)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.summarySubcontractorPayments.title"))) {
 
-    <h1 class="govuk-heading-xl">@messages("monthlyreturns.summarySubcontractorPayments.heading")</h1>
+    @h1("monthlyreturns.summarySubcontractorPayments.heading", classes = "govuk-heading-xl")
+
+    @if(subcontractorCount != 1) {
+        @paragraph(
+            message = "monthlyreturns.summarySubcontractorPayments.intro",
+            args = Seq(subcontractorCount)
+        )
+    }
+
+    @govukSummaryList(
+        SummaryListViewModel(
+            rows = Seq(
+                SummaryListRowViewModel(
+                    key = "monthlyreturns.summarySubcontractorPayments.totalPayments.label",
+                    value = ValueViewModel(Text(currencyFormat(totalPayments)))
+                ),
+                SummaryListRowViewModel(
+                    key = "monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label",
+                    value = ValueViewModel(Text(currencyFormat(totalMaterialsCost)))
+                ),
+                SummaryListRowViewModel(
+                    key = "monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label",
+                    value = ValueViewModel(Text(currencyFormat(totalCisDeductions)))
+                )
+            )
+        )
+    )
 }
