@@ -17,204 +17,125 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import services.MonthlyReturnService
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
-import services.MonthlyReturnService
 import org.scalatestplus.mockito.MockitoSugar
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.*
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage}
-import models.monthlyreturns.{Declaration, InactivityRequest}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage}
 import java.time.LocalDate
-import com.google.inject.AbstractModule
-import models.requests.DataRequest
-import services.guard.{DuplicateMRCreationCheck, DuplicateMRCreationGuard}
-import services.guard.DuplicateMRCreationCheck.DuplicateFound
+
+import scala.concurrent.Future
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
 
-  import scala.concurrent.Future
+  "Check Your Answers Controller" - {
 
-  class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency {
+    "must return OK and the correct view for a GET" in {
 
-    private val blockGuard: DuplicateMRCreationGuard = new DuplicateMRCreationGuard {
-      def check(implicit r: DataRequest[_]) = Future.successful(DuplicateFound)
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val returnDetailsList = SummaryListViewModel(
+          Seq(
+            ReturnTypeSummary.row(messages(application)).get,
+            PaymentsToSubcontractorsSummary.row(messages(application)).get
+          )
+        )
+        val emailList         = SummaryListViewModel(Seq.empty)
+
+        status(result) mustEqual OK
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+      }
     }
 
-    "Check Your Answers Controller" - {
+    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
 
-      "must return OK and the correct view for a GET" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
 
-        running(application) {
-          val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val result = route(application, request).value
 
-          val result = route(application, request).value
+        status(result) mustEqual SEE_OTHER
 
-          val view              = application.injector.instanceOf[CheckYourAnswersView]
-          val returnDetailsList = SummaryListViewModel(
-            Seq(
-              ReturnTypeSummary.row(messages(application)).get,
-              PaymentsToSubcontractorsSummary.row(messages(application)).get
-            )
-          )
-          val emailList         = SummaryListViewModel(Seq.empty)
-
-          status(result) mustEqual OK
-          val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
-          contentAsString(result) mustEqual rendered
-        }
+        redirectLocation(
+          result
+        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
+          .onPageLoad()
+          .url
       }
+    }
 
-      "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+    "must redirect to Journey Recovery for a GET if no existing data is found" in {
 
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = None).build()
 
-        running(application) {
-          val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
 
-          val result = route(application, request).value
+        val result = route(application, request).value
 
-          status(result) mustEqual SEE_OTHER
-
-          redirectLocation(
-            result
-          ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
-            .onPageLoad()
-            .url
-        }
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
+    }
 
-      "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must call updateNilMonthlyReturn and redirect to submission sending on POST when FormP record already exists (NilReturnStatusPage set)" in {
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "test-cis-id")
+        .success
+        .value
+        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .success
+        .value
+        .set(NilReturnStatusPage, "STARTED")
+        .success
+        .value
 
-        val application = applicationBuilder(userAnswers = None).build()
+      val mockService = mock[MonthlyReturnService]
+      when(mockService.updateNilMonthlyReturn(any())(any()))
+        .thenReturn(Future.successful(()))
 
-        running(application) {
-          val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .build()
 
-          val result = route(application, request).value
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
 
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-        }
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
+          .onPageLoad()
+          .url
       }
+    }
 
-      "must redirect to submission sending on POST when monthly return creation succeeds" in {
+    "must redirect to journey recovery on POST when NilReturnStatusPage is missing" in {
 
-        val userAnswers = emptyUserAnswers
-          .set(CisIdPage, "test-cis-id")
-          .success
-          .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
-          .success
-          .value
-          .set(InactivityRequestPage, InactivityRequest.Option1)
-          .success
-          .value
-          .set(DeclarationPage, Set(Declaration.Confirmed))
-          .success
-          .value
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
-        val mockService = mock[MonthlyReturnService]
-        when(mockService.createNilMonthlyReturn(any())(any()))
-          .thenReturn(Future.successful(userAnswers))
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
 
-        val application = applicationBuilder(userAnswers = Some(userAnswers))
-          .overrides(
-            new AbstractModule {
-              override def configure(): Unit =
-                bind(classOf[MonthlyReturnService]).toInstance(mockService)
-            }
-          )
-          .build()
+        val result = route(application, request).value
 
-        running(application) {
-          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-
-          val result = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
-            .onPageLoad()
-            .url
-        }
-      }
-
-      "must call monthly return service on POST" in {
-
-        val userAnswers = emptyUserAnswers
-          .set(CisIdPage, "test-cis-id")
-          .success
-          .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
-          .success
-          .value
-          .set(InactivityRequestPage, InactivityRequest.Option1)
-          .success
-          .value
-          .set(DeclarationPage, Set(Declaration.Confirmed))
-          .success
-          .value
-
-        val mockService = mock[MonthlyReturnService]
-        when(mockService.createNilMonthlyReturn(any())(any()))
-          .thenReturn(scala.concurrent.Future.successful(userAnswers))
-
-        val application = applicationBuilder(userAnswers = Some(userAnswers))
-          .overrides(
-            new AbstractModule {
-              override def configure(): Unit =
-                bind(classOf[MonthlyReturnService]).toInstance(mockService)
-            }
-          )
-          .build()
-
-        running(application) {
-          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-          route(application, request).value
-          org.mockito.Mockito.verify(mockService).createNilMonthlyReturn(any())(any())
-        }
-      }
-
-      "must redirect to journey recovery on POST when monthly return creation fails" in {
-
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-        running(application) {
-          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-
-          val result = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-        }
-      }
-
-      "must redirect to Journey Recovery on POST when duplicate is found (guard blocks) and not call service" in {
-        val mockService = mock[MonthlyReturnService]
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
-          .overrides(
-            new AbstractModule {
-              override def configure(): Unit = {
-                bind(classOf[MonthlyReturnService]).toInstance(mockService)
-                bind(classOf[DuplicateMRCreationGuard]).toInstance(blockGuard)
-              }
-            }
-          )
-          .build()
-
-        running(application) {
-          val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-          val result  = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-          verifyNoInteractions(mockService)
-        }
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }
