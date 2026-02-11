@@ -18,7 +18,7 @@ package controllers
 
 import base.SpecBase
 import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
-import models.monthlyreturns.AddSubcontractorDetails
+import models.monthlyreturns.SelectedSubcontractor
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
@@ -44,11 +44,34 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
   val formProvider = new AddSubcontractorDetailsFormProvider()
   val form         = formProvider()
 
-  private val subcontractorsWithDetails: Seq[String] =
-    Seq("BuildRight Construction")
+  private val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
+    Seq(
+      SelectedSubcontractor(
+        id = 1L,
+        name = "BuildRight Construction",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+    )
 
-  private val subcontractorsWithoutDetails: Seq[String] =
-    Seq("Northern Trades Ltd", "TyneWear Ltd")
+  private val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
+    Seq(
+      SelectedSubcontractor(
+        id = 2L,
+        name = "Northern Trades Ltd",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      ),
+      SelectedSubcontractor(
+        id = 3L,
+        name = "TyneWear Ltd",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+    )
 
   "AddSubcontractorDetails Controller" - {
 
@@ -79,8 +102,9 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
+      val selectedId  = subcontractorsWithoutDetails.head.id.toString
       val userAnswers =
-        UserAnswers(userAnswersId).set(AddSubcontractorDetailsPage, AddSubcontractorDetails.values.head).success.value
+        UserAnswers(userAnswersId).set(AddSubcontractorDetailsPage, selectedId).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -93,7 +117,7 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(
-          form.fill(AddSubcontractorDetails.values.head),
+          form.fill(selectedId),
           NormalMode,
           subcontractorsWithDetails,
           subcontractorsWithoutDetails
@@ -121,7 +145,7 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
       running(application) {
         val request =
           FakeRequest(POST, addSubcontractorDetailsRoute)
-            .withFormUrlEncodedBody(("value", AddSubcontractorDetails.values.head.toString))
+            .withFormUrlEncodedBody(("value", subcontractorsWithoutDetails.head.id.toString))
 
         val result = route(application, request).value
 
@@ -179,7 +203,7 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
       running(application) {
         val request =
           FakeRequest(POST, addSubcontractorDetailsRoute)
-            .withFormUrlEncodedBody(("value", AddSubcontractorDetails.values.head.toString))
+            .withFormUrlEncodedBody(("value", subcontractorsWithoutDetails.head.id.toString))
 
         val result = route(application, request).value
 

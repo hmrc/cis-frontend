@@ -19,6 +19,7 @@ package views.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
 import models.NormalMode
+import models.monthlyreturns.SelectedSubcontractor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
@@ -48,11 +49,11 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
     "must render radio buttons with the correct values and labels" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.select("input[type=radio][value=option1]").size() mustBe 1
-      doc.select("input[type=radio][value=option2]").size() mustBe 1
+      doc.select("input[type=radio][value=\"2\"]").size() mustBe 1
+      doc.select("input[type=radio][value=\"3\"]").size() mustBe 1
 
-      doc.select("label[for=option1]").text() must include("Northern Trades Ltd")
-      doc.select("label[for=option2]").text() must include("TyneWear Ltd")
+      doc.select("label[for=subcontractor-2]").text() must include("Northern Trades Ltd")
+      doc.select("label[for=subcontractor-3]").text() must include("TyneWear Ltd")
     }
   }
 
@@ -67,11 +68,34 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    private val subcontractorsWithDetails: Seq[String] =
-      Seq("BuildRight Construction")
+    private val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
+      Seq(
+        SelectedSubcontractor(
+          id = 1L,
+          name = "BuildRight Construction",
+          totalPaymentsMade = None,
+          costOfMaterials = None,
+          totalTaxDeducted = None
+        )
+      )
 
-    private val subcontractorsWithoutDetails: Seq[String] =
-      Seq("Northern Trades Ltd", "TyneWear Ltd")
+    private val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
+      Seq(
+        SelectedSubcontractor(
+          id = 2L,
+          name = "Northern Trades Ltd",
+          totalPaymentsMade = None,
+          costOfMaterials = None,
+          totalTaxDeducted = None
+        ),
+        SelectedSubcontractor(
+          id = 3L,
+          name = "TyneWear Ltd",
+          totalPaymentsMade = None,
+          costOfMaterials = None,
+          totalTaxDeducted = None
+        )
+      )
 
     val html = view(form, NormalMode, subcontractorsWithDetails, subcontractorsWithoutDetails)
   }

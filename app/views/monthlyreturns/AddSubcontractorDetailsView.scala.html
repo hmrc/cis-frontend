@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import models.monthlyreturns.AddSubcontractorDetails
+@import models.monthlyreturns.SelectedSubcontractor
 @import play.twirl.api.Html
 
 @this(
@@ -28,7 +28,7 @@
     fieldSet: components.FieldSet
 )
 
-@(form: Form[_], mode: Mode, subcontractorsWithDetails: Seq[String], subcontractorsWithoutDetails: Seq[String])(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, subcontractorsWithDetails: Seq[SelectedSubcontractor], subcontractorsWithoutDetails: Seq[SelectedSubcontractor])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.addSubcontractorDetails.title"))) {
 
@@ -46,13 +46,13 @@
             @paragraph("monthlyreturns.addSubcontractorDetails.alreadyAdded")
 
             @bulletListWithLinks(
-                subcontractorsWithDetails.map(name => Html(name))
+                subcontractorsWithDetails.map(subcontractor => Html(subcontractor.name))
             )
 
             @govukRadios(
                 RadiosViewModel(
                     field  = form("value"),
-                    items  = AddSubcontractorDetails.optionsWithLabels(subcontractorsWithoutDetails),
+                    items  = SelectedSubcontractor.radioItems(subcontractorsWithoutDetails),
                     legend = Legend()
                 )
             )

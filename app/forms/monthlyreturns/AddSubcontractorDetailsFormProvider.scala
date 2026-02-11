@@ -19,13 +19,12 @@ package forms.monthlyreturns
 import javax.inject.Inject
 
 import forms.mappings.Mappings
-import models.monthlyreturns.AddSubcontractorDetails
 import play.api.data.Form
 
 class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[AddSubcontractorDetails] =
+  def apply(): Form[String] =
     Form(
-      "value" -> enumerable[AddSubcontractorDetails]("monthlyreturns.addSubcontractorDetails.error.required")
+      "value" -> text("monthlyreturns.addSubcontractorDetails.error.required")
     )
 }

@@ -20,6 +20,7 @@ import controllers.actions._
 import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
 import javax.inject.Inject
 import models.Mode
+import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
 import pages.monthlyreturns.AddSubcontractorDetailsPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -46,11 +47,34 @@ class AddSubcontractorDetailsController @Inject() (
 
   private val form = formProvider()
 
-  private val subcontractorsWithDetails: Seq[String] =
-    Seq("BuildRight Construction")
+  private val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
+    Seq(
+      SelectedSubcontractor(
+        id = 1L,
+        name = "BuildRight Construction",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+    )
 
-  private val subcontractorsWithoutDetails: Seq[String] =
-    Seq("Northern Trades Ltd", "TyneWear Ltd")
+  private val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
+    Seq(
+      SelectedSubcontractor(
+        id = 2L,
+        name = "Northern Trades Ltd",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      ),
+      SelectedSubcontractor(
+        id = 3L,
+        name = "TyneWear Ltd",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+    )
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     val preparedForm = request.userAnswers.get(AddSubcontractorDetailsPage) match {

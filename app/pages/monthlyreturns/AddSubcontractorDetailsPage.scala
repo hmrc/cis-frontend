@@ -16,11 +16,10 @@
 
 package pages.monthlyreturns
 
-import models.monthlyreturns.AddSubcontractorDetails
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object AddSubcontractorDetailsPage extends QuestionPage[AddSubcontractorDetails] {
+case object AddSubcontractorDetailsPage extends QuestionPage[String] {
 
   override def path: JsPath = JsPath \ toString
 

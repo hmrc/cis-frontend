@@ -18,7 +18,6 @@ package forms
 
 import forms.behaviours.OptionFieldBehaviours
 import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
-import models.monthlyreturns.AddSubcontractorDetails
 import play.api.data.FormError
 
 class AddSubcontractorDetailsFormProviderSpec extends OptionFieldBehaviours {
@@ -30,12 +29,11 @@ class AddSubcontractorDetailsFormProviderSpec extends OptionFieldBehaviours {
     val fieldName   = "value"
     val requiredKey = "monthlyreturns.addSubcontractorDetails.error.required"
 
-    behave like optionsField[AddSubcontractorDetails](
-      form,
-      fieldName,
-      validValues = AddSubcontractorDetails.values,
-      invalidError = FormError(fieldName, "error.invalid")
-    )
+    "bind a non-empty string value" in {
+      val result = form.bind(Map(fieldName -> "123")).apply(fieldName)
+      result.value.value mustBe "123"
+      result.errors mustBe empty
+    }
 
     behave like mandatoryField(
       form,
