@@ -20,7 +20,6 @@ import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.SubcontractorDetailsAddedPage
-import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -43,15 +42,13 @@ class SubcontractorDetailsAddedController @Inject() (
   view: SubcontractorDetailsAddedView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport
-    with Logging {
+    with I18nSupport {
 
   val form = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData) { implicit request =>
     val ua = request.userAnswers.getOrElse(seedUserAnswers(request.userId))
-    logger.info(s"UA json = ${ua.data}")
-    logger.info(s"builder = ${SubcontractorDetailsAddedBuilder.build(ua).isDefined}")
+    
     SubcontractorDetailsAddedBuilder.build(ua) match {
       case Some(viewModel) => Ok(view(form, mode, viewModel))
       case None            => Redirect(controllers.routes.SystemErrorController.onPageLoad())
@@ -80,11 +77,13 @@ class SubcontractorDetailsAddedController @Inject() (
                     Future.successful(BadRequest(view(withError, mode, viewModel)))
                   } else {
                     Future.successful(
+                      // Todo: wire up to correct next page once flow is finalised
                       Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
                     )
                   }
                 } else {
                   Future.successful(
+                    // Todo: wire up to correct next page once flow is finalised
                     Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
                   )
                 }

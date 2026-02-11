@@ -33,13 +33,14 @@ object SubcontractorDetailsAddedBuilder {
     0.until(size)
   }
 
-  private def detailsAdded(sub: JsObject): Boolean                      = {
+  private def detailsAdded(sub: JsObject): Boolean = {
     val hasPaymentsMade = (sub \ "totalPaymentsMade").toOption.isDefined
     val hasMaterials    = (sub \ "costOfMaterials").toOption.isDefined
     val hasTaxDeducted  = (sub \ "totalTaxDeducted").toOption.isDefined
 
     hasPaymentsMade && hasMaterials && hasTaxDeducted
   }
+  
   private def headingKeyAndArgs(addedCount: Int): (String, Seq[AnyRef]) =
     if (addedCount == 1) {
       ("monthlyreturns.subcontractorDetailsAdded.heading.single", Seq.empty)
@@ -64,7 +65,8 @@ object SubcontractorDetailsAddedBuilder {
         detailsAdded = added,
         changeCall =
           controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode), // index to be added
-        removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(CheckMode)
+        removeCall =
+          controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(CheckMode) // index to be added
       )
     }
 
@@ -86,7 +88,4 @@ object SubcontractorDetailsAddedBuilder {
       )
     }
   }
-
-  def allSelectedHaveDetails(ua: UserAnswers): Boolean =
-    subcontractorsArray(ua).forall(detailsAdded)
 }
