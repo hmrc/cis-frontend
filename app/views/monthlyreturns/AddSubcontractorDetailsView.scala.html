@@ -35,7 +35,9 @@
     @formHelper(action = controllers.monthlyreturns.routes.AddSubcontractorDetailsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractorsWithoutDetails.headOption.fold(Map.empty[String, String]) { first =>
+                Map("value" -> s"subcontractor-${first.id}")
+            }))
         }
         
         @fieldSet(

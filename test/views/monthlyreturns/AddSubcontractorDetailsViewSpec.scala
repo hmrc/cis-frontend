@@ -55,6 +55,15 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
       doc.select("label[for=subcontractor-2]").text() must include("Northern Trades Ltd")
       doc.select("label[for=subcontractor-3]").text() must include("TyneWear Ltd")
     }
+
+    "must render error summary with link to first radio button when form has errors" in new Setup {
+      val formWithErrors = form.bind(Map("value" -> ""))
+      val errorHtml      = view(formWithErrors, NormalMode, subcontractorsWithDetails, subcontractorsWithoutDetails)
+      val doc: Document  = Jsoup.parse(errorHtml.toString)
+
+      doc.select(".govuk-error-summary").size() mustBe 1
+      doc.select(".govuk-error-summary__list a").attr("href") mustBe "#subcontractor-2"
+    }
   }
 
   trait Setup {
@@ -68,7 +77,7 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    private val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
+    val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
       Seq(
         SelectedSubcontractor(
           id = 1L,
@@ -79,7 +88,7 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
         )
       )
 
-    private val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
+    val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
       Seq(
         SelectedSubcontractor(
           id = 2L,
