@@ -42,7 +42,9 @@ class PaymentDetailsConfirmationSummarySpec extends SpecBase with OptionValues {
           messages("monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include(messages("site.yes"))
-        result.actions.value.items.head.href mustBe routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url
+        result.actions.value.items.head.href mustBe routes.PaymentDetailsConfirmationController
+          .onPageLoad(CheckMode)
+          .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.paymentDetailsConfirmation.change.hidden"
         )
@@ -57,7 +59,9 @@ class PaymentDetailsConfirmationSummarySpec extends SpecBase with OptionValues {
           messages("monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include(messages("site.no"))
-        result.actions.value.items.head.href mustBe routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url
+        result.actions.value.items.head.href mustBe routes.PaymentDetailsConfirmationController
+          .onPageLoad(CheckMode)
+          .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.paymentDetailsConfirmation.change.hidden"
         )
