@@ -119,3 +119,5 @@ GET        /monthly-return/do-you-want-email-confirmation                       
 POST       /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/change-subcontractor                       controllers.monthlyreturns.ChangeSubcontractorDetailsController.onPageLoad()
