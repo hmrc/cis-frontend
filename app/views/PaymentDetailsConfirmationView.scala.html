@@ -36,12 +36,24 @@
         }
 
         @govukRadios(
-            RadiosViewModel.yesNo(
+            RadiosViewModel(
                 field = form("value"),
+                items = Seq(
+                    RadioItem(
+                        content = Text(messages("monthlyreturns.paymentDetailsConfirmation.yes")),
+                        value = Some("true"),
+                        id = Some("value_0")
+                        ),
+                    RadioItem(
+                        content = Text(messages("monthlyreturns.paymentDetailsConfirmation.no")),
+                        value = Some("false"),
+                        id = Some("value_1")
+                    )
+                ),
                 legend = LegendViewModel(messages("monthlyreturns.paymentDetailsConfirmation.heading")).asPageHeading(LegendSize.Large)
+                ).withHint(HintViewModel(content = Text(messages("monthlyreturns.paymentDetailsConfirmation.hint"))))
+                .withCssClass("govuk-radios")
             )
-            .withHint(HintViewModel(content = Text(messages("monthlyreturns.paymentDetailsConfirmation.hint"))))
-        )
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))
