@@ -68,6 +68,21 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .withBody(Json.toJson(payload))
       .execute[NilMonthlyReturnResponse]
 
+  def updateNilMonthlyReturn(
+    payload: NilMonthlyReturnRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns/nil/update")
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        if (response.status / 100 == 2) {
+          Future.unit
+        } else {
+          Future.failed(UpstreamErrorResponse(response.body, response.status, response.status))
+        }
+      }
+
   def createMonthlyReturn(
     payload: MonthlyReturnRequest
   )(implicit hc: HeaderCarrier): Future[Unit] =
