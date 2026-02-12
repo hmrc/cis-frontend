@@ -29,7 +29,7 @@ class PaymentDetailsConfirmationSummarySpec extends SpecBase with OptionValues {
 
   private implicit val messages: Messages = Helpers.stubMessages()
 
-  "ConfirmationByEmailSummary" - {
+  "PaymentDetailsConfirmationSummary" - {
 
     "when answer is present" - {
 
