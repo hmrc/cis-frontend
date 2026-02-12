@@ -17,31 +17,63 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import controllers.routes
+import models.monthlyreturns.SelectedSubcontractor
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
 
-  val subcontractorName = "TyneWear Ltd"
+  val subcontractorName             = "TyneWear Ltd"
+  val totalPaymentsToSubcontractors = 1200
+  val totalCostOfMaterials          = 500
+  val totalCisDeductions            = 240
+
+  val subcontractor = SelectedSubcontractor(
+    id = 1,
+    name = subcontractorName,
+    totalPaymentsMade = Some(totalPaymentsToSubcontractors),
+    costOfMaterials = Some(totalCostOfMaterials),
+    totalTaxDeducted = Some(totalCisDeductions)
+  )
+
+  val viewModel: CheckAnswersTotalPaymentsViewModel = CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
   "CheckAnswersTotalPayments Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val userAnswersWithSubcontractor =
+        emptyUserAnswers.set(SelectedSubcontractorPage(1), subcontractor).success.value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor)).build()
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad().url)
+          FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1).url)
 
         val result = route(application, request).value
 
         val view = application.injector.instanceOf[CheckAnswersTotalPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(subcontractorName)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(viewModel)(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to SystemError if subcontractor data is missing" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1).url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result) mustBe Some(controllers.routes.SystemErrorController.onPageLoad().url)
       }
     }
   }

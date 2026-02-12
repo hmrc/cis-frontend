@@ -14,6 +14,9 @@
  * limitations under the License.
  *@
 
+@import controllers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
+@import models.CheckMode
+
 @this(
     layout: templates.Layout,
     govukButton: GovukButton,
@@ -22,44 +25,44 @@
 
 )
 
-@(subcontractorName: String)(implicit request: Request[_], messages: Messages)
+@(subcontractor: CheckAnswersTotalPaymentsViewModel)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.checkAnswersTotalPayments.title", subcontractorName))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.checkAnswersTotalPayments.title", subcontractor.name))) {
 
-    @h1(messages("monthlyreturns.checkAnswersTotalPayments.heading", subcontractorName))
+    @h1(messages("monthlyreturns.checkAnswersTotalPayments.heading", subcontractor.name))
 
     @govukSummaryList(
         SummaryListViewModel(Seq(
 
             SummaryListRowViewModel(
                 key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))),
-                value = ValueViewModel(Text("£1200")), //TODO: ADD DYNAMIC AMOUNT
+                value = ValueViewModel(Text(subcontractor.totalPaymentsMade)),
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = "#"
+                        href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
                 )
             ),
 
             SummaryListRowViewModel(
                 key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))),
-                value = ValueViewModel(Text("£500")), //TODO: ADD DYNAMIC AMOUNT
+                value = ValueViewModel(Text(subcontractor.costOfMaterials)),
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = "#"
+                        href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))
                 )
             ),
 
             SummaryListRowViewModel(
                 key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))),
-                value = ValueViewModel(Text("£240")), //TODO: ADD DYNAMIC AMOUNT
+                value = ValueViewModel(Text(subcontractor.totalTaxDeducted)),
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = "#"
+                        href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))
                 )
             )

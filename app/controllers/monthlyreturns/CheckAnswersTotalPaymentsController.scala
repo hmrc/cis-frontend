@@ -17,6 +17,8 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.monthlyreturns.SelectedSubcontractor
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -34,9 +36,30 @@ class CheckAnswersTotalPaymentsController @Inject() (
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val subcontractorName = "TyneWear Ltd"
-
-    Ok(view(subcontractorName))
+  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+      case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+      case Some(subcontractor) =>
+        Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)))
+    }
   }
+}
+
+case class CheckAnswersTotalPaymentsViewModel(
+  id: Long,
+  name: String,
+  totalPaymentsMade: String,
+  costOfMaterials: String,
+  totalTaxDeducted: String
+)
+
+object CheckAnswersTotalPaymentsViewModel {
+  def fromModel(subcontractor: SelectedSubcontractor): CheckAnswersTotalPaymentsViewModel =
+    CheckAnswersTotalPaymentsViewModel(
+      subcontractor.id,
+      subcontractor.name,
+      subcontractor.totalPaymentsMade.map(_.toString).getOrElse(""),
+      subcontractor.costOfMaterials.map(_.toString).getOrElse(""),
+      subcontractor.totalTaxDeducted.map(_.toString).getOrElse("")
+    )
 }

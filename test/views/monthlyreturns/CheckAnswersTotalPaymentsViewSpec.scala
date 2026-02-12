@@ -17,6 +17,8 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import controllers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
+import models.monthlyreturns.SelectedSubcontractor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
@@ -31,28 +33,28 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
   "CheckAnswersTotalPaymentsView" - {
 
     "must render the correct content on the page" in new Setup {
-      val html: HtmlFormat.Appendable = view(subcontractorName)
+      val html: HtmlFormat.Appendable = view(viewModel)
       val doc: Document               = Jsoup.parse(html.body)
 
-      doc.title             must include(messages("monthlyreturns.checkAnswersTotalPayments.title", subcontractorName))
+      doc.title             must include(messages("monthlyreturns.checkAnswersTotalPayments.title", viewModel.name))
       doc.select("h1").text must include(
-        messages("monthlyreturns.checkAnswersTotalPayments.heading", subcontractorName)
+        messages("monthlyreturns.checkAnswersTotalPayments.heading", viewModel.name)
       )
 
       doc.select("dt").text must include(
         messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors")
       )
-      doc.select("dd").text must include(messages(totalPaymentsToSubcontractors))
+      doc.select("dd").text must include(messages(viewModel.totalPaymentsMade))
 
       doc.select("dt").text must include(
         messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials")
       )
-      doc.select("dd").text must include(messages(totalCostOfMaterials))
+      doc.select("dd").text must include(messages(viewModel.costOfMaterials))
 
       doc.select("dt").text must include(
         messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions")
       )
-      doc.select("dd").text must include(messages(totalCisDeductions))
+      doc.select("dd").text must include(messages(viewModel.totalTaxDeducted))
 
       val changeLinks: Elements = doc.select(".govuk-summary-list__actions a.govuk-link")
       changeLinks.size() mustBe 3
@@ -83,8 +85,18 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
     )
 
     val subcontractorName             = "TyneWear Ltd"
-    val totalPaymentsToSubcontractors = "£1200"
-    val totalCostOfMaterials          = "£500"
-    val totalCisDeductions            = "£240"
+    val totalPaymentsToSubcontractors = 1200
+    val totalCostOfMaterials          = 500
+    val totalCisDeductions            = 240
+
+    val subcontractor = SelectedSubcontractor(
+      id = 1,
+      name = subcontractorName,
+      totalPaymentsMade = Some(totalPaymentsToSubcontractors),
+      costOfMaterials = Some(totalCostOfMaterials),
+      totalTaxDeducted = Some(totalCisDeductions)
+    )
+
+    val viewModel: CheckAnswersTotalPaymentsViewModel = CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)
   }
 }

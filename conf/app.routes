@@ -120,4 +120,4 @@ POST       /monthly-return/do-you-want-email-confirmation                       
 GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/check-answers-total-payments    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad()
+GET        /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)
