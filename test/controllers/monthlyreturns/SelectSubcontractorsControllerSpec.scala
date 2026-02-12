@@ -182,6 +182,20 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
         }
       }
+
+      "redirects to JourneyRecovery when user answers exist but required pages are missing" in {
+        val service = mock[SubcontractorService]
+        val app     = applicationWith(service, ua = Some(emptyUserAnswers))
+
+        running(app) {
+          val request =
+            FakeRequest(GET, controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url)
+
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
     }
 
     "onSubmit" - {
@@ -300,6 +314,21 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
               .withFormUrlEncodedBody("confirmation" -> "true")
+
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "redirects to JourneyRecovery when user answers exist but required pages are missing" in {
+        val service = mock[SubcontractorService]
+        val app     = applicationWith(service, ua = Some(emptyUserAnswers))
+
+        running(app) {
+          val request =
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
