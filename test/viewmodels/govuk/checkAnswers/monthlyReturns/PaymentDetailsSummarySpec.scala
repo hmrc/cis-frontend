@@ -24,6 +24,7 @@ import org.scalatest.TryValues.convertTryToSuccessOrFailure
 import pages.monthlyreturns.SelectedSubcontractorPaymentsMadePage
 import play.api.i18n.Messages
 import play.api.test.Helpers
+import viewmodels.checkAnswers.monthlyreturns.PaymentDetailsSummary
 
 class PaymentDetailsSummarySpec extends AnyFreeSpec with Matchers with OptionValues {
 

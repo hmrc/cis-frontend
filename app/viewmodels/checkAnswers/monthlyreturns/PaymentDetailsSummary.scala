@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
-import utils.CurrencyFormatter.currencyFormat
 import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.SelectedSubcontractorPaymentsMadePage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
+import utils.CurrencyFormatter.currencyFormat
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
