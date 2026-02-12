@@ -29,7 +29,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.PaymentDetailsConfirmationView
+import views.html.monthlyreturns.PaymentDetailsConfirmationView
 
 import scala.concurrent.Future
 

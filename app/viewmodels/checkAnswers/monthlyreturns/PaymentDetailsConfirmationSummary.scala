@@ -35,7 +35,10 @@ object PaymentDetailsConfirmationSummary {
         key = "monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.paymentDetailsConfirmation.change.hidden"))
         )
       )
