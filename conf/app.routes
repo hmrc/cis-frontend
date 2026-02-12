@@ -15,6 +15,9 @@ GET         /there-is-a-problem                          controllers.JourneyReco
 GET        /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
 POST       /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
+GET        /monthly-return/subcontractor-check-your-answers            controllers.monthlyreturns.SubcontractorCheckYourAnswersController.onPageLoad()
+POST       /monthly-return/subcontractor-check-your-answers            controllers.monthlyreturns.SubcontractorCheckYourAnswersController.onSubmit()
+
 GET         /account/sign-out-survey                     controllers.auth.AuthController.signOut()
 GET         /account/sign-out                            controllers.auth.AuthController.signOutNoSurvey()
 GET         /account/signed-out                          controllers.auth.SignedOutController.onPageLoad()

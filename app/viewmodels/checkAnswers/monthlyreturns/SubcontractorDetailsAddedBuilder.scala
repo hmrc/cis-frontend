@@ -17,21 +17,27 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.{JsObject, Json}
 
 object SubcontractorDetailsAddedBuilder {
 
-  private def subcontractorsArray(ua: UserAnswers): Vector[JsObject] =
-    (ua.data \ "subcontractors")
-      .asOpt[JsArray]
-      .map(_.value.toVector.collect { case obj: JsObject => obj })
-      .getOrElse(Vector.empty)
+  private def subcontractorsObject(ua: UserAnswers): JsObject =
+    (ua.data \ "subcontractors").asOpt[JsObject].getOrElse(Json.obj())
 
-  private def selectedIndexes(ua: UserAnswers): Seq[Int] = {
-    val size =
-      (ua.data \ "subcontractors").asOpt[JsArray].map(_.value.size).getOrElse(0)
-    0.until(size)
-  }
+  private def selectedIndexes(ua: UserAnswers): Seq[Int] =
+    subcontractorsObject(ua).keys.flatMap(_.toIntOption).filter(_ > 0).toSeq.sorted
+
+  private def subcontractorAt(ua: UserAnswers, index: Int): Option[JsObject] =
+    subcontractorsObject(ua).value.get(index.toString).collect { case o: JsObject => o }
+
+  private def subcontractorId(sub: JsObject): Long =
+    (sub \ "subcontractorId").toOption
+      .flatMap(_.asOpt[Long])
+      .orElse((sub \ "id").toOption.flatMap(_.asOpt[Long]))
+      .getOrElse(0L)
+
+  private def subcontractorName(sub: JsObject): String =
+    (sub \ "name").toOption.flatMap(_.asOpt[String]).getOrElse("")
 
   private def detailsAdded(sub: JsObject): Boolean = {
     val hasPaymentsMade = (sub \ "totalPaymentsMade").toOption.isDefined
@@ -40,7 +46,7 @@ object SubcontractorDetailsAddedBuilder {
 
     hasPaymentsMade && hasMaterials && hasTaxDeducted
   }
-  
+
   private def headingKeyAndArgs(addedCount: Int): (String, Seq[AnyRef]) =
     if (addedCount == 1) {
       ("monthlyreturns.subcontractorDetailsAdded.heading.single", Seq.empty)
@@ -49,43 +55,50 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
-    val subs = subcontractorsArray(ua)
 
-    val rows = selectedIndexes(ua).map { index =>
+    val indexes = selectedIndexes(ua)
 
-      val sub   = subs(index)
-      val id    = (sub \ "subcontractorId").asOpt[Long].getOrElse(0L)
-      val name  = (sub \ "name").asOpt[String].getOrElse("")
-      val added = detailsAdded(sub)
-
-      SubcontractorDetailsAddedRow(
-        index = index,
-        subcontractorId = id,
-        name = name,
-        detailsAdded = added,
-        changeCall =
-          controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode), // index to be added
-        removeCall =
-          controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(CheckMode) // index to be added
-      )
-    }
-
-    val hasIncomplete = rows.exists(!_.detailsAdded)
-    val rowsToDisplay = rows.filter(_.detailsAdded)
-    val addedCount    = rowsToDisplay.size
-
-    if (addedCount == 0) {
+    if (indexes.isEmpty) {
       None
     } else {
-      val (key, args) = headingKeyAndArgs(addedCount)
-      Some(
-        SubcontractorDetailsAddedViewModel(
-          headingKey = key,
-          headingArgs = args,
-          rows = rowsToDisplay,
-          hasIncomplete = hasIncomplete
+      val rows: Seq[SubcontractorDetailsAddedRow] =
+        indexes.flatMap { index =>
+          subcontractorAt(ua, index).map { sub =>
+
+            val id    = subcontractorId(sub)
+            val name  = subcontractorName(sub)
+            val added = detailsAdded(sub)
+
+            SubcontractorDetailsAddedRow(
+              index = index,
+              subcontractorId = id,
+              name = name,
+              detailsAdded = added,
+              changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
+                .onPageLoad(CheckMode, index),
+              removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+                .onPageLoad(CheckMode) // index to be added
+            )
+          }
+        }
+
+      val hasIncomplete = rows.exists(!_.detailsAdded)
+      val rowsToDisplay = rows.filter(_.detailsAdded)
+      val addedCount    = rowsToDisplay.size
+
+      if (addedCount == 0) {
+        None
+      } else {
+        val (key, args) = headingKeyAndArgs(addedCount)
+        Some(
+          SubcontractorDetailsAddedViewModel(
+            headingKey = key,
+            headingArgs = args,
+            rows = rowsToDisplay,
+            hasIncomplete = hasIncomplete
+          )
         )
-      )
+      }
     }
   }
 }
