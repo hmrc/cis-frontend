@@ -39,7 +39,7 @@ import views.html.monthlyreturns.DateConfirmPaymentsView
 import java.time.{LocalDate, ZoneOffset}
 import scala.concurrent.Future
 
-class   DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
+class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   private implicit val messages: Messages = stubMessages()
 
