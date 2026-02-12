@@ -443,5 +443,5 @@ monthlyreturns.paymentDetailsConfirmation.hint = By confirming, you are declarin
 monthlyreturns.paymentDetailsConfirmation.yes = Yes, the information is correct and complete
 monthlyreturns.paymentDetailsConfirmation.no = No, I need to make changes
 monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = paymentDetailsConfirmation
-monthlyreturns.paymentDetailsConfirmation.error.required = Select 'Yes' to confirm the information you have provided is correct. Select 'No' if you need to make changes.
+monthlyreturns.paymentDetailsConfirmation.error.required = Select ‘Yes’ to confirm the information you have provided is correct. Select ‘No’ if you need to make changes.
 monthlyreturns.paymentDetailsConfirmation.change.hidden = PaymentDetailsConfirmation
