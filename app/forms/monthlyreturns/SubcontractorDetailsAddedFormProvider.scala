@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package forms.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import forms.mappings.Mappings
+import play.api.data.Form
 
-case object TotalTaxDeductedPage extends QuestionPage[BigDecimal] {
+import javax.inject.Inject
 
-  override def path: JsPath = JsPath \ toString
+class SubcontractorDetailsAddedFormProvider @Inject() extends Mappings {
 
-  override def toString: String = "totalTaxDeducted"
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("monthlyreturns.subcontractorDetailsAdded.error.required")
+    )
 }

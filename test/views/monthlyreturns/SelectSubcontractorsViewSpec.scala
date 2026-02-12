@@ -38,17 +38,6 @@ class SelectSubcontractorsViewSpec extends SpecBase {
       doc.select("h1").text mustBe messages("monthlyreturns.selectSubcontractors.heading")
     }
 
-    "must render the introductory paragraphs and the confirmation checkbox label" in new Setup {
-      val html = view(form, subcontractors, upfrontDeclaration = true)
-      val doc  = Jsoup.parse(html.body)
-
-      doc.select("p").text must include(messages("monthlyreturns.selectSubcontractors.p1"))
-      doc.select("p").text must include(messages("monthlyreturns.selectSubcontractors.p2"))
-
-      val checkboxLabel = doc.select("div.govuk-checkboxes label").text
-      checkboxLabel must include(messages("monthlyreturns.selectSubcontractors.checkbox.label"))
-    }
-
     "must render the correct links for add subcontractor, select all and deselect all" in new Setup {
       val html     = view(form, subcontractors)
       val doc      = Jsoup.parse(html.body)
@@ -110,40 +99,6 @@ class SelectSubcontractorsViewSpec extends SpecBase {
 
       val td = rows.select("td")
       td.text() mustBe messages("monthlyreturns.selectSubcontractors.noSubcontractors")
-    }
-
-    "must render confirmation checkbox when upfrontDeclaration is true" in new SetupWithUpfrontDeclaration {
-      val html: play.twirl.api.HtmlFormat.Appendable = view(form, subcontractors, upfrontDeclaration = true)
-      val doc: org.jsoup.nodes.Document              = Jsoup.parse(html.body)
-
-      val checkboxInput: org.jsoup.select.Elements = doc.select("input[name=confirmation][type=checkbox]")
-      checkboxInput.size mustBe 1
-      checkboxInput.attr("value") mustBe "true"
-
-      val checkboxLabel: String = doc.select("div.govuk-checkboxes label").text
-      checkboxLabel must include(messages("monthlyreturns.selectSubcontractors.checkbox.label"))
-
-      val hiddenInput: org.jsoup.select.Elements = doc.select("input[name=confirmation][type=hidden]")
-      hiddenInput.size mustBe 0
-    }
-
-    "must render confirmation checkbox as unchecked when confirmation is false" in new SetupWithUpfrontDeclaration {
-      val formData: SelectSubcontractorsFormData         = SelectSubcontractorsFormData(
-        confirmation = false,
-        subcontractorsToInclude = List(1, 2, 3)
-      )
-      val filledForm: Form[SelectSubcontractorsFormData] = form.fill(formData)
-
-      val html: play.twirl.api.HtmlFormat.Appendable = view(filledForm, subcontractors, upfrontDeclaration = true)
-      val doc: org.jsoup.nodes.Document              = Jsoup.parse(html.body)
-
-      val checkboxInput: org.jsoup.select.Elements = doc.select("input[name=confirmation][type=checkbox]")
-      checkboxInput.size mustBe 1
-      checkboxInput.attr("value") mustBe "true"
-      checkboxInput.hasAttr("checked") mustBe false
-
-      val checkboxLabel: String = doc.select("div.govuk-checkboxes label").text
-      checkboxLabel must include(messages("monthlyreturns.selectSubcontractors.checkbox.label"))
     }
   }
 

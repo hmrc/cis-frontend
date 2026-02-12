@@ -365,16 +365,6 @@ verifySubcontractors.checkYourAnswersLabel = You have unverified subcontractors
 verifySubcontractors.error.required = Select yes if you want to verify your subcontractors now
 verifySubcontractors.change.hidden = VerifySubcontractors
 
-monthlyreturns.subcontractorsPaidThisMonth.title = Subcontractors you paid this month
-monthlyreturns.subcontractorsPaidThisMonth.heading = Subcontractors you paid this month
-monthlyreturns.subcontractorsPaidThisMonth.p1 = The {0} subcontractors you added to this monthly return are listed below.
-monthlyreturns.subcontractorsPaidThisMonth.p2 = Select ‘Add details’ to add payment details for each subcontractor.
-monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Add details
-monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = Remove
-monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden = for {0}
-monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden = {0} from this return
-monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add another subcontractor
-
 paymentDetails.title = Total payments made to {0}
 paymentDetails.heading = Total payments made to {0}
 paymentDetails.hint = The gross amount paid before any deductions, excluding VAT. Enter pounds and pence, like £300.00, £450.00, £1,200.00
@@ -436,3 +426,12 @@ monthlyreturns.confirmationByEmail.p = You can use the email we have on file or 
 monthlyreturns.confirmationByEmail.yes = Yes
 monthlyreturns.confirmationByEmail.no = No
 monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
+
+monthlyreturns.subcontractorDetailsAdded.error.required = Select ''Yes'' to submit your return. Select ''No'' to add payment details for more subcontractors.
+monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors
+monthlyreturns.subcontractorDetailsAdded.heading.single = You have added details for a single subcontractor
+monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added details for {0} subcontractors
+monthlyreturns.subcontractorDetailsAdded.question = Have you added all the subcontractors you are submitting returns for?
+monthlyreturns.subcontractorDetailsAdded.hint = Select ''Yes'' to submit your return, and ''No'' if you need to add more.
+monthlyreturns.subcontractorDetailsAdded.change.hidden = Change {0}
+monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list

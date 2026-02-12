@@ -75,6 +75,17 @@ class H1Spec extends SpecBase with Matchers {
       heading.size mustBe 1
       heading.text mustBe ""
     }
+
+    "must render the heading text with message args when provided" in new Setup {
+      val key  = "monthlyreturns.subcontractorDetailsAdded.heading.multiple"
+      val args = Seq(3)
+
+      val html    = h1(key, args = args)
+      val heading = getHeadingElement(html)
+
+      heading.size mustBe 1
+      heading.text mustBe messages(key, 3)
+    }
   }
 
   trait Setup {

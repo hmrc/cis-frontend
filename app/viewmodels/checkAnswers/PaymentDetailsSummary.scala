@@ -19,21 +19,21 @@ package viewmodels.checkAnswers
 import utils.CurrencyFormatter.currencyFormat
 import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
-import pages.PaymentDetailsPage
+import pages.monthlyreturns.SelectedSubcontractorPaymentsMadePage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import viewmodels.govuk.summarylist._
-import viewmodels.implicits._
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
 object PaymentDetailsSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(PaymentDetailsPage).map { answer =>
+  def row(answers: UserAnswers, index: Int)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(SelectedSubcontractorPaymentsMadePage(index)).map { answer =>
       SummaryListRowViewModel(
         key = "paymentDetails.checkYourAnswersLabel",
         value = ValueViewModel(currencyFormat(answer)),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.PaymentDetailsController.onPageLoad(CheckMode).url)
+          ActionItemViewModel("site.change", routes.PaymentDetailsController.onPageLoad(CheckMode, index).url)
             .withVisuallyHiddenText(messages("paymentDetails.change.hidden"))
         )
       )

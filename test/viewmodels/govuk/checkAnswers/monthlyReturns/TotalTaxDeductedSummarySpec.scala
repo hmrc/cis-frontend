@@ -21,7 +21,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.TryValues.convertTryToSuccessOrFailure
-import pages.monthlyreturns.TotalTaxDeductedPage
+import pages.monthlyreturns.SelectedSubcontractorTaxDeductedPage
 import play.api.i18n.Messages
 import play.api.test.Helpers
 
@@ -35,11 +35,11 @@ class TotalTaxDeductedSummarySpec extends AnyFreeSpec with Matchers with OptionV
 
       "must return Some(SummaryListRow) when TotalTaxDeductedPage is answered" in {
         val userAnswers = UserAnswers("id")
-          .set(TotalTaxDeductedPage, BigDecimal(1234.56))
+          .set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal(1234.56))
           .success
           .value
 
-        val result = TotalTaxDeductedSummary.row(userAnswers).value
+        val result = TotalTaxDeductedSummary.row(userAnswers, 1).value
 
         result.key.content.asHtml.toString   must include("monthlyreturns.totalTaxDeducted.checkYourAnswersLabel")
         result.value.content.asHtml.toString must include("1234.56")
@@ -48,30 +48,30 @@ class TotalTaxDeductedSummarySpec extends AnyFreeSpec with Matchers with OptionV
 
       "must return None when TotalTaxDeductedPage is not answered" in {
         val userAnswers = UserAnswers("id")
-        val result      = TotalTaxDeductedSummary.row(userAnswers)
+        val result      = TotalTaxDeductedSummary.row(userAnswers, 1)
 
         result mustBe None
       }
 
       "must include the correct change action URL" in {
         val userAnswers = UserAnswers("id")
-          .set(TotalTaxDeductedPage, BigDecimal(1234.56))
+          .set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal(1234.56))
           .success
           .value
 
-        val result = TotalTaxDeductedSummary.row(userAnswers).value
+        val result = TotalTaxDeductedSummary.row(userAnswers, 1).value
         val action = result.actions.value.items.head
 
-        action.href mustEqual controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
+        action.href mustEqual controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, 1).url
       }
 
       "must include visually hidden text in the change link" in {
         val userAnswers = UserAnswers("id")
-          .set(TotalTaxDeductedPage, BigDecimal(9999.99))
+          .set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal(9999.99))
           .success
           .value
 
-        val result = TotalTaxDeductedSummary.row(userAnswers).value
+        val result = TotalTaxDeductedSummary.row(userAnswers, 1).value
         val action = result.actions.value.items.head
 
         action.visuallyHiddenText.value mustEqual messages("monthlyreturns.totalTaxDeducted.change.hidden")
@@ -86,11 +86,11 @@ class TotalTaxDeductedSummarySpec extends AnyFreeSpec with Matchers with OptionV
 
         testCases.foreach { case (input, expectedOutput) =>
           val userAnswers = UserAnswers("id")
-            .set(TotalTaxDeductedPage, input)
+            .set(SelectedSubcontractorTaxDeductedPage(1), input)
             .success
             .value
 
-          val result = TotalTaxDeductedSummary.row(userAnswers).value
+          val result = TotalTaxDeductedSummary.row(userAnswers, 1).value
 
           result.value.content.asHtml.toString must include(expectedOutput)
         }

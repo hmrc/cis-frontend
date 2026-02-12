@@ -20,8 +20,11 @@
 
 @(
   msg: String,
+  args: Seq[Any] = Nil,
   classes: String = "govuk-heading-l",
   id: Option[String] = None
 )(implicit messages: Messages)
 
-<h1 @{id.fold(emptyString)(id => s"id=$id")} class="@classes">@messages(msg)</h1>
+<h1 @{id.fold(emptyString)(id => s"id=$id")} class="@classes">
+  @messages(msg, args:_*)
+</h1>

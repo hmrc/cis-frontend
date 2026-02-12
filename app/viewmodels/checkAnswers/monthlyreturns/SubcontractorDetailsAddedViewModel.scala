@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package viewmodels.checkAnswers.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import play.api.mvc.Call
 
-case object CostOfMaterialsPage extends QuestionPage[BigDecimal] {
+case class SubcontractorDetailsAddedRow(
+  index: Int,
+  subcontractorId: Long,
+  name: String,
+  detailsAdded: Boolean,
+  changeCall: Call,
+  removeCall: Call
+)
 
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "costOfMaterials"
+case class SubcontractorDetailsAddedViewModel(
+  headingKey: String,
+  headingArgs: Seq[AnyRef],
+  rows: Seq[SubcontractorDetailsAddedRow],
+  hasIncomplete: Boolean
+) {
+  def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
 }

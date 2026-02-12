@@ -17,27 +17,35 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.NormalMode
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.SubcontractorsPaidThisMonthView
+import views.html.monthlyreturns.DummyCheckYourAnswersView
 
 import javax.inject.Inject
+import scala.concurrent.Future
 
-class SubcontractorsPaidThisMonthController @Inject() (
+class SubcontractorCheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: SubcontractorsPaidThisMonthView
+  view: DummyCheckYourAnswersView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val schemeRef                           = "Scheme 123, Ref 123/AB456"
-    val periodEnding                        = "Period ending 5 January 2026"
-    val selectedSubcontractors: Seq[String] = Seq("BuildRight Construction", "Northern Trades Ltd", "TyneWear Ltd")
-    Ok(view(schemeRef, periodEnding, selectedSubcontractors))
-  }
+  def onPageLoad(): Action[AnyContent] =
+    (identify andThen getData andThen requireData) { implicit request =>
+      Ok(view())
+    }
+
+  def onSubmit(): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
+      Future.successful(
+        Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+      )
+    }
+
 }

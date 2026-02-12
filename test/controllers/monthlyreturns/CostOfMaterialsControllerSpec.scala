@@ -19,12 +19,13 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.CostOfMaterialsFormProvider
-import models.{NormalMode, UserAnswers}
+import models.monthlyreturns.SelectedSubcontractor
+import models.NormalMode
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.CostOfMaterialsPage
+import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -44,41 +45,50 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
   val validAnswer = 0
   val companyName = "TyneWear Ltd"
 
-  lazy val costOfMaterialsRoute = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode).url
+  val userAnswers = emptyUserAnswers
+    .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
+    .success
+    .value
+
+  lazy val costOfMaterialsRoute =
+    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1).url
 
   "CostOfMaterials Controller" - {
 
     "must return OK and the correct view for a GET" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, costOfMaterialsRoute)
-
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[CostOfMaterialsView]
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName)(request, messages(application)).toString
-      }
-    }
-
-    "must populate the view correctly on a GET when the question has previously been answered" in {
-
-      val userAnswers = UserAnswers(userAnswersId).set(CostOfMaterialsPage, validAnswer).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, costOfMaterialsRoute)
 
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[CostOfMaterialsView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must populate the view correctly on a GET when the question has previously been answered" in {
+
+      val updatedAnswers = userAnswers.set(SelectedSubcontractorMaterialCostsPage(1), validAnswer).success.value
+
+      val application = applicationBuilder(userAnswers = Some(updatedAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, costOfMaterialsRoute)
+
         val view = application.injector.instanceOf[CostOfMaterialsView]
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1)(
           request,
           messages(application)
         ).toString
@@ -92,7 +102,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -113,7 +123,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request =
@@ -127,7 +137,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1)(
           request,
           messages(application)
         ).toString
@@ -137,6 +147,20 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
     "must redirect to Journey Recovery for a GET if no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
+
+      running(application) {
+        val request = FakeRequest(GET, costOfMaterialsRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET if no subcontractor is found for the index" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, costOfMaterialsRoute)
@@ -161,6 +185,22 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
 
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST if no subcontractor is found for the index" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, costOfMaterialsRoute)
+            .withFormUrlEncodedBody(("value", validAnswer.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
