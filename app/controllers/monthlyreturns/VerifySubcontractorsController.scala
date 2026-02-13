@@ -66,7 +66,10 @@ class VerifySubcontractorsController @Inject() (
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage, value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, updatedAnswers))
+            } yield value match {
+              case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
+            }
         )
   }
 }

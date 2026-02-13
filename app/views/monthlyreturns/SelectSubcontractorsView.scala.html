@@ -35,7 +35,7 @@
     formHelper: FormWithCSRF
 )
 
-@(form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel], upfrontDeclaration: Boolean = false)(implicit request: Request[_], messages: Messages)
+@(form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel])(implicit request: Request[_], messages: Messages)
 
 @layout(
     pageTitle = title(form, messages("monthlyreturns.selectSubcontractors.title"))
@@ -48,24 +48,6 @@
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))
-        }
-
-        @if(subcontractors.length > 0 && upfrontDeclaration) {
-            @govukCheckboxes(
-                Checkboxes(
-                    name = "confirmation",
-                    items = Seq(
-                        CheckboxItem(
-                            name = Some("confirmation"),
-                            content = Text(messages("monthlyreturns.selectSubcontractors.checkbox.label")),
-                            value = "true",
-                            checked = form("confirmation").value.contains("true")
-                        )
-                    )
-                )
-            )
-        } else {
-            <input type="hidden" name="confirmation" value="true" />
         }
 
         @link(

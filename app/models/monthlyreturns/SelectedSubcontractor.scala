@@ -24,9 +24,9 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 case class SelectedSubcontractor(
   id: Long,
   name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
+  totalPaymentsMade: Option[BigDecimal],
+  costOfMaterials: Option[BigDecimal],
+  totalTaxDeducted: Option[BigDecimal]
 )
 
 object SelectedSubcontractor {
