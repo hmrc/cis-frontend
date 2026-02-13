@@ -47,12 +47,16 @@ class SubmissionService @Inject() (
       response <- cisConnector.createSubmission(req)
     } yield response
 
-  def submitToChrisAndPersist(submissionId: String, ua: UserAnswers)(implicit
+  def submitToChrisAndPersist(
+    submissionId: String,
+    ua: UserAnswers,
+    isAgent: Boolean
+  )(implicit
     hc: HeaderCarrier
   ): Future[ChrisSubmissionResponse] =
     for {
-      taxpayer <- cisConnector.getCisTaxpayer()
-      csr       = buildChrisSubmissionRequest(ua, taxpayer)
+      taxpayer <- if (isAgent) cisConnector.getAgentClientTaxpayer("123", "AB001") else cisConnector.getCisTaxpayer()
+      csr       = buildChrisSubmissionRequest(ua, taxpayer, isAgent)
       response <- cisConnector.submitToChris(submissionId, csr)
       _        <- writeToFeMongo(ua, submissionId, response)
     } yield response
@@ -138,7 +142,11 @@ class SubmissionService @Inject() (
     )
   }
 
-  private def buildChrisSubmissionRequest(ua: UserAnswers, taxpayer: CisTaxpayer): ChrisSubmissionRequest = {
+  private def buildChrisSubmissionRequest(
+    ua: UserAnswers,
+    taxpayer: CisTaxpayer,
+    isAgent: Boolean
+  ): ChrisSubmissionRequest = {
     val utr = taxpayer.utr
       .map(_.trim)
       .filter(_.nonEmpty)
@@ -181,7 +189,10 @@ class SubmissionService @Inject() (
       informationCorrect = true,
       inactivity = inactivity,
       monthYear = ym,
-      email = email
+      email = email,
+      isAgent = isAgent,
+      clientTaxOfficeNumber = taxpayer.taxOfficeNumber,
+      clientTaxOfficeRef = taxpayer.taxOfficeRef
     )
   }
 

@@ -82,7 +82,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     when(service.create(any[UserAnswers])(using any[HeaderCarrier]))
       .thenReturn(Future.successful(created))
 
-    when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers])(using any[HeaderCarrier]))
+    when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers], any[Boolean])(using any[HeaderCarrier]))
       .thenReturn(Future.successful(submitted))
 
     when(sessionDb.set(any[UserAnswers]))
@@ -154,7 +154,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe systemErrorRoute
 
       verifyNoInteractions(mockMongoDb)
-      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers])(any[HeaderCarrier])
+      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean])(
+        any[HeaderCarrier]
+      )
       verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
     }
 

@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.{DataRetrievalAction, IdentifierAction}
 import models.UserAnswers
+import models.agent.AgentClientData
 import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -46,9 +47,7 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData).async { implicit request =>
 
-    val instanceIdOpt         = request.getQueryString("instanceId")
-    val taxOfficeNumberOpt    = request.getQueryString("taxOfficeNumber")
-    val taxOfficeReferenceOpt = request.getQueryString("taxOfficeReference")
+    val instanceIdOpt = request.getQueryString("instanceId")
 
     def storeInstanceId(instanceId: String): Future[Result] = {
       val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
@@ -60,16 +59,16 @@ class FileYourMonthlyCisReturnController @Inject() (
 
     (request.isAgent, instanceIdOpt) match {
       case (true, Some(instanceId)) =>
-        (taxOfficeNumberOpt, taxOfficeReferenceOpt) match {
-          case (Some(taxOfficeNumber), Some(taxOfficeReference)) =>
+        monthlyReturnService.getAgentClient(request.userId).flatMap {
+          case Some(data) =>
             monthlyReturnService
-              .hasClient(taxOfficeNumber, taxOfficeReference)
+              .hasClient(data.taxOfficeNumber, data.taxOfficeReference)
               .flatMap {
                 case true  => storeInstanceId(instanceId)
                 case false =>
                   logger.warn(
                     s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-                      s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
+                      s"taxOfficeNumber: $data.taxOfficeNumber, taxOfficeReference: $data.taxOfficeReference"
                   )
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
               }
@@ -77,9 +76,10 @@ class FileYourMonthlyCisReturnController @Inject() (
                 logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
               }
-          case _                                                 =>
+
+          case _ =>
             logger.warn(
-              s"[FileYourMonthlyCisReturnController] Missing taxOfficeNumber or taxOfficeReference for agent request"
+              s"[FileYourMonthlyCisReturnController] No agent client found or JSON invalid"
             )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }

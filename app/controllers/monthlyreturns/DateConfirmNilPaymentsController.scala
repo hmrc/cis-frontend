@@ -134,33 +134,49 @@ class DateConfirmNilPaymentsController @Inject() (
 
   private def prepareUserAnswers(ua: UserAnswers, request: OptionalDataRequest[_])(implicit
     hc: HeaderCarrier
-  ): Future[UserAnswers] = {
+  ): Future[UserAnswers] =
+    if request.isAgent then
+      monthlyReturnService.getAgentClient(request.userId).flatMap {
+        case Some(data) =>
+          monthlyReturnService
+            .hasClient(data.taxOfficeNumber, data.taxOfficeReference)
+            .flatMap {
+              case true  => storeInstanceId(data.uniqueId, ua)
+              case false => Future.failed(new RuntimeException("Agent has no access to this client"))
+            }
+        case _          => Future.failed(new RuntimeException("Missing agent client data"))
+      }
+    else Future.successful(ua)
 
-    val instanceIdOpt = request.getQueryString("instanceId")
-
-    instanceIdOpt match {
-      case None => Future.successful(ua)
-
-      case Some(instanceId) if !request.isAgent =>
-        storeInstanceId(instanceId, ua)
-
-      case Some(instanceId) =>
-        val taxOfficeNumberOpt    = request.getQueryString("taxOfficeNumber")
-        val taxOfficeReferenceOpt = request.getQueryString("taxOfficeReference")
-
-        (taxOfficeNumberOpt, taxOfficeReferenceOpt) match {
-          case (Some(taxOfficeNumber), Some(taxOfficeReference)) =>
-            monthlyReturnService
-              .hasClient(taxOfficeNumber, taxOfficeReference)
-              .flatMap {
-                case true  => storeInstanceId(instanceId, ua)
-                case false => Future.failed(new RuntimeException("Agent has no access to this client"))
-              }
-          case _                                                 =>
-            Future.failed(new RuntimeException("Missing tax office Number or Reference"))
-        }
-    }
-  }
+//  private def prepareUserAnswersOld(ua: UserAnswers, request: OptionalDataRequest[_])(implicit
+//    hc: HeaderCarrier
+//  ): Future[UserAnswers] = {
+//
+//    val instanceIdOpt = request.getQueryString("instanceId")
+//
+//    instanceIdOpt match {
+//      case None => Future.successful(ua)
+//
+//      case Some(instanceId) if !request.isAgent =>
+//        storeInstanceId(instanceId, ua)
+//
+//      case Some(instanceId) =>
+//        val taxOfficeNumberOpt    = request.getQueryString("taxOfficeNumber")
+//        val taxOfficeReferenceOpt = request.getQueryString("taxOfficeReference")
+//
+//        (taxOfficeNumberOpt, taxOfficeReferenceOpt) match {
+//          case (Some(taxOfficeNumber), Some(taxOfficeReference)) =>
+//            monthlyReturnService
+//              .hasClient(taxOfficeNumber, taxOfficeReference)
+//              .flatMap {
+//                case true  => storeInstanceId(instanceId, ua)
+//                case false => Future.failed(new RuntimeException("Agent has no access to this client"))
+//              }
+//          case _                                                 =>
+//            Future.failed(new RuntimeException("Missing tax office Number or Reference"))
+//        }
+//    }
+//  }
 
   private def storeInstanceId(instanceId: String, ua: UserAnswers): Future[UserAnswers] =
     for {

@@ -152,7 +152,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         informationCorrect = true,
         inactivity = true,
         monthYear = YearMonth.parse("2025-10"),
-        email = "test@test.com"
+        email = "test@test.com",
+        isAgent = false,
+        clientTaxOfficeNumber = "123",
+        clientTaxOfficeRef = "AB456"
       )
 
       val beResp = mkChrisResp()
@@ -163,7 +166,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(beResp))
 
-      val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes).futureValue
+      val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
       out mustBe beResp
 
       val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -187,7 +190,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
       }
       ex.getMessage must include("CIS taxpayer UTR missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -208,7 +211,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
       }
       ex.getMessage must include("CIS taxpayer aoDistrict missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -229,7 +232,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
       }
       ex.getMessage must include("CIS taxpayer aoPayType missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -250,7 +253,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
       }
       ex.getMessage must include("CIS taxpayer aoCheckCode missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -271,7 +274,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(badTaxpayer))
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaBase).futureValue
+        service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
       }
       ex.getMessage must include("CIS taxpayer aoReference missing")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -293,7 +296,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val uaNoYM = emptyUserAnswers.set(CisIdPage, "123").success.value
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaNoYM).futureValue
+        service.submitToChrisAndPersist("sub-123", uaNoYM, false).futureValue
       }
       ex.getMessage must include("Month/Year not selected")
       verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
@@ -336,7 +339,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(beRespWithEndpoint))
 
-      val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes).futureValue
+      val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
       out mustBe beRespWithEndpoint
       verify(sessionRepository).set(uaCaptor.capture())
       val saved = uaCaptor.getValue
@@ -370,7 +373,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .set(eqTo(SubmissionDetailsPage), any)(any())
 
       val ex = intercept[RuntimeException] {
-        service.submitToChrisAndPersist("sub-123", uaSpy).futureValue
+        service.submitToChrisAndPersist("sub-123", uaSpy, false).futureValue
       }
       ex.getMessage must include("boom: cannot write submission id")
       verify(sessionRepository, never()).set(any[UserAnswers])

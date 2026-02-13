@@ -25,7 +25,10 @@ case class ChrisSubmissionRequest(
   informationCorrect: String,
   inactivity: String,
   monthYear: String,
-  email: String
+  email: String,
+  isAgent: Boolean,
+  clientTaxOfficeNumber: String,
+  clientTaxOfficeRef: String
 )
 
 object ChrisSubmissionRequest {
@@ -40,7 +43,10 @@ object ChrisSubmissionRequest {
     informationCorrect: Boolean,
     inactivity: Boolean,
     monthYear: YearMonth,
-    email: String
+    email: String,
+    isAgent: Boolean,
+    clientTaxOfficeNumber: String,
+    clientTaxOfficeRef: String
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
       utr = utr,
@@ -48,6 +54,9 @@ object ChrisSubmissionRequest {
       informationCorrect = yesNo(informationCorrect),
       inactivity = yesNo(inactivity),
       monthYear = toYearMonthString(monthYear),
-      email = email.trim
+      email = email.trim,
+      isAgent = isAgent,
+      clientTaxOfficeNumber = clientTaxOfficeNumber,
+      clientTaxOfficeRef = clientTaxOfficeRef
     )
 }
