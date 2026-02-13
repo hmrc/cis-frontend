@@ -390,7 +390,7 @@ paymentDetails.change.hidden = Payment Details
 
 monthlyreturns.costOfMaterials.title = What are the material costs paid by your subcontractor?
 monthlyreturns.costOfMaterials.heading = What are the material costs paid by {0}?
-monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Round up to the nearest pound
+monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Round up to the nearest pound.
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = Cost Of Materials
 monthlyreturns.costOfMaterials.error.nonNumeric = Enter your cost of materials using numbers and a decimal point
 monthlyreturns.costOfMaterials.error.required = Enter your cost of materials
