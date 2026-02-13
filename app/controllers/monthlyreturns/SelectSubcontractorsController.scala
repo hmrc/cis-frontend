@@ -19,13 +19,12 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
-import models.monthlyreturns.{SelectSubcontractorsFormData, SelectedSubcontractor}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import models.monthlyreturns.SelectSubcontractorsFormData
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import repositories.SessionRepository
-import services.SubcontractorService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SelectSubcontractorsView
 
@@ -40,8 +39,8 @@ class SelectSubcontractorsController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
-  sessionRepository: SessionRepository,
-  subcontractorService: SubcontractorService
+  subcontractorService: SubcontractorService,
+  monthlyReturnService: MonthlyReturnService
 )(using ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -96,49 +95,34 @@ class SelectSubcontractorsController @Inject() (
               form
                 .bindFromRequest()
                 .fold(
-                  formWithErrors =>
-                    Future.successful(
-                      BadRequest(
-                        view(formWithErrors, model.subcontractors)
-                      )
-                    ),
-                  formData =>
+                  formWithErrors => Future.successful(BadRequest(view(formWithErrors, model.subcontractors))),
+                  formData => {
                     val selectedSubcontractors =
                       model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))
 
-                    val userAnswersNoSelectedSubcontractors = request.userAnswers.remove(SelectedSubcontractorPage.all)
-                    val updatedAnswers                      =
-                      selectedSubcontractors.zipWithIndex.foldLeft(userAnswersNoSelectedSubcontractors) {
-                        case (ua, (vm, index)) =>
-                          ua.flatMap(
-                            _.set(
-                              SelectedSubcontractorPage(index + 1),
-                              SelectedSubcontractor(
-                                vm.id,
-                                vm.name,
-                                None,
-                                None,
-                                None
-                              )
-                            )
-                          )
-                      }
-
-                    Future
-                      .fromTry(updatedAnswers)
-                      .flatMap(sessionRepository.set)
-                      .map {
-                        case true if selectedSubcontractors.exists(_.verificationRequired == "Yes") =>
+                    monthlyReturnService
+                      .storeAndSyncSelectedSubcontractors(
+                        ua = request.userAnswers,
+                        cisId = cisId,
+                        taxYear = taxYear,
+                        taxMonth = taxMonth,
+                        selected = selectedSubcontractors
+                      )
+                      .map { _ =>
+                        if (selectedSubcontractors.exists(_.verificationRequired == "Yes")) {
                           Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
-                        case true                                                                   => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1))
-                        case false                                                                  => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                        } else {
+                          Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1))
+                        }
                       }
                       .recover { error =>
                         logger.error(
-                          s"[SelectSubcontractorsController] Unexpected error storing selected subcontractors into session: ${error.toString}"
+                          s"[SelectSubcontractorsController] Failed storing/syncing selected subcontractors: ${error.toString}",
+                          error
                         )
                         Redirect(controllers.routes.SystemErrorController.onPageLoad())
                       }
+                  }
                 )
             }
         }

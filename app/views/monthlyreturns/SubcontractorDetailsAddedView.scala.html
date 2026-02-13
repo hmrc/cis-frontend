@@ -65,7 +65,7 @@
                     legend = LegendViewModel(messages("monthlyreturns.subcontractorDetailsAdded.question"))
                         .withCssClass("govuk-fieldset__legend--m")
                 )
-                .withHint(HintViewModel(messages("monthlyreturns.subcontractorDetailsAdded.hint")))
+                .withHint(HintViewModel(HtmlContent(messages("monthlyreturns.subcontractorDetailsAdded.hint"))))
         )
 
         @govukButton(

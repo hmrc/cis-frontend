@@ -20,7 +20,7 @@ import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import play.api.Logging
-import play.api.http.Status.{ACCEPTED, OK}
+import play.api.http.Status.{ACCEPTED, NO_CONTENT, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
@@ -157,6 +157,18 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
           Future.unit
         } else {
           Future.failed(new RuntimeException(s"Send email failed: status: ${result.status} body: ${result.body}"))
+        }
+      }
+
+  def syncMonthlyReturnItems(payload: SelectedSubcontractorsRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-return-item/sync")
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case NO_CONTENT => Future.unit
+          case status     => Future.failed(UpstreamErrorResponse(response.body, status, status))
         }
       }
 }

@@ -39,12 +39,12 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
     )
 
   private def completeSub(
-                           id: Long,
-                           name: String,
-                           payments: BigDecimal = 1,
-                           materials: BigDecimal = 1,
-                           tax: BigDecimal = 1
-                         ): JsObject =
+    id: Long,
+    name: String,
+    payments: BigDecimal = 1,
+    materials: BigDecimal = 1,
+    tax: BigDecimal = 1
+  ): JsObject =
     Json.obj(
       "subcontractorId"   -> id,
       "name"              -> name,
