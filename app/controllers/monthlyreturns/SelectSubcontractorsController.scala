@@ -106,19 +106,22 @@ class SelectSubcontractorsController @Inject() (
                     val selectedSubcontractors =
                       model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))
 
+                    val existingSelectedSubcontractors      =
+                      request.userAnswers.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
                     val userAnswersNoSelectedSubcontractors = request.userAnswers.remove(SelectedSubcontractorPage.all)
                     val updatedAnswers                      =
                       selectedSubcontractors.zipWithIndex.foldLeft(userAnswersNoSelectedSubcontractors) {
                         case (ua, (vm, index)) =>
+                          val existing = existingSelectedSubcontractors.values.find(_.id == vm.id)
                           ua.flatMap(
                             _.set(
                               SelectedSubcontractorPage(index + 1),
                               SelectedSubcontractor(
                                 vm.id,
                                 vm.name,
-                                None,
-                                None,
-                                None
+                                existing.flatMap(_.totalPaymentsMade),
+                                existing.flatMap(_.costOfMaterials),
+                                existing.flatMap(_.totalTaxDeducted)
                               )
                             )
                           )

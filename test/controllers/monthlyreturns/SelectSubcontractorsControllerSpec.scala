@@ -23,7 +23,8 @@ import models.monthlyreturns.*
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import org.mockito.ArgumentCaptor
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -243,6 +244,86 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.VerifySubcontractorsController
             .onPageLoad(models.NormalMode)
             .url
+        }
+      }
+
+      "preserves existing payment details when resubmitting with the same subcontractor" in {
+        val existingAnswers = userAnswersWithRequiredPages
+          .set(
+            SelectedSubcontractorPage(1),
+            SelectedSubcontractor(2, "B", Some(BigDecimal(500.00)), Some(BigDecimal(100.00)), Some(BigDecimal(50.00)))
+          )
+          .success
+          .value
+
+        val service         = mock[SubcontractorService]
+        val mockSessionRepo = mock[SessionRepository]
+        stubBuild(service, pageModelNoneSelected, defaultSel = None)
+        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
+
+        val app = applicationWith(service, ua = Some(existingAnswers), sessionRepo = Some(mockSessionRepo))
+
+        running(app) {
+          val request =
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+              .withFormUrlEncodedBody(
+                "subcontractorsToInclude.0" -> "2"
+              )
+
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(mockSessionRepo).set(captor.capture())
+
+          val savedAnswers = captor.getValue
+          val savedSub     = savedAnswers.get(SelectedSubcontractorPage(1)).value
+
+          savedSub.id mustBe 2
+          savedSub.name mustBe "B"
+          savedSub.totalPaymentsMade mustBe Some(BigDecimal(500.00))
+          savedSub.costOfMaterials mustBe Some(BigDecimal(100.00))
+          savedSub.totalTaxDeducted mustBe Some(BigDecimal(50.00))
+        }
+      }
+
+      "clears payment details for a subcontractor that was not previously selected" in {
+        val existingAnswers = userAnswersWithRequiredPages
+          .set(
+            SelectedSubcontractorPage(1),
+            SelectedSubcontractor(1, "A", Some(BigDecimal(500.00)), Some(BigDecimal(100.00)), Some(BigDecimal(50.00)))
+          )
+          .success
+          .value
+
+        val service         = mock[SubcontractorService]
+        val mockSessionRepo = mock[SessionRepository]
+        stubBuild(service, pageModelNoneSelected, defaultSel = None)
+        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
+
+        val app = applicationWith(service, ua = Some(existingAnswers), sessionRepo = Some(mockSessionRepo))
+
+        running(app) {
+          val request =
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+              .withFormUrlEncodedBody(
+                "subcontractorsToInclude.0" -> "2"
+              )
+
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(mockSessionRepo).set(captor.capture())
+
+          val savedAnswers = captor.getValue
+          val savedSub     = savedAnswers.get(SelectedSubcontractorPage(1)).value
+
+          savedSub.id mustBe 2
+          savedSub.name mustBe "B"
+          savedSub.totalPaymentsMade mustBe None
+          savedSub.costOfMaterials mustBe None
+          savedSub.totalTaxDeducted mustBe None
         }
       }
 
