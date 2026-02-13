@@ -98,9 +98,29 @@ POST       /monthly-return/materials-cost                  controllers.monthlyre
 GET        /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/submit-inactivity-request                        controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/submit-inactivity-request                        controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-submit-inactivity-request                  controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-submit-inactivity-request                  controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = CheckMode)
+
 GET        /monthly-return/remove-subcontractor            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/remove-subcontractor            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-remove-subcontractor     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/inactivity-request-warning      controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
+
+GET        /monthly-return/enter-email-address             controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/enter-email-address             controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-enter-email-address      controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-enter-email-address      controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/do-you-want-email-confirmation                       controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/add-subcontractor-details                        controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/add-subcontractor-details                       controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = CheckMode)

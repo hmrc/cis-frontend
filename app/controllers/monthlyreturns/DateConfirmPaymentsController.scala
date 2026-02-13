@@ -23,16 +23,17 @@ import models.monthlyreturns.MonthlyReturnRequest
 import navigation.Navigator
 import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.Logging
-import play.api.data.FormError
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class DateConfirmPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
@@ -50,16 +51,26 @@ class DateConfirmPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+    implicit request =>
 
-    val form = formProvider()
+      val form = formProvider()
 
-    val preparedForm = request.userAnswers.get(DateConfirmPaymentsPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
+      val preparedForm = request.userAnswers.get(DateConfirmPaymentsPage) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
 
-    Ok(view(preparedForm, mode))
+      monthlyReturnService
+        .resolveAndStoreCisId(request.userAnswers, request.isAgent)
+        .map(_ => Ok(view(preparedForm, mode)))
+        .recover {
+          case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          case NonFatal(ex)                                          =>
+            logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
+            Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -68,38 +79,30 @@ class DateConfirmPaymentsController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => {
-            val formLevelErrors     = formWithErrors.errors.filter(_.key.isEmpty)
-            val fieldErrors         = formWithErrors.errors.filter(_.key.nonEmpty)
-            val taxMonthErrors      = formLevelErrors.map(error => FormError("taxMonth", error.message, error.args))
-            val allErrors           = fieldErrors ++ taxMonthErrors
-            val formWithFieldErrors = formWithErrors.copy(errors = allErrors)
-            Future.successful(BadRequest(view(formWithFieldErrors, mode)))
-          },
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value => {
             val year  = value.getYear
             val month = value.getMonthValue
 
             monthlyReturnService
               .resolveAndStoreCisId(request.userAnswers, request.isAgent)
-              .flatMap { case (cisId, _) =>
+              .flatMap { case (cisId, uaWithCisId) =>
                 monthlyReturnService
                   .isDuplicate(cisId, year, month)
                   .flatMap {
-                    case true =>
+                    case true  =>
                       val dupForm =
                         form
                           .fill(value)
-                          .withError("value", "dateConfirmPayments.taxYear.error.duplicate")
+                          .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
                       Future.successful(BadRequest(view(dupForm, mode)))
-
                     case false =>
                       val createRequest = MonthlyReturnRequest(cisId, year, month)
                       monthlyReturnService
                         .createMonthlyReturn(createRequest)
                         .flatMap { _ =>
                           for {
-                            updatedAnswers <- Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
+                            updatedAnswers <- Future.fromTry(uaWithCisId.set(DateConfirmPaymentsPage, value))
                             _              <- sessionRepository.set(updatedAnswers)
                           } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
                         }

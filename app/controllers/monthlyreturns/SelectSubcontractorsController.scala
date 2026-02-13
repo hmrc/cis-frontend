@@ -24,9 +24,8 @@ import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.MonthlyReturnService
+import services.SubcontractorService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
 
 import javax.inject.Inject
@@ -41,16 +40,15 @@ class SelectSubcontractorsController @Inject() (
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
   config: FrontendAppConfig,
-  monthlyReturnService: MonthlyReturnService
+  subcontractorService: SubcontractorService
 )(using ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
 
   private val form = formProvider()
-  def onPageLoad(
-    defaultSelection: Option[Boolean] = None
-  ): Action[AnyContent] =
+
+  def onPageLoad(defaultSelection: Option[Boolean] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
 
       val requiredAnswers = for {
@@ -60,57 +58,31 @@ class SelectSubcontractorsController @Inject() (
 
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
-            val previouslyIncludedResourceRefs =
-              data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+          subcontractorService
+            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, defaultSelection)
+            .map { model =>
 
-            val (subcontractorViewModels, includedLastMonthFlags) =
-              data.subcontractors.map { s =>
-                val includedLastMonth = s.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
-                val viewModel         = SelectSubcontractorsViewModel(
-                  id = s.subcontractorId.toInt,
-                  name = s.tradingName.getOrElse("Unknown"),
-                  verificationRequired = "Yes",
-                  verificationNumber = "Unknown",
-                  taxTreatment = "Unknown"
-                )
-                (viewModel, includedLastMonth)
-              }.unzip
+              val filledForm =
+                if (model.initiallySelectedIds.nonEmpty) {
+                  form.fill(
+                    SelectSubcontractorsFormData(
+                      confirmation = false,
+                      subcontractorsToInclude = model.initiallySelectedIds
+                    )
+                  )
+                } else {
+                  form
+                }
 
-            val initiallySelectedIds: Seq[Int] = defaultSelection match {
-              case Some(true)  =>
-                subcontractorViewModels.map(_.id)
-              case Some(false) =>
-                Seq.empty
-              case None        =>
-                subcontractorViewModels
-                  .zip(includedLastMonthFlags)
-                  .collect { case (vm, true) => vm.id }
+              Ok(view(filledForm, model.subcontractors, config.selectSubcontractorsUpfrontDeclaration))
             }
-
-            val filledForm =
-              if (initiallySelectedIds.nonEmpty) {
-                form.fill(
-                  SelectSubcontractorsFormData(confirmation = false, subcontractorsToInclude = initiallySelectedIds)
-                )
-              } else {
-                form
-              }
-
-            Ok(
-              view(
-                filledForm,
-                subcontractorViewModels,
-                config.selectSubcontractorsUpfrontDeclaration
-              )
-            )
-          }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
     }
 
   def onSubmit(): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
+
       val requiredAnswers = for {
         cisId   <- request.userAnswers.get(CisIdPage)
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
@@ -118,52 +90,34 @@ class SelectSubcontractorsController @Inject() (
 
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
-            val subcontractorViewModels = data.subcontractors.map(s =>
-              SelectSubcontractorsViewModel(
-                id = s.subcontractorId.toInt,
-                name = s.tradingName.getOrElse("Unknown"),
-                verificationRequired = "Yes",
-                verificationNumber = "Unknown",
-                taxTreatment = "Unknown"
-              )
-            )
-
-            form
-              .bindFromRequest()
-              .fold(
-                formWithErrors =>
-                  BadRequest(
-                    view(
-                      formWithErrors,
-                      subcontractorViewModels,
-                      config.selectSubcontractorsUpfrontDeclaration
-                    )
-                  ),
-                formData =>
-                  if (!formData.confirmation) {
+          subcontractorService
+            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, None)
+            .map { model =>
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors =>
                     BadRequest(
-                      view(
-                        form
-                          .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
-                          .fill(formData),
-                        subcontractorViewModels,
-                        config.selectSubcontractorsUpfrontDeclaration
+                      view(formWithErrors, model.subcontractors, config.selectSubcontractorsUpfrontDeclaration)
+                    ),
+                  formData =>
+                    if (!formData.confirmation) {
+                      BadRequest(
+                        view(
+                          form
+                            .withError("confirmation", "monthlyreturns.selectSubcontractors.confirmation.required")
+                            .fill(formData),
+                          model.subcontractors,
+                          config.selectSubcontractorsUpfrontDeclaration
+                        )
                       )
-                    )
-                  } else {
-                    Ok(
-                      view(
-                        form.fill(formData),
-                        subcontractorViewModels,
-                        config.selectSubcontractorsUpfrontDeclaration
-                      )
-                    )
-                  }
-              )
-          }
+                    } else {
+                      Ok(view(form.fill(formData), model.subcontractors, config.selectSubcontractorsUpfrontDeclaration))
+                    }
+                )
+            }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
-
     }
+
 }
