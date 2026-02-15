@@ -57,13 +57,13 @@ h1: components.H1
                 ),
                 
                 SummaryListRowViewModel(
-                    key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))),
+                    key = KeyViewModel(Text(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))),
                     value = ValueViewModel(Text(subcontractor.totalTaxDeducted)),
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
                     href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))
+                    ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))
                     )
                      )
                 ))

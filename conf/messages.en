@@ -443,7 +443,7 @@ monthlyreturns.addSubcontractorDetails.alreadyAdded = You have added details for
 monthlyreturns.addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for
 
 
-monthlyreturns.changeAnswersTotalPayments.title = Change  {0}’s details
+monthlyreturns.changeAnswersTotalPayments.title = Change  subcontractor’s details
 monthlyreturns.changeAnswersTotalPayments.heading = Change  {0}’s details
 monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Total payments to subcontractor
 monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
