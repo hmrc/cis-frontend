@@ -25,7 +25,7 @@
 
 )
 
-@(subcontractor: CheckAnswersTotalPaymentsViewModel)(implicit request: Request[_], messages: Messages)
+@(subcontractor: CheckAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.checkAnswersTotalPayments.title"))) {
 
@@ -40,7 +40,7 @@
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode).url
+                        href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
                 )
             ),
@@ -51,7 +51,7 @@
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode).url
+                        href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))
                 )
             ),
@@ -62,7 +62,7 @@
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
+                        href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))
                 )
             )

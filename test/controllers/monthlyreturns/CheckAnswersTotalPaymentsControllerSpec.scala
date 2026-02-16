@@ -29,6 +29,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
   val totalPaymentsToSubcontractors = 1200
   val totalCostOfMaterials          = 500
   val totalCisDeductions            = 240
+  val index                         = 1
 
   val subcontractor = SelectedSubcontractor(
     id = 1,
@@ -58,7 +59,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
         val view = application.injector.instanceOf[CheckAnswersTotalPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(viewModel)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(viewModel, index)(request, messages(application)).toString
       }
     }
 

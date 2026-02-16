@@ -60,7 +60,7 @@ class Navigator @Inject() () {
   }
 
   private val checkRouteMap: Page => UserAnswers => Call = {
-    case InactivityRequestPage =>
+    case InactivityRequestPage                         =>
       userAnswers =>
         userAnswers.get(InactivityRequestPage) match {
           case Some(InactivityRequest.Option2)        =>

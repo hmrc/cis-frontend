@@ -40,7 +40,7 @@ class CheckAnswersTotalPaymentsController @Inject() (
     request.userAnswers.get(SelectedSubcontractorPage(index)) match {
       case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
       case Some(subcontractor) =>
-        Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)))
+        Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
     }
   }
 }
