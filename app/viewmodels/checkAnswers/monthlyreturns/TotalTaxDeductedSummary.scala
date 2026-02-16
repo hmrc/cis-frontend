@@ -17,7 +17,7 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.TotalTaxDeductedPage
+import pages.monthlyreturns.SelectedSubcontractorTaxDeductedPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
@@ -25,15 +25,15 @@ import viewmodels.implicits.*
 
 object TotalTaxDeductedSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(TotalTaxDeductedPage).map { answer =>
+  def row(answers: UserAnswers, index: Int)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(SelectedSubcontractorTaxDeductedPage(index)).map { answer =>
       SummaryListRowViewModel(
         key = "monthlyreturns.totalTaxDeducted.checkYourAnswersLabel",
         value = ValueViewModel(answer.toString),
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.totalTaxDeducted.change.hidden"))
         )

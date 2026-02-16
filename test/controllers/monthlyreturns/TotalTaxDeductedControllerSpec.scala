@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
+import controllers.routes
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
-import models.{NormalMode, UserAnswers}
+import models.monthlyreturns.SelectedSubcontractor
+import models.NormalMode
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.TotalTaxDeductedPage
+import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.TotalTaxDeductedView
-import pages.monthlyreturns.ContractorNamePage
 
 import scala.concurrent.Future
 
@@ -41,16 +42,21 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  val validAnswer                = BigDecimal(1)
-  val companyName                = "TyneWear Ltd"
+  val validAnswer = BigDecimal(1)
+  val companyName = "TyneWear Ltd"
+
+  val userAnswers = emptyUserAnswers
+    .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
+    .success
+    .value
+
   lazy val totalTaxDeductedRoute =
-    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 1).url
 
   "TotalTaxDeducted Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val userAnswers = emptyUserAnswers.set(ContractorNamePage, companyName).success.value
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
@@ -61,7 +67,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[TotalTaxDeductedView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName)(
+        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1)(
           request,
           messages(application)
         ).toString
@@ -70,15 +76,9 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId)
-        .set(ContractorNamePage, companyName)
-        .success
-        .value
-        .set(TotalTaxDeductedPage, validAnswer)
-        .success
-        .value
+      val updatedAnswers = userAnswers.set(SelectedSubcontractorTaxDeductedPage(1), validAnswer).success.value
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(updatedAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, totalTaxDeductedRoute)
@@ -88,7 +88,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1)(
           request,
           messages(application)
         ).toString
@@ -100,8 +100,6 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
       val mockSessionRepository = mock[SessionRepository]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val userAnswers = emptyUserAnswers.set(ContractorNamePage, companyName).success.value
 
       val application =
         applicationBuilder(userAnswers = Some(userAnswers))
@@ -131,7 +129,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -152,7 +150,6 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val userAnswers = emptyUserAnswers.set(ContractorNamePage, companyName).success.value
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
@@ -167,7 +164,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1)(
           request,
           messages(application)
         ).toString
@@ -177,6 +174,20 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     "must redirect to Journey Recovery for a GET if no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
+
+      running(application) {
+        val request = FakeRequest(GET, totalTaxDeductedRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET if no subcontractor is found for the index" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, totalTaxDeductedRoute)
@@ -201,6 +212,22 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
 
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST if no subcontractor is found for the index" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, totalTaxDeductedRoute)
+            .withFormUrlEncodedBody(("value", validAnswer.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
