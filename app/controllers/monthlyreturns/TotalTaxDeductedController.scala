@@ -20,7 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.Mode
 import navigation.Navigator
-import pages.monthlyreturns.TotalTaxDeductedPage
+import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -46,32 +46,37 @@ class TotalTaxDeductedController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) {
+    implicit request =>
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case Some(subcontractor) =>
+          val preparedForm = request.userAnswers.get(SelectedSubcontractorTaxDeductedPage(index)) match {
+            case None        => form
+            case Some(value) => form.fill(value)
+          }
 
-    val preparedForm = request.userAnswers.get(TotalTaxDeductedPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
-
-    val companyName = "TyneWear Ltd"
-
-    Ok(view(preparedForm, mode, companyName))
+          Ok(view(preparedForm, mode, subcontractor.name, index))
+      }
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+  def onSubmit(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => {
-            val companyName = "TyneWear Ltd"
-            Future.successful(BadRequest(view(formWithErrors, mode, companyName)))
-          },
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(TotalTaxDeductedPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(TotalTaxDeductedPage, mode, updatedAnswers))
-        )
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case Some(subcontractor) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors =>
+                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index: Int))),
+              value =>
+                for {
+                  updatedAnswers <-
+                    Future.fromTry(request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), value))
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield Redirect(navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index), mode, updatedAnswers))
+            )
+      }
   }
 }

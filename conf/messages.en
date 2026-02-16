@@ -445,3 +445,8 @@ monthlyreturns.paymentDetailsConfirmation.no = No, I need to make changes
 monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = paymentDetailsConfirmation
 monthlyreturns.paymentDetailsConfirmation.error.required = Select ‘Yes’ to confirm the information you have provided is correct. Select ‘No’ if you need to make changes.
 monthlyreturns.paymentDetailsConfirmation.change.hidden = PaymentDetailsConfirmation
+
+monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.alreadyAdded = You have added details for:
+monthlyreturns.addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for

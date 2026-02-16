@@ -74,11 +74,6 @@ POST       /monthly-return/date-confirm-payments                controllers.mont
 GET        /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/tax-deducted                                   controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/tax-deducted                                    controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-tax-deducted                              controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-tax-deducted                              controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode)
-
 GET        /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors            controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
@@ -87,16 +82,34 @@ POST       /monthly-return/change-unverified-subcontractors     controllers.mont
 GET        /monthly-return/subcontractors-paid-this-month       controllers.monthlyreturns.SubcontractorsPaidThisMonthController.onPageLoad()
 
 
-GET        /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-payment-details                        controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/payment-details/:index           controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode, index: Int)
+POST       /monthly-return/payment-details/:index           controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode, index: Int)
+GET        /monthly-return/change-payment-details/:index    controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode, index: Int)
+POST       /monthly-return/change-payment-details/:index    controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode, index: Int)
+GET        /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode, index: Int = 1)
+POST       /monthly-return/payment-details                  controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode, index: Int = 1)
+GET        /monthly-return/change-payment-details           controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode, index: Int = 1)
+POST       /monthly-return/change-payment-details           controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode, index: Int = 1)
 
 
-GET        /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/materials-cost/:index           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode, index: Int)
+POST       /monthly-return/materials-cost/:index           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode, index: Int)
+GET        /monthly-return/change-materials-cost/:index    controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode, index: Int)
+POST       /monthly-return/change-materials-cost/:index    controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode, index: Int)
+GET        /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode, index: Int = 1)
+POST       /monthly-return/materials-cost                  controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode, index: Int = 1)
+GET        /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode, index: Int = 1)
+POST       /monthly-return/change-materials-cost           controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode, index: Int = 1)
+
+
+GET        /monthly-return/tax-deducted/:index                            controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = NormalMode, index: Int)
+POST       /monthly-return/tax-deducted/:index                            controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = NormalMode, index: Int)
+GET        /monthly-return/change-tax-deducted/:index                     controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode, index: Int)
+POST       /monthly-return/change-tax-deducted/:index                     controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode, index: Int)
+GET        /monthly-return/tax-deducted                                   controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = NormalMode, index: Int = 1)
+POST       /monthly-return/tax-deducted                                   controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = NormalMode, index: Int = 1)
+GET        /monthly-return/change-tax-deducted                            controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode, index: Int = 1)
+POST       /monthly-return/change-tax-deducted                            controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode, index: Int = 1)
 
 GET        /monthly-return/submit-inactivity-request                        controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/submit-inactivity-request                        controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = NormalMode)
@@ -124,3 +137,8 @@ GET        /monthly-return/payment-details-confirmation                        c
 POST       /monthly-return/payment-details-confirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-payment-details-confirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-payment-details-confirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/add-subcontractor-details                        controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/add-subcontractor-details                       controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = CheckMode)

@@ -14,81 +14,114 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers
 
 import base.SpecBase
-import controllers.routes
-import forms.monthlyreturns.CostOfMaterialsFormProvider
+import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
 import models.monthlyreturns.SelectedSubcontractor
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.AddSubcontractorDetailsPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
+import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.monthlyreturns.CostOfMaterialsView
+import views.html.monthlyreturns.AddSubcontractorDetailsView
 
 import scala.concurrent.Future
 
-class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
-
-  val formProvider = new CostOfMaterialsFormProvider()
-  val form         = formProvider()
+class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  val validAnswer = 0
-  val companyName = "TyneWear Ltd"
+  lazy val addSubcontractorDetailsRoute =
+    controllers.monthlyreturns.routes.AddSubcontractorDetailsController.onPageLoad(NormalMode).url
 
-  val userAnswers = emptyUserAnswers
-    .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
-    .success
-    .value
+  val formProvider = new AddSubcontractorDetailsFormProvider()
+  val form         = formProvider()
 
-  lazy val costOfMaterialsRoute =
-    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1).url
+  private val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
+    Seq(
+      SelectedSubcontractor(
+        id = 1L,
+        name = "BuildRight Construction",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+    )
 
-  "CostOfMaterials Controller" - {
+  private val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
+    Seq(
+      SelectedSubcontractor(
+        id = 2L,
+        name = "Northern Trades Ltd",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      ),
+      SelectedSubcontractor(
+        id = 3L,
+        name = "TyneWear Ltd",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+    )
+
+  "AddSubcontractorDetails Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, costOfMaterialsRoute)
+        val request = FakeRequest(GET, addSubcontractorDetailsRoute)
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[CostOfMaterialsView]
+        val view = application.injector.instanceOf[AddSubcontractorDetailsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1)(
+        val content = contentAsString(result)
+
+        content mustEqual view(form, NormalMode, subcontractorsWithDetails, subcontractorsWithoutDetails)(
           request,
           messages(application)
         ).toString
+
+        content must include("BuildRight Construction")
+        content must include("Northern Trades Ltd")
+        content must include("TyneWear Ltd")
       }
     }
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val updatedAnswers = userAnswers.set(SelectedSubcontractorMaterialCostsPage(1), validAnswer).success.value
+      val selectedId  = subcontractorsWithoutDetails.head.id.toString
+      val userAnswers =
+        UserAnswers(userAnswersId).set(AddSubcontractorDetailsPage, selectedId).success.value
 
-      val application = applicationBuilder(userAnswers = Some(updatedAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, costOfMaterialsRoute)
+        val request = FakeRequest(GET, addSubcontractorDetailsRoute)
 
-        val view = application.injector.instanceOf[CostOfMaterialsView]
+        val view = application.injector.instanceOf[AddSubcontractorDetailsView]
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(
+          form.fill(selectedId),
+          NormalMode,
+          subcontractorsWithDetails,
+          subcontractorsWithoutDetails
+        )(
           request,
           messages(application)
         ).toString
@@ -102,7 +135,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(userAnswers))
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -111,8 +144,8 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, costOfMaterialsRoute)
-            .withFormUrlEncodedBody(("value", validAnswer.toString))
+          FakeRequest(POST, addSubcontractorDetailsRoute)
+            .withFormUrlEncodedBody(("value", subcontractorsWithoutDetails.head.id.toString))
 
         val result = route(application, request).value
 
@@ -123,21 +156,26 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request =
-          FakeRequest(POST, costOfMaterialsRoute)
+          FakeRequest(POST, addSubcontractorDetailsRoute)
             .withFormUrlEncodedBody(("value", "invalid value"))
 
         val boundForm = form.bind(Map("value" -> "invalid value"))
 
-        val view = application.injector.instanceOf[CostOfMaterialsView]
+        val view = application.injector.instanceOf[AddSubcontractorDetailsView]
 
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(
+          boundForm,
+          NormalMode,
+          subcontractorsWithDetails,
+          subcontractorsWithoutDetails
+        )(
           request,
           messages(application)
         ).toString
@@ -149,7 +187,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, costOfMaterialsRoute)
+        val request = FakeRequest(GET, addSubcontractorDetailsRoute)
 
         val result = route(application, request).value
 
@@ -158,49 +196,19 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no subcontractor is found for the index" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, costOfMaterialsRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
+    "redirect to Journey Recovery for a POST if no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
         val request =
-          FakeRequest(POST, costOfMaterialsRoute)
-            .withFormUrlEncodedBody(("value", validAnswer.toString))
+          FakeRequest(POST, addSubcontractorDetailsRoute)
+            .withFormUrlEncodedBody(("value", subcontractorsWithoutDetails.head.id.toString))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
 
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no subcontractor is found for the index" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, costOfMaterialsRoute)
-            .withFormUrlEncodedBody(("value", validAnswer.toString))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }

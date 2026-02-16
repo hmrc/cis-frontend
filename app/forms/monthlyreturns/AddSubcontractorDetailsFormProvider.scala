@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package forms.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import javax.inject.Inject
 
-case object CostOfMaterialsPage extends QuestionPage[BigDecimal] {
+import forms.mappings.Mappings
+import play.api.data.Form
 
-  override def path: JsPath = JsPath \ toString
+class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
 
-  override def toString: String = "costOfMaterials"
+  def apply(): Form[String] =
+    Form(
+      "value" ->
+        text("monthlyreturns.addSubcontractorDetails.error.required")
+          .verifying("error.invalid", value => value.forall(_.isDigit))
+    )
 }

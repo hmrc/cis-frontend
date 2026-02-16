@@ -16,16 +16,29 @@
 
 package models.monthlyreturns
 
+import play.api.i18n.Messages
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.govukfrontend.views.Aliases.Text
+import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 
 case class SelectedSubcontractor(
   id: Long,
   name: String,
-  totalPaymentsMade: Option[Double],
-  costOfMaterials: Option[Double],
-  totalTaxDeducted: Option[Double]
+  totalPaymentsMade: Option[BigDecimal],
+  costOfMaterials: Option[BigDecimal],
+  totalTaxDeducted: Option[BigDecimal]
 )
 
 object SelectedSubcontractor {
+
   given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
+
+  def radioItems(subcontractors: Seq[SelectedSubcontractor])(using Messages): Seq[RadioItem] =
+    subcontractors.map { subcontractor =>
+      RadioItem(
+        content = Text(subcontractor.name),
+        value = Some(subcontractor.id.toString),
+        id = Some(s"subcontractor-${subcontractor.id}")
+      )
+    }
 }
