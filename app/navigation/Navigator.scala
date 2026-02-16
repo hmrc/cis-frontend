@@ -46,13 +46,21 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
-    case DateConfirmPaymentsPage =>
+    case VerifySubcontractorsPage                      =>
+      _ => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1)
+    case DateConfirmPaymentsPage                       =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-    case _                       => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case SelectedSubcontractorPaymentsMadePage(index)  =>
+      _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index)
+    case SelectedSubcontractorMaterialCostsPage(index) =>
+      _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index)
+    case SelectedSubcontractorTaxDeductedPage(index)   =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad(None)
+    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   private val checkRouteMap: Page => UserAnswers => Call = {
-    case InactivityRequestPage                         =>
+    case InactivityRequestPage =>
       userAnswers =>
         userAnswers.get(InactivityRequestPage) match {
           case Some(InactivityRequest.Option2)        =>
