@@ -21,6 +21,7 @@ import models.monthlyreturns.SelectedSubcontractor
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
 class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase {

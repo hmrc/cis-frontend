@@ -14,36 +14,9 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package viewmodels.checkAnswers.monthlyreturns
 
-import controllers.actions.*
 import models.monthlyreturns.SelectedSubcontractor
-import pages.monthlyreturns.SelectedSubcontractorPage
-import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
-
-import javax.inject.Inject
-
-class ChangeAnswersTotalPaymentsController @Inject() (
-  override val messagesApi: MessagesApi,
-  identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  val controllerComponents: MessagesControllerComponents,
-  view: ChangeAnswersTotalPaymentsView
-) extends FrontendBaseController
-    with I18nSupport {
-
-  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-      case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
-      case Some(subcontractor) =>
-        Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
-    }
-  }
-}
 
 case class ChangeAnswersTotalPaymentsViewModel(
   id: Long,
@@ -54,6 +27,7 @@ case class ChangeAnswersTotalPaymentsViewModel(
 )
 
 object ChangeAnswersTotalPaymentsViewModel {
+
   def fromModel(subcontractor: SelectedSubcontractor): ChangeAnswersTotalPaymentsViewModel =
     ChangeAnswersTotalPaymentsViewModel(
       subcontractor.id,
