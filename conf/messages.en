@@ -449,3 +449,10 @@ monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need t
 monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
 monthlyreturns.addSubcontractorDetails.alreadyAdded = You have added details for:
 monthlyreturns.addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for
+
+monthlyreturns.checkAnswersTotalPayments.title = Check your answers for subcontractor
+monthlyreturns.checkAnswersTotalPayments.heading = Check your answers for {0}
+monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Total payments to subcontractor
+monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
+monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
+
