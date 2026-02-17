@@ -15,9 +15,6 @@ GET         /there-is-a-problem                          controllers.JourneyReco
 GET        /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
 POST       /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
-GET        /monthly-return/subcontractor-check-your-answers            controllers.monthlyreturns.SubcontractorCheckYourAnswersController.onPageLoad()
-POST       /monthly-return/subcontractor-check-your-answers            controllers.monthlyreturns.SubcontractorCheckYourAnswersController.onSubmit()
-
 GET         /account/sign-out-survey                     controllers.auth.AuthController.signOut()
 GET         /account/sign-out                            controllers.auth.AuthController.signOutNoSurvey()
 GET         /account/signed-out                          controllers.auth.SignedOutController.onPageLoad()
@@ -137,3 +134,10 @@ GET        /monthly-return/subcontractor-details-added                        co
 POST       /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-subcontractor-details-added                 controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-subcontractor-details-added                 controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/add-subcontractor-details                        controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/add-subcontractor-details                       controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)

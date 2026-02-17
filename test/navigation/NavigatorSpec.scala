@@ -81,12 +81,52 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
       }
 
+      "must go from InactivityWarningPage to CheckYourAnswers" in {
+        navigator.nextPage(
+          InactivityWarningPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from VerifySubcontractorsPage to PaymentDetailsController" in {
+        navigator.nextPage(
+          VerifySubcontractorsPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1)
+      }
+
       "must go from DateConfirmPaymentsPage to SelectSubcontractorsController" in {
         navigator.nextPage(
           DateConfirmPaymentsPage,
           NormalMode,
           UserAnswers("id")
         ) mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+      }
+
+      "must go from SelectedSubcontractorPaymentsMadePage to CostOfMaterialsController" in {
+        navigator.nextPage(
+          SelectedSubcontractorPaymentsMadePage(1),
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1)
+      }
+
+      "must go from SelectedSubcontractorMaterialCostsPage to TotalTaxDeductedController" in {
+        navigator.nextPage(
+          SelectedSubcontractorMaterialCostsPage(2),
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 2)
+      }
+
+      "must go from SelectedSubcontractorTaxDeductedPage to JourneyRecoveryController" in {
+        navigator.nextPage(
+          SelectedSubcontractorTaxDeductedPage(1),
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad(None)
       }
 
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
@@ -143,6 +183,30 @@ class NavigatorSpec extends SpecBase {
           CheckMode,
           UserAnswers("id")
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayment Page in CheckMode" in {
+        navigator.nextPage(
+          SelectedSubcontractorPaymentsMadePage(1),
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+      }
+
+      "must go from SelectedSubcontractorMaterialCostsPage to CheckAnswersTotalPayment Page in CheckMode" in {
+        navigator.nextPage(
+          SelectedSubcontractorMaterialCostsPage(1),
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+      }
+
+      "must go from SelectedSubcontractorTaxDeductedPage to CheckAnswersTotalPayment Page in CheckMode" in {
+        navigator.nextPage(
+          SelectedSubcontractorTaxDeductedPage(1),
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
       }
 
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {
