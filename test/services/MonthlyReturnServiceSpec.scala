@@ -25,7 +25,6 @@ import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.OptionValues.*
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage, SelectedSubcontractorPage}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier

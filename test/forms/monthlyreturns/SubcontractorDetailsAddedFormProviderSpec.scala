@@ -17,7 +17,6 @@
 package forms.monthlyreturns
 
 import forms.behaviours.BooleanFieldBehaviours
-import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import play.api.data.FormError
 
 class SubcontractorDetailsAddedFormProviderSpec extends BooleanFieldBehaviours {
