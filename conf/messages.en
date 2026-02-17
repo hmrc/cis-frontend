@@ -14,6 +14,8 @@ site.signIn = Sign in
 site.govuk = GOV.UK
 site.acceptAndContinue = Accept and continue
 
+currency.pounds=£{0}
+
 date.day = Day
 date.month = Month
 date.year = Year
