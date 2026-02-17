@@ -133,6 +133,11 @@ POST       /monthly-return/do-you-want-email-confirmation                       
 GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/payment-details-confirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/payment-details-confirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-payment-details-confirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-payment-details-confirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = CheckMode)
+
 GET        /monthly-return/add-subcontractor-details                        controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/add-subcontractor-details                       controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onPageLoad(mode: Mode = CheckMode)
