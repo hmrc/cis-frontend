@@ -33,7 +33,8 @@ class ChangeAnswersTotalPaymentsViewSpec extends SpecBase {
   "ChangeAnswersTotalPaymentsView" - {
 
     "must render the correct content on the page" in new Setup {
-      val html: HtmlFormat.Appendable = view(viewModel)
+      val index = 1
+      val html: HtmlFormat.Appendable = view(viewModel, index)
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.changeAnswersTotalPayments.title", viewModel.name))

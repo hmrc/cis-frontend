@@ -25,7 +25,7 @@ h1: components.H1
 
 )
 
-@(subcontractor: ChangeAnswersTotalPaymentsViewModel)(implicit request: Request[_], messages: Messages)
+@(subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.changeAnswersTotalPayments.title", subcontractor.name))) {
 
@@ -40,7 +40,7 @@ h1: components.H1
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode).url
+                    href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
                 )
                 ),
@@ -51,7 +51,7 @@ h1: components.H1
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode).url
+                    href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials"))
                 )
                 ),
@@ -62,7 +62,7 @@ h1: components.H1
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
+                    href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))
                     )
                      )
