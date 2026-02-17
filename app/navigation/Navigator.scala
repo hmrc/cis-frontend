@@ -55,7 +55,7 @@ class Navigator @Inject() () {
     case SelectedSubcontractorMaterialCostsPage(index) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
-      _ => controllers.monthlyreturns.routes.SubcontractorCheckYourAnswersController.onPageLoad()
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 

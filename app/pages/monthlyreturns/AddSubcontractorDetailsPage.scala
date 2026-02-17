@@ -19,17 +19,9 @@ package pages.monthlyreturns
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-<<<<<<<< HEAD:app/pages/monthlyreturns/SubcontractorDetailsAddedPage.scala
-case object SubcontractorDetailsAddedPage extends QuestionPage[Boolean] {
-
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "subcontractorDetailsAdded"
-========
 case object AddSubcontractorDetailsPage extends QuestionPage[String] {
 
   override def path: JsPath = JsPath \ toString
 
   override def toString: String = "addSubcontractorDetails"
->>>>>>>> DTR-2832:app/pages/monthlyreturns/AddSubcontractorDetailsPage.scala
 }

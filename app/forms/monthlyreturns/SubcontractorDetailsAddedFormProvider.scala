@@ -16,7 +16,6 @@
 
 package forms.monthlyreturns
 
-<<<<<<<< HEAD:app/forms/monthlyreturns/SubcontractorDetailsAddedFormProvider.scala
 import forms.mappings.Mappings
 import play.api.data.Form
 
@@ -27,19 +26,5 @@ class SubcontractorDetailsAddedFormProvider @Inject() extends Mappings {
   def apply(): Form[Boolean] =
     Form(
       "value" -> boolean("monthlyreturns.subcontractorDetailsAdded.error.required")
-========
-import javax.inject.Inject
-
-import forms.mappings.Mappings
-import play.api.data.Form
-
-class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
-
-  def apply(): Form[String] =
-    Form(
-      "value" ->
-        text("monthlyreturns.addSubcontractorDetails.error.required")
-          .verifying("error.invalid", value => value.forall(_.isDigit))
->>>>>>>> DTR-2832:app/forms/monthlyreturns/AddSubcontractorDetailsFormProvider.scala
     )
 }

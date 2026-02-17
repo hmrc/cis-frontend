@@ -144,16 +144,25 @@ class MonthlyReturnService @Inject() (
     selected: Seq[SelectSubcontractorsViewModel]
   )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
 
-    val selectedIds: Seq[Long]       = selected.map(_.id)
-    val cleared: Try[UserAnswers]    = ua.remove(SelectedSubcontractorPage.all)
-    val updatedTry: Try[UserAnswers] =
+    val selectedIds: Seq[Long]         = selected.map(_.id)
+    val existingSelectedSubcontractors =
+      ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all)
+    val updatedTry: Try[UserAnswers]   =
       selected.zipWithIndex.foldLeft(cleared) { case (uaTry, (vm, index)) =>
-        uaTry.flatMap(
-          _.set(
+        uaTry.flatMap { answers =>
+          val existing = existingSelectedSubcontractors.values.find(_.id == vm.id)
+          answers.set(
             SelectedSubcontractorPage(index + 1),
-            SelectedSubcontractor(vm.id, vm.name, None, None, None)
+            SelectedSubcontractor(
+              vm.id,
+              vm.name,
+              existing.flatMap(_.totalPaymentsMade),
+              existing.flatMap(_.costOfMaterials),
+              existing.flatMap(_.totalTaxDeducted)
+            )
           )
-        )
+        }
       }
 
     Future
