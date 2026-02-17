@@ -19,13 +19,15 @@
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
+    h1: components.H1
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("verifiedStatusDeclaration.title"))) {
 
+    @h1(messages("verifiedStatusDeclaration.heading"))
     @formHelper(action = routes.VerifiedStatusDeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
@@ -35,7 +37,9 @@
         @govukRadios(
             RadiosViewModel.yesNo(
                 field = form("value"),
-                legend = LegendViewModel(messages("verifiedStatusDeclaration.heading")).asPageHeading()
+                legend = LegendViewModel(
+                    messages("verifiedStatusDeclaration.legend")
+                ).withCssClass("govuk-fieldset__legend--m")
             )
         )
 

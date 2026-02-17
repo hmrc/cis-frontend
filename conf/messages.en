@@ -459,6 +459,7 @@ monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS 
 
 verifiedStatusDeclaration.title = Declaration of verified status
 verifiedStatusDeclaration.heading = Declaration
+verifiedStatusDeclaration.legend = Has every subcontractor included on this return either been verified with HM Revenue & Customs, or been included in previous CIS returns in this, or the previous two tax years?
 verifiedStatusDeclaration.checkYourAnswersLabel = verifiedStatusDeclaration
 verifiedStatusDeclaration.error.required = Select yes if verifiedStatusDeclaration
 verifiedStatusDeclaration.change.hidden = VerifiedStatusDeclaration

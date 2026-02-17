@@ -22,7 +22,7 @@ class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new VerifiedStatusDeclarationFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   lazy val verifiedStatusDeclarationRoute = routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode).url
 
