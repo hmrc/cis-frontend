@@ -36,7 +36,7 @@
 
             SummaryListRowViewModel(
                 key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))),
-                value = ValueViewModel(Text(subcontractor.totalPaymentsMade)),
+                value = ValueViewModel(Text(s"£${subcontractor.totalPaymentsMade}")),
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
@@ -47,7 +47,7 @@
 
             SummaryListRowViewModel(
                 key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))),
-                value = ValueViewModel(Text(subcontractor.costOfMaterials)),
+                value = ValueViewModel(Text(s"£${subcontractor.costOfMaterials}")),
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
@@ -58,7 +58,7 @@
 
             SummaryListRowViewModel(
                 key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))),
-                value = ValueViewModel(Text(subcontractor.totalTaxDeducted)),
+                value = ValueViewModel(Text(s"£${subcontractor.totalTaxDeducted}")),
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
