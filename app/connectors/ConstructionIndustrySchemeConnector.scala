@@ -17,10 +17,10 @@
 package connectors
 
 import models.monthlyreturns.*
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import play.api.Logging
-import play.api.http.Status.{NOT_FOUND, OK}
+import play.api.http.Status.{ACCEPTED, NOT_FOUND, OK}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
@@ -88,6 +88,21 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .post(url"$cisBaseUrl/monthly-returns/nil/create")
       .withBody(Json.toJson(payload))
       .execute[NilMonthlyReturnResponse]
+
+  def updateNilMonthlyReturn(
+    payload: NilMonthlyReturnRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns/nil/update")
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        if (response.status / 100 == 2) {
+          Future.unit
+        } else {
+          Future.failed(UpstreamErrorResponse(response.body, response.status, response.status))
+        }
+      }
 
   def createMonthlyReturn(
     payload: MonthlyReturnRequest
@@ -164,4 +179,20 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/scheme/email/$cisId")
       .execute[Option[String]]
+
+  def sendSuccessfulEmail(submissionId: String, request: SendSuccessEmailRequest)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/send-success-email")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { result =>
+        if (result.status == ACCEPTED) {
+          Future.unit
+        } else {
+          Future.failed(new RuntimeException(s"Send email failed: status: ${result.status} body: ${result.body}"))
+        }
+      }
 }

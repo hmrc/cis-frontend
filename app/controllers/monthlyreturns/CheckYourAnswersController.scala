@@ -15,17 +15,18 @@
  */
 
 package controllers.monthlyreturns
+
 import controllers.actions.*
+import pages.monthlyreturns.NilReturnStatusPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
-import services.MonthlyReturnService
-import services.guard.*
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.Logging
 
 import javax.inject.Inject
@@ -39,8 +40,7 @@ class CheckYourAnswersController @Inject() (
   monthlyReturnService: MonthlyReturnService,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: CheckYourAnswersView,
-  duplicateMRCreationGuard: DuplicateMRCreationGuard
+  view: CheckYourAnswersView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -68,26 +68,29 @@ class CheckYourAnswersController @Inject() (
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    request.userAnswers.get(NilReturnStatusPage) match {
+      case None =>
+        logger.warn(
+          "[CheckYourAnswersController] C6 submit without FormP record (missing NilReturnStatusPage); redirecting to journey recovery"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-    logger.info("[CheckYourAnswersController] Starting monthly nil return creation process")
+      case Some(_) =>
+        implicit val hc: HeaderCarrier =
+          HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    duplicateMRCreationGuard.check.flatMap {
-      case DuplicateMRCreationCheck.DuplicateFound =>
-        logger.warn("[CheckYourAnswersController] Duplicate submission attempt detected; blocking progression")
-        Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
-
-      case DuplicateMRCreationCheck.NoDuplicate =>
         monthlyReturnService
-          .createNilMonthlyReturn(request.userAnswers)
+          .updateNilMonthlyReturn(request.userAnswers)
           .map { _ =>
-            logger.info("[CheckYourAnswersController] Monthly nil return creation completed successfully")
+            logger.info(
+              "[CheckYourAnswersController] Updated FormP monthly nil return confirmation/nil flags; redirecting to submission"
+            )
             Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
           }
-          .recover { case exception =>
+          .recover { case ex =>
             logger.error(
-              s"[CheckYourAnswersController] Failed to create monthly nil return: ${exception.getMessage}",
-              exception
+              s"[CheckYourAnswersController] Failed to update FormP monthly nil return: ${ex.getMessage}",
+              ex
             )
             Redirect(controllers.routes.SystemErrorController.onPageLoad())
           }

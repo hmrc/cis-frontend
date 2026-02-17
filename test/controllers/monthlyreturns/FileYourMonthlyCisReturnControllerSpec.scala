@@ -41,7 +41,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       when(mockRepo.set(any())).thenReturn(Future.successful(true))
 
       val app =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = false)
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockRepo),
             bind[MonthlyReturnService].toInstance(mockService)
@@ -63,12 +63,38 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Org: without instanceId => returns OK and does not store" in {
+    "Org: without instanceId => returns OK and stores empty UA when none exists" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+
+      val app =
+        applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request =
+          FakeRequest(GET, controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url)
+
+        val result = route(app, request).value
+        status(result) mustBe OK
+
+        verify(mockRepo).set(any())
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "Org: without instanceId and UA exists => returns OK and does not store" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
       val app =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = false)
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockRepo),
             bind[MonthlyReturnService].toInstance(mockService)
@@ -92,7 +118,9 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       val mockService = mock[MonthlyReturnService]
 
       when(mockService.getAgentClient(any())(any(), any()))
-        .thenReturn(Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063"))))
+        .thenReturn(
+          Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
+        )
       when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
         .thenReturn(Future.successful(true))
       when(mockRepo.set(any()))
@@ -110,7 +138,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val req = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url +
-            "?instanceId=CIS-123&taxOfficeNumber=163&taxOfficeReference=AB0063"
+            "?instanceId=CIS-123"
         )
 
         val res = route(app, req).value
@@ -126,7 +154,9 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       val mockService = mock[MonthlyReturnService]
 
       when(mockService.getAgentClient(any())(any(), any()))
-        .thenReturn(Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063"))))
+        .thenReturn(
+          Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
+        )
       when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
         .thenReturn(Future.successful(false))
 
@@ -142,7 +172,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url +
-            "?instanceId=CIS-123&taxOfficeNumber=163&taxOfficeReference=AB0063"
+            "?instanceId=CIS-123"
         )
 
         val result = route(app, request).value
@@ -154,40 +184,47 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-//    "Agent: with instanceId but missing ton/tor => redirect JourneyRecovery" in {
-//      val mockRepo    = mock[SessionRepository]
-//      val mockService = mock[MonthlyReturnService]
-//
-//      when(mockService.getAgentClient(any())(any(), any()))
-//        .thenReturn(Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063"))))
-//
-//      val app =
-//        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-//          .overrides(
-//            bind[SessionRepository].toInstance(mockRepo),
-//            bind[MonthlyReturnService].toInstance(mockService)
-//          )
-//          .build()
-//
-//      running(app) {
-//        val request = FakeRequest(
-//          GET,
-//          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url +
-//            "?instanceId=CIS-123"
-//        )
-//
-//        val result = route(app, request).value
-//        status(result) mustBe SEE_OTHER
-//        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
-//
-//        verifyNoInteractions(mockService)
-//        verifyNoInteractions(mockRepo)
-//      }
-//    }
+    "Agent: with instanceId but missing ton/tor => redirect JourneyRecovery" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(None)
+        )
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url +
+            "?instanceId=CIS-123"
+        )
+
+        val result = route(app, request).value
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
+        verifyNoInteractions(mockRepo)
+      }
+    }
 
     "Agent: missing instanceId => redirect JourneyRecovery" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
+
+      when(mockService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
+        )
 
       val app =
         applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
@@ -205,40 +242,45 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
-        verifyNoInteractions(mockService)
+        verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
         verifyNoInteractions(mockRepo)
       }
     }
 
-//    "Agent: hasClient throws => redirect JourneyRecovery" in {
-//      val mockRepo    = mock[SessionRepository]
-//      val mockService = mock[MonthlyReturnService]
-//
-//      when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
-//        .thenReturn(Future.failed(new RuntimeException("boom")))
-//
-//      val app =
-//        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-//          .overrides(
-//            bind[SessionRepository].toInstance(mockRepo),
-//            bind[MonthlyReturnService].toInstance(mockService)
-//          )
-//          .build()
-//
-//      running(app) {
-//        val request = FakeRequest(
-//          GET,
-//          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url +
-//            "?instanceId=CIS-123&taxOfficeNumber=163&taxOfficeReference=AB0063"
-//        )
-//
-//        val result = route(app, request).value
-//        status(result) mustBe SEE_OTHER
-//        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
-//
-//        verify(mockService).hasClient(eqTo("163"), eqTo("AB0063"))(any())
-//        verifyNoInteractions(mockRepo)
-//      }
-//    }
+    "Agent: hasClient throws => redirect JourneyRecovery" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
+        )
+      when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onPageLoad().url +
+            "?instanceId=CIS-123"
+        )
+
+        val result = route(app, request).value
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
+        verify(mockService).hasClient(eqTo("163"), eqTo("AB0063"))(any())
+        verifyNoInteractions(mockRepo)
+      }
+    }
   }
 }

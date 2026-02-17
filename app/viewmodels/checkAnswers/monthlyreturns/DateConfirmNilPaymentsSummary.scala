@@ -16,7 +16,7 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import models.{CheckMode, UserAnswers}
+import models.UserAnswers
 import pages.monthlyreturns.DateConfirmNilPaymentsPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
@@ -36,15 +36,7 @@ object DateConfirmNilPaymentsSummary {
 
       SummaryListRowViewModel(
         key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
-        value = ValueViewModel(taxPeriodText),
-        actions = Seq(
-          ActionItemViewModel(
-            "site.change",
-            controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(CheckMode).url
-          )
-            .withVisuallyHiddenText(messages("monthlyreturns.dateConfirmNilPayments.change.hidden"))
-            .withAttribute("id" -> "change-date-confirm-nil-payments")
-        )
+        value = ValueViewModel(taxPeriodText)
       )
     }
 }

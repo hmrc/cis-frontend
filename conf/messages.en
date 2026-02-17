@@ -6,10 +6,12 @@ site.change = Change
 site.no = No
 site.yes = Yes
 site.continue = Continue
+site.saveAndContinue = Save and continue
 site.start = Start now
 site.startAgain = Start again
 site.signIn = Sign in
 site.govuk = GOV.UK
+site.acceptAndContinue = Accept and continue
 
 date.day = Day
 date.month = Month
@@ -301,27 +303,25 @@ fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for t
 fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
 fileYourMonthlyCisReturn.startButton = Start
 
-dateConfirmPayments.title = Which tax month and year are you filing a return for?
-dateConfirmPayments.heading = Which tax month and year are you filing a return for?
-dateConfirmPayments.checkYourAnswersLabel = DateConfirmPayments
-dateConfirmPayments.taxMonth.error.required = Enter the tax month you are reporting payments for as a number, between 1 and 12
-dateConfirmPayments.taxMonth.error.wholeNumber = Enter the tax month you are reporting payments for as a number, between 1 and 12
-dateConfirmPayments.taxMonth.error.nonNumeric = Enter the tax month you are reporting payments for as a number, between 1 and 12
-dateConfirmPayments.taxMonth.error.range = Enter the tax month you are reporting payments for as a number, between 1 and 12
-dateConfirmPayments.taxYear.error.required = Enter the year you are reporting payments for, like 2024, 2025
-dateConfirmPayments.taxYear.error.wholeNumber = Enter the year you are reporting payments for, like 2024, 2025
-dateConfirmPayments.taxYear.error.nonNumeric = Enter the year you are reporting payments for, like 2024, 2025
-dateConfirmPayments.taxYear.error.range = Enter the year you are reporting payments for, like 2024, 2025
-dateConfirmPayments.taxYear.error.duplicate = The return for this period has already been submitted
-dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate = Enter a valid date for your return, with the month and year in the correct date range (as a number), like 8 2024. Date cannot be before {0} {1} {2}.
-dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod = Enter a valid date for your return, with the month and year in the correct date range (as a number), like 8 2024. Date cannot be more than 3 return periods ahead of the current date.
-dateConfirmPayments.change.hidden = Date Confirm Payments
-dateConfirmPayments.p1 = A tax month runs from the 6th of a month, to the 5th of the next month. For example, 6 May to 5 June should be inputted as June. The 6th of June to the 5th of July should inputted as July, and so on.
-dateConfirmPayments.WarningIcon = Warning
-dateConfirmPayments.warningText = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
-dateConfirmPayments.legendText = Tax month and tax year
-dateConfirmPayments.labelMonth = Tax month
-dateConfirmPayments.labelYear = Tax year
+monthlyreturns.dateConfirmPayments.title = Which tax month and year are you filing a return for?
+monthlyreturns.dateConfirmPayments.heading = Which tax month and year are you filing a return for?
+monthlyreturns.dateConfirmPayments.taxMonth.error.required = Enter the tax month you are reporting payments for as a number, between 1 and 12
+monthlyreturns.dateConfirmPayments.taxMonth.error.wholeNumber = Enter the tax month you are reporting payments for as a number, between 1 and 12
+monthlyreturns.dateConfirmPayments.taxMonth.error.nonNumeric = Enter the tax month you are reporting payments for as a number, between 1 and 12
+monthlyreturns.dateConfirmPayments.taxMonth.error.range = Enter the tax month you are reporting payments for as a number, between 1 and 12
+monthlyreturns.dateConfirmPayments.taxYear.error.required = Enter the year you are reporting payments for, like 2024, 2025
+monthlyreturns.dateConfirmPayments.taxYear.error.wholeNumber = Enter the year you are reporting payments for, like 2024, 2025
+monthlyreturns.dateConfirmPayments.taxYear.error.nonNumeric = Enter the year you are reporting payments for, like 2024, 2025
+monthlyreturns.dateConfirmPayments.taxYear.error.range = Enter the year you are reporting payments for, like 2024, 2025
+monthlyreturns.dateConfirmPayments.error.duplicate = The return for this period has already been submitted
+monthlyreturns.dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate = Enter a valid date for your return, with the month and year in the correct date range (as a number), like 8 2024. Date cannot be before {0} {1} {2}.
+monthlyreturns.dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod = Enter a valid date for your return, with the month and year in the correct date range (as a number), like 8 2024. Date cannot be more than 3 return periods ahead of the current date.
+monthlyreturns.dateConfirmPayments.paragraph = A tax month runs from the 6th of a month, to the 5th of the next month. For example, 6 May to 5 June should be inputted as June. The 6th of June to the 5th of July should inputted as July, and so on.
+monthlyreturns.dateConfirmPayments.WarningIcon = Warning
+monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
+monthlyreturns.dateConfirmPayments.legendText = Tax month and tax year
+monthlyreturns.dateConfirmPayments.labelMonth = Tax month
+monthlyreturns.dateConfirmPayments.labelYear = Tax year
 
 monthlyreturns.selectSubcontractors.title = Select subcontractors
 monthlyreturns.selectSubcontractors.heading = Select subcontractors
@@ -340,6 +340,17 @@ monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification n
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include this month
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
+monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
+
+monthlyreturns.totalTaxDeducted.title = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.heading = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.hintText = CIS deductions you made from the subcontractor’s payment. Enter pounds and pence, like £300.00, £450.00, £1,200.00
+monthlyreturns.totalTaxDeducted.checkYourAnswersLabel = Total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.error.maxValue = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
+monthlyreturns.totalTaxDeducted.error.maxLength = Enter the ‘Total tax deducted’, up to 13 characters
+monthlyreturns.totalTaxDeducted.change.hidden = total tax deducted from {0}
+monthlyreturns.totalTaxDeducted.error.invalid = Enter the amount for ‘Total tax deducted’, using the correct format of pound and pence, like £458.12
+monthlyreturns.totalTaxDeducted.error.required = Enter the ‘Total tax deducted’, up to 13 characters
 
 verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
@@ -390,6 +401,43 @@ monthlyreturns.costOfMaterials.error.maxLength = Enter the ‘Cost of materials�
 monthlyreturns.costOfMaterials.error.maxValue = Enter the amount for ‘Cost of materials’, using the correct format of pounds only, like £458
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
 
+monthlyreturns.submitInactivityRequest.title = Submit inactivity request
+monthlyreturns.submitInactivityRequest.heading = Submit inactivity request
+monthlyreturns.submitInactivityRequest.p1 = Tell HMRC that you are not expecting to pay any of your subcontractors in the next six months.
+monthlyreturns.submitInactivityRequest.p2 = If your request is accepted you will not need to submit a monthly return for this subcontractor.
+monthlyreturns.submitInactivityRequest.insetText = You must let HMRC know when you start to pay subcontractors again by phoning the CIS Helpline. Telephone 0300 200 3210
+monthlyreturns.submitInactivityRequest.question = Are you submitting an inactivity request?
+monthlyreturns.submitInactivityRequest.yes = Yes
+monthlyreturns.submitInactivityRequest.no = No
+monthlyreturns.submitInactivityRequest.error.required = Select ‘Yes’ to submit an inactivity request. Select ‘No’ to continue.
+
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if you want to remove this subcontractor
+
+monthlyreturns.inactivityRequestWarning.title = Inactivity request
+monthlyreturns.inactivityRequestWarning.heading = Inactivity request
+monthlyreturns.inactivityRequestWarning.p = You are submitting a request for inactivity. If it is accepted it is only valid for six months.
+monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors in this period you must submit a monthly return.
+
+
+monthlyreturns.enterYourEmailAddress.title = Enter your email address
+monthlyreturns.enterYourEmailAddress.heading = Enter your email address
+monthlyreturns.enterYourEmailAddress.hint = Enter an email for HMRC to send confirmation that your return has been submitted.
+monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Enter your email address
+monthlyreturns.enterYourEmailAddress.error.required = Enter an email address in the correct format, like name@example.com
+monthlyreturns.enterYourEmailAddress.error.invalid = Enter an email address in the correct format, like name@example.com
+monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 132 characters or less
+monthlyreturns.enterYourEmailAddress.change.hidden = Enter your email address
+
+monthlyreturns.confirmationByEmail.title = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.heading = Do you want confirmation by email that your CIS monthly return has been successfully submitted?
+monthlyreturns.confirmationByEmail.p = You can use the email we have on file or provide another one.
+monthlyreturns.confirmationByEmail.yes = Yes
+monthlyreturns.confirmationByEmail.no = No
+monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
+
+monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
+monthlyreturns.addSubcontractorDetails.alreadyAdded = You have added details for:
+monthlyreturns.addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for

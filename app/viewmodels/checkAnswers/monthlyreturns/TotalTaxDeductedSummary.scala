@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,30 +15,27 @@
  */
 
 package viewmodels.checkAnswers.monthlyreturns
+
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.DateConfirmPaymentsPage
-import play.api.i18n.{Lang, Messages}
+import pages.monthlyreturns.TotalTaxDeductedPage
+import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import utils.DateTimeFormats.dateTimeFormat
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object DateConfirmPaymentsSummary {
+object TotalTaxDeductedSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(DateConfirmPaymentsPage).map { answer =>
-
-      implicit val lang: Lang = messages.lang
-
+    answers.get(TotalTaxDeductedPage).map { answer =>
       SummaryListRowViewModel(
-        key = "dateConfirmPayments.checkYourAnswersLabel",
-        value = ValueViewModel(answer.format(dateTimeFormat())),
+        key = "monthlyreturns.totalTaxDeducted.checkYourAnswersLabel",
+        value = ValueViewModel(answer.toString),
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode).url
           )
-            .withVisuallyHiddenText(messages("dateConfirmPayments.change.hidden"))
+            .withVisuallyHiddenText(messages("monthlyreturns.totalTaxDeducted.change.hidden"))
         )
       )
     }

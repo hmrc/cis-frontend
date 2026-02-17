@@ -19,3 +19,5 @@ package pages
 import queries.{Gettable, Settable}
 
 trait QuestionPage[A] extends Page with Gettable[A] with Settable[A]
+
+type IndexedQuestionPage[A] = QuestionPage[Map[Int, A]]

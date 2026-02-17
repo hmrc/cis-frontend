@@ -19,7 +19,12 @@ package models.agent
 import play.api.libs.json.*
 import play.api.libs.json.Reads.*
 
-case class AgentClientData(uniqueId: String, taxOfficeNumber: String, taxOfficeReference: String)
+case class AgentClientData(
+  uniqueId: String,
+  taxOfficeNumber: String,
+  taxOfficeReference: String,
+  schemeName: Option[String]
+)
 
 object AgentClientData {
   implicit val format: Format[AgentClientData] = Json.format[AgentClientData]
