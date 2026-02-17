@@ -25,7 +25,6 @@ class SelectSubcontractorsFormDataSpec extends AnyWordSpec with Matchers {
   "SelectSubcontractorsFormData" should {
     "serialise and deserialise correctly via Json" in {
       val model = new SelectSubcontractorsFormData(
-        confirmation = true,
         subcontractorsToInclude = List(1, 2, 3, 4)
       )
 
@@ -35,25 +34,23 @@ class SelectSubcontractorsFormDataSpec extends AnyWordSpec with Matchers {
 
     "produce the correct Json structure" in {
       val model = new SelectSubcontractorsFormData(
-        confirmation = true,
         subcontractorsToInclude = List(1)
       )
 
       val json = Json.toJson(model)
-      (json \ "confirmation").as[Boolean] mustBe true
       (json \ "subcontractorsToInclude").as[List[Int]] mustBe List(1)
     }
 
     "handle an empty subcontractorsToInclude list" in {
-      val model = SelectSubcontractorsFormData(confirmation = true, subcontractorsToInclude = Nil)
+      val model = SelectSubcontractorsFormData(subcontractorsToInclude = Nil)
 
       val json = Json.toJson(model)
       json.as[SelectSubcontractorsFormData] mustBe model
     }
 
     "support equal comparison" in {
-      val model1 = SelectSubcontractorsFormData(true, List(1))
-      val model2 = SelectSubcontractorsFormData(true, List(1))
+      val model1 = SelectSubcontractorsFormData(List(1))
+      val model2 = SelectSubcontractorsFormData(List(1))
 
       model1 mustBe model2
     }

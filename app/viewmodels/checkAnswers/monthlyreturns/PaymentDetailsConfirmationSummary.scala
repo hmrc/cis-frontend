@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
-import utils.CurrencyFormatter.currencyFormat
-import controllers.monthlyreturns.routes
 import models.{CheckMode, UserAnswers}
-import pages.PaymentDetailsPage
+import pages.monthlyreturns.PaymentDetailsConfirmationPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object PaymentDetailsSummary {
+object PaymentDetailsConfirmationSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(PaymentDetailsPage).map { answer =>
+    answers.get(PaymentDetailsConfirmationPage).map { answer =>
+
+      val value = if (answer) "site.yes" else "site.no"
+
       SummaryListRowViewModel(
-        key = "paymentDetails.checkYourAnswersLabel",
-        value = ValueViewModel(currencyFormat(answer)),
+        key = "monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel",
+        value = ValueViewModel(value),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.PaymentDetailsController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("paymentDetails.change.hidden"))
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.paymentDetailsConfirmation.change.hidden"))
         )
       )
     }

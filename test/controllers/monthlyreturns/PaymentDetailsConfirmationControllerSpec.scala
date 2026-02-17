@@ -17,44 +17,43 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.monthlyreturns.VerifySubcontractorsFormProvider
+import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.VerifySubcontractorsPage
+import pages.monthlyreturns.PaymentDetailsConfirmationPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers.*
+import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.monthlyreturns.VerifySubcontractorsView
+import views.html.monthlyreturns.PaymentDetailsConfirmationView
 
 import scala.concurrent.Future
 
-class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
+class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val verifySubcontractorsRoute =
-    controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(NormalMode).url
-
-  val formProvider = new VerifySubcontractorsFormProvider()
+  val formProvider = new PaymentDetailsConfirmationFormProvider()
   val form         = formProvider()
 
-  "VerifySubcontractors Controller" - {
+  lazy val paymentDetailsConfirmationRoute = routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url
+
+  "PaymentDetailsConfirmation Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, verifySubcontractorsRoute)
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[VerifySubcontractorsView]
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
@@ -63,27 +62,23 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers =
-        UserAnswers(userAnswersId).set(VerifySubcontractorsPage, true).success.value
+      val userAnswers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, true).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, verifySubcontractorsRoute)
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
 
-        val view = application.injector.instanceOf[VerifySubcontractorsView]
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(
-          request,
-          messages(application)
-        ).toString
+        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(request, messages(application)).toString
       }
     }
 
-    "must redirect to the next page when 'false' is submitted" in {
+    "must redirect to the next page when valid data is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
 
@@ -99,39 +94,13 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, verifySubcontractorsRoute)
-            .withFormUrlEncodedBody(("value", "false"))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
-      }
-    }
-
-    "must redirect to journey recovery when 'true' is submitted" in {
-
-      val mockSessionRepository = mock[SessionRepository]
-
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
-          .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
-          )
-          .build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, verifySubcontractorsRoute)
+          FakeRequest(POST, paymentDetailsConfirmationRoute)
             .withFormUrlEncodedBody(("value", "true"))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual onwardRoute.url
       }
     }
 
@@ -141,12 +110,12 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(POST, verifySubcontractorsRoute)
-            .withFormUrlEncodedBody(("value", "invalid value"))
+          FakeRequest(POST, paymentDetailsConfirmationRoute)
+            .withFormUrlEncodedBody(("value", ""))
 
-        val boundForm = form.bind(Map("value" -> "invalid value"))
+        val boundForm = form.bind(Map("value" -> ""))
 
-        val view = application.injector.instanceOf[VerifySubcontractorsView]
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
 
         val result = route(application, request).value
 
@@ -160,7 +129,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, verifySubcontractorsRoute)
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
 
         val result = route(application, request).value
 
@@ -169,19 +138,18 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "redirect to Journey Recovery for a POST if no existing data is found" in {
+    "must redirect to Journey Recovery for a POST if no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
         val request =
-          FakeRequest(POST, verifySubcontractorsRoute)
+          FakeRequest(POST, paymentDetailsConfirmationRoute)
             .withFormUrlEncodedBody(("value", "true"))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }

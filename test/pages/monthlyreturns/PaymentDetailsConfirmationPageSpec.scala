@@ -16,12 +16,18 @@
 
 package pages.monthlyreturns
 
-import pages.QuestionPage
+import base.SpecBase
 import play.api.libs.json.JsPath
 
-case object TotalTaxDeductedPage extends QuestionPage[BigDecimal] {
+class PaymentDetailsConfirmationPageSpec extends SpecBase {
 
-  override def path: JsPath = JsPath \ toString
+  "PaymentDetailsConfirmationPage" - {
+    "have the correct path" in {
+      PaymentDetailsConfirmationPage.path mustBe (JsPath \ "paymentDetailsConfirmation")
+    }
 
-  override def toString: String = "totalTaxDeducted"
+    "have the correct toString" in {
+      PaymentDetailsConfirmationPage.toString mustBe "paymentDetailsConfirmation"
+    }
+  }
 }
