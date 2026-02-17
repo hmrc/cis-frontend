@@ -31,10 +31,10 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
 
     "must render the page with the correct html elements" in new Setup {
       val companyName = "Test Company Ltd"
-      val html        = view(form, NormalMode, companyName)
+      val html        = view(form, NormalMode, companyName, 1)
       val doc         = Jsoup.parse(html.body)
 
-      doc.title             must include(messages("paymentDetails.title", companyName))
+      doc.title             must include(messages("paymentDetails.title"))
       doc.select("h1").text must include(messages("paymentDetails.heading", companyName))
 
       doc.select("input[type=text]").size() mustBe 1
@@ -48,7 +48,7 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
     "must show error summary and messages when form has errors" in new Setup {
       val companyName    = "Test Company Ltd"
       val boundWithError = form.bind(Map("value" -> ""))
-      val html           = view(boundWithError, NormalMode, companyName)
+      val html           = view(boundWithError, NormalMode, companyName, 1)
       val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
@@ -61,23 +61,21 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
 
     "must render with different company names" in new Setup {
       val companyName1 = "Company A"
-      val html1        = view(form, NormalMode, companyName1)
+      val html1        = view(form, NormalMode, companyName1, 1)
       val doc1         = Jsoup.parse(html1.body)
 
-      doc1.title             must include(companyName1)
       doc1.select("h1").text must include(companyName1)
 
       val companyName2 = "Company B"
-      val html2        = view(form, NormalMode, companyName2)
+      val html2        = view(form, NormalMode, companyName2, 1)
       val doc2         = Jsoup.parse(html2.body)
 
-      doc2.title             must include(companyName2)
       doc2.select("h1").text must include(companyName2)
     }
 
     "must have the correct form action" in new Setup {
       val companyName = "Test Company Ltd"
-      val html        = view(form, NormalMode, companyName)
+      val html        = view(form, NormalMode, companyName, 1)
       val doc         = Jsoup.parse(html.body)
 
       val formElement = doc.select("form").first()

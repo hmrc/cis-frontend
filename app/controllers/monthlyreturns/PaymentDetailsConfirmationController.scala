@@ -16,30 +16,30 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.*
-import forms.monthlyreturns.VerifySubcontractorsFormProvider
+import controllers.actions._
+import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
+import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
-import pages.monthlyreturns.VerifySubcontractorsPage
+import pages.monthlyreturns.PaymentDetailsConfirmationPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.VerifySubcontractorsView
+import views.html.monthlyreturns.PaymentDetailsConfirmationView
 
-import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class VerifySubcontractorsController @Inject() (
+class PaymentDetailsConfirmationController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  formProvider: VerifySubcontractorsFormProvider,
+  formProvider: PaymentDetailsConfirmationFormProvider,
   val controllerComponents: MessagesControllerComponents,
-  view: VerifySubcontractorsView
+  view: PaymentDetailsConfirmationView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
@@ -48,7 +48,7 @@ class VerifySubcontractorsController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-    val preparedForm = request.userAnswers.get(VerifySubcontractorsPage) match {
+    val preparedForm = request.userAnswers.get(PaymentDetailsConfirmationPage) match {
       case None        => form
       case Some(value) => form.fill(value)
     }
@@ -64,12 +64,9 @@ class VerifySubcontractorsController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value =>
             for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage, value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(PaymentDetailsConfirmationPage, value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield value match {
-              case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
-            }
+            } yield Redirect(navigator.nextPage(PaymentDetailsConfirmationPage, mode, updatedAnswers))
         )
   }
 }

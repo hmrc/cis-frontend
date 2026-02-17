@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package forms.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import javax.inject.Inject
 
-case object CostOfMaterialsPage extends QuestionPage[BigDecimal] {
+import forms.mappings.Mappings
+import play.api.data.Form
 
-  override def path: JsPath = JsPath \ toString
+class PaymentDetailsConfirmationFormProvider @Inject() extends Mappings {
 
-  override def toString: String = "costOfMaterials"
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("monthlyreturns.paymentDetailsConfirmation.error.required")
+    )
 }
