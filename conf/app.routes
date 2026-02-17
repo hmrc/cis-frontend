@@ -144,3 +144,8 @@ GET        /monthly-return/change-add-subcontractor-details                  con
 POST       /monthly-return/change-add-subcontractor-details                  controllers.monthlyreturns.AddSubcontractorDetailsController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)
+
+GET        /verified-status-declaration                        controllers.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = NormalMode)
+POST       /verified-status-declaration                        controllers.VerifiedStatusDeclarationController.onSubmit(mode: Mode = NormalMode)
+GET        /change-verified-status-declaration                 controllers.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = CheckMode)
+POST       /change-verified-status-declaration                 controllers.VerifiedStatusDeclarationController.onSubmit(mode: Mode = CheckMode)

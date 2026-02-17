@@ -33,7 +33,7 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
   "CheckAnswersTotalPaymentsView" - {
 
     "must render the correct content on the page" in new Setup {
-      val index = 1
+      val index                       = 1
       val html: HtmlFormat.Appendable = view(viewModel, index)
       val doc: Document               = Jsoup.parse(html.body)
 

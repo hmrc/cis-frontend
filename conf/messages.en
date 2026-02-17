@@ -456,3 +456,9 @@ monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontracto
 monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
 monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
 
+
+verifiedStatusDeclaration.title = Declaration of verified status
+verifiedStatusDeclaration.heading = Declaration
+verifiedStatusDeclaration.checkYourAnswersLabel = verifiedStatusDeclaration
+verifiedStatusDeclaration.error.required = Select yes if verifiedStatusDeclaration
+verifiedStatusDeclaration.change.hidden = VerifiedStatusDeclaration
