@@ -19,7 +19,7 @@ package navigation
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.Call
 import pages.*
-import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage, InactivityWarningPage, SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPaymentsMadePage, SelectedSubcontractorTaxDeductedPage, VerifySubcontractorsPage}
+import pages.monthlyreturns.*
 import models.*
 import models.monthlyreturns.InactivityRequest
 
@@ -60,7 +60,7 @@ class Navigator @Inject() () {
   }
 
   private val checkRouteMap: Page => UserAnswers => Call = {
-    case InactivityRequestPage =>
+    case InactivityRequestPage                         =>
       userAnswers =>
         userAnswers.get(InactivityRequestPage) match {
           case Some(InactivityRequest.Option2)        =>
@@ -68,7 +68,13 @@ class Navigator @Inject() () {
           case Some(InactivityRequest.Option1) | None =>
             controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
         }
-    case _                     => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case SelectedSubcontractorPaymentsMadePage(index)  =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+    case SelectedSubcontractorMaterialCostsPage(index) =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+    case SelectedSubcontractorTaxDeductedPage(index)   =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {

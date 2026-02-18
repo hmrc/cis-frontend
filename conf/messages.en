@@ -13,6 +13,8 @@ site.signIn = Sign in
 site.govuk = GOV.UK
 site.acceptAndContinue = Accept and continue
 
+currency.pounds=£{0}
+
 date.day = Day
 date.month = Month
 date.year = Year
@@ -456,3 +458,10 @@ monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = employmentSta
 monthlyreturns.employmentStatusDeclaration.error.required = Select yes if employmentStatusDeclaration
 monthlyreturns.employmentStatusDeclaration.change.hidden = EmploymentStatusDeclaration
 monthlyreturns.employmentStatusDeclaration.confirm = Confirm
+
+monthlyreturns.checkAnswersTotalPayments.title = Check your answers for subcontractor
+monthlyreturns.checkAnswersTotalPayments.heading = Check your answers for {0}
+monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Total payments to subcontractor
+monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
+monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
+

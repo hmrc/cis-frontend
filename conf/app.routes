@@ -147,3 +147,5 @@ GET        /monthly-return/employment-status-declaration                        
 POST       /monthly-return/employment-status-declaration                        controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-employment-status-declaration                  controllers.monthlyreturns.EmploymentStatusDeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-employment-status-declaration                  controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)
