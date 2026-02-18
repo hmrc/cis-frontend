@@ -30,8 +30,9 @@ class EmploymentStatusDeclarationViewSpec extends SpecBase {
   "EmploymentStatusDeclarationView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title             must include(messages("monthlyreturns.employmentStatusDeclaration.title"))
-      doc.select("h1").text must include(messages("monthlyreturns.employmentStatusDeclaration.heading"))
+      doc.title                 must include(messages("monthlyreturns.employmentStatusDeclaration.title"))
+      doc.select("h1").text     must include(messages("monthlyreturns.employmentStatusDeclaration.heading"))
+      doc.select("legend").text must include(messages("monthlyreturns.employmentStatusDeclaration.legend"))
 
       doc.getElementsByClass("govuk-button").text must include(
         messages("monthlyreturns.employmentStatusDeclaration.confirm")
@@ -44,8 +45,6 @@ class EmploymentStatusDeclarationViewSpec extends SpecBase {
       doc.select("input[type=radio][value=true]").size() mustBe 1
       doc.select("input[type=radio][value=false]").size() mustBe 1
 
-      doc.select("label[for=value_0]").text() must include(messages("site.yes"))
-      doc.select("label[for=value_1]").text() must include(messages("site.no"))
     }
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
