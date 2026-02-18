@@ -25,6 +25,6 @@ class EmploymentStatusDeclarationFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Boolean] =
     Form(
-      "value" -> boolean("employmentStatusDeclaration.error.required")
+      "value" -> boolean("monthlyreturns.employmentStatusDeclaration.error.required")
     )
 }

@@ -21,8 +21,8 @@ import play.api.data.FormError
 
 class EmploymentStatusDeclarationFormProviderSpec extends BooleanFieldBehaviours {
 
-  val requiredKey = "employmentStatusDeclaration.error.required"
-  val invalidKey = "error.boolean"
+  val requiredKey = "monthlyreturns.employmentStatusDeclaration.error.required"
+  val invalidKey  = "error.boolean"
 
   val form = new EmploymentStatusDeclarationFormProvider()()
 
