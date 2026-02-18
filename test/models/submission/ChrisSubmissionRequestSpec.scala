@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package models
+package models.submission
 
-import models.submission.ChrisSubmissionRequest
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.*
 
 import java.time.YearMonth
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.must.Matchers
-import play.api.libs.json.*
 
 class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
 

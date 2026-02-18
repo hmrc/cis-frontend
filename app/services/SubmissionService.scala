@@ -22,6 +22,7 @@ import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
 import models.requests.SendSuccessEmailRequest
 import models.submission.*
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
 import pages.submission.*
 import play.api.Logging
@@ -55,8 +56,23 @@ class SubmissionService @Inject() (
   )(implicit
     hc: HeaderCarrier
   ): Future[ChrisSubmissionResponse] =
+
+    val taxpayerFut: Future[CisTaxpayer] =
+      if (isAgent)
+        ua.get(AgentClientDataPage) match {
+          case Some(agentClientData) =>
+            cisConnector.getAgentClientTaxpayer(
+              agentClientData.taxOfficeNumber,
+              agentClientData.taxOfficeReference
+            )
+          case None                  =>
+            Future.failed(new RuntimeException("Agent client data missing"))
+        }
+      else
+        cisConnector.getCisTaxpayer()
+
     for {
-      taxpayer <- if (isAgent) cisConnector.getAgentClientTaxpayer("123", "AB001") else cisConnector.getCisTaxpayer()
+      taxpayer <- taxpayerFut
       csr       = buildChrisSubmissionRequest(ua, taxpayer, isAgent)
       response <- cisConnector.submitToChris(submissionId, csr)
       _        <- writeToFeMongo(ua, submissionId, response)

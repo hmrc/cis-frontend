@@ -66,8 +66,8 @@ class SubmissionSuccessController @Inject() (
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       val cisId = request.userAnswers.get(CisIdPage).getOrElse {
-        logger.error("[SubmissionSuccess] cisId missing from userAnswers")
-        throw new IllegalStateException("cisId missing from userAnswers")
+        val errorMessage: String = s"[SubmissionSuccess] cisId missing from userAnswers"
+        fail(errorMessage)
       }
 
       val contractorName: String = {
@@ -92,6 +92,7 @@ class SubmissionSuccessController @Inject() (
         } else {
           request.userAnswers
             .get(AgentClientDataPage)
+            .filter(_.taxOfficeNumber.nonEmpty)
             .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
             .getOrElse {
               fail(errorMessage)
