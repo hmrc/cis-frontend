@@ -43,6 +43,7 @@ h1: components.H1
                     content = Text(messages("site.change")),
                     href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
+                     .withAttribute("id" -> "total-payment-made")
                 )
                 ),
                 
@@ -54,6 +55,7 @@ h1: components.H1
                     content = Text(messages("site.change")),
                     href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials"))
+                     .withAttribute("id" -> "total-cost-of-material")
                 )
                 ),
                 
@@ -65,6 +67,7 @@ h1: components.H1
                     content = Text(messages("site.change")),
                     href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))
+                     .withAttribute("id" -> "total-cis-deductions")
                     )
                      )
                 ))
