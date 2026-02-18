@@ -39,7 +39,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
   private def completeSub(id: Long, name: String): JsObject =
     Json.obj(
-      "subcontractorId"   -> id,
+      "id"                -> id,
       "name"              -> name,
       "totalPaymentsMade" -> 1000.00,
       "costOfMaterials"   -> 200.00,
@@ -48,8 +48,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
   private def incompleteSub(id: Long, name: String): JsObject =
     Json.obj(
-      "subcontractorId" -> id,
-      "name"            -> name
+      "id"   -> id,
+      "name" -> name
     )
 
   private def buildApp(ua: UserAnswers) =

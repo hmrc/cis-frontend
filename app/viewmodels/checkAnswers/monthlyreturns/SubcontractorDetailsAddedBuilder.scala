@@ -16,36 +16,17 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
+import models.monthlyreturns.SelectedSubcontractor
 import models.{CheckMode, UserAnswers}
-import play.api.libs.json.{JsObject, Json}
+import pages.monthlyreturns.SelectedSubcontractorPage
 
 object SubcontractorDetailsAddedBuilder {
 
-  private def subcontractorsObject(ua: UserAnswers): JsObject =
-    (ua.data \ "subcontractors").asOpt[JsObject].getOrElse(Json.obj())
+  private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
+    ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
 
-  private def selectedIndexes(ua: UserAnswers): Seq[Int] =
-    subcontractorsObject(ua).keys.flatMap(_.toIntOption).filter(_ > 0).toSeq.sorted
-
-  private def subcontractorAt(ua: UserAnswers, index: Int): Option[JsObject] =
-    subcontractorsObject(ua).value.get(index.toString).collect { case o: JsObject => o }
-
-  private def subcontractorId(sub: JsObject): Long =
-    (sub \ "subcontractorId").toOption
-      .flatMap(_.asOpt[Long])
-      .orElse((sub \ "id").toOption.flatMap(_.asOpt[Long]))
-      .getOrElse(0L)
-
-  private def subcontractorName(sub: JsObject): String =
-    (sub \ "name").toOption.flatMap(_.asOpt[String]).getOrElse("")
-
-  private def detailsAdded(sub: JsObject): Boolean = {
-    val hasPaymentsMade = (sub \ "totalPaymentsMade").toOption.isDefined
-    val hasMaterials    = (sub \ "costOfMaterials").toOption.isDefined
-    val hasTaxDeducted  = (sub \ "totalTaxDeducted").toOption.isDefined
-
-    hasPaymentsMade && hasMaterials && hasTaxDeducted
-  }
+  private def detailsAdded(sub: SelectedSubcontractor): Boolean =
+    sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
 
   private def headingKeyAndArgs(addedCount: Int): (String, Seq[AnyRef]) =
     if (addedCount == 1) {
@@ -56,28 +37,27 @@ object SubcontractorDetailsAddedBuilder {
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
 
-    val indexes = selectedIndexes(ua)
+    val subcontractorByIndex = selectedSubcontractors(ua)
+    val indexes              = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {
       None
     } else {
       val rows: Seq[SubcontractorDetailsAddedRow] =
         indexes.flatMap { index =>
-          subcontractorAt(ua, index).map { sub =>
+          subcontractorByIndex.get(index).map { sub =>
 
-            val id    = subcontractorId(sub)
-            val name  = subcontractorName(sub)
             val added = detailsAdded(sub)
 
             SubcontractorDetailsAddedRow(
               index = index,
-              subcontractorId = id,
-              name = name,
+              subcontractorId = sub.id,
+              name = sub.name,
               detailsAdded = added,
               changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
                 .onPageLoad(CheckMode, index),
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-                .onPageLoad(CheckMode) // index to be added
+                .onPageLoad(CheckMode) // TODO: add index to the route when implemented
             )
           }
         }

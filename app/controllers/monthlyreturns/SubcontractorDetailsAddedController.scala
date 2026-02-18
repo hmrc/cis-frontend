@@ -49,9 +49,6 @@ class SubcontractorDetailsAddedController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     val ua = request.userAnswers
-    logger.info(
-      s"[SubcontractorDetailsAdded] subcontractors JSON: ${(request.userAnswers.data \ "subcontractors").toString}"
-    )
     SubcontractorDetailsAddedBuilder.build(ua) match {
       case Some(viewModel) =>
         val preparedForm =
