@@ -38,9 +38,10 @@ class EmploymentStatusDeclarationControllerSpec extends SpecBase with MockitoSug
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new EmploymentStatusDeclarationFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
-  lazy val employmentStatusDeclarationRoute = controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode).url
+  lazy val employmentStatusDeclarationRoute =
+    controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode).url
 
   "EmploymentStatusDeclaration Controller" - {
 

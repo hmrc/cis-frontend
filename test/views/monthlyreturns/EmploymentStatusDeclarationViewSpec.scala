@@ -33,7 +33,9 @@ class EmploymentStatusDeclarationViewSpec extends SpecBase {
       doc.title             must include(messages("monthlyreturns.employmentStatusDeclaration.title"))
       doc.select("h1").text must include(messages("monthlyreturns.employmentStatusDeclaration.heading"))
 
-      doc.getElementsByClass("govuk-button").text must include(messages("monthlyreturns.employmentStatusDeclaration.confirm"))
+      doc.getElementsByClass("govuk-button").text must include(
+        messages("monthlyreturns.employmentStatusDeclaration.confirm")
+      )
     }
 
     "must render radio buttons with correct values" in new Setup {
