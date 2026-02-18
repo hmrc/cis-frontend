@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package forms
-
-import javax.inject.Inject
+package forms.monthlyreturns
 
 import forms.mappings.Mappings
 import play.api.data.Form
+
+import javax.inject.Inject
 
 class VerifiedStatusDeclarationFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Boolean] =
     Form(
-      "value" -> boolean("verifiedStatusDeclaration.error.required")
+      "value" -> boolean("monthlyreturns.verifiedStatusDeclaration.error.required")
     )
 }

@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.VerifiedStatusDeclarationFormProvider
+import controllers.routes
+import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.VerifiedStatusDeclarationPage
+import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.VerifiedStatusDeclarationView
+import views.html.monthlyreturns.VerifiedStatusDeclarationView
 
 import scala.concurrent.Future
 
@@ -40,7 +41,8 @@ class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar
   val formProvider = new VerifiedStatusDeclarationFormProvider()
   val form         = formProvider()
 
-  lazy val verifiedStatusDeclarationRoute = routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode).url
+  lazy val verifiedStatusDeclarationRoute =
+    controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode).url
 
   "VerifiedStatusDeclaration Controller" - {
 

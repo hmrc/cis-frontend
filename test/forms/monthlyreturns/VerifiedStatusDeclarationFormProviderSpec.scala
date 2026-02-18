@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package forms
+package forms.monthlyreturns
 
 import forms.behaviours.BooleanFieldBehaviours
+import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import play.api.data.FormError
 
 class VerifiedStatusDeclarationFormProviderSpec extends BooleanFieldBehaviours {
 
-  val requiredKey = "verifiedStatusDeclaration.error.required"
+  val requiredKey = "monthlyreturns.verifiedStatusDeclaration.error.required"
   val invalidKey  = "error.boolean"
 
   val form = new VerifiedStatusDeclarationFormProvider()()

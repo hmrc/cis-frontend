@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
+import pages.QuestionPage
 import play.api.libs.json.JsPath
 
 case object VerifiedStatusDeclarationPage extends QuestionPage[Boolean] {

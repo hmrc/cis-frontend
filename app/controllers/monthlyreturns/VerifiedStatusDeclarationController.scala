@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
-import controllers.actions._
-import forms.VerifiedStatusDeclarationFormProvider
-import javax.inject.Inject
+import controllers.actions.*
+import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import models.Mode
 import navigation.Navigator
-import pages.VerifiedStatusDeclarationPage
+import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.VerifiedStatusDeclarationView
+import views.html.monthlyreturns.VerifiedStatusDeclarationView
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class VerifiedStatusDeclarationController @Inject() (

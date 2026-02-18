@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
-import controllers.routes
 import models.{CheckMode, UserAnswers}
-import pages.VerifiedStatusDeclarationPage
+import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import viewmodels.govuk.summarylist._
-import viewmodels.implicits._
+import viewmodels.govuk.summarylist.*
+import viewmodels.implicits.*
 
 object VerifiedStatusDeclarationSummary {
 
@@ -32,11 +31,14 @@ object VerifiedStatusDeclarationSummary {
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
-        key = "verifiedStatusDeclaration.checkYourAnswersLabel",
+        key = "monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("verifiedStatusDeclaration.change.hidden"))
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
         )
       )
     }

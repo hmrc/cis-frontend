@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package views
+package views.monthlyreturns
 
 import base.SpecBase
+import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
+import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.Application
+import play.api.data.Form
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
-import views.html.VerifiedStatusDeclarationView
-import forms.VerifiedStatusDeclarationFormProvider
-import models.NormalMode
-import play.api.data.Form
+import views.html.monthlyreturns.VerifiedStatusDeclarationView
 
 class VerifiedStatusDeclarationViewSpec extends SpecBase {
 
@@ -35,9 +35,9 @@ class VerifiedStatusDeclarationViewSpec extends SpecBase {
       val html: HtmlFormat.Appendable = view(form, NormalMode)
       val doc: Document               = Jsoup.parse(html.body)
 
-      doc.title                 must include(messages("verifiedStatusDeclaration.title"))
-      doc.select("h1").text     must include(messages("verifiedStatusDeclaration.heading"))
-      doc.select("legend").text must include(messages("verifiedStatusDeclaration.legend"))
+      doc.title                 must include(messages("monthlyreturns.verifiedStatusDeclaration.title"))
+      doc.select("h1").text     must include(messages("monthlyreturns.verifiedStatusDeclaration.heading"))
+      doc.select("legend").text must include(messages("monthlyreturns.verifiedStatusDeclaration.legend"))
       doc.select("input[type=radio]").size() mustBe 2
       doc.select("button").text mustBe messages("site.confirm")
     }

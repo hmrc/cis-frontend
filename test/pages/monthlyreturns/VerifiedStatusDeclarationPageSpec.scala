@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
 import base.SpecBase
+import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.libs.json.JsPath
 
 class VerifiedStatusDeclarationPageSpec extends SpecBase {
