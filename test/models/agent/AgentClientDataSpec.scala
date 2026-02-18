@@ -23,7 +23,7 @@ import play.api.libs.json.{JsSuccess, Json}
 class AgentClientDataSpec extends SpecBase {
 
   "AgentClientData" - {
-    
+
     "serialize to JSON and deserialize from JSON correctly" in {
       val data = AgentClientData(
         uniqueId = "123",
@@ -33,15 +33,15 @@ class AgentClientDataSpec extends SpecBase {
       )
 
       val json = Json.toJson(data)
-      (json \ "uniqueId").as[String] shouldEqual "123"
-      (json \ "taxOfficeNumber").as[String] shouldEqual "456"
+      (json \ "uniqueId").as[String]           shouldEqual "123"
+      (json \ "taxOfficeNumber").as[String]    shouldEqual "456"
       (json \ "taxOfficeReference").as[String] shouldEqual "789"
-      (json \ "schemeName").asOpt[String] shouldEqual Some("Test Scheme")
+      (json \ "schemeName").asOpt[String]      shouldEqual Some("Test Scheme")
 
       val fromJson = Json.fromJson[AgentClientData](json)
       fromJson shouldEqual JsSuccess(data)
     }
-    
+
     "handle None for schemeName in JSON" in {
       val data = AgentClientData(
         uniqueId = "abc",
@@ -49,10 +49,10 @@ class AgentClientDataSpec extends SpecBase {
         taxOfficeReference = "ghi",
         schemeName = None
       )
-    
+
       val json = Json.toJson(data)
       (json \ "schemeName").asOpt[String] shouldEqual None
-    
+
       val fromJson = Json.fromJson[AgentClientData](json)
       fromJson shouldEqual JsSuccess(data)
     }
