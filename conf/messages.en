@@ -455,7 +455,8 @@ monthlyreturns.addSubcontractorDetails.error.required = Select which subcontract
 monthlyreturns.employmentStatusDeclaration.title = Declaration of employment status
 monthlyreturns.employmentStatusDeclaration.heading = Declaration
 monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = employmentStatusDeclaration
-monthlyreturns.employmentStatusDeclaration.error.required = Select yes if employmentStatusDeclaration
+monthlyreturns.employmentStatusDeclaration.p = Has the employment status of each individual included on this return been considered and have payments not been made under contracts of employment?
+monthlyreturns.employmentStatusDeclaration.error.required = You must complete the declaration: ‘The employment status of each individual included on this return has been considered and payments have not been made under contracts of employment.’
 monthlyreturns.employmentStatusDeclaration.change.hidden = EmploymentStatusDeclaration
 monthlyreturns.employmentStatusDeclaration.confirm = Confirm
 
