@@ -449,3 +449,10 @@ monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need t
 monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
 monthlyreturns.addSubcontractorDetails.alreadyAdded = You have added details for:
 monthlyreturns.addSubcontractorDetails.error.required = Select which subcontractor you need to add payment details for
+
+monthlyreturns.employmentStatusDeclaration.title = Declaration of employment status
+monthlyreturns.employmentStatusDeclaration.heading = Declaration
+monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = employmentStatusDeclaration
+monthlyreturns.employmentStatusDeclaration.error.required = Select yes if employmentStatusDeclaration
+monthlyreturns.employmentStatusDeclaration.change.hidden = EmploymentStatusDeclaration
+monthlyreturns.employmentStatusDeclaration.confirm = Confirm
