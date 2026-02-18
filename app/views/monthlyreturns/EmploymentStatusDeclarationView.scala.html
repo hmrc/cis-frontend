@@ -26,6 +26,12 @@
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
+@hintPanel() = {
+<div>
+    <h1 class="govuk-fieldset__legend govuk-fieldset__legend govuk-fieldset__legend--m">@messages("monthlyreturns.employmentStatusDeclaration.p")</h1>
+</div>
+}
+
 @layout(pageTitle = title(form, messages("monthlyreturns.employmentStatusDeclaration.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
@@ -50,7 +56,8 @@
                     )
                 ),
                 legend = LegendViewModel(messages("monthlyreturns.employmentStatusDeclaration.heading")).asPageHeading(LegendSize.Large)
-                ).withCssClass("govuk-radios govuk-radios--inline")
+                ).withHint(Hint(content = HtmlContent(hintPanel())))
+                .withCssClass("govuk-radios govuk-radios--inline")
             )
 
         @govukButton(
