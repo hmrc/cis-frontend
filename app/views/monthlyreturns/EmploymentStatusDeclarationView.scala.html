@@ -14,51 +14,40 @@
  * limitations under the License.
  *@
 
-@import viewmodels.LegendSize
-
 @this(
     layout: templates.Layout,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
+    fieldSet: components.FieldSet
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
-
-@hintPanel() = {
-<div>
-    <h1 class="govuk-fieldset__legend govuk-fieldset__legend govuk-fieldset__legend--m">@messages("monthlyreturns.employmentStatusDeclaration.p")</h1>
-</div>
-}
 
 @layout(pageTitle = title(form, messages("monthlyreturns.employmentStatusDeclaration.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form))
         }
 
-        @govukRadios(
-            RadiosViewModel(
-                field = form("value"),
-                items = Seq(
-                    RadioItem(
-                        content = Text(messages("site.yes")),
-                        value = Some("true"),
-                        id = Some("value_0")
-                    ),
-                    RadioItem(
-                        content = Text(messages("site.no")),
-                        value = Some("false"),
-                        id = Some("value_1")
-                    )
-                ),
-                legend = LegendViewModel(messages("monthlyreturns.employmentStatusDeclaration.heading")).asPageHeading(LegendSize.Large)
-                ).withHint(Hint(content = HtmlContent(hintPanel())))
-                .withCssClass("govuk-radios govuk-radios--inline")
+        @fieldSet(
+        legend = "monthlyreturns.employmentStatusDeclaration.heading",
+        asHeading = true,
+        describedBy = None
+        ) {
+
+            @govukRadios(
+                RadiosViewModel.yesNo(
+                    field = form("value"),
+                    legend = LegendViewModel(
+                        messages("monthlyreturns.employmentStatusDeclaration.legend")
+                    ).withCssClass("govuk-fieldset__legend--m")
+                )
             )
+        }
 
         @govukButton(
             ButtonViewModel(messages("monthlyreturns.employmentStatusDeclaration.confirm"))
