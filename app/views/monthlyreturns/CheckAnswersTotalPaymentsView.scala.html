@@ -19,7 +19,7 @@
 
 @this(
     layout: templates.Layout,
-    formHelpter: FormWithCSRF,
+    formHelper: FormWithCSRF,
     govukButton: GovukButton,
     govukSummaryList: GovukSummaryList,
     h1: components.H1
@@ -70,7 +70,7 @@
         ))
     )
 
-    @formHelpter(action = controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index)) {
+    @formHelper(action = controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index)) {
         @govukButton(ButtonViewModel(messages("site.continue")))
     }
 }
