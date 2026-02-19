@@ -12,8 +12,8 @@ GET         /refresh-session                             controllers.KeepAliveCo
 
 GET         /there-is-a-problem                          controllers.JourneyRecoveryController.onPageLoad(continueUrl: Option[RedirectUrl] ?= None)
 
-GET        /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
-POST       /monthly-return/check-your-answers            controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
+GET        /monthly-return/check-your-answers            controllers.nilreturns.CheckYourAnswersController.onPageLoad()
+POST       /monthly-return/check-your-answers            controllers.nilreturns.CheckYourAnswersController.onSubmit()
 
 GET         /account/sign-out-survey                     controllers.auth.AuthController.signOut()
 GET         /account/sign-out                            controllers.auth.AuthController.signOutNoSurvey()
@@ -25,40 +25,40 @@ GET         /unauthorised/organisation                   controllers.Unauthorise
 GET         /unauthorised/individual                     controllers.UnauthorisedIndividualAffinityController.onPageLoad()
 GET         /unauthorised/agent                          controllers.UnauthorisedAgentAffinityController.onPageLoad()
 
-GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/date-confirm-nil-payments                    controllers.nilreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-nil-payments                    controllers.nilreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-nil-payments             controllers.nilreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-nil-payments             controllers.nilreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/submit-inactive-request            controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/submit-inactive-request            controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-submit-inactive-request     controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-submit-inactive-request     controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/submit-inactive-request            controllers.nilreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/submit-inactive-request            controllers.nilreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-submit-inactive-request     controllers.nilreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-submit-inactive-request     controllers.nilreturns.InactivityRequestController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/confirm-email-address        controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/confirm-email-address        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-confirm-email-address controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-confirm-email-address controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/confirm-email-address        controllers.nilreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/confirm-email-address        controllers.nilreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-confirm-email-address controllers.nilreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-confirm-email-address controllers.nilreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/declaration                        controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/declaration                        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-declaration                  controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/declaration                        controllers.nilreturns.DeclarationController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/declaration                        controllers.nilreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-declaration                  controllers.nilreturns.DeclarationController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-declaration                  controllers.nilreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/submission-send                       controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
-GET        /monthly-return/submission-send/polling                       controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect
+GET        /monthly-return/submission-send                       controllers.nilreturns.SubmissionSendingController.onPageLoad()
+GET        /monthly-return/submission-send/polling                       controllers.nilreturns.SubmissionSendingController.onPollAndRedirect
 
-GET        /monthly-return/nil-month-return-inactive                      controllers.monthlyreturns.InactivityWarningController.onPageLoad
-POST       /monthly-return/nil-month-return-inactive                       controllers.monthlyreturns.InactivityWarningController.onSubmit
+GET        /monthly-return/nil-month-return-inactive                      controllers.nilreturns.InactivityWarningController.onPageLoad
+POST       /monthly-return/nil-month-return-inactive                       controllers.nilreturns.InactivityWarningController.onSubmit
 
-GET        /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
-POST       /monthly-return/submission-unsuccessful                       controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
+GET        /monthly-return/submission-unsuccessful                       controllers.nilreturns.SubmissionUnsuccessfulController.onPageLoad
+POST       /monthly-return/submission-unsuccessful                       controllers.nilreturns.SubmissionUnsuccessfulController.onSubmit
 
-GET        /monthly-return/submission-awaiting                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
+GET        /monthly-return/submission-awaiting                       controllers.nilreturns.SubmissionAwaitingController.onPageLoad
 
-GET        /monthly-return/confirmation                       controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
-GET        /monthly-return/confirmation-no-receipt            controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
-GET        /monthly-return/already-submitted                  controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
+GET        /monthly-return/confirmation                       controllers.nilreturns.SubmissionSuccessController.onPageLoad
+GET        /monthly-return/confirmation-no-receipt            controllers.nilreturns.SubmittedNoReceiptController.onPageLoad
+GET        /monthly-return/already-submitted                  controllers.nilreturns.AlreadySubmittedController.onPageLoad()
 
 GET        /page-not-found                                    controllers.PageNotFoundController.onPageLoad()
 GET        /access-denied                                     controllers.AccessDeniedController.onPageLoad()

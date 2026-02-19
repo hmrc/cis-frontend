@@ -33,7 +33,7 @@
 
 @layout(pageTitle = title(form, messages("monthlyreturns.declaration.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.nilreturns.routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
