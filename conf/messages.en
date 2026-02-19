@@ -6,6 +6,7 @@ site.change = Change
 site.no = No
 site.yes = Yes
 site.continue = Continue
+site.confirm = Confirm
 site.saveAndContinue = Save and continue
 site.start = Start now
 site.startAgain = Start again
@@ -458,3 +459,10 @@ monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontracto
 monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
 monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
 
+
+monthlyreturns.verifiedStatusDeclaration.title = Declaration of verified status
+monthlyreturns.verifiedStatusDeclaration.heading = Declaration of verified status
+monthlyreturns.verifiedStatusDeclaration.legend = Has every subcontractor included on this return either been verified with HM Revenue & Customs, or been included in previous CIS returns in this, or the previous two tax years?
+monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Verified Status Declaration
+monthlyreturns.verifiedStatusDeclaration.error.required = Select ‘Yes’ if your subcontractors have been verified. Select ‘No’ if they have not been verified.
+monthlyreturns.verifiedStatusDeclaration.change.hidden = Verified Status Declaration
