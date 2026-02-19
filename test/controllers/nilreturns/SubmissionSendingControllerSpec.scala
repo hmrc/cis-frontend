@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import base.SpecBase
 import play.api.test.FakeRequest
@@ -48,14 +48,14 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
 
   lazy val submissionSendingRoute: String =
-    controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
+    controllers.nilreturns.routes.SubmissionSendingController.onPageLoad().url
   private def mkRequest                   = FakeRequest(GET, submissionSendingRoute)
 
-  private def successRoute          = controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url
-  private def successNoReceiptRoute = controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoad.url
-  private def awaitingRoute         = controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url
-  private def pollingRoute          = controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
-  private def unsuccessfulRoute     = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
+  private def successRoute          = controllers.nilreturns.routes.SubmissionSuccessController.onPageLoad.url
+  private def successNoReceiptRoute = controllers.nilreturns.routes.SubmittedNoReceiptController.onPageLoad.url
+  private def awaitingRoute         = controllers.nilreturns.routes.SubmissionAwaitingController.onPageLoad.url
+  private def pollingRoute          = controllers.nilreturns.routes.SubmissionSendingController.onPollAndRedirect.url
+  private def unsuccessfulRoute     = controllers.nilreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
   private def recoveryRoute         = controllers.routes.JourneyRecoveryController.onPageLoad().url
   private def systemErrorRoute      = controllers.routes.SystemErrorController.onPageLoad().url
   given hc: HeaderCarrier           = HeaderCarrier()
@@ -163,7 +163,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
   }
 
   lazy val pollAndRedirectRoute: String =
-    controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
+    controllers.nilreturns.routes.SubmissionSendingController.onPollAndRedirect.url
   private def mkPollRequest             = FakeRequest(GET, pollAndRedirectRoute)
 
   "SubmissionSendingController.onPollAndRedirect" - {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import base.SpecBase
 import forms.monthlyreturns.InactivityRequestFormProvider
@@ -41,7 +41,7 @@ class InactivityRequestControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute: Call = Call("GET", "/foo")
 
   lazy val inactivityRequestRoute: String =
-    controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode).url
+    controllers.nilreturns.routes.InactivityRequestController.onPageLoad(NormalMode).url
 
   val formProvider                  = new InactivityRequestFormProvider()
   val form: Form[InactivityRequest] = formProvider()

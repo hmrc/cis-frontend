@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import controllers.actions.*
 import models.NormalMode
@@ -43,6 +43,6 @@ class SubmissionUnsuccessfulController @Inject() (
 
   def onSubmit: Action[AnyContent] =
     identify { implicit request =>
-      Redirect(controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
+      Redirect(controllers.nilreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
     }
 }

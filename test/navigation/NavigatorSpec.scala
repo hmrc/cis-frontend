@@ -17,6 +17,7 @@
 package navigation
 
 import base.SpecBase
+import controllers.nilreturns
 import controllers.monthlyreturns
 import pages._
 import pages.monthlyreturns.*
@@ -36,7 +37,7 @@ class NavigatorSpec extends SpecBase {
           DateConfirmNilPaymentsPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+        ) mustBe controllers.nilreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
       }
 
       "must go from InactivityRequestPage to ConfirmEmailAddressController" in {
@@ -44,7 +45,7 @@ class NavigatorSpec extends SpecBase {
           InactivityRequestPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+        ) mustBe controllers.nilreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
       }
 
       "must go from ConfirmEmailAddressPage to DeclarationController" in {
@@ -52,7 +53,7 @@ class NavigatorSpec extends SpecBase {
           ConfirmEmailAddressPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+        ) mustBe controllers.nilreturns.routes.DeclarationController.onPageLoad(NormalMode)
       }
 
       "must go from DeclarationPage to CheckYourAnswers when inactivity request is NO" in {
@@ -61,7 +62,7 @@ class NavigatorSpec extends SpecBase {
           DeclarationPage,
           NormalMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe nilreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from DeclarationPage to InactivityWarning when inactivity request is YES" in {
@@ -70,7 +71,7 @@ class NavigatorSpec extends SpecBase {
           DeclarationPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe controllers.nilreturns.routes.InactivityWarningController.onPageLoad
       }
 
       "must go from DeclarationPage to InactivityWarning when inactivity request is missing" in {
@@ -78,7 +79,7 @@ class NavigatorSpec extends SpecBase {
           DeclarationPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe controllers.nilreturns.routes.InactivityWarningController.onPageLoad
       }
 
       "must go from InactivityWarningPage to CheckYourAnswers" in {
@@ -86,7 +87,7 @@ class NavigatorSpec extends SpecBase {
           InactivityWarningPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe nilreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from VerifySubcontractorsPage to PaymentDetailsController" in {
@@ -136,7 +137,7 @@ class NavigatorSpec extends SpecBase {
           UnknownPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController
+        ) mustBe nilreturns.routes.CheckYourAnswersController
           .onPageLoad()
       }
     }
@@ -148,7 +149,7 @@ class NavigatorSpec extends SpecBase {
           DateConfirmNilPaymentsPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe nilreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from InactivityRequestPage to CheckYourAnswers in CheckMode when inactivity request is NO" in {
@@ -157,7 +158,7 @@ class NavigatorSpec extends SpecBase {
           InactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe nilreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from InactivityRequestPage to InactivityWarning in CheckMode when inactivity request is YES" in {
@@ -166,7 +167,7 @@ class NavigatorSpec extends SpecBase {
           InactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe controllers.nilreturns.routes.InactivityWarningController.onPageLoad
       }
 
       "must go from InactivityRequestPage to InactivityWarning in CheckMode when inactivity request is missing" in {
@@ -174,7 +175,7 @@ class NavigatorSpec extends SpecBase {
           InactivityRequestPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe controllers.nilreturns.routes.InactivityWarningController.onPageLoad
       }
 
       "must go from ConfirmEmailAddressPage to CheckYourAnswers Page in CheckMode" in {
@@ -182,7 +183,7 @@ class NavigatorSpec extends SpecBase {
           ConfirmEmailAddressPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe nilreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayment Page in CheckMode" in {
@@ -216,7 +217,7 @@ class NavigatorSpec extends SpecBase {
           UnknownPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController
+        ) mustBe nilreturns.routes.CheckYourAnswersController
           .onPageLoad()
       }
     }

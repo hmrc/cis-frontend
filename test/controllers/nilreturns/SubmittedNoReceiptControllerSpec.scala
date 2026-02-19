@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import base.SpecBase
-import controllers.monthlyreturns
+import controllers.nilreturns
 import models.UserAnswers
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
 import play.api.Application

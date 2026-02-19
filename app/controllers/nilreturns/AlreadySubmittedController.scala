@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import config.FrontendAppConfig
 import play.api.i18n.I18nSupport
