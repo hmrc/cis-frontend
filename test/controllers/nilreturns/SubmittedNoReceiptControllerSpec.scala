@@ -25,7 +25,7 @@ import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.monthlyreturns.SubmittedNoReceiptView
+import views.html.nilreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}

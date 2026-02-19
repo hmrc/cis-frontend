@@ -23,7 +23,7 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
-import views.html.monthlyreturns.SubmittedNoReceiptView
+import views.html.nilreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}

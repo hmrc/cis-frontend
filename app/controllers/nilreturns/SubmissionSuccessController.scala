@@ -29,7 +29,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.SubmissionSuccessView
+import views.html.nilreturns.SubmissionSuccessView
 import utils.IrMarkReferenceGenerator
 
 import java.time.{Clock, ZoneId, ZonedDateTime}

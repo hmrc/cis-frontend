@@ -30,7 +30,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.monthlyreturns.InactivityRequestView
+import views.html.nilreturns.InactivityRequestView
 import controllers.routes
 import play.api.data.Form
 

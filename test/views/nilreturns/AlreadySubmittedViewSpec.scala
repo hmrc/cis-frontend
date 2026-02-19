@@ -21,7 +21,7 @@ import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.monthlyreturns.AlreadySubmittedView
+import views.html.nilreturns.AlreadySubmittedView
 
 class AlreadySubmittedViewSpec extends SpecBase with Matchers {
 

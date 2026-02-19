@@ -15,60 +15,57 @@
  */
 
 import base.SpecBase
-import forms.monthlyreturns.ConfirmEmailAddressFormProvider
+import forms.monthlyreturns.DeclarationFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.monthlyreturns.ConfirmEmailAddressView
+import views.html.nilreturns.DeclarationView
 
-class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
+class DeclarationViewSpec extends SpecBase with Matchers {
 
-  "ConfirmEmailAddressView" - {
+  "DeclarationView" - {
 
-    "must render the page with heading, paragraph, input and button" in new Setup {
-      val html = view(form, NormalMode)
+    "must render the page with heading, paragraph, checkbox and button" in new Setup {
+      val html = view(form, NormalMode, "5 April 2024")
       val doc  = Jsoup.parse(html.body)
 
-      doc.title must include(messages("monthlyreturns.confirmEmailAddress.title"))
-      doc.select("h1").text mustBe messages("monthlyreturns.confirmEmailAddress.heading")
+      doc.title                 must include(messages("monthlyreturns.declaration.title"))
+      doc.select("legend").text must include(messages("monthlyreturns.declaration.heading"))
 
-      doc.select("p").text must include(messages("monthlyreturns.confirmEmailAddress.paragraph"))
+      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph", "5 April 2024"))
 
-      doc.select("label").text must include(messages("monthlyreturns.confirmEmailAddress.input.label"))
+      doc.select("input[type=checkbox]").size() mustBe 1
 
-      doc.select("button[type=submit]").text mustBe messages("site.continue")
+      doc.select("button[type=submit]").text mustBe messages("monthlyreturns.declaration.submit")
     }
 
     "must show error summary and messages when form has errors" in new Setup {
       val boundWithError = form.bind(Map("value" -> ""))
-      val html           = view(boundWithError, NormalMode)
+      val html           = view(boundWithError, NormalMode, "5 April 2024")
       val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
 
       doc.select(".govuk-error-summary").size() mustBe 1
 
-      val expected = messages("monthlyreturns.confirmEmailAddress.error.required")
+      val expected = messages("monthlyreturns.declaration.error.required")
       doc.text() must include(expected)
     }
 
-    "must render error summary with correct link when form has errors" in new Setup {
-      val formWithErrors = form.bind(Map("value" -> ""))
-      val errorHtml      = view(formWithErrors, NormalMode)
-      val doc: Document  = Jsoup.parse(errorHtml.toString)
+    "must render with empty date when no date is provided" in new Setup {
+      val html = view(form, NormalMode, "")
+      val doc  = Jsoup.parse(html.body)
 
-      doc.select(".govuk-error-summary").size() mustBe 1
-      doc.select(".govuk-error-summary__list a").attr("href") mustBe "#value"
+      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph", ""))
     }
   }
 
   trait Setup {
     val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[ConfirmEmailAddressView]
-    val formProvider                              = app.injector.instanceOf[ConfirmEmailAddressFormProvider]
+    val view                                      = app.injector.instanceOf[DeclarationView]
+    val formProvider                              = app.injector.instanceOf[DeclarationFormProvider]
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(

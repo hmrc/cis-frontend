@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.*
-import views.html.monthlyreturns.CheckYourAnswersView
+import views.html.nilreturns.CheckYourAnswersView
 import play.api.Logging
 
 import javax.inject.Inject

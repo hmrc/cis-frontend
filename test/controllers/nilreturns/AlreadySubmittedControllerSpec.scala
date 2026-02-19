@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.monthlyreturns.AlreadySubmittedView
+import views.html.nilreturns.AlreadySubmittedView
 
 class AlreadySubmittedControllerSpec extends SpecBase {
 
