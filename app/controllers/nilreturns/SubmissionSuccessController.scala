@@ -1,0 +1,139 @@
+/*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package controllers.nilreturns
+
+import controllers.actions.*
+import models.EmployerReference
+import models.submission.SubmissionDetails
+import pages.agent.AgentClientDataPage
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.submission.SubmissionDetailsPage
+import play.api.Logging
+import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import views.html.nilreturns.SubmissionSuccessView
+import utils.IrMarkReferenceGenerator
+
+import java.time.{Clock, ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
+
+class SubmissionSuccessController @Inject() (
+  override val messagesApi: MessagesApi,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
+  val controllerComponents: MessagesControllerComponents,
+  view: SubmissionSuccessView,
+  clock: Clock,
+  monthlyReturnService: MonthlyReturnService
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport
+    with Logging {
+
+  private def formatEmployerRef(er: EmployerReference): String =
+    s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
+
+  private def fail(errorMessage: String): Nothing = {
+    logger.error(errorMessage)
+    throw new IllegalStateException(errorMessage)
+  }
+
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+    implicit request =>
+      implicit val hc: HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+      val cisId = request.userAnswers.get(CisIdPage).getOrElse {
+        val errorMessage: String = s"[SubmissionSuccess] cisId missing from userAnswers"
+        fail(errorMessage)
+      }
+
+      val contractorName: String = {
+        val errorMessage: String = s"[SubmissionSuccess] contractorName missing for userId=${request.userId}"
+        if (!request.isAgent) {
+          request.userAnswers.get(ContractorNamePage).getOrElse {
+            fail(errorMessage)
+          }
+        } else {
+          request.userAnswers.get(AgentClientDataPage).flatMap(_.schemeName).getOrElse {
+            fail(errorMessage)
+          }
+        }
+      }
+
+      val employerRef: String = {
+        val errorMessage: String = s"[SubmissionSuccess] employerReference missing for userId=${request.userId}"
+        if (!request.isAgent) {
+          request.employerReference.map(formatEmployerRef).getOrElse {
+            fail(errorMessage)
+          }
+        } else {
+          request.userAnswers
+            .get(AgentClientDataPage)
+            .filter(_.taxOfficeNumber.nonEmpty)
+            .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
+            .getOrElse {
+              fail(errorMessage)
+            }
+        }
+      }
+
+      val emailFromSession = request.userAnswers.get(ConfirmEmailAddressPage)
+
+      val emailFuture = emailFromSession match {
+        case Some(email) => Future.successful(email)
+        case None        => monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse(""))
+      }
+
+      emailFuture.map { email =>
+        val dmyFmt            = DateTimeFormatter.ofPattern("d MMM uuuu")
+        val periodEnd         = request.userAnswers
+          .get(DateConfirmNilPaymentsPage)
+          .map(_.format(dmyFmt))
+          .getOrElse {
+            fail("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
+          }
+        val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
+        val submittedDate     = ukNow.format(dmyFmt)
+        val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
+          fail("[SubmissionSuccess] submissionDetails missing from userAnswers")
+        }
+        val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
+
+        Ok(
+          view(
+            reference = reference,
+            periodEnd = periodEnd,
+            submittedTime = submittedTime,
+            submittedDate = submittedDate,
+            contractorName = contractorName,
+            empRef = employerRef,
+            email = email
+          )
+        )
+      }
+  }
+}

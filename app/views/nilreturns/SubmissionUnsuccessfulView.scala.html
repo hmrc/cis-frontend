@@ -1,0 +1,78 @@
+@*
+ * Copyright 2025 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import config.FrontendAppConfig
+
+@this(
+        layout: templates.Layout,
+        govukButton: GovukButton,
+        formHelper: FormWithCSRF,
+        h1: components.H1,
+        h2: components.H2,
+        paragraph: components.Paragraph,
+        bulletList: components.BulletList,
+        link: components.Link,
+        govukWarningText: GovukWarningText,
+        govukDetails: GovukDetails,
+        appConfig: FrontendAppConfig
+)
+
+@()(implicit request: Request[_], messages: Messages)
+
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessful.title")),
+        showBackLink = false
+        ) {
+
+    @formHelper(action = controllers.nilreturns.routes.SubmissionUnsuccessfulController.onSubmit) {
+
+        @h1("monthlyreturns.submissionUnsuccessful.heading.h1")
+        @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p1", baseClass="govuk-body-lead")
+        @link(
+            linkTextKey   = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
+            linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
+            isNewTab      = true,
+            prefixTextKey = "monthlyreturns.submissionUnsuccessful.links.prefix"
+        )
+        @govukDetails(
+            Details(
+                summary = Text(messages("monthlyreturns.submissionUnsuccessful.details.summary")),
+                content = HtmlContent(
+                    paragraph("monthlyreturns.submissionUnsuccessful.details.intro").toString +
+                    bulletList(Seq(
+                        "monthlyreturns.submissionUnsuccessful.details.li1",
+                        "monthlyreturns.submissionUnsuccessful.details.li2",
+                        "monthlyreturns.submissionUnsuccessful.details.li3",
+                        "monthlyreturns.submissionUnsuccessful.details.li4"
+                    )).toString +
+                    paragraph("monthlyreturns.submissionUnsuccessful.paragraph.outro").toString
+                )
+            )
+        )
+        @h2("monthlyreturns.submissionUnsuccessful.heading.h2")
+        @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p2")
+        @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p3")
+        @govukWarningText(
+            WarningTextViewModel(
+                content = Text(messages("monthlyreturns.submissionUnsuccessful.warning"))
+                )
+        )
+        @govukButton(
+            ButtonViewModel(
+                messages("monthlyreturns.submissionUnsuccessful.submit")
+                )
+        )
+    }
+}
