@@ -16,18 +16,25 @@
 
 package pages.monthlyreturns
 
-import base.SpecBase
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.must.Matchers
 import play.api.libs.json.JsPath
 
-class ConfirmSubcontractorRemovalPageSpec extends SpecBase {
+class ConfirmSubcontractorRemovalPageSpec extends AnyWordSpec with Matchers {
 
-  "ConfirmSubcontractorRemovalPage" - {
+  "ConfirmSubcontractorRemovalPage" must {
+
     "have the correct path" in {
-      ConfirmSubcontractorRemovalPage.path mustBe (JsPath \ "confirmSubcontractorRemoval")
+      val index = 0
+      val page  = ConfirmSubcontractorRemovalPage(index)
+
+      page.path mustBe (JsPath \ "subcontractors" \ index.toString \ "confirmSubcontractorRemoval")
     }
 
-    "have the correct toString" in {
-      ConfirmSubcontractorRemovalPage.toString mustBe "confirmSubcontractorRemoval"
+    "have the correct toString value" in {
+      val page = ConfirmSubcontractorRemovalPage(1)
+
+      page.toString mustBe "confirmSubcontractorRemoval"
     }
   }
 }

@@ -186,4 +186,17 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
           case status     => Future.failed(UpstreamErrorResponse(response.body, status, status))
         }
       }
+
+  def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-return-item/delete")
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case NO_CONTENT => Future.unit
+          case status     => Future.failed(UpstreamErrorResponse(response.body, status, status))
+        }
+      }
+
 }

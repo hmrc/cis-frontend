@@ -19,7 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.requests.SendSuccessEmailRequest
-import models.monthlyreturns.MonthlyReturnRequest
+import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, MonthlyReturnRequest}
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -753,6 +753,45 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       ex.getMessage must include("Send email failed")
       ex.getMessage must include("status: 500")
       ex.getMessage must include("boom")
+    }
+  }
+
+  "deleteMonthlyReturnItem(payload)" should {
+
+    "POST /cis/monthly-return-item/delete and return Unit on 204" in {
+      val req = DeleteMonthlyReturnItemRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        subcontractorId = 1234567890L
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-return-item/delete"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.deleteMonthlyReturnItem(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-204 (e.g. 500)" in {
+      val req = DeleteMonthlyReturnItemRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        subcontractorId = 1234567890L
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-return-item/delete"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.deleteMonthlyReturnItem(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
   }
 }

@@ -18,12 +18,13 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
-import models.Mode
-import navigation.Navigator
-import pages.monthlyreturns.ConfirmSubcontractorRemovalPage
+import models.monthlyreturns.DeleteMonthlyReturnItemRequest
+import models.{Mode, UserAnswers}
+import pages.monthlyreturns.{CisIdPage, ConfirmSubcontractorRemovalPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.ConfirmSubcontractorRemovalView
 
@@ -33,11 +34,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class ConfirmSubcontractorRemovalController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
-  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   formProvider: ConfirmSubcontractorRemovalFormProvider,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmSubcontractorRemovalView
 )(implicit ec: ExecutionContext)
@@ -46,32 +47,81 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) {
+    implicit request =>
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None =>
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
-    val preparedForm = request.userAnswers.get(ConfirmSubcontractorRemovalPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
+        case Some(subcontractor) =>
+          val preparedForm =
+            request.userAnswers.get(ConfirmSubcontractorRemovalPage(index)) match {
+              case None        => form
+              case Some(value) => form.fill(value)
+            }
+
+          Ok(view(preparedForm, mode, subcontractor.name, index))
+      }
+  }
+
+  def onSubmit(mode: Mode, index: Int): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case Some(subcontractor) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index))),
+              confirmRemove =>
+                for {
+                  updatedAnswers1 <-
+                    Future.fromTry(request.userAnswers.set(ConfirmSubcontractorRemovalPage(index), confirmRemove))
+
+                  result <-
+                    if (!confirmRemove) {
+                      sessionRepository.set(updatedAnswers1).map { _ =>
+                        Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                      }
+                    } else {
+                      buildDeletePayload(updatedAnswers1, index) match {
+                        case None =>
+                          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+                        case Some(payload) =>
+                          monthlyReturnService
+                            .deleteMonthlyReturnItem(payload)
+                            .flatMap { _ =>
+                              for {
+                                updatedAnswers2 <-
+                                  Future.fromTry(updatedAnswers1.remove(SelectedSubcontractorPage(index)))
+                                _               <- sessionRepository.set(updatedAnswers2)
+                              } yield Redirect(
+                                controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+                              )
+                            }
+                            .recover { case e =>
+                              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                            }
+                      }
+                    }
+                } yield result
+            )
+      }
     }
 
-    val subcontractorName = "TyneWear Ltd"
+  private def buildDeletePayload(ua: UserAnswers, index: Int): Option[DeleteMonthlyReturnItemRequest] =
+    for {
+      cisId         <- ua.get(CisIdPage)
+      monthYear     <- ua.get(DateConfirmPaymentsPage)
+      subcontractor <- ua.get(SelectedSubcontractorPage(index))
+    } yield DeleteMonthlyReturnItemRequest(
+      instanceId = cisId,
+      taxYear = monthYear.getYear,
+      taxMonth = monthYear.getMonthValue,
+      subcontractorId = subcontractor.id
+    )
 
-    Ok(view(preparedForm, mode, subcontractorName))
-  }
-
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => {
-            val subcontractorName = "TyneWear Ltd"
-            Future.successful(BadRequest(view(formWithErrors, mode, subcontractorName)))
-          },
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmSubcontractorRemovalPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(ConfirmSubcontractorRemovalPage, mode, updatedAnswers))
-        )
-  }
 }

@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package models.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import play.api.libs.json.{Json, OFormat}
 
-case class ConfirmSubcontractorRemovalPage(index: Int) extends QuestionPage[Boolean] {
+case class DeleteMonthlyReturnItemRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int,
+  subcontractorId: Long
+)
 
-  override def path: JsPath = JsPath \ "subcontractors" \ index.toString \ toString
-
-  override def toString: String = "confirmSubcontractorRemoval"
+object DeleteMonthlyReturnItemRequest {
+  given format: OFormat[DeleteMonthlyReturnItemRequest] = Json.format[DeleteMonthlyReturnItemRequest]
 }

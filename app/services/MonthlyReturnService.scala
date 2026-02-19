@@ -20,8 +20,9 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.monthlyreturns.*
-import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import models.UserAnswers
+import models.monthlyreturns.DeleteMonthlyReturnItemRequest
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -135,6 +136,9 @@ class MonthlyReturnService @Inject() (
     cisConnector.syncMonthlyReturnItems(
       SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds)
     )
+
+  def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.deleteMonthlyReturnItem(payload)
 
   def storeAndSyncSelectedSubcontractors(
     ua: UserAnswers,
