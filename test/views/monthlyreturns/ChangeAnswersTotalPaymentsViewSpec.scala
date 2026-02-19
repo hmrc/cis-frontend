@@ -17,7 +17,7 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import controllers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
+import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 import models.monthlyreturns.SelectedSubcontractor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -33,7 +33,7 @@ class ChangeAnswersTotalPaymentsViewSpec extends SpecBase {
   "ChangeAnswersTotalPaymentsView" - {
 
     "must render the correct content on the page" in new Setup {
-      val index = 1
+      val index                       = 1
       val html: HtmlFormat.Appendable = view(viewModel, index)
       val doc: Document               = Jsoup.parse(html.body)
 
@@ -78,7 +78,7 @@ class ChangeAnswersTotalPaymentsViewSpec extends SpecBase {
 
   trait Setup {
     val app: Application                          = applicationBuilder().build()
-    val view: ChangeAnswersTotalPaymentsView       = app.injector.instanceOf[ChangeAnswersTotalPaymentsView]
+    val view: ChangeAnswersTotalPaymentsView      = app.injector.instanceOf[ChangeAnswersTotalPaymentsView]
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,

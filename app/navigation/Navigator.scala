@@ -69,11 +69,11 @@ class Navigator @Inject() () {
             controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
         }
     case SelectedSubcontractorPaymentsMadePage(index)  =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      _ => controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
     case SelectedSubcontractorMaterialCostsPage(index) =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      _ => controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      _ => controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
