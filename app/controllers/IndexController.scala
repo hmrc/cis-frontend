@@ -25,7 +25,7 @@ import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Results}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import controllers.monthlyreturns.{routes => monthlyReturnsRoutes}
+import controllers.nilreturns.{routes => nilReturnsRoutes}
 
 import scala.concurrent.ExecutionContext
 
@@ -43,7 +43,7 @@ class IndexController @Inject() (
     val userAnswers = UserAnswers(request.userId)
 
     sessionRepository.set(userAnswers).map { _ =>
-      Results.Redirect(monthlyReturnsRoutes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
+      Results.Redirect(nilReturnsRoutes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
     }
   }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import controllers.actions.*
 import models.submission.SubmissionDetails
@@ -58,8 +58,8 @@ class SubmissionSendingController @Inject() (
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
       } yield submitted.status match {
         case "PENDING" | "ACCEPTED" =>
-          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-        case _                      => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+          Redirect(controllers.nilreturns.routes.SubmissionSendingController.onPollAndRedirect)
+        case _                      => Redirect(controllers.nilreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
       }).recover { case ex =>
         logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
         Redirect(controllers.routes.SystemErrorController.onPageLoad())

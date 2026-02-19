@@ -40,17 +40,17 @@
 
     @govukButton(
         ButtonViewModel(messages("stub.monthlyreturns.submissionSuccessful.button"))
-        .asLink(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url)
+        .asLink(controllers.nilreturns.routes.SubmissionSuccessController.onPageLoad.url)
     )
 
     @govukButton(
         ButtonViewModel(messages("stub.monthlyreturns.submissionUnsuccessful.button"))
-        .asLink(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url)
+        .asLink(controllers.nilreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url)
     )
 
     @govukButton(
         ButtonViewModel(messages("stub.monthlyreturns.submissionAwaiting.button"))
-        .asLink(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url)
+        .asLink(controllers.nilreturns.routes.SubmissionAwaitingController.onPageLoad.url)
     )
 
 }

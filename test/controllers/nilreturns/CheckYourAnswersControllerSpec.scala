@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import base.SpecBase
 import models.ReturnType
@@ -47,7 +47,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswersWithReturnType)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, controllers.nilreturns.routes.CheckYourAnswersController.onPageLoad().url)
 
         val result = route(application, request).value
 
@@ -71,7 +71,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, controllers.nilreturns.routes.CheckYourAnswersController.onPageLoad().url)
 
         val result = route(application, request).value
 
@@ -90,7 +90,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, controllers.nilreturns.routes.CheckYourAnswersController.onPageLoad().url)
 
         val result = route(application, request).value
 
@@ -120,12 +120,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, controllers.nilreturns.routes.CheckYourAnswersController.onSubmit().url)
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
+        redirectLocation(result).value mustEqual controllers.nilreturns.routes.SubmissionSendingController
           .onPageLoad()
           .url
       }
@@ -136,7 +136,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, controllers.nilreturns.routes.CheckYourAnswersController.onSubmit().url)
 
         val result = route(application, request).value
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import controllers.actions._
 import forms.monthlyreturns.ConfirmEmailAddressFormProvider

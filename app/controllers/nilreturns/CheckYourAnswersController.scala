@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import controllers.actions.*
 import pages.monthlyreturns.NilReturnStatusPage
@@ -85,7 +85,7 @@ class CheckYourAnswersController @Inject() (
             logger.info(
               "[CheckYourAnswersController] Updated FormP monthly nil return confirmation/nil flags; redirecting to submission"
             )
-            Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+            Redirect(controllers.nilreturns.routes.SubmissionSendingController.onPageLoad())
           }
           .recover { case ex =>
             logger.error(

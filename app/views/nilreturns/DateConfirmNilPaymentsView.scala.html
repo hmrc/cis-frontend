@@ -37,7 +37,7 @@
 
 @layout(pageTitle = title(form, messages("monthlyreturns.dateConfirmNilPayments.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.nilreturns.routes.DateConfirmNilPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))

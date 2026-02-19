@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.monthlyreturns
+package controllers.nilreturns
 
 import base.SpecBase
 import models.NormalMode
@@ -80,7 +80,7 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
         ).value
 
         status(result) mustBe SEE_OTHER
-        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode).url
+        controllers.nilreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode).url
       }
     }
 

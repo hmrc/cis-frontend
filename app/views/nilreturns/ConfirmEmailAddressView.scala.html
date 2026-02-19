@@ -30,7 +30,7 @@
 
 @layout(pageTitle = title(form, messages("monthlyreturns.confirmEmailAddress.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.ConfirmEmailAddressController.onSubmit(mode)) {
+    @formHelper(action = controllers.nilreturns.routes.ConfirmEmailAddressController.onSubmit(mode)) {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))
