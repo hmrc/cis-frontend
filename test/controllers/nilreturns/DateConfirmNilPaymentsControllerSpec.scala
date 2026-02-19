@@ -34,7 +34,7 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.UpstreamErrorResponse
-import views.html.monthlyreturns.DateConfirmNilPaymentsView
+import views.html.nilreturns.DateConfirmNilPaymentsView
 
 import java.time.{LocalDate, ZoneOffset}
 import scala.concurrent.Future

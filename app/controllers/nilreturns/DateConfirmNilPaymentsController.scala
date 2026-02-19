@@ -30,7 +30,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import views.html.monthlyreturns.DateConfirmNilPaymentsView
+import views.html.nilreturns.DateConfirmNilPaymentsView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

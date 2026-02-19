@@ -17,24 +17,22 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import controllers.monthlyreturns
 import models.UserAnswers
-import models.submission.SubmissionDetails
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
-import pages.submission.SubmissionDetailsPage
 import play.api.Application
-import play.api.test.FakeRequest
-import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
-import views.html.monthlyreturns.SubmissionSuccessView
-import utils.IrMarkReferenceGenerator
+import play.api.test.FakeRequest
+import play.api.test.Helpers.*
+import views.html.nilreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
 
-class SubmissionSuccessControllerSpec extends SpecBase {
+class SubmittedNoReceiptControllerSpec extends SpecBase {
 
-  "SubmissionSuccessController.onPageLoad" - {
+  "SubmittedNoReceipt Controller" - {
 
     "must return OK and render the expected view" in new Setup {
       running(app) {
@@ -66,8 +64,6 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     val email: String          = "test@test.com"
     val periodEnd: LocalDate   = LocalDate.of(2018, 3, 5)
     val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
-    val irMarkBase64: String   = "Pyy1LRJh053AE+nuyp0GJR7oESw="
-    val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
     val contractorName: String = "PAL 355 Scheme"
     val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
@@ -95,12 +91,6 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         .set(DateConfirmNilPaymentsPage, periodEnd)
         .success
         .value
-        .set(
-          SubmissionDetailsPage,
-          SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-        )
-        .success
-        .value
 
     lazy val app: Application =
       applicationBuilder(userAnswers = Some(ua))
@@ -108,12 +98,11 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         .build()
 
     lazy val request: FakeRequest[AnyContentAsEmpty.type] =
-      FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad.url)
-    lazy val view: SubmissionSuccessView                  = app.injector.instanceOf[SubmissionSuccessView]
+      FakeRequest(GET, routes.SubmittedNoReceiptController.onPageLoad.url)
+    lazy val view: SubmittedNoReceiptView                 = app.injector.instanceOf[SubmittedNoReceiptView]
 
     lazy val expectedHtml: String =
       view(
-        reference = reference,
         periodEnd = periodEnd.format(dmyFmt),
         submittedTime = submittedTime,
         submittedDate = submittedDate,

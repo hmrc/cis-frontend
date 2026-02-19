@@ -20,7 +20,7 @@ import base.SpecBase
 import models.NormalMode
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.monthlyreturns.SubmissionUnsuccessfulView
+import views.html.nilreturns.SubmissionUnsuccessfulView
 
 class SubmissionUnsuccessfulControllerSpec extends SpecBase {
 
