@@ -31,7 +31,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.monthlyreturns.DeclarationView
+import views.html.nilreturns.DeclarationView
 
 import java.time.LocalDate
 import scala.concurrent.Future

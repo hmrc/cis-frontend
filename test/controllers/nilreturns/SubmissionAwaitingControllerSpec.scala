@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.monthlyreturns.SubmissionAwaitingView
+import views.html.nilreturns.SubmissionAwaitingView
 
 class SubmissionAwaitingControllerSpec extends SpecBase {
 

@@ -28,7 +28,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
-import views.html.monthlyreturns.SubmissionSuccessView
+import views.html.nilreturns.SubmissionSuccessView
 import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter

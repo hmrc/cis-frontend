@@ -25,7 +25,7 @@ import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
-import views.html.monthlyreturns.CheckYourAnswersView
+import views.html.nilreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage}
 import java.time.LocalDate
