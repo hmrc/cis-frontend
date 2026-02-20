@@ -23,18 +23,14 @@
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title")),
-        showBackLink = false
-        ) {
-
-    @h1("monthlyreturns.submissionSending.heading")
-
-    @paragraph("monthlyreturns.submissionSending.paragraph")
-
-    @govukInsetText(
-        InsetTextViewModel(
-            content = Text(messages("monthlyreturns.submissionSending.insetText"))
-        )
-    )
-
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title")), showBackLink = false, isFullWidth = true) {
+        <div class="loading-spinner">
+            <div class="loading-spinner__spinner" aria-live="polite" role="status"></div>
+            <div class="loading-spinner__content">
+                <h1 class="govuk-heading-m">
+                    @messages("monthlyreturns.submissionSending.h1")
+                </h1>
+                <p class="govuk-body">@messages("monthlyreturns.submissionSending.paragraph")</p>
+            </div>
+        </div>
 }
