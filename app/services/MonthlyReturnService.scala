@@ -20,7 +20,7 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.monthlyreturns.*
-import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
