@@ -19,13 +19,15 @@ package services
 import connectors.ConstructionIndustrySchemeConnector
 import models.monthlyreturns.*
 import models.UserAnswers
+import models.agent.AgentClientData
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
+import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -797,4 +799,53 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verifyNoInteractions(connector)
     }
   }
+
+  "getAgentClient" should {
+
+    "delegate to connector and return the agent client data when present" in {
+      val (service, connector, _) = newService()
+      val userId                  = "123"
+
+      val validAgentClientData = AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))
+      val validJson: JsValue   = Json.toJson(validAgentClientData)
+
+      when(connector.getAgentClient(eqTo(userId))(any[HeaderCarrier]))
+        .thenReturn(
+          Future.successful(Some(validJson))
+        )
+
+      val result = service.getAgentClient(userId).futureValue
+      result mustBe Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd")))
+
+      verify(connector).getAgentClient(eqTo(userId))(any[HeaderCarrier])
+    }
+
+    "delegate to connector and return None when agent client data is not present" in {
+      val (service, connector, _) = newService()
+      val invalidJson             = Json.obj("unexpected" -> "field")
+
+      when(connector.getAgentClient(eqTo("bar"))(any[HeaderCarrier]))
+        .thenReturn(
+          Future.successful(Some(invalidJson))
+        )
+
+      val result = service.getAgentClient("bar").futureValue
+      result mustBe None
+
+      verify(connector).getAgentClient(eqTo("bar"))(any[HeaderCarrier])
+    }
+
+    "return None when connector returns None" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getAgentClient("baz")).thenReturn(Future.successful(None))
+
+      val result = service.getAgentClient("baz").futureValue
+      result mustBe None
+
+      verify(connector).getAgentClient(eqTo("baz"))(any[HeaderCarrier])
+
+    }
+  }
+
 }

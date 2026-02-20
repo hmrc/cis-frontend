@@ -60,16 +60,22 @@ trait SpecBase
   protected def applicationBuilder(
     userAnswers: Option[UserAnswers] = None,
     additionalBindings: Seq[Binding[_]] = Nil,
-    isAgent: Boolean = false
+    isAgent: Boolean = false,
+    hasAgentRef: Boolean = true,
+    hasEmployeeRef: Boolean = true
   ): GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure("play.http.router" -> "app.Routes")
       .overrides(
         Seq(
           bind[DataRequiredAction].to[DataRequiredActionImpl],
-          bind[IdentifierAction].to(new FakeIdentifierAction(isAgent)(parsers)),
-          bind[IdentifierAction].qualifiedWith("AgentIdentifier").to(new FakeIdentifierAction(true)(parsers)),
-          bind[IdentifierAction].qualifiedWith("ContractorIdentifier").to(new FakeIdentifierAction(false)(parsers)),
+          bind[IdentifierAction].to(new FakeIdentifierAction(isAgent, hasAgentRef, hasEmployeeRef)(parsers)),
+          bind[IdentifierAction]
+            .qualifiedWith("AgentIdentifier")
+            .to(new FakeIdentifierAction(true, true, false)(parsers)),
+          bind[IdentifierAction]
+            .qualifiedWith("ContractorIdentifier")
+            .to(new FakeIdentifierAction(false, false, true)(parsers)),
           bind[DataRetrievalAction].toInstance(new FakeDataRetrievalAction(userAnswers))
         ) ++ additionalBindings
       )
