@@ -17,7 +17,6 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import controllers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 import models.monthlyreturns.SelectedSubcontractor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -26,6 +25,7 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 class CheckAnswersTotalPaymentsViewSpec extends SpecBase {

@@ -41,7 +41,7 @@
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index).url
+                        href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index, None).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
                 )
             ),
@@ -52,7 +52,7 @@
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index).url
+                        href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, None).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))
                 )
             ),
@@ -63,7 +63,7 @@
                 actions = Seq(
                     ActionItemViewModel(
                         content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
+                        href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index, None).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))
                 )
             )

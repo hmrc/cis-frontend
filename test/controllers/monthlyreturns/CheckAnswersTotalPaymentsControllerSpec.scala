@@ -21,6 +21,7 @@ import models.monthlyreturns.SelectedSubcontractor
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
@@ -63,7 +64,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect to SystemError if subcontractor data is missing" in {
+    "must redirect to JourneyRecovery if subcontractor data is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
@@ -74,7 +75,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result) mustBe Some(controllers.routes.SystemErrorController.onPageLoad().url)
+        redirectLocation(result) mustBe Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
       }
     }
   }

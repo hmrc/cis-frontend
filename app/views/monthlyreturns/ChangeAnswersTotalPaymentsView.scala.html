@@ -19,11 +19,11 @@
 @import models.CheckMode
 
 @this(
-layout: templates.Layout,
-govukButton: GovukButton,
-govukSummaryList: GovukSummaryList,
-h1: components.H1
-
+    layout: templates.Layout,
+    formHelper: FormWithCSRF,
+    govukButton: GovukButton,
+    govukSummaryList: GovukSummaryList,
+    h1: components.H1
 )
 
 @(subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
@@ -41,7 +41,7 @@ h1: components.H1
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index).url
+                    href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index, Some("changeAnswers")).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
                      .withAttribute("id" -> "total-payment-made")
                 )
@@ -53,7 +53,7 @@ h1: components.H1
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index).url
+                    href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, Some("changeAnswers")).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials"))
                      .withAttribute("id" -> "total-cost-of-material")
                 )
@@ -65,7 +65,7 @@ h1: components.H1
                     actions = Seq(
                     ActionItemViewModel(
                     content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
+                    href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index, Some("changeAnswers")).url
                     ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))
                      .withAttribute("id" -> "total-cis-deductions")
                     )
@@ -73,5 +73,8 @@ h1: components.H1
                 ))
         )
 
-@govukButton(ButtonViewModel(messages("site.continue")))
+@formHelper(action = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmit(index)) {
+    @govukButton(ButtonViewModel(messages("site.continue")))
+}
+
 }

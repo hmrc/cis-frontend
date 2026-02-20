@@ -46,8 +46,8 @@ class CostOfMaterialsController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
@@ -58,10 +58,10 @@ class CostOfMaterialsController @Inject() (
 
           Ok(view(preparedForm, mode, subcontractor.name, index))
       }
-  }
+    }
 
-  def onSubmit(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case Some(subcontractor) =>
@@ -74,10 +74,13 @@ class CostOfMaterialsController @Inject() (
                   updatedAnswers <-
                     Future.fromTry(request.userAnswers.set(SelectedSubcontractorMaterialCostsPage(index), value))
                   _              <- sessionRepository.set(updatedAnswers)
-                } yield Redirect(
-                  navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index), mode, updatedAnswers)
-                )
+                } yield returnTo match {
+                  case Some("changeAnswers") =>
+                    Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+                  case _                     =>
+                    Redirect(navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index), mode, updatedAnswers))
+                }
             )
       }
-  }
+    }
 }
