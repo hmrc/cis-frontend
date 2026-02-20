@@ -126,6 +126,9 @@ class MonthlyReturnService @Inject() (
   def createMonthlyReturn(request: MonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.createMonthlyReturn(request)
 
+  def updateMonthlyReturnItem(request: UpdateMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.updateMonthlyReturnItem(request)
+
   def syncMonthlyReturnItems(
     instanceId: String,
     taxYear: Int,
