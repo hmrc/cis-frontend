@@ -147,3 +147,5 @@ POST       /monthly-return/change-add-subcontractor-details                  con
 
 GET        /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)
 POST       /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onSubmit(index: Int)
+
+GET        /monthly-return/change-subcontractor/:index    controllers.monthlyreturns.ChangeAnswersTotalPaymentsController.onPageLoad(index: Int)

@@ -185,28 +185,28 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayment Page in CheckMode" in {
+      "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorPaymentsMadePage(1),
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+        ) mustBe monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1)
       }
 
-      "must go from SelectedSubcontractorMaterialCostsPage to CheckAnswersTotalPayment Page in CheckMode" in {
+      "must go from SelectedSubcontractorMaterialCostsPage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorMaterialCostsPage(1),
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+        ) mustBe monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1)
       }
 
-      "must go from SelectedSubcontractorTaxDeductedPage to CheckAnswersTotalPayment Page in CheckMode" in {
+      "must go from SelectedSubcontractorTaxDeductedPage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorTaxDeductedPage(1),
           CheckMode,
           UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+        ) mustBe monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1)
       }
 
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {
