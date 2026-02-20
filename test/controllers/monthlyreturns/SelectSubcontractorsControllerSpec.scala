@@ -20,16 +20,14 @@ import base.SpecBase
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.UserAnswers
 import models.monthlyreturns.*
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import org.mockito.ArgumentCaptor
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import repositories.SessionRepository
-import services.SubcontractorService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
@@ -71,16 +69,16 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
     SelectSubcontractorsPageModel(subcontractors = subcontractors, initiallySelectedIds = Seq.empty)
 
   private def applicationWith(
-    service: SubcontractorService,
-    ua: Option[UserAnswers] = Some(userAnswersWithRequiredPages),
-    sessionRepo: Option[SessionRepository] = None
-  ) = {
-    val builder = applicationBuilder(userAnswers = ua)
-      .overrides(bind[SubcontractorService].toInstance(service))
-    sessionRepo
-      .fold(builder)(repo => builder.overrides(bind[SessionRepository].toInstance(repo)))
+    subcontractorService: SubcontractorService,
+    monthlyReturnService: MonthlyReturnService,
+    ua: Option[UserAnswers] = Some(userAnswersWithRequiredPages)
+  ) =
+    applicationBuilder(userAnswers = ua)
+      .overrides(
+        bind[SubcontractorService].toInstance(subcontractorService),
+        bind[MonthlyReturnService].toInstance(monthlyReturnService)
+      )
       .build()
-  }
 
   private def stubBuild(
     service: SubcontractorService,
@@ -102,10 +100,11 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
     "onPageLoad" - {
 
       "renders OK and fills form when initiallySelectedIds is non-empty" in {
-        val service = mock[SubcontractorService]
-        stubBuild(service, pageModelSelected, defaultSel = None)
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService] // not used on GET
+        stubBuild(subcontractorService, pageModelSelected, defaultSel = None)
 
-        val app = applicationWith(service)
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
@@ -123,10 +122,11 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "renders OK without filling form when initiallySelectedIds is empty" in {
-        val service = mock[SubcontractorService]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
-        val app = applicationWith(service)
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
@@ -136,19 +136,16 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val view   = app.injector.instanceOf[SelectSubcontractorsView]
 
           status(result) mustBe OK
-          contentAsString(result) mustBe
-            view(
-              form,
-              subcontractors
-            )(request, messages(app)).toString
+          contentAsString(result) mustBe view(form, subcontractors)(request, messages(app)).toString
         }
       }
 
       "passes defaultSelection parameter to the service" in {
-        val service = mock[SubcontractorService]
-        stubBuild(service, pageModelSelected, defaultSel = Some(true))
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelSelected, defaultSel = Some(true))
 
-        val app = applicationWith(service)
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
@@ -158,9 +155,9 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
             )
 
           val result = route(app, request).value
-
           status(result) mustBe OK
-          verify(service).buildSelectSubcontractorPage(
+
+          verify(subcontractorService).buildSelectSubcontractorPage(
             eqTo(cisId),
             eqTo(taxMonth),
             eqTo(taxYear),
@@ -171,22 +168,9 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "redirects to JourneyRecovery when required answers are missing" in {
-        val service = mock[SubcontractorService]
-        val app     = applicationWith(service, ua = None)
-
-        running(app) {
-          val request =
-            FakeRequest(GET, controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url)
-
-          val result = route(app, request).value
-          status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
-        }
-      }
-
-      "redirects to JourneyRecovery when user answers exist but required pages are missing" in {
-        val service = mock[SubcontractorService]
-        val app     = applicationWith(service, ua = Some(emptyUserAnswers))
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        val app                  = applicationWith(subcontractorService, monthlyReturnService, ua = None)
 
         running(app) {
           val request =
@@ -202,19 +186,26 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
     "onSubmit" - {
 
       "redirects to PaymentDetailsController when no selected subcontractor requires verification" in {
-        val service         = mock[SubcontractorService]
-        val mockSessionRepo = mock[SessionRepository]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
-        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
-        val app = applicationWith(service, sessionRepo = Some(mockSessionRepo))
+        when(
+          monthlyReturnService.storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            cisId = eqTo(cisId),
+            taxYear = eqTo(taxYear),
+            taxMonth = eqTo(taxMonth),
+            selected = any[Seq[SelectSubcontractorsViewModel]]
+          )(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(userAnswersWithRequiredPages))
+
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "2"
-              )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "2")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
@@ -225,19 +216,26 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "redirects to VerifySubcontractorsController when a selected subcontractor requires verification" in {
-        val service         = mock[SubcontractorService]
-        val mockSessionRepo = mock[SessionRepository]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
-        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
-        val app = applicationWith(service, sessionRepo = Some(mockSessionRepo))
+        when(
+          monthlyReturnService.storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            cisId = eqTo(cisId),
+            taxYear = eqTo(taxYear),
+            taxMonth = eqTo(taxMonth),
+            selected = any[Seq[SelectSubcontractorsViewModel]]
+          )(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(userAnswersWithRequiredPages))
+
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "1"
-              )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
@@ -247,139 +245,44 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
-      "preserves existing payment details when resubmitting with the same subcontractor" in {
-        val existingAnswers = userAnswersWithRequiredPages
-          .set(
-            SelectedSubcontractorPage(1),
-            SelectedSubcontractor(2, "B", Some(BigDecimal(500.00)), Some(BigDecimal(100.00)), Some(BigDecimal(50.00)))
-          )
-          .success
-          .value
-
-        val service         = mock[SubcontractorService]
-        val mockSessionRepo = mock[SessionRepository]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
-        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
-
-        val app = applicationWith(service, ua = Some(existingAnswers), sessionRepo = Some(mockSessionRepo))
-
-        running(app) {
-          val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "2"
-              )
-
-          val result = route(app, request).value
-          status(result) mustBe SEE_OTHER
-
-          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
-          verify(mockSessionRepo).set(captor.capture())
-
-          val savedAnswers = captor.getValue
-          val savedSub     = savedAnswers.get(SelectedSubcontractorPage(1)).value
-
-          savedSub.id mustBe 2
-          savedSub.name mustBe "B"
-          savedSub.totalPaymentsMade mustBe Some(BigDecimal(500.00))
-          savedSub.costOfMaterials mustBe Some(BigDecimal(100.00))
-          savedSub.totalTaxDeducted mustBe Some(BigDecimal(50.00))
-        }
-      }
-
-      "clears payment details for a subcontractor that was not previously selected" in {
-        val existingAnswers = userAnswersWithRequiredPages
-          .set(
-            SelectedSubcontractorPage(1),
-            SelectedSubcontractor(1, "A", Some(BigDecimal(500.00)), Some(BigDecimal(100.00)), Some(BigDecimal(50.00)))
-          )
-          .success
-          .value
-
-        val service         = mock[SubcontractorService]
-        val mockSessionRepo = mock[SessionRepository]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
-        when(mockSessionRepo.set(any())) thenReturn Future.successful(true)
-
-        val app = applicationWith(service, ua = Some(existingAnswers), sessionRepo = Some(mockSessionRepo))
-
-        running(app) {
-          val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "2"
-              )
-
-          val result = route(app, request).value
-          status(result) mustBe SEE_OTHER
-
-          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
-          verify(mockSessionRepo).set(captor.capture())
-
-          val savedAnswers = captor.getValue
-          val savedSub     = savedAnswers.get(SelectedSubcontractorPage(1)).value
-
-          savedSub.id mustBe 2
-          savedSub.name mustBe "B"
-          savedSub.totalPaymentsMade mustBe None
-          savedSub.costOfMaterials mustBe None
-          savedSub.totalTaxDeducted mustBe None
-        }
-      }
-
       "returns BadRequest when form submission contains non-numeric values" in {
-        val service = mock[SubcontractorService]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
-        val app = applicationWith(service)
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "not-a-number"
-              )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "not-a-number")
 
           val result = route(app, request).value
           status(result) mustBe BAD_REQUEST
         }
       }
 
-      "redirects to SystemError when session repository returns false" in {
-        val service         = mock[SubcontractorService]
-        val mockSessionRepo = mock[SessionRepository]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
-        when(mockSessionRepo.set(any())) thenReturn Future.successful(false)
+      "redirects to SystemError when storeAndSyncSelectedSubcontractors fails" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
-        val app = applicationWith(service, sessionRepo = Some(mockSessionRepo))
+        when(
+          monthlyReturnService.storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            cisId = eqTo(cisId),
+            taxYear = eqTo(taxYear),
+            taxMonth = eqTo(taxMonth),
+            selected = any[Seq[SelectSubcontractorsViewModel]]
+          )(using any[HeaderCarrier])
+        ).thenReturn(Future.failed(new RuntimeException("boom")))
 
-        running(app) {
-          val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "1"
-              )
-
-          val result = route(app, request).value
-          status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.routes.SystemErrorController.onPageLoad().url
-        }
-      }
-
-      "redirects to SystemError when session repository fails with an exception" in {
-        val service         = mock[SubcontractorService]
-        val mockSessionRepo = mock[SessionRepository]
-        stubBuild(service, pageModelNoneSelected, defaultSel = None)
-        when(mockSessionRepo.set(any())) thenReturn Future.failed(new RuntimeException("db error"))
-
-        val app = applicationWith(service, sessionRepo = Some(mockSessionRepo))
+        val app = applicationWith(subcontractorService, monthlyReturnService)
 
         running(app) {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody(
-                "subcontractorsToInclude.0" -> "1"
-              )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
@@ -388,28 +291,14 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
 
       "redirects to JourneyRecovery when no user answers exist" in {
-        val service = mock[SubcontractorService]
-        val app     = applicationWith(service, ua = None)
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        val app                  = applicationWith(subcontractorService, monthlyReturnService, ua = None)
 
         running(app) {
           val request =
             FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
               .withFormUrlEncodedBody("confirmation" -> "true")
-
-          val result = route(app, request).value
-          status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
-        }
-      }
-
-      "redirects to JourneyRecovery when user answers exist but required pages are missing" in {
-        val service = mock[SubcontractorService]
-        val app     = applicationWith(service, ua = Some(emptyUserAnswers))
-
-        running(app) {
-          val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
-              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER

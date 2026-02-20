@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.NormalMode
 import models.monthlyreturns.SelectedSubcontractor
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -25,6 +26,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 import javax.inject.Inject
+import scala.concurrent.Future
 
 class CheckAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
@@ -43,6 +45,13 @@ class CheckAnswersTotalPaymentsController @Inject() (
         Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
     }
   }
+
+  def onSubmit(index: Int): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
+      Future.successful(
+        Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+      )
+    }
 }
 
 case class CheckAnswersTotalPaymentsViewModel(

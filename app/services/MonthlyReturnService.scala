@@ -20,14 +20,16 @@ import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.monthlyreturns.*
-import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import pages.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
+import viewmodels.SelectSubcontractorsViewModel
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 @Singleton
 class MonthlyReturnService @Inject() (
@@ -136,6 +138,66 @@ class MonthlyReturnService @Inject() (
 
   def createMonthlyReturn(request: MonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.createMonthlyReturn(request)
+
+  def syncMonthlyReturnItems(
+    instanceId: String,
+    taxYear: Int,
+    taxMonth: Int,
+    selectedSubcontractorIds: Seq[Long]
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.syncMonthlyReturnItems(
+      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds)
+    )
+
+  def storeAndSyncSelectedSubcontractors(
+    ua: UserAnswers,
+    cisId: String,
+    taxYear: Int,
+    taxMonth: Int,
+    selected: Seq[SelectSubcontractorsViewModel]
+  )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+
+    val selectedIds: Seq[Long]         = selected.map(_.id)
+    val existingSelectedSubcontractors =
+      ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all)
+    val updatedTry: Try[UserAnswers]   =
+      selected.zipWithIndex.foldLeft(cleared) { case (uaTry, (vm, index)) =>
+        uaTry.flatMap { answers =>
+          val existing = existingSelectedSubcontractors.values.find(_.id == vm.id)
+          answers.set(
+            SelectedSubcontractorPage(index + 1),
+            SelectedSubcontractor(
+              vm.id,
+              vm.name,
+              existing.flatMap(_.totalPaymentsMade),
+              existing.flatMap(_.costOfMaterials),
+              existing.flatMap(_.totalTaxDeducted)
+            )
+          )
+        }
+      }
+
+    Future
+      .fromTry(updatedTry)
+      .flatMap { updatedUa =>
+        sessionRepository.set(updatedUa).flatMap {
+          case false =>
+            Future.failed(new RuntimeException("Failed to persist selected subcontractors in session"))
+          case true  =>
+            cisConnector
+              .syncMonthlyReturnItems(
+                SelectedSubcontractorsRequest(
+                  instanceId = cisId,
+                  taxYear = taxYear,
+                  taxMonth = taxMonth,
+                  selectedSubcontractorIds = selectedIds
+                )
+              )
+              .map(_ => updatedUa)
+        }
+      }
+  }
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {

@@ -26,10 +26,11 @@ import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, DeclarationPage, InactivityRequestPage, NilReturnStatusPage}
+import pages.monthlyreturns.*
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import viewmodels.SelectSubcontractorsViewModel
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -666,6 +667,136 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
 
       verify(connector).createMonthlyReturn(eqTo(req))(any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "syncMonthlyReturnItems" should {
+
+    "delegate to connector with SelectedSubcontractorsRequest payload" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val instanceId = "CIS-123"
+      val taxYear    = 2024
+      val taxMonth   = 10
+      val ids        = Seq(1001L, 1002L)
+
+      when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.syncMonthlyReturnItems(instanceId, taxYear, taxMonth, ids).futureValue mustBe ()
+
+      val captor: ArgumentCaptor[SelectedSubcontractorsRequest] =
+        ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])
+
+      verify(connector).syncMonthlyReturnItems(captor.capture())(any[HeaderCarrier])
+
+      val sent = captor.getValue
+      sent.instanceId mustBe instanceId
+      sent.taxYear mustBe taxYear
+      sent.taxMonth mustBe taxMonth
+      sent.selectedSubcontractorIds mustBe ids
+
+      verifyNoInteractions(sessionRepo)
+      verifyNoMoreInteractions(connector)
+    }
+  }
+
+  "storeAndSyncSelectedSubcontractors" should {
+
+    "store selected subcontractors into session, call sync, and return updated UserAnswers" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+
+      val selected: Seq[SelectSubcontractorsViewModel] = Seq(
+        SelectSubcontractorsViewModel(
+          id = 1001,
+          name = "A Ltd",
+          verificationRequired = "No",
+          verificationNumber = "",
+          taxTreatment = ""
+        ),
+        SelectSubcontractorsViewModel(
+          id = 1002,
+          name = "B Ltd",
+          verificationRequired = "Yes",
+          verificationNumber = "",
+          taxTreatment = ""
+        )
+      )
+
+      val ua = UserAnswers("test-user")
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val resultUa =
+        service.storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected).futureValue
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedUa = uaCaptor.getValue
+
+      savedUa.get(SelectedSubcontractorPage(1)).map(_.id) mustBe Some(1001L)
+      savedUa.get(SelectedSubcontractorPage(1)).map(_.name) mustBe Some("A Ltd")
+      savedUa.get(SelectedSubcontractorPage(2)).map(_.id) mustBe Some(1002L)
+      savedUa.get(SelectedSubcontractorPage(2)).map(_.name) mustBe Some("B Ltd")
+
+      resultUa.get(SelectedSubcontractorPage(1)).map(_.id) mustBe Some(1001L)
+      resultUa.get(SelectedSubcontractorPage(2)).map(_.id) mustBe Some(1002L)
+
+      val reqCaptor: ArgumentCaptor[SelectedSubcontractorsRequest] =
+        ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])
+      verify(connector).syncMonthlyReturnItems(reqCaptor.capture())(any[HeaderCarrier])
+
+      val sent = reqCaptor.getValue
+      sent.instanceId mustBe cisId
+      sent.taxYear mustBe taxYear
+      sent.taxMonth mustBe taxMonth
+      sent.selectedSubcontractorIds mustBe Seq(1001L, 1002L)
+
+      verifyNoMoreInteractions(connector)
+    }
+
+    "fail when session repository returns false (and do not call sync)" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+
+      val selected: Seq[SelectSubcontractorsViewModel] = Seq(
+        SelectSubcontractorsViewModel(
+          id = 1001,
+          name = "A Ltd",
+          verificationRequired = "No",
+          verificationNumber = "",
+          taxTreatment = ""
+        )
+      )
+
+      val ua = UserAnswers("test-user")
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(false))
+
+      val ex = service
+        .storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected)
+        .failed
+        .futureValue
+
+      ex mustBe a[RuntimeException]
+      ex.getMessage must include("Failed to persist selected subcontractors in session")
+
+      verify(sessionRepo).set(any[UserAnswers])
+      verifyNoInteractions(connector)
     }
   }
 

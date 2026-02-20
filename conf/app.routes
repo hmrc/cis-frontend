@@ -79,9 +79,6 @@ POST       /monthly-return/unverified-subcontractors            controllers.mont
 GET        /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-unverified-subcontractors     controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/subcontractors-paid-this-month       controllers.monthlyreturns.SubcontractorsPaidThisMonthController.onPageLoad()
-
-
 GET        /monthly-return/payment-details/:index           controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode, index: Int)
 POST       /monthly-return/payment-details/:index           controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode, index: Int)
 GET        /monthly-return/change-payment-details/:index    controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode, index: Int)
@@ -133,6 +130,11 @@ POST       /monthly-return/do-you-want-email-confirmation                       
 GET        /monthly-return/change-do-you-want-email-confirmation                 controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation                  controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/subcontractor-details-added                        controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added                 controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-subcontractor-details-added                 controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
+
 GET        /monthly-return/payment-details-confirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/payment-details-confirmation                        controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-payment-details-confirmation                  controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = CheckMode)
@@ -149,6 +151,7 @@ GET        /monthly-return/change-employment-status-declaration                 
 POST       /monthly-return/change-employment-status-declaration                  controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)
+POST       /monthly-return/check-answers-total-payments/:index    controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onSubmit(index: Int)
 
 GET        /monthly-return/verified-status-declaration                        controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/verified-status-declaration                        controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = NormalMode)

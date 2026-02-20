@@ -439,6 +439,15 @@ monthlyreturns.confirmationByEmail.yes = Yes
 monthlyreturns.confirmationByEmail.no = No
 monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
 
+monthlyreturns.subcontractorDetailsAdded.error.required = Select ‘Yes’ to submit your return. Select ‘No’ to add payment details for more subcontractors.
+monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors
+monthlyreturns.subcontractorDetailsAdded.heading.single = You have added details for a single subcontractor
+monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added details for {0} subcontractors
+monthlyreturns.subcontractorDetailsAdded.question = Have you added all the subcontractors you are submitting returns for?
+monthlyreturns.subcontractorDetailsAdded.hint = Select ‘Yes’ to submit your return, and ‘No’ if you need to add more.
+monthlyreturns.subcontractorDetailsAdded.change.hidden = Change {0}
+monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list
+
 monthlyreturns.paymentDetailsConfirmation.title = Do you confirm the information in this return is correct?
 monthlyreturns.paymentDetailsConfirmation.heading = Do you confirm the information in this return is correct?
 monthlyreturns.paymentDetailsConfirmation.hint = By confirming, you are declaring that the best of your knowledge you have only selected subcontractors used within this reporting period
