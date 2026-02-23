@@ -100,8 +100,8 @@ class CheckAnswersTotalPaymentsController @Inject() (
       taxMonth = monthYear.getMonthValue,
       subcontractorId = subcontractor.id,
       subcontractorName = subcontractor.name,
-      totalPayments = subcontractor.totalPaymentsMade.toString,
-      costOfMaterials = subcontractor.costOfMaterials.toString,
-      totalDeducted = subcontractor.totalTaxDeducted.toString
+      totalPayments = totalPayments.toString,
+      costOfMaterials = costOfMaterials.toString,
+      totalDeducted = totalTaxDeducted.toString
     )
 }
