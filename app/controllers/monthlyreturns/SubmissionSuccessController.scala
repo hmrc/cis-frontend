@@ -95,14 +95,14 @@ class SubmissionSuccessController @Inject() (
             throw new IllegalStateException("taxPeriodEnd missing from userAnswers")
           }
         val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
+        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
         val submittedDate     = ukNow.format(dmyFmt)
         val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
           logger.error("[SubmissionSuccess] irMark missing from userAnswers")
           throw new IllegalStateException("submissionDetails missing from userAnswers")
         }
         val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
-
+        val submissionType    = "Monthly Return" // TODO: Dynamic from userAnswers
         Ok(
           view(
             reference = reference,
@@ -111,7 +111,8 @@ class SubmissionSuccessController @Inject() (
             submittedDate = submittedDate,
             contractorName = contractorName,
             empRef = employerRef,
-            email = email
+            email = email,
+            submissionType
           )
         )
       }
