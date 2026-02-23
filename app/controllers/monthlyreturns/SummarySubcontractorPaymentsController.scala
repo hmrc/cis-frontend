@@ -23,6 +23,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +52,13 @@ class SummarySubcontractorPaymentsController @Inject() (
     val totalPayments      = subcontractors.flatMap(_.totalPaymentsMade).sum.setScale(2, RoundingMode.HALF_DOWN)
     val totalMaterialsCost = subcontractors.flatMap(_.costOfMaterials).sum.setScale(2, RoundingMode.HALF_DOWN)
     val totalCisDeductions = subcontractors.flatMap(_.totalTaxDeducted).sum.setScale(2, RoundingMode.HALF_DOWN)
-    val subcontractorCount = subcontractors.size
+
+    val viewModel = SummarySubcontractorPaymentsViewModel(
+      subcontractorCount = subcontractors.size,
+      totalPayments = totalPayments,
+      totalMaterialsCost = totalMaterialsCost,
+      totalCisDeductions = totalCisDeductions
+    )
 
     for {
       updatedAnswers <- Future.fromTry(
@@ -61,6 +68,6 @@ class SummarySubcontractorPaymentsController @Inject() (
                             .flatMap(_.set(SummaryTotalCisDeductionsPage, totalCisDeductions))
                         )
       _              <- sessionRepository.set(updatedAnswers)
-    } yield Ok(view(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
+    } yield Ok(view(viewModel))
   }
 }

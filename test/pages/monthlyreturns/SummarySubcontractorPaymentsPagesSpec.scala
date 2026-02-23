@@ -76,11 +76,17 @@ class SummarySubcontractorPaymentsPagesSpec extends SpecBase {
 
     "must coexist independently in the same UserAnswers" in {
       val result = emptyUserAnswers
-        .set(SummaryTotalPaymentsPage, BigDecimal(3600.00)).success.value
-        .set(SummaryTotalMaterialsCostPage, BigDecimal(900.00)).success.value
-        .set(SummaryTotalCisDeductionsPage, BigDecimal(540.00)).success.value
+        .set(SummaryTotalPaymentsPage, BigDecimal(3600.00))
+        .success
+        .value
+        .set(SummaryTotalMaterialsCostPage, BigDecimal(900.00))
+        .success
+        .value
+        .set(SummaryTotalCisDeductionsPage, BigDecimal(540.00))
+        .success
+        .value
 
-      result.get(SummaryTotalPaymentsPage)      mustBe Some(BigDecimal(3600.00))
+      result.get(SummaryTotalPaymentsPage) mustBe Some(BigDecimal(3600.00))
       result.get(SummaryTotalMaterialsCostPage) mustBe Some(BigDecimal(900.00))
       result.get(SummaryTotalCisDeductionsPage) mustBe Some(BigDecimal(540.00))
     }

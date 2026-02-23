@@ -15,10 +15,9 @@
  *@
 
 @import views.html.components._
-@import utils.CurrencyFormatter.currencyFormat
 @import viewmodels.govuk.all._
 @import viewmodels.implicits._
-@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+@import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
 
 @this(
         layout: templates.Layout,
@@ -28,37 +27,20 @@
         govukSummaryList: GovukSummaryList
 )
 
-@(subcontractorCount: Int, totalPayments: BigDecimal, totalMaterialsCost: BigDecimal, totalCisDeductions: BigDecimal)(implicit request: Request[_], messages: Messages)
+@(viewModel: SummarySubcontractorPaymentsViewModel)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.summarySubcontractorPayments.title"))) {
 
     @h1("monthlyreturns.summarySubcontractorPayments.heading")
 
-    @if(subcontractorCount != 1) {
+    @if(viewModel.subcontractorCount != 1) {
         @paragraph(
             message = "monthlyreturns.summarySubcontractorPayments.intro",
-            args = Seq(subcontractorCount)
+            args = Seq(viewModel.subcontractorCount)
         )
     }
 
-    @govukSummaryList(
-        SummaryListViewModel(
-            rows = Seq(
-                SummaryListRowViewModel(
-                    key = "monthlyreturns.summarySubcontractorPayments.totalPayments.label",
-                    value = ValueViewModel(Text(currencyFormat(totalPayments)))
-                ),
-                SummaryListRowViewModel(
-                    key = "monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label",
-                    value = ValueViewModel(Text(currencyFormat(totalMaterialsCost)))
-                ),
-                SummaryListRowViewModel(
-                    key = "monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label",
-                    value = ValueViewModel(Text(currencyFormat(totalCisDeductions)))
-                )
-            )
-        )
-    )
+    @govukSummaryList(SummaryListViewModel(viewModel.rows))
 
     @govukButton(
         ButtonViewModel(messages("site.continue"))
