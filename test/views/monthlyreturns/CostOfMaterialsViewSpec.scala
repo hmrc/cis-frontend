@@ -30,7 +30,7 @@ class CostOfMaterialsViewSpec extends SpecBase {
 
     "must render the page with the correct html elements" in new Setup {
       val companyName = "Test Company Ltd"
-      val html        = view(form, NormalMode, companyName, 1)
+      val html        = view(form, NormalMode, companyName, 1, None)
       val doc         = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.costOfMaterials.title"))
@@ -45,7 +45,7 @@ class CostOfMaterialsViewSpec extends SpecBase {
     "must show error summary and messages when form has errors" in new Setup {
       val companyName    = "Test Company Ltd"
       val boundWithError = form.bind(Map("value" -> ""))
-      val html           = view(boundWithError, NormalMode, companyName, 1)
+      val html           = view(boundWithError, NormalMode, companyName, 1, None)
       val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
@@ -58,13 +58,13 @@ class CostOfMaterialsViewSpec extends SpecBase {
 
     "must render with different company names" in new Setup {
       val companyName1 = "Company A"
-      val html1        = view(form, NormalMode, companyName1, 1)
+      val html1        = view(form, NormalMode, companyName1, 1, None)
       val doc1         = Jsoup.parse(html1.body)
 
       doc1.select("h1").text must include(companyName1)
 
       val companyName2 = "Company B"
-      val html2        = view(form, NormalMode, companyName2, 1)
+      val html2        = view(form, NormalMode, companyName2, 1, None)
       val doc2         = Jsoup.parse(html2.body)
 
       doc2.select("h1").text must include(companyName2)
@@ -72,7 +72,7 @@ class CostOfMaterialsViewSpec extends SpecBase {
 
     "must have the correct form action" in new Setup {
       val companyName = "Test Company Ltd"
-      val html        = view(form, NormalMode, companyName, 1)
+      val html        = view(form, NormalMode, companyName, 1, None)
       val doc         = Jsoup.parse(html.body)
 
       val formElement = doc.select("form").first()

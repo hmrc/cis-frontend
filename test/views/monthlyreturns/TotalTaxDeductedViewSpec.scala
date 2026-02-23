@@ -48,7 +48,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
     "must display error summary when form has errors" in new Setup {
       val formWithErrors = form.bind(Map("value" -> ""))
-      val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1)
+      val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1, None)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-summary").size mustBe 1
@@ -57,7 +57,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
     "must display field error when value is invalid" in new Setup {
       val formWithErrors = form.bind(Map("value" -> "invalid"))
-      val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1)
+      val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1, None)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-message").size mustBe 1
@@ -76,6 +76,6 @@ class TotalTaxDeductedViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode, companyName, 1)
+    val html = view(form, NormalMode, companyName, 1, None)
   }
 }

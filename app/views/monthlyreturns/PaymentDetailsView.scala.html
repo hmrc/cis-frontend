@@ -27,11 +27,11 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, companyName: String, index: Int)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("paymentDetails.title", companyName))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.PaymentDetailsController.onSubmit(mode, index, None), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.PaymentDetailsController.onSubmit(mode, index, returnTo), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

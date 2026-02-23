@@ -67,7 +67,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[TotalTaxDeductedView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -88,7 +88,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -164,7 +164,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString

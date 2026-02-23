@@ -57,7 +57,7 @@ class PaymentDetailsController @Inject() (
             case Some(value) => form.fill(value)
           }
 
-          Ok(view(preparedForm, mode, subcontractor.name, index))
+          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
       }
     }
 
@@ -69,7 +69,8 @@ class PaymentDetailsController @Inject() (
           form
             .bindFromRequest()
             .fold(
-              formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index))),
+              formWithErrors =>
+                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
               value =>
                 for {
                   updatedAnswers <-
