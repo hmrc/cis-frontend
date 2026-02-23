@@ -14,51 +14,37 @@
  * limitations under the License.
  */
 
-package views.monthlyreturns
+package views.components
 
 import base.SpecBase
 import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
+import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.monthlyreturns.SubmissionSendingView
+import views.html.components.LoadingSpinner
 
-class SubmissionSendingViewSpec extends SpecBase with Matchers {
+class LoadingSpinnerSpec extends SpecBase with Matchers {
 
-  "SubmissionSendingView" - {
+  "LoadingSpinner" - {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
-      val html = view()
+      val html = loadingSpinner("h1text", "paragraph text")
       val doc  = Jsoup.parse(html.body)
-
-      doc.title must include(messages("monthlyreturns.submissionSending.title"))
-
-      doc.select("h1").text must include(messages("monthlyreturns.submissionSending.h1"))
-
-      doc.select("p").text must include(messages("monthlyreturns.submissionSending.paragraph"))
 
       doc.getElementsByClass("loading-spinner").size mustBe 1
       doc.getElementsByClass("loading-spinner__spinner").size mustBe 1
       doc.getElementsByClass("loading-spinner__content").size mustBe 1
     }
-
-    "must not show back link or sign out link" in new Setup {
-      val html = view()
-      val doc  = Jsoup.parse(html.body)
-
-      doc.getElementsByClass("govuk-back-link").size mustBe 0
-      doc.getElementsByClass("hmrc-sign-out-nav__link").size mustBe 0
-    }
   }
 
   trait Setup {
-    val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[SubmissionSendingView]
+    val app: Application                          = applicationBuilder().build()
+    val loadingSpinner: LoadingSpinner            = app.injector.instanceOf[LoadingSpinner]
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
   }
-
 }
