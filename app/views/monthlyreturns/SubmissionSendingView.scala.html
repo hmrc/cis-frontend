@@ -27,10 +27,8 @@
     <div class="loading-spinner">
         <div class="loading-spinner__spinner" aria-live="polite" role="status"></div>
         <div class="loading-spinner__content">
-            <h1 class="govuk-heading-m">
-                @messages("monthlyreturns.submissionSending.h1")
-            </h1>
-            <p class="govuk-body">@messages("monthlyreturns.submissionSending.paragraph")</p>
+            @h1(msg = "monthlyreturns.submissionSending.h1", classes = "govuk-heading-m")
+            @paragraph("monthlyreturns.submissionSending.paragraph")
         </div>
     </div>
 }
