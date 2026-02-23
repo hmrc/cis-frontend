@@ -18,15 +18,18 @@ package controllers.monthlyreturns
 
 import controllers.actions.{DataRetrievalAction, IdentifierAction}
 import models.UserAnswers
+import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
 import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, RequestHeader, Result}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
+
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -46,12 +49,15 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData).async { implicit request =>
     val instanceIdOpt = request.getQueryString("instanceId")
-    val agentRefOpt   = agentRefFromQuery(request)
-
-    handleRequest(instanceIdOpt, agentRefOpt)
+    getAgentClient(request).flatMap(clientTaxOfficeNumberTaxOfficeReference =>
+      handleRequest(instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference)
+    )
   }
 
-  private def handleRequest(instanceIdOpt: Option[String], agentRefOpt: Option[(String, String)])(implicit
+  private def handleRequest(
+    instanceIdOpt: Option[String],
+    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String)]
+  )(implicit
     request: OptionalDataRequest[AnyContent]
   ): Future[Result] =
     if (!request.isAgent) {
@@ -60,13 +66,13 @@ class FileYourMonthlyCisReturnController @Inject() (
         case None             => ensureUserAnswersExists().map(_ => Ok(view()))
       }
     } else {
-      (instanceIdOpt, agentRefOpt) match {
+      (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
         case (None, _) =>
           logger.warn(s"[FileYourMonthlyCisReturnController] Missing instanceId for agent request")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case (Some(_), None) =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing agent reference for agent request")
+          logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case (Some(instanceId), Some((taxOfficeNumber, taxOfficeReference))) =>
@@ -88,11 +94,17 @@ class FileYourMonthlyCisReturnController @Inject() (
       }
     }
 
-  private def agentRefFromQuery(request: RequestHeader): Option[(String, String)] =
-    for {
-      taxOfficeNumber    <- request.getQueryString("taxOfficeNumber")
-      taxOfficeReference <- request.getQueryString("taxOfficeReference")
-    } yield (taxOfficeNumber, taxOfficeReference)
+  private def getAgentClient(implicit
+    request: OptionalDataRequest[_],
+    ec: ExecutionContext,
+    hc: HeaderCarrier
+  ): Future[Option[(String, String)]] =
+    if (request.isAgent) {
+      monthlyReturnService.getAgentClient(request.userId).map {
+        case Some(data) => Some((data.taxOfficeNumber, data.taxOfficeReference))
+        case _          => None
+      }
+    } else Future.successful(None)
 
   private def ensureUserAnswersExists()(implicit request: OptionalDataRequest[_]): Future[Unit] =
     request.userAnswers match {

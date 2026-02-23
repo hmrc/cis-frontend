@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package models
+package models.submission
 
-import models.submission.ChrisSubmissionRequest
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.*
 
 import java.time.YearMonth
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.must.Matchers
-import play.api.libs.json.*
 
 class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
 
@@ -34,7 +33,10 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         informationCorrect = true,
         inactivity = false,
         monthYear = yearMonth,
-        email = "test@test.com"
+        email = "test@test.com",
+        isAgent = false,
+        clientTaxOfficeNumber = "123",
+        clientTaxOfficeRef = "AB456"
       )
 
       dto.utr mustBe "1234567890"
@@ -43,6 +45,9 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       dto.inactivity mustBe "no"
       dto.monthYear mustBe "2025-03"
       dto.email mustBe "test@test.com"
+      dto.isAgent mustBe false
+      dto.clientTaxOfficeNumber mustBe "123"
+      dto.clientTaxOfficeRef mustBe "AB456"
     }
   }
 
@@ -54,7 +59,10 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         informationCorrect = "yes",
         inactivity = "no",
         monthYear = "2025-03",
-        email = "test@test.com"
+        email = "test@test.com",
+        isAgent = false,
+        clientTaxOfficeNumber = "123",
+        clientTaxOfficeRef = "AB456"
       )
 
       val json     = Json.toJson(dto)
@@ -64,7 +72,10 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "informationCorrect": "yes",
           |  "inactivity": "no",
           |  "monthYear": "2025-03",
-          |  "email": "test@test.com"
+          |  "email": "test@test.com",
+          |  "isAgent": false,
+          |  "clientTaxOfficeNumber" : "123",
+          |  "clientTaxOfficeRef": "AB456"
           |}""".stripMargin)
 
       json mustBe expected
@@ -77,7 +88,10 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "informationCorrect": "yes",
           |  "inactivity": "no",
           |  "monthYear": "2025-03",
-          |  "email": "test@test.com"
+          |  "email": "test@test.com",
+          |  "isAgent": false,
+          |  "clientTaxOfficeNumber" : "123",
+          |  "clientTaxOfficeRef": "AB456"
           |}""".stripMargin)
 
       val result = json.validate[ChrisSubmissionRequest]
@@ -90,6 +104,9 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       dto.inactivity mustBe "no"
       dto.monthYear mustBe "2025-03"
       dto.email mustBe "test@test.com"
+      dto.isAgent mustBe false
+      dto.clientTaxOfficeNumber mustBe "123"
+      dto.clientTaxOfficeRef mustBe "AB456"
     }
   }
 }

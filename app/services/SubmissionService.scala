@@ -22,6 +22,7 @@ import models.UserAnswers
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
 import models.requests.SendSuccessEmailRequest
 import models.submission.*
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
 import pages.submission.*
 import play.api.Logging
@@ -48,12 +49,31 @@ class SubmissionService @Inject() (
       response <- cisConnector.createSubmission(req)
     } yield response
 
-  def submitToChrisAndPersist(submissionId: String, ua: UserAnswers)(implicit
+  def submitToChrisAndPersist(
+    submissionId: String,
+    ua: UserAnswers,
+    isAgent: Boolean
+  )(implicit
     hc: HeaderCarrier
   ): Future[ChrisSubmissionResponse] =
+
+    val taxpayerFut: Future[CisTaxpayer] =
+      if (isAgent)
+        ua.get(AgentClientDataPage) match {
+          case Some(agentClientData) =>
+            cisConnector.getAgentClientTaxpayer(
+              agentClientData.taxOfficeNumber,
+              agentClientData.taxOfficeReference
+            )
+          case None                  =>
+            Future.failed(new RuntimeException("Agent client data missing"))
+        }
+      else
+        cisConnector.getCisTaxpayer()
+
     for {
-      taxpayer <- cisConnector.getCisTaxpayer()
-      csr       = buildChrisSubmissionRequest(ua, taxpayer)
+      taxpayer <- taxpayerFut
+      csr       = buildChrisSubmissionRequest(ua, taxpayer, isAgent)
       response <- cisConnector.submitToChris(submissionId, csr)
       _        <- writeToFeMongo(ua, submissionId, response)
     } yield response
@@ -179,7 +199,11 @@ class SubmissionService @Inject() (
     )
   }
 
-  private def buildChrisSubmissionRequest(ua: UserAnswers, taxpayer: CisTaxpayer): ChrisSubmissionRequest = {
+  private def buildChrisSubmissionRequest(
+    ua: UserAnswers,
+    taxpayer: CisTaxpayer,
+    isAgent: Boolean
+  ): ChrisSubmissionRequest = {
     val utr = taxpayer.utr
       .map(_.trim)
       .filter(_.nonEmpty)
@@ -222,7 +246,10 @@ class SubmissionService @Inject() (
       informationCorrect = true,
       inactivity = inactivity,
       monthYear = ym,
-      email = email
+      email = email,
+      isAgent = isAgent,
+      clientTaxOfficeNumber = taxpayer.taxOfficeNumber,
+      clientTaxOfficeRef = taxpayer.taxOfficeRef
     )
   }
 
