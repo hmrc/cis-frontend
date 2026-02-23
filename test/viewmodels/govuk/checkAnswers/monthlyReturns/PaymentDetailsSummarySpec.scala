@@ -63,7 +63,9 @@ class PaymentDetailsSummarySpec extends AnyFreeSpec with Matchers with OptionVal
         val result = PaymentDetailsSummary.row(userAnswers, 1).value
         val action = result.actions.value.items.head
 
-        action.href mustEqual controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, 1, None).url
+        action.href mustEqual controllers.monthlyreturns.routes.PaymentDetailsController
+          .onPageLoad(CheckMode, 1, None)
+          .url
       }
 
       "must include visually hidden text in the change link" in {
