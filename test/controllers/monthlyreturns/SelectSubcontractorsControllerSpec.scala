@@ -210,7 +210,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.PaymentDetailsController
-            .onPageLoad(models.NormalMode, 1)
+            .onPageLoad(models.NormalMode, 1, None)
             .url
         }
       }

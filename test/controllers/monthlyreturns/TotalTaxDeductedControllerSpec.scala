@@ -51,7 +51,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     .value
 
   lazy val totalTaxDeductedRoute =
-    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 1).url
+    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 1, None).url
 
   "TotalTaxDeducted Controller" - {
 

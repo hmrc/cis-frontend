@@ -62,7 +62,7 @@ class ChangeAnswersTotalPaymentsController @Inject() (
 
       buildUpdatePayload(ua, index) match {
         case None          =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
         case Some(payload) =>
           monthlyReturnService
             .updateMonthlyReturnItem(payload)

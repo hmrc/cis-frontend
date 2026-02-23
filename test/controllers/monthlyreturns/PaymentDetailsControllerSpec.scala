@@ -50,7 +50,7 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
     .value
 
   lazy val paymentDetailsRoute =
-    controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1).url
+    controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None).url
 
   "PaymentDetails Controller" - {
 

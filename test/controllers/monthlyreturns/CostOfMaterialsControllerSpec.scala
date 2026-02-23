@@ -51,7 +51,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
     .value
 
   lazy val costOfMaterialsRoute =
-    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1).url
+    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1, None).url
 
   "CostOfMaterials Controller" - {
 
