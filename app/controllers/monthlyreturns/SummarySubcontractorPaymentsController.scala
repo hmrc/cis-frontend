@@ -18,7 +18,6 @@ package controllers.monthlyreturns
 
 import controllers.actions._
 import javax.inject.Inject
-import models.UserAnswers
 import pages.monthlyreturns.{SelectedSubcontractorPage, SummaryTotalCisDeductionsPage, SummaryTotalMaterialsCostPage, SummaryTotalPaymentsPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
