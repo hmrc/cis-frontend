@@ -88,9 +88,12 @@ class CheckAnswersTotalPaymentsController @Inject() (
 
   private def buildUpdatePayload(ua: UserAnswers, index: Int): Option[UpdateMonthlyReturnItemRequest] =
     for {
-      instanceId    <- ua.get(CisIdPage)
-      monthYear     <- ua.get(DateConfirmPaymentsPage)
-      subcontractor <- ua.get(SelectedSubcontractorPage(index))
+      instanceId       <- ua.get(CisIdPage)
+      monthYear        <- ua.get(DateConfirmPaymentsPage)
+      subcontractor    <- ua.get(SelectedSubcontractorPage(index))
+      totalPayments    <- subcontractor.totalPaymentsMade
+      costOfMaterials  <- subcontractor.costOfMaterials
+      totalTaxDeducted <- subcontractor.totalTaxDeducted
     } yield UpdateMonthlyReturnItemRequest(
       instanceId = instanceId,
       taxYear = monthYear.getYear,
