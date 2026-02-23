@@ -40,20 +40,27 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase {
     totalTaxDeducted = Some(totalCisDeductions)
   )
 
-  val viewModel: ChangeAnswersTotalPaymentsViewModel = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
+  val viewModel: ChangeAnswersTotalPaymentsViewModel =
+    ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
   "ChangeAnswersTotalPayments Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val userAnswersWithSubcontractor =
-        emptyUserAnswers.set(SelectedSubcontractorPage(1), subcontractor).success.value
+        emptyUserAnswers
+          .set(SelectedSubcontractorPage(index), subcontractor)
+          .success
+          .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor)).build()
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url)
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url
+          )
 
         val result = route(application, request).value
 
@@ -70,7 +77,10 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase {
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url)
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url
+          )
 
         val result = route(application, request).value
 
