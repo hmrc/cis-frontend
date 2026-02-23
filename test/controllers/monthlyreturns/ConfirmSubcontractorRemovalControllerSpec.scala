@@ -184,6 +184,53 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
+    "must call delete service and redirect to SubcontractorDetailsAdded when 'Yes' is submitted and subcontractors remain" in {
+      val mockSessionRepository = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.deleteMonthlyReturnItem(any())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val uaWithTwoSubcontractors =
+        uaWithSubcontractor
+          .set(
+            SelectedSubcontractorPage(2),
+            SelectedSubcontractor(
+              id = 999L,
+              name = "Another Ltd",
+              totalPaymentsMade = Some(BigDecimal(200)),
+              costOfMaterials = Some(BigDecimal(0)),
+              totalTaxDeducted = Some(BigDecimal(20))
+            )
+          )
+          .success
+          .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaWithTwoSubcontractors))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+
+        verify(mockMonthlyReturnService).deleteMonthlyReturnItem(any())(any[HeaderCarrier])
+        verify(mockSessionRepository, atLeastOnce()).set(any())
+      }
+    }
+
     "must return a Bad Request and errors when invalid data is submitted" in {
       val application =
         applicationBuilder(userAnswers = Some(uaWithSubcontractor)).build()

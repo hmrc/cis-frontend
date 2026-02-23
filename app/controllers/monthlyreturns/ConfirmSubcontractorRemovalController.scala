@@ -19,10 +19,12 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.DeleteMonthlyReturnItemRequest
+import models.requests.DataRequest
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.{CisIdPage, ConfirmSubcontractorRemovalPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.libs.json.JsObject
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -64,8 +66,8 @@ class ConfirmSubcontractorRemovalController @Inject() (
       }
   }
 
-  def onSubmit(mode: Mode, index: Int): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+  def onSubmit(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+    implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -86,31 +88,43 @@ class ConfirmSubcontractorRemovalController @Inject() (
                         Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
                       }
                     } else {
-                      buildDeletePayload(updatedAnswers1, index) match {
-                        case None =>
-                          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-                        case Some(payload) =>
-                          monthlyReturnService
-                            .deleteMonthlyReturnItem(payload)
-                            .flatMap { _ =>
-                              for {
-                                updatedAnswers2 <-
-                                  Future.fromTry(updatedAnswers1.remove(SelectedSubcontractorPage(index)))
-                                _               <- sessionRepository.set(updatedAnswers2)
-                              } yield Redirect(
-                                controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-                              )
-                            }
-                            .recover { case e =>
-                              Redirect(controllers.routes.SystemErrorController.onPageLoad())
-                            }
-                      }
+                      deleteFlow(updatedAnswers1, mode, index)
                     }
                 } yield result
             )
       }
+  }
+
+  private def deleteFlow(ua: UserAnswers, mode: Mode, index: Int)(implicit
+    request: DataRequest[AnyContent]
+  ): Future[Result] =
+    buildDeletePayload(ua, index) match {
+      case None =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case Some(payload) =>
+        (for {
+          _              <- monthlyReturnService.deleteMonthlyReturnItem(payload)
+          updatedAnswers <- Future.fromTry(ua.remove(SelectedSubcontractorPage(index)))
+          _              <- sessionRepository.set(updatedAnswers)
+        } yield redirectAfterDelete(updatedAnswers, mode))
+          .recover { case e =>
+            Redirect(controllers.routes.SystemErrorController.onPageLoad())
+          }
     }
+
+  private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
+    val remaining = remainingSubcontractorCount(ua)
+    if (remaining == 0) {
+      Redirect(
+        controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+      )
+    } else {
+      Redirect(
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode)
+      )
+    }
+  }
 
   private def buildDeletePayload(ua: UserAnswers, index: Int): Option[DeleteMonthlyReturnItemRequest] =
     for {
@@ -123,5 +137,11 @@ class ConfirmSubcontractorRemovalController @Inject() (
       taxMonth = monthYear.getMonthValue,
       subcontractorId = subcontractor.id
     )
+
+  private def remainingSubcontractorCount(ua: UserAnswers): Int =
+    (ua.data \ "subcontractors")
+      .asOpt[JsObject]
+      .map(_.keys.size)
+      .getOrElse(0)
 
 }
