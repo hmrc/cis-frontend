@@ -50,9 +50,21 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val subcontractors = Map(
-        1 -> SelectedSubcontractor(101, "Alpha Ltd",  Some(BigDecimal(1000)), Some(BigDecimal(200)), Some(BigDecimal(160))),
-        2 -> SelectedSubcontractor(102, "Beta Ltd",   Some(BigDecimal(2000)), Some(BigDecimal(400)), Some(BigDecimal(320))),
-        3 -> SelectedSubcontractor(103, "Gamma Ltd",  Some(BigDecimal(600)),  Some(BigDecimal(300)), Some(BigDecimal(60)))
+        1 -> SelectedSubcontractor(
+          101,
+          "Alpha Ltd",
+          Some(BigDecimal(1000)),
+          Some(BigDecimal(200)),
+          Some(BigDecimal(160))
+        ),
+        2 -> SelectedSubcontractor(
+          102,
+          "Beta Ltd",
+          Some(BigDecimal(2000)),
+          Some(BigDecimal(400)),
+          Some(BigDecimal(320))
+        ),
+        3 -> SelectedSubcontractor(103, "Gamma Ltd", Some(BigDecimal(600)), Some(BigDecimal(300)), Some(BigDecimal(60)))
       )
 
       val userAnswers = buildUserAnswers(subcontractors)
@@ -83,8 +95,14 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val subcontractors = Map(
-        1 -> SelectedSubcontractor(101, "Alpha Ltd", Some(BigDecimal(1000)), Some(BigDecimal(200)), Some(BigDecimal(160))),
-        2 -> SelectedSubcontractor(102, "Beta Ltd",  None,                  None,                  None)
+        1 -> SelectedSubcontractor(
+          101,
+          "Alpha Ltd",
+          Some(BigDecimal(1000)),
+          Some(BigDecimal(200)),
+          Some(BigDecimal(160))
+        ),
+        2 -> SelectedSubcontractor(102, "Beta Ltd", None, None, None)
       )
 
       val userAnswers = buildUserAnswers(subcontractors)
