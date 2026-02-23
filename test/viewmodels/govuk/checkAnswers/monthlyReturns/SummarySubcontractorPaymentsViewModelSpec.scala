@@ -58,10 +58,10 @@ class SummarySubcontractorPaymentsViewModelSpec extends AnyFreeSpec with Matcher
       vm.rows.head.key.content.asHtml.toString must include(
         "monthlyreturns.summarySubcontractorPayments.totalPayments.label"
       )
-      vm.rows(1).key.content.asHtml.toString must include(
+      vm.rows(1).key.content.asHtml.toString   must include(
         "monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label"
       )
-      vm.rows(2).key.content.asHtml.toString must include(
+      vm.rows(2).key.content.asHtml.toString   must include(
         "monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label"
       )
     }
@@ -73,9 +73,9 @@ class SummarySubcontractorPaymentsViewModelSpec extends AnyFreeSpec with Matcher
 
     "must handle zero values" in {
       val vm = SummarySubcontractorPaymentsViewModel(0, BigDecimal(0), BigDecimal(0), BigDecimal(0))
-      vm.rows.head.value.content.asHtml.toString  must include("£0")
-      vm.rows(1).value.content.asHtml.toString    must include("£0")
-      vm.rows(2).value.content.asHtml.toString    must include("£0")
+      vm.rows.head.value.content.asHtml.toString must include("£0")
+      vm.rows(1).value.content.asHtml.toString   must include("£0")
+      vm.rows(2).value.content.asHtml.toString   must include("£0")
     }
 
     "must format decimal values correctly" in {

@@ -42,15 +42,15 @@ object SummarySubcontractorPaymentsViewModel {
       subcontractorCount = subcontractorCount,
       rows = Seq(
         SummaryListRowViewModel(
-          key   = "monthlyreturns.summarySubcontractorPayments.totalPayments.label",
+          key = "monthlyreturns.summarySubcontractorPayments.totalPayments.label",
           value = ValueViewModel(Text(formatAmount(totalPayments)))
         ),
         SummaryListRowViewModel(
-          key   = "monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label",
+          key = "monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label",
           value = ValueViewModel(Text(formatAmount(totalMaterialsCost)))
         ),
         SummaryListRowViewModel(
-          key   = "monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label",
+          key = "monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label",
           value = ValueViewModel(Text(formatAmount(totalCisDeductions)))
         )
       )
