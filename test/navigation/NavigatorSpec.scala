@@ -126,7 +126,7 @@ class NavigatorSpec extends SpecBase {
           SelectedSubcontractorTaxDeductedPage(1),
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad(None)
+        ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
       }
 
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {

@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import models.EmployerReference
 import models.submission.SubmissionDetails
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
@@ -54,29 +55,50 @@ class SubmissionSuccessController @Inject() (
   private def formatEmployerRef(er: EmployerReference): String =
     s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
 
+  private def fail(errorMessage: String): Nothing = {
+    logger.error(errorMessage)
+    throw new IllegalStateException(errorMessage)
+  }
+
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       val cisId = request.userAnswers.get(CisIdPage).getOrElse {
-        logger.error("[SubmissionSuccess] cisId missing from userAnswers")
-        throw new IllegalStateException("cisId missing from userAnswers")
+        val errorMessage: String = s"[SubmissionSuccess] cisId missing from userAnswers"
+        fail(errorMessage)
       }
 
-      val contractorName = request.userAnswers.get(ContractorNamePage).getOrElse {
-        logger.error("[SubmissionSuccess] contractorName missing from userAnswers")
-        throw new IllegalStateException("contractorName missing from userAnswers")
-      }
-
-      val employerRef: String =
-        request.employerReference
-          .map(formatEmployerRef)
-          .getOrElse {
-            val msg = s"SubmissionSuccess: employerReference missing for userId=${request.userId}"
-            logger.error(msg)
-            throw new IllegalStateException(msg)
+      val contractorName: String = {
+        val errorMessage: String = s"[SubmissionSuccess] contractorName missing for userId=${request.userId}"
+        if (!request.isAgent) {
+          request.userAnswers.get(ContractorNamePage).getOrElse {
+            fail(errorMessage)
           }
+        } else {
+          request.userAnswers.get(AgentClientDataPage).flatMap(_.schemeName).getOrElse {
+            fail(errorMessage)
+          }
+        }
+      }
+
+      val employerRef: String = {
+        val errorMessage: String = s"[SubmissionSuccess] employerReference missing for userId=${request.userId}"
+        if (!request.isAgent) {
+          request.employerReference.map(formatEmployerRef).getOrElse {
+            fail(errorMessage)
+          }
+        } else {
+          request.userAnswers
+            .get(AgentClientDataPage)
+            .filter(_.taxOfficeNumber.nonEmpty)
+            .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
+            .getOrElse {
+              fail(errorMessage)
+            }
+        }
+      }
 
       val emailFromSession = request.userAnswers.get(ConfirmEmailAddressPage)
 
@@ -91,15 +113,13 @@ class SubmissionSuccessController @Inject() (
           .get(DateConfirmNilPaymentsPage)
           .map(_.format(dmyFmt))
           .getOrElse {
-            logger.error("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
-            throw new IllegalStateException("taxPeriodEnd missing from userAnswers")
+            fail("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
           }
         val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
         val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
         val submittedDate     = ukNow.format(dmyFmt)
         val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
-          logger.error("[SubmissionSuccess] irMark missing from userAnswers")
-          throw new IllegalStateException("submissionDetails missing from userAnswers")
+          fail("[SubmissionSuccess] submissionDetails missing from userAnswers")
         }
         val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
         val submissionType    = "Monthly Return" // TODO: Dynamic from userAnswers
