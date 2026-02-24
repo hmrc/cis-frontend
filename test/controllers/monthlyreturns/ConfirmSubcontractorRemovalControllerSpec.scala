@@ -185,7 +185,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
     }
 
     "must call delete service and redirect to SubcontractorDetailsAdded when 'Yes' is submitted and subcontractors remain" in {
-      val mockSessionRepository = mock[SessionRepository]
+      val mockSessionRepository    = mock[SessionRepository]
       val mockMonthlyReturnService = mock[MonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
