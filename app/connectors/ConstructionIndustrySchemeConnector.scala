@@ -20,10 +20,10 @@ import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import play.api.Logging
-import play.api.http.Status.{ACCEPTED, NO_CONTENT, OK}
-import play.api.libs.json.Json
+import play.api.http.Status.*
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -41,6 +41,27 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
   def getCisTaxpayer()(implicit hc: HeaderCarrier): Future[CisTaxpayer] =
     http
       .get(url"$cisBaseUrl/taxpayer")
+      .execute[CisTaxpayer]
+
+  def getAgentClient(userId: String)(implicit
+    hc: HeaderCarrier
+  ): Future[Option[JsValue]] =
+    http
+      .get(url"$cisBaseUrl/user-cache/agent-client/$userId")
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case OK        => Some(response.json)
+          case NOT_FOUND => None
+          case _         => throw new HttpException(response.body, response.status)
+        }
+      }
+
+  def getAgentClientTaxpayer(taxOfficeNumber: String, taxOfficeReference: String)(implicit
+    hc: HeaderCarrier
+  ): Future[CisTaxpayer] =
+    http
+      .get(url"$cisBaseUrl/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeReference")
       .execute[CisTaxpayer]
 
   def retrieveMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =

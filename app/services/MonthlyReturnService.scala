@@ -22,8 +22,9 @@ import repositories.SessionRepository
 import models.monthlyreturns.*
 import pages.monthlyreturns.*
 import models.UserAnswers
+import models.agent.AgentClientData
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import models.monthlyreturns.DeleteMonthlyReturnItemRequest
-import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 
@@ -87,6 +88,18 @@ class MonthlyReturnService @Inject() (
 
   def hasClient(taxOfficenumber: String, taxOfficeReference: String)(implicit hc: HeaderCarrier): Future[Boolean] =
     cisConnector.hasClient(taxOfficenumber, taxOfficeReference)
+
+  def getAgentClient(
+    userId: String
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Option[AgentClientData]] =
+    cisConnector.getAgentClient(userId).map {
+      case Some(jsValue) =>
+        jsValue.validate[AgentClientData] match {
+          case JsSuccess(agentClientData, _) => Some(agentClientData)
+          case JsError(_)                    => None
+        }
+      case None          => None
+    }
 
   def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")

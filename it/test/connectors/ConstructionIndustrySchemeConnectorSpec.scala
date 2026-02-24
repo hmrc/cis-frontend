@@ -26,8 +26,8 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
-import play.api.libs.json.Json
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import play.api.libs.json.{JsValue, Json}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, UpstreamErrorResponse}
 
 import scala.concurrent.ExecutionContext
 
@@ -50,7 +50,10 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     informationCorrect = "yes",
     inactivity = "no",
     monthYear = "2025-10",
-    email = "test@test.com"
+    email = "test@test.com",
+    isAgent = false,
+    clientTaxOfficeNumber = "",
+    clientTaxOfficeRef = ""
   )
 
   "getCisTaxpayer" should {
@@ -107,7 +110,138 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       ex.getMessage must include("returned 500")
     }
   }
-  
+
+  "getAgentClient" should {
+
+    val userId = "some-user-id"
+    val validJson: JsValue = Json.obj(
+      "uniqueId" -> "1",
+      "taxOfficeNumber" -> "123",
+      "taxOfficeReference" -> "AB001"
+    )
+
+    "returns Some(Json) if OK" in {
+      stubFor(
+        get(urlEqualTo(s"/cis/user-cache/agent-client/$userId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(Json.stringify(validJson))
+          )
+      )
+
+      val result = connector.getAgentClient(userId).futureValue
+
+      result mustBe Some(validJson)
+    }
+
+    "returns None if NOT_FOUND" in {
+      stubFor(
+        get(urlEqualTo(s"/cis/user-cache/agent-client/$userId"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+
+      val result = connector.getAgentClient(userId).futureValue
+
+      result mustBe None
+    }
+
+    "throws HttpException for other codes" in {
+      stubFor(
+        get(urlEqualTo(s"/cis/user-cache/agent-client/$userId"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("Something broke")
+          )
+
+      )
+
+      val result = connector
+        .getAgentClient(userId)
+        .failed
+        .futureValue
+
+      result mustBe a[HttpException]
+      result.getMessage must include("Something broke")
+    }
+
+  }
+
+  "getAgentClientTaxpayer" should {
+
+    "return CisTaxpayer when BE returns 200 with valid JSON" in {
+      val taxOfficeNumber = "111"
+      val taxOfficeRef = "test111"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeRef"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                """{
+                  |  "uniqueId": "123",
+                  |  "taxOfficeNumber": "111",
+                  |  "taxOfficeRef": "test111",
+                  |  "employerName1": "TEST LTD"
+                  |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getAgentClientTaxpayer(taxOfficeNumber, taxOfficeRef).futureValue
+
+      result.uniqueId mustBe "123"
+      result.taxOfficeNumber mustBe "111"
+      result.taxOfficeRef mustBe "test111"
+      result.employerName1 mustBe Some("TEST LTD")
+    }
+
+    "fail when BE returns 200 with invalid JSON" in {
+      val taxOfficeNumber = "111"
+      val taxOfficeRef = "test111"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeRef"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{ "unexpectedField": true }""")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getAgentClientTaxpayer(taxOfficeNumber, taxOfficeRef).futureValue
+      }
+
+      ex.getMessage.toLowerCase must include("uniqueid")
+    }
+
+    "propagate an upstream error when BE returns 500" in {
+      val taxOfficeNumber = "111"
+      val taxOfficeRef = "test111"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeRef"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("boom")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getAgentClientTaxpayer(taxOfficeNumber, taxOfficeRef).futureValue
+      }
+
+      ex.getMessage must include("returned 500")
+    }
+  }
+
   "retrieveMonthlyReturnForEditDetails" should {
 
     "return GetAllMonthlyReturnDetailsResponse when BE returns 200 with valid JSON" in {
