@@ -15,6 +15,7 @@
  *@
 
 @import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
+@import viewmodels.checkAnswers.monthlyreturns.TotalPaymentsSummary
 @import models.CheckMode
 
 @this(
@@ -33,41 +34,9 @@
     @h1(messages("monthlyreturns.checkAnswersTotalPayments.heading", subcontractor.name))
 
     @govukSummaryList(
-        SummaryListViewModel(Seq(
-
-            SummaryListRowViewModel(
-                key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))),
-                value = ValueViewModel(Text(messages("currency.pounds", subcontractor.totalPaymentsMade))),
-                actions = Seq(
-                    ActionItemViewModel(
-                        content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index, None).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
-                )
-            ),
-
-            SummaryListRowViewModel(
-                key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))),
-                value = ValueViewModel(Text(messages("currency.pounds", subcontractor.costOfMaterials))),
-                actions = Seq(
-                    ActionItemViewModel(
-                        content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, None).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials"))
-                )
-            ),
-
-            SummaryListRowViewModel(
-                key = KeyViewModel(Text(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))),
-                value = ValueViewModel(Text(messages("currency.pounds", subcontractor.totalTaxDeducted))),
-                actions = Seq(
-                    ActionItemViewModel(
-                        content = Text(messages("site.change")),
-                        href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index, None).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions"))
-                )
-            )
-        ))
+        SummaryListViewModel(
+            TotalPaymentsSummary.rowsForCheckAnswers(subcontractor, index)
+        )
     )
 
     @formHelper(action = controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index)) {

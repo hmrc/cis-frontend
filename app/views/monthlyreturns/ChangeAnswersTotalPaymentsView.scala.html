@@ -15,7 +15,7 @@
  *@
 
 @import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
-
+@import viewmodels.checkAnswers.monthlyreturns.TotalPaymentsSummary
 @import models.CheckMode
 
 @this(
@@ -30,51 +30,15 @@
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.changeAnswersTotalPayments.title", subcontractor.name))) {
 
-@h1(messages("monthlyreturns.changeAnswersTotalPayments.heading", subcontractor.name))
+    @h1(messages("monthlyreturns.changeAnswersTotalPayments.heading", subcontractor.name))
 
-        @govukSummaryList(
-            SummaryListViewModel(Seq(
-            
-                SummaryListRowViewModel(
-                    key = KeyViewModel(Text(messages("monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))),
-                    value = ValueViewModel(Text(subcontractor.totalPaymentsMade)),
-                    actions = Seq(
-                    ActionItemViewModel(
-                    content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index, Some("changeAnswers")).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors"))
-                     .withAttribute("id" -> "total-payment-made")
-                )
-                ),
-                
-                SummaryListRowViewModel(
-                    key = KeyViewModel(Text(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials"))),
-                    value = ValueViewModel(Text(subcontractor.costOfMaterials)),
-                    actions = Seq(
-                    ActionItemViewModel(
-                    content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, Some("changeAnswers")).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials"))
-                     .withAttribute("id" -> "total-cost-of-material")
-                )
-                ),
-                
-                SummaryListRowViewModel(
-                    key = KeyViewModel(Text(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))),
-                    value = ValueViewModel(Text(subcontractor.totalTaxDeducted)),
-                    actions = Seq(
-                    ActionItemViewModel(
-                    content = Text(messages("site.change")),
-                    href = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index, Some("changeAnswers")).url
-                    ).withVisuallyHiddenText(messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions"))
-                     .withAttribute("id" -> "total-cis-deductions")
-                    )
-                     )
-                ))
+    @govukSummaryList(
+        SummaryListViewModel(
+            TotalPaymentsSummary.rowsForChangeAnswers(subcontractor, index)
         )
+    )
 
-@formHelper(action = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmit(index)) {
-    @govukButton(ButtonViewModel(messages("site.continue")))
-}
-
+    @formHelper(action = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmit(index)) {
+        @govukButton(ButtonViewModel(messages("site.continue")))
+    }
 }
