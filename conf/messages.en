@@ -191,9 +191,8 @@ monthlyreturns.declaration.change.hidden = Declaration
 monthlyreturns.declaration.submit = Confirm and submit
 
 monthlyreturns.submissionSending.title = Submission - Sending
-monthlyreturns.submissionSending.heading = Sending your submission
-monthlyreturns.submissionSending.paragraph = Your submission is being sent to HMRC.
-monthlyreturns.submissionSending.insetText = Do not refresh this page or press the back button while your submission is being processed.
+monthlyreturns.submissionSending.h1 = Your submission is being sent to HMRC
+monthlyreturns.submissionSending.paragraph = Do not refresh this page or press the back button while your submission is being processed.
 
 monthlyreturns.inactivityWarning.title = Nil Monthly Return - Inactivity Warning
 monthlyreturns.inactivityWarning.heading = Nil Monthly Return - Inactivity Warning

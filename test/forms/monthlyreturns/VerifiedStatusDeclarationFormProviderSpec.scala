@@ -17,7 +17,6 @@
 package forms.monthlyreturns
 
 import forms.behaviours.BooleanFieldBehaviours
-import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import play.api.data.FormError
 
 class VerifiedStatusDeclarationFormProviderSpec extends BooleanFieldBehaviours {

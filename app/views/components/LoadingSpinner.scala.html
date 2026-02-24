@@ -15,14 +15,19 @@
  *@
 
 @this(
-    layout: templates.Layout,
-    loadingSpinner: components.LoadingSpinner
+    h1: H1,
+    paragraph: Paragraph
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(
+  h1Text: String,
+  paratext: String
+)(implicit messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title")), showBackLink = false, showSignOut = false, isFullWidth = true) {
-
-    @loadingSpinner(h1Text = "monthlyreturns.submissionSending.h1", paratext = "monthlyreturns.submissionSending.paragraph")
-
-}
+<div class="loading-spinner">
+    <div class="loading-spinner__spinner" aria-live="polite" role="status"></div>
+    <div class="loading-spinner__content">
+        @h1(msg = h1Text, classes = "govuk-heading-m")
+        @paragraph(paratext)
+    </div>
+</div>
