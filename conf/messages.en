@@ -191,9 +191,8 @@ monthlyreturns.declaration.change.hidden = Declaration
 monthlyreturns.declaration.submit = Confirm and submit
 
 monthlyreturns.submissionSending.title = Submission - Sending
-monthlyreturns.submissionSending.heading = Sending your submission
-monthlyreturns.submissionSending.paragraph = Your submission is being sent to HMRC.
-monthlyreturns.submissionSending.insetText = Do not refresh this page or press the back button while your submission is being processed.
+monthlyreturns.submissionSending.h1 = Your submission is being sent to HMRC
+monthlyreturns.submissionSending.paragraph = Do not refresh this page or press the back button while your submission is being processed.
 
 monthlyreturns.inactivityWarning.title = Nil Monthly Return - Inactivity Warning
 monthlyreturns.inactivityWarning.heading = Nil Monthly Return - Inactivity Warning
@@ -488,3 +487,9 @@ monthlyreturns.verifiedStatusDeclaration.legend = Has every subcontractor includ
 monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Verified Status Declaration
 monthlyreturns.verifiedStatusDeclaration.error.required = Select ‘Yes’ if your subcontractors have been verified. Select ‘No’ if they have not been verified.
 monthlyreturns.verifiedStatusDeclaration.change.hidden = Verified Status Declaration
+monthlyreturns.summarySubcontractorPayments.title = Summary of payments made
+monthlyreturns.summarySubcontractorPayments.heading = Summary of payments made
+monthlyreturns.summarySubcontractorPayments.intro = You have added the payment details of {0} subcontractors.
+monthlyreturns.summarySubcontractorPayments.totalPayments.label = Total payments to subcontractors
+monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label = Total cost of materials
+monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label = Total CIS deductions

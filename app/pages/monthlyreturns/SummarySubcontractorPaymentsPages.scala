@@ -16,19 +16,20 @@
 
 package pages.monthlyreturns
 
-import base.SpecBase
+import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-class VerifiedStatusDeclarationPageSpec extends SpecBase {
+case object SummaryTotalPaymentsPage extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ toString
+  override def toString: String = "summaryTotalPayments"
+}
 
-  "VerifiedStatusDeclarationPage" - {
+case object SummaryTotalMaterialsCostPage extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ toString
+  override def toString: String = "summaryTotalMaterialsCost"
+}
 
-    "have the correct path" in {
-      VerifiedStatusDeclarationPage.path mustBe (JsPath \ "verifiedStatusDeclaration")
-    }
-
-    "have the correct toString" in {
-      VerifiedStatusDeclarationPage.toString mustBe "verifiedStatusDeclaration"
-    }
-  }
+case object SummaryTotalCisDeductionsPage extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ toString
+  override def toString: String = "summaryTotalCisDeductions"
 }

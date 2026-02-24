@@ -14,15 +14,12 @@
  * limitations under the License.
  *@
 
-@this(
-    layout: templates.Layout,
-    loadingSpinner: components.LoadingSpinner
-)
+@this()
 
-@()(implicit request: Request[_], messages: Messages)
+@(contentBlock: Html)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title")), showBackLink = false, showSignOut = false, isFullWidth = true) {
-
-    @loadingSpinner(h1Text = "monthlyreturns.submissionSending.h1", paratext = "monthlyreturns.submissionSending.paragraph")
-
-}
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+        @contentBlock
+    </div>
+</div>

@@ -160,3 +160,5 @@ GET        /monthly-return/verified-status-declaration                  controll
 POST       /monthly-return/verified-status-declaration                  controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
