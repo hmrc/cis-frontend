@@ -33,6 +33,7 @@ import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
+import java.util.Locale
 
 class SubmissionSuccessControllerSpec extends SpecBase {
 
@@ -43,9 +44,10 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
   val contractorName: String = "PAL 355 Scheme"
   val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
+  val submissionType         = "Monthly Return"
 
-  private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu")
-  private val timeFmt = DateTimeFormatter.ofPattern("HH:mm z")
+  private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu").withLocale(Locale.UK)
+  private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london  = ZoneId.of("Europe/London")
 
   protected lazy val ukNow: ZonedDateTime =
@@ -87,7 +89,8 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       submittedDate = submittedDate,
       contractorName = contractorName,
       empRef = employerRef,
-      email = email
+      email = email,
+      submissionType = submissionType
     )(request, messages(app)).toString
 
   lazy val agentDate: AgentClientData =

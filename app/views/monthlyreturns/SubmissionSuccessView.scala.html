@@ -31,7 +31,7 @@
     paragraph: components.Paragraph,
     bulletList: components.BulletList,
     sectionBreak: components.SectionBreak,
-    printLinkButton: components.PrintLinkButton,
+    printLink: components.PrintLink,
     link: components.Link
 )
 
@@ -104,17 +104,21 @@
     )
 
     @govukInsetText(
-        InsetTextViewModel(
-            content = Text(messages("monthlyreturns.submissionSuccessful.inset"))
+        InsetText(
+            content = HtmlContent(
+                s"""
+                    ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
+                    ${printLink("monthlyreturns.submissionSuccessful.print")}
+                """
+            )
         )
-    // TODO: ADD THE PRINT BUTTON HERE INSIDE
     )
 
-    @printLinkButton("monthlyreturns.submissionSuccessful.print")
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
         linkUrl = "#",
     )
+
     @sectionBreak()
 
     @link(
