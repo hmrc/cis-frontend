@@ -20,10 +20,11 @@ import controllers.actions.*
 import models.EmployerReference
 import models.submission.SubmissionDetails
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -122,7 +123,19 @@ class SubmissionSuccessController @Inject() (
           fail("[SubmissionSuccess] submissionDetails missing from userAnswers")
         }
         val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
-        val submissionType    = "Monthly Return" // TODO: Dynamic from userAnswers
+
+        /** Internal server error, for (GET) [/construction-industry-scheme/monthly-return/confirmation] -> ]
+          * exception=[java.lang.IllegalStateException: [SubmissionSuccess] ReturnTypePage missing from userAnswers at
+          * controllers.monthlyreturns.SubmissionSuccessController.fail(SubmissionSuccessController.scala:61) at
+          * controllers.monthlyreturns.SubmissionSuccessController.$anonfun$14(SubmissionSuccessController.scala:128) at
+          * scala.Option.getOrElse(Option.scala:201) at
+          * controllers.monthlyreturns.SubmissionSuccessController.onPageLoad$$anonfun$1$$anonfun$1(SubmissionSuccessController.scala:128)
+          */
+        val submissionType = request.userAnswers
+          .get(ReturnTypePage)
+          .getOrElse(fail("[SubmissionSuccess] ReturnTypePage missing from userAnswers"))
+
+        logger.info(s"ReturnTypePage value: ${request.userAnswers.get(ReturnTypePage)}")
         Ok(
           view(
             reference = reference,
@@ -132,7 +145,7 @@ class SubmissionSuccessController @Inject() (
             contractorName = contractorName,
             empRef = employerRef,
             email = email,
-            submissionType
+            submissionType = submissionType
           )
         )
       }

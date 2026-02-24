@@ -256,6 +256,8 @@ monthlyreturns.submissionSuccessful.feedback.heading = Before you go
 monthlyreturns.submissionSuccessful.feedback.p1 = Your feedback helps us make our service better.
 monthlyreturns.submissionSuccessful.feedback.p2 = to share your feedback on this service.
 monthlyreturns.submissionSuccessful.feedback.p2.link = Take a short survey
+monthlyreturns.returnType.monthlyNilReturn = Monthly Nil Return
+monthlyreturns.returnType.monthlyStandardReturn = Monthly Return
 
 stub.monthlyreturns.submissionSuccessful.button = Successful
 stub.monthlyreturns.submissionUnsuccessful.button = Unsuccessful
