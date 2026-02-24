@@ -43,7 +43,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
       doc.text must include("£")
 
-      doc.getElementsByClass("govuk-button").text must include(messages("site.saveAndContinue"))
+      doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
 
     "must display error summary when form has errors" in new Setup {

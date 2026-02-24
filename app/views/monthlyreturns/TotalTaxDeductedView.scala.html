@@ -38,7 +38,7 @@
         @govukInput(
             InputViewModel(
                 field = form("value"),
-                label = LabelViewModel(messages("monthlyreturns.totalTaxDeducted.heading", companyName)).withCssClass("govuk-label--l")
+                label = LabelViewModel(messages("monthlyreturns.totalTaxDeducted.heading", companyName)).asPageHeading(LabelSize.Large)
             )
                 .withHint(HintViewModel(messages("monthlyreturns.totalTaxDeducted.hintText")))
                 .asNumeric()
@@ -47,7 +47,7 @@
         )
 
         @govukButton(
-            ButtonViewModel(messages("site.saveAndContinue"))
+            ButtonViewModel(messages("site.continue"))
         )
     }
 }
