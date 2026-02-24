@@ -87,14 +87,12 @@ class SubcontractorDetailsAddedController @Inject() (
                       Future.successful(BadRequest(view(withError, mode, viewModel)))
                     } else {
                       Future.successful(
-                        // Todo: wire up to correct next page once flow is finalised
-                        Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                        Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
                       )
                     }
                   } else {
                     Future.successful(
-                      // Todo: wire up to correct next page once flow is finalised
-                      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                      Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))
                     )
                   }
                 }
