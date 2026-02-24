@@ -19,8 +19,8 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
-import models.monthlyreturns.SelectSubcontractorsFormData
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import models.monthlyreturns.{SelectSubcontractorsFormData, SelectedSubcontractor}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -59,7 +59,7 @@ class SelectSubcontractorsController @Inject() (
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
           subcontractorService
-            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, defaultSelection)
+            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, defaultSelection, Some(request.userAnswers))
             .map { model =>
 
               val filledForm =
@@ -90,7 +90,7 @@ class SelectSubcontractorsController @Inject() (
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
           subcontractorService
-            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, None)
+            .buildSelectSubcontractorPage(cisId, taxMonth, taxYear, None, Some(request.userAnswers))
             .flatMap { model =>
               form
                 .bindFromRequest()
@@ -108,11 +108,19 @@ class SelectSubcontractorsController @Inject() (
                         taxMonth = taxMonth,
                         selected = selectedSubcontractors
                       )
-                      .map { _ =>
+                      .map { updatedAnswers =>
                         if (selectedSubcontractors.exists(_.verificationRequired == "Yes")) {
                           Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
                         } else {
-                          Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None))
+                          val firstIncompleteIndex = updatedAnswers
+                            .get(SelectedSubcontractorPage.all)
+                            .getOrElse(Map())
+                            .filter((_, subcontractor) => !subcontractor.isComplete)
+                            .keys
+                            .minOption
+                            .getOrElse(1)
+
+                          Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, firstIncompleteIndex, None))
                         }
                       }
                       .recover { error =>

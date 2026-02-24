@@ -18,7 +18,6 @@ package views.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
-import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.Application
@@ -32,7 +31,7 @@ class ConfirmSubcontractorRemovalViewSpec extends SpecBase {
 
   "ConfirmSubcontractorRemovalView" - {
     "must render the content on the page" in new Setup {
-      val html: HtmlFormat.Appendable = view(form, NormalMode, subcontractorName)
+      val html: HtmlFormat.Appendable = view(form, 1, subcontractorName)
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title               must include(messages("monthlyreturns.confirmSubcontractorRemoval.title", subcontractorName))

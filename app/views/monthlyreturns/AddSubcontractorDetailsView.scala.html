@@ -15,6 +15,7 @@
  *@
 
 @import models.monthlyreturns.SelectedSubcontractor
+@import controllers.monthlyreturns.AddSubcontractorDetailsController
 @import play.twirl.api.Html
 
 @this(
@@ -28,14 +29,14 @@
     fieldSet: components.FieldSet
 )
 
-@(form: Form[_], mode: Mode, subcontractorsWithDetails: Seq[SelectedSubcontractor], subcontractorsWithoutDetails: Seq[SelectedSubcontractor])(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, subcontractorsWithDetails: Seq[SelectedSubcontractor], subcontractorsWithoutDetails: Map[Int, SelectedSubcontractor])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.addSubcontractorDetails.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.AddSubcontractorDetailsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractorsWithoutDetails.headOption.fold(Map.empty[String, String]) { first =>
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractorsWithoutDetails.values.headOption.fold(Map.empty[String, String]) { first =>
                 Map("value" -> s"subcontractor-${first.id}")
             }))
         }
@@ -54,7 +55,7 @@
             @govukRadios(
                 RadiosViewModel(
                     field  = form("value"),
-                    items  = SelectedSubcontractor.radioItems(subcontractorsWithoutDetails),
+                    items  = AddSubcontractorDetailsController.radioItems(subcontractorsWithoutDetails),
                     legend = Legend()
                 )
             )

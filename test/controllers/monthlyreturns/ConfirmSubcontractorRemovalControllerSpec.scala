@@ -19,12 +19,12 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
-import models.{NormalMode, UserAnswers}
+import models.monthlyreturns.SelectedSubcontractor
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.ConfirmSubcontractorRemovalPage
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -41,13 +41,36 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
   val formProvider      = new ConfirmSubcontractorRemovalFormProvider()
   val form              = formProvider()
   val subcontractorName = "TyneWear Ltd"
+  val subcontractor     = SelectedSubcontractor(123L, subcontractorName, None, None, None)
+
+  val userAnswersWithSubcontractor =
+    emptyUserAnswers.set(SelectedSubcontractorPage(1), subcontractor).success.value
 
   lazy val confirmSubcontractorRemovalRoute =
-    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(1).url
 
   "ConfirmSubcontractorRemoval Controller" - {
 
     "must return OK and the correct view for a GET" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, confirmSubcontractorRemovalRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, 1, subcontractorName)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET when no subcontractor exists at index" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
@@ -56,45 +79,19 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, subcontractorName)(
-          request,
-          messages(application)
-        ).toString
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
-    "must populate the view correctly on a GET when the question has previously been answered" in {
-
-      val userAnswers = UserAnswers(userAnswersId).set(ConfirmSubcontractorRemovalPage, true).success.value
-
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, confirmSubcontractorRemovalRoute)
-
-        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
-
-        val result = route(application, request).value
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode, subcontractorName)(
-          request,
-          messages(application)
-        ).toString
-      }
-    }
-
-    "must redirect to the next page when valid data is submitted" in {
+    "must redirect to the next page when valid data is submitted with true" in {
 
       val mockSessionRepository = mock[SessionRepository]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -113,9 +110,30 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
+    "must redirect to the next page when valid data is submitted with false" in {
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute))
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmSubcontractorRemovalRoute)
+            .withFormUrlEncodedBody(("value", "false"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor)).build()
 
       running(application) {
         val request =
@@ -129,10 +147,26 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, subcontractorName)(
+        contentAsString(result) mustEqual view(boundForm, 1, subcontractorName)(
           request,
           messages(application)
         ).toString
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST when no subcontractor exists at index" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmSubcontractorRemovalRoute)
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 

@@ -27,18 +27,12 @@ case class SelectedSubcontractor(
   totalPaymentsMade: Option[BigDecimal],
   costOfMaterials: Option[BigDecimal],
   totalTaxDeducted: Option[BigDecimal]
-)
+) {
+  def isComplete: Boolean = totalPaymentsMade.isDefined && costOfMaterials.isDefined && totalTaxDeducted.isDefined
+}
 
 object SelectedSubcontractor {
 
   given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
 
-  def radioItems(subcontractors: Seq[SelectedSubcontractor])(using Messages): Seq[RadioItem] =
-    subcontractors.map { subcontractor =>
-      RadioItem(
-        content = Text(subcontractor.name),
-        value = Some(subcontractor.id.toString),
-        id = Some(s"subcontractor-${subcontractor.id}")
-      )
-    }
 }

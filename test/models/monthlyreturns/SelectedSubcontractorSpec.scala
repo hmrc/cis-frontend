@@ -119,34 +119,4 @@ class SelectedSubcontractorSpec extends AnyWordSpec with Matchers {
       json.validate[SelectedSubcontractor].isError mustBe true
     }
   }
-
-  "SelectedSubcontractor.radioItems" should {
-
-    implicit val messages: Messages =
-      MessagesImpl(Lang("en"), new DefaultMessagesApi())
-
-    "return an empty sequence when given no subcontractors" in {
-      val items = SelectedSubcontractor.radioItems(Seq.empty)
-      items mustBe empty
-    }
-
-    "create radio items with correct id, value and label for each subcontractor" in {
-      val subcontractors = Seq(
-        SelectedSubcontractor(1L, "First Subcontractor", None, None, None),
-        SelectedSubcontractor(2L, "Second Subcontractor", None, None, None)
-      )
-
-      val items = SelectedSubcontractor.radioItems(subcontractors)
-
-      items.size mustBe 2
-
-      items.head.id mustBe Some("subcontractor-1")
-      items.head.value mustBe Some("1")
-      items.head.content mustBe Text("First Subcontractor")
-
-      items(1).id mustBe Some("subcontractor-2")
-      items(1).value mustBe Some("2")
-      items(1).content mustBe Text("Second Subcontractor")
-    }
-  }
 }

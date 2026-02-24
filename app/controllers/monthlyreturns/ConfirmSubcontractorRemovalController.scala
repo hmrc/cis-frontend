@@ -18,9 +18,9 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
-import models.Mode
+import models.{Mode, NormalMode}
 import navigation.Navigator
-import pages.monthlyreturns.ConfirmSubcontractorRemovalPage
+import pages.monthlyreturns.{ConfirmSubcontractorRemovalPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -46,32 +46,44 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-
-    val preparedForm = request.userAnswers.get(ConfirmSubcontractorRemovalPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
+  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+      case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      case Some(subcontractor) => Ok(view(form, index, subcontractor.name))
     }
-
-    val subcontractorName = "TyneWear Ltd"
-
-    Ok(view(preparedForm, mode, subcontractorName))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+  def onSubmit(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => {
-            val subcontractorName = "TyneWear Ltd"
-            Future.successful(BadRequest(view(formWithErrors, mode, subcontractorName)))
-          },
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmSubcontractorRemovalPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(ConfirmSubcontractorRemovalPage, mode, updatedAnswers))
-        )
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case Some(subcontractor) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors => Future.successful(BadRequest(view(formWithErrors, index, subcontractor.name))),
+              value =>
+                if (value) {
+                  val updatedSubcontractors = request.userAnswers
+                    .get(SelectedSubcontractorPage.all)
+                    .getOrElse(Map())
+                    .filter(_._1 != index)
+                    .values
+                    .zipWithIndex
+                    .map((sub, idx) => idx -> sub)
+                    .toMap
+
+                  for {
+                    updatedAnswers <-
+                      Future.fromTry(request.userAnswers.set(SelectedSubcontractorPage.all, updatedSubcontractors))
+                    _              <- sessionRepository.set(updatedAnswers)
+                  } yield Redirect(navigator.nextPage(ConfirmSubcontractorRemovalPage, NormalMode, updatedAnswers))
+                } else {
+                  Future.successful(
+                    Redirect(navigator.nextPage(ConfirmSubcontractorRemovalPage, NormalMode, request.userAnswers))
+                  )
+                }
+            )
+      }
   }
 }

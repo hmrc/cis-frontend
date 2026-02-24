@@ -16,7 +16,9 @@
 
 package services
 
+import models.UserAnswers
 import models.monthlyreturns.SelectSubcontractorsPageModel
+import pages.monthlyreturns.SelectedSubcontractorPage
 import services.SubcontractorService.{TAX_YEAR_START_DAY, TAX_YEAR_START_MONTH}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -73,6 +75,7 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     taxMonth: Int,
     taxYear: Int,
     defaultSelection: Option[Boolean],
+    userAnswers: Option[UserAnswers] = None,
     today: LocalDate = LocalDate.now()
   )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
     monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
@@ -127,10 +130,13 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
 
       val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
 
+      val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all)).getOrElse(Map())
+
       val initiallySelectedIds: Seq[Int] = defaultSelection match {
-        case Some(true)  => subcontractorViewModels.map(_.id)
-        case Some(false) => Seq.empty
-        case None        =>
+        case Some(true)                              => subcontractorViewModels.map(_.id)
+        case Some(false)                             => Seq.empty
+        case None if selectedSubcontractors.nonEmpty => selectedSubcontractors.values.map(_.id.toInt).toSeq
+        case None                                    =>
           subcontractorViewModels
             .zip(includedLastMonthFlags)
             .collect { case (vm, true) => vm.id }

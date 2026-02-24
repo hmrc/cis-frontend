@@ -16,16 +16,20 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
+import controllers.actions.*
 import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
+
 import javax.inject.Inject
-import models.Mode
+import models.{Mode, NormalMode}
 import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
-import pages.monthlyreturns.AddSubcontractorDetailsPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import pages.monthlyreturns.{AddSubcontractorDetailsPage, SelectedSubcontractorPage}
+import play.api.i18n.{I18nSupport, Messages, MessagesApi}
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import uk.gov.hmrc.govukfrontend.views.Aliases.Text
+import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.AddSubcontractorDetailsView
 
@@ -47,58 +51,45 @@ class AddSubcontractorDetailsController @Inject() (
 
   private val form = formProvider()
 
-  private val subcontractorsWithDetails: Seq[SelectedSubcontractor] =
-    Seq(
-      SelectedSubcontractor(
-        id = 1L,
-        name = "BuildRight Construction",
-        totalPaymentsMade = None,
-        costOfMaterials = None,
-        totalTaxDeducted = None
-      )
-    )
-
-  private val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
-    Seq(
-      SelectedSubcontractor(
-        id = 2L,
-        name = "Northern Trades Ltd",
-        totalPaymentsMade = None,
-        costOfMaterials = None,
-        totalTaxDeducted = None
-      ),
-      SelectedSubcontractor(
-        id = 3L,
-        name = "TyneWear Ltd",
-        totalPaymentsMade = None,
-        costOfMaterials = None,
-        totalTaxDeducted = None
-      )
-    )
-
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val preparedForm = request.userAnswers.get(AddSubcontractorDetailsPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
+    val subcontractors = request.userAnswers
+      .get(SelectedSubcontractorPage.all)
+      .getOrElse(Map())
 
-    Ok(view(preparedForm, mode, subcontractorsWithDetails, subcontractorsWithoutDetails))
+    val completeSubcontractors   = subcontractors.filter(_._2.isComplete)
+    val incompleteSubcontractors = subcontractors.filter(!_._2.isComplete)
+
+    Ok(view(form, mode, completeSubcontractors.values.toSeq, incompleteSubcontractors))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors =>
-            Future.successful(
-              BadRequest(view(formWithErrors, mode, subcontractorsWithDetails, subcontractorsWithoutDetails))
-            ),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(AddSubcontractorDetailsPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(AddSubcontractorDetailsPage, mode, updatedAnswers))
-        )
+  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val subcontractors = request.userAnswers
+      .get(SelectedSubcontractorPage.all)
+      .getOrElse(Map())
+
+    val completeSubcontractors   = subcontractors.filter(_._2.isComplete)
+    val incompleteSubcontractors = subcontractors.filter(!_._2.isComplete)
+
+    form
+      .bindFromRequest()
+      .fold(
+        formWithErrors =>
+          BadRequest(
+            view(formWithErrors, mode, completeSubcontractors.values.toSeq, incompleteSubcontractors)
+          ),
+        value => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, value))
+      )
   }
+}
+
+object AddSubcontractorDetailsController {
+
+  def radioItems(subcontractors: Map[Int, SelectedSubcontractor])(using Messages): Seq[RadioItem] =
+    subcontractors.map { (index, subcontractor) =>
+      RadioItem(
+        content = Text(subcontractor.name),
+        value = Some(index.toString()),
+        id = Some(s"subcontractor-${subcontractor.id}")
+      )
+    }.toSeq
 }
