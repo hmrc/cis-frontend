@@ -123,18 +123,10 @@ class SubmissionSuccessController @Inject() (
         }
         val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
 
-        /** Internal server error, for (GET) [/construction-industry-scheme/monthly-return/confirmation] -> ]
-          * exception=[java.lang.IllegalStateException: [SubmissionSuccess] ReturnTypePage missing from userAnswers at
-          * controllers.monthlyreturns.SubmissionSuccessController.fail(SubmissionSuccessController.scala:61) at
-          * controllers.monthlyreturns.SubmissionSuccessController.$anonfun$14(SubmissionSuccessController.scala:128) at
-          * scala.Option.getOrElse(Option.scala:201) at
-          * controllers.monthlyreturns.SubmissionSuccessController.onPageLoad$$anonfun$1$$anonfun$1(SubmissionSuccessController.scala:128)
-          */
         val submissionType = request.userAnswers
           .get(ReturnTypePage)
           .getOrElse(fail("[SubmissionSuccess] ReturnTypePage missing from userAnswers"))
 
-        logger.info(s"ReturnTypePage value: ${request.userAnswers.get(ReturnTypePage)}")
         Ok(
           view(
             reference = reference,
