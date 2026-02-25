@@ -16,11 +16,10 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import pages.monthlyreturns.ReturnTypePage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import viewmodels.ReturnType
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 

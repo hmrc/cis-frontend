@@ -17,10 +17,10 @@
 package controllers.monthlyreturns
 
 import controllers.actions.{DataRetrievalAction, IdentifierAction}
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -49,21 +49,26 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData).async { implicit request =>
     val instanceIdOpt = request.getQueryString("instanceId")
-    getAgentClient(request).flatMap(clientTaxOfficeNumberTaxOfficeReference =>
-      handleRequest(instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference)
-    )
+    val userAnswer    = request.userAnswers.getOrElse(UserAnswers(request.userId))
+    for {
+      updatedAnswers <- Future.fromTry(userAnswer.set(ReturnTypePage, ReturnType.MonthlyStandardReturn))
+      _              <- sessionRepository.set(updatedAnswers)
+      clientInfoOpt  <- getAgentClient(request)
+      result         <- handleRequest(instanceIdOpt, clientInfoOpt, updatedAnswers)
+    } yield result
   }
 
   private def handleRequest(
     instanceIdOpt: Option[String],
-    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String)]
+    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String)],
+    userAnswers: UserAnswers
   )(implicit
     request: OptionalDataRequest[AnyContent]
   ): Future[Result] =
     if (!request.isAgent) {
       instanceIdOpt match {
-        case Some(instanceId) => storeInstanceId(instanceId).map(_ => Ok(view()))
-        case None             => ensureUserAnswersExists().map(_ => Ok(view()))
+        case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(view()))
+        case None             => Future.successful(Ok(view()))
       }
     } else {
       (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
@@ -79,7 +84,7 @@ class FileYourMonthlyCisReturnController @Inject() (
           monthlyReturnService
             .hasClient(taxOfficeNumber, taxOfficeReference)
             .flatMap {
-              case true  => storeInstanceId(instanceId).map(_ => Ok(view()))
+              case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(view()))
               case false =>
                 logger.warn(
                   s"[FileYourMonthlyCisReturnController] hasClient = false for " +
@@ -104,20 +109,11 @@ class FileYourMonthlyCisReturnController @Inject() (
         case Some(data) => Some((data.taxOfficeNumber, data.taxOfficeReference))
         case _          => None
       }
-    } else Future.successful(None)
+    } else { Future.successful(None) }
 
-  private def ensureUserAnswersExists()(implicit request: OptionalDataRequest[_]): Future[Unit] =
-    request.userAnswers match {
-      case Some(_) => Future.successful(())
-      case None    =>
-        val ua = UserAnswers(request.userId)
-        sessionRepository.set(ua).map(_ => ())
-    }
-
-  private def storeInstanceId(instanceId: String)(implicit request: OptionalDataRequest[_]): Future[Unit] =
-    val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
+  private def storeInstanceId(instanceId: String, userAnswers: UserAnswers): Future[Unit] =
     for {
-      updated <- Future.fromTry(ua0.set(CisIdPage, instanceId))
+      updated <- Future.fromTry(userAnswers.set(CisIdPage, instanceId))
       _       <- sessionRepository.set(updated)
     } yield ()
 }

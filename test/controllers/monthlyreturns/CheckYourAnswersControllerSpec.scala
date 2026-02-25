@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.ReturnType
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.inject.bind
@@ -27,9 +28,9 @@ import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage}
-import java.time.LocalDate
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage, ReturnTypePage}
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
@@ -38,7 +39,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val userAnswersWithReturnType = userAnswersWithCisId
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithReturnType)).build()
 
       running(application) {
         val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
@@ -48,7 +54,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val view              = application.injector.instanceOf[CheckYourAnswersView]
         val returnDetailsList = SummaryListViewModel(
           Seq(
-            ReturnTypeSummary.row(messages(application)).get,
+            ReturnTypeSummary.row(userAnswersWithReturnType)(messages(application)).get,
             PaymentsToSubcontractorsSummary.row(messages(application)).get
           )
         )

@@ -16,9 +16,9 @@
 
 package pages.monthlyreturns
 
+import models.ReturnType
 import pages.QuestionPage
 import play.api.libs.json.JsPath
-import viewmodels.ReturnType
 
 case object ReturnTypePage extends QuestionPage[ReturnType] {
 
