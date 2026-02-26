@@ -145,9 +145,17 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
       }
 
-      "must go from VerifiedStatusDeclarationPage to ConfirmationByEmailController" in {
+      "must go from VerifiedStatusDeclarationPage to SubmitInactivityRequestController" in {
         navigator.nextPage(
           VerifiedStatusDeclarationPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+      }
+
+      "must go from SubmitInactivityRequestPage to ConfirmationByEmailController" in {
+        navigator.nextPage(
+          SubmitInactivityRequestPage,
           NormalMode,
           UserAnswers("id")
         ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)

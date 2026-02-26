@@ -16,30 +16,24 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import models.{ReturnType, UserAnswers}
-import pages.monthlyreturns.EmploymentStatusDeclarationPage
+import models.UserAnswers
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
+import java.time.format.DateTimeFormatter
 
-object ReturnTypeSummary {
+object DateConfirmPaymentsSummary {
 
-  def returnType(answers: UserAnswers): ReturnType =
-    if (answers.get(EmploymentStatusDeclarationPage).isDefined) ReturnType.MonthlyStandardReturn
-    else ReturnType.MonthlyNilReturn
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(DateConfirmPaymentsPage).map { answer =>
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] = {
-    val valueKey = returnType(answers) match {
-      case ReturnType.MonthlyStandardReturn => "monthlyreturns.returnType.monthlyReturnValue"
-      case ReturnType.MonthlyNilReturn      => "monthlyreturns.returnType.value"
-    }
+      val returnPeriodText = answer.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 
-    Some(
       SummaryListRowViewModel(
-        key = messages("monthlyreturns.returnType.checkYourAnswersLabel"),
-        value = ValueViewModel(messages(valueKey))
+        key = messages("monthlyreturns.dateConfirmPayments.checkYourAnswersLabel"),
+        value = ValueViewModel(returnPeriodText)
       )
-    )
-  }
+    }
 }
