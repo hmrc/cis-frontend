@@ -64,6 +64,8 @@ class Navigator @Inject() () {
     case EmploymentStatusDeclarationPage               =>
       _ => controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
     case VerifiedStatusDeclarationPage                 =>
+      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+    case SubmitInactivityRequestPage                   =>
       _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
     case ConfirmationByEmailPage                       =>
       userAnswers =>
