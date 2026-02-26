@@ -51,16 +51,19 @@ class CheckYourAnswersController @Inject() (
 
       val returnDetailsList = SummaryListViewModel(
         rows = Seq(
-          ReturnTypeSummary.row,
+          ReturnTypeSummary.row(request.userAnswers),
           DateConfirmNilPaymentsSummary.row(request.userAnswers),
           PaymentsToSubcontractorsSummary.row,
-          InactivityRequestSummary.row(request.userAnswers)
+          InactivityRequestSummary.row(request.userAnswers),
+          EmploymentStatusDeclarationSummary.row(request.userAnswers),
+          VerifiedStatusDeclarationSummary.row(request.userAnswers)
         ).flatten
       )
 
       val emailList = SummaryListViewModel(
         rows = Seq(
-          ConfirmEmailAddressSummary.row(request.userAnswers)
+          ConfirmEmailAddressSummary.row(request.userAnswers),
+          ConfirmationByEmailSummary.row(request.userAnswers)
         ).flatten
       )
 

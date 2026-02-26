@@ -144,6 +144,7 @@ monthlyreturns.dateConfirmNilPayments.table.row.12.monthEnding = April
 monthlyreturns.dateConfirmNilPayments.table.row.12.input = 04 2025
 monthlyreturns.returnType.checkYourAnswersLabel = Return type
 monthlyreturns.returnType.value = Monthly nil return
+monthlyreturns.returnType.monthlyReturnValue = Monthly return
 
 monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Payments to subcontractors
 monthlyreturns.paymentsToSubcontractors.value = None
@@ -437,6 +438,8 @@ monthlyreturns.confirmationByEmail.p = You can use the email we have on file or 
 monthlyreturns.confirmationByEmail.yes = Yes
 monthlyreturns.confirmationByEmail.no = No
 monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
+monthlyreturns.confirmationByEmail.checkYourAnswersLabel = Do you want submission confirmation by email?
+monthlyreturns.confirmationByEmail.change.hidden = Do you want submission confirmation by email
 
 monthlyreturns.subcontractorDetailsAdded.error.required = Select ‘Yes’ to submit your return. Select ‘No’ to add payment details for more subcontractors.
 monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors
@@ -463,7 +466,7 @@ monthlyreturns.addSubcontractorDetails.error.required = Select which subcontract
 
 monthlyreturns.employmentStatusDeclaration.title = Declaration of employment status
 monthlyreturns.employmentStatusDeclaration.heading = Declaration of employment status
-monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = employmentStatusDeclaration
+monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = Declaration of employment status
 monthlyreturns.employmentStatusDeclaration.legend = Has the employment status of each individual included on this return been considered and have payments not been made under contracts of employment?
 monthlyreturns.employmentStatusDeclaration.error.required = Select ‘Yes’ if you have confirmed the employment status of your subcontractors. Select ‘No’ if their employment status is unconfirmed.
 monthlyreturns.employmentStatusDeclaration.change.hidden = EmploymentStatusDeclaration
@@ -479,7 +482,7 @@ monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS 
 monthlyreturns.verifiedStatusDeclaration.title = Declaration of verified status
 monthlyreturns.verifiedStatusDeclaration.heading = Declaration of verified status
 monthlyreturns.verifiedStatusDeclaration.legend = Has every subcontractor included on this return either been verified with HM Revenue & Customs, or been included in previous CIS returns in this, or the previous two tax years?
-monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Verified Status Declaration
+monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Declaration of verified status
 monthlyreturns.verifiedStatusDeclaration.error.required = Select ‘Yes’ if your subcontractors have been verified. Select ‘No’ if they have not been verified.
 monthlyreturns.verifiedStatusDeclaration.change.hidden = Verified Status Declaration
 monthlyreturns.summarySubcontractorPayments.title = Summary of payments made
