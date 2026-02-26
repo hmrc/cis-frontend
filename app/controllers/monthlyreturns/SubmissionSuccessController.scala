@@ -108,7 +108,7 @@ class SubmissionSuccessController @Inject() (
       }
 
       emailFuture.map { email =>
-        val dmyFmt            = DateTimeFormatter.ofPattern("d MMM uuuu")
+        val dmyFmt            = DateTimeFormatter.ofPattern("MMMM uuuu")
         val periodEnd         = request.userAnswers
           .get(DateConfirmNilPaymentsPage)
           .map(_.format(dmyFmt))
