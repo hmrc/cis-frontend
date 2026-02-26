@@ -62,7 +62,9 @@ class TotalTaxDeductedSummarySpec extends AnyFreeSpec with Matchers with OptionV
         val result = TotalTaxDeductedSummary.row(userAnswers, 1).value
         val action = result.actions.value.items.head
 
-        action.href mustEqual controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, 1).url
+        action.href mustEqual controllers.monthlyreturns.routes.TotalTaxDeductedController
+          .onPageLoad(CheckMode, 1, None)
+          .url
       }
 
       "must include visually hidden text in the change link" in {

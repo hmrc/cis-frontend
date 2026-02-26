@@ -47,8 +47,8 @@ class PaymentDetailsController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
@@ -57,26 +57,32 @@ class PaymentDetailsController @Inject() (
             case Some(value) => form.fill(value)
           }
 
-          Ok(view(preparedForm, mode, subcontractor.name, index))
+          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
       }
-  }
+    }
 
-  def onSubmit(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case Some(subcontractor) =>
           form
             .bindFromRequest()
             .fold(
-              formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index))),
+              formWithErrors =>
+                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
               value =>
                 for {
                   updatedAnswers <-
                     Future.fromTry(request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), value))
                   _              <- sessionRepository.set(updatedAnswers)
-                } yield Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index), mode, updatedAnswers))
+                } yield returnTo match {
+                  case Some("changeAnswers") =>
+                    Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+                  case _                     =>
+                    Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index), mode, updatedAnswers))
+                }
             )
       }
-  }
+    }
 }

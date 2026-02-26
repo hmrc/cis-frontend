@@ -21,12 +21,12 @@ import models.monthlyreturns.SelectedSubcontractor
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
-import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
+import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
+import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
-class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
+class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase {
 
-  val subcontractorName             = "TyneWear Ltd"
+  val subcontractorName             = "Tyne Test Ltd"
   val totalPaymentsToSubcontractors = 1200
   val totalCostOfMaterials          = 500
   val totalCisDeductions            = 240
@@ -40,42 +40,52 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase {
     totalTaxDeducted = Some(totalCisDeductions)
   )
 
-  val viewModel: CheckAnswersTotalPaymentsViewModel = CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)
+  val viewModel: ChangeAnswersTotalPaymentsViewModel =
+    ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
-  "CheckAnswersTotalPayments Controller" - {
+  "ChangeAnswersTotalPayments Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val userAnswersWithSubcontractor =
-        emptyUserAnswers.set(SelectedSubcontractorPage(1), subcontractor).success.value
+        emptyUserAnswers
+          .set(SelectedSubcontractorPage(index), subcontractor)
+          .success
+          .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor)).build()
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1).url)
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url
+          )
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[CheckAnswersTotalPaymentsView]
+        val view = application.injector.instanceOf[ChangeAnswersTotalPaymentsView]
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(viewModel, index)(request, messages(application)).toString
       }
     }
 
-    "must redirect to JourneyRecovery if subcontractor data is missing" in {
+    "must redirect to SystemError if subcontractor data is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1).url)
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url
+          )
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result) mustBe Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
+        redirectLocation(result) mustBe Some(controllers.routes.SystemErrorController.onPageLoad().url)
       }
     }
   }

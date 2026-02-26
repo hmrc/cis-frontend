@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
+@import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 @import viewmodels.checkAnswers.monthlyreturns.TotalPaymentsSummary
 @import models.CheckMode
 
@@ -24,22 +24,21 @@
     govukButton: GovukButton,
     govukSummaryList: GovukSummaryList,
     h1: components.H1
-
 )
 
-@(subcontractor: CheckAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
+@(subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.checkAnswersTotalPayments.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.changeAnswersTotalPayments.title", subcontractor.name))) {
 
-    @h1(messages("monthlyreturns.checkAnswersTotalPayments.heading", subcontractor.name))
+    @h1(messages("monthlyreturns.changeAnswersTotalPayments.heading", subcontractor.name))
 
     @govukSummaryList(
         SummaryListViewModel(
-            TotalPaymentsSummary.rowsForCheckAnswers(subcontractor, index)
+            TotalPaymentsSummary.rowsForChangeAnswers(subcontractor, index)
         )
     )
 
-    @formHelper(action = controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index)) {
+    @formHelper(action = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmit(index)) {
         @govukButton(ButtonViewModel(messages("site.continue")))
     }
 }

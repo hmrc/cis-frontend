@@ -17,6 +17,7 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 import models.monthlyreturns.SelectedSubcontractor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -25,35 +26,34 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
-import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
-import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
+import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
-class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
+class ChangeAnswersTotalPaymentsViewSpec extends SpecBase {
 
-  "CheckAnswersTotalPaymentsView" - {
+  "ChangeAnswersTotalPaymentsView" - {
 
     "must render the correct content on the page" in new Setup {
       val index                       = 1
       val html: HtmlFormat.Appendable = view(viewModel, index)
       val doc: Document               = Jsoup.parse(html.body)
 
-      doc.title             must include(messages("monthlyreturns.checkAnswersTotalPayments.title", viewModel.name))
+      doc.title             must include(messages("monthlyreturns.changeAnswersTotalPayments.title", viewModel.name))
       doc.select("h1").text must include(
-        messages("monthlyreturns.checkAnswersTotalPayments.heading", viewModel.name)
+        messages("monthlyreturns.changeAnswersTotalPayments.heading", viewModel.name)
       )
 
       doc.select("dt").text must include(
-        messages("monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors")
+        messages("monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors")
       )
       doc.select("dd").text must include(messages(viewModel.totalPaymentsMade))
 
       doc.select("dt").text must include(
-        messages("monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials")
+        messages("monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials")
       )
       doc.select("dd").text must include(messages(viewModel.costOfMaterials))
 
       doc.select("dt").text must include(
-        messages("monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions")
+        messages("monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions")
       )
       doc.select("dd").text must include(messages(viewModel.totalTaxDeducted))
 
@@ -78,7 +78,7 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
 
   trait Setup {
     val app: Application                          = applicationBuilder().build()
-    val view: CheckAnswersTotalPaymentsView       = app.injector.instanceOf[CheckAnswersTotalPaymentsView]
+    val view: ChangeAnswersTotalPaymentsView      = app.injector.instanceOf[ChangeAnswersTotalPaymentsView]
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
@@ -98,6 +98,6 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
       totalTaxDeducted = Some(totalCisDeductions)
     )
 
-    val viewModel: CheckAnswersTotalPaymentsViewModel = CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)
+    val viewModel: ChangeAnswersTotalPaymentsViewModel = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
   }
 }
