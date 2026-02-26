@@ -112,7 +112,7 @@ class SelectSubcontractorsController @Inject() (
                         if (selectedSubcontractors.exists(_.verificationRequired == "Yes")) {
                           Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
                         } else {
-                          Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1))
+                          Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None))
                         }
                       }
                       .recover { error =>

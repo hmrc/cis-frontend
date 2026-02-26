@@ -23,24 +23,26 @@ import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcont
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
-import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
+import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
+import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class CheckAnswersTotalPaymentsController @Inject() (
+class ChangeAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
+  sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
-  view: CheckAnswersTotalPaymentsView
+  view: ChangeAnswersTotalPaymentsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -48,43 +50,45 @@ class CheckAnswersTotalPaymentsController @Inject() (
 
   def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-      case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
       case Some(subcontractor) =>
-        Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
+        Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
     }
   }
 
-  def onSubmit(index: Int): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+  def onSubmit(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+    implicit request =>
       val ua = request.userAnswers
 
       buildUpdatePayload(ua, index) match {
-        case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
+        case None          =>
+          Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
         case Some(payload) =>
           monthlyReturnService
             .updateMonthlyReturnItem(payload)
-            .map { _ =>
-              Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+            .flatMap { _ =>
+              sessionRepository.set(ua).map { _ =>
+                Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+              }
             }
             .recover {
               case u: UpstreamErrorResponse =>
                 logger.error(
-                  s"[CheckAnswersTotalPaymentsController][onSubmit] UpdateMonthlyReturnItem failed, status: ${u.statusCode}," +
-                    s" index: $index subcontractorId: ${payload.subcontractorId}, message: ${u.message}"
+                  s"[ChangeAnswersTotalPaymentsController][onSubmit] - updateMonthlyReturnItems failed: status: ${u.statusCode}, " +
+                    s"index: $index, subcontractorId: ${payload.subcontractorId}, message: ${u.message}"
                 )
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
-              case NonFatal(e)              =>
+
+              case NonFatal(e) =>
                 logger.error(
-                  s"[CheckAnswersTotalPaymentsController][onSubmit] UpdateMonthlyReturnItem failed," +
-                    s" index: $index subcontractorId: ${payload.subcontractorId}",
+                  s"[ChangeAnswersTotalPaymentsController][onSubmit] - updateMonthlyReturnItems failed: index: $index, " +
+                    s"subcontractorId: ${payload.subcontractorId}, message: ${e.getMessage}",
                   e
                 )
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
             }
       }
-    }
+  }
 
   private def buildUpdatePayload(ua: UserAnswers, index: Int): Option[UpdateMonthlyReturnItemRequest] =
     for {

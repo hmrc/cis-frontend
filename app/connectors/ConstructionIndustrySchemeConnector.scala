@@ -196,6 +196,18 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         }
       }
 
+  def updateMonthlyReturnItem(request: UpdateMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-return-item/update")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case NO_CONTENT => Future.unit
+          case status     => Future.failed(UpstreamErrorResponse(response.body, status, status))
+        }
+      }
+
   def syncMonthlyReturnItems(payload: SelectedSubcontractorsRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     http
       .post(url"$cisBaseUrl/monthly-return-item/sync")

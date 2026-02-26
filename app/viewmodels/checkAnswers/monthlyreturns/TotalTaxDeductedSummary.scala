@@ -33,7 +33,7 @@ object TotalTaxDeductedSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index).url
+            controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index, None).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.totalTaxDeducted.change.hidden"))
         )
