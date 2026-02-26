@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,30 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import models.{ReturnType, UserAnswers}
-import pages.monthlyreturns.EmploymentStatusDeclarationPage
+import models.{CheckMode, UserAnswers}
+import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object ReturnTypeSummary {
+object SubmitInactivityRequestSummary {
 
-  def returnType(answers: UserAnswers): ReturnType =
-    if (answers.get(EmploymentStatusDeclarationPage).isDefined) ReturnType.MonthlyStandardReturn
-    else ReturnType.MonthlyNilReturn
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(SubmitInactivityRequestPage).map { answer =>
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] = {
-    val valueKey = returnType(answers) match {
-      case ReturnType.MonthlyStandardReturn => "monthlyreturns.returnType.monthlyReturnValue"
-      case ReturnType.MonthlyNilReturn      => "monthlyreturns.returnType.value"
-    }
+      val value = if (answer) "site.yes" else "site.no"
 
-    Some(
       SummaryListRowViewModel(
-        key = messages("monthlyreturns.returnType.checkYourAnswersLabel"),
-        value = ValueViewModel(messages(valueKey))
+        key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
+        )
       )
-    )
-  }
+    }
 }
