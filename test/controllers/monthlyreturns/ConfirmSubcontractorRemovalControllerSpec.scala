@@ -282,5 +282,72 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must redirect to Journey Recovery when delete payload cannot be built (case None)" in {
+      val uaMissingPayloadBits =
+        emptyUserAnswers
+          .set(
+            SelectedSubcontractorPage(index),
+            SelectedSubcontractor(
+              id = subcontractorId,
+              name = subcontractorName,
+              totalPaymentsMade = Some(BigDecimal(100)),
+              costOfMaterials = Some(BigDecimal(50)),
+              totalTaxDeducted = Some(BigDecimal(10))
+            )
+          )
+          .success
+          .value
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaMissingPayloadBits))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to System Error when delete service fails (recover redirect)" in {
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnService.deleteMonthlyReturnItem(any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaWithSubcontractor))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
   }
 }
