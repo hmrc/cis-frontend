@@ -24,10 +24,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmNilPaymentsPage, EnterYourEmailAddressPage, NilReturnStatusPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, EmploymentStatusDeclarationPage, EnterYourEmailAddressPage, NilReturnStatusPage}
 import java.time.LocalDate
 
 import scala.concurrent.Future
@@ -60,9 +60,15 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must include ConfirmationByEmail row in emailList for monthly return" in {
+    "must include Return period ended and ConfirmationByEmail rows for monthly standard return" in {
 
       val userAnswers = userAnswersWithCisId
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
         .set(ConfirmationByEmailPage, true)
         .success
         .value
@@ -78,7 +84,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val returnDetailsList = SummaryListViewModel(
           Seq(
             ReturnTypeSummary.row(userAnswers)(messages(application)).get,
-            PaymentsToSubcontractorsSummary.row(messages(application)).get
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get
           )
         )
         val emailList         = SummaryListViewModel(
@@ -93,9 +99,15 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must include EnterYourEmailAddress row in emailList when confirmation by email is Yes and email is entered" in {
+    "must include Email address row in emailList when confirmation by email is Yes and email is entered" in {
 
       val userAnswers = userAnswersWithCisId
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
         .set(ConfirmationByEmailPage, true)
         .success
         .value
@@ -114,10 +126,10 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val returnDetailsList = SummaryListViewModel(
           Seq(
             ReturnTypeSummary.row(userAnswers)(messages(application)).get,
-            PaymentsToSubcontractorsSummary.row(messages(application)).get
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get
           )
         )
-        val emailList = SummaryListViewModel(
+        val emailList         = SummaryListViewModel(
           Seq(
             ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get,
             EnterYourEmailAddressSummary.row(userAnswers)(messages(application)).get

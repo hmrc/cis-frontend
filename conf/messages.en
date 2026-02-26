@@ -322,6 +322,7 @@ monthlyreturns.dateConfirmPayments.paragraph = A tax month runs from the 6th of 
 monthlyreturns.dateConfirmPayments.WarningIcon = Warning
 monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
 monthlyreturns.dateConfirmPayments.legendText = Tax month and tax year
+monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmPayments.labelMonth = Tax month
 monthlyreturns.dateConfirmPayments.labelYear = Tax year
 
@@ -412,6 +413,8 @@ monthlyreturns.submitInactivityRequest.question = Are you submitting an inactivi
 monthlyreturns.submitInactivityRequest.yes = Yes
 monthlyreturns.submitInactivityRequest.no = No
 monthlyreturns.submitInactivityRequest.error.required = Select ‘Yes’ to submit an inactivity request. Select ‘No’ to continue.
+monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = Inactivity request
+monthlyreturns.submitInactivityRequest.change.hidden = Inactivity request
 
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
@@ -426,7 +429,7 @@ monthlyreturns.inactivityRequestWarning.warning = If you pay any subcontractors 
 monthlyreturns.enterYourEmailAddress.title = Enter your email address
 monthlyreturns.enterYourEmailAddress.heading = Enter your email address
 monthlyreturns.enterYourEmailAddress.hint = Enter an email for HMRC to send confirmation that your return has been submitted.
-monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Enter your email address
+monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Email address
 monthlyreturns.enterYourEmailAddress.error.required = Enter an email address in the correct format, like name@example.com
 monthlyreturns.enterYourEmailAddress.error.invalid = Enter an email address in the correct format, like name@example.com
 monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 132 characters or less
