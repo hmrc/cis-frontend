@@ -701,6 +701,39 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
+  "deleteMonthlyReturnItem" should {
+
+    "delegate to connector with DeleteMonthlyReturnItemRequest payload" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val payload = DeleteMonthlyReturnItemRequest(
+        instanceId = "CIS-123",
+        taxYear = 2024,
+        taxMonth = 10,
+        subcontractorId = 1001L
+      )
+
+      when(connector.deleteMonthlyReturnItem(any[DeleteMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.deleteMonthlyReturnItem(payload).futureValue mustBe ()
+
+      val captor: ArgumentCaptor[DeleteMonthlyReturnItemRequest] =
+        ArgumentCaptor.forClass(classOf[DeleteMonthlyReturnItemRequest])
+
+      verify(connector).deleteMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
+
+      val sent = captor.getValue
+      sent.instanceId mustBe payload.instanceId
+      sent.taxYear mustBe payload.taxYear
+      sent.taxMonth mustBe payload.taxMonth
+      sent.subcontractorId mustBe payload.subcontractorId
+
+      verifyNoInteractions(sessionRepo)
+      verifyNoMoreInteractions(connector)
+    }
+  }
+
   "storeAndSyncSelectedSubcontractors" should {
 
     "store selected subcontractors into session, call sync, and return updated UserAnswers" in {

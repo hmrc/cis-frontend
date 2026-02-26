@@ -24,6 +24,7 @@ import pages.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import models.monthlyreturns.DeleteMonthlyReturnItemRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 
@@ -148,6 +149,9 @@ class MonthlyReturnService @Inject() (
     cisConnector.syncMonthlyReturnItems(
       SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds)
     )
+
+  def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.deleteMonthlyReturnItem(payload)
 
   def storeAndSyncSelectedSubcontractors(
     ua: UserAnswers,
