@@ -56,6 +56,18 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+    case PaymentDetailsConfirmationPage                =>
+      _ => controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+    case EmploymentStatusDeclarationPage               =>
+      _ => controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+    case VerifiedStatusDeclarationPage                 =>
+      _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+    case ConfirmationByEmailPage                       =>
+      userAnswers =>
+        if (userAnswers.get(ConfirmationByEmailPage).contains(true))
+          controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+        else
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 

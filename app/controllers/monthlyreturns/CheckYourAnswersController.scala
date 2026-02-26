@@ -63,7 +63,8 @@ class CheckYourAnswersController @Inject() (
       val emailList = SummaryListViewModel(
         rows = Seq(
           ConfirmEmailAddressSummary.row(request.userAnswers),
-          ConfirmationByEmailSummary.row(request.userAnswers)
+          ConfirmationByEmailSummary.row(request.userAnswers),
+          EnterYourEmailAddressSummary.row(request.userAnswers)
         ).flatten
       )
 

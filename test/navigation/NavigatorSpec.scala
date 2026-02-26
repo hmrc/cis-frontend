@@ -129,6 +129,48 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
       }
 
+      "must go from PaymentDetailsConfirmationPage to EmploymentStatusDeclarationController" in {
+        navigator.nextPage(
+          PaymentDetailsConfirmationPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+      }
+
+      "must go from EmploymentStatusDeclarationPage to VerifiedStatusDeclarationController" in {
+        navigator.nextPage(
+          EmploymentStatusDeclarationPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+      }
+
+      "must go from VerifiedStatusDeclarationPage to ConfirmationByEmailController" in {
+        navigator.nextPage(
+          VerifiedStatusDeclarationPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+      }
+
+      "must go from ConfirmationByEmailPage to EnterYourEmailAddressController when answer is Yes" in {
+        val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, true)
+        navigator.nextPage(
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+      }
+
+      "must go from ConfirmationByEmailPage to CheckYourAnswers when answer is No" in {
+        val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, false)
+        navigator.nextPage(
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page
