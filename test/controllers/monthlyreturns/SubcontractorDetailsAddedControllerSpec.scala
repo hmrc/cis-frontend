@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.{NormalMode, UserAnswers}
+import models.UserAnswers
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -173,8 +173,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onPageLoad(NormalMode)
+          controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
+            .onPageLoad()
             .url
       }
     }
@@ -195,8 +195,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onPageLoad(NormalMode)
+          controllers.monthlyreturns.routes.SelectSubcontractorsController
+            .onPageLoad(None)
             .url
       }
     }
