@@ -57,7 +57,7 @@ object SubcontractorDetailsAddedBuilder {
               changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
                 .onPageLoad(index),
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-                .onPageLoad(CheckMode) // TODO: add index to the route when implemented
+                .onPageLoad(index)
             )
           }
         }

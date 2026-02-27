@@ -23,7 +23,7 @@ import models.monthlyreturns.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -80,6 +80,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       )
       .build()
 
+  private val incompleteSub = SelectedSubcontractor(2L, "B", None, None, None)
+
   private def stubBuild(
     service: SubcontractorService,
     model: SelectSubcontractorsPageModel,
@@ -91,6 +93,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         eqTo(taxMonth),
         eqTo(taxYear),
         eqTo(defaultSel),
+        any[Option[UserAnswers]],
         any[LocalDate]
       )(using any[HeaderCarrier])
     ).thenReturn(Future.successful(model))
@@ -162,6 +165,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
             eqTo(taxMonth),
             eqTo(taxYear),
             eqTo(Some(true)),
+            any[Option[UserAnswers]],
             any[LocalDate]
           )(using any[HeaderCarrier])
         }
@@ -190,6 +194,9 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val monthlyReturnService = mock[MonthlyReturnService]
         stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
+        val answersWithIncompleteSub =
+          userAnswersWithRequiredPages.set(SelectedSubcontractorPage(1), incompleteSub).success.value
+
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
@@ -198,7 +205,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
             taxMonth = eqTo(taxMonth),
             selected = any[Seq[SelectSubcontractorsViewModel]]
           )(using any[HeaderCarrier])
-        ).thenReturn(Future.successful(userAnswersWithRequiredPages))
+        ).thenReturn(Future.successful(answersWithIncompleteSub))
 
         val app = applicationWith(subcontractorService, monthlyReturnService)
 

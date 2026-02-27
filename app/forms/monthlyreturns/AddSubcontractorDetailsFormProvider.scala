@@ -23,10 +23,9 @@ import play.api.data.Form
 
 class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[String] =
+  def apply(): Form[Int] =
     Form(
       "value" ->
-        text("monthlyreturns.addSubcontractorDetails.error.required")
-          .verifying("error.invalid", value => value.forall(_.isDigit))
+        int("monthlyreturns.addSubcontractorDetails.error.required")
     )
 }

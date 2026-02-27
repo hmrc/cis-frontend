@@ -82,22 +82,22 @@ class AddSubcontractorDetailsViewSpec extends SpecBase {
         SelectedSubcontractor(
           id = 1L,
           name = "BuildRight Construction",
-          totalPaymentsMade = None,
-          costOfMaterials = None,
-          totalTaxDeducted = None
+          totalPaymentsMade = Some(BigDecimal(1000)),
+          costOfMaterials = Some(BigDecimal(200)),
+          totalTaxDeducted = Some(BigDecimal(300))
         )
       )
 
-    val subcontractorsWithoutDetails: Seq[SelectedSubcontractor] =
-      Seq(
-        SelectedSubcontractor(
+    val subcontractorsWithoutDetails: Map[Int, SelectedSubcontractor] =
+      Map(
+        2 -> SelectedSubcontractor(
           id = 2L,
           name = "Northern Trades Ltd",
           totalPaymentsMade = None,
           costOfMaterials = None,
           totalTaxDeducted = None
         ),
-        SelectedSubcontractor(
+        3 -> SelectedSubcontractor(
           id = 3L,
           name = "TyneWear Ltd",
           totalPaymentsMade = None,
