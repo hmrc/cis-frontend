@@ -18,6 +18,7 @@
 @import uk.gov.hmrc.govukfrontend.views.Aliases._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.panel.Panel
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.button.Button
+@import models.ReturnType
 
 @this(
     layout: templates.Layout,
@@ -31,7 +32,8 @@
     paragraph: components.Paragraph,
     bulletList: components.BulletList,
     sectionBreak: components.SectionBreak,
-    printLinkButton: components.PrintLinkButton
+    printLink: components.PrintLink,
+    link: components.Link
 )
 
 @(reference: String,
@@ -40,11 +42,12 @@
   submittedDate: String,
   contractorName: String,
   empRef: String,
-  email: String
+  email: String,
+  submissionType: ReturnType
 )(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSuccess.title")),
-        showBackLink = false
+        showBackLink = true
         ) {
 
     @govukPanel(
@@ -63,7 +66,7 @@
 
     @paragraph(
         message = "monthlyreturns.submissionSuccessful.submitted.line",
-        args    = Seq(periodEnd, submittedTime, submittedDate)
+        args    = Seq(submittedTime, submittedDate)
     )
 
     @h2("monthlyreturns.submissionSuccessful.submissionDetails.heading")
@@ -75,47 +78,64 @@
                 value = ValueViewModel(Text(contractorName))
             ),
             SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.employersReference"))),
+                key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.payeReference"))),
                 value = ValueViewModel(Text(empRef))
             ),
             SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.emailSentTo"))),
-                value = ValueViewModel(Text(email))
+                key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.submissionType"))),
+                value = ValueViewModel(Text(messages(s"monthlyreturns.returnType.${submissionType.toString}")))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.returnPeriodEnded"))),
+                value = ValueViewModel(Text(periodEnd))
             )
         ))
     )
 
-    @govukInsetText(
-        InsetTextViewModel(
-            content = Text(messages("monthlyreturns.submissionSuccessful.inset"))
-        )
+    @paragraph(messages(
+        "monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission",
+        Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
+    ))
+
+    @link(
+        linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
+        linkUrl = "#",
+        hasFullStop = true,
+        prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
     )
 
-    @govukDetails(
-        Details(
-            summary = Text(messages("monthlyreturns.submissionSuccessful.details.summary")),
+    @govukInsetText(
+        InsetText(
             content = HtmlContent(
-                paragraph("monthlyreturns.submissionSuccessful.details.p1").toString +
-                paragraph("monthlyreturns.submissionSuccessful.details.p2.intro").toString +
-                bulletList(Seq(
-                    "monthlyreturns.submissionSuccessful.details.li1",
-                    "monthlyreturns.submissionSuccessful.details.li2",
-                    "monthlyreturns.submissionSuccessful.details.li3"
-                )).toString +
-                paragraph("monthlyreturns.submissionSuccessful.details.p3").toString
+                s"""
+                    ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
+                    ${printLink("monthlyreturns.submissionSuccessful.print")}
+                """
             )
         )
     )
 
-    @printLinkButton("monthlyreturns.submissionSuccessful.print")
-
-    @h2("monthlyreturns.submissionSuccessful.next.heading")
-    @paragraph("monthlyreturns.submissionSuccessful.next.p1")
-    @paragraph("monthlyreturns.submissionSuccessful.next.p2")
+    @link(
+        linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
+        linkUrl = "#",
+    )
 
     @sectionBreak()
+
+    @link(
+        linkTextKey = "monthlyreturns.submissionSuccessful.questionsAboutReturnSubmission.link",
+        linkUrl = "#",
+        isNewTab = true,
+        hasFullStop = true,
+        prefixTextKey = "monthlyreturns.submissionSuccessful.questionsAboutReturnSubmission.p"
+    )
 
     @h2("monthlyreturns.submissionSuccessful.feedback.heading")
     @paragraph("monthlyreturns.submissionSuccessful.feedback.p1")
 
+    @link(
+        linkTextKey = "monthlyreturns.submissionSuccessful.feedback.p2.link",
+        linkUrl = "#",
+        suffixTextKey = "monthlyreturns.submissionSuccessful.feedback.p2"
+    )
 }

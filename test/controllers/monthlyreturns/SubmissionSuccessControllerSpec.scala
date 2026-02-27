@@ -17,11 +17,11 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -33,19 +33,21 @@ import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
+import java.util.Locale
 
 class SubmissionSuccessControllerSpec extends SpecBase {
 
-  val email: String          = "test@test.com"
-  val periodEnd: LocalDate   = LocalDate.of(2018, 3, 5)
-  val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
-  val irMarkBase64: String   = "Pyy1LRJh053AE+nuyp0GJR7oESw="
-  val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
-  val contractorName: String = "PAL 355 Scheme"
-  val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
+  val email: String              = "test@test.com"
+  val periodEnd: LocalDate       = LocalDate.of(2018, 3, 5)
+  val fixedInstant: Instant      = Instant.parse("2017-01-06T08:46:00Z")
+  val irMarkBase64: String       = "Pyy1LRJh053AE+nuyp0GJR7oESw="
+  val reference: String          = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
+  val contractorName: String     = "PAL 355 Scheme"
+  val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
+  val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
-  private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu")
-  private val timeFmt = DateTimeFormatter.ofPattern("HH:mm z")
+  private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
+  private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london  = ZoneId.of("Europe/London")
 
   protected lazy val ukNow: ZonedDateTime =
@@ -87,7 +89,8 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       submittedDate = submittedDate,
       contractorName = contractorName,
       empRef = employerRef,
-      email = email
+      email = email,
+      submissionType = submissionType
     )(request, messages(app)).toString
 
   lazy val agentDate: AgentClientData =
@@ -99,8 +102,13 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
       "onPageLoad" - {
 
+        val userAnswersWithReturnType = ua
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+
         lazy val app: Application =
-          applicationBuilder(userAnswers = Some(ua))
+          applicationBuilder(userAnswers = Some(userAnswersWithReturnType))
             .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
             .build()
 
@@ -231,8 +239,13 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           .success
           .value
 
+        val userAnswersWithReturnType = userAnswersWithAgentClientData
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+
         lazy val app: Application =
-          applicationBuilder(userAnswers = Some(userAnswersWithAgentClientData), isAgent = true)
+          applicationBuilder(userAnswers = Some(userAnswersWithReturnType), isAgent = true)
             .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
             .build()
 
