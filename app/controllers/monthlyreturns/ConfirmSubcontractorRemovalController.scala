@@ -18,12 +18,11 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
-import models.monthlyreturns.DeleteMonthlyReturnItemRequest
+import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
 import models.requests.DataRequest
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.{CisIdPage, ConfirmSubcontractorRemovalPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.libs.json.JsObject
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import services.MonthlyReturnService
@@ -114,8 +113,8 @@ class ConfirmSubcontractorRemovalController @Inject() (
     }
 
   private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
-    val remaining = remainingSubcontractorCount(ua)
-    if (remaining == 0) {
+    val subs = selectedSubcontractors(ua)
+    if (subs.isEmpty || !anyWithDetailsAdded(ua)) {
       Redirect(
         controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
       )
@@ -138,10 +137,12 @@ class ConfirmSubcontractorRemovalController @Inject() (
       subcontractorId = subcontractor.id
     )
 
-  private def remainingSubcontractorCount(ua: UserAnswers): Int =
-    (ua.data \ "subcontractors")
-      .asOpt[JsObject]
-      .map(_.keys.size)
-      .getOrElse(0)
+  private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
+    ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+
+  private def anyWithDetailsAdded(ua: UserAnswers): Boolean =
+    selectedSubcontractors(ua).values.exists(sub =>
+      sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
+    )
 
 }
