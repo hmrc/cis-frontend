@@ -36,7 +36,7 @@ class InactivityRequestWarningViewSpec extends SpecBase {
       doc.select("h1").text     must include(messages("monthlyreturns.inactivityRequestWarning.heading"))
       doc.select("p").text      must include(messages("monthlyreturns.inactivityRequestWarning.p"))
       doc.select("strong").text must include(messages("monthlyreturns.inactivityRequestWarning.warning"))
-      doc.select("button").text must include(messages("site.acceptAndContinue"))
+      doc.select("a").text      must include(messages("site.acceptAndContinue"))
     }
   }
 
