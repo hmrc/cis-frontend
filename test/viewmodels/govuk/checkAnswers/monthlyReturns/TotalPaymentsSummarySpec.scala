@@ -10,7 +10,7 @@ import viewmodels.checkAnswers.monthlyreturns.{ChangeAnswersTotalPaymentsViewMod
 class TotalPaymentsSummarySpec extends AnyFreeSpec with Matchers {
 
   private implicit val messages: Messages = Helpers.stubMessages()
-  private val index = 1
+  private val index                       = 1
 
   private val checkVm =
     CheckAnswersTotalPaymentsViewModel(
