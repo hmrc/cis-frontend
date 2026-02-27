@@ -24,7 +24,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, EmploymentStatusDeclarationPage, EnterYourEmailAddressPage, NilReturnStatusPage}
@@ -84,7 +84,8 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val returnDetailsList = SummaryListViewModel(
           Seq(
             ReturnTypeSummary.row(userAnswers)(messages(application)).get,
-            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
           )
         )
         val emailList         = SummaryListViewModel(
@@ -126,7 +127,8 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val returnDetailsList = SummaryListViewModel(
           Seq(
             ReturnTypeSummary.row(userAnswers)(messages(application)).get,
-            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
           )
         )
         val emailList         = SummaryListViewModel(
