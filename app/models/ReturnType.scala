@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package models
 
-import models.UserAnswers
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+sealed trait ReturnType
 
-import scala.util.Try
+object ReturnType extends Enumerable.Implicits {
 
-case object ConfirmationByEmailPage extends QuestionPage[Boolean] {
+  case object MonthlyNilReturn extends WithName("monthlyNilReturn") with ReturnType
+  case object MonthlyStandardReturn extends WithName("monthlyStandardReturn") with ReturnType
 
-  override def path: JsPath = JsPath \ toString
+  val values: Seq[ReturnType] = Seq(
+    MonthlyNilReturn,
+    MonthlyStandardReturn
+  )
 
-  override def toString: String = "confirmationByEmail"
-
-  override def cleanup(value: Option[Boolean], userAnswers: UserAnswers): Try[UserAnswers] =
-    value match {
-      case Some(false) | None => userAnswers.remove(EnterYourEmailAddressPage)
-      case _                  => super.cleanup(value, userAnswers)
-    }
+  implicit val enumerable: Enumerable[ReturnType] =
+    Enumerable(values.map(v => v.toString -> v): _*)
 }

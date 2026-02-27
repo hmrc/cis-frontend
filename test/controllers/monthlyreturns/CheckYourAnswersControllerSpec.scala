@@ -24,10 +24,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, EmploymentStatusDeclarationPage, EnterYourEmailAddressPage, NilReturnStatusPage}
 import java.time.LocalDate
 
 import scala.concurrent.Future
@@ -48,11 +48,95 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val view              = application.injector.instanceOf[CheckYourAnswersView]
         val returnDetailsList = SummaryListViewModel(
           Seq(
-            ReturnTypeSummary.row(messages(application)).get,
+            ReturnTypeSummary.row(userAnswersWithCisId)(messages(application)).get,
             PaymentsToSubcontractorsSummary.row(messages(application)).get
           )
         )
         val emailList         = SummaryListViewModel(Seq.empty)
+
+        status(result) mustEqual OK
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+      }
+    }
+
+    "must include Return period ended and ConfirmationByEmail rows for monthly standard return" in {
+
+      val userAnswers = userAnswersWithCisId
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
+        .set(ConfirmationByEmailPage, true)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val returnDetailsList = SummaryListViewModel(
+          Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)).get,
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
+          )
+        )
+        val emailList         = SummaryListViewModel(
+          Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get
+          )
+        )
+
+        status(result) mustEqual OK
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+      }
+    }
+
+    "must include Email address row in emailList when confirmation by email is Yes and email is entered" in {
+
+      val userAnswers = userAnswersWithCisId
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
+        .set(ConfirmationByEmailPage, true)
+        .success
+        .value
+        .set(EnterYourEmailAddressPage, "test@example.com")
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val returnDetailsList = SummaryListViewModel(
+          Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)).get,
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
+          )
+        )
+        val emailList         = SummaryListViewModel(
+          Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get,
+            EnterYourEmailAddressSummary.row(userAnswers)(messages(application)).get
+          )
+        )
 
         status(result) mustEqual OK
         val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString

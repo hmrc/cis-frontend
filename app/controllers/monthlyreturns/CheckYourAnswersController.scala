@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.ReturnType
 import pages.monthlyreturns.NilReturnStatusPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -49,20 +50,37 @@ class CheckYourAnswersController @Inject() (
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
 
+      val returnTypeRows = ReturnTypeSummary.returnType(request.userAnswers) match {
+        case ReturnType.MonthlyStandardReturn =>
+          Seq(
+            DateConfirmPaymentsSummary.row(request.userAnswers),
+            EmploymentStatusDeclarationSummary.row(request.userAnswers),
+            VerifiedStatusDeclarationSummary.row(request.userAnswers),
+            SubmitInactivityRequestSummary.row(request.userAnswers)
+          )
+        case ReturnType.MonthlyNilReturn      =>
+          Seq(
+            DateConfirmNilPaymentsSummary.row(request.userAnswers),
+            PaymentsToSubcontractorsSummary.row,
+            InactivityRequestSummary.row(request.userAnswers)
+          )
+      }
+
       val returnDetailsList = SummaryListViewModel(
-        rows = Seq(
-          ReturnTypeSummary.row,
-          DateConfirmNilPaymentsSummary.row(request.userAnswers),
-          PaymentsToSubcontractorsSummary.row,
-          InactivityRequestSummary.row(request.userAnswers)
-        ).flatten
+        rows = (Seq(ReturnTypeSummary.row(request.userAnswers)) ++ returnTypeRows).flatten
       )
 
-      val emailList = SummaryListViewModel(
-        rows = Seq(
-          ConfirmEmailAddressSummary.row(request.userAnswers)
-        ).flatten
-      )
+      val emailRows = ReturnTypeSummary.returnType(request.userAnswers) match {
+        case ReturnType.MonthlyStandardReturn =>
+          Seq(
+            ConfirmationByEmailSummary.row(request.userAnswers),
+            EnterYourEmailAddressSummary.row(request.userAnswers)
+          )
+        case ReturnType.MonthlyNilReturn      =>
+          Seq(ConfirmEmailAddressSummary.row(request.userAnswers))
+      }
+
+      val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
       Ok(view(returnDetailsList, emailList))
   }

@@ -30,5 +30,35 @@ class ConfirmationByEmailPageSpec extends SpecBase {
     "have the correct toString" in {
       ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
     }
+
+    "cleanup" - {
+
+      "must remove EnterYourEmailAddressPage when answer is No" in {
+        val userAnswers = emptyUserAnswers
+          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+        val result = ConfirmationByEmailPage.cleanup(Some(false), userAnswers).success.value
+
+        result.get(EnterYourEmailAddressPage) mustBe None
+      }
+
+      "must remove EnterYourEmailAddressPage when answer is removed" in {
+        val userAnswers = emptyUserAnswers
+          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+        val result = ConfirmationByEmailPage.cleanup(None, userAnswers).success.value
+
+        result.get(EnterYourEmailAddressPage) mustBe None
+      }
+
+      "must retain EnterYourEmailAddressPage when answer is Yes" in {
+        val userAnswers = emptyUserAnswers
+          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+        val result = ConfirmationByEmailPage.cleanup(Some(true), userAnswers).success.value
+
+        result.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      }
+    }
   }
 }
