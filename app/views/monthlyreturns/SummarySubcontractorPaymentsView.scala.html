@@ -18,6 +18,7 @@
 @import viewmodels.govuk.all._
 @import viewmodels.implicits._
 @import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
+@import models.NormalMode
 
 @this(
         layout: templates.Layout,
@@ -44,6 +45,6 @@
 
     @govukButton(
         ButtonViewModel(messages("site.continue"))
-            .asLink("#")
+            .asLink(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url)
     )
 }
