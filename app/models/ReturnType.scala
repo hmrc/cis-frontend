@@ -20,7 +20,7 @@ sealed trait ReturnType
 
 object ReturnType extends Enumerable.Implicits {
 
-  case object MonthlyNilReturn      extends WithName("monthlyNilReturn") with ReturnType
+  case object MonthlyNilReturn extends WithName("monthlyNilReturn") with ReturnType
   case object MonthlyStandardReturn extends WithName("monthlyStandardReturn") with ReturnType
 
   val values: Seq[ReturnType] = Seq(
