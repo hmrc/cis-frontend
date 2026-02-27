@@ -155,7 +155,7 @@ class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.PaymentDetailsController
-          .onPageLoad(NormalMode, selectedIndex)
+          .onPageLoad(NormalMode, selectedIndex, None)
           .url
       }
     }
