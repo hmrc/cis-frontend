@@ -77,10 +77,10 @@ class ConfirmSubcontractorRemovalController @Inject() (
                     updatedAnswers <-
                       Future.fromTry(request.userAnswers.set(SelectedSubcontractorPage.all, updatedSubcontractors))
                     _              <- sessionRepository.set(updatedAnswers)
-                  } yield Redirect(navigator.nextPage(ConfirmSubcontractorRemovalPage, NormalMode, updatedAnswers))
+                  } yield Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
                 } else {
                   Future.successful(
-                    Redirect(navigator.nextPage(ConfirmSubcontractorRemovalPage, NormalMode, request.userAnswers))
+                    Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
                   )
                 }
             )

@@ -77,7 +77,7 @@ class AddSubcontractorDetailsController @Inject() (
           BadRequest(
             view(formWithErrors, mode, completeSubcontractors.values.toSeq, incompleteSubcontractors)
           ),
-        value => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, value))
+        value => Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, value, None))
       )
   }
 }

@@ -19,8 +19,8 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
+import models.NormalMode
 import models.monthlyreturns.SelectedSubcontractor
-import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
@@ -93,7 +93,6 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       val application =
         applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor))
           .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
           )
           .build()
@@ -106,7 +105,9 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onPageLoad(NormalMode)
+          .url
       }
     }
 
@@ -114,9 +115,6 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
       val application =
         applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor))
-          .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute))
-          )
           .build()
 
       running(application) {
@@ -127,7 +125,9 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onPageLoad(NormalMode)
+          .url
       }
     }
 
