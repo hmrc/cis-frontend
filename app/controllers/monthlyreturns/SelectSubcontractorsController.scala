@@ -27,7 +27,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SelectSubcontractorsView
-
+import utils.UserAnswerUtils.*
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -112,14 +112,7 @@ class SelectSubcontractorsController @Inject() (
                         if (selectedSubcontractors.exists(_.verificationRequired == "Yes")) {
                           Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
                         } else {
-                          val firstIncompleteIndex = updatedAnswers
-                            .get(SelectedSubcontractorPage.all)
-                            .getOrElse(Map())
-                            .filter((_, subcontractor) => !subcontractor.isComplete)
-                            .keys
-                            .minOption
-                            .getOrElse(1)
-
+                          val firstIncompleteIndex = updatedAnswers.firstIncompleteSubcontractorIndex
                           Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, firstIncompleteIndex, None))
                         }
                       }
