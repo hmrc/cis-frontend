@@ -139,6 +139,166 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController
           .onPageLoad()
       }
+
+      "must go from PaymentDetailsConfirmationPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, true).success.value
+
+          navigator.nextPage(
+            PaymentDetailsConfirmationPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, false).success.value
+
+          navigator.nextPage(
+            PaymentDetailsConfirmationPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            PaymentDetailsConfirmationPage,
+            NormalMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from EmploymentStatusDeclarationPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(EmploymentStatusDeclarationPage, true).success.value
+
+          navigator.nextPage(
+            EmploymentStatusDeclarationPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(EmploymentStatusDeclarationPage, false).success.value
+
+          navigator.nextPage(
+            EmploymentStatusDeclarationPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            EmploymentStatusDeclarationPage,
+            NormalMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from VerifiedStatusDeclarationPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(VerifiedStatusDeclarationPage, true).success.value
+
+          navigator.nextPage(
+            VerifiedStatusDeclarationPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(VerifiedStatusDeclarationPage, false).success.value
+
+          navigator.nextPage(
+            VerifiedStatusDeclarationPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            VerifiedStatusDeclarationPage,
+            NormalMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from SubmitInactivityRequestPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(SubmitInactivityRequestPage, true).success.value
+
+          navigator.nextPage(
+            SubmitInactivityRequestPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad()
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(SubmitInactivityRequestPage, false).success.value
+
+          navigator.nextPage(
+            SubmitInactivityRequestPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            SubmitInactivityRequestPage,
+            NormalMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from ConfirmationByEmailPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(ConfirmationByEmailPage, true).success.value
+
+          navigator.nextPage(
+            ConfirmationByEmailPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(ConfirmationByEmailPage, false).success.value
+
+          navigator.nextPage(
+            ConfirmationByEmailPage,
+            NormalMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            ConfirmationByEmailPage,
+            NormalMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from EnterYourEmailAddressPage to CheckYourAnswers" in {
+        val answers = UserAnswers(userAnswersId).set(EnterYourEmailAddressPage, "test@test.co.uk").success.value
+
+        navigator.nextPage(
+          EnterYourEmailAddressPage,
+          NormalMode,
+          answers
+        ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
     }
 
     "in Check mode" - {
@@ -218,6 +378,166 @@ class NavigatorSpec extends SpecBase {
           UserAnswers("id")
         ) mustBe monthlyreturns.routes.CheckYourAnswersController
           .onPageLoad()
+      }
+
+      "must go from PaymentDetailsConfirmationPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, true).success.value
+
+          navigator.nextPage(
+            PaymentDetailsConfirmationPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(CheckMode)
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, false).success.value
+
+          navigator.nextPage(
+            PaymentDetailsConfirmationPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            PaymentDetailsConfirmationPage,
+            CheckMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from EmploymentStatusDeclarationPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(EmploymentStatusDeclarationPage, true).success.value
+
+          navigator.nextPage(
+            EmploymentStatusDeclarationPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(EmploymentStatusDeclarationPage, false).success.value
+
+          navigator.nextPage(
+            EmploymentStatusDeclarationPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            EmploymentStatusDeclarationPage,
+            CheckMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from VerifiedStatusDeclarationPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(VerifiedStatusDeclarationPage, true).success.value
+
+          navigator.nextPage(
+            VerifiedStatusDeclarationPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(VerifiedStatusDeclarationPage, false).success.value
+
+          navigator.nextPage(
+            VerifiedStatusDeclarationPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            VerifiedStatusDeclarationPage,
+            CheckMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from SubmitInactivityRequestPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(SubmitInactivityRequestPage, true).success.value
+
+          navigator.nextPage(
+            SubmitInactivityRequestPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad()
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(SubmitInactivityRequestPage, false).success.value
+
+          navigator.nextPage(
+            SubmitInactivityRequestPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            SubmitInactivityRequestPage,
+            CheckMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from ConfirmationByEmailPage" - {
+        "to next page when answer is Yes" in {
+          val answers = UserAnswers(userAnswersId).set(ConfirmationByEmailPage, true).success.value
+
+          navigator.nextPage(
+            ConfirmationByEmailPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+        }
+
+        "to next page when answer is No" in {
+          val answers = UserAnswers(userAnswersId).set(ConfirmationByEmailPage, false).success.value
+
+          navigator.nextPage(
+            ConfirmationByEmailPage,
+            CheckMode,
+            answers
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        }
+
+        "to JourneyRecoveryPage when answer is not present" in {
+          navigator.nextPage(
+            ConfirmationByEmailPage,
+            CheckMode,
+            emptyUserAnswers
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+      }
+
+      "must go from EnterYourEmailAddressPage to CheckYourAnswers" in {
+        val answers = UserAnswers(userAnswersId).set(EnterYourEmailAddressPage, "test@test.co.uk").success.value
+
+        navigator.nextPage(
+          EnterYourEmailAddressPage,
+          CheckMode,
+          answers
+        ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
     }
   }
