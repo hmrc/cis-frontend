@@ -49,7 +49,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
-  private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu").withLocale(Locale.UK)
+  private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london  = ZoneId.of("Europe/London")
 
@@ -62,7 +62,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   private val monthlyReturnService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
 
   protected lazy val submittedDate: String =
-    ukNow.format(dmyFmt)
+    ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
 
   val ua: UserAnswers =
     userAnswersWithCisId

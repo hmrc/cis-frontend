@@ -94,7 +94,7 @@ class NavigatorSpec extends SpecBase {
           VerifySubcontractorsPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1)
+        ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None)
       }
 
       "must go from DateConfirmPaymentsPage to SelectSubcontractorsController" in {
@@ -110,7 +110,7 @@ class NavigatorSpec extends SpecBase {
           SelectedSubcontractorPaymentsMadePage(1),
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1)
+        ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1, None)
       }
 
       "must go from SelectedSubcontractorMaterialCostsPage to TotalTaxDeductedController" in {
@@ -118,7 +118,7 @@ class NavigatorSpec extends SpecBase {
           SelectedSubcontractorMaterialCostsPage(2),
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 2)
+        ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 2, None)
       }
 
       "must go from SelectedSubcontractorTaxDeductedPage to JourneyRecoveryController" in {
@@ -185,7 +185,7 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayment Page in CheckMode" in {
+      "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorPaymentsMadePage(1),
           CheckMode,
@@ -193,7 +193,7 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
       }
 
-      "must go from SelectedSubcontractorMaterialCostsPage to CheckAnswersTotalPayment Page in CheckMode" in {
+      "must go from SelectedSubcontractorMaterialCostsPage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorMaterialCostsPage(1),
           CheckMode,
@@ -201,7 +201,7 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
       }
 
-      "must go from SelectedSubcontractorTaxDeductedPage to CheckAnswersTotalPayment Page in CheckMode" in {
+      "must go from SelectedSubcontractorTaxDeductedPage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorTaxDeductedPage(1),
           CheckMode,

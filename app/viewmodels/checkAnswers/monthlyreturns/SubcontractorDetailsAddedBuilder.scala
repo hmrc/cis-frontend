@@ -54,8 +54,8 @@ object SubcontractorDetailsAddedBuilder {
               subcontractorId = sub.id,
               name = sub.name,
               detailsAdded = added,
-              changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
-                .onPageLoad(CheckMode, index),
+              changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                .onPageLoad(index),
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
                 .onPageLoad(CheckMode) // TODO: add index to the route when implemented
             )

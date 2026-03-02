@@ -51,7 +51,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
     .value
 
   lazy val costOfMaterialsRoute =
-    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1).url
+    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1, None).url
 
   "CostOfMaterials Controller" - {
 
@@ -67,7 +67,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[CostOfMaterialsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -88,7 +88,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -137,7 +137,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -202,6 +202,31 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Change Answers total payments when returnTo is changeAnswers" in {
+
+      val changeAnswersPostRoute = s"/monthly-return/materials-cost/1?returnTo=changeAnswers"
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(bind[SessionRepository].toInstance(mockSessionRepository))
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, changeAnswersPostRoute)
+            .withFormUrlEncodedBody(("value", validAnswer.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
       }
     }
   }

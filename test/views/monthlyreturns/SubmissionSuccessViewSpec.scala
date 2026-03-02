@@ -90,7 +90,7 @@ class SubmissionSuccessViewSpec extends SpecBase {
       )
 
     val reference                  = "ABC1234567890123456789"
-    val periodEnd                  = "5 Jan 2026"
+    val periodEnd                  = "February 2026"
     val submittedTime              = "10:30am"
     val submittedDate              = "6 Jan 2026"
     val contractorName             = "Test Contractor Ltd"

@@ -476,6 +476,11 @@ monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontracto
 monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
 monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
 
+monthlyreturns.changeAnswersTotalPayments.title = Change subcontractor’s details
+monthlyreturns.changeAnswersTotalPayments.heading = Change {0}’s details
+monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Total payments to subcontractor
+monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials = Total cost of materials
+monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions = Total CIS deductions
 
 monthlyreturns.verifiedStatusDeclaration.title = Declaration of verified status
 monthlyreturns.verifiedStatusDeclaration.heading = Declaration of verified status
