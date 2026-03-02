@@ -57,7 +57,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     ukNow.format(timeFmt)
 
   protected lazy val submittedDate: String =
-    ukNow.format(dmyFmt)
+    ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
 
   val ua: UserAnswers =
     userAnswersWithCisId
