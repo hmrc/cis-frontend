@@ -230,6 +230,60 @@ class SubcontractorServiceSpec extends SpecBase {
         model.initiallySelectedIds mustBe Seq(1)
       }
     }
+
+    "preselects all subcontractors when defaultSelection is Some(true)" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = Some(true),
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.initiallySelectedIds mustBe Seq(1, 2)
+      }
+    }
+
+    "preselects no subcontractors when defaultSelection is Some(false)" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1001L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = Some(false),
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.initiallySelectedIds mustBe Seq.empty
+      }
+    }
   }
 
   private def mkResponse(items: Seq[MonthlyReturnItem], subs: Seq[Subcontractor]) =
