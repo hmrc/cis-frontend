@@ -54,7 +54,7 @@ object TotalPaymentsSummary {
     Seq(
       row(
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
-        displayValue = subcontractor.totalPaymentsMade,
+        displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
         changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController
           .onPageLoad(CheckMode, index, Some("changeAnswers"))
           .url,
@@ -62,7 +62,7 @@ object TotalPaymentsSummary {
       ),
       row(
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials",
-        displayValue = subcontractor.costOfMaterials,
+        displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
         changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController
           .onPageLoad(CheckMode, index, Some("changeAnswers"))
           .url,
@@ -70,7 +70,7 @@ object TotalPaymentsSummary {
       ),
       row(
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions",
-        displayValue = subcontractor.totalTaxDeducted,
+        displayValue = messages("currency.pounds", subcontractor.totalTaxDeducted),
         changeUrl = controllers.monthlyreturns.routes.TotalTaxDeductedController
           .onPageLoad(CheckMode, index, Some("changeAnswers"))
           .url,
