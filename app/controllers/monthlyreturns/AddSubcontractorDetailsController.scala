@@ -22,23 +22,18 @@ import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
 import javax.inject.Inject
 import models.{Mode, NormalMode}
 import models.monthlyreturns.SelectedSubcontractor
-import navigation.Navigator
-import pages.monthlyreturns.{AddSubcontractorDetailsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
-import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import repositories.SessionRepository
 import uk.gov.hmrc.govukfrontend.views.Aliases.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.AddSubcontractorDetailsView
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class AddSubcontractorDetailsController @Inject() (
   override val messagesApi: MessagesApi,
-  sessionRepository: SessionRepository,
-  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,

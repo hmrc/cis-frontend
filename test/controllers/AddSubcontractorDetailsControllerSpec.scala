@@ -17,26 +17,18 @@
 package controllers
 
 import base.SpecBase
-import controllers.monthlyreturns.{AddSubcontractorDetailsController, SubcontractorDetailsAddedController}
+import controllers.monthlyreturns.AddSubcontractorDetailsController
 import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
 import models.monthlyreturns.SelectedSubcontractor
 import models.{NormalMode, UserAnswers}
-import navigation.{FakeNavigator, Navigator}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{AddSubcontractorDetailsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.i18n.{DefaultMessagesApi, Lang, Messages, MessagesImpl}
-import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import repositories.SessionRepository
 import uk.gov.hmrc.govukfrontend.views.Aliases.Text
 import views.html.monthlyreturns.AddSubcontractorDetailsView
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.must.Matchers
-import scala.concurrent.Future
 
 class AddSubcontractorDetailsControllerSpec extends SpecBase with MockitoSugar {
 

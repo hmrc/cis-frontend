@@ -16,11 +16,9 @@
 
 package models.monthlyreturns
 
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
-import play.api.i18n.{DefaultMessagesApi, Lang, Messages, MessagesImpl}
-import play.api.libs.json._
-import uk.gov.hmrc.govukfrontend.views.Aliases.Text
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.*
 
 class SelectedSubcontractorSpec extends AnyWordSpec with Matchers {
 

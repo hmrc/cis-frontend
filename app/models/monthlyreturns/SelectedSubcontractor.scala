@@ -16,10 +16,7 @@
 
 package models.monthlyreturns
 
-import play.api.i18n.Messages
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.govukfrontend.views.Aliases.Text
-import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 
 case class SelectedSubcontractor(
   id: Long,
