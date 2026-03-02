@@ -21,20 +21,21 @@ import play.api.mvc.Call
 import pages.*
 import pages.monthlyreturns.*
 import models.*
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.InactivityRequest
 
 @Singleton
 class Navigator @Inject() () {
 
-  private val normalRoutes: Page => UserAnswers => Call = {
+  private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
     // nil return
-    case DateConfirmNilPaymentsPage =>
+    case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
       _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
-    case InactivityRequestPage      =>
+    case (InactivityRequestPage, _)                  =>
       _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
-    case ConfirmEmailAddressPage    =>
+    case (ConfirmEmailAddressPage, _)                =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
-    case DeclarationPage            =>
+    case (DeclarationPage, _)                        =>
       userAnswers =>
         userAnswers.get(InactivityRequestPage) match {
           case Some(InactivityRequest.Option2)        =>
@@ -42,25 +43,25 @@ class Navigator @Inject() () {
           case Some(InactivityRequest.Option1) | None =>
             controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
         }
-    case InactivityWarningPage      =>
+    case (InactivityWarningPage, _)                  =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
-    case VerifySubcontractorsPage                      =>
+    case (VerifySubcontractorsPage, _)                      =>
       _ => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None)
-    case DateConfirmPaymentsPage                       =>
+    case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-    case SelectedSubcontractorPaymentsMadePage(index)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
-    case SelectedSubcontractorMaterialCostsPage(index) =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
-    case SelectedSubcontractorTaxDeductedPage(index)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = {
-    case InactivityRequestPage                         =>
+  private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
+    case (InactivityRequestPage, _)                         =>
       userAnswers =>
         userAnswers.get(InactivityRequestPage) match {
           case Some(InactivityRequest.Option2)        =>
@@ -68,19 +69,22 @@ class Navigator @Inject() () {
           case Some(InactivityRequest.Option1) | None =>
             controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
         }
-    case SelectedSubcontractorPaymentsMadePage(index)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case SelectedSubcontractorMaterialCostsPage(index) =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case SelectedSubcontractorTaxDeductedPage(index)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {
-    case NormalMode =>
-      normalRoutes(page)(userAnswers)
-    case CheckMode  =>
-      checkRouteMap(page)(userAnswers)
+  def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = {
+    val returnType = userAnswers.get(ReturnTypePage).getOrElse(ReturnType.MonthlyStandardReturn)
+    mode match {
+      case NormalMode =>
+        normalRoutes(page, returnType)(userAnswers)
+      case CheckMode  =>
+        checkRouteMap(page, returnType)(userAnswers)
+    }
   }
 }
