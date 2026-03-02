@@ -51,7 +51,7 @@ class CheckYourAnswersController @Inject() (
 
       val returnDetailsList = SummaryListViewModel(
         rows = Seq(
-          ReturnTypeSummary.row,
+          ReturnTypeSummary.row(request.userAnswers),
           DateConfirmNilPaymentsSummary.row(request.userAnswers),
           PaymentsToSubcontractorsSummary.row,
           InactivityRequestSummary.row(request.userAnswers)

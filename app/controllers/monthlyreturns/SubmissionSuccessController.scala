@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.EmployerReference
 import models.submission.SubmissionDetails
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -108,7 +108,7 @@ class SubmissionSuccessController @Inject() (
       }
 
       emailFuture.map { email =>
-        val dmyFmt            = DateTimeFormatter.ofPattern("d MMM uuuu")
+        val dmyFmt            = DateTimeFormatter.ofPattern("MMMM uuuu")
         val periodEnd         = request.userAnswers
           .get(DateConfirmNilPaymentsPage)
           .map(_.format(dmyFmt))
@@ -116,12 +116,16 @@ class SubmissionSuccessController @Inject() (
             fail("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
           }
         val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
+        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
         val submittedDate     = ukNow.format(dmyFmt)
         val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
           fail("[SubmissionSuccess] submissionDetails missing from userAnswers")
         }
         val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
+
+        val submissionType = request.userAnswers
+          .get(ReturnTypePage)
+          .getOrElse(fail("[SubmissionSuccess] ReturnTypePage missing from userAnswers"))
 
         Ok(
           view(
@@ -131,7 +135,8 @@ class SubmissionSuccessController @Inject() (
             submittedDate = submittedDate,
             contractorName = contractorName,
             empRef = employerRef,
-            email = email
+            email = email,
+            submissionType = submissionType
           )
         )
       }

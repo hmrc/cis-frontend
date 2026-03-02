@@ -47,13 +47,13 @@ class Navigator @Inject() () {
 
     // monthly return
     case VerifySubcontractorsPage                      =>
-      _ => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1)
+      _ => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None)
     case DateConfirmPaymentsPage                       =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
     case SelectedSubcontractorPaymentsMadePage(index)  =>
-      _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index)
+      _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
     case SelectedSubcontractorMaterialCostsPage(index) =>
-      _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index)
+      _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()

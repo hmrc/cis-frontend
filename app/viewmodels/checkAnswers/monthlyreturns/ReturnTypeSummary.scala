@@ -16,6 +16,8 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
+import models.{ReturnType, UserAnswers}
+import pages.monthlyreturns.ReturnTypePage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
@@ -23,11 +25,17 @@ import viewmodels.implicits.*
 
 object ReturnTypeSummary {
 
-  def row(implicit messages: Messages): Option[SummaryListRow] =
-    Some(
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(ReturnTypePage).map { answer =>
+      val answerText = answer match {
+        case ReturnType.MonthlyNilReturn =>
+          messages(s"monthlyreturns.returnType.${ReturnType.MonthlyNilReturn.toString()}")
+        case _                           => messages(s"monthlyreturns.returnType.${ReturnType.MonthlyStandardReturn.toString()}")
+      }
+
       SummaryListRowViewModel(
         key = messages("monthlyreturns.returnType.checkYourAnswersLabel"),
-        value = ValueViewModel(messages("monthlyreturns.returnType.value"))
+        value = ValueViewModel(answerText)
       )
-    )
+    }
 }

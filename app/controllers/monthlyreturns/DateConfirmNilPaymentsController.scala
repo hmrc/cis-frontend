@@ -20,10 +20,10 @@ import controllers.actions.*
 import forms.monthlyreturns.DateConfirmNilPaymentsFormProvider
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
-import models.{Mode, UserAnswers}
+import models.{Mode, ReturnType, UserAnswers}
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -63,25 +63,22 @@ class DateConfirmNilPaymentsController @Inject() (
 
       val form = formProvider()
 
-      prepareUserAnswers(ua0, request)
-        .flatMap { ua1 =>
-          val preparedForm = ua1.get(DateConfirmNilPaymentsPage) match {
-            case None        => form
-            case Some(value) => form.fill(value)
-          }
-
-          monthlyReturnService
-            .resolveAndStoreCisId(ua1, request.isAgent)
-            .map(_ => Ok(view(preparedForm, mode)))
-
-        }
-        .recover {
-          case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          case NonFatal(ex)                                          =>
-            logger.error(s"[DateConfirmNilPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
-            Redirect(controllers.routes.SystemErrorController.onPageLoad())
-        }
+      (for {
+        uaWithReturnType <- Future.fromTry(ua0.set(ReturnTypePage, ReturnType.MonthlyNilReturn))
+        _                <- sessionRepository.set(uaWithReturnType)
+        ua1              <- prepareUserAnswers(uaWithReturnType, request)
+        preparedForm      = ua1.get(DateConfirmNilPaymentsPage) match {
+                              case None        => form
+                              case Some(value) => form.fill(value)
+                            }
+        _                <- monthlyReturnService.resolveAndStoreCisId(ua1, request.isAgent)
+      } yield Ok(view(preparedForm, mode))).recover {
+        case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case NonFatal(ex)                                          =>
+          logger.error(s"[DateConfirmNilPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+      }
     }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData).async { implicit request =>
@@ -101,36 +98,33 @@ class DateConfirmNilPaymentsController @Inject() (
 
           val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
 
-          prepareUserAnswers(ua0, request)
-            .flatMap { ua1 =>
-              monthlyReturnService
-                .resolveAndStoreCisId(ua1, request.isAgent)
-                .flatMap { case (cisId, _) =>
-                  monthlyReturnService.isDuplicate(cisId, year, month).flatMap {
-                    case true =>
-                      val dupForm =
-                        form
-                          .fill(value)
-                          .withError("value", "monthlyreturns.dateConfirmNilPayments.error.duplicate")
-                      Future.successful(BadRequest(view(dupForm, mode)))
-
-                    case false =>
-                      for {
-                        updatedAnswers <- Future.fromTry(ua1.set(DateConfirmNilPaymentsPage, value))
-                        _              <- sessionRepository.set(updatedAnswers)
-                        withStatus     <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
-                      } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, withStatus))
-                  }
-                }
-            }
-            .recover {
-              case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              case NonFatal(ex)                                          =>
-                logger
-                  .error(s"[DateConfirmNilPaymentsController] Duplicate check fails unexpectedly: ${ex.getMessage}", ex)
-                Redirect(controllers.routes.SystemErrorController.onPageLoad())
-            }
+          (for {
+            ua1       <- prepareUserAnswers(ua0, request)
+            resolved  <- monthlyReturnService.resolveAndStoreCisId(ua1, request.isAgent)
+            (cisId, _) = resolved
+            isDup     <- monthlyReturnService.isDuplicate(cisId, year, month)
+            result    <-
+              if (isDup) {
+                val dupForm =
+                  form
+                    .fill(value)
+                    .withError("value", "monthlyreturns.dateConfirmNilPayments.error.duplicate")
+                Future.successful(BadRequest(view(dupForm, mode)))
+              } else {
+                for {
+                  updatedAnswers <- Future.fromTry(ua1.set(DateConfirmNilPaymentsPage, value))
+                  _              <- sessionRepository.set(updatedAnswers)
+                  withStatus     <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
+                } yield Redirect(navigator.nextPage(DateConfirmNilPaymentsPage, mode, withStatus))
+              }
+          } yield result).recover {
+            case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            case NonFatal(ex)                                          =>
+              logger
+                .error(s"[DateConfirmNilPaymentsController] Duplicate check fails unexpectedly: ${ex.getMessage}", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+          }
         }
       )
   }
