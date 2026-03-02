@@ -18,13 +18,16 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import controllers.monthlyreturns
-import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import models.ReturnType.MonthlyNilReturn
+import models.{ReturnType, UserAnswers}
+import org.mockito.Mockito.mock
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import play.api.Application
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import services.MonthlyReturnService
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
@@ -67,15 +70,17 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
     val contractorName: String = "PAL 355 Scheme"
     val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
+    val monthlyReturnService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+
     private val dmyFmt  = DateTimeFormatter.ofPattern("d MMM uuuu")
-    private val timeFmt = DateTimeFormatter.ofPattern("HH:mm z")
+    private val timeFmt = DateTimeFormatter.ofPattern("h:mma")
     private val london  = ZoneId.of("Europe/London")
 
     protected lazy val ukNow: ZonedDateTime =
       ZonedDateTime.ofInstant(fixedInstant, london)
 
     protected lazy val submittedTime: String =
-      ukNow.format(timeFmt)
+      ukNow.format(timeFmt).toLowerCase
 
     protected lazy val submittedDate: String =
       ukNow.format(dmyFmt)
@@ -89,6 +94,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
         .success
         .value
         .set(DateConfirmNilPaymentsPage, periodEnd)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyNilReturn)
         .success
         .value
 
