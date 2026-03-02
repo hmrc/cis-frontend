@@ -200,7 +200,15 @@ class SubcontractorServiceSpec extends SpecBase {
         id = "id",
         data = Json.obj(
           "subcontractors" -> Json.obj(
-            "0" -> Json.toJson(SelectedSubcontractor(id = 1L, name = "Subbie 1", totalPaymentsMade = None, costOfMaterials = None, totalTaxDeducted = None))
+            "0" -> Json.toJson(
+              SelectedSubcontractor(
+                id = 1L,
+                name = "Subbie 1",
+                totalPaymentsMade = None,
+                costOfMaterials = None,
+                totalTaxDeducted = None
+              )
+            )
           )
         )
       )
