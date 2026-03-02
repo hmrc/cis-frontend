@@ -324,6 +324,7 @@ monthlyreturns.dateConfirmPayments.WarningIcon = Warning
 monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
 monthlyreturns.dateConfirmPayments.legendText = Tax month and tax year
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
+monthlyreturns.dateConfirmPayments.change.hidden = which tax month and year are you filing a return for
 monthlyreturns.dateConfirmPayments.labelMonth = Tax month
 monthlyreturns.dateConfirmPayments.labelYear = Tax year
 
@@ -415,7 +416,7 @@ monthlyreturns.submitInactivityRequest.yes = Yes
 monthlyreturns.submitInactivityRequest.no = No
 monthlyreturns.submitInactivityRequest.error.required = Select ‘Yes’ to submit an inactivity request. Select ‘No’ to continue.
 monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = Inactivity request
-monthlyreturns.submitInactivityRequest.change.hidden = Inactivity request
+monthlyreturns.submitInactivityRequest.change.hidden = inactivity request
 
 monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
@@ -443,7 +444,7 @@ monthlyreturns.confirmationByEmail.yes = Yes
 monthlyreturns.confirmationByEmail.no = No
 monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
 monthlyreturns.confirmationByEmail.checkYourAnswersLabel = Do you want submission confirmation by email?
-monthlyreturns.confirmationByEmail.change.hidden = Do you want submission confirmation by email
+monthlyreturns.confirmationByEmail.change.hidden = do you want submission confirmation by email
 
 monthlyreturns.subcontractorDetailsAdded.error.required = Select ‘Yes’ to submit your return. Select ‘No’ to add payment details for more subcontractors.
 monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors

@@ -222,5 +222,36 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must redirect to SystemError on POST when updateNilMonthlyReturn fails" in {
+
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "test-cis-id")
+        .success
+        .value
+        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .success
+        .value
+        .set(NilReturnStatusPage, "STARTED")
+        .success
+        .value
+
+      val mockService = mock[MonthlyReturnService]
+      when(mockService.updateNilMonthlyReturn(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("service error")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
   }
 }
