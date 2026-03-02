@@ -53,33 +53,33 @@ class DateConfirmNilPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] =
-    (identify andThen getData).async { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData).async { implicit request =>
 
-      implicit val hc: HeaderCarrier =
-        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    val form = formProvider()
 
-      val ua0 = request.userAnswers.getOrElse(UserAnswers(request.userId))
-
-      val form = formProvider()
-
-      (for {
-        uaWithReturnType <- Future.fromTry(ua0.set(ReturnTypePage, ReturnType.MonthlyNilReturn))
-        _                <- sessionRepository.set(uaWithReturnType)
-        ua1              <- prepareUserAnswers(uaWithReturnType, request)
-        preparedForm      = ua1.get(DateConfirmNilPaymentsPage) match {
-                              case None        => form
-                              case Some(value) => form.fill(value)
-                            }
-        _                <- monthlyReturnService.resolveAndStoreCisId(ua1, request.isAgent)
-      } yield Ok(view(preparedForm, mode))).recover {
-        case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        case NonFatal(ex)                                          =>
-          logger.error(s"[DateConfirmNilPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
-          Redirect(controllers.routes.SystemErrorController.onPageLoad())
-      }
+    val ua0          = request.userAnswers.getOrElse(UserAnswers(request.userId))
+    val preparedForm = ua0.get(DateConfirmNilPaymentsPage) match {
+      case None        => form
+      case Some(value) => form.fill(value)
     }
+
+    (for {
+      uaWithReturnType <- Future.fromTry(ua0.set(ReturnTypePage, ReturnType.MonthlyNilReturn))
+      _                <- sessionRepository.set(uaWithReturnType)
+      ua1              <- prepareUserAnswers(uaWithReturnType, request)
+      preparedForm      = ua1.get(DateConfirmNilPaymentsPage) match {
+                            case None        => form
+                            case Some(value) => form.fill(value)
+                          }
+      _                <- monthlyReturnService.resolveAndStoreCisId(ua1, request.isAgent)
+    } yield Ok(view(preparedForm, mode))).recover {
+      case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      case NonFatal(ex)                                          =>
+        logger.error(s"[DateConfirmNilPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
+        Redirect(controllers.routes.SystemErrorController.onPageLoad())
+    }
+  }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData).async { implicit request =>
 
