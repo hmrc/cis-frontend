@@ -18,16 +18,19 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
-import models.Mode
+import models.agent.AgentClientData
+import models.{Mode, UserAnswers}
 import models.monthlyreturns.MonthlyReturnRequest
+import models.requests.DataRequest
 import navigation.Navigator
-import pages.monthlyreturns.DateConfirmPaymentsPage
+import pages.agent.AgentClientDataPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
@@ -118,4 +121,27 @@ class DateConfirmPaymentsController @Inject() (
           }
         )
   }
+
+  private def prepareUserAnswers(ua: UserAnswers, request: DataRequest[_])(implicit
+    hc: HeaderCarrier
+  ): Future[UserAnswers] =
+    if request.isAgent then
+      monthlyReturnService.getAgentClient(request.userId).flatMap {
+        case Some(data) =>
+          monthlyReturnService
+            .hasClient(data.taxOfficeNumber, data.taxOfficeReference)
+            .flatMap {
+              case true  => storeAgentClientData(data, ua)
+              case false => Future.failed(new RuntimeException("Agent has no access to this client"))
+            }
+        case _          => Future.failed(new RuntimeException("Missing agent client data"))
+      }
+    else Future.successful(ua)
+
+  private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
+    for {
+      updatedUaWithCisId           <- Future.fromTry(ua.set(CisIdPage, data.uniqueId))
+      updatedUaWithAgentClientData <- Future.fromTry(updatedUaWithCisId.set(AgentClientDataPage, data))
+      _                            <- sessionRepository.set(updatedUaWithAgentClientData)
+    } yield updatedUaWithAgentClientData
 }
