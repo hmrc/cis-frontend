@@ -1,0 +1,12 @@
+#!/bin/sh
+
+echo "Running scalafmt check..."
+
+sbt scalafmtCheckAll
+
+if [ $? -ne 0 ]; then
+  echo "scalafmt check failed. Please run 'sbt scalafmtAll' to format your code before pushing."
+  exit 1
+fi
+
+exit 0
