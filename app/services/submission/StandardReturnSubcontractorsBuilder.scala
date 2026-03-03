@@ -45,7 +45,9 @@ object StandardReturnSubcontractorsBuilder {
         )
       )
 
-      val subType = toSubcontractorType(sub.subcontractorType)
+      val subType = SubcontractorType.fromString(
+        sub.subcontractorType.getOrElse(throw new RuntimeException("Missing subcontractor type"))
+      )
 
       ChrisStandardSubcontractor(
         subcontractorType = subType,
@@ -78,14 +80,5 @@ object StandardReturnSubcontractorsBuilder {
       )
     } else {
       None
-    }
-
-  private def toSubcontractorType(maybe: Option[String]): SubcontractorType =
-    maybe.map(_.toLowerCase) match {
-      case Some("soletrader")  => SoleTrader
-      case Some("company")     => Company
-      case Some("partnership") => Partnership
-      case Some("trust")       => Trust
-      case other               => throw new RuntimeException(s"Invalid subcontractor type: $other")
     }
 }

@@ -102,7 +102,12 @@ class ChrisSubmissionRequestBuilder @Inject() (
       case other                       => throw new RuntimeException(s"ReturnType missing or invalid: $other")
     }).getOrElse(throw new RuntimeException("Month and year of return missing"))
 
-    val emailOpt = ua.get(ConfirmEmailAddressPage).map(_.trim).filter(_.nonEmpty)
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
+
+    val emailOpt = returnType match {
+      case MonthlyNilReturn      => ua.get(ConfirmEmailAddressPage)
+      case MonthlyStandardReturn => ua.get(EnterYourEmailAddressPage)
+    }
 
     ChrisSubmissionCommon(
       utr = utr,

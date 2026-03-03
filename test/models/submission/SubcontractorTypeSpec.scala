@@ -33,7 +33,9 @@ class SubcontractorTypeSpec extends AnyFreeSpec with Matchers {
     }
 
     "rejects invalid value" in {
-      Json.fromJson[SubcontractorType](JsString("nope")).isError shouldBe true
+      assertThrows[IllegalArgumentException] {
+        Json.fromJson[SubcontractorType](JsString("nope"))
+      }
     }
 
     "writes to string" in {

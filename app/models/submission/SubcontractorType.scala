@@ -27,14 +27,18 @@ enum SubcontractorType(val value: String) extends WithName(value) {
 }
 
 object SubcontractorType {
+
+  def fromString(value: String): SubcontractorType =
+    value.trim.toLowerCase match {
+      case "soletrader"  => SoleTrader
+      case "company"     => Company
+      case "partnership" => Partnership
+      case "trust"       => Trust
+      case other         => throw new IllegalArgumentException(s"Invalid SubcontractorType value: $other")
+    }
+
   given Format[SubcontractorType] = Format(
-    Reads.StringReads.map(_.toLowerCase).flatMap {
-      case "soletrader"  => Reads.pure(SubcontractorType.SoleTrader)
-      case "company"     => Reads.pure(SubcontractorType.Company)
-      case "partnership" => Reads.pure(SubcontractorType.Partnership)
-      case "trust"       => Reads.pure(SubcontractorType.Trust)
-      case other         => Reads(_ => JsError("Invalid SubcontractorType value: $other"))
-    },
+    Reads.StringReads.map(fromString),
     Writes(t => JsString(t.value))
   )
 }
