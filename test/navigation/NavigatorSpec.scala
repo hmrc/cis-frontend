@@ -18,9 +18,10 @@ package navigation
 
 import base.SpecBase
 import controllers.monthlyreturns
-import pages._
+import pages.*
 import pages.monthlyreturns.*
-import models._
+import models.*
+import models.ReturnType.MonthlyNilReturn
 import models.monthlyreturns.InactivityRequest
 
 class NavigatorSpec extends SpecBase {
@@ -31,11 +32,11 @@ class NavigatorSpec extends SpecBase {
 
     "in Normal mode" - {
 
-      "must go from DateConfirmNilPaymentsPage to InactivityRequestController" in {
+      "must go from DateConfirmPaymentsPage (MonthlyNilReturn) to InactivityRequestController" in {
         navigator.nextPage(
-          DateConfirmNilPaymentsPage,
+          DateConfirmPaymentsPage,
           NormalMode,
-          UserAnswers("id")
+          UserAnswers("id").setOrException(ReturnTypePage, MonthlyNilReturn)
         ) mustBe controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
       }
 
@@ -145,7 +146,7 @@ class NavigatorSpec extends SpecBase {
 
       "must go from DateConfirmNilPaymentsPage to CheckYourAnswers Page in CheckMode" in {
         navigator.nextPage(
-          DateConfirmNilPaymentsPage,
+          DateConfirmPaymentsPage,
           CheckMode,
           UserAnswers("id")
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()

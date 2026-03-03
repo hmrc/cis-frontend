@@ -26,7 +26,7 @@ import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
 import org.mockito.Mockito.{verifyNoInteractions, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.DateConfirmNilPaymentsPage
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
 import play.api.inject.bind
 import play.api.mvc.{AnyContentAsEmpty, AnyContentAsFormUrlEncoded, Call}
@@ -132,7 +132,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
           .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
 
-        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmNilPaymentsPage, validAnswer).success.value
+        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmPaymentsPage, validAnswer).success.value
 
         val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
@@ -392,7 +392,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         when(mockRepo.set(any()))
           .thenReturn(Future.successful(true))
 
-        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmNilPaymentsPage, validAnswer).success.value
+        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmPaymentsPage, validAnswer).success.value
 
         val application = applicationBuilder(userAnswers = Some(userAnswers), isAgent = true)
           .overrides(
@@ -473,7 +473,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
             Future.successful(None)
           )
 
-        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmNilPaymentsPage, validAnswer).success.value
+        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmPaymentsPage, validAnswer).success.value
 
         val application = applicationBuilder(userAnswers = Some(userAnswers), isAgent = true)
           .overrides(
@@ -498,7 +498,7 @@ class DateConfirmNilPaymentsControllerSpec extends SpecBase with MockitoSugar {
         when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
           .thenReturn(Future.successful(false))
 
-        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmNilPaymentsPage, validAnswer).success.value
+        val userAnswers = UserAnswers(userAnswersId).set(DateConfirmPaymentsPage, validAnswer).success.value
 
         val application = applicationBuilder(userAnswers = Some(userAnswers), isAgent = true)
           .overrides(

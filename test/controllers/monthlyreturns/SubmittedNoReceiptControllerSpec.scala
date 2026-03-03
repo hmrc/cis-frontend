@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.monthlyreturns
 import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage}
 import play.api.Application
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
@@ -88,7 +88,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
         .set(ConfirmEmailAddressPage, email)
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, periodEnd)
+        .set(DateConfirmPaymentsPage, periodEnd)
         .success
         .value
 
