@@ -57,7 +57,7 @@ class Navigator @Inject() () {
     case SelectedSubcontractorTaxDeductedPage(index)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case PaymentDetailsConfirmationPage                =>
-      userAnswers => navigatorFromPaymentDetailsConfirmationPage(NormalMode)(userAnswers)
+      userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
     case EmploymentStatusDeclarationPage               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
     case VerifiedStatusDeclarationPage                 =>
@@ -86,8 +86,6 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case PaymentDetailsConfirmationPage                =>
-      userAnswers => navigatorFromPaymentDetailsConfirmationPage(CheckMode)(userAnswers)
     case EmploymentStatusDeclarationPage               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(CheckMode)(userAnswers)
     case VerifiedStatusDeclarationPage                 =>
@@ -108,16 +106,13 @@ class Navigator @Inject() () {
       checkRouteMap(page)(userAnswers)
   }
 
-  private def navigatorFromPaymentDetailsConfirmationPage(
-    mode: Mode
-  )(userAnswers: UserAnswers): Call =
-    (userAnswers.get(PaymentDetailsConfirmationPage), mode) match {
-      case (Some(true), _)           =>
-        controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(mode)
-      case (Some(false), NormalMode) =>
+  private def navigatorFromPaymentDetailsConfirmationPage()(userAnswers: UserAnswers): Call =
+    userAnswers.get(PaymentDetailsConfirmationPage) match {
+      case Some(true)  =>
+        controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+      case Some(false) =>
         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-      case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case _           => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
   private def navigatorFromEmploymentStatusDeclarationPage(

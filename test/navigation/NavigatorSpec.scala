@@ -380,36 +380,6 @@ class NavigatorSpec extends SpecBase {
           .onPageLoad()
       }
 
-      "must go from PaymentDetailsConfirmationPage" - {
-        "to next page when answer is Yes" in {
-          val answers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, true).success.value
-
-          navigator.nextPage(
-            PaymentDetailsConfirmationPage,
-            CheckMode,
-            answers
-          ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(CheckMode)
-        }
-
-        "to next page when answer is No" in {
-          val answers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, false).success.value
-
-          navigator.nextPage(
-            PaymentDetailsConfirmationPage,
-            CheckMode,
-            answers
-          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-        }
-
-        "to JourneyRecoveryPage when answer is not present" in {
-          navigator.nextPage(
-            PaymentDetailsConfirmationPage,
-            CheckMode,
-            emptyUserAnswers
-          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
-        }
-      }
-
       "must go from EmploymentStatusDeclarationPage" - {
         "to next page when answer is Yes" in {
           val answers = UserAnswers(userAnswersId).set(EmploymentStatusDeclarationPage, true).success.value
