@@ -43,7 +43,7 @@ class IndexController @Inject() (
     val userAnswers = UserAnswers(request.userId)
 
     sessionRepository.set(userAnswers).map { _ =>
-      Results.Redirect(monthlyReturnsRoutes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
+      Results.Redirect(monthlyReturnsRoutes.DateConfirmPaymentsController.onPageLoad(NormalMode))
     }
   }
 }
