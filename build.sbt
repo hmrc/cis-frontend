@@ -9,6 +9,8 @@ lazy val appName: String = "cis-frontend"
 ThisBuild / majorVersion := 0
 ThisBuild / scalaVersion := "3.3.5"
 
+onLoad in Global ~= (_ andThen ("git config core.hooksPath hooks" :: _))
+
 lazy val microservice = (project in file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
