@@ -43,6 +43,6 @@ class SubmissionUnsuccessfulController @Inject() (
 
   def onSubmit: Action[AnyContent] =
     identify { implicit request =>
-      Redirect(controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
+      Redirect(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode))
     }
 }
