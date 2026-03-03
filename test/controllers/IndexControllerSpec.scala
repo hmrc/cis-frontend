@@ -57,7 +57,7 @@ class IndexControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
 
-        redirectLocation(result).value mustEqual monthlyReturnsRoutes.DateConfirmNilPaymentsController
+        redirectLocation(result).value mustEqual monthlyReturnsRoutes.DateConfirmPaymentsController
           .onPageLoad(NormalMode)
           .url
       }
