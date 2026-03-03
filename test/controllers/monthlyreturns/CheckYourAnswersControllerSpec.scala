@@ -28,7 +28,7 @@ import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, NilReturnStatusPage, ReturnTypePage}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -104,7 +104,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(CisIdPage, "test-cis-id")
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
         .set(NilReturnStatusPage, "STARTED")
