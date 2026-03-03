@@ -117,7 +117,7 @@ class SubmissionSuccessController @Inject() (
           }
         val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
         val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
-        val submittedDate     = ukNow.format(dmyFmt)
+        val submittedDate     = ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
         val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
           fail("[SubmissionSuccess] submissionDetails missing from userAnswers")
         }
