@@ -109,7 +109,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val ua = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
+      val ua = emptyUserAnswers.set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
 
       val ex = intercept[RuntimeException] {
         service.create(ua).futureValue
@@ -515,7 +515,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val ua        = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
+      val ua        = emptyUserAnswers.set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
       val chrisResp = mkChrisResp()
 
       val ex = intercept[RuntimeException] {
@@ -1369,7 +1369,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       .set(CisIdPage, "123")
       .success
       .value
-      .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5))
+      .set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5))
       .success
       .value
       .set(ConfirmEmailAddressPage, "test@test.com")

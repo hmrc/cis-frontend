@@ -32,6 +32,7 @@ import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import javax.inject.Inject
@@ -56,24 +57,24 @@ class DateConfirmPaymentsController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
+      implicit val hc: HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      val form                       = formProvider()
 
-      val form = formProvider()
-
-      val preparedForm = request.userAnswers.get(DateConfirmPaymentsPage) match {
-        case None        => form
-        case Some(value) => form.fill(value)
+      (for {
+        preparedUserAnswers <- prepareUserAnswers(request.userAnswers, request)
+        _                   <- monthlyReturnService.resolveAndStoreCisId(preparedUserAnswers, request.isAgent)
+        preparedForm         = request.userAnswers.get(DateConfirmPaymentsPage) match {
+                                 case None        => form
+                                 case Some(value) => form.fill(value)
+                               }
+      } yield Ok(view(preparedForm, mode))).recover {
+        case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case NonFatal(ex)                                          =>
+          logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
       }
-
-      monthlyReturnService
-        .resolveAndStoreCisId(request.userAnswers, request.isAgent)
-        .map(_ => Ok(view(preparedForm, mode)))
-        .recover {
-          case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          case NonFatal(ex)                                          =>
-            logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
-            Redirect(controllers.routes.SystemErrorController.onPageLoad())
-        }
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {

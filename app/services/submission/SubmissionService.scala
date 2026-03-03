@@ -164,7 +164,7 @@ class SubmissionService @Inject() (
       val yearMonth = returnType match {
         case MonthlyNilReturn =>
           userAnswers
-            .get(DateConfirmNilPaymentsPage)
+            .get(DateConfirmPaymentsPage)
             .map(YearMonth.from)
             .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 

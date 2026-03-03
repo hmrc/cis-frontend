@@ -24,7 +24,7 @@ import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -75,7 +75,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       .set(ConfirmEmailAddressPage, email)
       .success
       .value
-      .set(DateConfirmNilPaymentsPage, periodEnd)
+      .set(DateConfirmPaymentsPage, periodEnd)
       .success
       .value
       .set(
@@ -205,7 +205,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ConfirmEmailAddressPage, email)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -236,7 +236,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -290,7 +290,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(ConfirmEmailAddressPage, "test@test.com")
@@ -393,7 +393,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
