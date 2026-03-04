@@ -19,6 +19,7 @@
 @import uk.gov.hmrc.govukfrontend.views.Aliases._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.panel.Panel
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.button.Button
+@import models.ReturnType
 
 @this(
     layout: templates.Layout,
@@ -27,7 +28,9 @@
     govukSummaryList: GovukSummaryList,
     paragraph: Paragraph,
     h2: H2,
-    link: Link
+    link: Link,
+    sectionBreak: SectionBreak,
+    printLink: PrintLink,
 )
 
 @(periodEnd: String,
@@ -35,51 +38,81 @@
   submittedDate: String,
   contractorName: String,
   empRef: String,
-  email: String
+  email: String,
+  submissionType: ReturnType
 )(implicit request: Request[_], messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("submittedNoReceipt.title")),
+    pageTitle = titleNoForm(messages("monthlyreturns.submittedNoReceipt.title")),
     showSignOut = false,
     showBackLink = false
 ) {
 
     @govukPanel(
-        Panel(title = Text(messages("submittedNoReceipt.heading")))
+        Panel(title = Text(messages("monthlyreturns.submittedNoReceipt.heading")))
     )
 
     @paragraph(
-        message = "submittedNoReceipt.p1",
-        args    = Seq(periodEnd, submittedTime, submittedDate)
+        message = "monthlyreturns.submittedNoReceipt.p1",
+        args    = Seq(submittedTime, submittedDate)
     )
 
-    @h2(messages("submittedNoReceipt.details.h2"))
+    @h2(messages("monthlyreturns.submittedNoReceipt.details.h2"))
 
     @govukSummaryList(
         SummaryListViewModel(Seq(
             SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("submittedNoReceipt.details.contractorName"))),
+                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.contractorName"))),
                 value = ValueViewModel(Text(contractorName))
             ),
             SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("submittedNoReceipt.details.employersReference"))),
+                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.payeReference"))),
                 value = ValueViewModel(Text(empRef))
             ),
             SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("submittedNoReceipt.details.emailConfirmationSentTo"))),
-                value = ValueViewModel(Text(email))
-            )
+                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.submissionType"))),
+                value = ValueViewModel(Text(messages(s"monthlyreturns.returnType.${submissionType.toString}")))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.returnPeriodEnded"))),
+                value = ValueViewModel(Text(periodEnd))
+            ),
         ))
     )
 
-    @h2(messages("submittedNoReceipt.h2"))
-    @paragraph(messages("submittedNoReceipt.p2"))
-    @paragraph(message = "submittedNoReceipt.p3", args = Seq(email))
+    @paragraph(messages(
+        "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
+        Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
+    ))
 
     @link(
-        linkTextKey   = "submittedNoReceipt.p4.link",
-        linkUrl       ="#",
-        prefixTextKey = "submittedNoReceipt.p4",
-        hasFullStop   = true
+        linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
+        linkUrl = "#",
+        hasFullStop = true,
+        prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
+    )
+
+    @link(
+        linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",
+        linkUrl = "#",
+    )
+
+    @sectionBreak()
+
+    @link(
+        linkTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.link",
+        linkUrl = "#",
+        isNewTab = true,
+        hasFullStop = true,
+        prefixTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p"
+    )
+
+    @h2("monthlyreturns.submittedNoReceipt.feedback.heading")
+    @paragraph("monthlyreturns.submittedNoReceipt.feedback.p1")
+
+    @link(
+        linkTextKey = "monthlyreturns.submittedNoReceipt.feedback.p2.link",
+        linkUrl = "#",
+        suffixTextKey = "monthlyreturns.submittedNoReceipt.feedback.p2"
     )
 }

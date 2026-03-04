@@ -287,18 +287,25 @@ systemError.p2          = Contact the
 systemError.link        = HMRC Online Services Helpdesk
 systemError.p3          = if you need to speak to someone about Construction Industry Scheme and quote the reference number:
 
-submittedNoReceipt.title = Confirmation
-submittedNoReceipt.heading = Your monthly return has been successfully submitted
-submittedNoReceipt.p1 = Your CIS monthly return for period ended {0} was successfully submitted to HMRC at {1} on {2}.
-submittedNoReceipt.details.h2 = Submission details
-submittedNoReceipt.details.contractorName = Contractor name
-submittedNoReceipt.details.employersReference = Employers Reference
-submittedNoReceipt.details.emailConfirmationSentTo = Email confirmation sent to
-submittedNoReceipt.h2 = What happens next
-submittedNoReceipt.p2 = This verification request has been successfully submitted and received by HMRC. It can be accessed in read-only format from your history.
-submittedNoReceipt.p3 = We were unable to issue a submission receipt at this time. HMRC will contact you shortly. You will receive confirmation of your submission at the following email address: {0}
-submittedNoReceipt.p4 = Your views are important in order to help make improvements to the service, to offer your views please complete our
-submittedNoReceipt.p4.link = feedback form
+monthlyreturns.submittedNoReceipt.title = Monthly return successfully submitted
+monthlyreturns.submittedNoReceipt.heading = Monthly return successfully submitted
+monthlyreturns.submittedNoReceipt.p1 = Submitted at {0} on {1}
+monthlyreturns.submittedNoReceipt.details.h2 = Submission details
+monthlyreturns.submittedNoReceipt.details.contractorName = Contractor name
+monthlyreturns.submittedNoReceipt.details.payeReference = PAYE reference
+monthlyreturns.submittedNoReceipt.details.submissionType = Submission type
+monthlyreturns.submittedNoReceipt.details.returnPeriodEnded = Return period ended
+monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission = Confirmation of successful submission has been sent to {0}
+monthlyreturns.submittedNoReceipt.submissionHistory.p = This return can be accessed in read-only format from your
+monthlyreturns.submittedNoReceipt.submissionHistory.link = submission history
+monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link = Back to Manage your CIS return
+monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p = For any questions about your return submission, contact the
+monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.link =  HMRC Online Services Helpdesk (opens in new tab)
+monthlyreturns.submittedNoReceipt.feedback.heading = Before you go
+monthlyreturns.submittedNoReceipt.feedback.p1 = Your feedback helps us make our service better.
+monthlyreturns.submittedNoReceipt.feedback.p2 = to share your feedback on this service.
+monthlyreturns.submittedNoReceipt.feedback.p2.link = Take a short survey
+
 
 fileYourMonthlyCisReturn.title = File your monthly CIS return
 fileYourMonthlyCisReturn.heading = File your monthly CIS return
