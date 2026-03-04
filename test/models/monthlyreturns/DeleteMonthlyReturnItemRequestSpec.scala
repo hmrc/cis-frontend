@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package models.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.Json
 
-case class ConfirmSubcontractorRemovalPage(index: Int) extends QuestionPage[Boolean] {
+class DeleteMonthlyReturnItemRequestSpec extends AnyWordSpec with Matchers {
 
-  override def path: JsPath = JsPath \ "subcontractors" \ index.toString \ toString
+  "DeleteMonthlyReturnItemRequest JSON format" should {
 
-  override def toString: String = "confirmSubcontractorRemoval"
+    "round-trip serialize and deserialize" in {
+      val model = DeleteMonthlyReturnItemRequest(
+        instanceId = "inst-123",
+        taxYear = 2025,
+        taxMonth = 1,
+        subcontractorId = 1001L
+      )
+
+      Json.fromJson[DeleteMonthlyReturnItemRequest](Json.toJson(model)).get mustBe model
+    }
+  }
 }
