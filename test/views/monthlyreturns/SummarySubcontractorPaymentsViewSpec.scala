@@ -32,13 +32,14 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
 
   "SummarySubcontractorPaymentsView" - {
 
-    "must render the page with correct heading" in new Setup {
+    "must render the page with correct heading and button" in new Setup {
       val html: HtmlFormat.Appendable =
         view(viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.summarySubcontractorPayments.title"))
       doc.select("h1").text must include(messages("monthlyreturns.summarySubcontractorPayments.heading"))
+      doc.select("a").text  must include(messages("site.continue"))
     }
 
     "must not render intro paragraph when count is 1" in new Setup {
