@@ -115,27 +115,8 @@ class MonthlyReturnService @Inject() (
     } yield saved
   }
 
-  def updateNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
-    logger.info("[MonthlyReturnService] Updating FormP monthly nil return confirmation/nil flags at C6")
-
-    for {
-      cisId         <- getCisId(userAnswers)
-      year          <- getTaxYear(userAnswers)
-      month         <- getTaxMonth(userAnswers)
-      infoCorrect   <- getInfoCorrectOrDefault(userAnswers)
-      nilNoPayments <- getNilNoPaymentsOrDefault(userAnswers)
-      _             <- {
-        val payload = NilMonthlyReturnRequest(
-          instanceId = cisId,
-          taxYear = year,
-          taxMonth = month,
-          decInformationCorrect = infoCorrect,
-          decNilReturnNoPayments = nilNoPayments
-        )
-        cisConnector.updateNilMonthlyReturn(payload)
-      }
-    } yield ()
-  }
+  def updateMonthlyReturn(request: UpdateMonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.updateMonthlyReturn(request)
 
   def createMonthlyReturn(request: MonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.createMonthlyReturn(request)

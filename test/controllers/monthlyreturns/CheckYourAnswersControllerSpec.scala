@@ -28,7 +28,7 @@ import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, ReturnTypePage}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -99,20 +99,20 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must call updateNilMonthlyReturn and redirect to submission sending on POST when FormP record already exists (NilReturnStatusPage set)" in {
+    "must call updateMonthlyReturn and redirect to submission sending on POST when ReturnTypePage is present" in {
       val userAnswers = emptyUserAnswers
         .set(CisIdPage, "test-cis-id")
+        .success
+        .value
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
         .success
         .value
         .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(NilReturnStatusPage, "STARTED")
-        .success
-        .value
 
       val mockService = mock[MonthlyReturnService]
-      when(mockService.updateNilMonthlyReturn(any())(any()))
+      when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
@@ -131,7 +131,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must redirect to journey recovery on POST when NilReturnStatusPage is missing" in {
+    "must redirect to journey recovery on POST when ReturnTypePage is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
