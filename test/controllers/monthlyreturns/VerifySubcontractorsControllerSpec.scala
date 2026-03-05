@@ -61,28 +61,6 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must populate the view correctly on a GET when the question has previously been answered" in {
-
-      val userAnswers =
-        UserAnswers(userAnswersId).set(VerifySubcontractorsPage, true).success.value
-
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, verifySubcontractorsRoute)
-
-        val view = application.injector.instanceOf[VerifySubcontractorsView]
-
-        val result = route(application, request).value
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(
-          request,
-          messages(application)
-        ).toString
-      }
-    }
-
     "must redirect to the next page when 'false' is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]

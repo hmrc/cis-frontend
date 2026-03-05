@@ -21,6 +21,7 @@ import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.{Mode, NormalMode}
 import pages.monthlyreturns.{SelectedSubcontractorPage, SubcontractorDetailsAddedPage}
 import play.api.Logging
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -45,19 +46,13 @@ class SubcontractorDetailsAddedController @Inject() (
     with I18nSupport
     with Logging {
 
-  val form = formProvider()
+  val form: Form[Boolean] = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     val ua = request.userAnswers
     SubcontractorDetailsAddedBuilder.build(ua) match {
       case Some(viewModel) =>
-        val preparedForm =
-          request.userAnswers.get(SubcontractorDetailsAddedPage) match {
-            case Some(value) => form.fill(value)
-            case None        => form
-          }
-
-        Ok(view(preparedForm, mode, viewModel))
+        Ok(view(form, mode, viewModel))
 
       case None =>
         Redirect(controllers.routes.SystemErrorController.onPageLoad())
