@@ -26,9 +26,6 @@ import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
-
 class SubmittedNoReceiptViewSpec extends SpecBase {
 
   "SubmittedNoReceiptView" - {
@@ -37,10 +34,10 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
 
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title must include(messages("monthlyreturns.submittedNoReceipt.title"))
+      doc.title must include(messages("monthlyreturns.submittedNoReceipt.title", "Monthly nil return"))
 
       doc.select(".govuk-panel__title").text must include(
-        messages("monthlyreturns.submittedNoReceipt.heading")
+        messages("monthlyreturns.submittedNoReceipt.heading", "Monthly nil return")
       )
 
       doc.select("p.govuk-body").text must include(

@@ -287,8 +287,8 @@ systemError.p2          = Contact the
 systemError.link        = HMRC Online Services Helpdesk
 systemError.p3          = if you need to speak to someone about Construction Industry Scheme and quote the reference number:
 
-monthlyreturns.submittedNoReceipt.title = Monthly return successfully submitted
-monthlyreturns.submittedNoReceipt.heading = Monthly return successfully submitted
+monthlyreturns.submittedNoReceipt.title = {0} successfully submitted
+monthlyreturns.submittedNoReceipt.heading = {0} successfully submitted
 monthlyreturns.submittedNoReceipt.p1 = Submitted at {0} on {1}
 monthlyreturns.submittedNoReceipt.details.h2 = Submission details
 monthlyreturns.submittedNoReceipt.details.contractorName = Contractor name

@@ -42,77 +42,91 @@
   submissionType: ReturnType
 )(implicit request: Request[_], messages: Messages)
 
-@layout(
-    pageTitle = titleNoForm(messages("monthlyreturns.submittedNoReceipt.title")),
-    showSignOut = false,
-    showBackLink = false
-) {
+@defining(messages(s"monthlyreturns.returnType.${submissionType.toString}")) { rawReturnTypeMessage =>
 
-    @govukPanel(
-        Panel(title = Text(messages("monthlyreturns.submittedNoReceipt.heading")))
-    )
+@defining(rawReturnTypeMessage.head.toUpper + rawReturnTypeMessage.tail.toLowerCase) { returnTypeMessage =>
+    @layout(
+        pageTitle = titleNoForm(
+            messages(
+                "monthlyreturns.submittedNoReceipt.title",
+                returnTypeMessage
+            )
+        ),
+        showSignOut = false,
+        showBackLink = false
+    ) {
 
-    @paragraph(
-        message = "monthlyreturns.submittedNoReceipt.p1",
-        args    = Seq(submittedTime, submittedDate)
-    )
+        @govukPanel(
+            Panel(title = Text(
+                messages(
+                    "monthlyreturns.submittedNoReceipt.heading",
+                    returnTypeMessage
+                )
+            ))
+        )
 
-    @h2(messages("monthlyreturns.submittedNoReceipt.details.h2"))
+        @paragraph(
+            message = "monthlyreturns.submittedNoReceipt.p1",
+            args    = Seq(submittedTime, submittedDate)
+        )
 
-    @govukSummaryList(
-        SummaryListViewModel(Seq(
-            SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.contractorName"))),
-                value = ValueViewModel(Text(contractorName))
-            ),
-            SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.payeReference"))),
-                value = ValueViewModel(Text(empRef))
-            ),
-            SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.submissionType"))),
-                value = ValueViewModel(Text(messages(s"monthlyreturns.returnType.${submissionType.toString}")))
-            ),
-            SummaryListRowViewModel(
-                key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.returnPeriodEnded"))),
-                value = ValueViewModel(Text(periodEnd))
-            ),
+        @h2(messages("monthlyreturns.submittedNoReceipt.details.h2"))
+
+        @govukSummaryList(
+            SummaryListViewModel(Seq(
+                SummaryListRowViewModel(
+                    key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.contractorName"))),
+                    value = ValueViewModel(Text(contractorName))
+                ),
+                SummaryListRowViewModel(
+                    key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.payeReference"))),
+                    value = ValueViewModel(Text(empRef))
+                ),
+                SummaryListRowViewModel(
+                    key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.submissionType"))),
+                    value = ValueViewModel(Text(messages(s"monthlyreturns.returnType.${submissionType.toString}")))
+                ),
+                SummaryListRowViewModel(
+                    key   = KeyViewModel(Text(messages("monthlyreturns.submittedNoReceipt.details.returnPeriodEnded"))),
+                    value = ValueViewModel(Text(periodEnd))
+                ),
+            ))
+        )
+
+        @paragraph(messages(
+            "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
+            Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
         ))
-    )
 
-    @paragraph(messages(
-        "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
-        Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
-    ))
+        @link(
+            linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
+            linkUrl = "#",
+            hasFullStop = true,
+            prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
+        )
 
-    @link(
-        linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
-        linkUrl = "#",
-        hasFullStop = true,
-        prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
-    )
+        @link(
+            linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",
+            linkUrl = "#",
+        )
 
-    @link(
-        linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",
-        linkUrl = "#",
-    )
+        @sectionBreak()
 
-    @sectionBreak()
+        @link(
+            linkTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.link",
+            linkUrl = "#",
+            isNewTab = true,
+            hasFullStop = true,
+            prefixTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p"
+        )
 
-    @link(
-        linkTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.link",
-        linkUrl = "#",
-        isNewTab = true,
-        hasFullStop = true,
-        prefixTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p"
-    )
+        @h2("monthlyreturns.submittedNoReceipt.feedback.heading")
+        @paragraph("monthlyreturns.submittedNoReceipt.feedback.p1")
 
-    @h2("monthlyreturns.submittedNoReceipt.feedback.heading")
-    @paragraph("monthlyreturns.submittedNoReceipt.feedback.p1")
-
-    @link(
-        linkTextKey = "monthlyreturns.submittedNoReceipt.feedback.p2.link",
-        linkUrl = "#",
-        suffixTextKey = "monthlyreturns.submittedNoReceipt.feedback.p2"
-    )
-}
+        @link(
+            linkTextKey = "monthlyreturns.submittedNoReceipt.feedback.p2.link",
+            linkUrl = "#",
+            suffixTextKey = "monthlyreturns.submittedNoReceipt.feedback.p2"
+        )
+    }
+}}

@@ -19,17 +19,20 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.monthlyreturns
 import models.{ReturnType, UserAnswers}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{verify, when}
+import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
-import play.api.Application
 import play.api.inject.bind
-import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import services.MonthlyReturnService
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.*
 import java.util.Locale
+import scala.concurrent.Future
 
 class SubmittedNoReceiptControllerSpec extends SpecBase {
 
@@ -102,7 +105,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
         }
       }
 
-      "must redirect to Unauthorised Organisation Affinity if cisId missing" in {
+      "must redirect to Unauthorised Organisation Affinity if cisId is missing from UserAnswers" in {
 
         val app = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
@@ -174,6 +177,82 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             controllers.routes.SystemErrorController.onPageLoad().url
         }
       }
+      "must call monthlyReturnService and use returned email when ConfirmEmailAddressPage is missing" in {
+
+        val fallbackEmail = "fallback@test.com"
+
+        val uaWithoutEmail =
+          userAnswersWithCisId
+            .set(ContractorNamePage, contractorName)
+            .success
+            .value
+            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .success
+            .value
+            .set(ReturnTypePage, submissionType)
+            .success
+            .value
+
+        val mockService = mock[MonthlyReturnService]
+
+        when(mockService.getSchemeEmail(any())(any()))
+          .thenReturn(Future.successful(Some(fallbackEmail)))
+
+        val app =
+          applicationBuilder(userAnswers = Some(uaWithoutEmail))
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(mockService)
+            )
+            .build()
+
+        val view = app.injector.instanceOf[SubmittedNoReceiptView]
+
+        val expectedHtml =
+          view(
+            periodEnd = periodEnd.format(dmyFmt),
+            submittedTime = submittedTime,
+            submittedDate = submittedDate,
+            contractorName = contractorName,
+            empRef = employerRef,
+            email = fallbackEmail,
+            submissionType = submissionType
+          )(request, messages(app)).toString
+
+        running(app) {
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+          contentAsString(result) mustBe expectedHtml
+        }
+
+        verify(mockService).getSchemeEmail(any())(any())
+      }
+
+      "must throw if returnTypePage is missing" in {
+
+        val incompleteUa =
+          userAnswersWithCisId
+            .set(ContractorNamePage, contractorName)
+            .success
+            .value
+            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .success
+            .value
+            .set(ConfirmEmailAddressPage, email)
+            .success
+            .value
+
+        val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+
+        running(app) {
+          val thrown = intercept[IllegalStateException] {
+            await(route(app, request).get)
+          }
+          thrown.getMessage must include("ReturnTypePage missing from userAnswers")
+        }
+      }
+
     }
   }
 }
