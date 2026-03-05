@@ -42,7 +42,7 @@ monthlyreturns.checkYourAnswers.returnDetails.heading = Return details
 monthlyreturns.checkYourAnswers.emailConfirmation.heading = Email confirmation
 monthlyreturns.checkYourAnswers.submitSection.heading = Now submit your return
 monthlyreturns.checkYourAnswers.submitSection.confirmation = By submitting this return you are confirming that, to the best of your knowledge, the details you are providing are correct.
-monthlyreturns.checkYourAnswers.submitSection.button = Accept and submit
+monthlyreturns.checkYourAnswers.submitSection.button = Confirm and continue
 
 journeyRecovery.continue.title = Sorry, there is a problem with this service
 journeyRecovery.continue.heading = Sorry, there is a problem with this service
