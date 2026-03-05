@@ -28,5 +28,13 @@ object UserAnswerUtils {
       .keys
       .minOption
       .getOrElse(1)
+
+    def incompleteSubcontractorIds: Seq[Long] = userAnswers
+      .get(SelectedSubcontractorPage.all)
+      .getOrElse(Map())
+      .values
+      .toSeq
+      .filter(!_.isComplete)
+      .map(_.id)
   }
 }
