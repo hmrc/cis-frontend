@@ -14,6 +14,7 @@
  * limitations under the License.
  *@
 
+@import models.NormalMode
 @import views.html.components._
 @import viewmodels.govuk.all._
 @import viewmodels.implicits._
@@ -44,6 +45,6 @@
 
     @govukButton(
         ButtonViewModel(messages("site.continue"))
-            .asLink("#")
+            .asLink(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url)
     )
 }
