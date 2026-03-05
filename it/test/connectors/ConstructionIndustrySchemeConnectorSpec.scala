@@ -19,7 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.requests.SendSuccessEmailRequest
-import models.monthlyreturns.MonthlyReturnRequest
+import models.monthlyreturns.{MonthlyReturnRequest, UpdateMonthlyReturnRequest}
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -490,6 +490,54 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       val req = models.monthlyreturns.NilMonthlyReturnRequest(cisId, 2024, 10, "Y", "Y")
       val ex = intercept[Exception] { connector.createNilMonthlyReturn(req).futureValue }
       ex.getMessage must include("returned 500")
+    }
+  }
+
+  "updateMonthlyReturn(payload)" should {
+
+    "POST to /cis/monthly-returns/update and return Unit on 204" in {
+      val req = UpdateMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N",
+        decNilReturnNoPayments = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        nilReturnIndicator = "Y",
+        status = "STARTED"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/update"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.updateMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future with UpstreamErrorResponse on non-204 (e.g. 500)" in {
+      val req = UpdateMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N",
+        decNilReturnNoPayments = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        nilReturnIndicator = "Y",
+        status = "STARTED"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/update"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val err = connector.updateMonthlyReturn(req).failed.futureValue
+      err mustBe a[UpstreamErrorResponse]
+      err.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+      err.getMessage must include("boom")
     }
   }
 
