@@ -17,7 +17,6 @@
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
-import models.CheckMode
 import org.scalatest.OptionValues
 import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
@@ -34,20 +33,17 @@ class DateConfirmPaymentsSummarySpec extends SpecBase with OptionValues {
 
     "when answer is present" - {
 
-      "must return a SummaryListRow with the formatted return period" in {
+      "must return a SummaryListRow with the formatted return period and no change action" in {
         val date    = LocalDate.of(2025, 2, 5)
         val answers = emptyUserAnswers.set(DateConfirmPaymentsPage, date).success.value
 
         val result = DateConfirmPaymentsSummary.row(answers).value
 
-        result.key.content.asHtml.toString must include(
+        result.key.content.asHtml.toString   must include(
           messages("monthlyreturns.dateConfirmPayments.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include("February 2025")
-        result.actions.value.items.head.href mustBe
-          controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(CheckMode).url
-        result.actions.value.items.head.visuallyHiddenText.value mustBe
-          messages("monthlyreturns.dateConfirmPayments.change.hidden")
+        result.actions mustBe None
       }
     }
 
