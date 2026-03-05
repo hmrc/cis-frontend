@@ -16,6 +16,7 @@
 
 @import views.html.components._
 @import models.NormalMode
+@import models.ReturnType.MonthlyStandardReturn
 
 @this(
     layout: templates.Layout,
@@ -43,6 +44,6 @@
 
 @govukButton(Button(
    content = Text(messages("site.continue")),
-   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url)
+   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(MonthlyStandardReturn)).url)
 ))
 }

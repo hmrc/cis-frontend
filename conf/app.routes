@@ -64,10 +64,15 @@ POST       /monthly-return/select-subcontractors                        controll
 GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
 GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
 
-GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode)
+GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
 POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
+GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
 POST       /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
+POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
+POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)

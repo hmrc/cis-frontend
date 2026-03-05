@@ -19,12 +19,12 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.agent.AgentClientData
-import models.{Mode, UserAnswers}
+import models.{Mode, ReturnType, UserAnswers}
 import models.monthlyreturns.MonthlyReturnRequest
 import models.requests.DataRequest
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -33,6 +33,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import utils.TypeUtils.{toFuture, toTry}
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import javax.inject.Inject
@@ -55,14 +56,17 @@ class DateConfirmPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onPageLoad(mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
       val form                       = formProvider()
 
       (for {
-        preparedUserAnswers <- prepareUserAnswers(request.userAnswers, request)
+        uaWithReturnType    <- returnType.fold(Future.successful(request.userAnswers))(r =>
+                                 request.userAnswers.set(ReturnTypePage, r).toFuture
+                               )
+        preparedUserAnswers <- prepareUserAnswers(uaWithReturnType, request)
         _                   <- monthlyReturnService.resolveAndStoreCisId(preparedUserAnswers, request.isAgent)
         preparedForm         = request.userAnswers.get(DateConfirmPaymentsPage) match {
                                  case None        => form
@@ -75,7 +79,7 @@ class DateConfirmPaymentsController @Inject() (
           logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
           Redirect(controllers.routes.SystemErrorController.onPageLoad())
       }
-  }
+    }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
