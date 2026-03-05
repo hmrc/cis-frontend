@@ -24,6 +24,7 @@ import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
+import play.twirl.api.Html
 import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -47,28 +48,39 @@ class FileYourMonthlyCisReturnController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData).async { implicit request =>
+  def startMonthlyReturn(): Action[AnyContent] = (identify andThen getData).async { implicit request =>
+    commonMethod(ReturnType.MonthlyStandardReturn, () => view())
+  }
+
+  def startNilReturn(): Action[AnyContent] = (identify andThen getData).async { implicit request =>
+    commonMethod(ReturnType.MonthlyNilReturn, () => view())
+  }
+
+  private def commonMethod(returnType: ReturnType, view: () => Html)(implicit
+    request: OptionalDataRequest[AnyContent]
+  ): Future[Result] = {
     val instanceIdOpt = request.getQueryString("instanceId")
     val userAnswer    = request.userAnswers.getOrElse(UserAnswers(request.userId))
     for {
-      updatedAnswers <- Future.fromTry(userAnswer.set(ReturnTypePage, ReturnType.MonthlyStandardReturn))
+      updatedAnswers <- Future.fromTry(userAnswer.set(ReturnTypePage, returnType))
       _              <- sessionRepository.set(updatedAnswers)
       clientInfoOpt  <- getAgentClient(request)
-      result         <- handleRequest(instanceIdOpt, clientInfoOpt, updatedAnswers)
+      result         <- handleRequest(instanceIdOpt, clientInfoOpt, updatedAnswers, view)
     } yield result
   }
 
   private def handleRequest(
     instanceIdOpt: Option[String],
     clientTaxOfficeNumberTaxOfficeReference: Option[(String, String)],
-    userAnswers: UserAnswers
+    userAnswers: UserAnswers,
+    viewToShow: () => Html
   )(implicit
     request: OptionalDataRequest[AnyContent]
   ): Future[Result] =
     if (!request.isAgent) {
       instanceIdOpt match {
-        case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(view()))
-        case None             => Future.successful(Ok(view()))
+        case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(viewToShow()))
+        case None             => Future.successful(Ok(viewToShow()))
       }
     } else {
       (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
@@ -84,7 +96,7 @@ class FileYourMonthlyCisReturnController @Inject() (
           monthlyReturnService
             .hasClient(taxOfficeNumber, taxOfficeReference)
             .flatMap {
-              case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(view()))
+              case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(viewToShow()))
               case false =>
                 logger.warn(
                   s"[FileYourMonthlyCisReturnController] hasClient = false for " +

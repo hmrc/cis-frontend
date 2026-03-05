@@ -67,7 +67,8 @@ GET        /system-error/there-is-a-problem                             controll
 GET        /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(defaultSelection: Option[Boolean])
 POST       /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
-GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.onPageLoad()
+GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
+GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
 
 GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
