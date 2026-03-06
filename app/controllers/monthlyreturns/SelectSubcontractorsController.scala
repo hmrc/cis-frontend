@@ -20,7 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
 import models.monthlyreturns.SelectSubcontractorsFormData
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}

@@ -258,6 +258,74 @@ class SubcontractorServiceSpec extends SpecBase {
       }
     }
 
+    "maps taxTreatment 'net' to 'Standard rate' when verification is not required" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(
+            id = 1L,
+            ref = Some(1001L),
+            verified = Some("Y"),
+            verificationDate = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
+            lastMrDate = None,
+            verificationNumber = Some("VN001"),
+            taxTreatment = Some("net")
+          )
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.subcontractors.head.taxTreatment mustBe "Standard rate"
+      }
+    }
+
+    "maps taxTreatment 'unmatched' to 'Higher rate' when verification is not required" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(
+            id = 1L,
+            ref = Some(1001L),
+            verified = Some("Y"),
+            verificationDate = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
+            lastMrDate = None,
+            verificationNumber = Some("VN001"),
+            taxTreatment = Some("unmatched")
+          )
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.subcontractors.head.taxTreatment mustBe "Higher rate"
+      }
+    }
+
     "preselects no subcontractors when defaultSelection is Some(false)" in {
       val response = mkResponse(
         items = Seq(mkItem(1001L)),
