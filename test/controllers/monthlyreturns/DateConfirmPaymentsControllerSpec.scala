@@ -20,6 +20,7 @@ import base.SpecBase
 import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
+import models.ReturnType.MonthlyNilReturn
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
@@ -55,7 +56,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
   val validAnswer: LocalDate = LocalDate.now(ZoneOffset.UTC)
 
   lazy val dateConfirmPaymentsRoute: String =
-    controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(MonthlyNilReturn)).url
 
   override val emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
 

@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.NormalMode
+import models.ReturnType.MonthlyNilReturn
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
@@ -80,7 +81,9 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
         ).value
 
         status(result) mustBe SEE_OTHER
-        controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url
+        controllers.monthlyreturns.routes.DateConfirmPaymentsController
+          .onPageLoad(NormalMode, Some(MonthlyNilReturn))
+          .url
       }
     }
 
