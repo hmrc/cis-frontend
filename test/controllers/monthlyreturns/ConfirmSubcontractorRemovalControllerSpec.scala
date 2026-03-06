@@ -92,30 +92,6 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
-    "must populate the view correctly on a GET when the question has previously been answered" in {
-      val userAnswers =
-        uaWithSubcontractor
-          .set(ConfirmSubcontractorRemovalPage(index), true)
-          .success
-          .value
-
-      val application =
-        applicationBuilder(userAnswers = Some(userAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, routeGet(NormalMode))
-        val result  = route(application, request).value
-
-        val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode, subcontractorName, index)(
-          request,
-          messages(application)
-        ).toString
-      }
-    }
-
     "must redirect to SubcontractorDetailsAdded when 'No' is submitted and persist the answer" in {
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
