@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.EmployerReference
 import models.submission.SubmissionDetails
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -110,7 +110,7 @@ class SubmissionSuccessController @Inject() (
       emailFuture.map { email =>
         val dmyFmt            = DateTimeFormatter.ofPattern("MMMM uuuu")
         val periodEnd         = request.userAnswers
-          .get(DateConfirmNilPaymentsPage)
+          .get(DateConfirmPaymentsPage)
           .map(_.format(dmyFmt))
           .getOrElse {
             fail("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")

@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.EmployerReference
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.SubmittedNoReceiptView
+
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, ZoneId, ZonedDateTime}
 import javax.inject.Inject
@@ -75,7 +76,7 @@ class SubmittedNoReceiptController @Inject() (
       emailFuture.map { email =>
         val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
         val periodEnd     = request.userAnswers
-          .get(DateConfirmNilPaymentsPage)
+          .get(DateConfirmPaymentsPage)
           .map(_.format(dmyFmt))
           .getOrElse {
             logger.error("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")

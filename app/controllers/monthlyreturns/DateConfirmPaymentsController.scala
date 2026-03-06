@@ -18,17 +18,21 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
-import models.Mode
+import models.agent.AgentClientData
+import models.{Mode, UserAnswers}
 import models.monthlyreturns.MonthlyReturnRequest
+import models.requests.DataRequest
 import navigation.Navigator
-import pages.monthlyreturns.DateConfirmPaymentsPage
+import pages.agent.AgentClientDataPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import javax.inject.Inject
@@ -53,24 +57,24 @@ class DateConfirmPaymentsController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
+      implicit val hc: HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      val form                       = formProvider()
 
-      val form = formProvider()
-
-      val preparedForm = request.userAnswers.get(DateConfirmPaymentsPage) match {
-        case None        => form
-        case Some(value) => form.fill(value)
+      (for {
+        preparedUserAnswers <- prepareUserAnswers(request.userAnswers, request)
+        _                   <- monthlyReturnService.resolveAndStoreCisId(preparedUserAnswers, request.isAgent)
+        preparedForm         = request.userAnswers.get(DateConfirmPaymentsPage) match {
+                                 case None        => form
+                                 case Some(value) => form.fill(value)
+                               }
+      } yield Ok(view(preparedForm, mode))).recover {
+        case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case NonFatal(ex)                                          =>
+          logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
       }
-
-      monthlyReturnService
-        .resolveAndStoreCisId(request.userAnswers, request.isAgent)
-        .map(_ => Ok(view(preparedForm, mode)))
-        .recover {
-          case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          case NonFatal(ex)                                          =>
-            logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
-            Redirect(controllers.routes.SystemErrorController.onPageLoad())
-        }
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -84,38 +88,59 @@ class DateConfirmPaymentsController @Inject() (
             val year  = value.getYear
             val month = value.getMonthValue
 
-            monthlyReturnService
-              .resolveAndStoreCisId(request.userAnswers, request.isAgent)
-              .flatMap { case (cisId, uaWithCisId) =>
-                monthlyReturnService
-                  .isDuplicate(cisId, year, month)
-                  .flatMap {
-                    case true  =>
-                      val dupForm =
-                        form
-                          .fill(value)
-                          .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-                      Future.successful(BadRequest(view(dupForm, mode)))
-                    case false =>
-                      val createRequest = MonthlyReturnRequest(cisId, year, month)
-                      monthlyReturnService
-                        .createMonthlyReturn(createRequest)
-                        .flatMap { _ =>
-                          for {
-                            updatedAnswers <- Future.fromTry(uaWithCisId.set(DateConfirmPaymentsPage, value))
-                            _              <- sessionRepository.set(updatedAnswers)
-                          } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
-                        }
-                  }
-              }
-              .recover { exception =>
-                logger.error(
-                  s"[DateConfirmPaymentsController] duplicate check fails unexpectedly: ${exception.getMessage}",
-                  exception
-                )
-                Redirect(controllers.routes.SystemErrorController.onPageLoad())
-              }
+            (for {
+              resolved            <- monthlyReturnService
+                                       .resolveAndStoreCisId(request.userAnswers, request.isAgent)
+              (cisId, uaWithCisId) = resolved
+              isDup               <- monthlyReturnService.isDuplicate(cisId, year, month)
+              result              <- if (isDup) {
+                                       val dupForm =
+                                         form
+                                           .fill(value)
+                                           .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
+                                       Future.successful(BadRequest(view(dupForm, mode)))
+                                     } else {
+                                       val createRequest = MonthlyReturnRequest(cisId, year, month)
+                                       monthlyReturnService
+                                         .createMonthlyReturn(createRequest)
+                                         .flatMap { _ =>
+                                           for {
+                                             updatedAnswers <- Future.fromTry(uaWithCisId.set(DateConfirmPaymentsPage, value))
+                                             _              <- sessionRepository.set(updatedAnswers)
+                                           } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+                                         }
+                                     }
+            } yield result).recover { exception =>
+              logger.error(
+                s"[DateConfirmPaymentsController] duplicate check fails unexpectedly: ${exception.getMessage}",
+                exception
+              )
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
           }
         )
   }
+
+  private def prepareUserAnswers(ua: UserAnswers, request: DataRequest[_])(implicit
+    hc: HeaderCarrier
+  ): Future[UserAnswers] =
+    if request.isAgent then
+      monthlyReturnService.getAgentClient(request.userId).flatMap {
+        case Some(data) =>
+          monthlyReturnService
+            .hasClient(data.taxOfficeNumber, data.taxOfficeReference)
+            .flatMap {
+              case true  => storeAgentClientData(data, ua)
+              case false => Future.failed(new RuntimeException("Agent has no access to this client"))
+            }
+        case _          => Future.failed(new RuntimeException("Missing agent client data"))
+      }
+    else Future.successful(ua)
+
+  private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
+    for {
+      updatedUaWithCisId           <- Future.fromTry(ua.set(CisIdPage, data.uniqueId))
+      updatedUaWithAgentClientData <- Future.fromTry(updatedUaWithCisId.set(AgentClientDataPage, data))
+      _                            <- sessionRepository.set(updatedUaWithAgentClientData)
+    } yield updatedUaWithAgentClientData
 }

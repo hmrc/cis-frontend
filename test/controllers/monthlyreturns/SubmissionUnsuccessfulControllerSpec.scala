@@ -80,7 +80,7 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
         ).value
 
         status(result) mustBe SEE_OTHER
-        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode).url
+        controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url
       }
     }
 
