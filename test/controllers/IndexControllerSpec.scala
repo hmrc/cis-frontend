@@ -23,6 +23,7 @@ import repositories.SessionRepository
 import play.api.test.Helpers.*
 import controllers.routes as mainRoutes
 import controllers.monthlyreturns.routes as monthlyReturnsRoutes
+import models.ReturnType.MonthlyNilReturn
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -58,7 +59,7 @@ class IndexControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual monthlyReturnsRoutes.DateConfirmPaymentsController
-          .onPageLoad(NormalMode)
+          .onPageLoad(NormalMode, Some(MonthlyNilReturn))
           .url
       }
     }

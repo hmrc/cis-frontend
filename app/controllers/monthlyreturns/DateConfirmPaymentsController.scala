@@ -33,7 +33,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import utils.TypeUtils.{toFuture, toTry}
+import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import javax.inject.Inject
