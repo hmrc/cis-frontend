@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package services
+package services.submission
 
 import base.SpecBase
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
+import models.ReturnType.MonthlyNilReturn
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
 import models.requests.SendSuccessEmailRequest
 import models.submission.*
-import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
+import pages.monthlyreturns.*
 import pages.submission.{CorrelationIdPage, PollIntervalPage, PollUrlPage, SubmissionDetailsPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Instant, LocalDate, YearMonth}
+import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -74,7 +75,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val expectedReq = CreateSubmissionRequest(
         instanceId = "123",
@@ -104,7 +106,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
 
@@ -123,14 +126,21 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val ua = emptyUserAnswers.set(CisIdPage, "123").success.value
+      val ua = emptyUserAnswers
+        .set(CisIdPage, "123")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyNilReturn)
+        .success
+        .value
 
       val ex = intercept[RuntimeException] {
         service.create(ua).futureValue
       }
-      ex.getMessage must include("Month/Year not selected")
+      ex.getMessage must include("Date of return missing for monthly nil return")
       verifyNoInteractions(connector)
     }
   }
@@ -147,22 +157,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
 
-        val expectedCsr = ChrisSubmissionRequest.from(
-          utr = "1234567890",
-          aoReference = "123PA12345678",
-          informationCorrect = true,
-          inactivity = true,
-          monthYear = YearMonth.parse("2025-10"),
-          email = "test@test.com",
-          isAgent = false,
-          clientTaxOfficeNumber = "123",
-          clientTaxOfficeRef = "AB456"
-        )
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
 
         val beResp = mkChrisResp()
 
@@ -178,10 +181,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
           ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
         verify(connector).submitToChris(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
-        cap.getValue mustBe expectedCsr
+        cap.getValue mustBe builtCsr
       }
 
-      "fail when taxpayer UTR is missing" in {
+      "fail when request builder fails" in {
         val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
         val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
         val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
@@ -189,123 +192,22 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-        val badTaxpayer = taxpayer.copy(utr = None)
-        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-          .thenReturn(Future.successful(badTaxpayer))
-
-        val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
-        }
-        ex.getMessage must include("CIS taxpayer UTR missing")
-        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-      }
-
-      "fail when taxpayer aoDistrict is missing" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration(
-            "submission-poll-timeout-seconds" -> "60"
-          )
-        )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-        val badTaxpayer = taxpayer.copy(aoDistrict = None)
-        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-          .thenReturn(Future.successful(badTaxpayer))
-
-        val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
-        }
-        ex.getMessage must include("CIS taxpayer aoDistrict missing")
-        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-      }
-
-      "fail when taxpayer aoPayType is missing" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration(
-            "submission-poll-timeout-seconds" -> "60"
-          )
-        )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-        val badTaxpayer = taxpayer.copy(aoPayType = None)
-        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-          .thenReturn(Future.successful(badTaxpayer))
-
-        val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
-        }
-        ex.getMessage must include("CIS taxpayer aoPayType missing")
-        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-      }
-
-      "fail when taxpayer aoCheckCode is missing" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration(
-            "submission-poll-timeout-seconds" -> "60"
-          )
-        )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-        val badTaxpayer = taxpayer.copy(aoCheckCode = None)
-        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-          .thenReturn(Future.successful(badTaxpayer))
-
-        val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
-        }
-        ex.getMessage must include("CIS taxpayer aoCheckCode missing")
-        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-      }
-
-      "fail when taxpayer aoReference is missing" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration(
-            "submission-poll-timeout-seconds" -> "60"
-          )
-        )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
-
-        val badTaxpayer = taxpayer.copy(aoReference = None)
-        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-          .thenReturn(Future.successful(badTaxpayer))
-
-        val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
-        }
-        ex.getMessage must include("CIS taxpayer aoReference missing")
-        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-      }
-
-      "fail when Month/Year not selected" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration(
-            "submission-poll-timeout-seconds" -> "60"
-          )
-        )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
 
-        val uaNoYM = emptyUserAnswers.set(CisIdPage, "123").success.value
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("boom-builder")))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaNoYM, false).futureValue
+          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
         }
-        ex.getMessage must include("Month/Year not selected")
+        ex.getMessage must include("boom-builder")
+
         verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
+        verify(sessionRepository, never()).set(any[UserAnswers])
       }
 
       "persists poll endpoint details when response.endpoint is present" in {
@@ -316,7 +218,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -345,6 +248,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beRespWithEndpoint))
 
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+
         val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
         out mustBe beRespWithEndpoint
         verify(sessionRepository).set(uaCaptor.capture())
@@ -361,10 +268,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
 
         val beResp = mkChrisResp()
 
@@ -397,22 +309,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
         when(connector.getAgentClientTaxpayer(any(), any())(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
 
-        val expectedCsr = ChrisSubmissionRequest.from(
-          utr = "1234567890",
-          aoReference = "123PA12345678",
-          informationCorrect = true,
-          inactivity = true,
-          monthYear = YearMonth.parse("2025-10"),
-          email = "test@test.com",
-          isAgent = true,
-          clientTaxOfficeNumber = "123",
-          clientTaxOfficeRef = "AB456"
-        )
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(true))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
 
         val beResp = mkChrisResp()
 
@@ -429,7 +334,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
           ArgumentCaptor.forClass(classOf[ChrisSubmissionRequest])
         verify(connector).submitToChris(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
-        cap.getValue mustBe expectedCsr
+        cap.getValue mustBe builtCsr
       }
 
       "fail when agent client data is missing" in {
@@ -440,7 +345,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
         when(connector.getAgentClientTaxpayer(any(), any())(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -473,7 +379,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
@@ -513,7 +420,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua        = emptyUserAnswers.set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
       val chrisResp = mkChrisResp()
@@ -533,15 +441,22 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val ua        = emptyUserAnswers.set(CisIdPage, "123").success.value
+      val ua        = emptyUserAnswers
+        .set(CisIdPage, "123")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyNilReturn)
+        .success
+        .value
       val chrisResp = mkChrisResp()
 
       val ex = intercept[RuntimeException] {
         service.updateSubmission("sub-123", ua, chrisResp).futureValue
       }
-      ex.getMessage must include("Month/Year not selected")
+      ex.getMessage must include("Date of return missing for monthly nil return")
       verifyNoInteractions(connector)
     }
   }
@@ -556,7 +471,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-default-interval-seconds" -> "10"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = uaBase.set(PollIntervalPage, 25).success.value
 
@@ -574,7 +490,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-default-interval-seconds" -> "15"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = uaBase
 
@@ -593,7 +510,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = uaBase
 
@@ -617,7 +535,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -652,7 +571,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "3600"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -702,7 +622,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "3600"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -754,7 +675,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -805,7 +727,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -856,7 +779,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -907,7 +831,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -959,7 +884,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
         Configuration("submission-poll-timeout-seconds" -> "60")
       )
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = uaBase
@@ -989,7 +915,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
 
@@ -1033,7 +960,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ex = intercept[IllegalStateException] {
         service.sendSuccessEmail(uaBase).futureValue
@@ -1044,11 +972,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verifyNoInteractions(sessionRepository)
     }
 
-    "throw IllegalStateException when ConfirmEmailAddressPage missing" in {
+    "throw IllegalStateException when Month/Year not selected (nil)" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val appConfig: FrontendAppConfig                   =
+        new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val details      = SubmissionDetails(
@@ -1065,12 +995,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .set(SuccessEmailSentPage(submissionId), false)
         .success
         .value
+        .set(ReturnTypePage, MonthlyNilReturn)
+        .success
+        .value
 
       val ex = intercept[IllegalStateException] {
-        service.sendSuccessEmail(ua)
+        service.sendSuccessEmail(ua).futureValue
       }
-      ex.getMessage mustBe "Email address missing"
 
+      ex.getMessage mustBe "Month/Year not selected"
       verifyNoInteractions(connector)
       verifyNoInteractions(sessionRepository)
     }
@@ -1079,7 +1012,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val details      = SubmissionDetails(
@@ -1097,6 +1031,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
         .set(ConfirmEmailAddressPage, "test@example.com")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyNilReturn)
         .success
         .value
 
@@ -1119,6 +1056,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       .success
       .value
       .set(ConfirmEmailAddressPage, "test@test.com")
+      .success
+      .value
+      .set(ReturnTypePage, MonthlyNilReturn)
       .success
       .value
 

@@ -16,7 +16,11 @@
 
 package models.submission
 
+import models.ReturnType
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import play.api.libs.json.{Json, OFormat}
+import utils.Normalise.yesNo
+
 import java.time.YearMonth
 
 case class ChrisSubmissionRequest(
@@ -25,38 +29,55 @@ case class ChrisSubmissionRequest(
   informationCorrect: String,
   inactivity: String,
   monthYear: String,
-  email: String,
+  email: Option[String],
   isAgent: Boolean,
   clientTaxOfficeNumber: String,
-  clientTaxOfficeRef: String
+  clientTaxOfficeRef: String,
+  returnType: ReturnType,
+  standard: Option[ChrisStandardMonthlyReturn] = None
 )
 
 object ChrisSubmissionRequest {
   implicit val format: OFormat[ChrisSubmissionRequest] = Json.format[ChrisSubmissionRequest]
 
-  private def yesNo(boolean: Boolean): String                 = if (boolean) "yes" else "no"
   private def toYearMonthString(yearMonth: YearMonth): String = yearMonth.toString
 
-  def from(
-    utr: String,
-    aoReference: String,
+  def fromNil(
+    common: ChrisSubmissionCommon,
     informationCorrect: Boolean,
-    inactivity: Boolean,
-    monthYear: YearMonth,
-    email: String,
-    isAgent: Boolean,
-    clientTaxOfficeNumber: String,
-    clientTaxOfficeRef: String
+    inactivity: Boolean
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
-      utr = utr,
-      aoReference = aoReference,
+      utr = common.utr,
+      aoReference = common.aoReference,
       informationCorrect = yesNo(informationCorrect),
       inactivity = yesNo(inactivity),
-      monthYear = toYearMonthString(monthYear),
-      email = email.trim,
-      isAgent = isAgent,
-      clientTaxOfficeNumber = clientTaxOfficeNumber,
-      clientTaxOfficeRef = clientTaxOfficeRef
+      monthYear = toYearMonthString(common.monthYear),
+      email = common.email.map(_.trim),
+      isAgent = common.isAgent,
+      clientTaxOfficeNumber = common.clientTaxOfficeNumber,
+      clientTaxOfficeRef = common.clientTaxOfficeRef,
+      returnType = MonthlyNilReturn,
+      standard = None
+    )
+
+  def fromStandard(
+    common: ChrisSubmissionCommon,
+    informationCorrect: Boolean,
+    inactivity: Boolean,
+    standard: ChrisStandardMonthlyReturn
+  ): ChrisSubmissionRequest =
+    ChrisSubmissionRequest(
+      utr = common.utr,
+      aoReference = common.aoReference,
+      informationCorrect = yesNo(informationCorrect),
+      inactivity = yesNo(inactivity),
+      monthYear = toYearMonthString(common.monthYear),
+      email = common.email.map(_.trim),
+      isAgent = common.isAgent,
+      clientTaxOfficeNumber = common.clientTaxOfficeNumber,
+      clientTaxOfficeRef = common.clientTaxOfficeRef,
+      returnType = MonthlyStandardReturn,
+      standard = Some(standard)
     )
 }

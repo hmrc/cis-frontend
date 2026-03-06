@@ -17,12 +17,12 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.EmployerReference
+import controllers.helpers.SubmissionViewDataSupport
+import models.ReturnType
 import models.submission.SubmissionDetails
-import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
-import play.api.Logging
+import models.ReturnType.reads
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -50,91 +50,48 @@ class SubmissionSuccessController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
-    with Logging {
-
-  private def formatEmployerRef(er: EmployerReference): String =
-    s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
-
-  private def fail(errorMessage: String): Nothing = {
-    logger.error(errorMessage)
-    throw new IllegalStateException(errorMessage)
-  }
+    with SubmissionViewDataSupport {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      val cisId = request.userAnswers.get(CisIdPage).getOrElse {
-        val errorMessage: String = s"[SubmissionSuccess] cisId missing from userAnswers"
-        fail(errorMessage)
-      }
+      val ua = request.userAnswers
 
-      val contractorName: String = {
-        val errorMessage: String = s"[SubmissionSuccess] contractorName missing for userId=${request.userId}"
-        if (!request.isAgent) {
-          request.userAnswers.get(ContractorNamePage).getOrElse {
-            fail(errorMessage)
-          }
-        } else {
-          request.userAnswers.get(AgentClientDataPage).flatMap(_.schemeName).getOrElse {
-            fail(errorMessage)
-          }
-        }
-      }
+      val cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
 
-      val employerRef: String = {
-        val errorMessage: String = s"[SubmissionSuccess] employerReference missing for userId=${request.userId}"
-        if (!request.isAgent) {
-          request.employerReference.map(formatEmployerRef).getOrElse {
-            fail(errorMessage)
-          }
-        } else {
-          request.userAnswers
-            .get(AgentClientDataPage)
-            .filter(_.taxOfficeNumber.nonEmpty)
-            .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
-            .getOrElse {
-              fail(errorMessage)
-            }
-        }
-      }
+      val submissionType =
+        ua.get(ReturnTypePage).getOrElse(fail("[SubmissionSuccess] ReturnTypePage missing from userAnswers"))
 
-      val emailFromSession = request.userAnswers.get(ConfirmEmailAddressPage)
+      val periodEnd = required(
+        periodEndFromUserAnswers(ua, submissionType),
+        s"[SubmissionSuccess] taxPeriodEnd missing from userAnswers for submissionType $submissionType"
+      )
 
-      val emailFuture = emailFromSession match {
-        case Some(email) => Future.successful(email)
-        case None        => monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse(""))
-      }
+      val reference = IrMarkReferenceGenerator.fromBase64(
+        required(ua.get(SubmissionDetailsPage), "[SubmissionSuccess] submissionDetails missing from userAnswers").irMark
+      )
 
-      emailFuture.map { email =>
-        val dmyFmt            = DateTimeFormatter.ofPattern("MMMM uuuu")
-        val periodEnd         = request.userAnswers
-          .get(DateConfirmNilPaymentsPage)
-          .map(_.format(dmyFmt))
-          .getOrElse {
-            fail("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
-          }
-        val ukNow             = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-        val submittedTime     = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
-        val submittedDate     = ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
-        val submissionDetails = request.userAnswers.get(SubmissionDetailsPage).getOrElse {
-          fail("[SubmissionSuccess] submissionDetails missing from userAnswers")
-        }
-        val reference         = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
+      val emailFuture: Future[String] = emailfromUserAnswers(ua, submissionType)
+        .map(Future.successful)
+        .getOrElse(monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse("")))
 
-        val submissionType = request.userAnswers
-          .get(ReturnTypePage)
-          .getOrElse(fail("[SubmissionSuccess] ReturnTypePage missing from userAnswers"))
-
+      for {
+        email <- emailFuture
+      } yield {
+        val dmyFmt        = DateTimeFormatter.ofPattern("d MMMM uuuu")
+        val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+        val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
+        val submittedDate = ukNow.format(dmyFmt)
         Ok(
           view(
             reference = reference,
-            periodEnd = periodEnd,
+            periodEnd = periodEnd.format(dmyFmt),
             submittedTime = submittedTime,
             submittedDate = submittedDate,
-            contractorName = contractorName,
-            empRef = employerRef,
+            contractorName = contractorNameFrom(request),
+            empRef = employerRefFrom(request),
             email = email,
             submissionType = submissionType
           )

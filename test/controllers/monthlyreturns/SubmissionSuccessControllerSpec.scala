@@ -17,9 +17,11 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.ReturnType.MonthlyNilReturn
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails
+import org.mockito.Mockito.mock
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
@@ -28,6 +30,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
+import services.MonthlyReturnService
 import views.html.monthlyreturns.SubmissionSuccessView
 import utils.IrMarkReferenceGenerator
 
@@ -46,7 +49,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
-  private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
+  private val dmyFmt  = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london  = ZoneId.of("Europe/London")
 
@@ -54,7 +57,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     ZonedDateTime.ofInstant(fixedInstant, london)
 
   protected lazy val submittedTime: String =
-    ukNow.format(timeFmt)
+    ukNow.format(timeFmt).toLowerCase
+
+  private val monthlyReturnService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
 
   protected lazy val submittedDate: String =
     ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
@@ -109,7 +114,10 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         lazy val app: Application =
           applicationBuilder(userAnswers = Some(userAnswersWithReturnType))
-            .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
             .build()
 
         "must return OK and render the expected view" in {
@@ -123,7 +131,11 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
 
-          val app = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+          val app = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
 
           running(app) {
 
@@ -138,93 +150,96 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         }
 
         "must throw if contractorName is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(DateConfirmNilPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+          val incompleteUa =
+            ua
+              .remove(ContractorNamePage)
+              .success
+              .value
+              .set(ReturnTypePage, MonthlyNilReturn)
+              .success
+              .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa))
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
 
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val ex = intercept[Exception] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("contractorName missing for userId=")
+
+            ex.getMessage must include("contractorName")
           }
         }
 
         "must throw if employerReference is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+          val incompleteUa =
+            ua
+              .set(ReturnTypePage, MonthlyNilReturn)
+              .success
+              .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa), hasEmployeeRef = false).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa), hasEmployeeRef = false)
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
+
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val ex = intercept[Exception] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("employerReference missing for userId=")
+            ex.getMessage must include("employerReference")
           }
         }
 
         "must throw if taxPeriodEnd is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(ConfirmEmailAddressPage, "test@test.com")
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+          val incompleteUa =
+            ua
+              .remove(DateConfirmNilPaymentsPage)
+              .success
+              .value
+              .set(ReturnTypePage, MonthlyNilReturn)
+              .success
+              .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa))
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
+
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val ex = intercept[Exception] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
+            ex.getMessage must include("[SubmissionSuccess] taxPeriodEnd missing")
           }
         }
 
         "must throw if submissionDetails is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(ConfirmEmailAddressPage, "test@test.com")
-            .success
-            .value
+          val incompleteUa =
+            ua
+              .remove(SubmissionDetailsPage)
+              .success
+              .value
+              .set(ReturnTypePage, MonthlyNilReturn)
+              .success
+              .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa))
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
+
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val ex = intercept[Exception] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("[SubmissionSuccess] submissionDetails missing from userAnswers")
+            ex.getMessage must include("[SubmissionSuccess] submissionDetails missing")
           }
         }
       }
@@ -246,7 +261,10 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         lazy val app: Application =
           applicationBuilder(userAnswers = Some(userAnswersWithReturnType), isAgent = true)
-            .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
             .build()
 
         "must return OK and render the expected view" in {
@@ -260,7 +278,11 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
 
-          val app = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true).build()
+          val app = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
 
           running(app) {
 
@@ -275,53 +297,62 @@ class SubmissionSuccessControllerSpec extends SpecBase {
         }
 
         "must throw if contractorName is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+          val agentDataNoSchemeName =
+            agentDate.copy(schemeName = None)
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true).build()
+          val incompleteUa =
+            ua
+              .set(AgentClientDataPage, agentDataNoSchemeName)
+              .success
+              .value
+              .set(ReturnTypePage, MonthlyNilReturn)
+              .success
+              .value
+              .remove(ContractorNamePage)
+              .success
+              .value
+
+          val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true)
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            )
+            .build()
+
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val ex = intercept[Exception] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("contractorName missing for userId=")
+            ex.getMessage must include("contractorName")
           }
         }
 
         "must throw if employerReference is missing" in {
-          lazy val agentDateWithoutTaxRefTaxNumber: AgentClientData =
-            AgentClientData("CLIENT-123", "", "taxOfficeReference", Some("PAL 355 Scheme"))
+          val agentDataMissingEmpRef =
+            agentDate.copy(taxOfficeNumber = "", taxOfficeReference = "taxOfficeReference")
 
-          val incompleteUa = userAnswersWithCisId
-            .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
-            .success
-            .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+          val incompleteUa =
+            ua
+              .set(AgentClientDataPage, agentDataMissingEmpRef)
+              .success
+              .value
+              .set(ReturnTypePage, MonthlyNilReturn)
+              .success
+              .value
+
+          val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true, hasAgentRef = false)
+            .overrides(
+              bind[MonthlyReturnService].toInstance(monthlyReturnService)
             )
-            .success
-            .value
+            .build()
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true, hasAgentRef = false).build()
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val ex = intercept[Exception] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("employerReference missing for userId=")
+            ex.getMessage must include("employerReference")
           }
         }
-
       }
     }
-
   }
-
 }
