@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.EmployerReference
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -73,17 +73,23 @@ class SubmittedNoReceiptController @Inject() (
       }
 
       emailFuture.map { email =>
-        val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
-        val periodEnd     = request.userAnswers
+        val dmyFmt         = DateTimeFormatter.ofPattern("MMMM uuuu")
+        val periodEnd      = request.userAnswers
           .get(DateConfirmNilPaymentsPage)
           .map(_.format(dmyFmt))
           .getOrElse {
             logger.error("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
             throw new IllegalStateException("taxPeriodEnd missing from userAnswers")
           }
-        val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-        val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("HH:mm z"))
-        val submittedDate = ukNow.format(dmyFmt)
+        val ukNow          = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+        val submittedTime  = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
+        val submittedDate  = ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
+        val submissionType = request.userAnswers
+          .get(ReturnTypePage)
+          .getOrElse {
+            logger.error("[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
+            throw new IllegalStateException("ReturnTypePage missing from userAnswers")
+          }
 
         request.employerReference.map(formatEmployerRef) match {
           case Some(employerRef) =>
@@ -94,7 +100,8 @@ class SubmittedNoReceiptController @Inject() (
                 submittedDate = submittedDate,
                 contractorName = contractorName,
                 empRef = employerRef,
-                email = email
+                email = email,
+                submissionType = submissionType
               )
             )
           case None              =>
