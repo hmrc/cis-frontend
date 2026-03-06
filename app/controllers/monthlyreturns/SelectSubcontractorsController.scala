@@ -46,7 +46,7 @@ class SelectSubcontractorsController @Inject() (
     with I18nSupport
     with Logging {
 
-  private val form = formProvider()
+  val form = formProvider()
 
   def onPageLoad(defaultSelection: Option[Boolean] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
