@@ -305,6 +305,11 @@ fileYourMonthlyCisReturn.heading = File your monthly CIS return
 fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
 fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
 
+fileYourNilReturn.title = File your nil return
+fileYourNilReturn.heading = File your nil return
+fileYourNilReturn.p1 = Use this service to confirm you have not paid any subcontractors in tax month.
+fileYourNilReturn.p2 = You can also submit an inactivity request.
+
 monthlyreturns.dateConfirmPayments.title = Which tax month and year are you filing a return for?
 monthlyreturns.dateConfirmPayments.heading = Which tax month and year are you filing a return for?
 monthlyreturns.dateConfirmPayments.taxMonth.error.required = Enter the tax month you are reporting payments for as a number, between 1 and 12
