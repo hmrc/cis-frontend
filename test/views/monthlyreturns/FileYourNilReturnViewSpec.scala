@@ -17,8 +17,9 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import models.NormalMode
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import org.jsoup.nodes.{Document, Element}
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import views.html.monthlyreturns.FileYourNilReturnView
@@ -33,7 +34,15 @@ class FileYourNilReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourNilReturn.p1"))
       doc.select("p").text  must include(messages("fileYourNilReturn.p2"))
 
-      doc.getElementsByClass("govuk-button").text            must include(messages("site.continue"))
+      val expectedUrl: String =
+        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController
+          .onPageLoad(NormalMode)
+          .url
+
+      val button: Element = doc.getElementsByClass("govuk-button").first()
+
+      button.text                                            must include(messages("site.continue"))
+      button.attr("href") mustBe expectedUrl
       doc.getElementsByClass("hmrc-sign-out-nav__link").text must include(messages("timeout.signOut"))
     }
   }
