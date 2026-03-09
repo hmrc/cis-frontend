@@ -208,7 +208,7 @@ class NavigatorSpec extends SpecBase {
           SubmitInactivityRequestPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad()
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode)
       }
 
       "must go from SubmitInactivityRequestPage to ConfirmationByEmailController when answer is false" in {
@@ -382,7 +382,7 @@ class NavigatorSpec extends SpecBase {
           SubmitInactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad()
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
       }
 
       "must go from SubmitInactivityRequestPage to CheckYourAnswers in CheckMode when answer is false" in {
