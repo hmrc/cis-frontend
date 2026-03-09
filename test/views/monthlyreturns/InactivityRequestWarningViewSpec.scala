@@ -29,7 +29,7 @@ class InactivityRequestWarningViewSpec extends SpecBase {
 
   "InactivityRequestWarningView" - {
     "must render the content on the page" in new Setup {
-      val html: HtmlFormat.Appendable = view()
+      val html: HtmlFormat.Appendable = view("next-link")
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title                 must include(messages("monthlyreturns.inactivityRequestWarning.title"))
@@ -37,6 +37,7 @@ class InactivityRequestWarningViewSpec extends SpecBase {
       doc.select("p").text      must include(messages("monthlyreturns.inactivityRequestWarning.p"))
       doc.select("strong").text must include(messages("monthlyreturns.inactivityRequestWarning.warning"))
       doc.select("a").text      must include(messages("site.acceptAndContinue"))
+      doc.getElementsByClass("govuk-button").first().attr("href") mustBe "next-link"
     }
   }
 
