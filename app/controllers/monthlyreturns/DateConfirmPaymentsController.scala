@@ -67,6 +67,7 @@ class DateConfirmPaymentsController @Inject() (
         uaWithReturnType    <- returnType.fold(Future.successful(request.userAnswers))(r =>
                                  request.userAnswers.set(ReturnTypePage, r).toFuture
                                )
+        _                   <- sessionRepository.set(uaWithReturnType)
         returnType          <- uaWithReturnType.get(ReturnTypePage).toFuture
         messagePrefix        = if (returnType == MonthlyStandardReturn) "monthlyreturns.dateConfirmPayments"
                                else "monthlyreturns.dateConfirmPayments.nilreturn"
