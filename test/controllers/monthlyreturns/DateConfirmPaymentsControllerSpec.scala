@@ -170,7 +170,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(Future.successful(()))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(emptyUserAnswers.setOrException(ReturnTypePage, MonthlyStandardReturn)))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
