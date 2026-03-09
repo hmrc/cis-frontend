@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.{CheckMode, NormalMode}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.InactivityRequestWarningView
@@ -25,20 +26,45 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
 
   "InactivityRequestWarning Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "must return OK and render the view with ConfirmationByEmail as next URL in NormalMode" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request =
-          FakeRequest(GET, controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad().url)
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode).url
+          )
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[InactivityRequestWarningView]
+        val view    = application.injector.instanceOf[InactivityRequestWarningView]
+        val nextUrl = controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(nextUrl)(request, messages(application)).toString
+      }
+    }
+
+    "must return OK and render the view with CheckYourAnswers as next URL in CheckMode" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode).url
+          )
+
+        val result = route(application, request).value
+
+        val view    = application.injector.instanceOf[InactivityRequestWarningView]
+        val nextUrl = controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(nextUrl)(request, messages(application)).toString
       }
     }
   }

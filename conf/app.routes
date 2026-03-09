@@ -119,7 +119,8 @@ POST       /monthly-return/remove-subcontractor/:index            controllers.mo
 GET        /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode, index: Int)
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
-GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
+GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
+GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
 
 GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)

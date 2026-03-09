@@ -142,8 +142,10 @@ class Navigator @Inject() () {
     mode: Mode
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(SubmitInactivityRequestPage), mode) match {
-      case (Some(true), _)           =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad()
+      case (Some(true), NormalMode)  =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode)
+      case (Some(true), CheckMode)   =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
       case (Some(false), NormalMode) =>
         controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
