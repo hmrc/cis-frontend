@@ -149,7 +149,7 @@ monthlyreturns.returnType.monthlyReturnValue = Monthly return
 monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Payments to subcontractors
 monthlyreturns.paymentsToSubcontractors.value = None
 
-monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Tax period
+monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmNilPayments.change.hidden = confirm nil return payments to subcontractors this month
 monthlyreturns.dateConfirmNilPayments.error.required.month = Enter the tax month you are reporting nil payments for as a number, between 1 and 12
 monthlyreturns.dateConfirmNilPayments.error.required.year = Enter the year you are reporting nil payments for, like 2024, 2025
