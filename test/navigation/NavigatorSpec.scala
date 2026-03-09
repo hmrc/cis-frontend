@@ -39,7 +39,25 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
       }
 
-      "must go from InactivityRequestPage to ConfirmEmailAddressController" in {
+      "must go from InactivityRequestPage to ConfirmationByEmailController when answer is No" in {
+        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option2)
+        navigator.nextPage(
+          InactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+      }
+
+      "must go from InactivityRequestPage to ConfirmEmailAddressController when answer is Yes" in {
+        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option1)
+        navigator.nextPage(
+          InactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+      }
+
+      "must go from InactivityRequestPage to ConfirmEmailAddressController when answer is missing" in {
         navigator.nextPage(
           InactivityRequestPage,
           NormalMode,

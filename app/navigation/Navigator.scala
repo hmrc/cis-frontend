@@ -32,7 +32,13 @@ class Navigator @Inject() () {
     case DateConfirmNilPaymentsPage =>
       _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
     case InactivityRequestPage      =>
-      _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+      userAnswers =>
+        userAnswers.get(InactivityRequestPage) match {
+          case Some(InactivityRequest.Option2)        =>
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+          case Some(InactivityRequest.Option1) | None =>
+            controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+        }
     case ConfirmEmailAddressPage    =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case DeclarationPage            =>
