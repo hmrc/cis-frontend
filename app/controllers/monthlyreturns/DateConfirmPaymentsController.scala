@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.agent.AgentClientData
 import models.{Mode, ReturnType, UserAnswers}
 import models.monthlyreturns.MonthlyReturnRequest
@@ -66,13 +67,16 @@ class DateConfirmPaymentsController @Inject() (
         uaWithReturnType    <- returnType.fold(Future.successful(request.userAnswers))(r =>
                                  request.userAnswers.set(ReturnTypePage, r).toFuture
                                )
+        returnType          <- uaWithReturnType.get(ReturnTypePage).toFuture
+        messagePrefix        = if (returnType == MonthlyStandardReturn) "monthlyreturns.dateConfirmPayments"
+                               else "monthlyreturns.dateConfirmPayments.nilreturn"
         preparedUserAnswers <- prepareUserAnswers(uaWithReturnType, request)
         _                   <- monthlyReturnService.resolveAndStoreCisId(preparedUserAnswers, request.isAgent)
         preparedForm         = request.userAnswers.get(DateConfirmPaymentsPage) match {
                                  case None        => form
                                  case Some(value) => form.fill(value)
                                }
-      } yield Ok(view(preparedForm, mode))).recover {
+      } yield Ok(view(preparedForm, mode, messagePrefix))).recover {
         case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case NonFatal(ex)                                          =>
@@ -83,11 +87,15 @@ class DateConfirmPaymentsController @Inject() (
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      val form = formProvider()
+      val form          = formProvider()
+      val messagePrefix =
+        if (request.userAnswers.get(ReturnTypePage).contains(MonthlyStandardReturn))
+          "monthlyreturns.dateConfirmPayments"
+        else "monthlyreturns.dateConfirmPayments.nilreturn"
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix))),
           value => {
             val year  = value.getYear
             val month = value.getMonthValue
@@ -103,7 +111,7 @@ class DateConfirmPaymentsController @Inject() (
                     form
                       .fill(value)
                       .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-                  Future.successful(BadRequest(view(dupForm, mode)))
+                  Future.successful(BadRequest(view(dupForm, mode, messagePrefix)))
                 } else {
                   val createRequest = MonthlyReturnRequest(cisId, year, month)
                   monthlyReturnService

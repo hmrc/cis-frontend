@@ -54,7 +54,9 @@ class Navigator @Inject() () {
 
     // monthly return
     case (VerifySubcontractorsPage, _)                      =>
-      ua => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, ua.firstIncompleteSubcontractorIndex, None)
+      ua =>
+        controllers.monthlyreturns.routes.PaymentDetailsController
+          .onPageLoad(NormalMode, ua.firstIncompleteSubcontractorIndex, None)
     case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
     case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
