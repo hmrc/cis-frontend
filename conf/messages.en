@@ -439,7 +439,7 @@ monthlyreturns.enterYourEmailAddress.change.hidden = Enter your email address
 
 monthlyreturns.confirmationByEmail.title = Do you want confirmation by email that this return has been successfully submitted?
 monthlyreturns.confirmationByEmail.heading = Do you want confirmation by email that this return has been successfully submitted?
-monthlyreturns.confirmationByEmail.p = You can use the email we have on file or provide another one.
+monthlyreturns.confirmationByEmail.p = You can use the email we have on file or provide another one
 monthlyreturns.confirmationByEmail.yes = Yes
 monthlyreturns.confirmationByEmail.no = No
 monthlyreturns.confirmationByEmail.error.required = Select ‘Yes’ to provide an email. Select ‘No’ if you do not want the confirmation of submission to be emailed to you.
