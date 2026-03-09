@@ -33,7 +33,8 @@ class FileYourNilReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourNilReturn.p1"))
       doc.select("p").text  must include(messages("fileYourNilReturn.p2"))
 
-      doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
+      doc.getElementsByClass("govuk-button").text            must include(messages("site.continue"))
+      doc.getElementsByClass("hmrc-sign-out-nav__link").text must include(messages("timeout.signOut"))
     }
   }
 

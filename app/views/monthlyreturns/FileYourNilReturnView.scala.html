@@ -26,23 +26,20 @@
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(
-   pageTitle = titleNoForm(messages("fileYourNilReturn.title")),
-   showSignOut = false
-){
+@layout(pageTitle = titleNoForm(messages("fileYourNilReturn.title"))) {
 
-@h1(messages("fileYourNilReturn.heading"))
+    @h1(messages("fileYourNilReturn.heading"))
 
-@paragraph(
-   message = "fileYourNilReturn.p1"
-)
+    @paragraph(
+       message = "fileYourNilReturn.p1"
+    )
 
-@paragraph(
-   message = "fileYourNilReturn.p2"
-)
+    @paragraph(
+       message = "fileYourNilReturn.p2"
+    )
 
-@govukButton(Button(
-   content = Text(messages("site.continue")),
-   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url)
-))
+    @govukButton(Button(
+       content = Text(messages("site.continue")),
+       href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode).url)
+    ))
 }
