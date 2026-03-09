@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package utils
 
-import play.api.libs.json.{Json, OFormat}
+import models.UserAnswers
+import pages.monthlyreturns.SelectedSubcontractorPage
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[BigDecimal],
-  costOfMaterials: Option[BigDecimal],
-  totalTaxDeducted: Option[BigDecimal]
-) {
-  def isComplete: Boolean = totalPaymentsMade.isDefined && costOfMaterials.isDefined && totalTaxDeducted.isDefined
-}
+object UserAnswerUtils {
+  extension (userAnswers: UserAnswers) {
+    def firstIncompleteSubcontractorIndex: Int = userAnswers
+      .get(SelectedSubcontractorPage.all)
+      .getOrElse(Map())
+      .filter((_, subcontractor) => !subcontractor.isComplete)
+      .keys
+      .minOption
+      .getOrElse(1)
 
-object SelectedSubcontractor {
-
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
-
+    def incompleteSubcontractorIds: Seq[Long] = userAnswers
+      .get(SelectedSubcontractorPage.all)
+      .getOrElse(Map())
+      .values
+      .toSeq
+      .filter(!_.isComplete)
+      .map(_.id)
+  }
 }
