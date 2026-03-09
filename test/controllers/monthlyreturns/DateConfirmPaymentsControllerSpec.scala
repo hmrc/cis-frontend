@@ -20,13 +20,13 @@ import base.SpecBase
 import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
-import models.ReturnType.MonthlyNilReturn
+import models.ReturnType.MonthlyStandardReturn
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
 import org.mockito.Mockito.{verifyNoInteractions, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.DateConfirmPaymentsPage
+import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.i18n.Messages
 import play.api.inject.bind
 import play.api.mvc.{AnyContentAsEmpty, AnyContentAsFormUrlEncoded, Call}
@@ -56,7 +56,9 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
   val validAnswer: LocalDate = LocalDate.now(ZoneOffset.UTC)
 
   lazy val dateConfirmPaymentsRoute: String =
-    controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(MonthlyNilReturn)).url
+    controllers.monthlyreturns.routes.DateConfirmPaymentsController
+      .onPageLoad(NormalMode, Some(MonthlyStandardReturn))
+      .url
 
   override val emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
 
@@ -87,7 +89,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val view   = application.injector.instanceOf[DateConfirmPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(getRequest, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, "monthlyreturns.dateConfirmPayments")(
+          getRequest,
+          messages(application)
+        ).toString
       }
     }
 
@@ -141,7 +146,11 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, getRequest).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode)(
+        contentAsString(result) mustEqual view(
+          form.fill(validAnswer),
+          NormalMode,
+          "monthlyreturns.dateConfirmPayments"
+        )(
           getRequest,
           messages(application)
         ).toString
@@ -178,7 +187,9 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "must return a Bad Request and errors when invalid data is submitted" in {
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers =
+        Some(emptyUserAnswers.setOrException(ReturnTypePage, MonthlyStandardReturn))
+      ).build()
 
       val request =
         FakeRequest(POST, dateConfirmPaymentsRoute)
@@ -190,7 +201,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val result    = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, "monthlyreturns.dateConfirmPayments")(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
