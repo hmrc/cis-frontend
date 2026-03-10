@@ -39,6 +39,7 @@ object VerifiedStatusDeclarationSummary {
             controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
+            .withAttribute("id" -> "change-verified-status-declaration")
         )
       )
     }

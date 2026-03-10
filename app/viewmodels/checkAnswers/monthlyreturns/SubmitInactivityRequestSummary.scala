@@ -39,6 +39,7 @@ object SubmitInactivityRequestSummary {
             controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
+            .withAttribute("id" -> "change-submit-inactivity-request")
         )
       )
     }
