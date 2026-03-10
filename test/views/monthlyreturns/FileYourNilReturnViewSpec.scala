@@ -22,33 +22,34 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.monthlyreturns.FileYourMonthlyCisReturnView
+import views.html.monthlyreturns.FileYourNilReturnView
 
-class FileYourMonthlyCisReturnViewSpec extends SpecBase {
+class FileYourNilReturnViewSpec extends SpecBase {
 
-  "FileYourMonthlyCisReturnView" - {
+  "FileYourNilReturnView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title             must include(messages("fileYourMonthlyCisReturn.title"))
-      doc.select("h1").text must include(messages("fileYourMonthlyCisReturn.heading"))
-      doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p1"))
-      doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p2"))
+      doc.title             must include(messages("fileYourNilReturn.title"))
+      doc.select("h1").text must include(messages("fileYourNilReturn.heading"))
+      doc.select("p").text  must include(messages("fileYourNilReturn.p1"))
+      doc.select("p").text  must include(messages("fileYourNilReturn.p2"))
 
       val expectedUrl: String =
-        controllers.monthlyreturns.routes.DateConfirmPaymentsController
+        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController
           .onPageLoad(NormalMode)
           .url
 
       val button: Element = doc.getElementsByClass("govuk-button").first()
 
-      button.text must include(messages("site.continue"))
+      button.text                                            must include(messages("site.continue"))
       button.attr("href") mustBe expectedUrl
+      doc.getElementsByClass("hmrc-sign-out-nav__link").text must include(messages("timeout.signOut"))
     }
   }
 
   trait Setup {
     val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[FileYourMonthlyCisReturnView]
+    val view                                      = app.injector.instanceOf[FileYourNilReturnView]
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
