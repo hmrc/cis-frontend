@@ -22,7 +22,6 @@ import pages._
 import pages.monthlyreturns.*
 import models._
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
-import pages.monthlyreturns.SelectedSubcontractorPage
 
 class NavigatorSpec extends SpecBase {
 
