@@ -17,34 +17,33 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import models.ReturnType
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import play.twirl.api.HtmlFormat
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
 
 class SubmissionUnsuccessfulViewSpec extends SpecBase {
 
   "SubmissionUnsuccessfulView" - {
 
-
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
       val html = view()
       val doc  = Jsoup.parse(html.body)
 
-      doc.title                                       must include(messages("monthlyreturns.submissionUnsuccessful.title"))
-      doc.select("h1").text                           must include(messages("monthlyreturns.submissionUnsuccessful.heading.h1"))
-      doc.select("p").text                            must include(messages("monthlyreturns.submissionUnsuccessful.paragraph.p1"))
-      doc.select(".govuk-warning-text__text").text    must include(messages("monthlyreturns.submissionUnsuccessful.warning"))
-      doc.select(".govuk-body").text                  must include(messages("monthlyreturns.submissionUnsuccessful.links.prefix"))
-      doc.select(".govuk-link").text                  must include(messages("monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk"))
-      doc.select(".govuk-body").text                  must include(messages("monthlyreturns.submissionUnsuccessful.details.intro"))
-      doc.select("li").text()                         must include(messages("monthlyreturns.submissionUnsuccessful.details.li1"))
-      doc.select("li").text()                         must include(messages("monthlyreturns.submissionUnsuccessful.details.li2"))
-      doc.select(".govuk-link").text()                must include(messages("monthlyreturns.submissionUnsuccessful.submit"))
+      doc.title                                    must include(messages("monthlyreturns.submissionUnsuccessful.title"))
+      doc.select("h1").text                        must include(messages("monthlyreturns.submissionUnsuccessful.heading.h1"))
+      doc.select("p").text                         must include(messages("monthlyreturns.submissionUnsuccessful.paragraph.p1"))
+      doc.select(".govuk-warning-text__text").text must include(
+        messages("monthlyreturns.submissionUnsuccessful.warning")
+      )
+      doc.select(".govuk-body").text               must include(messages("monthlyreturns.submissionUnsuccessful.links.prefix"))
+      doc.select(".govuk-link").text               must include(
+        messages("monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk")
+      )
+      doc.select(".govuk-body").text               must include(messages("monthlyreturns.submissionUnsuccessful.details.intro"))
+      doc.select("li").text()                      must include(messages("monthlyreturns.submissionUnsuccessful.details.li1"))
+      doc.select("li").text()                      must include(messages("monthlyreturns.submissionUnsuccessful.details.li2"))
+      doc.select(".govuk-link").text()             must include(messages("monthlyreturns.submissionUnsuccessful.submit"))
     }
 
   }
