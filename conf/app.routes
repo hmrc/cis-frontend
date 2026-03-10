@@ -65,6 +65,7 @@ POST       /monthly-return/select-subcontractors                        controll
 GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
 GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
 
+GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
 GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
 POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
