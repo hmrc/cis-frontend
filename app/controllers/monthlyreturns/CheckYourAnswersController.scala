@@ -70,15 +70,10 @@ class CheckYourAnswersController @Inject() (
         rows = (Seq(ReturnTypeSummary.row(request.userAnswers)) ++ returnTypeRows).flatten
       )
 
-      val emailRows = ReturnTypeSummary.returnType(request.userAnswers) match {
-        case ReturnType.MonthlyStandardReturn =>
-          Seq(
-            ConfirmationByEmailSummary.row(request.userAnswers),
-            EnterYourEmailAddressSummary.row(request.userAnswers)
-          )
-        case ReturnType.MonthlyNilReturn      =>
-          Seq(ConfirmEmailAddressSummary.row(request.userAnswers))
-      }
+      val emailRows = Seq(
+        ConfirmationByEmailSummary.row(request.userAnswers),
+        EnterYourEmailAddressSummary.row(request.userAnswers)
+      )
 
       val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
