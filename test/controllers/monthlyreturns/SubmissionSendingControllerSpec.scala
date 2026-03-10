@@ -162,6 +162,20 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
     }
 
+    "redirects to JourneyRecovery when status is STARTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubSubmissionFlow(mockService, mockMongoDb, status = "STARTED")
+
+      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+    }
+
   }
 
   lazy val pollAndRedirectRoute: String =
