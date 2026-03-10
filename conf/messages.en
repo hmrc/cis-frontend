@@ -258,6 +258,8 @@ monthlyreturns.submissionSuccessful.feedback.p2 = to share your feedback on this
 monthlyreturns.submissionSuccessful.feedback.p2.link = Take a short survey
 monthlyreturns.returnType.monthlyNilReturn = Monthly Nil Return
 monthlyreturns.returnType.monthlyStandardReturn = Monthly Return
+monthlyreturns.submissionSuccessful.whatHappensNext.h2 = What happens next
+monthlyreturns.submissionSuccessful.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
 stub.monthlyreturns.submissionSuccessful.button = Successful
 stub.monthlyreturns.submissionUnsuccessful.button = Unsuccessful

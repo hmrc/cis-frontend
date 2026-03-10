@@ -30,75 +30,150 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
   "SubmissionSuccessView" - {
 
-    "must render the page with the correct content" in new Setup {
+    "must render the page when email is provided" in new Setup {
+
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title                              must include(messages("monthlyreturns.submissionSuccess.title"))
+      doc.title must include(messages("monthlyreturns.submissionSuccess.title"))
+
       doc.select(".govuk-panel__title").text must include(
         messages("monthlyreturns.submissionSuccess.heading")
       )
-      doc.select(".govuk-panel__body").text  must include(reference)
-      doc.select("p.govuk-body").text        must include(
-        messages("monthlyreturns.submissionSuccessful.submitted.line", submittedTime, submittedDate)
+
+      doc.select(".govuk-panel__body").text must include(reference)
+
+      doc.select("p.govuk-body").text must include(
+        messages(
+          "monthlyreturns.submissionSuccessful.submitted.line",
+          submittedTime,
+          submittedDate
+        )
       )
-      doc.select("h2").text                  must include(
+
+      doc.select("h2").text must include(
         messages("monthlyreturns.submissionSuccessful.submissionDetails.heading")
       )
 
       val summaryText: String = doc.select(".govuk-summary-list").text()
+
       summaryText must include(contractorName)
       summaryText must include(empRef)
       summaryText must include(messages(s"monthlyreturns.returnType.${submissionType.toString}"))
       summaryText must include(periodEnd)
 
-      doc.select("p.govuk-body").text      must include(
-        messages("monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission", email)
+      doc.select("p.govuk-body").text must include(
+        messages(
+          "monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission",
+          email
+        )
       )
-      doc.select("a.govuk-link").text      must include(
+
+      doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submissionSuccessful.submissionHistory.link")
       )
+
       doc.select(".govuk-inset-text").text must include(
         messages("monthlyreturns.submissionSuccessful.inset")
       )
-      doc.select("a.govuk-link").text      must include(messages("monthlyreturns.submissionSuccessful.print"))
-      doc.select("a.govuk-link").text      must include(
+
+      doc.select("a.govuk-link").text must include(
+        messages("monthlyreturns.submissionSuccessful.print")
+      )
+
+      doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link")
       )
-      doc.select("a.govuk-link").text      must include(
+
+      doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submissionSuccessful.questionsAboutReturnSubmission.link")
       )
-      doc.select("h2").text                must include(
+
+      doc.select("h2").text must include(
         messages("monthlyreturns.submissionSuccessful.feedback.heading")
       )
-      doc.select("p.govuk-body").text      must include(messages("monthlyreturns.submissionSuccessful.feedback.p1"))
-      doc.select("a.govuk-link").text      must include(
+
+      doc.select("p.govuk-body").text must include(
+        messages("monthlyreturns.submissionSuccessful.feedback.p1")
+      )
+
+      doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submissionSuccessful.feedback.p2.link")
+      )
+
+      doc.select("h2").text must not include
+        messages("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
+    }
+
+    "must render the page when email is empty" in new Setup {
+
+      override def email: String = ""
+
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.title must include(messages("monthlyreturns.submissionSuccess.title"))
+
+      doc.select(".govuk-panel__title").text must include(
+        messages("monthlyreturns.submissionSuccess.heading")
+      )
+
+      doc.select(".govuk-panel__body").text must include(reference)
+
+      doc.select("p.govuk-body").text must include(
+        messages(
+          "monthlyreturns.submissionSuccessful.submitted.line",
+          submittedTime,
+          submittedDate
+        )
+      )
+
+      doc.select("h2").text must include(
+        messages("monthlyreturns.submissionSuccessful.submissionDetails.heading")
+      )
+
+      val summaryText: String = doc.select(".govuk-summary-list").text()
+
+      summaryText must include(contractorName)
+      summaryText must include(empRef)
+      summaryText must include(messages(s"monthlyreturns.returnType.${submissionType.toString}"))
+      summaryText must include(periodEnd)
+
+      doc.select("p.govuk-body").text must not include
+        messages("monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission", email)
+
+      doc.select("h2").text must include(
+        messages("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
+      )
+
+      doc.select("p.govuk-body").text must include(
+        messages("monthlyreturns.submissionSuccessful.whatHappensNext.p")
       )
     }
   }
 
   trait Setup {
 
-    val app: Application            = applicationBuilder().build()
+    def email: String = "test@test.com"
+
+    val app: Application = applicationBuilder().build()
     val view: SubmissionSuccessView = app.injector.instanceOf[SubmissionSuccessView]
 
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
-    implicit val messages: Messages               =
+
+    implicit val messages: Messages =
       play.api.i18n.MessagesImpl(
         play.api.i18n.Lang.defaultLang,
         app.injector.instanceOf[play.api.i18n.MessagesApi]
       )
 
-    val reference                  = "ABC1234567890123456789"
-    val periodEnd                  = "February 2026"
-    val submittedTime              = "10:30am"
-    val submittedDate              = "6 Jan 2026"
-    val contractorName             = "Test Contractor Ltd"
-    val empRef                     = "123/AB456"
-    val email                      = "test@test.com"
+    val reference = "ABC1234567890123456789"
+    val periodEnd = "February 2026"
+    val submittedTime = "10:30am"
+    val submittedDate = "6 Jan 2026"
+    val contractorName = "Test Contractor Ltd"
+    val empRef = "123/AB456"
     val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
-    val html: HtmlFormat.Appendable = view(
+    lazy val html: HtmlFormat.Appendable = view(
       reference = reference,
       periodEnd = periodEnd,
       submittedTime = submittedTime,

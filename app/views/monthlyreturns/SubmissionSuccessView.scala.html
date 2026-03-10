@@ -92,28 +92,51 @@
         ))
     )
 
-    @paragraph(messages(
-        "monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission",
-        Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
-    ))
+    @if(!email.trim.isEmpty) {
+        @paragraph(messages(
+            "monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission",
+            Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
+        ))
 
-    @link(
-        linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
-        linkUrl = "#",
-        hasFullStop = true,
-        prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
-    )
+        @link(
+            linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
+            linkUrl = "#",
+            hasFullStop = true,
+            prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
+        )
 
-    @govukInsetText(
-        InsetText(
-            content = HtmlContent(
-                s"""
+        @govukInsetText(
+            InsetText(
+                content = HtmlContent(
+                    s"""
                     ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
                     ${printLink("monthlyreturns.submissionSuccessful.print")}
-                """
+                    """
+                )
             )
         )
-    )
+    } else {
+        @link(
+            linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
+            linkUrl = "#",
+            hasFullStop = true,
+            prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
+        )
+
+        @govukInsetText(
+            InsetText(
+                content = HtmlContent(
+                    s"""
+                    ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
+                    ${printLink("monthlyreturns.submissionSuccessful.print")}
+                    """
+                )
+            )
+        )
+
+        @h2("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
+        @paragraph(messages("monthlyreturns.submissionSuccessful.whatHappensNext.p"))
+    }
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
