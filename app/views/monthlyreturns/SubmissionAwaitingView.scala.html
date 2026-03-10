@@ -27,7 +27,7 @@
         govukDetails: GovukDetails,
         govukInsetText: GovukInsetText,
         govukButton: GovukButton,
-        config: FrontendAppConfig,
+        appConfig: FrontendAppConfig,
 )
 
 @()(implicit request: Request[_], messages: Messages)
@@ -39,7 +39,6 @@
     @h1("monthlyreturns.submissionAwaiting.heading")
     @paragraph("monthlyreturns.submissionAwaiting.paragraph.p1", baseClass="govuk-body-lead")
     @paragraph("monthlyreturns.submissionAwaiting.paragraph.p2")
-    @paragraph("monthlyreturns.submissionAwaiting.paragraph.p3")
 
     @govukDetails(Details(
         summary = Text(s"${messages("monthlyreturns.submissionAwaiting.details.summary")}"),
@@ -49,17 +48,16 @@
         )
     )
 
-    @govukInsetText(
-        InsetTextViewModel(
-            content = Text(messages("monthlyreturns.submissionAwaiting.inset"))
-        )
+    @link(
+        linkTextKey   = "monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk",
+        linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
+        isNewTab      = true,
+        prefixTextKey = "monthlyreturns.submissionAwaiting.links.prefix"
     )
 
-    @h2("monthlyreturns.submissionAwaiting.heading.h2")
-    @paragraph("monthlyreturns.submissionAwaiting.paragraph.p4")
-    @link("monthlyreturns.submissionAwaiting.link.l2",
-        config.hmrcOnlineServicesHelpdeskUrl,
-        true,
-        "monthlyreturns.submissionAwaiting.link.l1")
+    @link(
+        linkTextKey = "monthlyreturns.submissionAwaiting.links.submit",
+        linkUrl   = "#"
+    )
 
 }
