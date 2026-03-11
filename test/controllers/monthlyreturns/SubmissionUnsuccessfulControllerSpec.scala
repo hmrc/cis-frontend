@@ -17,8 +17,6 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.NormalMode
-import pages.monthlyreturns.CisIdPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
@@ -33,10 +31,10 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
         val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
-          val fakeCisId = Some(userAnswersWithCisId).toString
-          val result  = route(application, request).value
-          val view    = application.injector.instanceOf[SubmissionUnsuccessfulView]
+          val request   = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
+          val fakeCisId = "1"
+          val result    = route(application, request).value
+          val view      = application.injector.instanceOf[SubmissionUnsuccessfulView]
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
