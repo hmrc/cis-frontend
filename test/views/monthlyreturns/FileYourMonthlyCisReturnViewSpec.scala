@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import models.NormalMode
+import models.ReturnType.MonthlyStandardReturn
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import play.api.i18n.Messages
@@ -36,7 +37,7 @@ class FileYourMonthlyCisReturnViewSpec extends SpecBase {
 
       val expectedUrl: String =
         controllers.monthlyreturns.routes.DateConfirmPaymentsController
-          .onPageLoad(NormalMode)
+          .onPageLoad(NormalMode, Some(MonthlyStandardReturn))
           .url
 
       val button: Element = doc.getElementsByClass("govuk-button").first()

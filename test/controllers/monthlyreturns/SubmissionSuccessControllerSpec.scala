@@ -240,7 +240,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
               .set(ContractorNamePage, contractorName)
               .success
               .value
-              .set(DateConfirmNilPaymentsPage, periodEnd)
+              .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
               .set(ConfirmEmailAddressPage, email)
