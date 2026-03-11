@@ -27,13 +27,11 @@
         appConfig: FrontendAppConfig
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(cisId:String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessful.title")),
         showBackLink = false
         ) {
-
-    @formHelper(action = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onSubmit) {
 
         @h1("monthlyreturns.submissionUnsuccessful.heading.h1")
         @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p1", baseClass="govuk-body-lead")
@@ -55,7 +53,6 @@
         ))
         @link(
             linkTextKey = messages("monthlyreturns.submissionUnsuccessful.submit"),
-            linkUrl   = appConfig.manageYourCisReturn,
+            linkUrl   = appConfig.manageYourCisReturn + cisId
         )
-    }
 }
