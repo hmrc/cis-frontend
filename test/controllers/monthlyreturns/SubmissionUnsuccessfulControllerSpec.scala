@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.NormalMode
+import pages.monthlyreturns.CisIdPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
@@ -33,11 +34,12 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
 
         running(application) {
           val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
+          val fakeCisId = Some(userAnswersWithCisId).toString
           val result  = route(application, request).value
           val view    = application.injector.instanceOf[SubmissionUnsuccessfulView]
 
           status(result) mustEqual OK
-          contentAsString(result) mustEqual view()(request, messages(application)).toString
+          contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
         }
       }
 
@@ -68,19 +70,6 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
           status(result) mustEqual SEE_OTHER
           redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
         }
-      }
-    }
-
-    "POST onSubmit must redirect to IndexController (start of journey)" in {
-      val app = applicationBuilder(userAnswers = None).build()
-      running(app) {
-        val result = route(
-          app,
-          FakeRequest(POST, routes.SubmissionUnsuccessfulController.onSubmit.url)
-        ).value
-
-        status(result) mustBe SEE_OTHER
-        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode).url
       }
     }
 

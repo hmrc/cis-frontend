@@ -27,7 +27,8 @@ class SubmissionUnsuccessfulViewSpec extends SpecBase {
   "SubmissionUnsuccessfulView" - {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
-      val html = view()
+      val fakeCisId = Some(userAnswersWithCisId).toString
+      val html = view(fakeCisId)
       val doc  = Jsoup.parse(html.body)
 
       doc.title                                    must include(messages("monthlyreturns.submissionUnsuccessful.title"))
