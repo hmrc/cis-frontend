@@ -53,7 +53,7 @@ trait SubmissionViewDataSupport extends Logging {
 
   protected def contractorNameFrom(request: DataRequest[_]): String = {
     val ua  = request.userAnswers
-    val msg = s"[SubmissionSuccess] contractorName missing for userId=${request.userId}"
+    val msg = s"[SubmissionViewDataSupport] contractorName missing for userId=${request.userId}"
     if (!request.isAgent) {
       required(ua.get(ContractorNamePage), msg)
     } else {
@@ -62,7 +62,7 @@ trait SubmissionViewDataSupport extends Logging {
   }
 
   protected def employerRefFrom(request: DataRequest[_]): String = {
-    val msg = s"[SubmissionSuccess] employerReference missing for userId=${request.userId}"
+    val msg = s"[SubmissionViewDataSupport] employerReference missing for userId=${request.userId}"
     if (!request.isAgent) {
       request.employerReference.map(formatEmployerRef).getOrElse(fail(msg))
     } else {

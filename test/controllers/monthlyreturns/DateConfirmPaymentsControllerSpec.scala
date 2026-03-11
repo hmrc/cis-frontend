@@ -20,6 +20,7 @@ import base.SpecBase
 import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
+import models.agent.AgentClientData
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
@@ -33,11 +34,11 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{LocalDate, ZoneOffset}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
@@ -285,6 +286,70 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
         status(result) mustEqual BAD_REQUEST
         verifyNoInteractions(mockMonthlyReturnService)
+      }
+    }
+
+    "must redirect to Journey Recovery on POST when resolveAndStoreCisId returns NOT_FOUND" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND)))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must prepare user answers for agent and redirect to next page when valid data is submitted" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val agentClientData          = AgentClientData(
+        uniqueId = "CIS-AGENT-123",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        schemeName = Some("Test Employer")
+      )
+
+      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(Some(agentClientData)))
+      when(mockMonthlyReturnService.hasClient(eqTo("123"), eqTo("AB456"))(any()))
+        .thenReturn(Future.successful(true))
+      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], eqTo(true))(any()))
+        .thenReturn(Future.successful(("CIS-AGENT-123", emptyUserAnswers)))
+      when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-AGENT-123"), anyInt(), anyInt())(any()))
+        .thenReturn(Future.successful(false))
+      when(mockMonthlyReturnService.createMonthlyReturn(any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
       }
     }
   }

@@ -36,12 +36,13 @@ class ChrisSubmissionRequestBuilder @Inject() (
   def build(ua: UserAnswers, taxpayer: CisTaxpayer, isAgent: Boolean)(implicit
     hc: HeaderCarrier
   ): Future[ChrisSubmissionRequest] = {
-    val common             = buildCommon(ua, taxpayer, isAgent)
+    val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
+    val common             = buildCommon(ua, taxpayer, isAgent, returnType)
     val informationCorrect = true
     val inactivityBool     = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
 
-    ua.get(ReturnTypePage) match {
-      case Some(ReturnType.MonthlyNilReturn) =>
+    returnType match {
+      case MonthlyNilReturn =>
         Future.successful(
           ChrisSubmissionRequest.fromNil(
             common = common,
@@ -50,7 +51,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
           )
         )
 
-      case Some(ReturnType.MonthlyStandardReturn) =>
+      case MonthlyStandardReturn =>
         buildStandardMonthlyReturn(ua).map { standardReturn =>
           ChrisSubmissionRequest.fromStandard(
             common = common,
@@ -59,13 +60,15 @@ class ChrisSubmissionRequestBuilder @Inject() (
             standard = standardReturn
           )
         }
-
-      case other =>
-        Future.failed(new RuntimeException(s"ReturnType missing or invalid: $other"))
     }
   }
 
-  private def buildCommon(ua: UserAnswers, taxpayer: CisTaxpayer, isAgent: Boolean): ChrisSubmissionCommon = {
+  private def buildCommon(
+    ua: UserAnswers,
+    taxpayer: CisTaxpayer,
+    isAgent: Boolean,
+    returnType: ReturnType
+  ): ChrisSubmissionCommon = {
 
     val utr = taxpayer.utr
       .map(_.trim)
@@ -96,13 +99,10 @@ class ChrisSubmissionRequestBuilder @Inject() (
     val accountsOfficeRef: String =
       List(aoDistrict, aoPayType, aoCheckCode, aoReference).flatten.mkString
 
-    val ym = (ua.get(ReturnTypePage) match {
-      case Some(MonthlyNilReturn)      => ua.get(DateConfirmNilPaymentsPage).map(YearMonth.from)
-      case Some(MonthlyStandardReturn) => ua.get(DateConfirmPaymentsPage).map(YearMonth.from)
-      case other                       => throw new RuntimeException(s"ReturnType missing or invalid: $other")
+    val ym = (returnType match {
+      case MonthlyNilReturn      => ua.get(DateConfirmNilPaymentsPage).map(YearMonth.from)
+      case MonthlyStandardReturn => ua.get(DateConfirmPaymentsPage).map(YearMonth.from)
     }).getOrElse(throw new RuntimeException("Month and year of return missing"))
-
-    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
 
     val emailOpt = returnType match {
       case MonthlyNilReturn      => ua.get(ConfirmEmailAddressPage)

@@ -42,7 +42,7 @@ class ChrisSubmissionRequestBuilderSpec
     with TryValues {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   private def mkTaxpayer(): CisTaxpayer =
     CisTaxpayer(
@@ -108,7 +108,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "build MonthlyNilReturn request (minimal)" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")
@@ -149,7 +149,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "build MonthlyStandardReturn request" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder(connector)
 
       val subId: Long = 1L
 
@@ -216,7 +216,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when ReturnTypePage missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder(connector)
 
       val ua = UserAnswers("id")
 
@@ -224,7 +224,229 @@ class ChrisSubmissionRequestBuilderSpec
         builder.build(ua, mkTaxpayer(), isAgent = false)
       }
 
-      ex.getMessage must include("ReturnType missing or invalid")
+      ex.getMessage mustBe "ReturnType missing"
+    }
+
+    "fail when taxpayer UTR is missing" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val taxpayer = mkTaxpayer().copy(utr = None)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, taxpayer, isAgent = false)
+      }
+
+      ex.getMessage mustBe "CIS taxpayer UTR missing"
+    }
+
+    "fail when taxpayer aoDistrict is missing" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val taxpayer = mkTaxpayer().copy(aoDistrict = None)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, taxpayer, isAgent = false)
+      }
+
+      ex.getMessage mustBe "CIS taxpayer aoDistrict missing"
+    }
+
+    "fail when taxpayer aoPayType is missing" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val taxpayer = mkTaxpayer().copy(aoPayType = None)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, taxpayer, isAgent = false)
+      }
+
+      ex.getMessage mustBe "CIS taxpayer aoPayType missing"
+    }
+
+    "fail when taxpayer aoCheckCode is missing" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val taxpayer = mkTaxpayer().copy(aoCheckCode = None)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, taxpayer, isAgent = false)
+      }
+
+      ex.getMessage mustBe "CIS taxpayer aoCheckCode missing"
+    }
+
+    "fail when taxpayer aoReference is missing" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val taxpayer = mkTaxpayer().copy(aoReference = None)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, taxpayer, isAgent = false)
+      }
+
+      ex.getMessage mustBe "CIS taxpayer aoReference missing"
+    }
+
+    "fail when month and year of return are missing for nil return" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, mkTaxpayer(), isAgent = false)
+      }
+
+      ex.getMessage mustBe "Month and year of return missing"
+    }
+
+    "fail when month and year of return are missing for standard return" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, mkTaxpayer(), isAgent = false)
+      }
+
+      ex.getMessage mustBe "Month and year of return missing"
+    }
+
+    "fail when employment status declaration is missing for standard return" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+          .set(VerifiedStatusDeclarationPage, true)
+          .success
+          .value
+          .set(CisIdPage, "instance-1")
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, mkTaxpayer(), isAgent = false)
+      }
+
+      ex.getMessage mustBe "Employment status declaration missing"
+    }
+
+    "fail when verification answer is missing for standard return" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+          .set(EmploymentStatusDeclarationPage, true)
+          .success
+          .value
+          .set(CisIdPage, "instance-1")
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, mkTaxpayer(), isAgent = false)
+      }
+
+      ex.getMessage mustBe "Verification answer missing"
+    }
+
+    "fail when CIS ID is missing for standard return" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+      val builder = new ChrisSubmissionRequestBuilder(connector)
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+          .set(EmploymentStatusDeclarationPage, true)
+          .success
+          .value
+          .set(VerifiedStatusDeclarationPage, true)
+          .success
+          .value
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, mkTaxpayer(), isAgent = false)
+      }
+
+      ex.getMessage mustBe "CIS ID missing"
     }
   }
 }

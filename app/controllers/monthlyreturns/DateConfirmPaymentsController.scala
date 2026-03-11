@@ -88,11 +88,11 @@ class DateConfirmPaymentsController @Inject() (
             val month = value.getMonthValue
 
             (for {
-              uaPrepared           <- prepareUserAnswers(request.userAnswers, request)
-              resolved             <- monthlyReturnService.resolveAndStoreCisId(uaPrepared, request.isAgent)
+              uaPrepared          <- prepareUserAnswers(request.userAnswers, request)
+              resolved            <- monthlyReturnService.resolveAndStoreCisId(uaPrepared, request.isAgent)
               (cisId, uaWithCisId) = resolved
-              isDup                <- monthlyReturnService.isDuplicate(cisId, year, month)
-              result               <-
+              isDup               <- monthlyReturnService.isDuplicate(cisId, year, month)
+              result              <-
                 if (isDup) {
                   val dupForm =
                     form

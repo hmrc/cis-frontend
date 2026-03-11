@@ -19,7 +19,6 @@ package services.submission
 import models.UserAnswers
 import models.submission.{ChrisPersonName, ChrisStandardSubcontractor, SubcontractorType}
 import models.monthlyreturns.{SelectedSubcontractor, Subcontractor}
-import models.submission.SubcontractorType.*
 import pages.monthlyreturns.*
 import utils.Normalise.{isBLank, nonBlank}
 
