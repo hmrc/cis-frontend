@@ -16,7 +16,7 @@
 
 package models.monthlyreturns
 
-import models.ReturnType.MonthlyNilReturn
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -73,6 +73,92 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
           decNilReturnNoPayments = Some("Y"),
           decInformationCorrect = None,
           nilReturnIndicator = "Y",
+          status = "STARTED",
+          version = None
+        )
+      )
+    }
+
+    "build a request for MonthlyStandardReturn with standard declarations" in {
+      val ua = UserAnswers("test-user")
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(CisIdPage, "CIS-456")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 4, 1))
+        .success
+        .value
+        .set(PaymentDetailsConfirmationPage, true)
+        .success
+        .value
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(VerifiedStatusDeclarationPage, false)
+        .success
+        .value
+        .set(SubmitInactivityRequestPage, true)
+        .success
+        .value
+
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua)
+
+      result shouldBe Right(
+        UpdateMonthlyReturnRequest(
+          instanceId = "CIS-456",
+          taxYear = 2024,
+          taxMonth = 4,
+          amendment = "N",
+          decEmpStatusConsidered = Some("Y"),
+          decAllSubsVerified = Some("N"),
+          decNoMoreSubPayments = Some("Y"),
+          decInformationCorrect = Some("Y"),
+          nilReturnIndicator = "N",
+          status = "STARTED",
+          version = None
+        )
+      )
+    }
+
+    "build a request for MonthlyStandardReturn without optional inactivity when SubmitInactivityRequestPage is false" in {
+      val ua = UserAnswers("test-user")
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(CisIdPage, "CIS-789")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 5, 1))
+        .success
+        .value
+        .set(PaymentDetailsConfirmationPage, false)
+        .success
+        .value
+        .set(EmploymentStatusDeclarationPage, false)
+        .success
+        .value
+        .set(VerifiedStatusDeclarationPage, true)
+        .success
+        .value
+        .set(SubmitInactivityRequestPage, false)
+        .success
+        .value
+
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua)
+
+      result shouldBe Right(
+        UpdateMonthlyReturnRequest(
+          instanceId = "CIS-789",
+          taxYear = 2024,
+          taxMonth = 5,
+          amendment = "N",
+          decEmpStatusConsidered = Some("N"),
+          decAllSubsVerified = Some("Y"),
+          decNoMoreSubPayments = None,
+          decInformationCorrect = Some("N"),
+          nilReturnIndicator = "N",
           status = "STARTED",
           version = None
         )
