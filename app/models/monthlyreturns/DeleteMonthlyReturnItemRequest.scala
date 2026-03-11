@@ -18,18 +18,13 @@ package models.monthlyreturns
 
 import play.api.libs.json.{Json, OFormat}
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[BigDecimal],
-  costOfMaterials: Option[BigDecimal],
-  totalTaxDeducted: Option[BigDecimal]
-) {
-  def isComplete: Boolean = totalPaymentsMade.isDefined && costOfMaterials.isDefined && totalTaxDeducted.isDefined
-}
+case class DeleteMonthlyReturnItemRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int,
+  subcontractorId: Long
+)
 
-object SelectedSubcontractor {
-
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
-
+object DeleteMonthlyReturnItemRequest {
+  given format: OFormat[DeleteMonthlyReturnItemRequest] = Json.format[DeleteMonthlyReturnItemRequest]
 }

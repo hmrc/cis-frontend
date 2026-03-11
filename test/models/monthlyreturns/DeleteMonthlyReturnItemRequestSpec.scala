@@ -16,20 +16,23 @@
 
 package models.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.Json
 
-case class SelectedSubcontractor(
-  id: Long,
-  name: String,
-  totalPaymentsMade: Option[BigDecimal],
-  costOfMaterials: Option[BigDecimal],
-  totalTaxDeducted: Option[BigDecimal]
-) {
-  def isComplete: Boolean = totalPaymentsMade.isDefined && costOfMaterials.isDefined && totalTaxDeducted.isDefined
-}
+class DeleteMonthlyReturnItemRequestSpec extends AnyWordSpec with Matchers {
 
-object SelectedSubcontractor {
+  "DeleteMonthlyReturnItemRequest JSON format" should {
 
-  given OFormat[SelectedSubcontractor] = Json.format[SelectedSubcontractor]
+    "round-trip serialize and deserialize" in {
+      val model = DeleteMonthlyReturnItemRequest(
+        instanceId = "inst-123",
+        taxYear = 2025,
+        taxMonth = 1,
+        subcontractorId = 1001L
+      )
 
+      Json.fromJson[DeleteMonthlyReturnItemRequest](Json.toJson(model)).get mustBe model
+    }
+  }
 }

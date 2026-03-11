@@ -21,7 +21,7 @@ import controllers.monthlyreturns
 import pages._
 import pages.monthlyreturns.*
 import models._
-import models.monthlyreturns.InactivityRequest
+import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
 
 class NavigatorSpec extends SpecBase {
 
@@ -89,12 +89,25 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from VerifySubcontractorsPage to PaymentDetailsController" in {
+      "must go from VerifySubcontractorsPage to PaymentDetailsController at index 1 when no subcontractors are saved" in {
         navigator.nextPage(
           VerifySubcontractorsPage,
           NormalMode,
           UserAnswers("id")
         ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None)
+      }
+
+      "must go from VerifySubcontractorsPage to PaymentDetailsController at the first incomplete subcontractor index" in {
+        val ua = UserAnswers("id")
+          .setOrException(SelectedSubcontractorPage(0), completeSub)
+          .setOrException(SelectedSubcontractorPage(2), incompleteSub)
+          .setOrException(SelectedSubcontractorPage(5), incompleteSub)
+
+        navigator.nextPage(
+          VerifySubcontractorsPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 2, None)
       }
 
       "must go from DateConfirmPaymentsPage to SelectSubcontractorsController" in {
@@ -221,4 +234,20 @@ class NavigatorSpec extends SpecBase {
       }
     }
   }
+
+  private val completeSub = SelectedSubcontractor(
+    id = 1L,
+    name = "Sub",
+    totalPaymentsMade = Some(100),
+    costOfMaterials = Some(50),
+    totalTaxDeducted = Some(20)
+  )
+
+  private val incompleteSub = SelectedSubcontractor(
+    id = 2L,
+    name = "Sub",
+    totalPaymentsMade = None,
+    costOfMaterials = None,
+    totalTaxDeducted = None
+  )
 }

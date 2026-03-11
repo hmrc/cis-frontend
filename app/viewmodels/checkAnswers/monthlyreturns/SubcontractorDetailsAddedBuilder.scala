@@ -17,8 +17,9 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
-import models.{CheckMode, UserAnswers}
+import models.UserAnswers
 import pages.monthlyreturns.SelectedSubcontractorPage
+import models.CheckMode
 
 object SubcontractorDetailsAddedBuilder {
 
@@ -57,7 +58,7 @@ object SubcontractorDetailsAddedBuilder {
               changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
                 .onPageLoad(index),
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-                .onPageLoad(CheckMode) // TODO: add index to the route when implemented
+                .onPageLoad(CheckMode, index)
             )
           }
         }

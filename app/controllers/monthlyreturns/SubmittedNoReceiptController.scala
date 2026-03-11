@@ -17,8 +17,10 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import controllers.helpers.SubmissionViewDataSupport
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import models.EmployerReference
+import pages.agent.AgentClientDataPage
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -26,7 +28,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.SubmittedNoReceiptView
-
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, ZoneId, ZonedDateTime}
 import javax.inject.Inject
@@ -45,44 +46,91 @@ class SubmittedNoReceiptController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
-    with SubmissionViewDataSupport {
+    with Logging {
+
+  private def formatEmployerRef(er: EmployerReference): String =
+    s"${er.taxOfficeNumber}/${er.taxOfficeReference}"
+
+  private def fail(errorMessage: String): Nothing = {
+    logger.error(errorMessage)
+    throw new IllegalStateException(errorMessage)
+  }
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      val ua = request.userAnswers
+      val cisId = request.userAnswers.get(CisIdPage).getOrElse {
+        logger.error("[SubmittedNoReceipt] cisId missing from userAnswers")
+        throw new IllegalStateException("cisId missing from userAnswers")
+      }
 
-      val cisId = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
+      val contractorName: String = {
+        val errorMessage: String = s"[SubmittedNoReceipt] contractorName missing for userId=${request.userId}"
+        if (!request.isAgent) {
+          request.userAnswers.get(ContractorNamePage).getOrElse {
+            fail(errorMessage)
+          }
+        } else {
+          request.userAnswers.get(AgentClientDataPage).flatMap(_.schemeName).getOrElse {
+            fail(errorMessage)
+          }
+        }
+      }
 
-      val submissionType =
-        ua.get(ReturnTypePage).getOrElse(fail("[SubmittedNoReceipt] ReturnTypePage missing from userAnswers"))
+      val employerRef: String = {
+        val errorMessage: String = s"[SubmissionSuccess] employerReference missing for userId=${request.userId}"
+        if (!request.isAgent) {
+          request.employerReference.map(formatEmployerRef).getOrElse {
+            fail(errorMessage)
+          }
+        } else {
+          request.userAnswers
+            .get(AgentClientDataPage)
+            .filter(_.taxOfficeNumber.nonEmpty)
+            .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
+            .getOrElse {
+              fail(errorMessage)
+            }
+        }
+      }
 
-      val periodEnd = required(
-        periodEndFromUserAnswers(ua, submissionType),
-        s"[SubmittedNoReceipt] taxPeriodEnd missing from userAnswers for submissionType $submissionType"
-      )
+      val emailFromSession = request.userAnswers.get(ConfirmEmailAddressPage)
 
-      val emailFuture: Future[String] = emailfromUserAnswers(ua, submissionType)
-        .map(Future.successful)
-        .getOrElse(monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse("")))
+      val emailFuture = emailFromSession match {
+        case Some(email) => Future.successful(email)
+        case None        => monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse(""))
+      }
 
-      for {
-        email <- emailFuture
-      } yield {
-        val dmyFmt        = DateTimeFormatter.ofPattern("d MMM uuuu")
-        val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
-        val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
-        val submittedDate = ukNow.format(dmyFmt)
+      emailFuture.map { email =>
+        val dmyFmt         = DateTimeFormatter.ofPattern("MMMM uuuu")
+        val periodEnd      = request.userAnswers
+          .get(DateConfirmNilPaymentsPage)
+          .map(_.format(dmyFmt))
+          .getOrElse {
+            logger.error("[SubmittedNoReceipt] taxPeriodEnd missing from userAnswers")
+            throw new IllegalStateException("taxPeriodEnd missing from userAnswers")
+          }
+        val ukNow          = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+        val submittedTime  = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
+        val submittedDate  = ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
+        val submissionType = request.userAnswers
+          .get(ReturnTypePage)
+          .getOrElse {
+            logger.error("[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
+            throw new IllegalStateException("ReturnTypePage missing from userAnswers")
+          }
+
         Ok(
           view(
-            periodEnd = periodEnd.format(dmyFmt),
+            periodEnd = periodEnd,
             submittedTime = submittedTime,
             submittedDate = submittedDate,
-            contractorName = contractorNameFrom(request),
-            empRef = employerRefFrom(request),
-            email = email
+            contractorName = contractorName,
+            empRef = employerRef,
+            email = email,
+            submissionType = submissionType
           )
         )
       }

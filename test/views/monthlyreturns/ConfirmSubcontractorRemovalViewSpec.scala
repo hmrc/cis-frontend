@@ -32,7 +32,7 @@ class ConfirmSubcontractorRemovalViewSpec extends SpecBase {
 
   "ConfirmSubcontractorRemovalView" - {
     "must render the content on the page" in new Setup {
-      val html: HtmlFormat.Appendable = view(form, NormalMode, subcontractorName)
+      val html: HtmlFormat.Appendable = view(form, NormalMode, subcontractorName, index)
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title               must include(messages("monthlyreturns.confirmSubcontractorRemoval.title", subcontractorName))
@@ -56,5 +56,6 @@ class ConfirmSubcontractorRemovalViewSpec extends SpecBase {
     )
 
     val subcontractorName = "TyneWear Ltd"
+    val index: Int        = 1
   }
 }
