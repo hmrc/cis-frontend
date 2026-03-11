@@ -154,7 +154,7 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
     def email: String = "test@test.com"
 
-    val app: Application = applicationBuilder().build()
+    val app: Application            = applicationBuilder().build()
     val view: SubmissionSuccessView = app.injector.instanceOf[SubmissionSuccessView]
 
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
@@ -165,12 +165,12 @@ class SubmissionSuccessViewSpec extends SpecBase {
         app.injector.instanceOf[play.api.i18n.MessagesApi]
       )
 
-    val reference = "ABC1234567890123456789"
-    val periodEnd = "February 2026"
-    val submittedTime = "10:30am"
-    val submittedDate = "6 Jan 2026"
-    val contractorName = "Test Contractor Ltd"
-    val empRef = "123/AB456"
+    val reference                  = "ABC1234567890123456789"
+    val periodEnd                  = "February 2026"
+    val submittedTime              = "10:30am"
+    val submittedDate              = "6 Jan 2026"
+    val contractorName             = "Test Contractor Ltd"
+    val empRef                     = "123/AB456"
     val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
     lazy val html: HtmlFormat.Appendable = view(

@@ -92,17 +92,30 @@
             ))
         )
 
-        @paragraph(messages(
-            "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
-            Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
-        ))
+        @if(!email.trim.isEmpty) {
+            @paragraph(messages(
+                "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
+                Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
+            ))
 
-        @link(
-            linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
-            linkUrl = "#",
-            hasFullStop = true,
-            prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
-        )
+            @link(
+                linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
+                linkUrl = "#",
+                hasFullStop = true,
+                prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
+            )
+
+        } else {
+            @link(
+                linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
+                linkUrl = "#",
+                hasFullStop = true,
+                prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
+            )
+
+            @h2("monthlyreturns.submittedNoReceipt.whatHappensNext.heading")
+            @paragraph(messages("monthlyreturns.submittedNoReceipt.whatHappensNext.p"))
+        }
 
         @link(
             linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",

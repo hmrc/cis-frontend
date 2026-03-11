@@ -307,7 +307,8 @@ monthlyreturns.submittedNoReceipt.feedback.heading = Before you go
 monthlyreturns.submittedNoReceipt.feedback.p1 = Your feedback helps us make our service better.
 monthlyreturns.submittedNoReceipt.feedback.p2 = to share your feedback on this service.
 monthlyreturns.submittedNoReceipt.feedback.p2.link = Take a short survey
-
+monthlyreturns.submittedNoReceipt.whatHappensNext.heading = What happens next
+monthlyreturns.submittedNoReceipt.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services.’
 
 fileYourMonthlyCisReturn.title = File your monthly CIS return
 fileYourMonthlyCisReturn.heading = File your monthly CIS return

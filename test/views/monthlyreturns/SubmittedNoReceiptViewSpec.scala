@@ -30,14 +30,16 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
 
   "SubmittedNoReceiptView" - {
 
-    "must render the correct content on the page" in new Setup {
+    "must render the page when email is provided" in new Setup {
 
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title must include(messages("monthlyreturns.submittedNoReceipt.title", "Monthly nil return"))
+      doc.title must include(
+        messages("monthlyreturns.submittedNoReceipt.title", returnTypeMessage)
+      )
 
       doc.select(".govuk-panel__title").text must include(
-        messages("monthlyreturns.submittedNoReceipt.heading", "Monthly nil return")
+        messages("monthlyreturns.submittedNoReceipt.heading", returnTypeMessage)
       )
 
       doc.select("p.govuk-body").text must include(
@@ -49,21 +51,18 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       )
 
       val summaryText: String = doc.select(".govuk-summary-list").text()
+
       summaryText must include(contractorName)
       summaryText must include(empRef)
       summaryText must include(messages(s"monthlyreturns.returnType.${submissionType.toString}"))
       summaryText must include(periodEnd)
 
-      doc.select("p.govuk-body").text must include(
-        messages(
-          "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
-          email
-        )
-      )
+      doc.select("p.govuk-body").text must include(email)
 
       doc.select("p.govuk-body").text must include(
         messages("monthlyreturns.submittedNoReceipt.submissionHistory.p")
       )
+
       doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submittedNoReceipt.submissionHistory.link")
       )
@@ -75,6 +74,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       doc.select("p.govuk-body").text must include(
         messages("monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p")
       )
+
       doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.link")
       )
@@ -86,6 +86,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       doc.select("p.govuk-body").text must include(
         messages("monthlyreturns.submittedNoReceipt.feedback.p1")
       )
+
       doc.select("p.govuk-body").text must include(
         messages("monthlyreturns.submittedNoReceipt.feedback.p2")
       )
@@ -93,11 +94,61 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submittedNoReceipt.feedback.p2.link")
       )
+
+      doc.select("h2").text must not include
+        messages("monthlyreturns.submittedNoReceipt.whatHappensNext.heading")
+    }
+
+    "must render the page when email is empty" in new Setup {
+
+      override val email: String = ""
+
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.title must include(
+        messages("monthlyreturns.submittedNoReceipt.title", returnTypeMessage)
+      )
+
+      doc.select(".govuk-panel__title").text must include(
+        messages("monthlyreturns.submittedNoReceipt.heading", returnTypeMessage)
+      )
+
+      doc.select("p.govuk-body").text must include(
+        messages("monthlyreturns.submittedNoReceipt.p1", submittedTime, submittedDate)
+      )
+
+      doc.select("h2").text must include(
+        messages("monthlyreturns.submittedNoReceipt.details.h2")
+      )
+
+      val summaryText: String = doc.select(".govuk-summary-list").text()
+
+      summaryText must include(contractorName)
+      summaryText must include(empRef)
+      summaryText must include(messages(s"monthlyreturns.returnType.${submissionType.toString}"))
+      summaryText must include(periodEnd)
+
+      doc.select("p.govuk-body").text must include(
+        messages("monthlyreturns.submittedNoReceipt.submissionHistory.p")
+      )
+
+      doc.select("a.govuk-link").text must include(
+        messages("monthlyreturns.submittedNoReceipt.submissionHistory.link")
+      )
+
+      doc.select("h2").text must include(
+        messages("monthlyreturns.submittedNoReceipt.whatHappensNext.heading")
+      )
+
+      doc.select("p.govuk-body").text must include(
+        messages("monthlyreturns.submittedNoReceipt.whatHappensNext.p")
+      )
     }
   }
 
   trait Setup {
 
+    def email: String                = "test@test.com"
     val app: Application             = applicationBuilder().build()
     val view: SubmittedNoReceiptView = app.injector.instanceOf[SubmittedNoReceiptView]
 
@@ -113,10 +164,14 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
     val submittedDate              = "6 Jan 2026"
     val contractorName             = "Test Contractor Ltd"
     val empRef                     = "123/AB456"
-    val email                      = "test@test.com"
     val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
-    val html: HtmlFormat.Appendable = view(
+    val returnTypeMessage: String = {
+      val raw = messages(s"monthlyreturns.returnType.${submissionType.toString}")
+      s"${raw.head.toUpper}${raw.tail.toLowerCase}"
+    }
+
+    lazy val html: HtmlFormat.Appendable = view(
       periodEnd = periodEnd,
       submittedTime = submittedTime,
       submittedDate = submittedDate,
