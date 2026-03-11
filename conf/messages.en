@@ -339,6 +339,7 @@ monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit
 monthlyreturns.dateConfirmPayments.legendText = Tax month and tax year
 monthlyreturns.dateConfirmPayments.labelMonth = Tax month
 monthlyreturns.dateConfirmPayments.labelYear = Tax year
+monthlyreturns.dateConfirmPayments.helpText = For example, 9 2025
 
 monthlyreturns.selectSubcontractors.title = Select subcontractors
 monthlyreturns.selectSubcontractors.heading = Select subcontractors
