@@ -80,6 +80,7 @@ class SubmissionSuccessController @Inject() (
       for {
         email <- emailFuture
       } yield {
+        val myFmt         = DateTimeFormatter.ofPattern("MMMM uuuu")
         val dmyFmt        = DateTimeFormatter.ofPattern("d MMMM uuuu")
         val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
         val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
@@ -87,7 +88,7 @@ class SubmissionSuccessController @Inject() (
         Ok(
           view(
             reference = reference,
-            periodEnd = periodEnd.format(dmyFmt),
+            periodEnd = periodEnd.format(myFmt),
             submittedTime = submittedTime,
             submittedDate = submittedDate,
             contractorName = contractorNameFrom(request),
