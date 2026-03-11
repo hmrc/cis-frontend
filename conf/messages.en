@@ -506,3 +506,6 @@ monthlyreturns.summarySubcontractorPayments.intro = You have added the payment d
 monthlyreturns.summarySubcontractorPayments.totalPayments.label = Total payments to subcontractors
 monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label = Total cost of materials
 monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label = Total CIS deductions
+
+resubmissionUnsuccessful.title = resubmissionUnsuccessful
+resubmissionUnsuccessful.heading = resubmissionUnsuccessful
