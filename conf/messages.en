@@ -335,6 +335,7 @@ monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmPayments.change.hidden = which tax month and year are you filing a return for
 monthlyreturns.dateConfirmPayments.labelMonth = Tax month
 monthlyreturns.dateConfirmPayments.labelYear = Tax year
+monthlyreturns.dateConfirmPayments.helpText = For example, 9 2025
 
 monthlyreturns.selectSubcontractors.title = Select subcontractors
 monthlyreturns.selectSubcontractors.heading = Select subcontractors

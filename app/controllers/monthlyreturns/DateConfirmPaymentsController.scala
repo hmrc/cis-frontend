@@ -18,11 +18,11 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.MonthlyStandardReturn
 import models.agent.AgentClientData
-import models.{Mode, ReturnType, UserAnswers}
 import models.monthlyreturns.MonthlyReturnRequest
 import models.requests.DataRequest
+import models.{Mode, ReturnType, UserAnswers}
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
