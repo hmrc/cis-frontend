@@ -52,7 +52,6 @@ GET        /monthly-return/nil-month-return-inactive                    controll
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
 
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
-POST       /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
 
 GET        /monthly-return/submission-awaiting                          controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 
