@@ -164,4 +164,4 @@ POST       /monthly-return/change-verified-status-declaration           controll
 
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
 
-GET        /resubmissionUnsuccessful                       controllers.ResubmissionUnsuccessfulController.onPageLoad()
+GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.ResubmissionUnsuccessfulController.onPageLoad()

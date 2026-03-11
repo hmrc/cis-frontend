@@ -507,5 +507,15 @@ monthlyreturns.summarySubcontractorPayments.totalPayments.label = Total payments
 monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label = Total cost of materials
 monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label = Total CIS deductions
 
-resubmissionUnsuccessful.title = resubmissionUnsuccessful
-resubmissionUnsuccessful.heading = resubmissionUnsuccessful
+monthlyreturns.resubmissionUnsuccessful.title = There is a problem with your submission
+monthlyreturns.resubmissionUnsuccessful.heading = There is a problem with your submission
+monthlyreturns.resubmissionUnsuccessful.p1.links.prefix = You must go back to
+monthlyreturns.resubmissionUnsuccessful.p1.links.text = Manage your CIS return
+monthlyreturns.resubmissionUnsuccessful.p1.links.suffix = and submit again.
+monthlyreturns.resubmissionUnsuccessful.p2.warning = You must submit your monthly return by the required deadline to avoid any penalties.
+monthlyreturns.resubmissionUnsuccessful.p3.links.prefix = If you have any technical difficulties, contact the
+monthlyreturns.resubmissionUnsuccessful.p3.links.text = HMRC Online Services Helpdesk (opens in new tab).
+monthlyreturns.resubmissionUnsuccessful.p4 = You will need to provide:
+monthlyreturns.resubmissionUnsuccessful.list.l1 = your PAYE reference number, also known as an Employer Reference Number (ERN)
+monthlyreturns.resubmissionUnsuccessful.list.l2 = the date when you tried to submit the return
+monthlyreturns.resubmissionUnsuccessful.p5.links.text = Back to Manage your CIS return
