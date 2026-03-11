@@ -55,13 +55,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
         case Some(subcontractor) =>
-          val preparedForm =
-            request.userAnswers.get(ConfirmSubcontractorRemovalPage(index)) match {
-              case None        => form
-              case Some(value) => form.fill(value)
-            }
-
-          Ok(view(preparedForm, mode, subcontractor.name, index))
+          Ok(view(form, mode, subcontractor.name, index))
       }
   }
 

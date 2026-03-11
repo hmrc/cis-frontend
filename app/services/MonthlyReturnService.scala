@@ -24,7 +24,6 @@ import pages.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import models.monthlyreturns.DeleteMonthlyReturnItemRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 

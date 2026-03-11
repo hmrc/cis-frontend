@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.UserAnswers
+import models.{NormalMode, UserAnswers}
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -175,6 +175,29 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
         redirectLocation(result).value mustBe
           controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
             .onPageLoad()
+            .url
+      }
+    }
+
+    "must redirect to AddSubcontractorDetails on POST No when there are incomplete subcontractors" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "Complete Ltd"),
+        2 -> incompleteSub(1002L, "Incomplete Ltd")
+      )
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrl)
+            .withFormUrlEncodedBody("value" -> "false")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.AddSubcontractorDetailsController
+            .onPageLoad(NormalMode)
             .url
       }
     }
