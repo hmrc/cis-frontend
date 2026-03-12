@@ -73,7 +73,7 @@ class DateConfirmPaymentsController @Inject() (
                                else "monthlyreturns.dateConfirmPayments.nilreturn"
         preparedUserAnswers <- prepareUserAnswers(uaWithReturnType, request)
         _                   <- monthlyReturnService.resolveAndStoreCisId(preparedUserAnswers, request.isAgent)
-        preparedForm         = request.userAnswers.get(DateConfirmPaymentsPage) match {
+        preparedForm         = preparedUserAnswers.get(DateConfirmPaymentsPage) match {
                                  case None        => form
                                  case Some(value) => form.fill(value)
                                }
