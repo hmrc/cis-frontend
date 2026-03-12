@@ -20,6 +20,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.panel.Panel
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.button.Button
 @import models.ReturnType
+@import config.FrontendAppConfig
 
 @this(
     layout: templates.Layout,
@@ -39,8 +40,9 @@
   contractorName: String,
   empRef: String,
   email: String,
-  submissionType: ReturnType
-)(implicit request: Request[_], messages: Messages)
+  submissionType: ReturnType,
+  cisId: String
+)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @defining(messages(s"monthlyreturns.returnType.${submissionType.toString}")) { rawReturnTypeMessage =>
 
@@ -92,10 +94,12 @@
             ))
         )
 
-        @paragraph(messages(
-            "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
-            Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
-        ))
+        @if(!email.trim.isEmpty) {
+            @paragraph(messages(
+                "monthlyreturns.submittedNoReceipt.confirmationOfSuccessfulSubmission",
+                Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
+            ))
+        }
 
         @link(
             linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
@@ -104,16 +108,21 @@
             prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
         )
 
+        @if(email.trim.isEmpty) {
+            @h2("monthlyreturns.submittedNoReceipt.whatHappensNext.heading")
+            @paragraph(messages("monthlyreturns.submittedNoReceipt.whatHappensNext.p"))
+        }
+
         @link(
             linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",
-            linkUrl = "#",
+            linkUrl = appConfig.manageYourCisReturn + cisId
         )
 
         @sectionBreak()
 
         @link(
             linkTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.link",
-            linkUrl = "#",
+            linkUrl = appConfig.hmrcOnlineServiceDeskUrl,
             isNewTab = true,
             hasFullStop = true,
             prefixTextKey = "monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p"
