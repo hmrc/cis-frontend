@@ -46,21 +46,21 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
 
     "must render the return details summary list" in new Setup {
       val returnDetailsRow = SummaryListRowViewModel(
-        key     = "Return period",
-        value   = ValueViewModel("January 2025"),
+        key = "Return period",
+        value = ValueViewModel("January 2025"),
         actions = Seq.empty
       )
       val listWithRow      = SummaryListViewModel(Seq(returnDetailsRow))
       val docWithRows      = Jsoup.parse(view(listWithRow, SummaryListViewModel(Seq.empty)).body)
 
-      docWithRows.select(".govuk-summary-list__key").text must include("Return period")
+      docWithRows.select(".govuk-summary-list__key").text   must include("Return period")
       docWithRows.select(".govuk-summary-list__value").text must include("January 2025")
     }
 
     "must render the email confirmation summary list" in new Setup {
       val emailRow    = SummaryListRowViewModel(
-        key     = "Email confirmation",
-        value   = ValueViewModel("Yes"),
+        key = "Email confirmation",
+        value = ValueViewModel("Yes"),
         actions = Seq.empty
       )
       val listWithRow = SummaryListViewModel(Seq(emailRow))
@@ -71,14 +71,14 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
     }
 
     "must render two separate summary lists when both are populated" in new Setup {
-      val returnRow = SummaryListRowViewModel(
-        key     = "Return period",
-        value   = ValueViewModel("February 2025"),
+      val returnRow   = SummaryListRowViewModel(
+        key = "Return period",
+        value = ValueViewModel("February 2025"),
         actions = Seq.empty
       )
-      val emailRow  = SummaryListRowViewModel(
-        key     = "Email confirmation",
-        value   = ValueViewModel("No"),
+      val emailRow    = SummaryListRowViewModel(
+        key = "Email confirmation",
+        value = ValueViewModel("No"),
         actions = Seq.empty
       )
       val docWithRows = Jsoup.parse(
