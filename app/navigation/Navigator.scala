@@ -22,6 +22,7 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.monthlyreturns.InactivityRequest
+import utils.UserAnswerUtils.*
 
 @Singleton
 class Navigator @Inject() () {
@@ -47,7 +48,9 @@ class Navigator @Inject() () {
 
     // monthly return
     case VerifySubcontractorsPage                      =>
-      _ => controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None)
+      ua =>
+        controllers.monthlyreturns.routes.PaymentDetailsController
+          .onPageLoad(NormalMode, ua.firstIncompleteSubcontractorIndex, None)
     case DateConfirmPaymentsPage                       =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
     case SelectedSubcontractorPaymentsMadePage(index)  =>
