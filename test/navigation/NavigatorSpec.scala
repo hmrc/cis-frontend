@@ -237,8 +237,19 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
       }
 
-      "must go from ConfirmationByEmailPage to CheckYourAnswers when answer is false" in {
+      "must go from ConfirmationByEmailPage to DeclarationController when answer is false and no employment status declaration exists" in {
         val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, false)
+        navigator.nextPage(
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      }
+
+      "must go from ConfirmationByEmailPage to CheckYourAnswers when answer is false and employment status declaration exists" in {
+        val ua = UserAnswers("id")
+          .setOrException(ConfirmationByEmailPage, false)
+          .setOrException(EmploymentStatusDeclarationPage, true)
         navigator.nextPage(
           ConfirmationByEmailPage,
           NormalMode,
@@ -254,11 +265,29 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
       }
 
-      "must go from EnterYourEmailAddressPage to CheckYourAnswers" in {
+      "must go from EnterYourEmailAddressPage to DeclarationController when no employment status declaration exists" in {
         navigator.nextPage(
           EnterYourEmailAddressPage,
           NormalMode,
           UserAnswers("id")
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      }
+
+      "must go from EnterYourEmailAddressPage to CheckYourAnswers when employment status declaration exists" in {
+        val ua = UserAnswers("id").setOrException(EmploymentStatusDeclarationPage, true)
+        navigator.nextPage(
+          EnterYourEmailAddressPage,
+          NormalMode,
+          ua
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      }
+
+      "must go from DeclarationPage to CheckYourAnswers when SubmitInactivityRequestPage is false" in {
+        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, false)
+        navigator.nextPage(
+          DeclarationPage,
+          NormalMode,
+          ua
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 

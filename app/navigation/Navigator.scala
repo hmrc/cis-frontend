@@ -37,11 +37,16 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case DeclarationPage            =>
       userAnswers =>
-        userAnswers.get(InactivityRequestPage) match {
-          case Some(InactivityRequest.Option2)        =>
+        userAnswers.get(SubmitInactivityRequestPage) match {
+          case Some(false) =>
             controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-          case Some(InactivityRequest.Option1) | None =>
-            controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+          case _           =>
+            userAnswers.get(InactivityRequestPage) match {
+              case Some(InactivityRequest.Option2)        =>
+                controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+              case Some(InactivityRequest.Option1) | None =>
+                controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+            }
         }
     case InactivityWarningPage      =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
@@ -70,7 +75,11 @@ class Navigator @Inject() () {
     case ConfirmationByEmailPage                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
     case EnterYourEmailAddressPage                     =>
-      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      userAnswers =>
+        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        else
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
@@ -156,9 +165,14 @@ class Navigator @Inject() () {
     mode: Mode
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(ConfirmationByEmailPage), mode) match {
-      case (Some(true), _)  =>
+      case (Some(true), _)           =>
         controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
-      case (Some(false), _) => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      case (None, _)        => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case (Some(false), NormalMode) =>
+        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        else
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 }
