@@ -27,7 +27,9 @@ class SubmissionUnsuccessfulResubmitControllerSpec extends SpecBase {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val fakeCisId = "1"
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url)
@@ -37,7 +39,24 @@ class SubmissionUnsuccessfulResubmitControllerSpec extends SpecBase {
         val view = application.injector.instanceOf[SubmissionUnsuccessfulResubmitView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
+      }
+    }
+
+    "throw IllegalStateException when cisId is missing" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+
+        val request = FakeRequest(GET, routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url)
+
+        val controller = application.injector.instanceOf[SubmissionUnsuccessfulResubmitController]
+
+        val exception = controller.onPageLoad()(request).failed.futureValue
+
+        exception mustBe a[IllegalStateException]
+        exception.getMessage mustBe "cisId missing from userAnswers"
       }
     }
   }

@@ -31,7 +31,7 @@ class SubmissionUnsuccessfulResubmitViewSpec extends SpecBase {
   "SubmissionUnsuccessfulResubmitView" - {
 
     "must render the page with the correct content" in new Setup {
-      val html: HtmlFormat.Appendable = view()
+      val html: HtmlFormat.Appendable = view(cisId = "1")
       val doc: Document               = Jsoup.parse(html.toString)
 
       doc.title             must include(messages("monthlyreturns.submissionUnsuccessfulResubmit.title"))

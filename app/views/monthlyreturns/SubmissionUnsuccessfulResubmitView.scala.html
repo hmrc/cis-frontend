@@ -26,7 +26,7 @@
         bulletList: components.BulletList
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(cisId: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessfulResubmit.title")), showBackLink = false) {
 
@@ -34,7 +34,7 @@
 
     @link(
         linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.text",
-        linkUrl       = appConfig.manageYourCisReturn,
+        linkUrl       = appConfig.manageYourCisReturn + cisId,
         prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.prefix",
         suffixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.suffix",
     )
@@ -58,6 +58,6 @@
 
     @link(
         linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text",
-        linkUrl       = appConfig.manageYourCisReturn
+        linkUrl       = appConfig.manageYourCisReturn + cisId
     )
 }
