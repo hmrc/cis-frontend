@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import models.EmployerReference
 import pages.agent.AgentClientDataPage
@@ -28,6 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.SubmittedNoReceiptView
+
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, ZoneId, ZonedDateTime}
 import javax.inject.Inject
@@ -43,7 +45,7 @@ class SubmittedNoReceiptController @Inject() (
   view: SubmittedNoReceiptView,
   clock: Clock,
   monthlyReturnService: MonthlyReturnService
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
@@ -130,7 +132,8 @@ class SubmittedNoReceiptController @Inject() (
             contractorName = contractorName,
             empRef = employerRef,
             email = email,
-            submissionType = submissionType
+            submissionType = submissionType,
+            cisId = cisId
           )
         )
       }

@@ -172,6 +172,7 @@ class SubmissionSuccessViewSpec extends SpecBase {
     val contractorName             = "Test Contractor Ltd"
     val empRef                     = "123/AB456"
     val submissionType: ReturnType = ReturnType.MonthlyNilReturn
+    val cisId                      = "1"
 
     lazy val html: HtmlFormat.Appendable = view(
       reference = reference,
@@ -181,7 +182,8 @@ class SubmissionSuccessViewSpec extends SpecBase {
       contractorName = contractorName,
       empRef = empRef,
       email = email,
-      submissionType = submissionType
+      submissionType = submissionType,
+      cisId = cisId
     )
   }
 }

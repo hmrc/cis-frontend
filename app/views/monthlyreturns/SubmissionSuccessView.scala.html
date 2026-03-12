@@ -19,6 +19,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.panel.Panel
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.button.Button
 @import models.ReturnType
+@import config.FrontendAppConfig
 
 @this(
     layout: templates.Layout,
@@ -43,8 +44,9 @@
   contractorName: String,
   empRef: String,
   email: String,
-  submissionType: ReturnType
-)(implicit request: Request[_], messages: Messages)
+  submissionType: ReturnType,
+  cisId: String
+)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSuccess.title")),
         showBackLink = true
@@ -97,57 +99,41 @@
             "monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission",
             Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
         ))
+    }
 
-        @link(
-            linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
-            linkUrl = "#",
-            hasFullStop = true,
-            prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
-        )
+    @link(
+        linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
+        linkUrl = "#",
+        hasFullStop = true,
+        prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
+    )
 
-        @govukInsetText(
-            InsetText(
-                content = HtmlContent(
-                    s"""
-                    ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
-                    ${printLink("monthlyreturns.submissionSuccessful.print")}
-                    """
-                )
+    @govukInsetText(
+        InsetText(
+            content = HtmlContent(
+                s"""
+                ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
+                ${printLink("monthlyreturns.submissionSuccessful.print")}
+                """
             )
         )
-    } else {
-        @link(
-            linkTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.link",
-            linkUrl = "#",
-            hasFullStop = true,
-            prefixTextKey = "monthlyreturns.submissionSuccessful.submissionHistory.p"
-        )
+    )
 
-        @govukInsetText(
-            InsetText(
-                content = HtmlContent(
-                    s"""
-                    ${paragraph(messages("monthlyreturns.submissionSuccessful.inset"))}
-                    ${printLink("monthlyreturns.submissionSuccessful.print")}
-                    """
-                )
-            )
-        )
-
+    @if(email.trim.isEmpty) {
         @h2("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
         @paragraph(messages("monthlyreturns.submissionSuccessful.whatHappensNext.p"))
     }
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
-        linkUrl = "#",
+        linkUrl = appConfig.manageYourCisReturn + cisId,
     )
 
     @sectionBreak()
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.questionsAboutReturnSubmission.link",
-        linkUrl = "#",
+        linkUrl = appConfig.hmrcOnlineServiceDeskUrl,
         isNewTab = true,
         hasFullStop = true,
         prefixTextKey = "monthlyreturns.submissionSuccessful.questionsAboutReturnSubmission.p"
