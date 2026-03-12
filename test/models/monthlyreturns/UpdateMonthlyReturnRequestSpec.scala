@@ -164,5 +164,32 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         )
       )
     }
+
+    "not include inactivity when SubmitInactivityRequestPage is missing" in {
+      val ua = UserAnswers("test-user")
+        .set(ReturnTypePage, MonthlyStandardReturn).success.value
+        .set(CisIdPage, "CIS-999").success.value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 6, 1)).success.value
+        .set(PaymentDetailsConfirmationPage, true).success.value
+        .set(EmploymentStatusDeclarationPage, true).success.value
+        .set(VerifiedStatusDeclarationPage, true).success.value
+
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
+
+      result.decNoMoreSubPayments shouldBe None
+    }
+
+    "set decInformationCorrect when DeclarationPage has a value" in {
+      val ua = UserAnswers("test-user")
+        .set(ReturnTypePage, MonthlyNilReturn).success.value
+        .set(CisIdPage, "CIS-321").success.value
+        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 7, 1)).success.value
+        .set(InactivityRequestPage, InactivityRequest.Option1).success.value
+        .set(DeclarationPage, Set(Declaration.Confirmed)).success.value
+
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
+
+      result.decInformationCorrect shouldBe Some("Y")
+    }
   }
 }
