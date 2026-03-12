@@ -23,7 +23,7 @@ import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
 import models.requests.SendSuccessEmailRequest
 import models.submission.*
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
 import pages.submission.*
 import play.api.Logging
 import repositories.SessionRepository
@@ -120,7 +120,7 @@ class SubmissionService @Inject() (
       .get(CisIdPage)
       .getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
+      .get(DateConfirmPaymentsPage)
       .map(YearMonth.from)
       .getOrElse(throw new RuntimeException("Month/Year not selected"))
     val email      = ua.get(ConfirmEmailAddressPage)
@@ -159,7 +159,7 @@ class SubmissionService @Inject() (
         .getOrElse(throw new IllegalStateException("Email address missing"))
 
       val yearMonth = userAnswers
-        .get(DateConfirmNilPaymentsPage)
+        .get(DateConfirmPaymentsPage)
         .map(YearMonth.from)
         .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 
@@ -184,7 +184,7 @@ class SubmissionService @Inject() (
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
     val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
+      .get(DateConfirmPaymentsPage)
       .map(YearMonth.from)
       .getOrElse(throw new RuntimeException("Month/Year not selected"))
     val email      = ua.get(ConfirmEmailAddressPage)
@@ -235,7 +235,7 @@ class SubmissionService @Inject() (
 
     val inactivity = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
     val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
+      .get(DateConfirmPaymentsPage)
       .map(YearMonth.from)
       .getOrElse(throw new RuntimeException("Month/Year not selected"))
     val email      = ua.get(ConfirmEmailAddressPage).get

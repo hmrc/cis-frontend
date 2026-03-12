@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.NormalMode
+import models.ReturnType.MonthlyNilReturn
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -43,6 +44,8 @@ class SubmissionUnsuccessfulController @Inject() (
 
   def onSubmit: Action[AnyContent] =
     identify { implicit request =>
-      Redirect(controllers.monthlyreturns.routes.DateConfirmNilPaymentsController.onPageLoad(NormalMode))
+      Redirect(
+        controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(MonthlyNilReturn))
+      )
     }
 }
