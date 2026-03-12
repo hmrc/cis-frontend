@@ -17,7 +17,9 @@
 package services
 
 import base.SpecBase
-import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturnItem, Subcontractor}
+import models.UserAnswers
+import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturnItem, SelectedSubcontractor, Subcontractor}
+import play.api.libs.json.Json
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.http.HeaderCarrier
 import org.mockito.Mockito.*
@@ -178,6 +180,176 @@ class SubcontractorServiceSpec extends SpecBase {
 
         byId(2).verificationNumber mustBe "123457"
         byId(2).taxTreatment mustBe "Gross"
+      }
+    }
+
+    "uses ids from UserAnswers when defaultSelection is None and selectedSubcontractors is non-empty" in {
+      val response = mkResponse(
+        items = Seq(mkItem(2002L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = None, verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val ua = UserAnswers(
+        id = "id",
+        data = Json.obj(
+          "subcontractors" -> Json.obj(
+            "0" -> Json.toJson(
+              SelectedSubcontractor(
+                id = 1L,
+                name = "Subbie 1",
+                totalPaymentsMade = None,
+                costOfMaterials = None,
+                totalTaxDeducted = None
+              )
+            )
+          )
+        )
+      )
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          userAnswers = Some(ua),
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        // Sub 2 was included last month, but the saved UserAnswers contain sub 1,
+        // so the `case None if selectedSubcontractors.nonEmpty` branch fires and
+        // returns sub 1's id rather than the last-month selection.
+        model.initiallySelectedIds mustBe Seq(1)
+      }
+    }
+
+    "preselects all subcontractors when defaultSelection is Some(true)" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = Some(true),
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.initiallySelectedIds mustBe Seq(1, 2)
+      }
+    }
+
+    "maps taxTreatment 'net' to 'Standard rate' when verification is not required" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(
+            id = 1L,
+            ref = Some(1001L),
+            verified = Some("Y"),
+            verificationDate = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
+            lastMrDate = None,
+            verificationNumber = Some("VN001"),
+            taxTreatment = Some("net")
+          )
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.subcontractors.head.taxTreatment mustBe "Standard rate"
+      }
+    }
+
+    "maps taxTreatment 'unmatched' to 'Higher rate' when verification is not required" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(
+            id = 1L,
+            ref = Some(1001L),
+            verified = Some("Y"),
+            verificationDate = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
+            lastMrDate = None,
+            verificationNumber = Some("VN001"),
+            taxTreatment = Some("unmatched")
+          )
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.subcontractors.head.taxTreatment mustBe "Higher rate"
+      }
+    }
+
+    "preselects no subcontractors when defaultSelection is Some(false)" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1001L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = Some(false),
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.initiallySelectedIds mustBe Seq.empty
       }
     }
   }

@@ -18,9 +18,10 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
-import models.Mode
-import pages.monthlyreturns.SubcontractorDetailsAddedPage
+import models.{Mode, NormalMode}
+import pages.monthlyreturns.{SelectedSubcontractorPage, SubcontractorDetailsAddedPage}
 import play.api.Logging
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -45,19 +46,13 @@ class SubcontractorDetailsAddedController @Inject() (
     with I18nSupport
     with Logging {
 
-  val form = formProvider()
+  val form: Form[Boolean] = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     val ua = request.userAnswers
     SubcontractorDetailsAddedBuilder.build(ua) match {
       case Some(viewModel) =>
-        val preparedForm =
-          request.userAnswers.get(SubcontractorDetailsAddedPage) match {
-            case Some(value) => form.fill(value)
-            case None        => form
-          }
-
-        Ok(view(preparedForm, mode, viewModel))
+        Ok(view(form, mode, viewModel))
 
       case None =>
         Redirect(controllers.routes.SystemErrorController.onPageLoad())
@@ -71,6 +66,7 @@ class SubcontractorDetailsAddedController @Inject() (
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
         case Some(viewModel) =>
+          val subcontractors = request.userAnswers.get(SelectedSubcontractorPage.all).getOrElse(Map())
           form
             .bindFromRequest()
             .fold(
@@ -79,20 +75,20 @@ class SubcontractorDetailsAddedController @Inject() (
                 val updatedUa =
                   request.userAnswers.set(SubcontractorDetailsAddedPage, answer).getOrElse(request.userAnswers)
 
-                sessionRepository.set(updatedUa).flatMap { _ =>
-                  if (answer) {
-                    if (viewModel.hasIncomplete) {
-                      val withError =
-                        form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
-                      Future.successful(BadRequest(view(withError, mode, viewModel)))
-                    } else {
-                      Future.successful(
-                        Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
-                      )
-                    }
+                sessionRepository.set(updatedUa).map { _ =>
+                  if (answer && viewModel.hasIncomplete) {
+                    val withError =
+                      form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+                    BadRequest(view(withError, mode, viewModel))
+                  } else if (answer) {
+                    Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
+                  } else if (!answer && subcontractors.values.exists(!_.isComplete)) {
+                    Redirect(
+                      controllers.monthlyreturns.routes.AddSubcontractorDetailsController.onPageLoad(NormalMode)
+                    )
                   } else {
-                    Future.successful(
-                      Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))
+                    Redirect(
+                      controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
                     )
                   }
                 }
