@@ -352,5 +352,63 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustEqual onwardRoute.url
       }
     }
+
+    "must redirect to system error page when agent has no access to this client" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val agentClientData = AgentClientData(
+        uniqueId = "CIS-AGENT-123",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        schemeName = Some("Test Employer")
+      )
+
+      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(Some(agentClientData)))
+      when(mockMonthlyReturnService.hasClient(eqTo("123"), eqTo("AB456"))(any()))
+        .thenReturn(Future.successful(false))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
+
+    "must redirect to system error page when agent client data is missing" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.successful(None))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val result = route(application, postRequest()).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
   }
 }

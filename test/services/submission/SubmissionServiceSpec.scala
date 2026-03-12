@@ -19,7 +19,7 @@ package services.submission
 import base.SpecBase
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.ReturnType.MonthlyNilReturn
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
@@ -141,6 +141,71 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         service.create(ua).futureValue
       }
       ex.getMessage must include("Date of return missing for monthly nil return")
+      verifyNoInteractions(connector)
+    }
+
+    "build request using DateConfirmPaymentsPage for monthly standard return" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val ua = emptyUserAnswers
+        .set(CisIdPage, "123")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 11, 10))
+        .success
+        .value
+        .set(ConfirmEmailAddressPage, "test@test.com")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+
+      val beResp = CreateSubmissionResponse("sub-123")
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(beResp))
+
+      service.create(ua).futureValue
+
+      val cap: ArgumentCaptor[CreateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[CreateSubmissionRequest])
+      verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
+      cap.getValue.taxYear mustBe 2025
+      cap.getValue.taxMonth mustBe 11
+    }
+
+    "fail when ReturnTypePage is missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val ua = emptyUserAnswers
+        .set(CisIdPage, "123")
+        .success
+        .value
+        .set(ConfirmEmailAddressPage, "test@test.com")
+        .success
+        .value
+
+      val ex = intercept[RuntimeException] {
+        service.create(ua).futureValue
+      }
+
+      ex.getMessage must include("Return type missing or invalid")
       verifyNoInteractions(connector)
     }
   }
@@ -1045,6 +1110,156 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verifyNoInteractions(connector)
       verifyNoInteractions(sessionRepository)
     }
+
+    "send email using DateConfirmPaymentsPage for monthly standard return" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig =
+        new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submissionId = "sub-123"
+      val ua = UserAnswers("id", Json.obj())
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = submissionId,
+            status = "SUBMITTED",
+            irMark = "IR-MARK-123",
+            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+          )
+        )
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5))
+        .success
+        .value
+        .set(EnterYourEmailAddressPage, "standard@test.com")
+        .success
+        .value
+
+      when(
+        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
+      ).thenReturn(Future.unit)
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.sendSuccessEmail(ua).futureValue
+
+      val reqCaptor: ArgumentCaptor[SendSuccessEmailRequest] =
+        ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
+
+      verify(connector)
+        .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+
+      reqCaptor.getValue.month mustBe "10"
+      reqCaptor.getValue.year mustBe "2025"
+    }
+
+    "do not send email and just persist when monthly standard return email is missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig =
+        new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submissionId = "sub-123"
+      val ua = UserAnswers("id", Json.obj())
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = submissionId,
+            status = "SUBMITTED",
+            irMark = "IR-MARK-123",
+            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+          )
+        )
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5))
+        .success
+        .value
+        .set(EnterYourEmailAddressPage, "   ")
+        .success
+        .value
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val out = service.sendSuccessEmail(ua).futureValue
+
+      out.get(SuccessEmailSentPage(submissionId)).value mustBe true
+      verifyNoInteractions(connector)
+      verify(sessionRepository).set(any[UserAnswers])
+    }
+
+    "send email using EnterYourEmailAddressPage for monthly standard return" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig =
+        new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submissionId = "sub-123"
+      val ua = UserAnswers("id", Json.obj())
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = submissionId,
+            status = "SUBMITTED",
+            irMark = "IR-MARK-123",
+            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+          )
+        )
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5))
+        .success
+        .value
+        .set(EnterYourEmailAddressPage, "standard@test.com")
+        .success
+        .value
+
+      when(
+        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
+      ).thenReturn(Future.unit)
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.sendSuccessEmail(ua).futureValue
+
+      val reqCaptor: ArgumentCaptor[SendSuccessEmailRequest] =
+        ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
+
+      verify(connector)
+        .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+
+      reqCaptor.getValue.email mustBe "standard@test.com"
+    }
+
   }
 
   private def uaBase: UserAnswers =
