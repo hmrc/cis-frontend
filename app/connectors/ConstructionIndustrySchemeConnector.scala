@@ -147,6 +147,10 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     submissionId: String,
     request: ChrisSubmissionRequest
   )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
+    val jsonBody = Json.toJson(request)
+    logger.info(
+      s"[submitToChris] submissionId=$submissionId payload=${Json.prettyPrint(jsonBody)}"
+    )
     http
       .post(url"$cisBaseUrl/submissions/$submissionId/submit-to-chris")
       .withBody(Json.toJson(request))

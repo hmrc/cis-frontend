@@ -16,6 +16,7 @@
 
 package models.submission
 
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
@@ -24,89 +25,81 @@ import java.time.YearMonth
 
 class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
 
-  "ChrisSubmissionRequest.from" should {
-    "map booleans to 'yes'/'no' and YearMonth to ISO yyyy-MM" in {
-      val yearMonth = YearMonth.of(2025, 3)
-      val dto       = ChrisSubmissionRequest.from(
-        utr = "1234567890",
-        aoReference = "123/AB456",
-        informationCorrect = true,
-        inactivity = false,
-        monthYear = yearMonth,
-        email = "test@test.com",
-        isAgent = false,
-        clientTaxOfficeNumber = "123",
-        clientTaxOfficeRef = "AB456"
-      )
+  "ChrisSubmissionRequest" should {
 
-      dto.utr mustBe "1234567890"
-      dto.aoReference mustBe "123/AB456"
-      dto.informationCorrect mustBe "yes"
-      dto.inactivity mustBe "no"
-      dto.monthYear mustBe "2025-03"
-      dto.email mustBe "test@test.com"
-      dto.isAgent mustBe false
-      dto.clientTaxOfficeNumber mustBe "123"
-      dto.clientTaxOfficeRef mustBe "AB456"
-    }
-  }
-
-  "ChrisSubmissionRequest JSON format" should {
-    "write to the expected JSON shape" in {
-      val dto = ChrisSubmissionRequest(
+    "JSON round-trip" in {
+      val model = ChrisSubmissionRequest(
         utr = "1234567890",
-        aoReference = "123/AB456",
+        aoReference = "754PT00002240",
         informationCorrect = "yes",
         inactivity = "no",
-        monthYear = "2025-03",
-        email = "test@test.com",
+        monthYear = "2025-09",
+        email = Some("test@test.com"),
         isAgent = false,
+        clientTaxOfficeNumber = "",
+        clientTaxOfficeRef = "",
+        returnType = MonthlyNilReturn,
+        standard = None
+      )
+
+      Json.toJson(model).validate[ChrisSubmissionRequest] mustBe JsSuccess(model)
+    }
+
+    "fromNil builds request with yes/no values, trims email, sets returnType and standard=None" in {
+      val common = ChrisSubmissionCommon(
+        utr = "1234567890",
+        aoReference = "754PT00002240",
+        monthYear = YearMonth.of(2025, 9),
+        email = Some("  test@test.com  "),
+        isAgent = false,
+        clientTaxOfficeNumber = "",
+        clientTaxOfficeRef = ""
+      )
+
+      val req = ChrisSubmissionRequest.fromNil(
+        common = common,
+        informationCorrect = true,
+        inactivity = false
+      )
+
+      req.utr mustBe "1234567890"
+      req.aoReference mustBe "754PT00002240"
+      req.monthYear mustBe "2025-09"
+      req.email mustBe Some("test@test.com")
+      req.informationCorrect mustBe "yes"
+      req.inactivity mustBe "no"
+      req.returnType mustBe MonthlyNilReturn
+      req.standard mustBe None
+    }
+
+    "fromStandard builds request with returnType=MonthlyStandardReturn and standard=Some(...)" in {
+      val common = ChrisSubmissionCommon(
+        utr = "1234567890",
+        aoReference = "754PT00002240",
+        monthYear = YearMonth.of(2025, 9),
+        email = Some(" test@test.com "),
+        isAgent = true,
         clientTaxOfficeNumber = "123",
         clientTaxOfficeRef = "AB456"
       )
 
-      val json     = Json.toJson(dto)
-      val expected = Json.parse("""{
-          |  "utr": "1234567890",
-          |  "aoReference": "123/AB456",
-          |  "informationCorrect": "yes",
-          |  "inactivity": "no",
-          |  "monthYear": "2025-03",
-          |  "email": "test@test.com",
-          |  "isAgent": false,
-          |  "clientTaxOfficeNumber" : "123",
-          |  "clientTaxOfficeRef": "AB456"
-          |}""".stripMargin)
+      val standard = ChrisStandardMonthlyReturn(
+        subcontractors = Seq.empty,
+        declarations = ChrisStandardDeclarations("yes", "yes")
+      )
 
-      json mustBe expected
-    }
+      val req = ChrisSubmissionRequest.fromStandard(
+        common = common,
+        informationCorrect = true,
+        inactivity = true,
+        standard = standard
+      )
 
-    "read from JSON into the model" in {
-      val json = Json.parse("""{
-          |  "utr": "1234567890",
-          |  "aoReference": "123/AB456",
-          |  "informationCorrect": "yes",
-          |  "inactivity": "no",
-          |  "monthYear": "2025-03",
-          |  "email": "test@test.com",
-          |  "isAgent": false,
-          |  "clientTaxOfficeNumber" : "123",
-          |  "clientTaxOfficeRef": "AB456"
-          |}""".stripMargin)
-
-      val result = json.validate[ChrisSubmissionRequest]
-      result.isSuccess mustBe true
-
-      val dto = result.get
-      dto.utr mustBe "1234567890"
-      dto.aoReference mustBe "123/AB456"
-      dto.informationCorrect mustBe "yes"
-      dto.inactivity mustBe "no"
-      dto.monthYear mustBe "2025-03"
-      dto.email mustBe "test@test.com"
-      dto.isAgent mustBe false
-      dto.clientTaxOfficeNumber mustBe "123"
-      dto.clientTaxOfficeRef mustBe "AB456"
+      req.returnType mustBe MonthlyStandardReturn
+      req.standard mustBe Some(standard)
+      req.email mustBe Some("test@test.com")
+      req.informationCorrect mustBe "yes"
+      req.inactivity mustBe "yes"
     }
   }
 }
