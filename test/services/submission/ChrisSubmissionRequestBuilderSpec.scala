@@ -42,7 +42,7 @@ class ChrisSubmissionRequestBuilderSpec
     with TryValues {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier    = HeaderCarrier()
 
   private def mkTaxpayer(): CisTaxpayer =
     CisTaxpayer(
@@ -108,7 +108,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "build MonthlyNilReturn request (minimal)" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")
@@ -149,7 +149,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "build MonthlyStandardReturn request" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val subId: Long = 1L
 
@@ -216,7 +216,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when ReturnTypePage missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua = UserAnswers("id")
 
@@ -229,7 +229,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when taxpayer UTR is missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val taxpayer = mkTaxpayer().copy(utr = None)
 
@@ -251,7 +251,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when taxpayer aoDistrict is missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val taxpayer = mkTaxpayer().copy(aoDistrict = None)
 
@@ -273,7 +273,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when taxpayer aoPayType is missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val taxpayer = mkTaxpayer().copy(aoPayType = None)
 
@@ -295,7 +295,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when taxpayer aoCheckCode is missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val taxpayer = mkTaxpayer().copy(aoCheckCode = None)
 
@@ -317,7 +317,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when taxpayer aoReference is missing" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val taxpayer = mkTaxpayer().copy(aoReference = None)
 
@@ -339,7 +339,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when month and year of return are missing for nil return" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")
@@ -356,7 +356,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when month and year of return are missing for standard return" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")
@@ -373,7 +373,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when employment status declaration is missing for standard return" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")
@@ -399,7 +399,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when verification answer is missing for standard return" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")
@@ -425,7 +425,7 @@ class ChrisSubmissionRequestBuilderSpec
 
     "fail when CIS ID is missing for standard return" in {
       val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder = new ChrisSubmissionRequestBuilder(connector)
+      val builder   = new ChrisSubmissionRequestBuilder(connector)
 
       val ua =
         UserAnswers("id")

@@ -358,7 +358,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      val agentClientData = AgentClientData(
+      val agentClientData          = AgentClientData(
         uniqueId = "CIS-AGENT-123",
         taxOfficeNumber = "123",
         taxOfficeReference = "AB456",

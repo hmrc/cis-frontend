@@ -146,14 +146,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "build request using DateConfirmPaymentsPage for monthly standard return" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig = new FrontendAppConfig(
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
         Configuration(
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -184,14 +184,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when ReturnTypePage is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig = new FrontendAppConfig(
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
         Configuration(
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -206,6 +206,33 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       }
 
       ex.getMessage must include("Return type missing or invalid")
+      verifyNoInteractions(connector)
+    }
+
+    "fail when Month/Year is missing for monthly standard return" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val ua = emptyUserAnswers
+        .set(CisIdPage, "123")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+
+      val ex = intercept[RuntimeException] {
+        service.create(ua).futureValue
+      }
+
+      ex.getMessage mustBe "Date of return missing for monthly standard return"
       verifyNoInteractions(connector)
     }
   }
@@ -1113,14 +1140,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "send email using DateConfirmPaymentsPage for monthly standard return" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig =
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
-      val ua = UserAnswers("id", Json.obj())
+      val ua           = UserAnswers("id", Json.obj())
         .set(
           SubmissionDetailsPage,
           SubmissionDetails(
@@ -1146,7 +1173,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(
-        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
+        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(
+          any[HeaderCarrier],
+          any[ExecutionContext]
+        )
       ).thenReturn(Future.unit)
 
       when(sessionRepository.set(any[UserAnswers]))
@@ -1166,14 +1196,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "do not send email and just persist when monthly standard return email is missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig =
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
-      val ua = UserAnswers("id", Json.obj())
+      val ua           = UserAnswers("id", Json.obj())
         .set(
           SubmissionDetailsPage,
           SubmissionDetails(
@@ -1210,14 +1240,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "send email using EnterYourEmailAddressPage for monthly standard return" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig =
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
-      val ua = UserAnswers("id", Json.obj())
+      val ua           = UserAnswers("id", Json.obj())
         .set(
           SubmissionDetailsPage,
           SubmissionDetails(
@@ -1243,7 +1273,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(
-        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
+        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(
+          any[HeaderCarrier],
+          any[ExecutionContext]
+        )
       ).thenReturn(Future.unit)
 
       when(sessionRepository.set(any[UserAnswers]))
@@ -1260,6 +1293,75 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       reqCaptor.getValue.email mustBe "standard@test.com"
     }
 
+    "throw IllegalStateException when ReturnTypePage missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig =
+        new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submissionId = "sub-123"
+      val ua = UserAnswers("id", Json.obj())
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = submissionId,
+            status = "SUBMITTED",
+            irMark = "IR-MARK-123",
+            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+          )
+        )
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+
+      val ex = intercept[IllegalStateException] {
+        service.sendSuccessEmail(ua).futureValue
+      }
+
+      ex.getMessage mustBe "Return type missing"
+    }
+
+    "throw IllegalStateException when DateConfirmPaymentsPage missing for monthly standard return" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig =
+        new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submissionId = "sub-123"
+      val ua = UserAnswers("id", Json.obj())
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = submissionId,
+            status = "SUBMITTED",
+            irMark = "IR-MARK-123",
+            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+          )
+        )
+        .success
+        .value
+        .set(SuccessEmailSentPage(submissionId), false)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(EnterYourEmailAddressPage, "standard@test.com")
+        .success
+        .value
+
+      val ex = intercept[IllegalStateException] {
+        service.sendSuccessEmail(ua).futureValue
+      }
+
+      ex.getMessage mustBe "Month/Year not selected"
+    }
   }
 
   private def uaBase: UserAnswers =

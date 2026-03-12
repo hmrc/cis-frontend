@@ -36,7 +36,7 @@ class StandardReturnSubcontractorsBuilderSpec extends AnyWordSpec with Matchers 
 
   private def mkSub(
     id: Long,
-    subType: String,
+    subType: Option[String],
     tradingName: Option[String] = None,
     firstName: Option[String] = Some("A"),
     secondName: Option[String] = Some("M"),
@@ -55,7 +55,7 @@ class StandardReturnSubcontractorsBuilderSpec extends AnyWordSpec with Matchers 
       surname = surname,
       partnershipTradingName = None,
       tradingName = tradingName,
-      subcontractorType = Some(subType),
+      subcontractorType = subType,
       addressLine1 = None,
       addressLine2 = None,
       addressLine3 = None,
@@ -84,6 +84,27 @@ class StandardReturnSubcontractorsBuilderSpec extends AnyWordSpec with Matchers 
 
   "StandardReturnSubcontractorsBuilder.build" should {
 
+    "throw when matching subcontractor has missing subcontractor type" in {
+      val selected = SelectedSubcontractor(
+        id = 1L,
+        name = "A B",
+        totalPaymentsMade = None,
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+
+      val ua = uaWithSelected(0, selected)
+
+      val ex = intercept[RuntimeException] {
+        StandardReturnSubcontractorsBuilder.build(
+          ua,
+          allSubs = Seq(mkSub(1L, None))
+        )
+      }
+
+      ex.getMessage mustBe "Missing subcontractor type"
+    }
+
     "throw when no subcontractors selected" in {
       val ua = UserAnswers("id", Json.obj())
       val ex = intercept[RuntimeException] {
@@ -106,7 +127,7 @@ class StandardReturnSubcontractorsBuilderSpec extends AnyWordSpec with Matchers 
       val allSubs = Seq(
         mkSub(
           id = 1L,
-          subType = "soletrader",
+          subType = Some("soletrader"),
           tradingName = Some("   ")
         )
       )
@@ -137,7 +158,7 @@ class StandardReturnSubcontractorsBuilderSpec extends AnyWordSpec with Matchers 
       val ua = uaWithSelected(0, selected)
 
       val ex = intercept[RuntimeException] {
-        StandardReturnSubcontractorsBuilder.build(ua, allSubs = Seq(mkSub(1L, "soletrader")))
+        StandardReturnSubcontractorsBuilder.build(ua, allSubs = Seq(mkSub(1L, Some("soletrader"))))
       }
 
       ex.getMessage must include("No subcontractor found with id 999")

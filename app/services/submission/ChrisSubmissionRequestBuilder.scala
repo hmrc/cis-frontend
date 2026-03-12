@@ -139,10 +139,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
     )
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
-    val ym         = ua
-      .get(DateConfirmPaymentsPage)
-      .map(YearMonth.from)
-      .getOrElse(throw new RuntimeException("Month and year of return missing"))
+    val ym         = YearMonth.from(ua.get(DateConfirmPaymentsPage).get)
 
     cisConnector
       .retrieveMonthlyReturnForEditDetails(instanceId, ym.getMonthValue, ym.getYear)
