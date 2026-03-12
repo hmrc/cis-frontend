@@ -28,36 +28,36 @@
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("monthlyreturns.resubmissionUnsuccessful.title")), showBackLink = false) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessfulResubmit.title")), showBackLink = false) {
 
-    @h1("monthlyreturns.resubmissionUnsuccessful.heading")
+    @h1("monthlyreturns.submissionUnsuccessfulResubmit.heading")
 
     @link(
-        linkTextKey   = "monthlyreturns.resubmissionUnsuccessful.p1.links.text",
-        linkUrl       = appConfig.manageYourReturnDashboardUrl,
-        prefixTextKey = "monthlyreturns.resubmissionUnsuccessful.p1.links.prefix",
-        suffixTextKey = "monthlyreturns.resubmissionUnsuccessful.p1.links.suffix",
+        linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.text",
+        linkUrl       = appConfig.manageYourCisReturn,
+        prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.prefix",
+        suffixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.suffix",
     )
 
     @govukWarningText(
         WarningTextViewModel(
-            content = Text(messages("monthlyreturns.resubmissionUnsuccessful.p2.warning"))
+            content = Text(messages("monthlyreturns.submissionUnsuccessfulResubmit.p2.warning"))
         )
     )
 
     @link(
-        linkTextKey   = "monthlyreturns.resubmissionUnsuccessful.p3.links.text",
+        linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p3.links.text",
         linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
-        prefixTextKey = "monthlyreturns.resubmissionUnsuccessful.p3.links.prefix",
+        prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p3.links.prefix",
         isNewTab      = true,
     )
 
-    @paragraph("monthlyreturns.resubmissionUnsuccessful.p4")
+    @paragraph("monthlyreturns.submissionUnsuccessfulResubmit.p4")
 
-    @bulletList(Seq("monthlyreturns.resubmissionUnsuccessful.list.l1", "monthlyreturns.resubmissionUnsuccessful.list.l2"))
+    @bulletList(Seq("monthlyreturns.submissionUnsuccessfulResubmit.list.l1", "monthlyreturns.submissionUnsuccessfulResubmit.list.l2"))
 
     @link(
-        linkTextKey   = "monthlyreturns.resubmissionUnsuccessful.p5.links.text",
-        linkUrl       = appConfig.manageYourReturnDashboardUrl
+        linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text",
+        linkUrl       = appConfig.manageYourCisReturn
     )
 }

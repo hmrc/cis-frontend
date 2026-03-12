@@ -19,9 +19,9 @@ package controllers.monthlyreturns
 import base.SpecBase
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import views.html.monthlyreturns.ResubmissionUnsuccessfulView
+import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
-class ResubmissionUnsuccessfulControllerSpec extends SpecBase {
+class SubmissionUnsuccessfulResubmitControllerSpec extends SpecBase {
 
   "ResubmissionUnsuccessful Controller" - {
 
@@ -30,11 +30,11 @@ class ResubmissionUnsuccessfulControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.ResubmissionUnsuccessfulController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url)
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[ResubmissionUnsuccessfulView]
+        val view = application.injector.instanceOf[SubmissionUnsuccessfulResubmitView]
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view()(request, messages(application)).toString

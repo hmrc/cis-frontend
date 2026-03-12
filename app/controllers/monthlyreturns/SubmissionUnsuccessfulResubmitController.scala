@@ -20,17 +20,17 @@ import controllers.actions.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.ResubmissionUnsuccessfulView
+import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
 import javax.inject.Inject
 
-class ResubmissionUnsuccessfulController @Inject() (
+class SubmissionUnsuccessfulResubmitController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: ResubmissionUnsuccessfulView
+  view: SubmissionUnsuccessfulResubmitView
 ) extends FrontendBaseController
     with I18nSupport {
 
