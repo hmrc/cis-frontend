@@ -30,19 +30,13 @@ class Navigator @Inject() () {
   private val normalRoutes: Page => UserAnswers => Call = {
     // nil return
     case DateConfirmNilPaymentsPage =>
-      _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
     case InactivityRequestPage      =>
-      _ => controllers.monthlyreturns.routes.ConfirmEmailAddressController.onPageLoad(NormalMode)
+      _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
     case ConfirmEmailAddressPage    =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case DeclarationPage            =>
-      userAnswers =>
-        userAnswers.get(InactivityRequestPage) match {
-          case Some(InactivityRequest.Option2)        =>
-            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-          case Some(InactivityRequest.Option1) | None =>
-            controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
-        }
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case InactivityWarningPage      =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
@@ -59,6 +53,22 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+    case PaymentDetailsConfirmationPage                =>
+      userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
+    case EmploymentStatusDeclarationPage               =>
+      userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
+    case VerifiedStatusDeclarationPage                 =>
+      userAnswers => navigatorFromVerifiedStatusDeclarationPage(NormalMode)(userAnswers)
+    case SubmitInactivityRequestPage                   =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(NormalMode)(userAnswers)
+    case ConfirmationByEmailPage                       =>
+      userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
+    case EnterYourEmailAddressPage                     =>
+      userAnswers =>
+        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        else
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
@@ -77,6 +87,16 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case SelectedSubcontractorTaxDeductedPage(index)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+    case EmploymentStatusDeclarationPage               =>
+      userAnswers => navigatorFromEmploymentStatusDeclarationPage(CheckMode)(userAnswers)
+    case VerifiedStatusDeclarationPage                 =>
+      userAnswers => navigatorFromVerifiedStatusDeclarationPage(CheckMode)(userAnswers)
+    case SubmitInactivityRequestPage                   =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(CheckMode)(userAnswers)
+    case ConfirmationByEmailPage                       =>
+      userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
+    case EnterYourEmailAddressPage                     =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
@@ -86,4 +106,62 @@ class Navigator @Inject() () {
     case CheckMode  =>
       checkRouteMap(page)(userAnswers)
   }
+
+  private def navigatorFromPaymentDetailsConfirmationPage()(userAnswers: UserAnswers): Call =
+    userAnswers.get(PaymentDetailsConfirmationPage) match {
+      case Some(true)  =>
+        controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+      case Some(false) =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+      case _           => controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromEmploymentStatusDeclarationPage(
+    mode: Mode
+  )(userAnswers: UserAnswers): Call =
+    (userAnswers.get(EmploymentStatusDeclarationPage), mode) match {
+      case (Some(_), NormalMode) =>
+        controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+      case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromVerifiedStatusDeclarationPage(
+    mode: Mode
+  )(userAnswers: UserAnswers): Call =
+    (userAnswers.get(VerifiedStatusDeclarationPage), mode) match {
+      case (Some(_), NormalMode) =>
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+      case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromSubmitInactivityRequestPage(
+    mode: Mode
+  )(userAnswers: UserAnswers): Call =
+    (userAnswers.get(SubmitInactivityRequestPage), mode) match {
+      case (Some(true), NormalMode)  =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode)
+      case (Some(true), CheckMode)   =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
+      case (Some(false), NormalMode) =>
+        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+      case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromConfirmationByEmailPage(
+    mode: Mode
+  )(userAnswers: UserAnswers): Call =
+    (userAnswers.get(ConfirmationByEmailPage), mode) match {
+      case (Some(true), mode)        =>
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(mode)
+      case (Some(false), NormalMode) =>
+        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        else
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
 }
