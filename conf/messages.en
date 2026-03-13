@@ -229,7 +229,7 @@ monthlyreturns.submissionAwaiting.details.list.l1 = HMRC systems are validating 
 monthlyreturns.submissionAwaiting.details.list.l2 = your submission is being checked for errors
 monthlyreturns.submissionAwaiting.details.list.l3 = a confirmation receipt is being generated
 monthlyreturns.submissionAwaiting.links.prefix = For technical problems, contact the
-monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk = HMRC Online Services Helpdesk (opens in new tab).
+monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk = HMRC Online Services Helpdesk (opens in new tab)
 monthlyreturns.submissionAwaiting.links.submit = Back to Manage your CIS return
 
 monthlyreturns.submissionSuccess.title = Monthly return successfully submitted
