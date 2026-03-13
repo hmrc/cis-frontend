@@ -42,19 +42,19 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
       }
 
       "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+
         val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
-          val result  = route(application, request).value
+          val request = FakeRequest(GET, submissionAwaitingRoute)
+
+          val result = route(application, request).value
 
           status(result) mustEqual SEE_OTHER
 
           redirectLocation(
             result
-          ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
-            .onPageLoad()
-            .url
+          ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
         }
       }
 
