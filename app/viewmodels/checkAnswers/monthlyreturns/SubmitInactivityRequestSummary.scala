@@ -17,29 +17,29 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.VerifiedStatusDeclarationPage
+import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object VerifiedStatusDeclarationSummary {
+object SubmitInactivityRequestSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(VerifiedStatusDeclarationPage).map { answer =>
+    answers.get(SubmitInactivityRequestPage).map { answer =>
 
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
-        key = "monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel",
+        key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
           )
-            .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
-            .withAttribute("id" -> "change-verified-status-declaration")
+            .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
+            .withAttribute("id" -> "change-submit-inactivity-request")
         )
       )
     }
