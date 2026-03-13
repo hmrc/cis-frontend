@@ -41,7 +41,7 @@ class SubmissionAwaitingController @Inject() (
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
       val cisId = request.userAnswers.get(CisIdPage).getOrElse {
-        logger.error("[SubmissionUnsuccessful] cisId missing from userAnswers")
+        logger.error("[SubmissionAwaiting] cisId missing from userAnswers")
         throw new IllegalStateException("cisId missing from userAnswers")
       }
       Ok(view(cisId))
