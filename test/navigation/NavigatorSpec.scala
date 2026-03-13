@@ -31,12 +31,12 @@ class NavigatorSpec extends SpecBase {
 
     "in Normal mode" - {
 
-      "must go from DateConfirmNilPaymentsPage to InactivityRequestController" in {
+      "must go from DateConfirmNilPaymentsPage to SubmitInactivityRequestController" in {
         navigator.nextPage(
           DateConfirmNilPaymentsPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
       }
 
       "must go from InactivityRequestPage to ConfirmationByEmailController" in {
@@ -55,30 +55,12 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
       }
 
-      "must go from DeclarationPage to CheckYourAnswers when inactivity request is NO" in {
-        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option2)
-        navigator.nextPage(
-          DeclarationPage,
-          NormalMode,
-          ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      }
-
-      "must go from DeclarationPage to InactivityWarning when inactivity request is YES" in {
-        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option1)
-        navigator.nextPage(
-          DeclarationPage,
-          NormalMode,
-          ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
-      }
-
-      "must go from DeclarationPage to InactivityWarning when inactivity request is missing" in {
+      "must go from DeclarationPage to CheckYourAnswers" in {
         navigator.nextPage(
           DeclarationPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
       "must go from InactivityWarningPage to CheckYourAnswers" in {
@@ -282,8 +264,8 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from DeclarationPage to CheckYourAnswers when SubmitInactivityRequestPage is false" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, false)
+      "must go from DeclarationPage to CheckYourAnswers regardless of SubmitInactivityRequestPage value" in {
+        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
         navigator.nextPage(
           DeclarationPage,
           NormalMode,
@@ -437,7 +419,7 @@ class NavigatorSpec extends SpecBase {
           ConfirmationByEmailPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode)
       }
 
       "must go from ConfirmationByEmailPage to CheckYourAnswers in CheckMode when answer is false" in {

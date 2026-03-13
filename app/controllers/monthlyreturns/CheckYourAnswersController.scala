@@ -62,7 +62,7 @@ class CheckYourAnswersController @Inject() (
           Seq(
             DateConfirmNilPaymentsSummary.row(request.userAnswers),
             PaymentsToSubcontractorsSummary.row,
-            InactivityRequestSummary.row(request.userAnswers)
+            SubmitInactivityRequestSummary.row(request.userAnswers)
           )
       }
 
