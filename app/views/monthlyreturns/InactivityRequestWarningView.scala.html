@@ -23,7 +23,7 @@
     paragraph: components.Paragraph
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(nextUrl: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.inactivityRequestWarning.title"))) {
 
@@ -34,7 +34,8 @@
 
     @govukButton(
         ButtonViewModel(
-            messages("site.acceptAndContinue")
-        )
+            messages("site.acceptAndContinue"))
+                .asLink(nextUrl)
     )
+
 }

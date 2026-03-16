@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package utils
 
-import models.UserAnswers
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+object Normalise {
 
-import scala.util.Try
+  def nonBlank(value: Option[String]): Option[String] =
+    value.map(_.trim).filter(_.nonEmpty)
 
-case object ConfirmationByEmailPage extends QuestionPage[Boolean] {
+  def isBLank(value: Option[String]): Boolean =
+    nonBlank(value).isEmpty
 
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "confirmationByEmail"
-
-  override def cleanup(value: Option[Boolean], userAnswers: UserAnswers): Try[UserAnswers] =
-    value match {
-      case Some(false) | None => userAnswers.remove(EnterYourEmailAddressPage)
-      case _                  => super.cleanup(value, userAnswers)
-    }
+  def yesNo(boolean: Boolean): String =
+    if (boolean) "yes" else "no"
 }

@@ -18,61 +18,42 @@
 
 @this(
         layout: templates.Layout,
-        govukButton: GovukButton,
         formHelper: FormWithCSRF,
         h1: components.H1,
-        h2: components.H2,
         paragraph: components.Paragraph,
         bulletList: components.BulletList,
         link: components.Link,
         govukWarningText: GovukWarningText,
-        govukDetails: GovukDetails,
         appConfig: FrontendAppConfig
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(cisId:String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessful.title")),
         showBackLink = false
         ) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onSubmit) {
-
         @h1("monthlyreturns.submissionUnsuccessful.heading.h1")
         @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p1", baseClass="govuk-body-lead")
+        @govukWarningText(
+            WarningTextViewModel(
+            content = Text(messages("monthlyreturns.submissionUnsuccessful.warning"))
+            )
+        )
         @link(
             linkTextKey   = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
             linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
             isNewTab      = true,
             prefixTextKey = "monthlyreturns.submissionUnsuccessful.links.prefix"
         )
-        @govukDetails(
-            Details(
-                summary = Text(messages("monthlyreturns.submissionUnsuccessful.details.summary")),
-                content = HtmlContent(
-                    paragraph("monthlyreturns.submissionUnsuccessful.details.intro").toString +
-                    bulletList(Seq(
-                        "monthlyreturns.submissionUnsuccessful.details.li1",
-                        "monthlyreturns.submissionUnsuccessful.details.li2",
-                        "monthlyreturns.submissionUnsuccessful.details.li3",
-                        "monthlyreturns.submissionUnsuccessful.details.li4"
-                    )).toString +
-                    paragraph("monthlyreturns.submissionUnsuccessful.paragraph.outro").toString
-                )
-            )
+        @paragraph("monthlyreturns.submissionUnsuccessful.details.intro")
+        @bulletList(Seq(
+            "monthlyreturns.submissionUnsuccessful.details.li1",
+            "monthlyreturns.submissionUnsuccessful.details.li2",
+        ))
+        @link(
+            linkTextKey = messages("monthlyreturns.submissionUnsuccessful.submit"),
+            linkUrl   = appConfig.manageYourCisReturn + cisId,
+            hasFullStop = true
         )
-        @h2("monthlyreturns.submissionUnsuccessful.heading.h2")
-        @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p2")
-        @paragraph("monthlyreturns.submissionUnsuccessful.paragraph.p3")
-        @govukWarningText(
-            WarningTextViewModel(
-                content = Text(messages("monthlyreturns.submissionUnsuccessful.warning"))
-                )
-        )
-        @govukButton(
-            ButtonViewModel(
-                messages("monthlyreturns.submissionUnsuccessful.submit")
-                )
-        )
-    }
 }

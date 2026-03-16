@@ -51,8 +51,7 @@ GET        /monthly-return/submission-send/polling                      controll
 GET        /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onPageLoad
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
 
-GET        /monthly-return/submission-unsuccessful                      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
-POST       /monthly-return/submission-unsuccessful                      controllers.monthlyreturns.SubmissionUnsuccessfulController.onSubmit
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 
 GET        /monthly-return/submission-awaiting                          controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 
@@ -119,7 +118,8 @@ POST       /monthly-return/remove-subcontractor/:index            controllers.mo
 GET        /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode, index: Int)
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
-GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
+GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
+GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
 
 GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)

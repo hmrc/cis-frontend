@@ -17,12 +17,12 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.ReturnType.MonthlyNilReturn
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
-import org.scalatestplus.mockito.MockitoSugar.mock
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
@@ -32,6 +32,7 @@ import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.SubmissionSuccessView
 import utils.IrMarkReferenceGenerator
 
@@ -52,9 +53,11 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
   val cisId                      = "1"
 
-  private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
-  private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
-  private val london  = ZoneId.of("Europe/London")
+  private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
+  private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
+  private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
+  private val london                   = ZoneId.of("Europe/London")
+  private val mockMonthlyReturnService = mock(classOf[MonthlyReturnService])
 
   protected lazy val ukNow: ZonedDateTime =
     ZonedDateTime.ofInstant(fixedInstant, london)
@@ -63,7 +66,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
     ukNow.format(timeFmt)
 
   protected lazy val submittedDate: String =
-    ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
+    ukNow.format(fullDateFmt)
 
   val ua: UserAnswers =
     userAnswersWithCisId
@@ -90,7 +93,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   lazy val expectedHtml: String =
     view(
       reference = reference,
-      periodEnd = periodEnd.format(dmyFmt),
+      periodEnd = periodEnd.format(monthYearFmt),
       submittedTime = submittedTime,
       submittedDate = submittedDate,
       contractorName = contractorName,
@@ -144,8 +147,66 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           }
         }
 
+        "must throw if ReturnTypePage is missing" in {
+          val incompleteUa = ua // note: ua does not set ReturnTypePage
+
+          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+
+          running(app) {
+            val thrown = intercept[IllegalStateException] {
+              await(route(app, request).get)
+            }
+            thrown.getMessage must include("[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+          }
+        }
+
+        "must use scheme email when email is missing from user answers" in {
+          val uaWithoutEmail = userAnswersWithCisId
+            .set(ContractorNamePage, contractorName)
+            .success
+            .value
+            .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+            .success
+            .value
+            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .success
+            .value
+            .set(
+              SubmissionDetailsPage,
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+            )
+            .success
+            .value
+
+          when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
+            .thenReturn(Future.successful(Some(email)))
+
+          val app =
+            applicationBuilder(userAnswers = Some(uaWithoutEmail))
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+              )
+              .build()
+
+          running(app) {
+            val result = route(app, request).value
+
+            status(result) mustBe OK
+            contentAsString(result) must include(email)
+
+            verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+          }
+        }
+
         "must throw if contractorName is missing" in {
           val incompleteUa = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+            .set(ConfirmEmailAddressPage, email)
+            .success
+            .value
             .set(DateConfirmNilPaymentsPage, periodEnd)
             .success
             .value
@@ -168,6 +229,12 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         "must throw if employerReference is missing" in {
           val incompleteUa = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+            .set(ConfirmEmailAddressPage, email)
+            .success
+            .value
             .set(ContractorNamePage, contractorName)
             .success
             .value
@@ -192,6 +259,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         "must throw if taxPeriodEnd is missing" in {
           val incompleteUa = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
             .set(ContractorNamePage, contractorName)
             .success
             .value
@@ -216,6 +286,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         "must throw if submissionDetails is missing" in {
           val incompleteUa = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
             .set(ContractorNamePage, contractorName)
             .success
             .value
@@ -364,6 +437,15 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
         "must throw if contractorName is missing" in {
           val incompleteUa = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+            .set(ConfirmEmailAddressPage, email)
+            .success
+            .value
+            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .success
+            .value
             .set(
               SubmissionDetailsPage,
               SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
@@ -385,6 +467,12 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             AgentClientData("CLIENT-123", "", "taxOfficeReference", Some("PAL 355 Scheme"))
 
           val incompleteUa = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+            .set(ConfirmEmailAddressPage, email)
+            .success
+            .value
             .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
             .success
             .value
