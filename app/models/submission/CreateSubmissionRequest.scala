@@ -22,7 +22,12 @@ case class CreateSubmissionRequest(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  emailRecipient: Option[String] = None
+  hmrcMarkGenerated: Option[String] = None,
+  emailRecipient: Option[String] = None,
+  agentId: Option[String] = None,
+  subcontractorCount: Option[Int] = None,
+  totalPaymentsMade: Option[BigDecimal] = None,
+  totalTaxDeducted: Option[BigDecimal] = None
 )
 
 object CreateSubmissionRequest {
