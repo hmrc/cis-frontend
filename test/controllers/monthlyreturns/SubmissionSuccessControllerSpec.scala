@@ -22,7 +22,6 @@ import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
-import org.scalatestplus.mockito.MockitoSugar.mock
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
@@ -54,7 +53,6 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
   val cisId                      = "1"
 
-  private val dmyFmt                   = DateTimeFormatter.ofPattern("MMMM uuuu")
   private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
@@ -370,14 +368,15 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           lazy val expectedHtml: String =
             view(
               reference = reference,
-              periodEnd = periodEnd.format(dmyFmt),
+              periodEnd = periodEnd.format(monthYearFmt),
               submittedTime = submittedTime,
               submittedDate = submittedDate,
               contractorName = contractorName,
               empRef = employerRef,
               email = fallbackEmail,
-              submissionType = submissionType
-            )(request, messages(app)).toString
+              submissionType = submissionType,
+              cisId = cisId
+            )(request, applicationConfig, messages(app)).toString
 
           running(app) {
             val result = route(app, request).value
