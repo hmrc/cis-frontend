@@ -22,6 +22,7 @@ import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
@@ -57,7 +58,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london                   = ZoneId.of("Europe/London")
-  private val mockMonthlyReturnService = mock(classOf[MonthlyReturnService])
+  private val mockMonthlyReturnService = mock[MonthlyReturnService]
 
   protected lazy val ukNow: ZonedDateTime =
     ZonedDateTime.ofInstant(fixedInstant, london)
@@ -368,7 +369,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           lazy val expectedHtml: String =
             view(
               reference = reference,
-              periodEnd = periodEnd.format(dmyFmt),
+              periodEnd = periodEnd.format(monthYearFmt),
               submittedTime = submittedTime,
               submittedDate = submittedDate,
               contractorName = contractorName,
