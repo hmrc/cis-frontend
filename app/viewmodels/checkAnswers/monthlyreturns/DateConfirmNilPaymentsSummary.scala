@@ -29,14 +29,11 @@ object DateConfirmNilPaymentsSummary {
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(DateConfirmNilPaymentsPage).map { answer =>
 
-      val taxPeriodEnd   = answer
-      val taxPeriodStart = taxPeriodEnd.minusMonths(1).withDayOfMonth(6)
-      val taxPeriodText  = s"${taxPeriodStart.format(DateTimeFormatter.ofPattern("d MMM yyyy"))} to ${taxPeriodEnd
-          .format(DateTimeFormatter.ofPattern("d MMM yyyy"))}"
+      val returnPeriodText = answer.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 
       SummaryListRowViewModel(
         key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
-        value = ValueViewModel(taxPeriodText)
+        value = ValueViewModel(returnPeriodText)
       )
     }
 }

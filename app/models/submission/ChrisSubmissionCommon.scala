@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package models.submission
 
-import models.UserAnswers
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import java.time.YearMonth
 
-import scala.util.Try
-
-case object ConfirmationByEmailPage extends QuestionPage[Boolean] {
-
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "confirmationByEmail"
-
-  override def cleanup(value: Option[Boolean], userAnswers: UserAnswers): Try[UserAnswers] =
-    value match {
-      case Some(false) | None => userAnswers.remove(EnterYourEmailAddressPage)
-      case _                  => super.cleanup(value, userAnswers)
-    }
-}
+case class ChrisSubmissionCommon(
+  utr: String,
+  aoReference: String,
+  monthYear: YearMonth,
+  email: Option[String],
+  isAgent: Boolean,
+  clientTaxOfficeNumber: String,
+  clientTaxOfficeRef: String
+)

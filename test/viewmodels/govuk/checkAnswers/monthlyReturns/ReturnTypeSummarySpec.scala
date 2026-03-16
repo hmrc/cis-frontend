@@ -17,9 +17,8 @@
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
-import models.ReturnType
 import org.scalatest.OptionValues
-import pages.monthlyreturns.ReturnTypePage
+import pages.monthlyreturns.EmploymentStatusDeclarationPage
 import play.api.i18n.Messages
 import viewmodels.checkAnswers.monthlyreturns.ReturnTypeSummary
 import play.api.test.Helpers._
@@ -30,51 +29,30 @@ class ReturnTypeSummarySpec extends SpecBase with OptionValues {
 
   "ReturnTypeSummary" - {
 
-    "when answer is present" - {
+    "must return a SummaryListRow with Monthly Nil Return text when EmploymentStatusDeclarationPage is not set" in {
 
-      "must return a SummaryListRow with Monthly Nil Return text when answer is MonthlyNilReturn" in {
+      val result = ReturnTypeSummary.row(emptyUserAnswers).value
 
-        val answers =
-          emptyUserAnswers.set(ReturnTypePage, ReturnType.MonthlyNilReturn).success.value
-
-        val result = ReturnTypeSummary.row(answers).value
-
-        result.key.content.asHtml.toString must include(
-          messages("monthlyreturns.returnType.checkYourAnswersLabel")
-        )
-
-        result.value.content.asHtml.toString must include(
-          messages(s"monthlyreturns.returnType.${ReturnType.MonthlyNilReturn.toString}")
-        )
-      }
-
-      "must return a SummaryListRow with Monthly Standard Return text when answer is MonthlyStandardReturn" in {
-
-        val answers =
-          emptyUserAnswers.set(ReturnTypePage, ReturnType.MonthlyStandardReturn).success.value
-
-        val result = ReturnTypeSummary.row(answers).value
-
-        result.key.content.asHtml.toString must include(
-          messages("monthlyreturns.returnType.checkYourAnswersLabel")
-        )
-
-        result.value.content.asHtml.toString must include(
-          messages(s"monthlyreturns.returnType.${ReturnType.MonthlyStandardReturn.toString}")
-        )
-      }
+      result.key.content.asHtml.toString   must include(
+        messages("monthlyreturns.returnType.checkYourAnswersLabel")
+      )
+      result.value.content.asHtml.toString must include(
+        messages("monthlyreturns.returnType.value")
+      )
     }
 
-    "when answer is not present" - {
+    "must return a SummaryListRow with Monthly Return text when EmploymentStatusDeclarationPage is set" in {
 
-      "must return None" in {
+      val answers = emptyUserAnswers.set(EmploymentStatusDeclarationPage, true).success.value
 
-        val answers = emptyUserAnswers
+      val result = ReturnTypeSummary.row(answers).value
 
-        val result = ReturnTypeSummary.row(answers)
-
-        result mustBe None
-      }
+      result.key.content.asHtml.toString   must include(
+        messages("monthlyreturns.returnType.checkYourAnswersLabel")
+      )
+      result.value.content.asHtml.toString must include(
+        messages("monthlyreturns.returnType.monthlyReturnValue")
+      )
     }
   }
 }
