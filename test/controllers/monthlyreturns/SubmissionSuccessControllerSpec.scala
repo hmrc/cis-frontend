@@ -52,6 +52,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
+  private val dmyFmt                   = DateTimeFormatter.ofPattern("MMMM uuuu")
   private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
@@ -166,7 +167,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -348,7 +349,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .success
             .value
 
-          val mockService = mock[MonthlyReturnService]
+          val mockService = mock(classOf[MonthlyReturnService])
 
           when(mockService.getSchemeEmail(any())(any()))
             .thenReturn(Future.successful(Some(fallbackEmail)))
@@ -440,7 +441,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ConfirmEmailAddressPage, email)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(

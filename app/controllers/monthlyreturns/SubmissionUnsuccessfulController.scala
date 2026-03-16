@@ -17,8 +17,6 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.NormalMode
-import models.ReturnType.MonthlyNilReturn
 import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}

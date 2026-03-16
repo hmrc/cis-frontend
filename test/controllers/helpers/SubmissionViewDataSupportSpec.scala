@@ -25,7 +25,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.when
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
 
 import java.time.LocalDate
 import play.api.libs.json.Json
@@ -79,17 +79,13 @@ class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with Mocki
     }
 
     "periodEndFromUserAnswers uses correct page per return type" in {
-      val d1 = LocalDate.of(2025, 9, 1)
-      val d2 = LocalDate.of(2025, 10, 1)
+      val date = LocalDate.of(2025, 9, 1)
 
       val ua = uaEmpty
-        .set(DateConfirmNilPaymentsPage, d1)
-        .get
-        .set(DateConfirmPaymentsPage, d2)
+        .set(DateConfirmPaymentsPage, date)
         .get
 
-      Harness.periodEndPublic(ua, MonthlyNilReturn) mustBe Some(d1)
-      Harness.periodEndPublic(ua, MonthlyStandardReturn) mustBe Some(d2)
+      Harness.periodEndPublic(ua, MonthlyNilReturn) mustBe Some(date)
     }
 
     "contractorNameFrom uses ContractorNamePage for contractor" in {

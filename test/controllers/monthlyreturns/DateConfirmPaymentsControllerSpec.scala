@@ -20,12 +20,9 @@ import base.SpecBase
 import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
-import models.ReturnType.MonthlyStandardReturn
-import models.ReturnType.MonthlyNilReturn
-import models.agent.AgentClientData
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.agent.AgentClientData
-import models.{NormalMode, UserAnswers}
+import models.{NormalMode, ReturnType, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
 import org.mockito.Mockito.{verifyNoInteractions, when}
@@ -65,6 +62,8 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       .url
 
   override val emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
+  val standardReturnUserAnswers: UserAnswers =
+    UserAnswers(userAnswersId).setOrException(ReturnTypePage, MonthlyStandardReturn)
 
   def getRequest: FakeRequest[AnyContentAsEmpty.type] =
     FakeRequest(GET, dateConfirmPaymentsRoute)
@@ -348,14 +347,14 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockMonthlyReturnService.hasClient(eqTo("123"), eqTo("AB456"))(any()))
         .thenReturn(Future.successful(true))
       when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], eqTo(true))(any()))
-        .thenReturn(Future.successful(("CIS-AGENT-123", emptyUserAnswers)))
+        .thenReturn(Future.successful(("CIS-AGENT-123", standardReturnUserAnswers)))
       when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-AGENT-123"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(false))
       when(mockMonthlyReturnService.createMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+        applicationBuilder(userAnswers = Some(standardReturnUserAnswers), isAgent = true)
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),

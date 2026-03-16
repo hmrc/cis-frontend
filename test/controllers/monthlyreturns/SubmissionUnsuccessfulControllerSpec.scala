@@ -17,8 +17,6 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.NormalMode
-import models.ReturnType.MonthlyNilReturn
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.SubmissionUnsuccessfulView

@@ -120,13 +120,13 @@ class DateConfirmPaymentsController @Inject() (
                                        monthlyReturnService
                                          .createMonthlyReturn(createRequest)
                                          .map { _ =>
-                      Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+                                           Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
                                          }
                                      } else {
                                        for {
                                          uaWithStatus <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
                                        } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
-                }
+                                     }
             } yield result).recover {
               case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())

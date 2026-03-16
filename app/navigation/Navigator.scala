@@ -65,17 +65,17 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
     case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case PaymentDetailsConfirmationPage                =>
+    case (PaymentDetailsConfirmationPage, _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
-    case EmploymentStatusDeclarationPage               =>
+    case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
-    case VerifiedStatusDeclarationPage                 =>
+    case (VerifiedStatusDeclarationPage, _)                 =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(NormalMode)(userAnswers)
-    case SubmitInactivityRequestPage                   =>
+    case (SubmitInactivityRequestPage, _)                   =>
       userAnswers => navigatorFromSubmitInactivityRequestPage(NormalMode)(userAnswers)
-    case ConfirmationByEmailPage                       =>
+    case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
-    case EnterYourEmailAddressPage                     =>
+    case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
