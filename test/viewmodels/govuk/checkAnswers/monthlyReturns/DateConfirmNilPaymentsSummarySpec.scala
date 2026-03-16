@@ -18,7 +18,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
 import org.scalatest.OptionValues
-import pages.monthlyreturns.DateConfirmNilPaymentsPage
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
 import play.api.test.Helpers
 import viewmodels.checkAnswers.monthlyreturns.DateConfirmNilPaymentsSummary
@@ -35,7 +35,7 @@ class DateConfirmNilPaymentsSummarySpec extends SpecBase with OptionValues {
 
       "must return a SummaryListRow with the formatted return period and no change action" in {
         val date    = LocalDate.of(2024, 4, 5)
-        val answers = emptyUserAnswers.set(DateConfirmNilPaymentsPage, date).success.value
+        val answers = emptyUserAnswers.set(DateConfirmPaymentsPage, date).success.value
 
         val result = DateConfirmNilPaymentsSummary.row(answers).value
 
