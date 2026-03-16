@@ -450,7 +450,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, cisId)
         .get
-        .set(DateConfirmNilPaymentsPage, testDate)
+        .set(DateConfirmPaymentsPage, testDate)
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -489,7 +489,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val (service, connector, sessionRepo) = newService()
 
       val userAnswers = UserAnswers("test-user")
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
 
       val ex = intercept[RuntimeException] {
@@ -523,7 +523,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, "CIS-123")
         .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -548,7 +548,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, "CIS-123")
         .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -580,7 +580,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, cisId)
         .get
-        .set(DateConfirmNilPaymentsPage, testDate)
+        .set(DateConfirmPaymentsPage, testDate)
         .get
 
       val backendResponse = NilMonthlyReturnResponse(status = "STARTED")
@@ -617,7 +617,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, "CIS-123")
         .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get

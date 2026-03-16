@@ -25,7 +25,7 @@ import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -54,11 +54,12 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
   val cisId                      = "1"
 
+  private val dmyFmt                   = DateTimeFormatter.ofPattern("MMMM uuuu")
   private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london                   = ZoneId.of("Europe/London")
-  private val mockMonthlyReturnService = mock[MonthlyReturnService]
+  private val mockMonthlyReturnService = mock(classOf[MonthlyReturnService])
 
   protected lazy val ukNow: ZonedDateTime =
     ZonedDateTime.ofInstant(fixedInstant, london)
@@ -77,7 +78,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       .set(ConfirmEmailAddressPage, email)
       .success
       .value
-      .set(DateConfirmNilPaymentsPage, periodEnd)
+      .set(DateConfirmPaymentsPage, periodEnd)
       .success
       .value
       .set(
@@ -169,7 +170,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -208,7 +209,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ConfirmEmailAddressPage, email)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -239,7 +240,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -293,7 +294,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(ConfirmEmailAddressPage, "test@test.com")
@@ -316,7 +317,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
               .set(ContractorNamePage, contractorName)
               .success
               .value
-              .set(DateConfirmNilPaymentsPage, periodEnd)
+              .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
               .set(ConfirmEmailAddressPage, email)
@@ -351,7 +352,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .success
             .value
 
-          val mockService = mock[MonthlyReturnService]
+          val mockService = mock(classOf[MonthlyReturnService])
 
           when(mockService.getSchemeEmail(any())(any()))
             .thenReturn(Future.successful(Some(fallbackEmail)))
@@ -369,15 +370,14 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           lazy val expectedHtml: String =
             view(
               reference = reference,
-              periodEnd = periodEnd.format(monthYearFmt),
+              periodEnd = periodEnd.format(dmyFmt),
               submittedTime = submittedTime,
               submittedDate = submittedDate,
               contractorName = contractorName,
               empRef = employerRef,
               email = fallbackEmail,
-              submissionType = submissionType,
-              cisId = cisId
-            )(request, applicationConfig, messages(app)).toString
+              submissionType = submissionType
+            )(request, messages(app)).toString
 
           running(app) {
             val result = route(app, request).value
@@ -444,7 +444,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ConfirmEmailAddressPage, email)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -477,7 +477,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(

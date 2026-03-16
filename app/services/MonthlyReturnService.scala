@@ -212,13 +212,13 @@ class MonthlyReturnService @Inject() (
     }
 
   private def getTaxYear(ua: UserAnswers): Future[Int] =
-    ua.get(DateConfirmNilPaymentsPage) match {
+    ua.get(DateConfirmPaymentsPage) match {
       case Some(date) => Future.successful(date.getYear)
       case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
     }
 
   private def getTaxMonth(ua: UserAnswers): Future[Int] =
-    ua.get(DateConfirmNilPaymentsPage) match {
+    ua.get(DateConfirmPaymentsPage) match {
       case Some(date) => Future.successful(date.getMonthValue)
       case None       => Future.failed(new RuntimeException("Date confirm nil payments not found in session data"))
     }
