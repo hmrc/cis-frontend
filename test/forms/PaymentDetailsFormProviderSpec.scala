@@ -45,12 +45,12 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    "must not bind when the value exceeds maxLength of 13" in {
-      val result = form.bind(Map(fieldName -> "12345678901234")).apply(fieldName)
-      result.errors mustEqual Seq(FormError(fieldName, "paymentDetails.error.maxLength"))
+    "must not bind when the value exceeds maxValue of 9999999" in {
+      val result = form.bind(Map(fieldName -> "999999999")).apply(fieldName)
+      result.errors mustEqual Seq(FormError(fieldName, "paymentDetails.error.maxValue"))
     }
 
-    "must bind when the value is exactly 13 characters" in {
+    "must bind when the value is exactly 99999999" in {
       val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
       boundForm.get mustBe BigDecimal("99999999")
@@ -60,7 +60,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       Seq(
         ("abc", "non-numeric characters"),
         ("12.345", "more than 2 decimal places"),
-        ("£100", "currency symbol"),
+        ("100£", "currency symbol incorrect position"),
         ("-100", "negative sign"),
         ("100.001", "more than 2 decimal places"),
         ("100.123", "more than 2 decimal places"),

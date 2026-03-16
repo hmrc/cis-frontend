@@ -18,8 +18,8 @@ package forms.mappings
 
 import config.FrontendAppConfig
 import models.Enumerable
-import play.api.data.FieldMapping
-import play.api.data.Forms.of
+import play.api.data.{FieldMapping, Mapping}
+import play.api.data.Forms.{of, optional}
 import play.api.i18n.Messages
 
 import java.time.LocalDate
@@ -77,11 +77,23 @@ trait Mappings extends Formatters with Constraints {
 
   protected def currency(
     requiredKey: String = "error.required",
-    invalidNumeric: String = "error.invalidNumeric",
-    nonNumericKey: String = "error.nonNumeric",
+    invalidKey: String = "error.invalid",
+    maxLengthKey: String = "error.maxLength",
+    scale: Int,
     args: Seq[String] = Seq.empty
   ): FieldMapping[BigDecimal] =
-    of(currencyFormatter(requiredKey, invalidNumeric, nonNumericKey, args))
+    of(currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = scale, args = args))
+
+  // IMPORTANT: optional(...) returns Mapping, not FieldMapping
+  protected def optionalCurrency(
+    invalidKey: String = "error.invalid",
+    maxLengthKey: String = "error.maxLength",
+    scale: Int,
+    args: Seq[String] = Seq.empty
+  ): Mapping[Option[BigDecimal]] =
+    optional(
+      of(currencyFormatter(requiredKey = "error.required", invalidKey, maxLengthKey, scale = scale, args = args))
+    )
 
   protected def paymentDetailsCurrency(
     requiredKey: String = "error.required",
@@ -89,7 +101,15 @@ trait Mappings extends Formatters with Constraints {
     maxLengthKey: String = "error.maxLength",
     args: Seq[String] = Seq.empty
   ): FieldMapping[BigDecimal] =
-    of(paymentDetailsCurrencyFormatter(requiredKey, invalidKey, maxLengthKey, args))
+    currency(requiredKey, invalidKey, maxLengthKey, scale = 0, args = args)
+
+  protected def CostOfMaterialsCurrency(
+    requiredKey: String = "error.required",
+    invalidKey: String = "error.invalid",
+    maxLengthKey: String = "error.maxLength",
+    args: Seq[String] = Seq.empty
+  ): FieldMapping[BigDecimal] =
+    of(costOfMaterialsCurrencyFormatter(requiredKey, invalidKey, maxLengthKey, args))
 
   protected def taxDeductedCurrency(
     requiredKey: String = "error.required",
@@ -97,7 +117,7 @@ trait Mappings extends Formatters with Constraints {
     maxLengthKey: String = "error.maxLength",
     args: Seq[String] = Seq.empty
   ): FieldMapping[BigDecimal] =
-    of(taxDeductedCurrencyFormatter(requiredKey, invalidKey, maxLengthKey, args))
+    currency(requiredKey, invalidKey, maxLengthKey, scale = 2, args = args)
 
   protected def monthYearPaymentDate(
     invalidKey: String,

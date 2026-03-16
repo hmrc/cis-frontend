@@ -26,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import utils.MoneyFormat
 import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
@@ -94,14 +95,17 @@ class CheckAnswersTotalPaymentsController @Inject() (
       totalPayments    <- subcontractor.totalPaymentsMade
       costOfMaterials  <- subcontractor.costOfMaterials
       totalTaxDeducted <- subcontractor.totalTaxDeducted
-    } yield UpdateMonthlyReturnItemRequest(
-      instanceId = instanceId,
-      taxYear = monthYear.getYear,
-      taxMonth = monthYear.getMonthValue,
-      subcontractorId = subcontractor.id,
-      subcontractorName = subcontractor.name,
-      totalPayments = totalPayments.toString,
-      costOfMaterials = costOfMaterials.toString,
-      totalDeducted = totalTaxDeducted.toString
-    )
+    } yield
+      val costOfMaterials  = subcontractor.costOfMaterials.getOrElse(BigDecimal(0))
+      val totalTaxDeducted = subcontractor.totalTaxDeducted.getOrElse(BigDecimal(0))
+      UpdateMonthlyReturnItemRequest(
+        instanceId = instanceId,
+        taxYear = monthYear.getYear,
+        taxMonth = monthYear.getMonthValue,
+        subcontractorId = subcontractor.id,
+        subcontractorName = subcontractor.name,
+        totalPayments = MoneyFormat.twoDp(totalPayments),
+        costOfMaterials = MoneyFormat.twoDp(costOfMaterials),
+        totalDeducted = MoneyFormat.twoDp(totalTaxDeducted)
+      )
 }

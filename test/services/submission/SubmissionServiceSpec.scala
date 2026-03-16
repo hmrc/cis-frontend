@@ -211,14 +211,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "fail when Month/Year is missing for monthly standard return" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig = new FrontendAppConfig(
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
         Configuration(
           "submission-poll-timeout-seconds" -> "60"
         )
       )
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -1295,14 +1295,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "throw IllegalStateException when ReturnTypePage missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig =
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
-      val ua = UserAnswers("id", Json.obj())
+      val ua           = UserAnswers("id", Json.obj())
         .set(
           SubmissionDetailsPage,
           SubmissionDetails(
@@ -1327,14 +1327,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
     "throw IllegalStateException when DateConfirmPaymentsPage missing for monthly standard return" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig =
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
-      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val submissionId = "sub-123"
-      val ua = UserAnswers("id", Json.obj())
+      val ua           = UserAnswers("id", Json.obj())
         .set(
           SubmissionDetailsPage,
           SubmissionDetails(

@@ -22,8 +22,9 @@ import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.monthlyreturns.SelectedSubcontractor
 import models.NormalMode
 import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
 import play.api.inject.bind
@@ -38,12 +39,12 @@ import scala.concurrent.Future
 class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
   val formProvider = new TotalTaxDeductedFormProvider()
-  val form         = formProvider()
+  val form         = formProvider() // Form[Option[BigDecimal]]
 
   def onwardRoute = Call("GET", "/foo")
 
-  val validAnswer = BigDecimal(1)
-  val companyName = "TyneWear Ltd"
+  val validAnswer: BigDecimal = BigDecimal(1)
+  val companyName             = "TyneWear Ltd"
 
   val userAnswers = emptyUserAnswers
     .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
@@ -88,7 +89,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(validAnswer), NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(form.fill(Some(validAnswer)), NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -98,7 +99,6 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     "must redirect to the next page when valid data is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
-
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
@@ -118,6 +118,39 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must redirect to the next page when empty data is submitted (optional) and remove the answer" in {
+
+      val existingAnswerUa =
+        userAnswers.set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67")).success.value
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(existingAnswerUa))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, totalTaxDeductedRoute)
+            .withFormUrlEncodedBody(("value", "")) // blank allowed
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+
+        val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
+        org.mockito.Mockito.verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe None
       }
     }
 
@@ -254,6 +287,39 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
           controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
+      }
+    }
+
+    "must redirect to Change Answers total payments when returnTo is changeAnswers and empty data is submitted (optional) and remove the answer" in {
+
+      val existingAnswerUa =
+        userAnswers.set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67")).success.value
+
+      val changeAnswersPostRoute = "/monthly-return/tax-deducted/1?returnTo=changeAnswers"
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(existingAnswerUa))
+          .overrides(bind[SessionRepository].toInstance(mockSessionRepository))
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, changeAnswersPostRoute)
+            .withFormUrlEncodedBody(("value", "")) // blank allowed
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
+
+        val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe None
       }
     }
   }

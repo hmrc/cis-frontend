@@ -18,24 +18,23 @@ package forms.monthlyreturns
 
 import forms.mappings.Mappings
 import play.api.data.Form
+import play.api.data.Forms.optional
 
 import javax.inject.Inject
 
 class CostOfMaterialsFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[BigDecimal] =
+  def apply(): Form[Option[BigDecimal]] =
     Form(
-      "value" -> paymentDetailsCurrency(
-        "monthlyreturns.costOfMaterials.error.required",
-        "monthlyreturns.costOfMaterials.error.invalid",
-        "monthlyreturns.costOfMaterials.error.maxLength"
-      )
-        .verifying(
-          maximumCurrency(
-            BigDecimal("99999999.00"),
-            "monthlyreturns.costOfMaterials.error.maxValue",
-            includeFormattedValue = false
-          )
+      "value" -> optional(
+        CostOfMaterialsCurrency(
+          "monthlyreturns.costOfMaterials.error.required",
+          "monthlyreturns.costOfMaterials.error.invalid",
+          "monthlyreturns.costOfMaterials.error.maxLength"
         )
+      ).verifying(
+        "monthlyreturns.costOfMaterials.error.maxValue",
+        opt => opt.forall(_ <= BigDecimal("99999999.00"))
+      )
     )
 }

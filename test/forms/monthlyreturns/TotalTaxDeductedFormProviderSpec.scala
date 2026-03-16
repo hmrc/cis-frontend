@@ -45,22 +45,31 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    "must not bind when the value exceeds maxLength of 13" in {
-      val result = form.bind(Map(fieldName -> "12345678901234")).apply(fieldName)
-      result.errors mustEqual Seq(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.maxLength"))
+    // OPTIONAL now:
+    // behave like mandatoryField(...)
+
+    "must bind empty value as None" in {
+      val boundForm = form.bind(Map(fieldName -> ""))
+      boundForm.errors mustBe empty
+      boundForm.get mustBe None
     }
 
-    "must bind when the value is exactly 13 characters" in {
+    "must not bind when the value exceeds maxValue of 99999999.99" in {
+      val result = form.bind(Map(fieldName -> "999999999.99")).apply(fieldName)
+      result.errors mustEqual Seq(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.maxValue"))
+    }
+
+    "must bind when the value less than or equal to 99999999" in {
       val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999")
+      boundForm.get mustBe Some(BigDecimal("99999999"))
     }
 
     "must not bind when the value does not match regex pattern" in {
       Seq(
         ("abc", "non-numeric characters"),
         ("12.345", "more than 2 decimal places"),
-        ("£100", "currency symbol"),
+        ("100£", "currency symbol in incorrect position"),
         ("-100", "negative sign"),
         ("100.001", "more than 2 decimal places"),
         ("100.123", "more than 2 decimal places"),
@@ -103,18 +112,6 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
       }
     }
 
-    "must not bind when decimal point has no digits after it" in {
-      Seq(
-        ("100.", "trailing decimal point"),
-        ("0.", "trailing decimal point")
-      ).foreach { case (invalidValue, description) =>
-        withClue(s"Value '$invalidValue' ($description) should be invalid") {
-          val result = form.bind(Map(fieldName -> invalidValue)).apply(fieldName)
-          result.errors must contain(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.invalid"))
-        }
-      }
-    }
-
     "must bind values with commas in various positions" in {
       val validCommaValues = Seq("1,000", "10,000", "100,000", "1,000,000", "99,999,999")
       validCommaValues.foreach { validValue =>
@@ -126,13 +123,13 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
     "must bind exactly at maximum value boundary" in {
       val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999")
+      boundForm.get mustBe Some(BigDecimal("99999999"))
     }
 
     "must bind maximum value with decimals" in {
       val boundForm = form.bind(Map(fieldName -> "99999999.99"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999.99")
+      boundForm.get mustBe Some(BigDecimal("99999999.99"))
     }
 
     "must not bind when value exceeds maximum value" in {
@@ -143,36 +140,36 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
     "must correctly parse values with commas" in {
       val boundForm = form.bind(Map(fieldName -> "1,234,567"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("1234567")
+      boundForm.get mustBe Some(BigDecimal("1234567"))
     }
 
     "must correctly parse decimal values with commas" in {
       val boundForm = form.bind(Map(fieldName -> "1,234,567.89"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("1234567.89")
+      boundForm.get mustBe Some(BigDecimal("1234567.89"))
     }
 
     "must correctly parse decimal values with one decimal place" in {
       val boundForm = form.bind(Map(fieldName -> "458.1"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("458.1")
+      boundForm.get mustBe Some(BigDecimal("458.1"))
     }
 
     "must correctly parse decimal values with two decimal places" in {
       val boundForm = form.bind(Map(fieldName -> "458.12"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("458.12")
+      boundForm.get mustBe Some(BigDecimal("458.12"))
     }
 
     "must correctly unbind values" in {
       val value  = BigDecimal("12345")
-      val result = form.fill(value)
-      result.data.get(fieldName) mustBe Some("12345")
+      val result = form.fill(Some(value))
+      result.data.get(fieldName) mustBe Some("12,345.00")
     }
 
     "must correctly unbind decimal values" in {
       val value  = BigDecimal("458.12")
-      val result = form.fill(value)
+      val result = form.fill(Some(value))
       result.data.get(fieldName) mustBe Some("458.12")
     }
 
@@ -180,11 +177,5 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
       val result = form.bind(Map(fieldName -> "100000000")).apply(fieldName)
       result.errors must contain(FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.maxValue"))
     }
-
-    behave like mandatoryField(
-      form,
-      fieldName,
-      requiredError = FormError(fieldName, "monthlyreturns.totalTaxDeducted.error.required")
-    )
   }
 }

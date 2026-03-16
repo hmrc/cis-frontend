@@ -18,24 +18,23 @@ package forms.monthlyreturns
 
 import forms.mappings.Mappings
 import play.api.data.Form
+import play.api.data.Forms.optional
 
 import javax.inject.Inject
 
 class TotalTaxDeductedFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[BigDecimal] =
+  def apply(): Form[Option[BigDecimal]] =
     Form(
-      "value" -> taxDeductedCurrency(
-        "monthlyreturns.totalTaxDeducted.error.required",
-        "monthlyreturns.totalTaxDeducted.error.invalid",
-        "monthlyreturns.totalTaxDeducted.error.maxLength"
-      )
-        .verifying(
-          maximumCurrency(
-            BigDecimal("99999999.99"),
-            "monthlyreturns.totalTaxDeducted.error.maxValue",
-            includeFormattedValue = false
-          )
+      "value" -> optional(
+        taxDeductedCurrency(
+          "monthlyreturns.totalTaxDeducted.error.required",
+          "monthlyreturns.totalTaxDeducted.error.invalid",
+          "monthlyreturns.totalTaxDeducted.error.maxLength"
         )
+      ).verifying(
+        "monthlyreturns.totalTaxDeducted.error.maxValue",
+        opt => opt.forall(_ <= BigDecimal("99999999.99"))
+      )
     )
 }
