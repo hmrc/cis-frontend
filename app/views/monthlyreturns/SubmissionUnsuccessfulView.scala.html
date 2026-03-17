@@ -44,6 +44,7 @@
             linkTextKey   = "monthlyreturns.submissionUnsuccessful.hmrcOnlineServicesHelpdesk",
             linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
             isNewTab      = true,
+            hasFullStop = true,
             prefixTextKey = "monthlyreturns.submissionUnsuccessful.links.prefix"
         )
         @paragraph("monthlyreturns.submissionUnsuccessful.details.intro")
@@ -54,6 +55,5 @@
         @link(
             linkTextKey = messages("monthlyreturns.submissionUnsuccessful.submit"),
             linkUrl   = appConfig.manageYourCisReturn + cisId,
-            hasFullStop = true
         )
 }
