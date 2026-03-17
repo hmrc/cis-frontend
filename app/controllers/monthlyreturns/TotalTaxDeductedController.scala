@@ -45,7 +45,7 @@ class TotalTaxDeductedController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  val form: Form[Option[BigDecimal]] = formProvider() // Form[Option[BigDecimal]]
+  val form: Form[Option[BigDecimal]] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>

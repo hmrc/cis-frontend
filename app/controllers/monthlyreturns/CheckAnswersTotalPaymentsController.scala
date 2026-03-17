@@ -63,8 +63,6 @@ class CheckAnswersTotalPaymentsController @Inject() (
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(payload) =>
-          println("****************************************")
-          println("payload: " + payload)
           monthlyReturnService
             .updateMonthlyReturnItem(payload)
             .map { _ =>
