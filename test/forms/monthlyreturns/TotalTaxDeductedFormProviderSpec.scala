@@ -45,9 +45,6 @@ class TotalTaxDeductedFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    // OPTIONAL now:
-    // behave like mandatoryField(...)
-
     "must bind empty value as None" in {
       val boundForm = form.bind(Map(fieldName -> ""))
       boundForm.errors mustBe empty

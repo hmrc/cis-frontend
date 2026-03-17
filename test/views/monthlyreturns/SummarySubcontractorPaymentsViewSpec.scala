@@ -32,13 +32,14 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
 
   "SummarySubcontractorPaymentsView" - {
 
-    "must render the page with correct heading" in new Setup {
+    "must render the page with correct heading and button" in new Setup {
       val html: HtmlFormat.Appendable =
         view(viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.summarySubcontractorPayments.title"))
       doc.select("h1").text must include(messages("monthlyreturns.summarySubcontractorPayments.heading"))
+      doc.select("a").text  must include(messages("site.continue"))
     }
 
     "must not render intro paragraph when count is 1" in new Setup {
@@ -81,9 +82,9 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
       keys.get(2) mustEqual messages("monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label")
 
       val values = summaryRows.select(".govuk-summary-list__value").eachText()
-      values.get(0) mustEqual "£3600"
-      values.get(1) mustEqual "£900"
-      values.get(2) mustEqual "£540"
+      values.get(0) mustEqual "£3600.00"
+      values.get(1) mustEqual "£900.00"
+      values.get(2) mustEqual "£540.00"
     }
 
     "must format currency values correctly" in new Setup {
@@ -108,9 +109,9 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
       val doc: Document               = Jsoup.parse(html.body)
 
       val values = doc.select(".govuk-summary-list__value").eachText()
-      values.get(0) mustEqual "£0"
-      values.get(1) mustEqual "£0"
-      values.get(2) mustEqual "£0"
+      values.get(0) mustEqual "£0.00"
+      values.get(1) mustEqual "£0.00"
+      values.get(2) mustEqual "£0.00"
     }
   }
 

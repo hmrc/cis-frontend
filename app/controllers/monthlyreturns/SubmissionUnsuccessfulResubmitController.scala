@@ -17,29 +17,31 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.{CheckMode, Mode, NormalMode}
+import pages.monthlyreturns.CisIdPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.InactivityRequestWarningView
+import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
 import javax.inject.Inject
 
-class InactivityRequestWarningController @Inject() (
+class SubmissionUnsuccessfulResubmitController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: InactivityRequestWarningView
+  view: SubmissionUnsuccessfulResubmitView
 ) extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val nextUrl = mode match {
-      case CheckMode  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
-      case NormalMode => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val cisId = request.userAnswers.get(CisIdPage).getOrElse {
+      logger.error("[SubmissionUnsuccessful] cisId missing from userAnswers")
+      throw new IllegalStateException("cisId missing from userAnswers")
     }
-    Ok(view(nextUrl))
+    Ok(view(cisId))
   }
 }

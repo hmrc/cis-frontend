@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,24 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.VerifiedStatusDeclarationPage
+import models.UserAnswers
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
+import java.time.format.DateTimeFormatter
 
-object VerifiedStatusDeclarationSummary {
+object DateConfirmPaymentsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(VerifiedStatusDeclarationPage).map { answer =>
+    answers.get(DateConfirmPaymentsPage).map { answer =>
 
-      val value = if (answer) "site.yes" else "site.no"
+      val returnPeriodText = answer.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 
       SummaryListRowViewModel(
-        key = "monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel",
-        value = ValueViewModel(value),
-        actions = Seq(
-          ActionItemViewModel(
-            "site.change",
-            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
-          )
-            .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
-            .withAttribute("id" -> "change-verified-status-declaration")
-        )
+        key = messages("monthlyreturns.dateConfirmPayments.checkYourAnswersLabel"),
+        value = ValueViewModel(returnPeriodText)
       )
     }
 }

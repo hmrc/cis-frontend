@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package config
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import base.SpecBase
+import play.api.Application
 
-import java.time.LocalDate
+class FrontendAppConfigSpec extends SpecBase {
+  "FrontendAppConfig" - {
+    "must contain correct values for the provided configuration" in new Setup {
+      appConfig.manageYourCisReturn mustBe
+        "http://localhost:6996/construction-industry-scheme/management/manage-cis-return/"
+    }
+  }
 
-case object DateConfirmNilPaymentsPage extends QuestionPage[LocalDate] {
-
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "dateConfirmNilPayments"
+  trait Setup {
+    val app: Application             = applicationBuilder().build()
+    val appConfig: FrontendAppConfig = app.injector.instanceOf[FrontendAppConfig]
+  }
 }

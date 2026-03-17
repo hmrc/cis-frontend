@@ -84,7 +84,6 @@ trait Mappings extends Formatters with Constraints {
   ): FieldMapping[BigDecimal] =
     of(currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = scale, args = args))
 
-  // IMPORTANT: optional(...) returns Mapping, not FieldMapping
   protected def optionalCurrency(
     invalidKey: String = "error.invalid",
     maxLengthKey: String = "error.maxLength",

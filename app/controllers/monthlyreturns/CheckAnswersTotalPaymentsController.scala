@@ -18,21 +18,19 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.{NormalMode, UserAnswers}
-import models.monthlyreturns.{SelectedSubcontractor, UpdateMonthlyReturnItemRequest}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.MonthlyReturnService
+import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnService}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import utils.MoneyFormat
 import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+import pages.monthlyreturns.SelectedSubcontractorPage
 
 class CheckAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
@@ -40,6 +38,7 @@ class CheckAnswersTotalPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
+  payloadBuilder: MonthlyReturnItemPayloadBuilder,
   val controllerComponents: MessagesControllerComponents,
   view: CheckAnswersTotalPaymentsView
 )(implicit ec: ExecutionContext)
@@ -59,11 +58,13 @@ class CheckAnswersTotalPaymentsController @Inject() (
     (identify andThen getData andThen requireData).async { implicit request =>
       val ua = request.userAnswers
 
-      buildUpdatePayload(ua, index) match {
+      payloadBuilder.build(ua, index) match {
         case None =>
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(payload) =>
+          println("****************************************")
+          println("payload: " + payload)
           monthlyReturnService
             .updateMonthlyReturnItem(payload)
             .map { _ =>
@@ -86,26 +87,4 @@ class CheckAnswersTotalPaymentsController @Inject() (
             }
       }
     }
-
-  private def buildUpdatePayload(ua: UserAnswers, index: Int): Option[UpdateMonthlyReturnItemRequest] =
-    for {
-      instanceId       <- ua.get(CisIdPage)
-      monthYear        <- ua.get(DateConfirmPaymentsPage)
-      subcontractor    <- ua.get(SelectedSubcontractorPage(index))
-      totalPayments    <- subcontractor.totalPaymentsMade
-      costOfMaterials  <- subcontractor.costOfMaterials
-      totalTaxDeducted <- subcontractor.totalTaxDeducted
-    } yield
-      val costOfMaterials  = subcontractor.costOfMaterials.getOrElse(BigDecimal(0))
-      val totalTaxDeducted = subcontractor.totalTaxDeducted.getOrElse(BigDecimal(0))
-      UpdateMonthlyReturnItemRequest(
-        instanceId = instanceId,
-        taxYear = monthYear.getYear,
-        taxMonth = monthYear.getMonthValue,
-        subcontractorId = subcontractor.id,
-        subcontractorName = subcontractor.name,
-        totalPayments = MoneyFormat.twoDp(totalPayments),
-        costOfMaterials = MoneyFormat.twoDp(costOfMaterials),
-        totalDeducted = MoneyFormat.twoDp(totalTaxDeducted)
-      )
 }

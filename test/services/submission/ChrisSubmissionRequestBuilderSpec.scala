@@ -115,7 +115,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
           .success
           .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
           .set(InactivityRequestPage, InactivityRequest.Option1)
@@ -238,7 +238,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
           .success
           .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
 
@@ -260,7 +260,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
           .success
           .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
 
@@ -282,7 +282,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
           .success
           .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
 
@@ -304,7 +304,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
           .success
           .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
 
@@ -326,7 +326,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
           .success
           .value
-          .set(DateConfirmNilPaymentsPage, LocalDate.of(2025, 9, 1))
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
 

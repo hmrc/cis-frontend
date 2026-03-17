@@ -46,10 +46,7 @@ trait SubmissionViewDataSupport extends Logging {
   }
 
   protected def periodEndFromUserAnswers(ua: UserAnswers, submissionType: ReturnType): Option[LocalDate] =
-    submissionType match {
-      case MonthlyNilReturn      => ua.get(DateConfirmNilPaymentsPage)
-      case MonthlyStandardReturn => ua.get(DateConfirmPaymentsPage)
-    }
+    ua.get(DateConfirmPaymentsPage)
 
   protected def contractorNameFrom(request: DataRequest[_]): String = {
     val ua  = request.userAnswers

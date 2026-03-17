@@ -25,11 +25,6 @@ GET         /unauthorised/organisation                                  controll
 GET         /unauthorised/individual                                    controllers.UnauthorisedIndividualAffinityController.onPageLoad()
 GET         /unauthorised/agent                                         controllers.UnauthorisedAgentAffinityController.onPageLoad()
 
-GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmNilPaymentsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmNilPaymentsController.onSubmit(mode: Mode = CheckMode)
-
 GET        /monthly-return/submit-inactive-request                      controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/submit-inactive-request                      controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-submit-inactive-request               controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
@@ -69,10 +64,16 @@ POST       /monthly-return/select-subcontractors                        controll
 GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
 GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
 
-GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode)
+GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
+GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
 POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode)
+GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
 POST       /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
+POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
+POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
@@ -118,7 +119,8 @@ POST       /monthly-return/remove-subcontractor/:index            controllers.mo
 GET        /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode, index: Int)
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
-GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad()
+GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
+GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
 
 GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
@@ -162,3 +164,5 @@ GET        /monthly-return/change-verified-status-declaration           controll
 POST       /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
+
+GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()

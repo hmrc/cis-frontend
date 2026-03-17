@@ -24,7 +24,7 @@ import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, DeclarationPage}
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -106,7 +106,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
       val testDate    = LocalDate.of(2024, 4, 5)
       val userAnswers = userAnswersWithCisId
-        .set(DateConfirmNilPaymentsPage, testDate)
+        .set(DateConfirmPaymentsPage, testDate)
         .success
         .value
 

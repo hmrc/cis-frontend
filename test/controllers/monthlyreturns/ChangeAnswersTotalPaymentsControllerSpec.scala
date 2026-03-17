@@ -17,75 +17,219 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.monthlyreturns.SelectedSubcontractor
+import models.{NormalMode, UserAnswers}
+import models.monthlyreturns.{SelectedSubcontractor, UpdateMonthlyReturnItemRequest}
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{never, times, verify, when}
+import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.SelectedSubcontractorPage
+import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import repositories.SessionRepository
+import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
-class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase {
+import scala.concurrent.Future
 
-  val subcontractorName             = "Tyne Test Ltd"
-  val totalPaymentsToSubcontractors = 1200
-  val totalCostOfMaterials          = 500
-  val totalCisDeductions            = 240
-  val index                         = 1
+class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
-  val subcontractor = SelectedSubcontractor(
+  given HeaderCarrier = HeaderCarrier()
+
+  private val index = 1
+
+  private val subcontractor = SelectedSubcontractor(
     id = 1,
-    name = subcontractorName,
-    totalPaymentsMade = Some(totalPaymentsToSubcontractors),
-    costOfMaterials = Some(totalCostOfMaterials),
-    totalTaxDeducted = Some(totalCisDeductions)
+    name = "Tyne Test Ltd",
+    totalPaymentsMade = Some(BigDecimal("1200")),
+    costOfMaterials = Some(BigDecimal("500")),
+    totalTaxDeducted = Some(BigDecimal("240"))
   )
-
-  val viewModel: ChangeAnswersTotalPaymentsViewModel =
-    ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
   "ChangeAnswersTotalPayments Controller" - {
 
-    "must return OK and the correct view for a GET" in {
-
-      val userAnswersWithSubcontractor =
-        emptyUserAnswers
-          .set(SelectedSubcontractorPage(index), subcontractor)
-          .success
-          .value
-
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithSubcontractor)).build()
+    "GET must return OK and the correct view" in {
+      val ua          = emptyUserAnswers.set(SelectedSubcontractorPage(index), subcontractor).success.value
+      val application = applicationBuilder(userAnswers = Some(ua)).build()
 
       running(application) {
-        val request =
-          FakeRequest(
-            GET,
-            controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url
-          )
+        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url)
 
         val result = route(application, request).value
+        val view   = application.injector.instanceOf[ChangeAnswersTotalPaymentsView]
 
-        val view = application.injector.instanceOf[ChangeAnswersTotalPaymentsView]
+        val expectedVm = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(viewModel, index)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(expectedVm, index)(request, messages(application)).toString
       }
     }
 
-    "must redirect to SystemError if subcontractor data is missing" in {
-
+    "GET must redirect to SystemError if subcontractor data is missing" in {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request =
-          FakeRequest(
-            GET,
-            controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url
-          )
-
-        val result = route(application, request).value
+        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url)
+        val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result) mustBe Some(controllers.routes.SystemErrorController.onPageLoad().url)
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
+
+    "POST must redirect to SystemError when payloadBuilder returns None" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+      val mockSession = mock[SessionRepository]
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn None
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder),
+            bind[SessionRepository].toInstance(mockSession)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+
+        verify(mockService, never).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+        verify(mockSession, never).set(any())
+      }
+    }
+
+    "POST must call MonthlyReturnService, persist session, and redirect to SubcontractorDetailsAdded on success" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+      val mockSession = mock[SessionRepository]
+
+      val payload = UpdateMonthlyReturnItemRequest(
+        instanceId = "i-123",
+        taxYear = 2026,
+        taxMonth = 3,
+        subcontractorId = 1,
+        subcontractorName = "Tyne Test Ltd",
+        totalPayments = "1,200.00",
+        costOfMaterials = "500.00",
+        totalDeducted = "240.00"
+      )
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+      when(mockSession.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder),
+            bind[SessionRepository].toInstance(mockSession)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+
+        val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
+        verify(mockService).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
+        captor.getValue mustBe payload
+        verify(mockSession, times(1)).set(any())
+      }
+    }
+
+    "POST must redirect to SystemError when MonthlyReturnService fails with UpstreamErrorResponse" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+      val mockSession = mock[SessionRepository]
+
+      val payload = UpdateMonthlyReturnItemRequest(
+        instanceId = "i-123",
+        taxYear = 2026,
+        taxMonth = 3,
+        subcontractorId = 1,
+        subcontractorName = "Tyne Test Ltd",
+        totalPayments = "1,200.00",
+        costOfMaterials = "500.00",
+        totalDeducted = "240.00"
+      )
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(UpstreamErrorResponse("boom", 500)))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder),
+            bind[SessionRepository].toInstance(mockSession)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+
+        verify(mockSession, never).set(any()) // should not save if update fails
+      }
+    }
+
+    "POST must redirect to SystemError when MonthlyReturnService throws a non-fatal exception" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+      val mockSession = mock[SessionRepository]
+
+      val payload = UpdateMonthlyReturnItemRequest(
+        instanceId = "i-123",
+        taxYear = 2026,
+        taxMonth = 3,
+        subcontractorId = 1,
+        subcontractorName = "Tyne Test Ltd",
+        totalPayments = "1,200.00",
+        costOfMaterials = "500.00",
+        totalDeducted = "240.00"
+      )
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder),
+            bind[SessionRepository].toInstance(mockSession)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+
+        verify(mockSession, never).set(any())
       }
     }
   }

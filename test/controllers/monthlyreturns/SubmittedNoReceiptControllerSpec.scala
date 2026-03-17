@@ -24,7 +24,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -66,7 +66,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
       .set(ConfirmEmailAddressPage, email)
       .success
       .value
-      .set(DateConfirmNilPaymentsPage, periodEnd)
+      .set(DateConfirmPaymentsPage, periodEnd)
       .success
       .value
       .set(ReturnTypePage, submissionType)
@@ -125,7 +125,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val incompleteUa =
             userAnswersWithCisId
-              .set(DateConfirmNilPaymentsPage, periodEnd)
+              .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
               .set(ReturnTypePage, submissionType)
@@ -187,7 +187,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .set(ContractorNamePage, contractorName)
               .success
               .value
-              .set(DateConfirmNilPaymentsPage, periodEnd)
+              .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
               .set(ReturnTypePage, submissionType)
@@ -237,7 +237,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .set(ContractorNamePage, contractorName)
               .success
               .value
-              .set(DateConfirmNilPaymentsPage, periodEnd)
+              .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
               .set(ConfirmEmailAddressPage, email)
@@ -303,7 +303,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val incompleteUa =
               userAnswersWithCisId
-                .set(DateConfirmNilPaymentsPage, periodEnd)
+                .set(DateConfirmPaymentsPage, periodEnd)
                 .success
                 .value
                 .set(ReturnTypePage, submissionType)
@@ -329,7 +329,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
               .success
               .value
-              .set(DateConfirmNilPaymentsPage, periodEnd)
+              .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
 
@@ -359,7 +359,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .set(ContractorNamePage, contractorName)
                 .success
                 .value
-                .set(DateConfirmNilPaymentsPage, periodEnd)
+                .set(DateConfirmPaymentsPage, periodEnd)
                 .success
                 .value
                 .set(ReturnTypePage, submissionType)
@@ -412,7 +412,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
                 .success
                 .value
-                .set(DateConfirmNilPaymentsPage, periodEnd)
+                .set(DateConfirmPaymentsPage, periodEnd)
                 .success
                 .value
                 .set(ConfirmEmailAddressPage, email)

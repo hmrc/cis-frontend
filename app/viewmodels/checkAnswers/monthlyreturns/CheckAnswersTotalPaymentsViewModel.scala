@@ -27,17 +27,6 @@ case class CheckAnswersTotalPaymentsViewModel(
   totalTaxDeducted: String
 )
 
-//object CheckAnswersTotalPaymentsViewModel {
-//  def fromModel(subcontractor: SelectedSubcontractor): CheckAnswersTotalPaymentsViewModel =
-//    CheckAnswersTotalPaymentsViewModel(
-//      subcontractor.id,
-//      subcontractor.name,
-//      subcontractor.totalPaymentsMade.map(_.toString).getOrElse(""),
-//      subcontractor.costOfMaterials.map(_.toString).getOrElse(""),
-//      subcontractor.totalTaxDeducted.map(_.toString).getOrElse("")
-//    )
-//}
-
 object CheckAnswersTotalPaymentsViewModel {
   def fromModel(subcontractor: SelectedSubcontractor): CheckAnswersTotalPaymentsViewModel =
     CheckAnswersTotalPaymentsViewModel(
