@@ -167,7 +167,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "STARTED")
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)

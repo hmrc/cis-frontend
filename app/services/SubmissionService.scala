@@ -97,17 +97,17 @@ class SubmissionService @Inject() (
         val timeoutDateTime = submissionDetails.submittedAt.plusSeconds(timeout)
 
         for {
-          pollUrl       <- userAnswers.get(PollUrlPage).toFuture
-          correlationId <- userAnswers.get(CorrelationIdPage).toFuture
-          result        <- cisConnector.getSubmissionStatus(pollUrl, correlationId)
-          newStatus      = result.status
-          timedOut       = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
-          newDetails     = submissionDetails.copy(status = newStatus)
-          ua1           <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
-          ua2           <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
-          ua3           <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
-          ua4           <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
-          _             <- sessionRepository.set(ua4)
+          pollUrl      <- userAnswers.get(PollUrlPage).toFuture
+          submissionId <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
+          result       <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
+          newStatus     = result.status
+          timedOut      = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
+          newDetails    = submissionDetails.copy(status = newStatus)
+          ua1          <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
+          ua2          <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
+          ua3          <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
+          ua4          <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
+          _            <- sessionRepository.set(ua4)
         } yield newStatus
     }
   }
