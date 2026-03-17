@@ -18,8 +18,8 @@ package forms.mappings
 
 import config.FrontendAppConfig
 import models.Enumerable
-import play.api.data.{FieldMapping, Mapping}
-import play.api.data.Forms.{of, optional}
+import play.api.data.FieldMapping
+import play.api.data.Forms.of
 import play.api.i18n.Messages
 
 import java.time.LocalDate
