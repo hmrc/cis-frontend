@@ -40,191 +40,146 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
   import FormattersSpec._
 
   "stringFormatter" - {
-
     val formatter = stringFormatter("error.required")
 
     "must bind a valid string" in {
-      val result = formatter.bind("key", Map("key" -> "value"))
-      result mustBe Right("value")
+      formatter.bind("key", Map("key" -> "value")) mustBe Right("value")
     }
 
     "must not bind when key is missing" in {
-      val result = formatter.bind("key", Map.empty[String, String])
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map.empty[String, String]) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind an empty string" in {
-      val result = formatter.bind("key", Map("key" -> ""))
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map("key" -> "")) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind a string with only whitespace" in {
-      val result = formatter.bind("key", Map("key" -> "   "))
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map("key" -> "   ")) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
-    "must bind a string with leading/trailing whitespace" in {
-      val result = formatter.bind("key", Map("key" -> "  value  "))
-      result mustBe Right("  value  ")
+    "must bind a string with leading/trailing whitespace (no trimming performed)" in {
+      formatter.bind("key", Map("key" -> "  value  ")) mustBe Right("  value  ")
     }
 
     "must use custom error key with args" in {
       val customFormatter = stringFormatter("custom.error", Seq("arg1", "arg2"))
-      val result          = customFormatter.bind("key", Map.empty[String, String])
-      result mustBe Left(Seq(FormError("key", "custom.error", Seq("arg1", "arg2"))))
+      customFormatter.bind("key", Map.empty[String, String]) mustBe
+        Left(Seq(FormError("key", "custom.error", Seq("arg1", "arg2"))))
     }
 
     "must unbind a valid value" in {
-      val result = formatter.unbind("key", "value")
-      result mustEqual Map("key" -> "value")
+      formatter.unbind("key", "value") mustEqual Map("key" -> "value")
     }
   }
 
   "booleanFormatter" - {
-
     val formatter = booleanFormatter("error.required", "error.boolean")
 
     "must bind true" in {
-      val result = formatter.bind("key", Map("key" -> "true"))
-      result mustBe Right(true)
+      formatter.bind("key", Map("key" -> "true")) mustBe Right(true)
     }
 
     "must bind false" in {
-      val result = formatter.bind("key", Map("key" -> "false"))
-      result mustBe Right(false)
+      formatter.bind("key", Map("key" -> "false")) mustBe Right(false)
     }
 
     "must not bind when key is missing" in {
-      val result = formatter.bind("key", Map.empty[String, String])
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map.empty[String, String]) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind an empty string" in {
-      val result = formatter.bind("key", Map("key" -> ""))
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map("key" -> "")) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind an invalid boolean value" in {
-      val result = formatter.bind("key", Map("key" -> "maybe"))
-      result mustBe Left(Seq(FormError("key", "error.boolean")))
+      formatter.bind("key", Map("key" -> "maybe")) mustBe Left(Seq(FormError("key", "error.boolean")))
     }
 
     "must use custom error keys with args" in {
       val customFormatter = booleanFormatter("custom.required", "custom.boolean", Seq("arg1"))
-      val result          = customFormatter.bind("key", Map("key" -> "invalid"))
-      result mustBe Left(Seq(FormError("key", "custom.boolean", Seq("arg1"))))
+      customFormatter.bind("key", Map("key" -> "invalid")) mustBe Left(
+        Seq(FormError("key", "custom.boolean", Seq("arg1")))
+      )
     }
 
     "must unbind true" in {
-      val result = formatter.unbind("key", true)
-      result mustEqual Map("key" -> "true")
+      formatter.unbind("key", true) mustEqual Map("key" -> "true")
     }
 
     "must unbind false" in {
-      val result = formatter.unbind("key", false)
-      result mustEqual Map("key" -> "false")
+      formatter.unbind("key", false) mustEqual Map("key" -> "false")
     }
   }
 
   "booleanDefaultFalseFormatter" - {
-
     val formatter = booleanDefaultFalseFormatter("error.required", "error.boolean")
 
     "must bind true" in {
-      val result = formatter.bind("key", Map("key" -> "true"))
-      result mustBe Right(true)
+      formatter.bind("key", Map("key" -> "true")) mustBe Right(true)
     }
 
     "must bind false when key is missing" in {
-      val result = formatter.bind("key", Map.empty[String, String])
-      result mustBe Right(false)
+      formatter.bind("key", Map.empty[String, String]) mustBe Right(false)
     }
 
     "must bind false when value is empty" in {
-      val result = formatter.bind("key", Map("key" -> ""))
-      result mustBe Right(false)
+      formatter.bind("key", Map("key" -> "")) mustBe Right(false)
     }
 
     "must bind false when value is invalid" in {
-      val result = formatter.bind("key", Map("key" -> "invalid"))
-      result mustBe Right(false)
+      formatter.bind("key", Map("key" -> "invalid")) mustBe Right(false)
     }
 
     "must bind false when value is false" in {
-      val result = formatter.bind("key", Map("key" -> "false"))
-      result mustBe Right(false)
+      formatter.bind("key", Map("key" -> "false")) mustBe Right(false)
     }
 
     "must unbind true" in {
-      val result = formatter.unbind("key", true)
-      result mustEqual Map("key" -> "true")
+      formatter.unbind("key", true) mustEqual Map("key" -> "true")
     }
 
     "must unbind false" in {
-      val result = formatter.unbind("key", false)
-      result mustEqual Map("key" -> "false")
+      formatter.unbind("key", false) mustEqual Map("key" -> "false")
     }
   }
 
   "seqFormatter" - {
-
     val baseIntFormatter = intFormatter("error.required", "error.wholeNumber", "error.nonNumeric")
     val formatter        = seqFormatter[Int](using baseIntFormatter)
 
     "must bind a valid sequence" in {
-      val data   = Map(
-        "items.0" -> "1",
-        "items.1" -> "2",
-        "items.2" -> "3"
-      )
-      val result = formatter.bind("items", data)
-      result mustBe Right(Seq(1, 2, 3))
+      val data = Map("items.0" -> "1", "items.1" -> "2", "items.2" -> "3")
+      formatter.bind("items", data) mustBe Right(Seq(1, 2, 3))
     }
 
     "must bind a single item" in {
-      val data   = Map("items.0" -> "42")
-      val result = formatter.bind("items", data)
-      result mustBe Right(Seq(42))
+      formatter.bind("items", Map("items.0" -> "42")) mustBe Right(Seq(42))
     }
 
     "must bind an empty sequence when no values provided" in {
-      val result = formatter.bind("items", Map.empty[String, String])
-      result mustBe Right(Seq.empty)
+      formatter.bind("items", Map.empty[String, String]) mustBe Right(Seq.empty)
     }
 
     "must bind items in correct order" in {
-      val data   = Map(
-        "items.2" -> "30",
-        "items.0" -> "10",
-        "items.1" -> "20"
-      )
-      val result = formatter.bind("items", data)
-      result mustBe Right(Seq(10, 20, 30))
+      val data = Map("items.2" -> "30", "items.0" -> "10", "items.1" -> "20")
+      formatter.bind("items", data) mustBe Right(Seq(10, 20, 30))
     }
 
     "must not bind when items have errors" in {
-      val data   = Map(
-        "items.0" -> "1.5",
-        "items.1" -> "abc"
-      )
+      val data   = Map("items.0" -> "1.5", "items.1" -> "abc")
       val result = formatter.bind("items", data)
       result.isLeft mustBe true
       result.left.toOption.get.size mustBe 2
     }
 
     "must ignore keys that don't match the pattern" in {
-      val data   = Map(
-        "items.0" -> "1",
-        "other.0" -> "2",
-        "items.1" -> "3"
-      )
-      val result = formatter.bind("items", data)
-      result mustBe Right(Seq(1, 3))
+      val data = Map("items.0" -> "1", "other.0" -> "2", "items.1" -> "3")
+      formatter.bind("items", data) mustBe Right(Seq(1, 3))
     }
 
     "must unbind a valid sequence" in {
-      val result = formatter.unbind("items", Seq(10, 20, 30))
-      result mustEqual Map(
+      formatter.unbind("items", Seq(10, 20, 30)) mustEqual Map(
         "items.0" -> "10",
         "items.1" -> "20",
         "items.2" -> "30"
@@ -232,239 +187,160 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
     }
 
     "must unbind an empty sequence" in {
-      val result = formatter.unbind("items", Seq.empty)
-      result mustEqual Map.empty
+      formatter.unbind("items", Seq.empty) mustEqual Map.empty
     }
   }
 
   "intFormatter" - {
-
     val formatter = intFormatter("error.required", "error.wholeNumber", "error.nonNumeric")
 
     "must bind a valid integer" in {
-      val result = formatter.bind("key", Map("key" -> "123"))
-      result mustBe Right(123)
+      formatter.bind("key", Map("key" -> "123")) mustBe Right(123)
     }
 
     "must bind a negative integer" in {
-      val result = formatter.bind("key", Map("key" -> "-456"))
-      result mustBe Right(-456)
+      formatter.bind("key", Map("key" -> "-456")) mustBe Right(-456)
     }
 
     "must bind an integer with commas" in {
-      val result = formatter.bind("key", Map("key" -> "1,234"))
-      result mustBe Right(1234)
+      formatter.bind("key", Map("key" -> "1,234")) mustBe Right(1234)
     }
 
     "must not bind when key is missing" in {
-      val result = formatter.bind("key", Map.empty[String, String])
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map.empty[String, String]) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind an empty string" in {
-      val result = formatter.bind("key", Map("key" -> ""))
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map("key" -> "")) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind a decimal number" in {
-      val result = formatter.bind("key", Map("key" -> "1.5"))
-      result mustBe Left(Seq(FormError("key", "error.wholeNumber")))
+      formatter.bind("key", Map("key" -> "1.5")) mustBe Left(Seq(FormError("key", "error.wholeNumber")))
     }
 
     "must not bind a non-numeric string" in {
-      val result = formatter.bind("key", Map("key" -> "abc"))
-      result mustBe Left(Seq(FormError("key", "error.nonNumeric")))
+      formatter.bind("key", Map("key" -> "abc")) mustBe Left(Seq(FormError("key", "error.nonNumeric")))
     }
 
     "must use custom error keys with args" in {
       val customFormatter = intFormatter("custom.required", "custom.wholeNumber", "custom.nonNumeric", Seq("arg1"))
-      val result          = customFormatter.bind("key", Map("key" -> "1.5"))
-      result mustBe Left(Seq(FormError("key", "custom.wholeNumber", Seq("arg1"))))
+      customFormatter.bind("key", Map("key" -> "1.5")) mustBe Left(
+        Seq(FormError("key", "custom.wholeNumber", Seq("arg1")))
+      )
     }
 
     "must unbind a valid value" in {
-      val result = formatter.unbind("key", 123)
-      result mustEqual Map("key" -> "123")
+      formatter.unbind("key", 123) mustEqual Map("key" -> "123")
     }
   }
 
   "enumerableFormatter" - {
-
     implicit val testEnumEnumerable: Enumerable[TestEnum] = TestEnum.testEnumEnumerable
     val formatter                                         = enumerableFormatter[TestEnum]("error.required", "error.invalid")
 
     "must bind a valid enum value" in {
-      val result = formatter.bind("key", Map("key" -> "Value1"))
-      result mustBe Right(Value1)
+      formatter.bind("key", Map("key" -> "Value1")) mustBe Right(Value1)
     }
 
     "must bind another valid enum value" in {
-      val result = formatter.bind("key", Map("key" -> "Value2"))
-      result mustBe Right(Value2)
+      formatter.bind("key", Map("key" -> "Value2")) mustBe Right(Value2)
     }
 
     "must not bind when key is missing" in {
-      val result = formatter.bind("key", Map.empty[String, String])
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map.empty[String, String]) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind an empty string" in {
-      val result = formatter.bind("key", Map("key" -> ""))
-      result mustBe Left(Seq(FormError("key", "error.required")))
+      formatter.bind("key", Map("key" -> "")) mustBe Left(Seq(FormError("key", "error.required")))
     }
 
     "must not bind an invalid enum value" in {
-      val result = formatter.bind("key", Map("key" -> "InvalidValue"))
-      result mustBe Left(Seq(FormError("key", "error.invalid")))
+      formatter.bind("key", Map("key" -> "InvalidValue")) mustBe Left(Seq(FormError("key", "error.invalid")))
     }
 
     "must use custom error keys with args" in {
       val customFormatter = enumerableFormatter[TestEnum]("custom.required", "custom.invalid", Seq("arg1"))
-      val result          = customFormatter.bind("key", Map("key" -> "InvalidValue"))
-      result mustBe Left(Seq(FormError("key", "custom.invalid", Seq("arg1"))))
+      customFormatter.bind("key", Map("key" -> "InvalidValue")) mustBe Left(
+        Seq(FormError("key", "custom.invalid", Seq("arg1")))
+      )
     }
 
     "must unbind a valid value" in {
-      val result = formatter.unbind("key", Value1)
-      result mustEqual Map("key" -> "Value1")
+      formatter.unbind("key", Value1) mustEqual Map("key" -> "Value1")
     }
   }
 
-  "paymentDetailsCurrencyFormatter (scale=0)" - {
+  "currencyFormatter" - {
 
-    val formatter = paymentDetailsCurrencyFormatter("error.required", "error.invalid", "error.maxLength")
+    "scale=0 (whole pounds)" - {
+      val formatter = currencyFormatter(
+        requiredKey = "required",
+        invalidKey = "invalid",
+        maxLengthKey = "maxLength",
+        scale = 0
+      )
 
-    "must bind a valid integer" in {
-      formatter.bind("key", Map("key" -> "123")) mustBe Right(BigDecimal(123))
+      "must bind whole numbers" in {
+        Seq("0", "100", "99999999", "1,000", "£100", " 1 0 0 ", "100.", "100.0", "100.00").foreach { in =>
+          withClue(s"input='$in'") {
+            formatter.bind("key", Map("key" -> in)).isRight mustBe true
+          }
+        }
+      }
+
+      "must reject non-zero decimals" in {
+        Seq("0.01", "100.5", "100.50", "1,234.56").foreach { in =>
+          withClue(s"input='$in'") {
+            formatter.bind("key", Map("key" -> in)) mustBe Left(Seq(FormError("key", "invalid")))
+          }
+        }
+      }
+
+      "must reject negatives and invalid patterns" in {
+        Seq("-1", "abc", "100£", "1..0", "1.0.0").foreach { in =>
+          withClue(s"input='$in'") {
+            formatter.bind("key", Map("key" -> in)) mustBe Left(Seq(FormError("key", "invalid")))
+          }
+        }
+      }
+
+      "must enforce max length" in {
+        val tooLong = "1" * 17
+        formatter.bind("key", Map("key" -> tooLong)) mustBe Left(Seq(FormError("key", "maxLength")))
+      }
+
+      "must unbind as whole pounds without decimals" in {
+        formatter.unbind("key", BigDecimal("123.00")) mustBe Map("key" -> "123")
+      }
     }
 
-    "must bind a valid integer with £ prefix, commas and spaces" in {
-      formatter.bind("key", Map("key" -> "£ 1,234  ")) mustBe Right(BigDecimal(1234))
-    }
+    "scale=2 (pounds and pence)" - {
+      val formatter = currencyFormatter(
+        requiredKey = "required",
+        invalidKey = "invalid",
+        maxLengthKey = "maxLength",
+        scale = 2
+      )
 
-    "must bind .00" in {
-      formatter.bind("key", Map("key" -> "123.00")) mustBe Right(BigDecimal("123.00"))
-    }
+      "must bind up to 2dp" in {
+        Seq("0", "0.0", "0.00", "1.2", "1.23", "£1,234.56", " 1 2 3 4 . 5 6 ").foreach { in =>
+          withClue(s"input='$in'") {
+            formatter.bind("key", Map("key" -> in)).isRight mustBe true
+          }
+        }
+      }
 
-    "must bind .0" in {
-      formatter.bind("key", Map("key" -> "123.0")) mustBe Right(BigDecimal("123.0"))
-    }
+      "must reject more than 2dp and invalid patterns" in {
+        Seq("1.234", "1.2.3", "abc", "-1").foreach { in =>
+          withClue(s"input='$in'") {
+            formatter.bind("key", Map("key" -> in)) mustBe Left(Seq(FormError("key", "invalid")))
+          }
+        }
+      }
 
-    "must bind 0" in {
-      formatter.bind("key", Map("key" -> "0")) mustBe Right(BigDecimal(0))
+      "must unbind with exactly 2dp" in {
+        formatter.unbind("key", BigDecimal("12")) mustBe Map("key" -> "12.00")
+      }
     }
-
-    "must bind 0.00" in {
-      formatter.bind("key", Map("key" -> "0.00")) mustBe Right(BigDecimal("0.00"))
-    }
-
-    "must bind invalid comma grouping" in {
-      formatter.bind("key", Map("key" -> "12,34")) mustBe Right(BigDecimal("1234.00"))
-      formatter.bind("key", Map("key" -> "1,23,456")) mustBe Right(BigDecimal("123456.00"))
-    }
-
-    "must not bind decimals other than .0 or .00" in {
-      formatter.bind("key", Map("key" -> "123.4")) mustBe Left(Seq(FormError("key", "error.invalid")))
-      formatter.bind("key", Map("key" -> "123.45")) mustBe Left(Seq(FormError("key", "error.invalid")))
-    }
-
-    "must not bind more than 2 decimal places" in {
-      formatter.bind("key", Map("key" -> "123.000")) mustBe Left(Seq(FormError("key", "error.invalid")))
-    }
-
-    "must not bind when key is missing" in {
-      formatter.bind("key", Map.empty) mustBe Left(Seq(FormError("key", "error.required")))
-    }
-
-    "must not bind an empty string" in {
-      formatter.bind("key", Map("key" -> "")) mustBe Left(Seq(FormError("key", "error.required")))
-    }
-
-    "must bind valid comma grouping" in {
-      formatter.bind("key", Map("key" -> "1,234")) mustBe Right(BigDecimal(1234))
-      formatter.bind("key", Map("key" -> "1,234,567")) mustBe Right(BigDecimal(1234567))
-    }
-
-    "must unbind without decimals" in {
-      formatter.unbind("key", BigDecimal("123.00")) mustEqual Map("key" -> "123")
-      formatter.unbind("key", BigDecimal("0.00")) mustEqual Map("key" -> "0")
-    }
-
-    "must allow leading zeros (no leading-zero prevention)" in {
-      formatter.bind("key", Map("key" -> "01")) mustBe Right(BigDecimal(1))
-      formatter.bind("key", Map("key" -> "001.00")) mustBe Right(BigDecimal("1.00"))
-    }
-
-    "must bind numbers with arbitrary comma placement (commas ignored)" in {
-      paymentDetailsCurrencyFormatter("error.required", "error.invalid", "error.maxLength")
-        .bind("key", Map("key" -> "12,34")) mustBe Right(BigDecimal(1234))
-    }
-
   }
-
-  "taxDeductedCurrencyFormatter (scale=2)" - {
-
-    val formatter = taxDeductedCurrencyFormatter("error.required", "error.invalid", "error.maxLength")
-
-    "must bind integer" in {
-      formatter.bind("key", Map("key" -> "123")) mustBe Right(BigDecimal(123))
-    }
-
-    "must bind 1dp and 2dp values" in {
-      formatter.bind("key", Map("key" -> "123.4")) mustBe Right(BigDecimal("123.4"))
-      formatter.bind("key", Map("key" -> "123.45")) mustBe Right(BigDecimal("123.45"))
-    }
-
-    "must bind a number with £, commas and spaces" in {
-      formatter.bind("key", Map("key" -> "£ 1,234 . 56")) mustBe Right(BigDecimal("1234.56"))
-    }
-
-    "must bind 00.50 (leading zeros allowed)" in {
-      formatter.bind("key", Map("key" -> "00.50")) mustBe Right(BigDecimal("0.50"))
-    }
-
-    "must bind invalid comma grouping" in {
-      formatter.bind("key", Map("key" -> "12,34.56")) mustBe Right(BigDecimal("1234.56"))
-      formatter.bind("key", Map("key" -> "1,23,456.78")) mustBe Right(BigDecimal("123456.78"))
-    }
-
-    "must not bind more than 2 decimal places" in {
-      formatter.bind("key", Map("key" -> "123.456")) mustBe Left(Seq(FormError("key", "error.invalid")))
-    }
-
-    "must bind valid comma grouping" in {
-      formatter.bind("key", Map("key" -> "1,234.56")) mustBe Right(BigDecimal("1234.56"))
-      formatter.bind("key", Map("key" -> "1,234,567.89")) mustBe Right(BigDecimal("1234567.89"))
-    }
-
-    "must not bind negative values" in {
-      formatter.bind("key", Map("key" -> "-123.45")) mustBe Left(Seq(FormError("key", "error.invalid")))
-    }
-
-    "must not bind when key is missing" in {
-      formatter.bind("key", Map.empty) mustBe Left(Seq(FormError("key", "error.required")))
-    }
-
-    "must not bind empty string" in {
-      formatter.bind("key", Map("key" -> "")) mustBe Left(Seq(FormError("key", "error.required")))
-    }
-
-    "must unbind with exactly 2dp (for redisplay on input/check-answers)" in {
-      formatter.unbind("key", BigDecimal(100)) mustEqual Map("key" -> "100.00")
-      formatter.unbind("key", BigDecimal("50.5")) mustEqual Map("key" -> "50.50")
-      formatter.unbind("key", BigDecimal("0")) mustEqual Map("key" -> "0.00")
-    }
-
-    "must bind numbers with arbitrary comma placement (commas ignored)" in {
-      taxDeductedCurrencyFormatter("error.required", "error.invalid", "error.maxLength")
-        .bind("key", Map("key" -> "1,23,456.78")) mustBe Right(BigDecimal("123456.78"))
-    }
-
-    "must bind trailing dot" in {
-      taxDeductedCurrencyFormatter("error.required", "error.invalid", "error.maxLength")
-        .bind("key", Map("key" -> "0.")) mustBe Right(BigDecimal(0))
-    }
-
-  }
-
 }

@@ -184,9 +184,7 @@ trait Formatters {
 
               // Normalise FIRST (strip spaces + £) so we can allow inputs like "£ 1,234 . 56"
               val normalisedForValidation =
-                input
-                  .replace(" ", "")
-                  .trim
+                input.filterNot(_.isWhitespace)
 
               val allowedRawPattern =
                 ("^£?" + intPartWithOptionalCommas + decimalsForScale + "$").r
@@ -205,7 +203,7 @@ trait Formatters {
                 val cleaned =
                   if (cleaned0.endsWith(".")) cleaned0.dropRight(1) else cleaned0
 
-                val parts          = cleaned0.split("\\.", -1)
+                val parts          = cleaned.split("\\.", -1)
                 val hasDecimalPart = parts.length == 2
                 val decPart        = if (hasDecimalPart) parts(1) else ""
 
@@ -249,30 +247,5 @@ trait Formatters {
         baseFormatter.unbind(key, rendered)
       }
     }
-
-  // Optional compatibility wrappers
-  private[mappings] def paymentDetailsCurrencyFormatter(
-    requiredKey: String,
-    invalidKey: String,
-    maxLengthKey: String,
-    args: Seq[String] = Seq.empty
-  ): Formatter[BigDecimal] =
-    currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = 0, args = args)
-
-  private[mappings] def costOfMaterialsCurrencyFormatter(
-    requiredKey: String,
-    invalidKey: String,
-    maxLengthKey: String,
-    args: Seq[String] = Seq.empty
-  ): Formatter[BigDecimal] =
-    currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = 0, args = args)
-
-  private[mappings] def taxDeductedCurrencyFormatter(
-    requiredKey: String,
-    invalidKey: String,
-    maxLengthKey: String,
-    args: Seq[String] = Seq.empty
-  ): Formatter[BigDecimal] =
-    currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = 2, args = args)
 
 }

@@ -84,40 +84,6 @@ trait Mappings extends Formatters with Constraints {
   ): FieldMapping[BigDecimal] =
     of(currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = scale, args = args))
 
-  protected def optionalCurrency(
-    invalidKey: String = "error.invalid",
-    maxLengthKey: String = "error.maxLength",
-    scale: Int,
-    args: Seq[String] = Seq.empty
-  ): Mapping[Option[BigDecimal]] =
-    optional(
-      of(currencyFormatter(requiredKey = "error.required", invalidKey, maxLengthKey, scale = scale, args = args))
-    )
-
-  protected def paymentDetailsCurrency(
-    requiredKey: String = "error.required",
-    invalidKey: String = "error.invalid",
-    maxLengthKey: String = "error.maxLength",
-    args: Seq[String] = Seq.empty
-  ): FieldMapping[BigDecimal] =
-    currency(requiredKey, invalidKey, maxLengthKey, scale = 0, args = args)
-
-  protected def CostOfMaterialsCurrency(
-    requiredKey: String = "error.required",
-    invalidKey: String = "error.invalid",
-    maxLengthKey: String = "error.maxLength",
-    args: Seq[String] = Seq.empty
-  ): FieldMapping[BigDecimal] =
-    of(costOfMaterialsCurrencyFormatter(requiredKey, invalidKey, maxLengthKey, args))
-
-  protected def taxDeductedCurrency(
-    requiredKey: String = "error.required",
-    invalidKey: String = "error.invalid",
-    maxLengthKey: String = "error.maxLength",
-    args: Seq[String] = Seq.empty
-  ): FieldMapping[BigDecimal] =
-    currency(requiredKey, invalidKey, maxLengthKey, scale = 2, args = args)
-
   protected def monthYearPaymentDate(
     invalidKey: String,
     twoRequiredKey: String,

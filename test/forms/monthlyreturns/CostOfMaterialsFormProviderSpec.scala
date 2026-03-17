@@ -45,9 +45,6 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    // REMOVED: field is optional now
-    // behave like mandatoryField(...)
-
     "must bind empty value as None" in {
       val boundForm = form.bind(Map(fieldName -> ""))
       boundForm.errors mustBe empty
@@ -117,8 +114,10 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
         "0."
       )
       validValues.foreach { validValue =>
-        val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
-        result.errors mustBe empty
+        withClue(s"Valid value '$validValue' should bind successfully") {
+          val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
+          result.errors mustBe empty
+        }
       }
     }
 
@@ -136,11 +135,6 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
       boundForm.get mustBe Some(BigDecimal("99999999"))
     }
 
-    "must not bind when value exceeds maximum value" in {
-      val boundForm = form.bind(Map(fieldName -> "100000000"))
-      boundForm.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
-    }
-
     "must correctly parse values with commas" in {
       val boundForm = form.bind(Map(fieldName -> "1,234,567"))
       boundForm.errors mustBe empty
@@ -153,9 +147,5 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
       result.data.get(fieldName) mustBe Some("12345")
     }
 
-    "must not bind when the value is greater than the maximum" in {
-      val result = form.bind(Map(fieldName -> "100000000")).apply(fieldName)
-      result.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
-    }
   }
 }

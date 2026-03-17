@@ -20,21 +20,20 @@ import forms.mappings.Mappings
 import play.api.data.Form
 import play.api.data.Forms.optional
 
-import javax.inject.Inject
-
-class CostOfMaterialsFormProvider @Inject() extends Mappings {
+class CostOfMaterialsFormProvider extends Mappings {
 
   def apply(): Form[Option[BigDecimal]] =
     Form(
       "value" -> optional(
-        CostOfMaterialsCurrency(
-          "monthlyreturns.costOfMaterials.error.required",
-          "monthlyreturns.costOfMaterials.error.invalid",
-          "monthlyreturns.costOfMaterials.error.maxLength"
+        currency(
+          requiredKey = "monthlyreturns.costOfMaterials.error.required", // not used when optional
+          invalidKey = "monthlyreturns.costOfMaterials.error.invalid",
+          maxLengthKey = "monthlyreturns.costOfMaterials.error.maxLength",
+          scale = 0
         )
       ).verifying(
         "monthlyreturns.costOfMaterials.error.maxValue",
-        opt => opt.forall(_ <= BigDecimal("99999999.00"))
+        opt => opt.forall(_ <= BigDecimal("99999999"))
       )
     )
 }

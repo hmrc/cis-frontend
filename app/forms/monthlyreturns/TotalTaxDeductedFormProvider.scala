@@ -27,10 +27,11 @@ class TotalTaxDeductedFormProvider @Inject() extends Mappings {
   def apply(): Form[Option[BigDecimal]] =
     Form(
       "value" -> optional(
-        taxDeductedCurrency(
-          "monthlyreturns.totalTaxDeducted.error.required",
-          "monthlyreturns.totalTaxDeducted.error.invalid",
-          "monthlyreturns.totalTaxDeducted.error.maxLength"
+        currency(
+          requiredKey = "monthlyreturns.totalTaxDeducted.error.required", // not used when optional
+          invalidKey = "monthlyreturns.totalTaxDeducted.error.invalid",
+          maxLengthKey = "monthlyreturns.totalTaxDeducted.error.maxLength",
+          scale = 2
         )
       ).verifying(
         "monthlyreturns.totalTaxDeducted.error.maxValue",
