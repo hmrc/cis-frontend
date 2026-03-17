@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.{NormalMode, UserAnswers}
+import models.NormalMode
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}

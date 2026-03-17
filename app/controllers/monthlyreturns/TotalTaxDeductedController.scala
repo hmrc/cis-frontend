@@ -18,12 +18,12 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
-import models.Mode
+import models.{Mode, UserAnswers}
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.TotalTaxDeductedView
@@ -63,38 +63,37 @@ class TotalTaxDeductedController @Inject() (
 
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
+      def redirect(updatedAnswers: UserAnswers): Result =
+        returnTo match {
+          case Some("changeAnswers") =>
+            Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+          case _                     =>
+            Redirect(navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index), mode, updatedAnswers))
+        }
+
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
         case Some(subcontractor) =>
           form
             .bindFromRequest()
             .fold(
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
-              {
-                case Some(value) =>
-                  for {
-                    updatedAnswers <-
-                      Future.fromTry(request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), value))
-                    _              <- sessionRepository.set(updatedAnswers)
-                  } yield returnTo match {
-                    case Some("changeAnswers") =>
-                      Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
-                    case _                     =>
-                      Redirect(navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index), mode, updatedAnswers))
+              valueOpt => {
+                val updatedAnswersTry =
+                  valueOpt match {
+                    case Some(value) =>
+                      request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), value)
+                    case None        =>
+                      request.userAnswers.remove(SelectedSubcontractorTaxDeductedPage(index))
                   }
 
-                case None =>
-                  for {
-                    updatedAnswers <-
-                      Future.fromTry(request.userAnswers.remove(SelectedSubcontractorTaxDeductedPage(index)))
-                    _              <- sessionRepository.set(updatedAnswers)
-                  } yield returnTo match {
-                    case Some("changeAnswers") =>
-                      Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
-                    case _                     =>
-                      Redirect(navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index), mode, updatedAnswers))
-                  }
+                for {
+                  updatedAnswers <- Future.fromTry(updatedAnswersTry)
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield redirect(updatedAnswers)
               }
             )
       }

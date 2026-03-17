@@ -23,7 +23,7 @@ import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.CostOfMaterialsView
@@ -63,38 +63,37 @@ class CostOfMaterialsController @Inject() (
 
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
+      def redirect(updatedAnswers: models.UserAnswers): Result =
+        returnTo match {
+          case Some("changeAnswers") =>
+            Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+          case _                     =>
+            Redirect(navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index), mode, updatedAnswers))
+        }
+
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
         case Some(subcontractor) =>
           form
             .bindFromRequest()
             .fold(
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
-              {
-                case Some(value) =>
-                  for {
-                    updatedAnswers <-
-                      Future.fromTry(request.userAnswers.set(SelectedSubcontractorMaterialCostsPage(index), value))
-                    _              <- sessionRepository.set(updatedAnswers)
-                  } yield returnTo match {
-                    case Some("changeAnswers") =>
-                      Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
-                    case _                     =>
-                      Redirect(navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index), mode, updatedAnswers))
+              valueOpt => {
+                val updatedAnswersTry =
+                  valueOpt match {
+                    case Some(value) =>
+                      request.userAnswers.set(SelectedSubcontractorMaterialCostsPage(index), value)
+                    case None        =>
+                      request.userAnswers.remove(SelectedSubcontractorMaterialCostsPage(index))
                   }
 
-                case None =>
-                  for {
-                    updatedAnswers <-
-                      Future.fromTry(request.userAnswers.remove(SelectedSubcontractorMaterialCostsPage(index)))
-                    _              <- sessionRepository.set(updatedAnswers)
-                  } yield returnTo match {
-                    case Some("changeAnswers") =>
-                      Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
-                    case _                     =>
-                      Redirect(navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index), mode, updatedAnswers))
-                  }
+                for {
+                  updatedAnswers <- Future.fromTry(updatedAnswersTry)
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield redirect(updatedAnswers)
               }
             )
       }

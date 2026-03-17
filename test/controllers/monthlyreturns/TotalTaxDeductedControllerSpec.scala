@@ -20,13 +20,14 @@ import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.monthlyreturns.SelectedSubcontractor
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -38,20 +39,20 @@ import scala.concurrent.Future
 
 class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
-  val formProvider = new TotalTaxDeductedFormProvider()
-  val form         = formProvider() // Form[Option[BigDecimal]]
+  val formProvider                   = new TotalTaxDeductedFormProvider()
+  val form: Form[Option[BigDecimal]] = formProvider() // Form[Option[BigDecimal]]
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
   val validAnswer: BigDecimal = BigDecimal(1)
   val companyName             = "TyneWear Ltd"
 
-  val userAnswers = emptyUserAnswers
+  val userAnswers: UserAnswers = emptyUserAnswers
     .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
     .success
     .value
 
-  lazy val totalTaxDeductedRoute =
+  lazy val totalTaxDeductedRoute: String =
     controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 1, None).url
 
   "TotalTaxDeducted Controller" - {

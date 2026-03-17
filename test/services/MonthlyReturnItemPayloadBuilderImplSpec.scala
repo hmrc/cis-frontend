@@ -44,9 +44,15 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
     "must build an UpdateMonthlyReturnItemRequest when required answers exist" in {
       val ua =
         emptyUserAnswers
-          .set(CisIdPage, instanceId).success.value
-          .set(DateConfirmPaymentsPage, monthDate).success.value
-          .set(SelectedSubcontractorPage(index), subcontractor).success.value
+          .set(CisIdPage, instanceId)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, monthDate)
+          .success
+          .value
+          .set(SelectedSubcontractorPage(index), subcontractor)
+          .success
+          .value
 
       val result = builder.build(ua, index).value
 
@@ -67,9 +73,15 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
 
       val ua =
         emptyUserAnswers
-          .set(CisIdPage, instanceId).success.value
-          .set(DateConfirmPaymentsPage, monthDate).success.value
-          .set(SelectedSubcontractorPage(index), subcontractorMissingOptionals).success.value
+          .set(CisIdPage, instanceId)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, monthDate)
+          .success
+          .value
+          .set(SelectedSubcontractorPage(index), subcontractorMissingOptionals)
+          .success
+          .value
 
       val result = builder.build(ua, index).value
 
@@ -81,8 +93,12 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
     "must return None when CisIdPage is missing" in {
       val ua =
         emptyUserAnswers
-          .set(DateConfirmPaymentsPage, monthDate).success.value
-          .set(SelectedSubcontractorPage(index), subcontractor).success.value
+          .set(DateConfirmPaymentsPage, monthDate)
+          .success
+          .value
+          .set(SelectedSubcontractorPage(index), subcontractor)
+          .success
+          .value
 
       builder.build(ua, index) mustBe None
     }
@@ -90,8 +106,12 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
     "must return None when DateConfirmPaymentsPage is missing" in {
       val ua =
         emptyUserAnswers
-          .set(CisIdPage, instanceId).success.value
-          .set(SelectedSubcontractorPage(index), subcontractor).success.value
+          .set(CisIdPage, instanceId)
+          .success
+          .value
+          .set(SelectedSubcontractorPage(index), subcontractor)
+          .success
+          .value
 
       builder.build(ua, index) mustBe None
     }
@@ -99,8 +119,12 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
     "must return None when SelectedSubcontractorPage(index) is missing" in {
       val ua =
         emptyUserAnswers
-          .set(CisIdPage, instanceId).success.value
-          .set(DateConfirmPaymentsPage, monthDate).success.value
+          .set(CisIdPage, instanceId)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, monthDate)
+          .success
+          .value
 
       builder.build(ua, index) mustBe None
     }
@@ -111,9 +135,15 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
 
       val ua =
         emptyUserAnswers
-          .set(CisIdPage, instanceId).success.value
-          .set(DateConfirmPaymentsPage, monthDate).success.value
-          .set(SelectedSubcontractorPage(index), subcontractorMissingTotalPayments).success.value
+          .set(CisIdPage, instanceId)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, monthDate)
+          .success
+          .value
+          .set(SelectedSubcontractorPage(index), subcontractorMissingTotalPayments)
+          .success
+          .value
 
       builder.build(ua, index) mustBe None
     }
