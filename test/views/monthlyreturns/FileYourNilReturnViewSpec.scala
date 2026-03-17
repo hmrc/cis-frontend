@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import models.NormalMode
+import models.ReturnType.MonthlyNilReturn
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import play.api.i18n.Messages
@@ -35,8 +36,8 @@ class FileYourNilReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourNilReturn.p2"))
 
       val expectedUrl: String =
-        controllers.monthlyreturns.routes.DateConfirmNilPaymentsController
-          .onPageLoad(NormalMode)
+        controllers.monthlyreturns.routes.DateConfirmPaymentsController
+          .onPageLoad(NormalMode, Some(MonthlyNilReturn))
           .url
 
       val button: Element = doc.getElementsByClass("govuk-button").first()
