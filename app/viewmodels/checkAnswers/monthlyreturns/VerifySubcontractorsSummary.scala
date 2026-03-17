@@ -17,7 +17,6 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.VerifySubcontractorsPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent

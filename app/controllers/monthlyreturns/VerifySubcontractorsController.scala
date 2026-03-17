@@ -33,8 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class VerifySubcontractorsController @Inject() (
   override val messagesApi: MessagesApi,
-  sessionRepository: SessionRepository,
-  navigator: Navigator,
+    navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -51,20 +50,15 @@ class VerifySubcontractorsController @Inject() (
     Ok(view(form, mode))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield value match {
-              case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
-            }
-        )
+  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    form
+      .bindFromRequest()
+      .fold(
+        formWithErrors => BadRequest(view(formWithErrors, mode)),
+        {
+            case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
+        }
+      )
   }
 }
