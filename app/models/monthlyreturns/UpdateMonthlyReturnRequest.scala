@@ -44,11 +44,8 @@ object UpdateMonthlyReturnRequest {
 
   private def toYN(value: Boolean): String = if (value) "Y" else "N"
 
-  private def dateFor(returnType: ReturnType, ua: UserAnswers): Either[String, LocalDate] =
-    returnType match {
-      case MonthlyNilReturn      => ua.get(DateConfirmNilPaymentsPage).toRight("Missing date for nil return")
-      case MonthlyStandardReturn => ua.get(DateConfirmPaymentsPage).toRight("Missing date for standard return")
-    }
+  private def dateFor(ua: UserAnswers): Either[String, LocalDate] =
+    ua.get(DateConfirmPaymentsPage).toRight("Missing confirmed payment date")
 
   private def inactivityY(returnType: ReturnType, ua: UserAnswers): Option[String] =
     returnType match {
@@ -73,7 +70,7 @@ object UpdateMonthlyReturnRequest {
     for {
       returnType <- ua.get(ReturnTypePage).toRight("Missing return type")
       instanceId <- ua.get(CisIdPage).toRight("Missing instanceId")
-      date       <- dateFor(returnType, ua)
+      date       <- dateFor(ua)
 
       decInformationCorrect = returnType match {
                                 case MonthlyNilReturn =>

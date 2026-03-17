@@ -55,7 +55,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .set(CisIdPage, "CIS-123")
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
         .set(InactivityRequestPage, InactivityRequest.Option1)
@@ -167,12 +167,24 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
 
     "not include inactivity when SubmitInactivityRequestPage is missing" in {
       val ua = UserAnswers("test-user")
-        .set(ReturnTypePage, MonthlyStandardReturn).success.value
-        .set(CisIdPage, "CIS-999").success.value
-        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 6, 1)).success.value
-        .set(PaymentDetailsConfirmationPage, true).success.value
-        .set(EmploymentStatusDeclarationPage, true).success.value
-        .set(VerifiedStatusDeclarationPage, true).success.value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(CisIdPage, "CIS-999")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 6, 1))
+        .success
+        .value
+        .set(PaymentDetailsConfirmationPage, true)
+        .success
+        .value
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(VerifiedStatusDeclarationPage, true)
+        .success
+        .value
 
       val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
 
@@ -181,11 +193,21 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
 
     "set decInformationCorrect when DeclarationPage has a value" in {
       val ua = UserAnswers("test-user")
-        .set(ReturnTypePage, MonthlyNilReturn).success.value
-        .set(CisIdPage, "CIS-321").success.value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 7, 1)).success.value
-        .set(InactivityRequestPage, InactivityRequest.Option1).success.value
-        .set(DeclarationPage, Set(Declaration.Confirmed)).success.value
+        .set(ReturnTypePage, MonthlyNilReturn)
+        .success
+        .value
+        .set(CisIdPage, "CIS-321")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 7, 1))
+        .success
+        .value
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .success
+        .value
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .success
+        .value
 
       val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
 

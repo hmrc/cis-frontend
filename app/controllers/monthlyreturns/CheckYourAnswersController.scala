@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import pages.monthlyreturns.{ReturnTypePage, NilReturnStatusPage}
+import pages.monthlyreturns.ReturnTypePage
 import models.ReturnType
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}

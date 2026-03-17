@@ -17,6 +17,8 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.ReturnType
+import models.ReturnType.MonthlyNilReturn
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.inject.bind
@@ -188,7 +190,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
 
@@ -235,12 +237,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(NilReturnStatusPage, "STARTED")
+        .set(ReturnTypePage, MonthlyNilReturn)
         .success
         .value
 
       val mockService = mock[MonthlyReturnService]
-      when(mockService.updateNilMonthlyReturn(any())(any()))
+      when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.failed(new RuntimeException("service error")))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
@@ -271,7 +273,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-        val result = route(application, request).value
+        val result  = route(application, request).value
 
         status(result) mustEqual INTERNAL_SERVER_ERROR
       }
