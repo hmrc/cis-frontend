@@ -164,7 +164,7 @@ class SubmissionService @Inject() (
       val yearMonth = returnType match {
         case MonthlyNilReturn =>
           userAnswers
-            .get(DateConfirmNilPaymentsPage)
+            .get(DateConfirmPaymentsPage)
             .map(YearMonth.from)
             .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 
@@ -223,24 +223,11 @@ class SubmissionService @Inject() (
   }
 
   private def selectedYearMonth(ua: UserAnswers): YearMonth =
-    ua.get(ReturnTypePage) match {
-      case Some(ReturnType.MonthlyNilReturn) =>
-        ua.get(DateConfirmNilPaymentsPage)
-          .map(YearMonth.from)
-          .getOrElse(
-            throw new RuntimeException("Date of return missing for monthly nil return")
-          )
-
-      case Some(ReturnType.MonthlyStandardReturn) =>
-        ua.get(DateConfirmPaymentsPage)
-          .map(YearMonth.from)
-          .getOrElse(
-            throw new RuntimeException("Date of return missing for monthly standard return")
-          )
-
-      case other =>
-        throw new RuntimeException(s"Return type missing or invalid: $other")
-    }
+    ua.get(DateConfirmPaymentsPage)
+      .map(YearMonth.from)
+      .getOrElse(
+        throw new RuntimeException("Date of return missing for monthly return")
+      )
 
   private def writeToFeMongo(
     ua: UserAnswers,

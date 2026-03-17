@@ -21,21 +21,22 @@ import play.api.mvc.Call
 import pages.*
 import pages.monthlyreturns.*
 import models.*
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.InactivityRequest
 import utils.UserAnswerUtils.*
 
 @Singleton
 class Navigator @Inject() () {
 
-  private val normalRoutes: Page => UserAnswers => Call = {
+  private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
     // nil return
-    case DateConfirmNilPaymentsPage =>
+    case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
       _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
-    case InactivityRequestPage      =>
+    case (InactivityRequestPage, _)                  =>
       _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
-    case ConfirmEmailAddressPage    =>
+    case (ConfirmEmailAddressPage, _)                =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
-    case DeclarationPage            =>
+    case (DeclarationPage, _)                        =>
       userAnswers =>
         userAnswers.get(SubmitInactivityRequestPage) match {
           case Some(false) =>
@@ -48,43 +49,43 @@ class Navigator @Inject() () {
                 controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
             }
         }
-    case InactivityWarningPage      =>
+    case (InactivityWarningPage, _)                  =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
-    case VerifySubcontractorsPage                      =>
+    case (VerifySubcontractorsPage, _)                      =>
       ua =>
         controllers.monthlyreturns.routes.PaymentDetailsController
           .onPageLoad(NormalMode, ua.firstIncompleteSubcontractorIndex, None)
-    case DateConfirmPaymentsPage                       =>
+    case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-    case SelectedSubcontractorPaymentsMadePage(index)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
-    case SelectedSubcontractorMaterialCostsPage(index) =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
-    case SelectedSubcontractorTaxDeductedPage(index)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case PaymentDetailsConfirmationPage                =>
+    case (PaymentDetailsConfirmationPage, _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
-    case EmploymentStatusDeclarationPage               =>
+    case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
-    case VerifiedStatusDeclarationPage                 =>
+    case (VerifiedStatusDeclarationPage, _)                 =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(NormalMode)(userAnswers)
-    case SubmitInactivityRequestPage                   =>
+    case (SubmitInactivityRequestPage, _)                   =>
       userAnswers => navigatorFromSubmitInactivityRequestPage(NormalMode)(userAnswers)
-    case ConfirmationByEmailPage                       =>
+    case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
-    case EnterYourEmailAddressPage                     =>
+    case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
         else
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
-    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  private val checkRouteMap: Page => UserAnswers => Call = {
-    case InactivityRequestPage                         =>
+  private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
+    case (InactivityRequestPage, _)                         =>
       userAnswers =>
         userAnswers.get(InactivityRequestPage) match {
           case Some(InactivityRequest.Option2)        =>
@@ -92,30 +93,33 @@ class Navigator @Inject() () {
           case Some(InactivityRequest.Option1) | None =>
             controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
         }
-    case SelectedSubcontractorPaymentsMadePage(index)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case SelectedSubcontractorMaterialCostsPage(index) =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case SelectedSubcontractorTaxDeductedPage(index)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case EmploymentStatusDeclarationPage               =>
+    case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(CheckMode)(userAnswers)
-    case VerifiedStatusDeclarationPage                 =>
+    case (VerifiedStatusDeclarationPage, _)                 =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(CheckMode)(userAnswers)
-    case SubmitInactivityRequestPage                   =>
+    case (SubmitInactivityRequestPage, _)                   =>
       userAnswers => navigatorFromSubmitInactivityRequestPage(CheckMode)(userAnswers)
-    case ConfirmationByEmailPage                       =>
+    case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
-    case EnterYourEmailAddressPage                     =>
+    case (EnterYourEmailAddressPage, _)                     =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-    case _                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
-  def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = mode match {
-    case NormalMode =>
-      normalRoutes(page)(userAnswers)
-    case CheckMode  =>
-      checkRouteMap(page)(userAnswers)
+  def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = {
+    val returnType = userAnswers.get(ReturnTypePage).getOrElse(ReturnType.MonthlyStandardReturn)
+    mode match {
+      case NormalMode =>
+        normalRoutes(page, returnType)(userAnswers)
+      case CheckMode  =>
+        checkRouteMap(page, returnType)(userAnswers)
+    }
   }
 
   private def navigatorFromPaymentDetailsConfirmationPage()(userAnswers: UserAnswers): Call =

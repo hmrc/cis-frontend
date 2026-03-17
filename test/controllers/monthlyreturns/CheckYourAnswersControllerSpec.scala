@@ -27,7 +27,7 @@ import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmNilPaymentsPage, DateConfirmPaymentsPage, EmploymentStatusDeclarationPage, EnterYourEmailAddressPage, NilReturnStatusPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmPaymentsPage, EmploymentStatusDeclarationPage, EnterYourEmailAddressPage, NilReturnStatusPage}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -182,7 +182,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(CisIdPage, "test-cis-id")
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
         .set(NilReturnStatusPage, "STARTED")
@@ -229,7 +229,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(CisIdPage, "test-cis-id")
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
         .set(NilReturnStatusPage, "STARTED")

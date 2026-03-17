@@ -24,7 +24,7 @@ import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmNilPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -52,6 +52,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
   val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
 
+  private val dmyFmt                   = DateTimeFormatter.ofPattern("MMMM uuuu")
   private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
@@ -75,7 +76,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       .set(ConfirmEmailAddressPage, email)
       .success
       .value
-      .set(DateConfirmNilPaymentsPage, periodEnd)
+      .set(DateConfirmPaymentsPage, periodEnd)
       .success
       .value
       .set(
@@ -166,7 +167,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -205,7 +206,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ConfirmEmailAddressPage, email)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -236,7 +237,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -290,7 +291,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(ConfirmEmailAddressPage, "test@test.com")
@@ -305,6 +306,86 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             thrown.getMessage must include("[SubmissionSuccess] submissionDetails missing from userAnswers")
           }
         }
+
+        "must throw if returnTypePage is missing" in {
+
+          val incompleteUa =
+            userAnswersWithCisId
+              .set(ContractorNamePage, contractorName)
+              .success
+              .value
+              .set(DateConfirmPaymentsPage, periodEnd)
+              .success
+              .value
+              .set(ConfirmEmailAddressPage, email)
+              .success
+              .value
+              .set(
+                SubmissionDetailsPage,
+                SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              )
+              .success
+              .value
+
+          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+
+          running(app) {
+            val thrown = intercept[IllegalStateException] {
+              await(route(app, request).get)
+            }
+            thrown.getMessage must include("ReturnTypePage missing from userAnswers")
+          }
+        }
+
+        "must call monthlyReturnService and use returned email when ConfirmEmailAddressPage is missing" in {
+
+          val fallbackEmail = "fallback@test.com"
+
+          val uaWithoutEmail: UserAnswers = ua
+            .remove(ConfirmEmailAddressPage)
+            .success
+            .value
+            .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+            .success
+            .value
+
+          val mockService = mock(classOf[MonthlyReturnService])
+
+          when(mockService.getSchemeEmail(any())(any()))
+            .thenReturn(Future.successful(Some(fallbackEmail)))
+
+          val app =
+            applicationBuilder(userAnswers = Some(uaWithoutEmail))
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockService)
+              )
+              .build()
+
+          val view = app.injector.instanceOf[SubmissionSuccessView]
+
+          lazy val expectedHtml: String =
+            view(
+              reference = reference,
+              periodEnd = periodEnd.format(dmyFmt),
+              submittedTime = submittedTime,
+              submittedDate = submittedDate,
+              contractorName = contractorName,
+              empRef = employerRef,
+              email = fallbackEmail,
+              submissionType = submissionType
+            )(request, messages(app)).toString
+
+          running(app) {
+            val result = route(app, request).value
+
+            status(result) mustBe OK
+            contentAsString(result) mustBe expectedHtml
+          }
+
+          verify(mockService).getSchemeEmail(any())(any())
+        }
+
       }
     }
 
@@ -360,7 +441,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ConfirmEmailAddressPage, email)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(
@@ -393,7 +474,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
             .success
             .value
-            .set(DateConfirmNilPaymentsPage, periodEnd)
+            .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
             .set(

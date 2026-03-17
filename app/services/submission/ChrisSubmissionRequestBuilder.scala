@@ -99,10 +99,10 @@ class ChrisSubmissionRequestBuilder @Inject() (
     val accountsOfficeRef: String =
       List(aoDistrict, aoPayType, aoCheckCode, aoReference).flatten.mkString
 
-    val ym = (returnType match {
-      case MonthlyNilReturn      => ua.get(DateConfirmNilPaymentsPage).map(YearMonth.from)
-      case MonthlyStandardReturn => ua.get(DateConfirmPaymentsPage).map(YearMonth.from)
-    }).getOrElse(throw new RuntimeException("Month and year of return missing"))
+    val ym = ua
+      .get(DateConfirmPaymentsPage)
+      .map(YearMonth.from)
+      .getOrElse(throw new RuntimeException("Month and year of return missing"))
 
     val emailOpt = returnType match {
       case MonthlyNilReturn      => ua.get(ConfirmEmailAddressPage)

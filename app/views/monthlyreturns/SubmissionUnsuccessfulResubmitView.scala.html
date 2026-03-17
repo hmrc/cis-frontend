@@ -1,0 +1,63 @@
+@*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import config.FrontendAppConfig
+
+@this(
+        layout: templates.Layout,
+        h1: components.H1,
+        link: components.Link,
+        appConfig: FrontendAppConfig,
+        govukWarningText: GovukWarningText,
+        paragraph: components.Paragraph,
+        bulletList: components.BulletList
+)
+
+@(cisId: String)(implicit request: Request[_], messages: Messages)
+
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessfulResubmit.title")), showBackLink = false) {
+
+    @h1("monthlyreturns.submissionUnsuccessfulResubmit.heading")
+
+    @link(
+        linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.text",
+        linkUrl       = appConfig.manageYourCisReturn + cisId,
+        prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.prefix",
+        suffixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.suffix",
+    )
+
+    @govukWarningText(
+        WarningTextViewModel(
+            content = Text(messages("monthlyreturns.submissionUnsuccessfulResubmit.p2.warning"))
+        )
+    )
+
+    @link(
+        linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p3.links.text",
+        linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
+        prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p3.links.prefix",
+        isNewTab      = true,
+    )
+
+    @paragraph("monthlyreturns.submissionUnsuccessfulResubmit.p4")
+
+    @bulletList(Seq("monthlyreturns.submissionUnsuccessfulResubmit.list.l1", "monthlyreturns.submissionUnsuccessfulResubmit.list.l2"))
+
+    @link(
+        linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text",
+        linkUrl       = appConfig.manageYourCisReturn + cisId
+    )
+}
