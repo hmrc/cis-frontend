@@ -39,6 +39,7 @@ object ConfirmationByEmailSummary {
             controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
+            .withAttribute("id" -> "change-confirmation-by-email")
         )
       )
     }

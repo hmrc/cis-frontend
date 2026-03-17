@@ -16,6 +16,8 @@
 
 package models
 
+import play.api.mvc.JavascriptLiteral
+
 sealed trait ReturnType
 
 object ReturnType extends Enumerable.Implicits {
@@ -30,4 +32,11 @@ object ReturnType extends Enumerable.Implicits {
 
   implicit val enumerable: Enumerable[ReturnType] =
     Enumerable(values.map(v => v.toString -> v): _*)
+
+  implicit val jsLiteral: JavascriptLiteral[ReturnType] = new JavascriptLiteral[ReturnType] {
+    override def to(value: ReturnType): String = value match {
+      case MonthlyNilReturn      => "MonthlyNilReturn"
+      case MonthlyStandardReturn => "MonthlyStandardReturn"
+    }
+  }
 }
