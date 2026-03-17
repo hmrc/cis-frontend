@@ -49,7 +49,6 @@ class CheckYourAnswersController @Inject() (
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
-
       val returnTypeRows = ReturnTypeSummary.returnType(request.userAnswers) match {
         case ReturnType.MonthlyStandardReturn =>
           Seq(
@@ -62,7 +61,7 @@ class CheckYourAnswersController @Inject() (
           Seq(
             DateConfirmNilPaymentsSummary.row(request.userAnswers),
             PaymentsToSubcontractorsSummary.row,
-            InactivityRequestSummary.row(request.userAnswers)
+            SubmitInactivityRequestSummary.row(request.userAnswers)
           )
       }
 
