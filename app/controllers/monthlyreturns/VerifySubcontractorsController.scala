@@ -33,7 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class VerifySubcontractorsController @Inject() (
   override val messagesApi: MessagesApi,
-    navigator: Navigator,
+  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -56,7 +56,7 @@ class VerifySubcontractorsController @Inject() (
       .fold(
         formWithErrors => BadRequest(view(formWithErrors, mode)),
         {
-            case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
         }
       )
