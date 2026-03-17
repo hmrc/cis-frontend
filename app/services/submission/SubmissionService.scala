@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package services
+package services.submission
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.UserAnswers
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.{ReturnType, UserAnswers}
+import models.monthlyreturns.CisTaxpayer
 import models.requests.SendSuccessEmailRequest
 import models.submission.*
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, DateConfirmNilPaymentsPage, InactivityRequestPage, SuccessEmailSentPage}
+import pages.monthlyreturns.*
 import pages.submission.*
 import play.api.Logging
 import repositories.SessionRepository
@@ -39,9 +40,12 @@ import scala.util.{Success, Try}
 class SubmissionService @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector,
   appConfig: FrontendAppConfig,
-  sessionRepository: SessionRepository
+  sessionRepository: SessionRepository,
+  chrisRequestBuilder: ChrisSubmissionRequestBuilder
 )(implicit ec: ExecutionContext)
     extends Logging {
+
+  // Orchestration
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[CreateSubmissionResponse] =
     for {
@@ -53,9 +57,7 @@ class SubmissionService @Inject() (
     submissionId: String,
     ua: UserAnswers,
     isAgent: Boolean
-  )(implicit
-    hc: HeaderCarrier
-  ): Future[ChrisSubmissionResponse] =
+  )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
 
     val taxpayerFut: Future[CisTaxpayer] =
       if (isAgent)
@@ -73,10 +75,38 @@ class SubmissionService @Inject() (
 
     for {
       taxpayer <- taxpayerFut
-      csr       = buildChrisSubmissionRequest(ua, taxpayer, isAgent)
+      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
       response <- cisConnector.submitToChris(submissionId, csr)
       _        <- writeToFeMongo(ua, submissionId, response)
     } yield response
+
+  def updateSubmission(
+    submissionId: String,
+    ua: UserAnswers,
+    chrisResp: ChrisSubmissionResponse
+  )(implicit hc: HeaderCarrier): Future[Unit] = {
+
+    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
+    val ym         = selectedYearMonth(ua)
+    val email      = ua.get(ConfirmEmailAddressPage)
+
+    val update = UpdateSubmissionRequest(
+      instanceId = instanceId,
+      taxYear = ym.getYear,
+      taxMonth = ym.getMonthValue,
+      hmrcMarkGenerated = Some(chrisResp.hmrcMarkGenerated),
+      submittableStatus = chrisResp.status,
+      acceptedTime = chrisResp.gatewayTimestamp,
+      emailRecipient = email,
+      govtalkErrorCode = chrisResp.error.flatMap(js => (js \ "number").asOpt[String]),
+      govtalkErrorType = chrisResp.error.flatMap(js => (js \ "type").asOpt[String]),
+      govtalkErrorMessage = chrisResp.error.flatMap(js => (js \ "text").asOpt[String])
+    )
+
+    cisConnector.updateSubmission(submissionId, update)
+  }
+
+  // Polling
 
   def getPollInterval(userAnswers: UserAnswers): Int =
     userAnswers.get(PollIntervalPage).getOrElse(appConfig.submissionPollDefaultIntervalSeconds)
@@ -112,34 +142,7 @@ class SubmissionService @Inject() (
     }
   }
 
-  def updateSubmission(submissionId: String, ua: UserAnswers, chrisResp: ChrisSubmissionResponse)(implicit
-    hc: HeaderCarrier
-  ): Future[Unit] = {
-
-    val instanceId = ua
-      .get(CisIdPage)
-      .getOrElse(throw new RuntimeException("CIS ID missing"))
-    val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
-      .map(YearMonth.from)
-      .getOrElse(throw new RuntimeException("Month/Year not selected"))
-    val email      = ua.get(ConfirmEmailAddressPage)
-
-    val update = UpdateSubmissionRequest(
-      instanceId = instanceId,
-      taxYear = ym.getYear,
-      taxMonth = ym.getMonthValue,
-      hmrcMarkGenerated = Some(chrisResp.hmrcMarkGenerated),
-      submittableStatus = chrisResp.status,
-      acceptedTime = chrisResp.gatewayTimestamp,
-      emailRecipient = email,
-      govtalkErrorCode = chrisResp.error.flatMap(js => (js \ "number").asOpt[String]),
-      govtalkErrorType = chrisResp.error.flatMap(js => (js \ "type").asOpt[String]),
-      govtalkErrorMessage = chrisResp.error.flatMap(js => (js \ "text").asOpt[String])
-    )
-
-    cisConnector.updateSubmission(submissionId, update)
-  }
+// Email
 
   def sendSuccessEmail(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val submissionId = userAnswers
@@ -151,42 +154,62 @@ class SubmissionService @Inject() (
       .get(SuccessEmailSentPage(submissionId))
       .getOrElse(false)
 
+    val returnType = userAnswers
+      .get(ReturnTypePage)
+      .getOrElse(throw new IllegalStateException("Return type missing"))
+
     if (alreadySent) {
       Future.successful(userAnswers)
     } else {
-      val email = userAnswers
-        .get(ConfirmEmailAddressPage)
-        .getOrElse(throw new IllegalStateException("Email address missing"))
+      val yearMonth = returnType match {
+        case MonthlyNilReturn =>
+          userAnswers
+            .get(DateConfirmPaymentsPage)
+            .map(YearMonth.from)
+            .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 
-      val yearMonth = userAnswers
-        .get(DateConfirmNilPaymentsPage)
-        .map(YearMonth.from)
-        .getOrElse(throw new IllegalStateException("Month/Year not selected"))
+        case MonthlyStandardReturn =>
+          userAnswers
+            .get(DateConfirmPaymentsPage)
+            .map(YearMonth.from)
+            .getOrElse(throw new IllegalStateException("Month/Year not selected"))
+      }
 
-      val request = SendSuccessEmailRequest(
-        email = email,
-        month = yearMonth.getMonthValue.toString,
-        year = yearMonth.getYear.toString
-      )
+      val emailOpt = returnType match {
+        case MonthlyNilReturn      => userAnswers.get(ConfirmEmailAddressPage).map(_.trim).filter(_.nonEmpty)
+        case MonthlyStandardReturn => userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
+      }
 
-      cisConnector
-        .sendSuccessfulEmail(submissionId, request)
-        .flatMap(_ =>
+      emailOpt match {
+        case None =>
+          val updated = userAnswers.set(SuccessEmailSentPage(submissionId), true)
           Future
-            .fromTry(userAnswers.set(SuccessEmailSentPage(submissionId), true))
-            .flatMap { updatedUa =>
-              sessionRepository.set(updatedUa).map(_ => updatedUa)
-            }
-        )
+            .fromTry(updated)
+            .flatMap(updatedUa => sessionRepository.set(updatedUa).map(_ => updatedUa))
+
+        case Some(email) =>
+          val request = SendSuccessEmailRequest(
+            email = email,
+            month = yearMonth.getMonthValue.toString,
+            year = yearMonth.getYear.toString
+          )
+
+          val updatedUaFuture = Future.fromTry(userAnswers.set(SuccessEmailSentPage(submissionId), true))
+
+          for {
+            _         <- cisConnector.sendSuccessfulEmail(submissionId, request)
+            updatedUa <- updatedUaFuture
+            _         <- sessionRepository.set(updatedUa)
+          } yield updatedUa
+      }
     }
   }
 
+// UserAnswer helpers
+
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
-    val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
-      .map(YearMonth.from)
-      .getOrElse(throw new RuntimeException("Month/Year not selected"))
+    val ym         = selectedYearMonth(ua)
     val email      = ua.get(ConfirmEmailAddressPage)
 
     Future.successful(
@@ -199,59 +222,12 @@ class SubmissionService @Inject() (
     )
   }
 
-  private def buildChrisSubmissionRequest(
-    ua: UserAnswers,
-    taxpayer: CisTaxpayer,
-    isAgent: Boolean
-  ): ChrisSubmissionRequest = {
-    val utr = taxpayer.utr
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer UTR missing"))
-
-    val aoDistrict = taxpayer.aoDistrict
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoDistrict missing"))
-
-    val aoPayType = taxpayer.aoPayType
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoPayType missing"))
-
-    val aoCheckCode = taxpayer.aoCheckCode
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoCheckCode missing"))
-
-    val aoReference = taxpayer.aoReference
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer aoReference missing"))
-
-    // AO reference = aoDistrict + aoPayType + aoCheckCode + aoReference
-    val accountsOfficeRef: String =
-      List(aoDistrict, aoPayType, aoCheckCode, aoReference).flatten.mkString
-
-    val inactivity = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
-    val ym         = ua
-      .get(DateConfirmNilPaymentsPage)
+  private def selectedYearMonth(ua: UserAnswers): YearMonth =
+    ua.get(DateConfirmPaymentsPage)
       .map(YearMonth.from)
-      .getOrElse(throw new RuntimeException("Month/Year not selected"))
-    val email      = ua.get(ConfirmEmailAddressPage).get
-
-    ChrisSubmissionRequest.from(
-      utr = utr,
-      aoReference = accountsOfficeRef,
-      informationCorrect = true,
-      inactivity = inactivity,
-      monthYear = ym,
-      email = email,
-      isAgent = isAgent,
-      clientTaxOfficeNumber = taxpayer.taxOfficeNumber,
-      clientTaxOfficeRef = taxpayer.taxOfficeRef
-    )
-  }
+      .getOrElse(
+        throw new RuntimeException("Date of return missing for monthly return")
+      )
 
   private def writeToFeMongo(
     ua: UserAnswers,

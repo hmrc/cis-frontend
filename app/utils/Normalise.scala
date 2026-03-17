@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package utils
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+object Normalise {
 
-import java.time.LocalDate
+  def nonBlank(value: Option[String]): Option[String] =
+    value.map(_.trim).filter(_.nonEmpty)
 
-case object DateConfirmNilPaymentsPage extends QuestionPage[LocalDate] {
+  def isBLank(value: Option[String]): Boolean =
+    nonBlank(value).isEmpty
 
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "dateConfirmNilPayments"
+  def yesNo(boolean: Boolean): String =
+    if (boolean) "yes" else "no"
 }

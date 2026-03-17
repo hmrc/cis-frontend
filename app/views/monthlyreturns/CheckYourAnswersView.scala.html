@@ -22,8 +22,7 @@
     govukSummaryList: GovukSummaryList,
     govukButton: GovukButton,
     h1: components.H1,
-    h2: components.H2,
-    paragraph: components.Paragraph
+    h2: components.H2
 )
 
 @(returnDetailsList: SummaryList, emailList: SummaryList)(implicit request: Request[_], messages: Messages)
@@ -39,9 +38,6 @@
 
         @h2("monthlyreturns.checkYourAnswers.emailConfirmation.heading")
         @govukSummaryList(emailList)
-
-        @h2("monthlyreturns.checkYourAnswers.submitSection.heading")
-        @paragraph("monthlyreturns.checkYourAnswers.submitSection.confirmation")
 
         @govukButton(
             ButtonViewModel(messages("monthlyreturns.checkYourAnswers.submitSection.button"))

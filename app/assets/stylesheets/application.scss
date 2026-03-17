@@ -49,3 +49,8 @@
       transform: rotate(360deg);
   }
 }
+
+.govuk-fieldset__legend .govuk-hint {
+    margin-top: -5px;
+    margin-bottom: 5px
+}

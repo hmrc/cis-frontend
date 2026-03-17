@@ -37,6 +37,7 @@ object EnterYourEmailAddressSummary {
             controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
+            .withAttribute("id" -> "change-enter-your-email-address")
         )
       )
     }

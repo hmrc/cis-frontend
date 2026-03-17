@@ -18,6 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
+import models.ReturnType.MonthlyNilReturn
 import models.requests.SendSuccessEmailRequest
 import models.monthlyreturns.*
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
@@ -50,10 +51,12 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     informationCorrect = "yes",
     inactivity = "no",
     monthYear = "2025-10",
-    email = "test@test.com",
+    email = Some("test@test.com"),
     isAgent = false,
     clientTaxOfficeNumber = "",
-    clientTaxOfficeRef = ""
+    clientTaxOfficeRef = "",
+    returnType = MonthlyNilReturn,
+    standard = None
   )
 
   "getCisTaxpayer" should {
