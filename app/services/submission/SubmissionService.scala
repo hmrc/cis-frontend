@@ -88,7 +88,7 @@ class SubmissionService @Inject() (
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
-    val email      = ua.get(ConfirmEmailAddressPage)
+    val email      = ua.get(EnterYourEmailAddressPage)
 
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
@@ -176,8 +176,8 @@ class SubmissionService @Inject() (
       }
 
       val emailOpt = returnType match {
-        case MonthlyNilReturn      => userAnswers.get(ConfirmEmailAddressPage).map(_.trim).filter(_.nonEmpty)
-        case MonthlyStandardReturn => userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
+        case MonthlyNilReturn | MonthlyStandardReturn =>
+          userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
       }
 
       emailOpt match {
@@ -210,7 +210,7 @@ class SubmissionService @Inject() (
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
     val ym         = selectedYearMonth(ua)
-    val email      = ua.get(ConfirmEmailAddressPage)
+    val email      = ua.get(EnterYourEmailAddressPage)
 
     Future.successful(
       CreateSubmissionRequest(

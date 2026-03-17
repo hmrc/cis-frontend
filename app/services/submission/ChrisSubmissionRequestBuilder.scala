@@ -104,10 +104,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
       .map(YearMonth.from)
       .getOrElse(throw new RuntimeException("Month and year of return missing"))
 
-    val emailOpt = returnType match {
-      case MonthlyNilReturn      => ua.get(ConfirmEmailAddressPage)
-      case MonthlyStandardReturn => ua.get(EnterYourEmailAddressPage)
-    }
+    val emailOpt = ua.get(EnterYourEmailAddressPage)
 
     ChrisSubmissionCommon(
       utr = utr,
