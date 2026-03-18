@@ -17,6 +17,8 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.ReturnType
+import models.ReturnType.MonthlyNilReturn
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.inject.bind
@@ -27,7 +29,7 @@ import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmPaymentsPage, EmploymentStatusDeclarationPage, EnterYourEmailAddressPage, NilReturnStatusPage}
+import pages.monthlyreturns.*
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -177,7 +179,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must call updateNilMonthlyReturn and redirect to submission sending on POST when FormP record already exists (NilReturnStatusPage set)" in {
+    "must call updateMonthlyReturn and redirect to submission sending on POST when ReturnTypePage is present" in {
       val userAnswers = emptyUserAnswers
         .set(CisIdPage, "test-cis-id")
         .success
@@ -185,12 +187,15 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(NilReturnStatusPage, "STARTED")
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
 
       val mockService = mock[MonthlyReturnService]
-      when(mockService.updateNilMonthlyReturn(any())(any()))
+      when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
@@ -209,7 +214,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must redirect to journey recovery on POST when NilReturnStatusPage is missing" in {
+    "must redirect to journey recovery on POST when ReturnTypePage is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
@@ -232,12 +237,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(NilReturnStatusPage, "STARTED")
+        .set(ReturnTypePage, MonthlyNilReturn)
         .success
         .value
 
       val mockService = mock[MonthlyReturnService]
-      when(mockService.updateNilMonthlyReturn(any())(any()))
+      when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.failed(new RuntimeException("service error")))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
@@ -251,6 +256,26 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
+
+    "must return InternalServerError on POST when update request cannot be built" in {
+      val userAnswers = emptyUserAnswers
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+
+      val mockService = mock[MonthlyReturnService]
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
       }
     }
   }
