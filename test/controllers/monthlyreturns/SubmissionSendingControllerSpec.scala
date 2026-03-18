@@ -27,10 +27,10 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 import models.submission.SubmissionDetails
 import pages.submission.SubmissionDetailsPage
+import services.submission.SubmissionService
 import java.time.Instant
 import scala.concurrent.Future
 

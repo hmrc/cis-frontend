@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.ReturnType
+import models.ReturnType.MonthlyNilReturn
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.inject.bind
@@ -25,10 +26,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.{PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmNilPaymentsPage, NilReturnStatusPage, ReturnTypePage}
+import pages.monthlyreturns.*
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -39,12 +40,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must return OK and the correct view for a GET" in {
 
-      val userAnswersWithReturnType = userAnswersWithCisId
-        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-        .success
-        .value
-
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithReturnType)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
@@ -54,11 +50,95 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val view              = application.injector.instanceOf[CheckYourAnswersView]
         val returnDetailsList = SummaryListViewModel(
           Seq(
-            ReturnTypeSummary.row(userAnswersWithReturnType)(messages(application)).get,
+            ReturnTypeSummary.row(userAnswersWithCisId)(messages(application)).get,
             PaymentsToSubcontractorsSummary.row(messages(application)).get
           )
         )
         val emailList         = SummaryListViewModel(Seq.empty)
+
+        status(result) mustEqual OK
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+      }
+    }
+
+    "must include Return period ended and ConfirmationByEmail rows for monthly standard return" in {
+
+      val userAnswers = userAnswersWithCisId
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
+        .set(ConfirmationByEmailPage, true)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val returnDetailsList = SummaryListViewModel(
+          Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)).get,
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
+          )
+        )
+        val emailList         = SummaryListViewModel(
+          Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get
+          )
+        )
+
+        status(result) mustEqual OK
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+      }
+    }
+
+    "must include Email address row in emailList when confirmation by email is Yes and email is entered" in {
+
+      val userAnswers = userAnswersWithCisId
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
+        .set(ConfirmationByEmailPage, true)
+        .success
+        .value
+        .set(EnterYourEmailAddressPage, "test@example.com")
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val returnDetailsList = SummaryListViewModel(
+          Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)).get,
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
+          )
+        )
+        val emailList         = SummaryListViewModel(
+          Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get,
+            EnterYourEmailAddressSummary.row(userAnswers)(messages(application)).get
+          )
+        )
 
         status(result) mustEqual OK
         val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
@@ -99,20 +179,23 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must call updateNilMonthlyReturn and redirect to submission sending on POST when FormP record already exists (NilReturnStatusPage set)" in {
+    "must call updateMonthlyReturn and redirect to submission sending on POST when ReturnTypePage is present" in {
       val userAnswers = emptyUserAnswers
         .set(CisIdPage, "test-cis-id")
         .success
         .value
-        .set(DateConfirmNilPaymentsPage, LocalDate.of(2024, 3, 1))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(NilReturnStatusPage, "STARTED")
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
 
       val mockService = mock[MonthlyReturnService]
-      when(mockService.updateNilMonthlyReturn(any())(any()))
+      when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
@@ -131,7 +214,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must redirect to journey recovery on POST when NilReturnStatusPage is missing" in {
+    "must redirect to journey recovery on POST when ReturnTypePage is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
@@ -142,6 +225,57 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to SystemError on POST when updateNilMonthlyReturn fails" in {
+
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "test-cis-id")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyNilReturn)
+        .success
+        .value
+
+      val mockService = mock[MonthlyReturnService]
+      when(mockService.updateMonthlyReturn(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("service error")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
+
+    "must return InternalServerError on POST when update request cannot be built" in {
+      val userAnswers = emptyUserAnswers
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+
+      val mockService = mock[MonthlyReturnService]
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual INTERNAL_SERVER_ERROR
       }
     }
   }

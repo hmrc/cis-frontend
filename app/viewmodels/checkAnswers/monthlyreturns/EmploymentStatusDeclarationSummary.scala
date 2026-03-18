@@ -39,6 +39,7 @@ object EmploymentStatusDeclarationSummary {
             controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.employmentStatusDeclaration.change.hidden"))
+            .withAttribute("id" -> "change-employment-status-declaration")
         )
       )
     }
