@@ -16,13 +16,14 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
+import controllers.actions.*
 import forms.monthlyreturns.DeclarationFormProvider
+
 import javax.inject.Inject
 import models.Mode
 import models.monthlyreturns.Declaration
 import navigation.Navigator
-import pages.monthlyreturns.{DateConfirmNilPaymentsPage, DeclarationPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, DeclarationPage}
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -58,7 +59,7 @@ class DeclarationController @Inject() (
       }
 
       val formattedDate = request.userAnswers
-        .get(DateConfirmNilPaymentsPage)
+        .get(DateConfirmPaymentsPage)
         .map { date =>
           implicit val lang: Lang = messagesApi.preferred(request).lang
           date.format(dateTimeFormat())
@@ -75,7 +76,7 @@ class DeclarationController @Inject() (
         .fold(
           formWithErrors => {
             val formattedDate = request.userAnswers
-              .get(DateConfirmNilPaymentsPage)
+              .get(DateConfirmPaymentsPage)
               .map { date =>
                 implicit val lang: Lang = messagesApi.preferred(request).lang
                 date.format(dateTimeFormat())

@@ -17,26 +17,24 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.UserAnswers
-import pages.monthlyreturns.DateConfirmNilPaymentsPage
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
+
 import java.time.format.DateTimeFormatter
 
 object DateConfirmNilPaymentsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(DateConfirmNilPaymentsPage).map { answer =>
+    answers.get(DateConfirmPaymentsPage).map { answer =>
 
-      val taxPeriodEnd   = answer
-      val taxPeriodStart = taxPeriodEnd.minusMonths(1).withDayOfMonth(6)
-      val taxPeriodText  = s"${taxPeriodStart.format(DateTimeFormatter.ofPattern("d MMM yyyy"))} to ${taxPeriodEnd
-          .format(DateTimeFormatter.ofPattern("d MMM yyyy"))}"
+      val returnPeriodText = answer.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 
       SummaryListRowViewModel(
         key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
-        value = ValueViewModel(taxPeriodText)
+        value = ValueViewModel(returnPeriodText)
       )
     }
 }

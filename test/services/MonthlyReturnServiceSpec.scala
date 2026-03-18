@@ -450,7 +450,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, cisId)
         .get
-        .set(DateConfirmNilPaymentsPage, testDate)
+        .set(DateConfirmPaymentsPage, testDate)
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -489,7 +489,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val (service, connector, sessionRepo) = newService()
 
       val userAnswers = UserAnswers("test-user")
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
 
       val ex = intercept[RuntimeException] {
@@ -523,7 +523,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, "CIS-123")
         .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -548,7 +548,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, "CIS-123")
         .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -580,7 +580,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, cisId)
         .get
-        .set(DateConfirmNilPaymentsPage, testDate)
+        .set(DateConfirmPaymentsPage, testDate)
         .get
 
       val backendResponse = NilMonthlyReturnResponse(status = "STARTED")
@@ -617,7 +617,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       val userAnswers = UserAnswers("test-user")
         .set(CisIdPage, "CIS-123")
         .get
-        .set(DateConfirmNilPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
@@ -635,6 +635,57 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
         ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
       verify(connector).createNilMonthlyReturn(requestCaptor.capture())(any[HeaderCarrier])
       requestCaptor.getValue.decInformationCorrect mustBe "N"
+    }
+  }
+
+  "updateMonthlyReturn" should {
+
+    "delegate to connector and complete successfully" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val req = UpdateMonthlyReturnRequest(
+        instanceId = "CIS-123",
+        taxYear = 2024,
+        taxMonth = 10,
+        amendment = "N",
+        decNilReturnNoPayments = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        nilReturnIndicator = "Y",
+        status = "STARTED"
+      )
+
+      when(connector.updateMonthlyReturn(eqTo(req))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.updateMonthlyReturn(req).futureValue mustBe ()
+
+      verify(connector).updateMonthlyReturn(eqTo(req))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, _) = newService()
+
+      val req = UpdateMonthlyReturnRequest(
+        instanceId = "CIS-123",
+        taxYear = 2024,
+        taxMonth = 10,
+        amendment = "N",
+        decNilReturnNoPayments = Some("Y"),
+        decInformationCorrect = Some("Y"),
+        nilReturnIndicator = "Y",
+        status = "STARTED"
+      )
+
+      when(connector.updateMonthlyReturn(eqTo(req))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val ex = intercept[RuntimeException] {
+        service.updateMonthlyReturn(req).futureValue
+      }
+      ex.getMessage must include("boom")
+
+      verify(connector).updateMonthlyReturn(eqTo(req))(any[HeaderCarrier])
     }
   }
 

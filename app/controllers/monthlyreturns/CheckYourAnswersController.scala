@@ -17,7 +17,9 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import pages.monthlyreturns.NilReturnStatusPage
+import models.monthlyreturns.UpdateMonthlyReturnRequest
+import pages.monthlyreturns.ReturnTypePage
+import models.ReturnType
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -48,52 +50,69 @@ class CheckYourAnswersController @Inject() (
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
+      val returnTypeRows = ReturnTypeSummary.returnType(request.userAnswers) match {
+        case ReturnType.MonthlyStandardReturn =>
+          Seq(
+            DateConfirmPaymentsSummary.row(request.userAnswers),
+            EmploymentStatusDeclarationSummary.row(request.userAnswers),
+            VerifiedStatusDeclarationSummary.row(request.userAnswers),
+            SubmitInactivityRequestSummary.row(request.userAnswers)
+          )
+        case ReturnType.MonthlyNilReturn      =>
+          Seq(
+            DateConfirmNilPaymentsSummary.row(request.userAnswers),
+            PaymentsToSubcontractorsSummary.row,
+            SubmitInactivityRequestSummary.row(request.userAnswers)
+          )
+      }
 
       val returnDetailsList = SummaryListViewModel(
-        rows = Seq(
-          ReturnTypeSummary.row(request.userAnswers),
-          DateConfirmNilPaymentsSummary.row(request.userAnswers),
-          PaymentsToSubcontractorsSummary.row,
-          InactivityRequestSummary.row(request.userAnswers)
-        ).flatten
+        rows = (Seq(ReturnTypeSummary.row(request.userAnswers)) ++ returnTypeRows).flatten
       )
 
-      val emailList = SummaryListViewModel(
-        rows = Seq(
-          ConfirmEmailAddressSummary.row(request.userAnswers)
-        ).flatten
+      val emailRows = Seq(
+        ConfirmationByEmailSummary.row(request.userAnswers),
+        EnterYourEmailAddressSummary.row(request.userAnswers)
       )
+
+      val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
       Ok(view(returnDetailsList, emailList))
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    request.userAnswers.get(NilReturnStatusPage) match {
+    request.userAnswers.get(ReturnTypePage) match {
       case None =>
         logger.warn(
-          "[CheckYourAnswersController] C6 submit without FormP record (missing NilReturnStatusPage); redirecting to journey recovery"
+          "[CheckYourAnswersController] C6 submit without FormP record (missing ReturnTypePage); redirecting to journey recovery"
         )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-      case Some(_) =>
+      case Some(returnType) =>
         implicit val hc: HeaderCarrier =
           HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-        monthlyReturnService
-          .updateNilMonthlyReturn(request.userAnswers)
-          .map { _ =>
-            logger.info(
-              "[CheckYourAnswersController] Updated FormP monthly nil return confirmation/nil flags; redirecting to submission"
-            )
-            Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-          }
-          .recover { case ex =>
-            logger.error(
-              s"[CheckYourAnswersController] Failed to update FormP monthly nil return: ${ex.getMessage}",
-              ex
-            )
-            Redirect(controllers.routes.SystemErrorController.onPageLoad())
-          }
+        val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
+
+        updateRequest match {
+          case Left(error) =>
+            logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
+            Future.successful(InternalServerError)
+
+          case Right(req) =>
+            monthlyReturnService
+              .updateMonthlyReturn(req)
+              .map { _ =>
+                logger.info(
+                  s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
+                )
+                Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+              }
+              .recover { case t =>
+                logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+              }
+        }
     }
   }
 }

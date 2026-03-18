@@ -16,6 +16,8 @@
 
 package models
 
+import play.api.mvc.{JavascriptLiteral, QueryStringBindable}
+
 sealed trait ReturnType
 
 object ReturnType extends Enumerable.Implicits {
@@ -30,4 +32,26 @@ object ReturnType extends Enumerable.Implicits {
 
   implicit val enumerable: Enumerable[ReturnType] =
     Enumerable(values.map(v => v.toString -> v): _*)
+
+  implicit val jsLiteral: JavascriptLiteral[ReturnType] = new JavascriptLiteral[ReturnType] {
+    override def to(value: ReturnType): String = value match {
+      case MonthlyNilReturn      => "MonthlyNilReturn"
+      case MonthlyStandardReturn => "MonthlyStandardReturn"
+    }
+  }
+
+  implicit def queryStringBindable(implicit
+    strBinder: QueryStringBindable[String]
+  ): QueryStringBindable[ReturnType] = new QueryStringBindable[ReturnType] {
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ReturnType]] =
+      strBinder.bind(key, params).map {
+        case Right("MonthlyNilReturn")      => Right(MonthlyNilReturn)
+        case Right("MonthlyStandardReturn") => Right(MonthlyStandardReturn)
+        case Right(other)                   => Left(s"Unknown ReturnType: $other")
+        case Left(err)                      => Left(err)
+      }
+
+    override def unbind(key: String, value: ReturnType): String =
+      strBinder.unbind(key, jsLiteral.to(value))
+  }
 }
