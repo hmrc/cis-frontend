@@ -37,7 +37,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
     hc: HeaderCarrier
   ): Future[ChrisSubmissionRequest] = {
     val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
-    val common             = buildCommon(ua, taxpayer, isAgent, returnType)
+    val common             = buildCommon(ua, taxpayer, isAgent)
     val informationCorrect = true
     val inactivityBool     = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
 
@@ -66,8 +66,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
   private def buildCommon(
     ua: UserAnswers,
     taxpayer: CisTaxpayer,
-    isAgent: Boolean,
-    returnType: ReturnType
+    isAgent: Boolean
   ): ChrisSubmissionCommon = {
 
     val utr = taxpayer.utr
