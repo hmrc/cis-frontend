@@ -651,13 +651,14 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   "getSubmissionStatus" should {
 
-    val pollUrl = "https%3A%2F%2Fsomeurl.com%3Ftimestamp%3D2025-01-15T10%3A30%3A00Z"
-    val correlationId = "CID-ABC-123"
+    val pollUrl = "https://someurl.com/poll"
+    val submissionId = "sub-123"
 
     "return ChrisPollResponse with SUBMITTED status when BE returns 200 with valid JSON" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -665,21 +666,24 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
               .withBody(
                 """{
                   |  "status": "SUBMITTED",
-                  |  "pollUrl": "https://chris.example/poll/next"
+                  |  "pollUrl": "https://chris.example/poll/next",
+                  |  "intervalSeconds": 10
                   |}""".stripMargin
               )
           )
       )
 
-      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      val result = connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       result.status mustBe "SUBMITTED"
       result.pollUrl mustBe Some("https://chris.example/poll/next")
+      result.intervalSeconds mustBe Some(10)
     }
 
     "return ChrisPollResponse with ACCEPTED status and no pollUrl when pollUrl is absent" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -692,15 +696,17 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      val result = connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       result.status mustBe "ACCEPTED"
       result.pollUrl mustBe None
+      result.intervalSeconds mustBe None
     }
 
     "return ChrisPollResponse with FATAL_ERROR status" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -713,16 +719,17 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      val result = connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       result.status mustBe "FATAL_ERROR"
       result.pollUrl mustBe None
+      result.intervalSeconds mustBe None
     }
 
-    "correctly encode the pollUrl query parameter" in {
+    "send submissionId and pollUrl as query parameters" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
-          .withQueryParam("pollUrl", equalTo("https%3A%2F%2Fsomeurl.com%3Ftimestamp%3D2025-01-15T10%3A30%3A00Z"))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -731,14 +738,15 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+      val result = connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       result.status mustBe "SUBMITTED"
     }
 
     "fail when BE returns 200 with invalid JSON" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(OK)
@@ -747,7 +755,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+        connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       }
       ex.getMessage.toLowerCase must include("status")
     }
@@ -755,7 +763,8 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     "propagate an upstream error when BE returns 404" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(NOT_FOUND)
@@ -764,7 +773,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+        connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       }
       ex.getMessage must include("returned 404")
     }
@@ -772,7 +781,8 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
     "propagate an upstream error when BE returns 500" in {
       stubFor(
         get(urlPathMatching("/cis/submissions/poll"))
-          .withQueryParam("correlationId", equalTo(correlationId))
+          .withQueryParam("submissionId", equalTo(submissionId))
+          .withQueryParam("pollUrl", equalTo(pollUrl))
           .willReturn(
             aResponse()
               .withStatus(INTERNAL_SERVER_ERROR)
@@ -781,7 +791,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.getSubmissionStatus(pollUrl, correlationId).futureValue
+        connector.getSubmissionStatus(pollUrl, submissionId).futureValue
       }
       ex.getMessage must include("returned 500")
     }
