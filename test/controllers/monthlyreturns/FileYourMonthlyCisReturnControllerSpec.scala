@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.agent.AgentClientData
+import models.{NormalMode, ReturnType}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -274,6 +275,141 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
         verify(mockService).hasClient(eqTo("163"), eqTo("AB0063"))(any())
         verify(mockRepo).set(any())
+      }
+    }
+  }
+
+  "FileYourMonthlyCisReturnController.onSubmit" - {
+
+    "redirects to DateConfirmPayments for MonthlyStandardReturn and persists cleaned answers" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmit(ReturnType.MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.DateConfirmPaymentsController
+            .onPageLoad(NormalMode, Some(ReturnType.MonthlyStandardReturn))
+            .url
+
+        verify(mockRepo).set(any())
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "redirects to DateConfirmPayments for MonthlyNilReturn and persists cleaned answers" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmit(ReturnType.MonthlyNilReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.DateConfirmPaymentsController
+            .onPageLoad(NormalMode, Some(ReturnType.MonthlyNilReturn))
+            .url
+
+        verify(mockRepo).set(any())
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "redirects to JourneyRecovery when no user answers exist" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      val app =
+        applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmit(ReturnType.MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verifyNoInteractions(mockRepo)
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "redirects to JourneyRecovery when session repository fails" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmit(ReturnType.MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockRepo).set(any())
+        verifyNoInteractions(mockService)
       }
     }
   }
