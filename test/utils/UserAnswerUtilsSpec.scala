@@ -59,19 +59,32 @@ class UserAnswerUtilsSpec extends SpecBase {
 
     "removes all monthly return journey pages from UserAnswers" in {
       val ua = UserAnswers("id")
-        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1)).get
-        .set(InactivityRequestPage, InactivityRequest.Option1).get
-        .set(ConfirmationByEmailPage, true).get
-        .set(EnterYourEmailAddressPage, "test@example.com").get
-        .set(DeclarationPage, Set(Declaration.Confirmed)).get
-        .set(SelectedSubcontractorPage(1), completeSub(1)).get
-        .set(VerifySubcontractorsPage, true).get
-        .set(SubcontractorDetailsAddedPage, true).get
-        .set(PaymentDetailsConfirmationPage, true).get
-        .set(EmploymentStatusDeclarationPage, true).get
-        .set(VerifiedStatusDeclarationPage, true).get
-        .set(SubmitInactivityRequestPage, true).get
-        .set(ConfirmEmailAddressPage, "test@example.com").get
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(ConfirmationByEmailPage, true)
+        .get
+        .set(EnterYourEmailAddressPage, "test@example.com")
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+        .set(SelectedSubcontractorPage(1), completeSub(1))
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+        .set(SubcontractorDetailsAddedPage, true)
+        .get
+        .set(PaymentDetailsConfirmationPage, true)
+        .get
+        .set(EmploymentStatusDeclarationPage, true)
+        .get
+        .set(VerifiedStatusDeclarationPage, true)
+        .get
+        .set(SubmitInactivityRequestPage, true)
+        .get
+        .set(ConfirmEmailAddressPage, "test@example.com")
+        .get
 
       val result = ua.clearMonthlyReturnJourney
 
@@ -95,10 +108,14 @@ class UserAnswerUtilsSpec extends SpecBase {
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {
       val ua = UserAnswers("id")
-        .set(CisIdPage, "CIS-123").get
-        .set(ReturnTypePage, ReturnType.MonthlyStandardReturn).get
-        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1)).get
-        .set(VerifySubcontractorsPage, true).get
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+        .get
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
 
       val result = ua.clearMonthlyReturnJourney
 
