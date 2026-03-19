@@ -205,6 +205,24 @@ class SubmissionService @Inject() (
     }
   }
 
+  def isChrisPollingAllowed(
+    userAnswers: UserAnswers
+  ): Boolean = {
+
+    val currentDateTime = Instant.now()
+
+    val pollIntervalSeconds = getPollInterval(userAnswers)
+
+    val lastGatewayMsg = userAnswers
+      .get(SubmissionDetailsPage)
+      .map(_.submittedAt)
+      .getOrElse(throw new IllegalStateException("Submission details missing"))
+
+    val nextPollDateTime = lastGatewayMsg.plusSeconds(pollIntervalSeconds)
+
+    currentDateTime.isAfter(nextPollDateTime)
+  }
+
 // UserAnswer helpers
 
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
