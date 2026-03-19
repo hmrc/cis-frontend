@@ -1337,6 +1337,74 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     }
   }
 
+  "isChrisPollingAllowed" - {
+
+    "should return true when current time is after next poll time" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+
+      val pastTime = Instant.now().minusSeconds(20)
+
+      val userAnswers = emptyUserAnswers
+        .set(SubmissionDetailsPage, SubmissionDetails("submissionId", "PENDING", "irMark", pastTime))
+        .success
+        .value
+
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service             = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val result              = service.isChrisPollingAllowed(userAnswers)
+      result mustBe true
+    }
+
+    "should return false when current time is before next poll time" in {
+      val connector         = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository = mock(classOf[SessionRepository])
+
+      val appConfig = new FrontendAppConfig(
+        Configuration("submission-poll-default-interval-seconds" -> "10")
+      )
+
+      val recentTime = Instant.now()
+
+      val userAnswers = emptyUserAnswers
+        .set(SubmissionDetailsPage, SubmissionDetails("submissionId", "PENDING", "irMark", recentTime))
+        .success
+        .value
+
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service             = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val result = service.isChrisPollingAllowed(userAnswers)
+
+      result mustBe false
+    }
+
+    "should throw IllegalStateException when submission details are missing" in {
+      val connector         = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository = mock(classOf[SessionRepository])
+
+      val appConfig = new FrontendAppConfig(
+        Configuration("submission-poll-default-interval-seconds" -> "10")
+      )
+
+      val userAnswers = emptyUserAnswers
+
+      val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service             = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val ex = intercept[IllegalStateException] {
+        service.isChrisPollingAllowed(userAnswers)
+      }
+
+      ex.getMessage mustBe "Submission details missing"
+    }
+  }
+
   private def uaBase: UserAnswers =
     emptyUserAnswers
       .set(CisIdPage, "123")
