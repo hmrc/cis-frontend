@@ -16,7 +16,7 @@
 
 package models.submission
 
-import play.api.libs.json.{JsObject, Json, OFormat}
+import play.api.libs.json.{JsObject, JsValue, Json, OFormat}
 
 final case class ResponseEndPointDto(
   url: String,
@@ -34,7 +34,7 @@ final case class ChrisSubmissionResponse(
   correlationId: Option[String] = None,
   responseEndPoint: Option[ResponseEndPointDto] = None,
   gatewayTimestamp: Option[String] = None,
-  error: Option[JsObject] = None
+  error: Option[JsValue] = None
 )
 
 object ChrisSubmissionResponse {
