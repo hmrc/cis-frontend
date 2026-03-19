@@ -523,3 +523,9 @@ monthlyreturns.submissionUnsuccessfulResubmit.p4 = You will need to provide:
 monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference number, also known as an Employer Reference Number (ERN)
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
+
+monthlyreturns.deleteMonthlyReturn.title = Are you sure you want to delete this monthly return?
+monthlyreturns.deleteMonthlyReturn.heading = Are you sure you want to delete the monthly return for ?
+monthlyreturns.deleteMonthlyReturn.checkYourAnswersLabel = deleteMonthlyReturn
+monthlyreturns.deleteMonthlyReturn.error.required = Select ‘Yes’ to delete the return. Select ‘No’ if you do not want to delete the return.
+monthlyreturns.deleteMonthlyReturn.change.hidden = DeleteMonthlyReturn
