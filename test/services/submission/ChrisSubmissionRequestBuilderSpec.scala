@@ -121,7 +121,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(InactivityRequestPage, InactivityRequest.Option1)
           .success
           .value
-          .set(ConfirmEmailAddressPage, "  test@test.com  ")
+          .set(EnterYourEmailAddressPage, "  test@test.com  ")
           .success
           .value
 
@@ -164,7 +164,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(InactivityRequestPage, InactivityRequest.Option2)
           .success
           .value
-          .set(ConfirmEmailAddressPage, "test@test.com")
+          .set(EnterYourEmailAddressPage, "test@test.com")
           .success
           .value
           .set(EmploymentStatusDeclarationPage, true)
