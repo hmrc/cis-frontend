@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package forms
+package forms.monthlyreturns
 
 import javax.inject.Inject
 
@@ -25,6 +25,6 @@ class DeleteMonthlyReturnFormProvider @Inject() extends Mappings {
 
   def apply(): Form[Boolean] =
     Form(
-      "value" -> boolean("deleteMonthlyReturn.error.required")
+      "value" -> boolean("monthlyreturns.deleteMonthlyReturn.error.required")
     )
 }

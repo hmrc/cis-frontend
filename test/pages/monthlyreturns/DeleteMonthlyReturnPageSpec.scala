@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
 import base.SpecBase
 import play.api.libs.json.JsPath

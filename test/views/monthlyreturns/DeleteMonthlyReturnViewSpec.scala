@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package views
+package views.monthlyreturns
 
 import base.SpecBase
-import forms.DeleteMonthlyReturnFormProvider
+import forms.monthlyreturns.DeleteMonthlyReturnFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.DeleteMonthlyReturnView
+import views.html.monthlyreturns.DeleteMonthlyReturnView
 
 class DeleteMonthlyReturnViewSpec extends SpecBase {
 

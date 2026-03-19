@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package viewmodels.govuk.checkAnswers
+package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
-import controllers.routes
+import controllers.monthlyreturns.routes
 import models.CheckMode
 import org.scalatest.OptionValues
-import pages.DeleteMonthlyReturnPage
+import pages.monthlyreturns.DeleteMonthlyReturnPage
 import play.api.i18n.Messages
 import play.api.test.Helpers
-import viewmodels.checkAnswers.DeleteMonthlyReturnSummary
+import viewmodels.checkAnswers.monthlyreturns.DeleteMonthlyReturnSummary
 
 class DeleteMonthlyReturnSummarySpec extends SpecBase with OptionValues {
 

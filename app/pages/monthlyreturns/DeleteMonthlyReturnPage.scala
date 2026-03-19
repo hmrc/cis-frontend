@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
 import play.api.libs.json.JsPath
+import pages.QuestionPage
 
 case object DeleteMonthlyReturnPage extends QuestionPage[Boolean] {
 

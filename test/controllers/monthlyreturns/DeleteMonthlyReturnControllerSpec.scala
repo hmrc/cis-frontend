@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.DeleteMonthlyReturnFormProvider
+import forms.monthlyreturns.DeleteMonthlyReturnFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.DeleteMonthlyReturnPage
+import pages.monthlyreturns.DeleteMonthlyReturnPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.DeleteMonthlyReturnView
+import views.html.monthlyreturns.DeleteMonthlyReturnView
 
 import scala.concurrent.Future
 
@@ -38,9 +38,10 @@ class DeleteMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new DeleteMonthlyReturnFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
-  lazy val deleteMonthlyReturnRoute = routes.DeleteMonthlyReturnController.onPageLoad(NormalMode).url
+  lazy val deleteMonthlyReturnRoute =
+    controllers.monthlyreturns.routes.DeleteMonthlyReturnController.onPageLoad(NormalMode).url
 
   "DeleteMonthlyReturn Controller" - {
 
@@ -134,7 +135,7 @@ class DeleteMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -150,7 +151,7 @@ class DeleteMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }
