@@ -111,6 +111,24 @@ class SubmissionService @Inject() (
   def getPollInterval(userAnswers: UserAnswers): Int =
     userAnswers.get(PollIntervalPage).getOrElse(appConfig.submissionPollDefaultIntervalSeconds)
 
+  def checkAndUpdateSubmissionStatusIfAllowed(
+    userAnswers: UserAnswers
+  )(using HeaderCarrier): Future[PollDecision] =
+    userAnswers.get(LastMessageDatePage) match {
+      case Some(receivedAt) =>
+        val nextPollAllowedAt = receivedAt.plusSeconds(getPollInterval(userAnswers))
+
+        if (Instant.now().isAfter(nextPollAllowedAt)) {
+          checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+        } else {
+          Future.successful(PollDecision.Skip)
+        }
+
+      case None =>
+        logger.warn("[checkAndUpdateSubmissionStatusIfAllowed] Missing lastMessageDate, allowing poll by default")
+        checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+    }
+
   def checkAndUpdateSubmissionStatus(
     userAnswers: UserAnswers
   )(using HeaderCarrier): Future[String] = {
@@ -137,7 +155,11 @@ class SubmissionService @Inject() (
           ua2           <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
           ua3           <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
           ua4           <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
-          _             <- sessionRepository.set(ua4)
+          ua5           <- result.lastMessageDate match {
+                             case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
+                             case None     => Future.successful(ua4)
+                           }
+          _             <- sessionRepository.set(ua5)
         } yield newStatus
     }
   }
@@ -256,7 +278,11 @@ class SubmissionService @Inject() (
                  Success(ua1)
              }
       ua3 <- response.correlationId.toTry.flatMap(c => ua2.set(CorrelationIdPage, c))
-    } yield ua3
+      ua4 <- response.gatewayTimestamp match {
+               case Some(ts) => ua3.set(LastMessageDatePage, Instant.parse(ts))
+               case None     => Success(ua3)
+             }
+    } yield ua4
 
     updatedUa.fold(
       { err =>
