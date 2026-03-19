@@ -24,7 +24,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -63,7 +63,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
       .set(ContractorNamePage, contractorName)
       .success
       .value
-      .set(ConfirmEmailAddressPage, email)
+      .set(EnterYourEmailAddressPage, email)
       .success
       .value
       .set(DateConfirmPaymentsPage, periodEnd)
@@ -149,7 +149,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .set(ContractorNamePage, contractorName)
               .success
               .value
-              .set(ConfirmEmailAddressPage, email)
+              .set(EnterYourEmailAddressPage, email)
               .success
               .value
               .set(ReturnTypePage, submissionType)
@@ -178,7 +178,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
         }
 
-        "must call monthlyReturnService and use returned email when ConfirmEmailAddressPage is missing" in {
+        "must call monthlyReturnService and use returned email when EnterYourEmailAddressPage is missing" in {
 
           val fallbackEmail = "fallback@test.com"
 
@@ -240,7 +240,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
-              .set(ConfirmEmailAddressPage, email)
+              .set(EnterYourEmailAddressPage, email)
               .success
               .value
 
@@ -344,7 +344,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           }
 
-          "must call monthlyReturnService and use returned email when ConfirmEmailAddressPage is missing" in {
+          "must call monthlyReturnService and use returned email when EnterYourEmailAddressPage is missing" in {
 
             val fallbackEmail = "fallback@test.com"
 
@@ -415,7 +415,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .set(DateConfirmPaymentsPage, periodEnd)
                 .success
                 .value
-                .set(ConfirmEmailAddressPage, email)
+                .set(EnterYourEmailAddressPage, email)
                 .success
                 .value
 
