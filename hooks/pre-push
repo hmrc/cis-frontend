@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Running scalafmt check..."
+
+git stash
+sbt scalafmtCheckAll
+
+if [ $? -ne 0 ]; then
+  echo "scalafmt check failed. Please run 'sbt scalafmtAll' to format your code before pushing."
+  git stash pop
+  exit 1
+fi
+
+git stash pop
+exit 0

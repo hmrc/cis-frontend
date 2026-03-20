@@ -25,7 +25,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.when
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
 
 import java.time.LocalDate
 import play.api.libs.json.Json
@@ -70,12 +70,14 @@ class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with Mocki
       ex.getMessage must include("boom-err")
     }
 
-    "emailfromUserAnswers trims and uses correct page per return type" in {
-      val uaNil = uaEmpty.set(ConfirmEmailAddressPage, "  test@test.com  ").get
-      Harness.emailPublic(uaNil, MonthlyNilReturn) mustBe Some("test@test.com")
+    "emailfromUserAnswers trims and filters empty values from EnterYourEmailAddressPage" in {
+      val uaWithEmail = uaEmpty.set(EnterYourEmailAddressPage, "  test@test.com  ").get
+      Harness.emailPublic(uaWithEmail, MonthlyNilReturn) mustBe Some("test@test.com")
+      Harness.emailPublic(uaWithEmail, MonthlyStandardReturn) mustBe Some("test@test.com")
 
-      val uaStd = uaEmpty.set(EnterYourEmailAddressPage, "   ").get
-      Harness.emailPublic(uaStd, MonthlyStandardReturn) mustBe None
+      val uaBlank = uaEmpty.set(EnterYourEmailAddressPage, "   ").get
+      Harness.emailPublic(uaBlank, MonthlyNilReturn) mustBe None
+      Harness.emailPublic(uaBlank, MonthlyStandardReturn) mustBe None
     }
 
     "periodEndFromUserAnswers uses correct page per return type" in {

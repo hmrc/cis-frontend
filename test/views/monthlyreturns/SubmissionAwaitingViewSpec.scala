@@ -28,18 +28,20 @@ class SubmissionAwaitingViewSpec extends SpecBase with Matchers {
   "SubmissionAwaitingView" - {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
-      val html = view()
-      val doc  = Jsoup.parse(html.body)
+      val fakeCisId = "1"
+      val html      = view(fakeCisId)
+      val doc       = Jsoup.parse(html.body)
 
-      doc.title                                       must include(messages("monthlyreturns.submissionAwaiting.title"))
-      doc.select("h1").text                           must include(messages("monthlyreturns.submissionAwaiting.heading"))
-      doc.select("p").text                            must include(messages("monthlyreturns.submissionAwaiting.paragraph.p1"))
-      doc.select("p").text                            must include(messages("monthlyreturns.submissionAwaiting.paragraph.p2"))
-      doc.select("p").text                            must include(messages("monthlyreturns.submissionAwaiting.paragraph.p3"))
-      doc.select("details").text                      must include(messages("monthlyreturns.submissionAwaiting.details.summary"))
-      doc.getElementsByClass("govuk-inset-text").text must include(messages("monthlyreturns.submissionAwaiting.inset"))
-      doc.select("h2").text                           must include(messages("monthlyreturns.submissionAwaiting.heading.h2"))
-      doc.getElementsByClass("govuk-link").text       must include(messages("monthlyreturns.submissionAwaiting.link.l2"))
+      doc.title                      must include(messages("monthlyreturns.submissionAwaiting.title"))
+      doc.select("h1").text          must include(messages("monthlyreturns.submissionAwaiting.heading"))
+      doc.select("p").text           must include(messages("monthlyreturns.submissionAwaiting.paragraph.p1"))
+      doc.select("p").text           must include(messages("monthlyreturns.submissionAwaiting.paragraph.p2"))
+      doc.select("details").text     must include(messages("monthlyreturns.submissionAwaiting.details.summary"))
+      doc.select("li").text          must include(messages("monthlyreturns.submissionAwaiting.details.list.l1"))
+      doc.select(".govuk-link").text must include(
+        messages("monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk")
+      )
+      doc.select(".govuk-link").text must include(messages("monthlyreturns.submissionAwaiting.links.submit"))
     }
 
   }
