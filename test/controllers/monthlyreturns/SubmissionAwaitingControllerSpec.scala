@@ -32,14 +32,13 @@ class SubmissionAwaitingControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
-        val request = FakeRequest(GET, submissionAwaitingRoute)
-
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[SubmissionAwaitingView]
+        val request   = FakeRequest(GET, submissionAwaitingRoute)
+        val fakeCisId = "1"
+        val result    = route(application, request).value
+        val view      = application.injector.instanceOf[SubmissionAwaitingView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
       }
     }
 

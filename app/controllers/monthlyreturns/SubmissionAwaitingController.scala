@@ -17,6 +17,8 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import pages.monthlyreturns.CisIdPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -33,10 +35,15 @@ class SubmissionAwaitingController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionAwaitingView
 ) extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
-      Ok(view())
+      val cisId = request.userAnswers.get(CisIdPage).getOrElse {
+        logger.error("[SubmissionAwaiting] cisId missing from userAnswers")
+        throw new IllegalStateException("cisId missing from userAnswers")
+      }
+      Ok(view(cisId))
   }
 }
