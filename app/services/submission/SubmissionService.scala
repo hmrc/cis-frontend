@@ -116,11 +116,29 @@ class SubmissionService @Inject() (
   )(using HeaderCarrier): Future[PollDecision] =
     userAnswers.get(LastMessageDatePage) match {
       case Some(receivedAt) =>
-        val nextPollAllowedAt = receivedAt.plusSeconds(getPollInterval(userAnswers))
+        val pollInterval      = getPollInterval(userAnswers)
+        val nextPollAllowedAt = receivedAt.plusSeconds(pollInterval)
+        val now               = Instant.now() // TODO - val added to support logs for testing, to be deleted after verification
 
         if (Instant.now().isAfter(nextPollAllowedAt)) {
+          // TODO - logs used for testing, to be deleted after verification
+          logger.info(
+            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL ALLOWED " +
+              s"lastMessageRecieved=$receivedAt," +
+              s"pollIntervalSeconds=$pollInterval, " +
+              s"nextPollAllowed=$nextPollAllowedAt, " +
+              s"now=$now"
+          )
           checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
         } else {
+          // TODO - logs used for testing, to be deleted after verification
+          logger.info(
+            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL SKIPPED " +
+              s"lastMessageRecieved=$receivedAt," +
+              s"pollIntervalSeconds=$pollInterval, " +
+              s"nextPollAllowed=$nextPollAllowedAt, " +
+              s"now=$now"
+          )
           Future.successful(PollDecision.Skip)
         }
 
@@ -278,11 +296,7 @@ class SubmissionService @Inject() (
                  Success(ua1)
              }
       ua3 <- response.correlationId.toTry.flatMap(c => ua2.set(CorrelationIdPage, c))
-      ua4 <- response.gatewayTimestamp match {
-               case Some(ts) => ua3.set(LastMessageDatePage, Instant.parse(ts))
-               case None     => Success(ua3)
-             }
-    } yield ua4
+    } yield ua3
 
     updatedUa.fold(
       { err =>

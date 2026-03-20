@@ -31,7 +31,7 @@ import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, PollIntervalPage, PollUrlPage, SubmissionDetailsPage}
+import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import repositories.SessionRepository
@@ -275,7 +275,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         verify(sessionRepository, never()).set(any[UserAnswers])
       }
 
-      "persists poll endpoint details when response.endpoint is present" in {
+      "persists poll endpoint details but not lastMessageDate when response.endpoint is present" in {
         val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
         val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
         val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
@@ -317,12 +317,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
           .thenReturn(Future.successful(builtCsr))
 
-        val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
         out mustBe beRespWithEndpoint
+
         verify(sessionRepository).set(uaCaptor.capture())
         val saved = uaCaptor.getValue
         saved.get(PollUrlPage).value mustBe "https://poll.example.test/cis/sub-123"
         saved.get(PollIntervalPage).value mustBe 15
+        saved.get(LastMessageDatePage) mustBe None
       }
 
       "fails fast and does not persist if updating UserAnswers fails" in {
@@ -566,6 +568,128 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     }
   }
 
+  "checkAndUpdateSubmissionStatusIfAllowed" - {
+
+    "poll and return Polled when lastMessageDate is missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submittedAt       = Instant.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
+
+      result mustBe PollDecision.Polled("SUBMITTED")
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(sessionRepository).set(any[UserAnswers])
+    }
+
+    "skip polling when lastMessageDate is present and interval has not elapsed" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val ua = uaBase
+        .set(LastMessageDatePage, Instant.now().minusSeconds(5))
+        .success
+        .value
+        .set(PollIntervalPage, 10)
+        .success
+        .value
+
+      val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
+
+      result mustBe PollDecision.Skip
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "poll and return Polled when lastMessageDate is present and interval has elapsed" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submittedAt       = Instant.now().minusSeconds(10)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+        .set(LastMessageDatePage, Instant.now().minusSeconds(60))
+        .success
+        .value
+        .set(PollIntervalPage, 5)
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None)))
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
+
+      result mustBe PollDecision.Polled("ACCEPTED")
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(sessionRepository).set(any[UserAnswers])
+    }
+  }
+
   "checkAndUpdateSubmissionStatus" - {
     "fail when SubmissionDetailsPage is not present" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
@@ -581,7 +705,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = uaBase
 
       when(connector.getSubmissionStatus(any, any)(any))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).failed.futureValue
 
@@ -628,7 +752,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verifyNoInteractions(sessionRepository)
     }
 
-    "update status and save to repository when submission is not timed out" in {
+    "update status and save PollUrl, PollInterval and LastMessageDate when present in poll response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
@@ -638,9 +762,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
-
-      import models.submission.SubmissionDetails
-      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 
       val submittedAt       = Instant.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -657,25 +778,37 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .set(CorrelationIdPage, "123")
         .success
         .value
-        .set(PollUrlPage, "someUrl")
+        .set(PollUrlPage, "oldUrl")
         .success
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
+        .thenReturn(
+          Future.successful(
+            ChrisPollResponse(
+              "PENDING",
+              Some("newPollUrl"),
+              Some(30),
+              Some("2025-01-01T00:00:30Z")
+            )
+          )
+        )
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "SUBMITTED"
+      result mustBe "PENDING"
       verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
 
       val savedUa = captor.getValue
-      savedUa.get(SubmissionDetailsPage).value.status mustBe "SUBMITTED"
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "PENDING"
+      savedUa.get(PollUrlPage).value mustBe "newPollUrl"
+      savedUa.get(PollIntervalPage).value mustBe 30
+      savedUa.get(LastMessageDatePage).value mustBe Instant.parse("2025-01-01T00:00:30Z")
       savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
     }
 
@@ -713,7 +846,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30))))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -730,6 +863,57 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       savedUa.get(PollUrlPage).value mustBe "newPollUrl"
       savedUa.get(PollIntervalPage).value mustBe 30
       savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
+    }
+
+    "not update LastMessageDatePage when poll response does not contain lastMessageDate" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submittedAt       = Instant.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val existingLastMessageDate = Instant.parse("2025-01-01T00:00:00Z")
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "oldUrl")
+        .success
+        .value
+        .set(LastMessageDatePage, existingLastMessageDate)
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None)))
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedUa = captor.getValue
+      savedUa.get(LastMessageDatePage).value mustBe existingLastMessageDate
     }
 
     "mark as timed out when timeout exceeded and status is still PENDING" in {
@@ -766,7 +950,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -818,7 +1002,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -870,7 +1054,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -922,7 +1106,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"), None, None)))
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
