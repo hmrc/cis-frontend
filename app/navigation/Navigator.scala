@@ -31,24 +31,13 @@ class Navigator @Inject() () {
   private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
     // nil return
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
-      _ => controllers.monthlyreturns.routes.InactivityRequestController.onPageLoad(NormalMode)
+      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
     case (InactivityRequestPage, _)                  =>
       _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
     case (DeclarationPage, _)                        =>
-      userAnswers =>
-        userAnswers.get(SubmitInactivityRequestPage) match {
-          case Some(false) =>
-            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-          case _           =>
-            userAnswers.get(InactivityRequestPage) match {
-              case Some(InactivityRequest.Option2)        =>
-                controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-              case Some(InactivityRequest.Option1) | None =>
-                controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
-            }
-        }
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case (InactivityWarningPage, _)                  =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
@@ -169,8 +158,8 @@ class Navigator @Inject() () {
     mode: Mode
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(ConfirmationByEmailPage), mode) match {
-      case (Some(true), _)           =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+      case (Some(true), mode)        =>
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(mode)
       case (Some(false), NormalMode) =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
