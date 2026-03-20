@@ -167,7 +167,7 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
-GET        /delete-nil-monthly-return                        controllers.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
-POST       /delete-nil-monthly-return                        controllers.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
-GET        /change-delete-nil-monthly-return                  controllers.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = CheckMode)
-POST       /change-delete-nil-monthly-return                  controllers.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-delete-nil-monthly-return                  controllers.monthlyreturns.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-delete-nil-monthly-return                  controllers.monthlyreturns.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = CheckMode)

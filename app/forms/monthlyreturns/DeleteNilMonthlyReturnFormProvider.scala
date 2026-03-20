@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package pages
+package forms.monthlyreturns
 
-import base.SpecBase
-import play.api.libs.json.JsPath
+import javax.inject.Inject
 
-class DeleteNilMonthlyReturnPageSpec extends SpecBase {
+import forms.mappings.Mappings
+import play.api.data.Form
 
-  "DeleteNilMonthlyReturnPage" - {
-    "have the correct path" in {
-      DeleteNilMonthlyReturnPage.path mustBe (JsPath \ "deleteNilMonthlyReturn")
-    }
+class DeleteNilMonthlyReturnFormProvider @Inject() extends Mappings {
 
-    "have the correct toString" in {
-      DeleteNilMonthlyReturnPage.toString mustBe "deleteNilMonthlyReturn"
-    }
-  }
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("monthlyreturns.deleteNilMonthlyReturn.error.required")
+    )
 }

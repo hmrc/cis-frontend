@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers
+package viewmodels.checkAnswers.monthlyreturns
 
-import controllers.routes
 import models.{CheckMode, UserAnswers}
-import pages.DeleteNilMonthlyReturnPage
+import pages.monthlyreturns.DeleteNilMonthlyReturnPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object DeleteNilMonthlyReturnSummary  {
+object DeleteNilMonthlyReturnSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(DeleteNilMonthlyReturnPage).map {
-      answer =>
+    answers.get(DeleteNilMonthlyReturnPage).map { answer =>
 
-        val value = if (answer) "site.yes" else "site.no"
+      val value = if (answer) "site.yes" else "site.no"
 
-        SummaryListRowViewModel(
-          key     = "monthlyreturns.deleteNilMonthlyReturn.checkYourAnswersLabel",
-          value   = ValueViewModel(value),
-          actions = Seq(
-            ActionItemViewModel("site.change", routes.DeleteNilMonthlyReturnController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("monthlyreturns.deleteNilMonthlyReturn.change.hidden"))
+      SummaryListRowViewModel(
+        key = "monthlyreturns.deleteNilMonthlyReturn.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.DeleteNilMonthlyReturnController.onPageLoad(CheckMode).url
           )
+            .withVisuallyHiddenText(messages("monthlyreturns.deleteNilMonthlyReturn.change.hidden"))
         )
+      )
     }
 }

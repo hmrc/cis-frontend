@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package pages
+package pages.monthlyreturns
 
+import base.SpecBase
 import play.api.libs.json.JsPath
 
-case object DeleteNilMonthlyReturnPage extends QuestionPage[Boolean] {
+class DeleteNilMonthlyReturnPageSpec extends SpecBase {
 
-  override def path: JsPath = JsPath \ toString
+  "DeleteNilMonthlyReturnPage" - {
+    "have the correct path" in {
+      DeleteNilMonthlyReturnPage.path mustBe (JsPath \ "deleteNilMonthlyReturn")
+    }
 
-  override def toString: String = "deleteNilMonthlyReturn"
+    "have the correct toString" in {
+      DeleteNilMonthlyReturnPage.toString mustBe "deleteNilMonthlyReturn"
+    }
+  }
 }

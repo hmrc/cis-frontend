@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package forms
+package pages.monthlyreturns
 
-import javax.inject.Inject
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-import forms.mappings.Mappings
-import play.api.data.Form
+case object DeleteNilMonthlyReturnPage extends QuestionPage[Boolean] {
 
-class DeleteNilMonthlyReturnFormProvider @Inject() extends Mappings {
+  override def path: JsPath = JsPath \ toString
 
-  def apply(): Form[Boolean] =
-    Form(
-      "value" -> boolean("monthlyreturns.deleteNilMonthlyReturn.error.required")
-    )
+  override def toString: String = "deleteNilMonthlyReturn"
 }
