@@ -23,6 +23,7 @@ import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -45,16 +46,18 @@ class PaymentDetailsController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  val form = formProvider()
+  val form: Form[Option[BigDecimal]] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case None =>
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
         case Some(subcontractor) =>
           val preparedForm = subcontractor.totalPaymentsMade match {
             case None        => form
-            case Some(value) => form.fill(value)
+            case Some(value) => form.fill(Some(value))
           }
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
@@ -64,17 +67,23 @@ class PaymentDetailsController @Inject() (
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
         case Some(subcontractor) =>
           form
             .bindFromRequest()
             .fold(
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
-              value =>
+              valueOpt => {
+                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
+
                 for {
                   updatedAnswers <-
-                    Future.fromTry(request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), value))
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), valueToPersist)
+                    )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
                   case Some("changeAnswers") =>
@@ -82,6 +91,7 @@ class PaymentDetailsController @Inject() (
                   case _                     =>
                     Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index), mode, updatedAnswers))
                 }
+              }
             )
       }
     }
