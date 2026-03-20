@@ -309,9 +309,14 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
         formatter.bind("key", Map("key" -> tooLong)) mustBe Left(Seq(FormError("key", "maxLength")))
       }
 
-      "must unbind as whole pounds without decimals" in {
+      "must unbind as whole pounds with comma grouping and no decimals" in {
+        formatter.unbind("key", BigDecimal("12345.00")) mustBe Map("key" -> "12,345")
+      }
+
+      "must unbind without commas when not needed" in {
         formatter.unbind("key", BigDecimal("123.00")) mustBe Map("key" -> "123")
       }
+
     }
 
     "scale=2 (pounds and pence)" - {
@@ -338,8 +343,8 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
         }
       }
 
-      "must unbind with exactly 2dp" in {
-        formatter.unbind("key", BigDecimal("12")) mustBe Map("key" -> "12.00")
+      "must unbind with exactly 2dp and comma grouping" in {
+        formatter.unbind("key", BigDecimal("12345")) mustBe Map("key" -> "12,345.00")
       }
     }
   }

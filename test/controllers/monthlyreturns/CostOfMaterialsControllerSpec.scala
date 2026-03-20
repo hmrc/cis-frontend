@@ -40,7 +40,7 @@ import scala.concurrent.Future
 class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
   val formProvider                   = new CostOfMaterialsFormProvider()
-  val form: Form[Option[BigDecimal]] = formProvider() // Form[Option[BigDecimal]]
+  val form: Form[Option[BigDecimal]] = formProvider()
 
   def onwardRoute: Call = Call("GET", "/foo")
 
@@ -122,7 +122,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to the next page when empty data is submitted (optional) and remove the answer" in {
+    "must redirect to the next page when empty data is submitted (optional) and save a default value of 0" in {
 
       val existingAnswerUa =
         userAnswers.set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal("123.00")).success.value
@@ -151,7 +151,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe None
+        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe Some(BigDecimal(0))
       }
     }
 
@@ -264,7 +264,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Change Answers total payments when returnTo is changeAnswers and empty data is submitted (optional) and remove the answer" in {
+    "must redirect to Change Answers total payments when returnTo is changeAnswers and empty data is submitted (optional) and save a default value of 0" in {
 
       val existingAnswerUa =
         userAnswers.set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal("123")).success.value
@@ -293,7 +293,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe None
+        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe Some(BigDecimal(0))
       }
     }
   }

@@ -82,16 +82,13 @@ class CostOfMaterialsController @Inject() (
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
               valueOpt => {
-                val updatedAnswersTry =
-                  valueOpt match {
-                    case Some(value) =>
-                      request.userAnswers.set(SelectedSubcontractorMaterialCostsPage(index), value)
-                    case None        =>
-                      request.userAnswers.remove(SelectedSubcontractorMaterialCostsPage(index))
-                  }
+                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
 
                 for {
-                  updatedAnswers <- Future.fromTry(updatedAnswersTry)
+                  updatedAnswers <-
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorMaterialCostsPage(index), valueToPersist)
+                    )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield redirect(updatedAnswers)
               }

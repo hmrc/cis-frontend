@@ -82,16 +82,13 @@ class TotalTaxDeductedController @Inject() (
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
               valueOpt => {
-                val updatedAnswersTry =
-                  valueOpt match {
-                    case Some(value) =>
-                      request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), value)
-                    case None        =>
-                      request.userAnswers.remove(SelectedSubcontractorTaxDeductedPage(index))
-                  }
+                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
 
                 for {
-                  updatedAnswers <- Future.fromTry(updatedAnswersTry)
+                  updatedAnswers <-
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), valueToPersist)
+                    )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield redirect(updatedAnswers)
               }

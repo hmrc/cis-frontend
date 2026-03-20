@@ -20,6 +20,8 @@ import models.Enumerable
 import play.api.data.FormError
 import play.api.data.format.Formatter
 
+import java.text.{DecimalFormat, DecimalFormatSymbols}
+import java.util.Locale
 import scala.util.control.Exception.nonFatalCatch
 
 trait Formatters {
@@ -234,18 +236,22 @@ trait Formatters {
           }
 
       override def unbind(key: String, value: BigDecimal): Map[String, String] = {
+        val symbols = DecimalFormatSymbols.getInstance(Locale.UK)
+
         val rendered =
           scale match {
             case 0 =>
-              // PaymentDetails: always show whole pounds, no decimals
-              value.setScale(0).toBigIntExact.map(_.toString).getOrElse(value.setScale(0).toString)
+              val df = new DecimalFormat("#,##0", symbols)
+              df.format(value.setScale(0).bigDecimal)
+
             case 2 =>
-              // TotalTaxDeducted: always show exactly 2dp
-              utils.MoneyFormat.twoDp(value)
+              val df = new DecimalFormat("#,##0.00", symbols)
+              df.format(value.setScale(2).bigDecimal)
           }
 
         baseFormatter.unbind(key, rendered)
       }
+
     }
 
 }

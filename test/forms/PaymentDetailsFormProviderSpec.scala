@@ -45,7 +45,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    "must not bind when the value exceeds maxValue of 9999999" in {
+    "must not bind when the value exceeds maxValue of 99999999" in {
       val result = form.bind(Map(fieldName -> "999999999")).apply(fieldName)
       result.errors mustEqual Seq(FormError(fieldName, "paymentDetails.error.maxValue"))
     }
@@ -103,11 +103,18 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
         "0",
         "0.00",
         "0.0",
-        "0."
+        "0.",
+        "£100",
+        "£100.0",
+        "£100.00",
+        " 1 0 0 "
       )
+
       validValues.foreach { validValue =>
-        val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
-        result.errors mustBe empty
+        withClue(s"Valid value '$validValue' should bind successfully") {
+          val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
+          result.errors mustBe empty
+        }
       }
     }
 
@@ -136,10 +143,12 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       boundForm.get mustBe BigDecimal("1234567")
     }
 
-    "must correctly unbind values" in {
+    "must correctly unbind values with comma grouping" in {
       val value  = BigDecimal("12345")
       val result = form.fill(value)
-      result.data.get(fieldName) mustBe Some("12345")
+
+      // Now that currencyFormatter.unbind formats scale=0 with commas
+      result.data.get(fieldName) mustBe Some("12,345")
     }
 
     "must not bind when the value is greater than the maximum" in {

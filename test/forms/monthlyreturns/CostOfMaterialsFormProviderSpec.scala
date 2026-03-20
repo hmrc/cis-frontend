@@ -113,6 +113,7 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
         "0.0",
         "0."
       )
+
       validValues.foreach { validValue =>
         withClue(s"Valid value '$validValue' should bind successfully") {
           val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
@@ -141,11 +142,12 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
       boundForm.get mustBe Some(BigDecimal("1234567"))
     }
 
-    "must correctly unbind values" in {
+    "must correctly unbind values with comma grouping" in {
       val value  = BigDecimal("12345")
       val result = form.fill(Some(value))
-      result.data.get(fieldName) mustBe Some("12345")
-    }
 
+      // Now that currencyFormatter.unbind formats scale=0 with commas
+      result.data.get(fieldName) mustBe Some("12,345")
+    }
   }
 }

@@ -40,7 +40,7 @@ import scala.concurrent.Future
 class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
   val formProvider                   = new TotalTaxDeductedFormProvider()
-  val form: Form[Option[BigDecimal]] = formProvider() // Form[Option[BigDecimal]]
+  val form: Form[Option[BigDecimal]] = formProvider()
 
   def onwardRoute: Call = Call("GET", "/foo")
 
@@ -122,7 +122,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to the next page when empty data is submitted (optional) and remove the answer" in {
+    "must redirect to the next page when empty data is submitted (optional) and save a default value of 0" in {
 
       val existingAnswerUa =
         userAnswers.set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67")).success.value
@@ -149,9 +149,9 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustEqual onwardRoute.url
 
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
-        org.mockito.Mockito.verify(mockSessionRepository).set(captor.capture())
+        verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe None
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal(0))
       }
     }
 
@@ -291,7 +291,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Change Answers total payments when returnTo is changeAnswers and empty data is submitted (optional) and remove the answer" in {
+    "must redirect to Change Answers total payments when returnTo is changeAnswers and empty data is submitted (optional) and save a default value of 0" in {
 
       val existingAnswerUa =
         userAnswers.set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67")).success.value
@@ -320,7 +320,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe None
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal(0))
       }
     }
   }
