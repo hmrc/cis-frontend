@@ -17,6 +17,7 @@
 @import viewmodels.govuk._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 @import models.monthlyreturns.Declaration
+@import utils.Utils.firstRadioId
 
 @this(
     layout: templates.Layout,
@@ -36,13 +37,11 @@
     @formHelper(action = controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> firstRadioId)))
         }
 
         @fieldSet(
-            legend = "monthlyreturns.declaration.heading",
-            asHeading = true,
-            describedBy = None
+            legend = "monthlyreturns.declaration.heading"
         ) {
             @paragraph(messages("monthlyreturns.declaration.paragraph", formattedDate))
             
