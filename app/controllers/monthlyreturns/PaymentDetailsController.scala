@@ -46,7 +46,7 @@ class PaymentDetailsController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  val form: Form[Option[BigDecimal]] = formProvider()
+  val form: Form[BigDecimal] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
@@ -57,7 +57,7 @@ class PaymentDetailsController @Inject() (
         case Some(subcontractor) =>
           val preparedForm = subcontractor.totalPaymentsMade match {
             case None        => form
-            case Some(value) => form.fill(Some(value))
+            case Some(value) => form.fill(value)
           }
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
@@ -76,13 +76,11 @@ class PaymentDetailsController @Inject() (
             .fold(
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
-              valueOpt => {
-                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
-
+              value =>
                 for {
                   updatedAnswers <-
                     Future.fromTry(
-                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), valueToPersist)
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), value)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
@@ -91,7 +89,6 @@ class PaymentDetailsController @Inject() (
                   case _                     =>
                     Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index), mode, updatedAnswers))
                 }
-              }
             )
       }
     }

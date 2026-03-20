@@ -241,17 +241,9 @@ trait Formatters {
         val rendered =
           scale match {
             case 0 =>
-<<<<<<< Updated upstream
               val df = new DecimalFormat("#,##0", symbols)
               df.format(value.setScale(0).bigDecimal)
 
-=======
-//              // PaymentDetails & CostOfMaterials (if not null): always show whole pounds with commas, no decimals
-//              val df = new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.UK))
-//              df.format(value.setScale(0).bigDecimal)
-              // PaymentDetails: always show whole pounds, no decimals
-              value.setScale(0).toBigIntExact.map(_.toString).getOrElse(value.setScale(0).toString)
->>>>>>> Stashed changes
             case 2 =>
               val df = new DecimalFormat("#,##0.00", symbols)
               df.format(value.setScale(2).bigDecimal)

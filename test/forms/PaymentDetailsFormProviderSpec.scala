@@ -147,7 +147,6 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       val value  = BigDecimal("12345")
       val result = form.fill(value)
 
-      // Now that currencyFormatter.unbind formats scale=0 with commas
       result.data.get(fieldName) mustBe Some("12,345")
     }
 

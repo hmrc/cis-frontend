@@ -18,24 +18,20 @@ package forms
 
 import forms.mappings.Mappings
 import play.api.data.Form
-import play.api.data.Forms.optional
 
 import javax.inject.Inject
 
 class PaymentDetailsFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[Option[BigDecimal]] =
+  def apply(): Form[BigDecimal] =
     Form(
-      "value" -> optional(
-        currency(
-          requiredKey = "paymentDetails.error.required", // not used when optional
-          invalidKey = "paymentDetails.error.invalid",
-          maxLengthKey = "paymentDetails.error.maxLength",
-          scale = 0
-        )
+      "value" -> currency(
+        requiredKey = "paymentDetails.error.required",
+        invalidKey = "paymentDetails.error.invalid",
+        maxLengthKey = "paymentDetails.error.maxLength",
+        scale = 0
       ).verifying(
-        "paymentDetails.error.maxValue",
-        opt => opt.forall(_ <= BigDecimal("99999999"))
+        maximumCurrency(BigDecimal("99999999.00"), "paymentDetails.error.maxValue", includeFormattedValue = false)
       )
     )
 }
