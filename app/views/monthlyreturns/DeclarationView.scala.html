@@ -41,7 +41,8 @@
         }
 
         @fieldSet(
-            legend = "monthlyreturns.declaration.heading"
+            legend = "monthlyreturns.declaration.heading",
+            form = Some(form)
         ) {
             @paragraph(messages("monthlyreturns.declaration.paragraph", formattedDate))
             
