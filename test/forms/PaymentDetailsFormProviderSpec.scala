@@ -45,12 +45,12 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    "must not bind when the value exceeds maxLength of 13" in {
-      val result = form.bind(Map(fieldName -> "12345678901234")).apply(fieldName)
-      result.errors mustEqual Seq(FormError(fieldName, "paymentDetails.error.maxLength"))
+    "must not bind when the value exceeds maxValue of 99999999" in {
+      val result = form.bind(Map(fieldName -> "999999999")).apply(fieldName)
+      result.errors mustEqual Seq(FormError(fieldName, "paymentDetails.error.maxValue"))
     }
 
-    "must bind when the value is exactly 13 characters" in {
+    "must bind when the value is exactly 99999999" in {
       val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
       boundForm.get mustBe BigDecimal("99999999")
@@ -60,7 +60,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       Seq(
         ("abc", "non-numeric characters"),
         ("12.345", "more than 2 decimal places"),
-        ("£100", "currency symbol"),
+        ("100£", "currency symbol incorrect position"),
         ("-100", "negative sign"),
         ("100.001", "more than 2 decimal places"),
         ("100.123", "more than 2 decimal places"),
@@ -103,11 +103,18 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
         "0",
         "0.00",
         "0.0",
-        "0."
+        "0.",
+        "£100",
+        "£100.0",
+        "£100.00",
+        " 1 0 0 "
       )
+
       validValues.foreach { validValue =>
-        val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
-        result.errors mustBe empty
+        withClue(s"Valid value '$validValue' should bind successfully") {
+          val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
+          result.errors mustBe empty
+        }
       }
     }
 
@@ -136,10 +143,11 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       boundForm.get mustBe BigDecimal("1234567")
     }
 
-    "must correctly unbind values" in {
+    "must correctly unbind values with comma grouping" in {
       val value  = BigDecimal("12345")
       val result = form.fill(value)
-      result.data.get(fieldName) mustBe Some("12345")
+
+      result.data.get(fieldName) mustBe Some("12,345")
     }
 
     "must not bind when the value is greater than the maximum" in {

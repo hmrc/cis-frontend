@@ -29,18 +29,18 @@ class ChangeAnswersTotalPaymentsViewModelSpec extends SpecBase {
       val subcontractor = SelectedSubcontractor(
         id = 123L,
         name = "Tyne Test Ltd",
-        totalPaymentsMade = Some(1200),
-        costOfMaterials = Some(500),
-        totalTaxDeducted = Some(240)
+        totalPaymentsMade = Some(1200.00),
+        costOfMaterials = Some(500.00),
+        totalTaxDeducted = Some(240.00)
       )
 
       val result = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
       result.id mustBe 123L
       result.name mustBe "Tyne Test Ltd"
-      result.totalPaymentsMade mustBe "1200"
-      result.costOfMaterials mustBe "500"
-      result.totalTaxDeducted mustBe "240"
+      result.totalPaymentsMade mustBe "1,200.00"
+      result.costOfMaterials mustBe "500.00"
+      result.totalTaxDeducted mustBe "240.00"
     }
 
     "must map missing optional values to empty strings" in {
@@ -58,8 +58,8 @@ class ChangeAnswersTotalPaymentsViewModelSpec extends SpecBase {
       result.id mustBe 1L
       result.name mustBe "Tyne Test Ltd"
       result.totalPaymentsMade mustBe ""
-      result.costOfMaterials mustBe ""
-      result.totalTaxDeducted mustBe ""
+      result.costOfMaterials mustBe "0.00"
+      result.totalTaxDeducted mustBe "0.00"
     }
 
     "must handle a mix of present and missing optional values" in {
@@ -76,9 +76,9 @@ class ChangeAnswersTotalPaymentsViewModelSpec extends SpecBase {
 
       result.id mustBe 42L
       result.name mustBe "Mixed Co"
-      result.totalPaymentsMade mustBe "999"
-      result.costOfMaterials mustBe ""
-      result.totalTaxDeducted mustBe "111"
+      result.totalPaymentsMade mustBe "999.00"
+      result.costOfMaterials mustBe "0.00"
+      result.totalTaxDeducted mustBe "111.00"
     }
 
     "must preserve zeros when provided" in {
@@ -93,9 +93,9 @@ class ChangeAnswersTotalPaymentsViewModelSpec extends SpecBase {
 
       val result = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
-      result.totalPaymentsMade mustBe "0"
-      result.costOfMaterials mustBe "0"
-      result.totalTaxDeducted mustBe "0"
+      result.totalPaymentsMade mustBe "0.00"
+      result.costOfMaterials mustBe "0.00"
+      result.totalTaxDeducted mustBe "0.00"
     }
   }
 }
