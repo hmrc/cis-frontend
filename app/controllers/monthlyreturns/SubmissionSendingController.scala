@@ -57,10 +57,9 @@ class SubmissionSendingController @Inject() (
           submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers, request.isAgent)
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
       } yield submitted.status match {
-        // TODO - recoverable error for resubmit: case "STARTED" will be updated to a new page MR-05-b controller when ready
         case "STARTED"              =>
           logger.info(s"[Submission Sending] submitted.status=${submitted.status}")
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
         case "PENDING" | "ACCEPTED" =>
           Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
         case _                      => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
@@ -78,6 +77,7 @@ class SubmissionSendingController @Inject() (
         case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case Some(submissionStatus) =>
           submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).flatMap {
+            case "STARTED"                            => Future.successful(Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad()))
             case "PENDING" | "ACCEPTED"               => Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
             case "TIMED_OUT"                          => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
             case "SUBMITTED"                          =>
