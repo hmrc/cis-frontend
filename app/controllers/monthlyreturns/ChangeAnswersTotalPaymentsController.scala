@@ -17,14 +17,13 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.{NormalMode, UserAnswers}
-import models.monthlyreturns.{SelectedSubcontractor, UpdateMonthlyReturnItemRequest}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import models.NormalMode
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnService}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
@@ -41,6 +40,7 @@ class ChangeAnswersTotalPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
+  payloadBuilder: MonthlyReturnItemPayloadBuilder,
   val controllerComponents: MessagesControllerComponents,
   view: ChangeAnswersTotalPaymentsView
 )(implicit ec: ExecutionContext)
@@ -60,9 +60,10 @@ class ChangeAnswersTotalPaymentsController @Inject() (
     implicit request =>
       val ua = request.userAnswers
 
-      buildUpdatePayload(ua, index) match {
-        case None          =>
+      payloadBuilder.build(ua, index) match {
+        case None =>
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
+
         case Some(payload) =>
           monthlyReturnService
             .updateMonthlyReturnItem(payload)
@@ -89,23 +90,4 @@ class ChangeAnswersTotalPaymentsController @Inject() (
             }
       }
   }
-
-  private def buildUpdatePayload(ua: UserAnswers, index: Int): Option[UpdateMonthlyReturnItemRequest] =
-    for {
-      instanceId       <- ua.get(CisIdPage)
-      monthYear        <- ua.get(DateConfirmPaymentsPage)
-      subcontractor    <- ua.get(SelectedSubcontractorPage(index))
-      totalPayments    <- subcontractor.totalPaymentsMade
-      costOfMaterials  <- subcontractor.costOfMaterials
-      totalTaxDeducted <- subcontractor.totalTaxDeducted
-    } yield UpdateMonthlyReturnItemRequest(
-      instanceId = instanceId,
-      taxYear = monthYear.getYear,
-      taxMonth = monthYear.getMonthValue,
-      subcontractorId = subcontractor.id,
-      subcontractorName = subcontractor.name,
-      totalPayments = totalPayments.toString,
-      costOfMaterials = costOfMaterials.toString,
-      totalDeducted = totalTaxDeducted.toString
-    )
 }

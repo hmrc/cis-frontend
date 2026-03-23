@@ -82,9 +82,9 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
       keys.get(2) mustEqual messages("monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label")
 
       val values = summaryRows.select(".govuk-summary-list__value").eachText()
-      values.get(0) mustEqual "£3600"
-      values.get(1) mustEqual "£900"
-      values.get(2) mustEqual "£540"
+      values.get(0) mustEqual "£3600.00"
+      values.get(1) mustEqual "£900.00"
+      values.get(2) mustEqual "£540.00"
     }
 
     "must format currency values correctly" in new Setup {
@@ -109,9 +109,9 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
       val doc: Document               = Jsoup.parse(html.body)
 
       val values = doc.select(".govuk-summary-list__value").eachText()
-      values.get(0) mustEqual "£0"
-      values.get(1) mustEqual "£0"
-      values.get(2) mustEqual "£0"
+      values.get(0) mustEqual "£0.00"
+      values.get(1) mustEqual "£0.00"
+      values.get(2) mustEqual "£0.00"
     }
   }
 

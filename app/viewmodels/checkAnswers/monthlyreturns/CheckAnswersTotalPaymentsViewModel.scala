@@ -17,6 +17,7 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
+import utils.MoneyFormat
 
 case class CheckAnswersTotalPaymentsViewModel(
   id: Long,
@@ -31,8 +32,8 @@ object CheckAnswersTotalPaymentsViewModel {
     CheckAnswersTotalPaymentsViewModel(
       subcontractor.id,
       subcontractor.name,
-      subcontractor.totalPaymentsMade.map(_.toString).getOrElse(""),
-      subcontractor.costOfMaterials.map(_.toString).getOrElse(""),
-      subcontractor.totalTaxDeducted.map(_.toString).getOrElse("")
+      MoneyFormat.twoDpOrEmpty(subcontractor.totalPaymentsMade),
+      MoneyFormat.twoDp(subcontractor.costOfMaterials.getOrElse(BigDecimal(0))), // default -> 0.00
+      MoneyFormat.twoDp(subcontractor.totalTaxDeducted.getOrElse(BigDecimal(0))) // default -> 0.00
     )
 }
