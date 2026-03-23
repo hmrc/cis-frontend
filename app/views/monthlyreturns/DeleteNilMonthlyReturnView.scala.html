@@ -26,7 +26,7 @@
 
 @(form: Form[_], monthYear: String, mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("monthlyreturns.deleteNilMonthlyReturn.title"))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.deleteNilMonthlyReturn.title", monthYear))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.DeleteNilMonthlyReturnController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
@@ -49,7 +49,7 @@
                         id = Some("value_1")
                     )
                 ),
-                legend = LegendViewModel(messages("monthlyreturns.deleteNilMonthlyReturn.heading")).asPageHeading(LegendSize.Large)
+                legend = LegendViewModel(messages("monthlyreturns.deleteNilMonthlyReturn.heading", monthYear)).asPageHeading(LegendSize.Large)
             ).withCssClass("govuk-radios govuk-radios--inline")
         )
 

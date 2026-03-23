@@ -18,13 +18,12 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.DeleteNilMonthlyReturnFormProvider
-
-import javax.inject.Inject
 import models.Mode
 import models.requests.DataRequest
 import navigation.Navigator
 import pages.monthlyreturns.{DateConfirmPaymentsPage, DeleteNilMonthlyReturnPage}
-import play.api.i18n.Lang.logger
+import play.api.Logging
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -32,8 +31,8 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeleteNilMonthlyReturnView
 
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
 
 class DeleteNilMonthlyReturnController @Inject() (
   override val messagesApi: MessagesApi,
@@ -47,43 +46,55 @@ class DeleteNilMonthlyReturnController @Inject() (
   view: DeleteNilMonthlyReturnView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
-  val form = formProvider()
+  val form: Form[Boolean] = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val preparedForm = request.userAnswers.get(DeleteNilMonthlyReturnPage) match {
-      case None => form
-      case Some(value) => form.fill(value)
-    }
-    val monthYear = getPeriodEnd
-    Ok(view(preparedForm, monthYear, mode))
-  }
+    getPeriodEnd match {
+      case Some(monthYear) =>
+        val preparedForm = request.userAnswers.get(DeleteNilMonthlyReturnPage) match {
+          case None        => form
+          case Some(value) => form.fill(value)
+        }
+        Ok(view(preparedForm, monthYear, mode))
 
+      case None =>
+        logger.error("[DeleteNilMonthlyReturn] dateConfirmPayments missing")
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+    }
+  }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      val monthYear = getPeriodEnd
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteNilMonthlyReturnPage, value))
-              _ <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DeleteNilMonthlyReturnPage, mode, updatedAnswers))
-        )
+      getPeriodEnd match {
+        case Some(monthYear) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, mode))),
+              value =>
+                for {
+                  updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteNilMonthlyReturnPage, value))
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield Redirect(navigator.nextPage(DeleteNilMonthlyReturnPage, mode, updatedAnswers))
+            )
+
+        case None =>
+          logger.error("[DeleteNilMonthlyReturn] dateConfirmPayments missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
   }
 
-  private def getPeriodEnd(implicit request: DataRequest[_]): String = {
-    val locale: Locale = messages.lang.locale
-    val dmyFmt = DateTimeFormatter
+  private def getPeriodEnd(implicit request: DataRequest[_]): Option[String] = {
+    val messages = messagesApi.preferred(request)
+    val fmt      = DateTimeFormatter
       .ofPattern("MMMM uuuu")
-      .withLocale(locale)
+      .withLocale(messages.lang.locale)
+
     request.userAnswers
       .get(DateConfirmPaymentsPage)
-      .map(_.format(dmyFmt))
-      .getOrElse(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      .map(_.format(fmt))
   }
 }

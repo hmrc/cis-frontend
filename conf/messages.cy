@@ -1,0 +1,2 @@
+monthlyreturns.deleteNilMonthlyReturn.title = Ydych chi'n siŵr eich bod am ddileu'r adroddiad misol dim ar gyfer {0}?
+monthlyreturns.deleteNilMonthlyReturn.heading = Ydych chi'n siŵr eich bod am ddileu'r adroddiad misol dim ar gyfer {0}?

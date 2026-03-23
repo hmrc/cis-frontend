@@ -23,31 +23,43 @@ import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.DeleteNilMonthlyReturnPage
+import pages.monthlyreturns.{DateConfirmPaymentsPage, DeleteNilMonthlyReturnPage}
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.DeleteNilMonthlyReturnView
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import scala.concurrent.Future
 
 class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
-  val formProvider = new DeleteNilMonthlyReturnFormProvider()
-  val form         = formProvider()
+  val formProvider        = new DeleteNilMonthlyReturnFormProvider()
+  val form: Form[Boolean] = formProvider()
 
-  lazy val deleteNilMonthlyReturnRoute =
+  lazy val deleteNilMonthlyReturnRoute: String =
     controllers.monthlyreturns.routes.DeleteNilMonthlyReturnController.onPageLoad(NormalMode).url
+
+  private val confirmPaymentsDate: LocalDate = LocalDate.of(2026, 3, 1)
+  private val monthYear: String              = confirmPaymentsDate.format(DateTimeFormatter.ofPattern("MMMM uuuu"))
 
   "DeleteNilMonthlyReturn Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val userAnswers =
+        emptyUserAnswers
+          .set(DateConfirmPaymentsPage, confirmPaymentsDate)
+          .success
+          .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, deleteNilMonthlyReturnRoute)
@@ -57,13 +69,20 @@ class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[DeleteNilMonthlyReturnView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, monthYear, NormalMode)(request, messages(application)).toString
       }
     }
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(DeleteNilMonthlyReturnPage, true).success.value
+      val userAnswers =
+        UserAnswers(userAnswersId)
+          .set(DateConfirmPaymentsPage, confirmPaymentsDate)
+          .success
+          .value
+          .set(DeleteNilMonthlyReturnPage, true)
+          .success
+          .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -75,18 +94,26 @@ class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(true), monthYear, NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
     "must redirect to the next page when valid data is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
-
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
+      val userAnswers =
+        emptyUserAnswers
+          .set(DateConfirmPaymentsPage, confirmPaymentsDate)
+          .success
+          .value
+
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -107,7 +134,13 @@ class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val userAnswers =
+        emptyUserAnswers
+          .set(DateConfirmPaymentsPage, confirmPaymentsDate)
+          .success
+          .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request =
@@ -121,7 +154,10 @@ class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, monthYear, NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
