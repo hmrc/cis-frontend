@@ -16,19 +16,23 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
+import controllers.actions.*
 import forms.monthlyreturns.DeleteMonthlyReturnFormProvider
-import javax.inject.Inject
 import models.Mode
+import models.requests.DataRequest
 import navigation.Navigator
-import pages.monthlyreturns.DeleteMonthlyReturnPage
+import pages.monthlyreturns.{DateConfirmPaymentsPage, DeleteMonthlyReturnPage}
+import play.api.Logging
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeleteMonthlyReturnView
 
+import java.time.format.DateTimeFormatter
 import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
 
 class DeleteMonthlyReturnController @Inject() (
   override val messagesApi: MessagesApi,
@@ -42,31 +46,55 @@ class DeleteMonthlyReturnController @Inject() (
   view: DeleteMonthlyReturnView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
-  val form = formProvider()
+  val form: Form[Boolean] = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    getPeriodEnd match {
+      case Some(monthYear) =>
+        val preparedForm = request.userAnswers.get(DeleteMonthlyReturnPage) match {
+          case None        => form
+          case Some(value) => form.fill(value)
+        }
+        Ok(view(preparedForm, monthYear, mode))
 
-    val preparedForm = request.userAnswers.get(DeleteMonthlyReturnPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
+      case None =>
+        logger.error("[DeleteNilMonthlyReturn] dateConfirmPayments missing")
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
     }
-
-    Ok(view(preparedForm, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteMonthlyReturnPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DeleteMonthlyReturnPage, mode, updatedAnswers))
-        )
+      getPeriodEnd match {
+        case Some(monthYear) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, mode))),
+              value =>
+                for {
+                  updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteMonthlyReturnPage, value))
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield Redirect(navigator.nextPage(DeleteMonthlyReturnPage, mode, updatedAnswers))
+            )
+
+        case None =>
+          logger.error("[DeleteNilMonthlyReturn] dateConfirmPayments missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+  }
+
+  private def getPeriodEnd(implicit request: DataRequest[_]): Option[String] = {
+    val messages = messagesApi.preferred(request)
+    val fmt      = DateTimeFormatter
+      .ofPattern("MMMM uuuu")
+      .withLocale(messages.lang.locale)
+
+    request.userAnswers
+      .get(DateConfirmPaymentsPage)
+      .map(_.format(fmt))
   }
 }
