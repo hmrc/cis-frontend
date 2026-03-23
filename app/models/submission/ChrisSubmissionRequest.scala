@@ -34,7 +34,8 @@ case class ChrisSubmissionRequest(
   clientTaxOfficeNumber: String,
   clientTaxOfficeRef: String,
   returnType: ReturnType,
-  standard: Option[ChrisStandardMonthlyReturn] = None
+  standard: Option[ChrisStandardMonthlyReturn] = None,
+  langCode: String
 )
 
 object ChrisSubmissionRequest {
@@ -45,7 +46,8 @@ object ChrisSubmissionRequest {
   def fromNil(
     common: ChrisSubmissionCommon,
     informationCorrect: Boolean,
-    inactivity: Boolean
+    inactivity: Boolean,
+    langCode: String
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
       utr = common.utr,
@@ -58,14 +60,16 @@ object ChrisSubmissionRequest {
       clientTaxOfficeNumber = common.clientTaxOfficeNumber,
       clientTaxOfficeRef = common.clientTaxOfficeRef,
       returnType = MonthlyNilReturn,
-      standard = None
+      standard = None,
+      langCode = langCode
     )
 
   def fromStandard(
     common: ChrisSubmissionCommon,
     informationCorrect: Boolean,
     inactivity: Boolean,
-    standard: ChrisStandardMonthlyReturn
+    standard: ChrisStandardMonthlyReturn,
+    langCode: String
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
       utr = common.utr,
@@ -78,6 +82,7 @@ object ChrisSubmissionRequest {
       clientTaxOfficeNumber = common.clientTaxOfficeNumber,
       clientTaxOfficeRef = common.clientTaxOfficeRef,
       returnType = MonthlyStandardReturn,
-      standard = Some(standard)
+      standard = Some(standard),
+      langCode = langCode
     )
 }

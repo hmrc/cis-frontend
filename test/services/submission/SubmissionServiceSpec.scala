@@ -66,6 +66,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       enrolledSig = None
     )
 
+  private val langCode = "en"
+
   "create" - {
     "build request from UserAnswers and return BE response" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
@@ -229,7 +231,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+        when(
+          chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[String])(any[HeaderCarrier])
+        )
           .thenReturn(Future.successful(builtCsr))
 
         val beResp = mkChrisResp()
@@ -240,7 +244,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
 
-        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, langCode).futureValue
         out mustBe beResp
 
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -263,11 +267,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
 
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+        when(
+          chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[String])(any[HeaderCarrier])
+        )
           .thenReturn(Future.failed(new RuntimeException("boom-builder")))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
+          service.submitToChrisAndPersist("sub-123", uaBase, false, langCode).futureValue
         }
         ex.getMessage must include("boom-builder")
 
@@ -314,10 +320,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(beRespWithEndpoint))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+        when(
+          chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[String])(any[HeaderCarrier])
+        )
           .thenReturn(Future.successful(builtCsr))
 
-        val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        val out   = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, langCode).futureValue
         out mustBe beRespWithEndpoint
         verify(sessionRepository).set(uaCaptor.capture())
         val saved = uaCaptor.getValue
@@ -340,7 +348,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+        when(
+          chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[String])(any[HeaderCarrier])
+        )
           .thenReturn(Future.successful(builtCsr))
 
         val beResp = mkChrisResp()
@@ -356,7 +366,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .set(eqTo(SubmissionDetailsPage), any)(any())
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaSpy, false).futureValue
+          service.submitToChrisAndPersist("sub-123", uaSpy, false, langCode).futureValue
         }
         ex.getMessage must include("boom: cannot write submission id")
         verify(sessionRepository, never()).set(any[UserAnswers])
@@ -381,7 +391,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(true))(any[HeaderCarrier]))
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(true), any[String])(any[HeaderCarrier]))
           .thenReturn(Future.successful(builtCsr))
 
         val beResp = mkChrisResp()
@@ -393,7 +403,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(beResp))
 
         val uaWithAgentClientData = uaWithInactivityYes.set(AgentClientDataPage, agentDate).success.value
-        val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true).futureValue
+        val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true, langCode).futureValue
         out mustBe beResp
 
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -425,7 +435,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(beResp))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, true).futureValue
+          service.submitToChrisAndPersist("sub-123", uaBase, true, langCode).futureValue
         }
         ex.getMessage must include("Agent client data missing")
         verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])

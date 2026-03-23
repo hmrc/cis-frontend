@@ -33,7 +33,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector
 )(implicit ec: ExecutionContext) {
 
-  def build(ua: UserAnswers, taxpayer: CisTaxpayer, isAgent: Boolean)(implicit
+  def build(ua: UserAnswers, taxpayer: CisTaxpayer, isAgent: Boolean, langCode: String)(implicit
     hc: HeaderCarrier
   ): Future[ChrisSubmissionRequest] = {
     val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
@@ -47,7 +47,8 @@ class ChrisSubmissionRequestBuilder @Inject() (
           ChrisSubmissionRequest.fromNil(
             common = common,
             informationCorrect = informationCorrect,
-            inactivity = inactivityBool
+            inactivity = inactivityBool,
+            langCode = langCode
           )
         )
 
@@ -57,7 +58,8 @@ class ChrisSubmissionRequestBuilder @Inject() (
             common = common,
             informationCorrect = informationCorrect,
             inactivity = inactivityBool,
-            standard = standardReturn
+            standard = standardReturn,
+            langCode = langCode
           )
         }
     }

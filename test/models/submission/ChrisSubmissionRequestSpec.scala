@@ -39,7 +39,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         clientTaxOfficeNumber = "",
         clientTaxOfficeRef = "",
         returnType = MonthlyNilReturn,
-        standard = None
+        standard = None,
+        langCode = "en"
       )
 
       Json.toJson(model).validate[ChrisSubmissionRequest] mustBe JsSuccess(model)
@@ -59,7 +60,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       val req = ChrisSubmissionRequest.fromNil(
         common = common,
         informationCorrect = true,
-        inactivity = false
+        inactivity = false,
+        langCode = "en"
       )
 
       req.utr mustBe "1234567890"
@@ -70,6 +72,7 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       req.inactivity mustBe "no"
       req.returnType mustBe MonthlyNilReturn
       req.standard mustBe None
+      req.langCode mustBe "en"
     }
 
     "fromStandard builds request with returnType=MonthlyStandardReturn and standard=Some(...)" in {
@@ -92,7 +95,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         common = common,
         informationCorrect = true,
         inactivity = true,
-        standard = standard
+        standard = standard,
+        langCode = "cy"
       )
 
       req.returnType mustBe MonthlyStandardReturn
@@ -100,6 +104,7 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       req.email mustBe Some("test@test.com")
       req.informationCorrect mustBe "yes"
       req.inactivity mustBe "yes"
+      req.langCode mustBe "cy"
     }
   }
 }

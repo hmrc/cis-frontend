@@ -56,7 +56,8 @@ class SubmissionService @Inject() (
   def submitToChrisAndPersist(
     submissionId: String,
     ua: UserAnswers,
-    isAgent: Boolean
+    isAgent: Boolean,
+    langCode: String
   )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
 
     val taxpayerFut: Future[CisTaxpayer] =
@@ -75,7 +76,7 @@ class SubmissionService @Inject() (
 
     for {
       taxpayer <- taxpayerFut
-      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
+      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent, langCode)(hc)
       response <- cisConnector.submitToChris(submissionId, csr)
       _        <- writeToFeMongo(ua, submissionId, response)
     } yield response

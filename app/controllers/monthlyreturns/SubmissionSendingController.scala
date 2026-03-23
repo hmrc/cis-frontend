@@ -51,10 +51,17 @@ class SubmissionSendingController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
+      val langCode = messagesApi.preferred(request).lang.code
+
       (for {
         created   <- submissionService.create(request.userAnswers)
         submitted <-
-          submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers, request.isAgent)
+          submissionService.submitToChrisAndPersist(
+            created.submissionId,
+            request.userAnswers,
+            request.isAgent,
+            langCode
+          )
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
       } yield submitted.status match {
         // TODO - recoverable error for resubmit: case "STARTED" will be updated to a new page MR-05-b controller when ready

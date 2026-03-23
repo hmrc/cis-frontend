@@ -125,7 +125,7 @@ class ChrisSubmissionRequestBuilderSpec
           .success
           .value
 
-      val reqF = builder.build(ua, mkTaxpayer(), isAgent = false)
+      val reqF = builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "en")
 
       whenReady(reqF) { req =>
         req.returnType mustBe MonthlyNilReturn
@@ -141,6 +141,8 @@ class ChrisSubmissionRequestBuilderSpec
         req.isAgent mustBe false
         req.clientTaxOfficeNumber mustBe "123"
         req.clientTaxOfficeRef mustBe "AB456"
+
+        req.langCode mustBe "en"
       }
 
       verify(connector, times(0))
@@ -200,7 +202,7 @@ class ChrisSubmissionRequestBuilderSpec
       when(connector.retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025))(any[HeaderCarrier]))
         .thenReturn(Future.successful(details))
 
-      val reqF = builder.build(ua, mkTaxpayer(), isAgent = true)
+      val reqF = builder.build(ua, mkTaxpayer(), isAgent = true, langCode = "cy")
 
       whenReady(reqF) { req =>
         req.returnType mustBe MonthlyStandardReturn
@@ -208,6 +210,7 @@ class ChrisSubmissionRequestBuilderSpec
         req.informationCorrect mustBe "yes"
         req.inactivity mustBe "no"
         req.isAgent mustBe true
+        req.langCode mustBe "cy"
       }
 
       verify(connector, times(1))
@@ -221,7 +224,7 @@ class ChrisSubmissionRequestBuilderSpec
       val ua = UserAnswers("id")
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "en")
       }
 
       ex.getMessage mustBe "ReturnType missing"
@@ -243,7 +246,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, langCode = "en")
       }
 
       ex.getMessage mustBe "CIS taxpayer UTR missing"
@@ -265,7 +268,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, langCode = "en")
       }
 
       ex.getMessage mustBe "CIS taxpayer aoDistrict missing"
@@ -287,7 +290,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "CIS taxpayer aoPayType missing"
@@ -309,7 +312,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "CIS taxpayer aoCheckCode missing"
@@ -331,7 +334,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "CIS taxpayer aoReference missing"
@@ -348,7 +351,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "Month and year of return missing"
@@ -365,7 +368,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "Month and year of return missing"
@@ -391,7 +394,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "Employment status declaration missing"
@@ -417,7 +420,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "Verification answer missing"
@@ -443,7 +446,7 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, langCode = "cy")
       }
 
       ex.getMessage mustBe "CIS ID missing"
