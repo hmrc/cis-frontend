@@ -2,14 +2,24 @@
 
 echo "Running scalafmt check..."
 
-git stash
-sbt scalafmtCheckAll
+git diff --quiet
+HAS_CHANGES=$?  # 0 = no changes, 1 = changes
 
+if [ $HAS_CHANGES -ne 0 ]; then
+  git stash
+fi
+
+sbt scalafmtCheckAll
 if [ $? -ne 0 ]; then
   echo "scalafmt check failed. Please run 'sbt scalafmtAll' to format your code before pushing."
-  git stash pop
+
+  if [ $HAS_CHANGES -ne 0 ]; then
+    git stash pop
+  fi
   exit 1
 fi
 
-git stash pop
+if [ $HAS_CHANGES -ne 0 ]; then
+  git stash pop
+fi
 exit 0
