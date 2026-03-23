@@ -16,18 +16,23 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
+import controllers.actions.*
 import forms.monthlyreturns.DeleteNilMonthlyReturnFormProvider
+
 import javax.inject.Inject
 import models.Mode
+import models.requests.DataRequest
 import navigation.Navigator
-import pages.monthlyreturns.DeleteNilMonthlyReturnPage
+import pages.monthlyreturns.{DateConfirmPaymentsPage, DeleteNilMonthlyReturnPage}
+import play.api.i18n.Lang.logger
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeleteNilMonthlyReturnView
 
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import scala.concurrent.{ExecutionContext, Future}
 
 class DeleteNilMonthlyReturnController @Inject() (
@@ -47,26 +52,38 @@ class DeleteNilMonthlyReturnController @Inject() (
   val form = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-
     val preparedForm = request.userAnswers.get(DeleteNilMonthlyReturnPage) match {
-      case None        => form
+      case None => form
       case Some(value) => form.fill(value)
     }
-
-    Ok(view(preparedForm, mode))
+    val monthYear = getPeriodEnd
+    Ok(view(preparedForm, monthYear, mode))
   }
+
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
+      val monthYear = getPeriodEnd
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, mode))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteNilMonthlyReturnPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
+              _ <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(DeleteNilMonthlyReturnPage, mode, updatedAnswers))
         )
+  }
+
+  private def getPeriodEnd(implicit request: DataRequest[_]): String = {
+    val locale: Locale = messages.lang.locale
+    val dmyFmt = DateTimeFormatter
+      .ofPattern("MMMM uuuu")
+      .withLocale(locale)
+    request.userAnswers
+      .get(DateConfirmPaymentsPage)
+      .map(_.format(dmyFmt))
+      .getOrElse(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
   }
 }
