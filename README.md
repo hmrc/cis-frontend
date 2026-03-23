@@ -3,6 +3,18 @@
 
 This is the new cis-frontend repository
 
+## Git Hooks
+
+This project includes a pre-push hook that checks code formatting with scalafmt before pushing.
+
+To activate it, run once after cloning:
+
+```sh
+git config core.hooksPath hooks
+```
+
+If the check fails, format your code with `sbt scalafmtAll` and try again.
+
 ## Running the service
 
 Service Manager: `sm2 --start CIS_ALL`

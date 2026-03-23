@@ -19,6 +19,7 @@ package config
 import com.google.inject.AbstractModule
 import com.google.inject.name.Names
 import controllers.actions.*
+import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilderImpl}
 import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl}
 
@@ -45,5 +46,6 @@ class Module extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[DuplicateMRCreationGuard]).to(classOf[DuplicateMRCreationGuardImpl])
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
+    bind(classOf[MonthlyReturnItemPayloadBuilder]).to(classOf[MonthlyReturnItemPayloadBuilderImpl])
   }
 }

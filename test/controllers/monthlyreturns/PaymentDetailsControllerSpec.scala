@@ -19,12 +19,13 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.PaymentDetailsFormProvider
 import models.monthlyreturns.SelectedSubcontractor
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -36,20 +37,20 @@ import scala.concurrent.Future
 
 class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
 
-  val formProvider = new PaymentDetailsFormProvider()
-  val form         = formProvider()
+  val formProvider           = new PaymentDetailsFormProvider()
+  val form: Form[BigDecimal] = formProvider()
 
-  def onwardRoute = Call("GET", "/foo")
+  def onwardRoute: Call = Call("GET", "/foo")
 
-  val companyName = "TyneWear Ltd"
-  val validAnswer = 0
+  val companyName             = "TyneWear Ltd"
+  val validAnswer: BigDecimal = BigDecimal(0)
 
-  val userAnswers = emptyUserAnswers
+  val userAnswers: UserAnswers = emptyUserAnswers
     .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
     .success
     .value
 
-  lazy val paymentDetailsRoute =
+  lazy val paymentDetailsRoute: String =
     controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None).url
 
   "PaymentDetails Controller" - {
@@ -98,7 +99,6 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
     "must redirect to the next page when valid data is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
-
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
@@ -184,7 +184,6 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }

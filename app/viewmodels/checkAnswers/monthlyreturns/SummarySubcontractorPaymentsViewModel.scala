@@ -30,7 +30,7 @@ case class SummarySubcontractorPaymentsViewModel(
 object SummarySubcontractorPaymentsViewModel {
 
   private def formatAmount(amt: BigDecimal): String =
-    f"£$amt%.2f".replace(".00", "")
+    f"£$amt%.2f"
 
   def apply(
     subcontractorCount: Int,
