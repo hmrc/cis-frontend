@@ -28,7 +28,7 @@
 
 @layout(pageTitle = title(form, messages("monthlyreturns.deleteAmendedNilMonthlyReturn.title", monthYear))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onSubmit(), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

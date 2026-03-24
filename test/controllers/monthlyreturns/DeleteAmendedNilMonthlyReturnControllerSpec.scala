@@ -54,7 +54,7 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
       .value
 
   lazy val deleteAmendedNilMonthlyReturnRoute: String =
-    controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad().url
 
   "DeleteAmendedNilMonthlyReturn Controller" - {
 
@@ -183,7 +183,7 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
       running(application) {
         val request = FakeRequest(
           GET,
-          controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad(NormalMode).url
+          controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad().url
         )
 
         val result = route(application, request).value
@@ -202,7 +202,7 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
         val request =
           FakeRequest(
             POST,
-            controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad(NormalMode).url
+            controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad().url
           )
             .withFormUrlEncodedBody(("value", "true"))
 

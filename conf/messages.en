@@ -523,6 +523,4 @@ monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage you
 
 monthlyreturns.deleteAmendedNilMonthlyReturn.title = Are you sure you want to delete the amended nil monthly return for {0}?
 monthlyreturns.deleteAmendedNilMonthlyReturn.heading = Are you sure you want to delete the amended nil monthly return for {0}?
-monthlyreturns.deleteAmendedNilMonthlyReturn.checkYourAnswersLabel = Delete amended nil monthly return?
 monthlyreturns.deleteAmendedNilMonthlyReturn.error.required = Select yes to delete the amended nil monthly return for Month Year
-monthlyreturns.deleteAmendedNilMonthlyReturn.change.hidden = delete amended nil monthly return

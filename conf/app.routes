@@ -169,5 +169,3 @@ GET        /monthly-return/submission-unsuccessful-resubmit             controll
 
 GET        /monthly-return/delete-amended-nil-monthly-return                        controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/delete-amended-nil-monthly-return                        controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-delete-amended-nil-monthly-return                 controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-delete-amended-nil-monthly-return                    controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onSubmit(mode: Mode = CheckMode)
