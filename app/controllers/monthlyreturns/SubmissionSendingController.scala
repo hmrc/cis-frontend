@@ -73,7 +73,7 @@ class SubmissionSendingController @Inject() (
   def onPollAndRedirect: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
-
+      val langCode     = messagesApi.preferred(request).lang.code
       request.userAnswers.get(SubmissionDetailsPage) match {
         case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case Some(submissionStatus) =>
@@ -82,7 +82,7 @@ class SubmissionSendingController @Inject() (
             case "TIMED_OUT"                          => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
             case "SUBMITTED"                          =>
               submissionService
-                .sendSuccessEmail(request.userAnswers)
+                .sendSuccessEmail(request.userAnswers, langCode)
                 .recover { case ex =>
                   logger.warn("[onPollAndRedirect] Sending success email failed, continuing", ex)
                   ()

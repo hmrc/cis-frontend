@@ -969,7 +969,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
-      val out = service.sendSuccessEmail(ua).futureValue
+      val out = service.sendSuccessEmail(ua, "en").futureValue
       out mustBe ua
 
       verifyNoInteractions(connector)
@@ -1011,7 +1011,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(sessionRepository.set(savedCaptor.capture()))
         .thenReturn(Future.successful(true))
 
-      val out = service.sendSuccessEmail(ua).futureValue
+      val out = service.sendSuccessEmail(ua, "en").futureValue
 
       out.get(SuccessEmailSentPage(submissionId)).value mustBe true
       savedCaptor.getValue.get(SuccessEmailSentPage(submissionId)).value mustBe true
@@ -1029,7 +1029,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
       val ex = intercept[IllegalStateException] {
-        service.sendSuccessEmail(uaBase).futureValue
+        service.sendSuccessEmail(uaBase, "en").futureValue
       }
       ex.getMessage mustBe "Submission details missing"
 
@@ -1065,7 +1065,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       val ex = intercept[IllegalStateException] {
-        service.sendSuccessEmail(ua).futureValue
+        service.sendSuccessEmail(ua, "en").futureValue
       }
 
       ex.getMessage mustBe "Month/Year not selected"
@@ -1103,7 +1103,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       val ex = intercept[IllegalStateException] {
-        service.sendSuccessEmail(ua)
+        service.sendSuccessEmail(ua, "en")
       }
       ex.getMessage mustBe "Month/Year not selected"
 
@@ -1155,7 +1155,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      service.sendSuccessEmail(ua).futureValue
+      service.sendSuccessEmail(ua, "cy").futureValue
 
       val reqCaptor: ArgumentCaptor[SendSuccessEmailRequest] =
         ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
@@ -1163,7 +1163,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector)
         .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
 
-      reqCaptor.getValue.month mustBe "10"
+      reqCaptor.getValue.month mustBe "Hydref"
       reqCaptor.getValue.year mustBe "2025"
     }
 
@@ -1204,7 +1204,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val out = service.sendSuccessEmail(ua).futureValue
+      val out = service.sendSuccessEmail(ua, "en").futureValue
 
       out.get(SuccessEmailSentPage(submissionId)).value mustBe true
       verifyNoInteractions(connector)
@@ -1255,7 +1255,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      service.sendSuccessEmail(ua).futureValue
+      service.sendSuccessEmail(ua, "en").futureValue
 
       val reqCaptor: ArgumentCaptor[SendSuccessEmailRequest] =
         ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
@@ -1292,7 +1292,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       val ex = intercept[IllegalStateException] {
-        service.sendSuccessEmail(ua).futureValue
+        service.sendSuccessEmail(ua, "en").futureValue
       }
 
       ex.getMessage mustBe "Return type missing"
@@ -1330,7 +1330,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       val ex = intercept[IllegalStateException] {
-        service.sendSuccessEmail(ua).futureValue
+        service.sendSuccessEmail(ua, "en").futureValue
       }
 
       ex.getMessage mustBe "Month/Year not selected"

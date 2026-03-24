@@ -27,11 +27,14 @@ import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import pages.submission.*
 import play.api.Logging
+import play.api.i18n.Lang
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.DateTimeFormats
 import utils.TypeUtils.*
 
 import java.time.{Instant, YearMonth}
+import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -144,7 +147,7 @@ class SubmissionService @Inject() (
 
 // Email
 
-  def sendSuccessEmail(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+  def sendSuccessEmail(userAnswers: UserAnswers, langCode: String)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val submissionId = userAnswers
       .get(SubmissionDetailsPage)
       .map(_.id)
@@ -161,19 +164,10 @@ class SubmissionService @Inject() (
     if (alreadySent) {
       Future.successful(userAnswers)
     } else {
-      val yearMonth = returnType match {
-        case MonthlyNilReturn =>
-          userAnswers
-            .get(DateConfirmPaymentsPage)
-            .map(YearMonth.from)
-            .getOrElse(throw new IllegalStateException("Month/Year not selected"))
-
-        case MonthlyStandardReturn =>
-          userAnswers
-            .get(DateConfirmPaymentsPage)
-            .map(YearMonth.from)
-            .getOrElse(throw new IllegalStateException("Month/Year not selected"))
-      }
+      val yearMonth = userAnswers
+        .get(DateConfirmPaymentsPage)
+        .map(YearMonth.from)
+        .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 
       val emailOpt = returnType match {
         case MonthlyNilReturn | MonthlyStandardReturn =>
@@ -188,9 +182,10 @@ class SubmissionService @Inject() (
             .flatMap(updatedUa => sessionRepository.set(updatedUa).map(_ => updatedUa))
 
         case Some(email) =>
-          val request = SendSuccessEmailRequest(
+          val locale: Locale = Lang.get(langCode).map(_.locale).getOrElse(Locale.UK)
+          val request        = SendSuccessEmailRequest(
             email = email,
-            month = yearMonth.getMonthValue.toString,
+            month = yearMonth.format(DateTimeFormats.monthFormatter(locale)),
             year = yearMonth.getYear.toString
           )
 

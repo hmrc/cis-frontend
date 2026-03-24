@@ -310,7 +310,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.successful("SUBMITTED"))
 
-      when(mockService.sendSuccessEmail(any[UserAnswers])(using any[HeaderCarrier]))
+      when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
         .thenReturn(Future.successful(uaWithSubmission))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
@@ -338,7 +338,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.successful("SUBMITTED"))
 
-      when(mockService.sendSuccessEmail(any[UserAnswers])(using any[HeaderCarrier]))
+      when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("email down")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
@@ -350,7 +350,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe successRoute
 
       verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
-      verify(mockService).sendSuccessEmail(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
     "redirects to SubmissionSuccess when status is SUBMITTED_NO_RECEIPT" in {
