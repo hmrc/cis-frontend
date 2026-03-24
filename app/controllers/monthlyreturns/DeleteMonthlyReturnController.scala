@@ -61,7 +61,7 @@ class DeleteMonthlyReturnController @Inject() (
         Ok(view(preparedForm, monthYear, mode))
 
       case None =>
-        logger.error("[DeleteNilMonthlyReturn] dateConfirmPayments missing")
+        logger.error("[DeleteMonthlyReturn] dateConfirmPayments missing")
         Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
     }
   }
@@ -82,7 +82,7 @@ class DeleteMonthlyReturnController @Inject() (
             )
 
         case None =>
-          logger.error("[DeleteNilMonthlyReturn] dateConfirmPayments missing")
+          logger.error("[DeleteMonthlyReturn] dateConfirmPayments missing")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
   }

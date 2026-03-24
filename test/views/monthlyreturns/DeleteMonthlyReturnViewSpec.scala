@@ -34,7 +34,7 @@ import java.util.Locale
 
 class DeleteMonthlyReturnViewSpec extends SpecBase {
 
-  "DeleteNilMonthlyReturnView" - {
+  "DeleteMonthlyReturnView" - {
 
     "must render the page with the correct html elements (English) including monthYear" in new Setup {
       val doc: Document = Jsoup.parse(htmlEn.toString)
