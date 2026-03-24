@@ -44,7 +44,7 @@ class DeleteAmendedMonthlyReturnControllerSpec extends SpecBase with MockitoSuga
   val form: Form[Boolean] = formProvider()
 
   lazy val deleteAmendedMonthlyReturnRoute: String =
-    controllers.monthlyreturns.routes.DeleteAmendedMonthlyReturnController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.DeleteAmendedMonthlyReturnController.onPageLoad().url
 
   private val confirmPaymentsDate: LocalDate = LocalDate.of(2026, 3, 1)
   private val monthYear: String              = confirmPaymentsDate.format(DateTimeFormatter.ofPattern("MMMM uuuu"))
