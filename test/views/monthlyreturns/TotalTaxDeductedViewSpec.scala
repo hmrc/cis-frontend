@@ -47,7 +47,8 @@ class TotalTaxDeductedViewSpec extends SpecBase {
     }
 
     "must display error summary when form has errors" in new Setup {
-      val formWithErrors = form.bind(Map("value" -> ""))
+      // empty is allowed now (optional), so use invalid non-empty input to trigger errors
+      val formWithErrors = form.bind(Map("value" -> "invalid"))
       val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1, None)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
@@ -61,6 +62,15 @@ class TotalTaxDeductedViewSpec extends SpecBase {
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-message").size mustBe 1
+    }
+
+    "must not display error summary when value is empty (optional)" in new Setup {
+      val formNoErrors  = form.bind(Map("value" -> ""))
+      val htmlNoErrors  = view(formNoErrors, NormalMode, companyName, 1, None)
+      val doc: Document = Jsoup.parse(htmlNoErrors.toString)
+
+      doc.select(".govuk-error-summary").size mustBe 0
+      doc.select(".govuk-error-message").size mustBe 0
     }
   }
 

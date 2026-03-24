@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package forms
+package utils
 
-import forms.mappings.Mappings
-import play.api.data.Form
+import java.text.DecimalFormat
+import java.math.RoundingMode
 
-import javax.inject.Inject
+object MoneyFormat {
 
-class PaymentDetailsFormProvider @Inject() extends Mappings {
+  private val df: DecimalFormat = {
+    val f = new DecimalFormat("#,##0.00")
+    f.setRoundingMode(RoundingMode.HALF_UP)
+    f
+  }
 
-  def apply(): Form[BigDecimal] =
-    Form(
-      "value" -> currency(
-        requiredKey = "paymentDetails.error.required",
-        invalidKey = "paymentDetails.error.invalid",
-        maxLengthKey = "paymentDetails.error.maxLength",
-        scale = 0
-      ).verifying(
-        maximumCurrency(BigDecimal("99999999.00"), "paymentDetails.error.maxValue", includeFormattedValue = false)
-      )
-    )
+  /** Always renders with exactly 2dp, no commas, no currency symbol. */
+  def twoDp(value: BigDecimal): String =
+    df.format(value.bigDecimal)
+
+  /** Convenience for Option[BigDecimal]. */
+  def twoDpOrEmpty(value: Option[BigDecimal]): String =
+    value.map(twoDp).getOrElse("")
 }

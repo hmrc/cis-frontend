@@ -20,6 +20,8 @@ import models.Enumerable
 import play.api.data.FormError
 import play.api.data.format.Formatter
 
+import java.text.{DecimalFormat, DecimalFormatSymbols}
+import java.util.Locale
 import scala.util.control.Exception.nonFatalCatch
 
 trait Formatters {
@@ -47,7 +49,7 @@ trait Formatters {
 
       private val baseFormatter = stringFormatter(requiredKey, args)
 
-      override def bind(key: String, data: Map[String, String]) =
+      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Boolean] =
         baseFormatter
           .bind(key, data)
           .flatMap {
@@ -56,7 +58,7 @@ trait Formatters {
             case _       => Left(Seq(FormError(key, invalidKey, args)))
           }
 
-      def unbind(key: String, value: Boolean) = Map(key -> value.toString)
+      def unbind(key: String, value: Boolean): Map[String, String] = Map(key -> value.toString)
     }
 
   private[mappings] def booleanDefaultFalseFormatter(
@@ -71,7 +73,7 @@ trait Formatters {
         case _            => Right(false)
       }
 
-    def unbind(key: String, value: Boolean) = Map(key -> value.toString)
+    def unbind(key: String, value: Boolean): Map[String, String] = Map(key -> value.toString)
   }
 
   private[mappings] def seqFormatter[A](using baseFormatter: Formatter[A]): Formatter[Seq[A]] =
@@ -106,7 +108,7 @@ trait Formatters {
 
       private val baseFormatter = stringFormatter(requiredKey, args)
 
-      override def bind(key: String, data: Map[String, String]) =
+      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Int] =
         baseFormatter
           .bind(key, data)
           .map(_.replace(",", ""))
@@ -120,7 +122,7 @@ trait Formatters {
                 .map(_ => Seq(FormError(key, nonNumericKey, args)))
           }
 
-      override def unbind(key: String, value: Int) =
+      override def unbind(key: String, value: Int): Map[String, String] =
         baseFormatter.unbind(key, value.toString)
     }
 
@@ -144,108 +146,112 @@ trait Formatters {
 
   private[mappings] def currencyFormatter(
     requiredKey: String,
-    invalidNumericKey: String,
-    nonNumericKey: String,
-    args: Seq[String] = Seq.empty
-  ): Formatter[BigDecimal] =
-    new Formatter[BigDecimal] {
-      val isNumeric    = """(^£?\d*$)|(^£?\d*\.\d*$)"""
-      val validDecimal = """(^£?\d*$)|(^£?\d*\.\d{1,2}$)"""
-
-      private val baseFormatter = stringFormatter(requiredKey, args)
-
-      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], BigDecimal] =
-        baseFormatter
-          .bind(key, data)
-          .map(_.replace(",", "").replace(" ", ""))
-          .flatMap {
-            case s if !s.matches(isNumeric)    =>
-              Left(Seq(FormError(key, nonNumericKey, args)))
-            case s if !s.matches(validDecimal) =>
-              Left(Seq(FormError(key, invalidNumericKey, args)))
-            case s                             =>
-              nonFatalCatch
-                .either(BigDecimal(s.replace("£", "")))
-                .left
-                .map(_ => Seq(FormError(key, nonNumericKey, args)))
-          }
-
-      override def unbind(key: String, value: BigDecimal): Map[String, String] =
-        baseFormatter.unbind(key, value.toString)
-    }
-
-  private[mappings] def paymentDetailsCurrencyFormatter(
-    requiredKey: String,
     invalidKey: String,
     maxLengthKey: String,
+    scale: Int, // 0 or 2
     args: Seq[String] = Seq.empty
   ): Formatter[BigDecimal] =
     new Formatter[BigDecimal] {
-      val paymentDetailsRegex = """^[0-9,]+[.]{0,1}[0-9]{0,2}$"""
-      val maxLength           = 13
 
+      require(scale == 0 || scale == 2, s"Unsupported scale: $scale (expected 0 or 2)")
+
+      private val maxLength     = 16
       private val baseFormatter = stringFormatter(requiredKey, args)
 
+      // Accept digits and commas in the integer part; no comma-grouping validation.
+      private val intPartWithOptionalCommas = """[0-9,]+"""
+
+      private val decimalsForScale: String =
+        scale match {
+          case 0 =>
+            // allow: integer, ".", ".0", ".00"
+            """(?:\.(?:0|00)?)?"""
+          case 2 =>
+            // allow: integer, ".", ".<1-2 digits>"
+            """(?:\.(?:\d{1,2})?)?"""
+        }
+
+      // Allow optional £ and spaces anywhere (we strip spaces before matching by normalising first)
       override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], BigDecimal] =
         baseFormatter
           .bind(key, data)
           .flatMap { rawInput =>
             val input = rawInput.trim
-            if (input.length > maxLength) {
+
+            if (input.isEmpty) {
+              Left(Seq(FormError(key, requiredKey, args)))
+            } else if (input.length > maxLength) {
               Left(Seq(FormError(key, maxLengthKey, args)))
-            } else if (!input.matches(paymentDetailsRegex)) {
-              Left(Seq(FormError(key, invalidKey, args)))
             } else {
-              val cleaned = input.replace(",", "")
-              nonFatalCatch
-                .either(BigDecimal(cleaned))
-                .left
-                .map(_ => Seq(FormError(key, invalidKey, args)))
-                .flatMap { value =>
-                  if (value % 1 != 0) {
-                    Left(Seq(FormError(key, invalidKey, args)))
-                  } else {
-                    Right(value)
-                  }
+
+              // Normalise FIRST (strip spaces + £) so we can allow inputs like "£ 1,234 . 56"
+              val normalisedForValidation =
+                input.filterNot(_.isWhitespace)
+
+              val allowedRawPattern =
+                ("^£?" + intPartWithOptionalCommas + decimalsForScale + "$").r
+
+              if (allowedRawPattern.findFirstIn(normalisedForValidation).isEmpty) {
+                Left(Seq(FormError(key, invalidKey, args)))
+              } else {
+                val cleaned0 =
+                  normalisedForValidation
+                    .replace("£", "")
+                    .replace(",", "")
+
+                // Normalise trailing dot:
+                // "100." -> "100"
+                // "0."   -> "0"
+                val cleaned =
+                  if (cleaned0.endsWith(".")) cleaned0.dropRight(1) else cleaned0
+
+                val parts          = cleaned.split("\\.", -1)
+                val hasDecimalPart = parts.length == 2
+                val decPart        = if (hasDecimalPart) parts(1) else ""
+
+                // For scale=0: only allow decimal part "", "0", "00" ("" happens for trailing dot)
+                val decimalNotAllowedForScale0 =
+                  scale == 0 && hasDecimalPart && !(decPart.isEmpty || decPart == "0" || decPart == "00")
+
+                if (decimalNotAllowedForScale0) {
+                  Left(Seq(FormError(key, invalidKey, args)))
+                } else {
+                  nonFatalCatch
+                    .either(BigDecimal(cleaned))
+                    .left
+                    .map(_ => Seq(FormError(key, invalidKey, args)))
+                    .flatMap { value =>
+                      val scaleOk =
+                        scale match {
+                          case 0 => value.scale <= 0 || value.setScale(0) == value
+                          case 2 => value.scale <= 2
+                        }
+
+                      if (!scaleOk) Left(Seq(FormError(key, invalidKey, args)))
+                      else Right(value)
+                    }
                 }
+              }
             }
           }
 
-      override def unbind(key: String, value: BigDecimal): Map[String, String] =
-        baseFormatter.unbind(key, value.toString)
-    }
+      override def unbind(key: String, value: BigDecimal): Map[String, String] = {
+        val symbols = DecimalFormatSymbols.getInstance(Locale.UK)
 
-  private[mappings] def taxDeductedCurrencyFormatter(
-    requiredKey: String,
-    invalidKey: String,
-    maxLengthKey: String,
-    args: Seq[String] = Seq.empty
-  ): Formatter[BigDecimal] =
-    new Formatter[BigDecimal] {
-      val taxDeductedRegex = """^[0-9,]+(\.[0-9]{1,2})?$"""
-      val maxLength        = 13
+        val rendered =
+          scale match {
+            case 0 =>
+              val df = new DecimalFormat("#,##0", symbols)
+              df.format(value.setScale(0).bigDecimal)
 
-      private val baseFormatter = stringFormatter(requiredKey, args)
-
-      override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], BigDecimal] =
-        baseFormatter
-          .bind(key, data)
-          .flatMap { rawInput =>
-            val input = rawInput.trim
-            if (input.length > maxLength) {
-              Left(Seq(FormError(key, maxLengthKey, args)))
-            } else if (!input.matches(taxDeductedRegex)) {
-              Left(Seq(FormError(key, invalidKey, args)))
-            } else {
-              val cleaned = input.replace(",", "")
-              nonFatalCatch
-                .either(BigDecimal(cleaned))
-                .left
-                .map(_ => Seq(FormError(key, invalidKey, args)))
-            }
+            case 2 =>
+              val df = new DecimalFormat("#,##0.00", symbols)
+              df.format(value.setScale(2).bigDecimal)
           }
 
-      override def unbind(key: String, value: BigDecimal): Map[String, String] =
-        baseFormatter.unbind(key, value.toString)
+        baseFormatter.unbind(key, rendered)
+      }
+
     }
+
 }
