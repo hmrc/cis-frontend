@@ -190,5 +190,37 @@ class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must redirect to Journey Recovery for a GET when dateConfirmPayments is missing" in {
+      val userAnswers = emptyUserAnswers
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, deleteNilMonthlyReturnRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST when dateConfirmPayments is missing" in {
+      val userAnswers = emptyUserAnswers
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, deleteNilMonthlyReturnRoute)
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
   }
 }
