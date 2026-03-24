@@ -20,7 +20,7 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import models.EmployerReference
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -98,11 +98,18 @@ class SubmittedNoReceiptController @Inject() (
         }
       }
 
-      val emailFromSession = request.userAnswers.get(ConfirmEmailAddressPage)
+      val emailFromSession = request.userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
 
       val emailFuture = emailFromSession match {
         case Some(email) => Future.successful(email)
-        case None        => monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse(""))
+        case None        =>
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              ""
+            }
       }
 
       emailFuture.map { email =>

@@ -18,11 +18,12 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
-import models.Mode
+import models.{Mode, UserAnswers}
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.TotalTaxDeductedView
@@ -44,7 +45,7 @@ class TotalTaxDeductedController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  val form = formProvider()
+  val form: Form[Option[BigDecimal]] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
@@ -53,7 +54,7 @@ class TotalTaxDeductedController @Inject() (
         case Some(subcontractor) =>
           val preparedForm = request.userAnswers.get(SelectedSubcontractorTaxDeductedPage(index)) match {
             case None        => form
-            case Some(value) => form.fill(value)
+            case Some(value) => form.fill(Some(value))
           }
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
@@ -62,25 +63,35 @@ class TotalTaxDeductedController @Inject() (
 
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
+      def redirect(updatedAnswers: UserAnswers): Result =
+        returnTo match {
+          case Some("changeAnswers") =>
+            Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+          case _                     =>
+            Redirect(navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index), mode, updatedAnswers))
+        }
+
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
         case Some(subcontractor) =>
           form
             .bindFromRequest()
             .fold(
               formWithErrors =>
                 Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
-              value =>
+              valueOpt => {
+                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
+
                 for {
                   updatedAnswers <-
-                    Future.fromTry(request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), value))
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), valueToPersist)
+                    )
                   _              <- sessionRepository.set(updatedAnswers)
-                } yield returnTo match {
-                  case Some("changeAnswers") =>
-                    Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
-                  case _                     =>
-                    Redirect(navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index), mode, updatedAnswers))
-                }
+                } yield redirect(updatedAnswers)
+              }
             )
       }
     }

@@ -162,7 +162,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .set(DateConfirmPaymentsPage, LocalDate.of(2025, 11, 10))
         .success
         .value
-        .set(ConfirmEmailAddressPage, "test@test.com")
+        .set(EnterYourEmailAddressPage, "test@test.com")
         .success
         .value
         .set(ReturnTypePage, MonthlyStandardReturn)
@@ -1095,7 +1095,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .set(SuccessEmailSentPage(submissionId), false)
         .success
         .value
-        .set(ConfirmEmailAddressPage, "test@example.com")
+        .set(EnterYourEmailAddressPage, "test@example.com")
         .success
         .value
         .set(ReturnTypePage, MonthlyNilReturn)
@@ -1345,7 +1345,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       .set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5))
       .success
       .value
-      .set(ConfirmEmailAddressPage, "test@test.com")
+      .set(EnterYourEmailAddressPage, "test@test.com")
       .success
       .value
       .set(ReturnTypePage, MonthlyNilReturn)

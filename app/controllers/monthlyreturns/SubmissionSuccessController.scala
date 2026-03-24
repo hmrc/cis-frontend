@@ -76,7 +76,15 @@ class SubmissionSuccessController @Inject() (
 
       val emailFuture: Future[String] = emailfromUserAnswers(ua, submissionType)
         .map(Future.successful)
-        .getOrElse(monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse("")))
+        .getOrElse(
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              ""
+            }
+        )
 
       for {
         email <- emailFuture

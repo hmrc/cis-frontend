@@ -24,7 +24,7 @@ import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmEmailAddressPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -73,7 +73,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       .set(ContractorNamePage, contractorName)
       .success
       .value
-      .set(ConfirmEmailAddressPage, email)
+      .set(EnterYourEmailAddressPage, email)
       .success
       .value
       .set(DateConfirmPaymentsPage, periodEnd)
@@ -204,7 +204,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, MonthlyNilReturn)
             .success
             .value
-            .set(ConfirmEmailAddressPage, email)
+            .set(EnterYourEmailAddressPage, email)
             .success
             .value
             .set(DateConfirmPaymentsPage, periodEnd)
@@ -232,7 +232,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, MonthlyNilReturn)
             .success
             .value
-            .set(ConfirmEmailAddressPage, email)
+            .set(EnterYourEmailAddressPage, email)
             .success
             .value
             .set(ContractorNamePage, contractorName)
@@ -265,7 +265,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ContractorNamePage, contractorName)
             .success
             .value
-            .set(ConfirmEmailAddressPage, "test@test.com")
+            .set(EnterYourEmailAddressPage, "test@test.com")
             .success
             .value
             .set(
@@ -295,7 +295,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(DateConfirmPaymentsPage, periodEnd)
             .success
             .value
-            .set(ConfirmEmailAddressPage, "test@test.com")
+            .set(EnterYourEmailAddressPage, "test@test.com")
             .success
             .value
 
@@ -318,7 +318,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
               .set(DateConfirmPaymentsPage, periodEnd)
               .success
               .value
-              .set(ConfirmEmailAddressPage, email)
+              .set(EnterYourEmailAddressPage, email)
               .success
               .value
               .set(
@@ -338,12 +338,12 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           }
         }
 
-        "must call monthlyReturnService and use returned email when ConfirmEmailAddressPage is missing" in {
+        "must call monthlyReturnService and use returned email when EnterYourEmailAddressPage is missing" in {
 
           val fallbackEmail = "fallback@test.com"
 
           val uaWithoutEmail: UserAnswers = ua
-            .remove(ConfirmEmailAddressPage)
+            .remove(EnterYourEmailAddressPage)
             .success
             .value
             .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
@@ -440,7 +440,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, MonthlyNilReturn)
             .success
             .value
-            .set(ConfirmEmailAddressPage, email)
+            .set(EnterYourEmailAddressPage, email)
             .success
             .value
             .set(DateConfirmPaymentsPage, periodEnd)
@@ -470,7 +470,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .set(ReturnTypePage, MonthlyNilReturn)
             .success
             .value
-            .set(ConfirmEmailAddressPage, email)
+            .set(EnterYourEmailAddressPage, email)
             .success
             .value
             .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
