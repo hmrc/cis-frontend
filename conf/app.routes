@@ -166,3 +166,8 @@ POST       /monthly-return/change-verified-status-declaration           controll
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
+
+GET        /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-delete-amended-monthly-return                  controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-delete-amended-monthly-return                  controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onSubmit(mode: Mode = CheckMode)
