@@ -19,9 +19,7 @@ package pages.monthlyreturns
 import base.SpecBase
 import play.api.libs.json.JsPath
 
-
 class DeleteAmendedMonthlyReturnPageSpec extends SpecBase {
-
 
   "DeleteAmendedMonthlyReturnPage" - {
 
@@ -30,7 +28,6 @@ class DeleteAmendedMonthlyReturnPageSpec extends SpecBase {
       DeleteAmendedMonthlyReturnPage.path mustBe (JsPath \ "deleteAmendedMonthlyReturn")
 
     }
-
 
     "have the correct toString" in {
 
