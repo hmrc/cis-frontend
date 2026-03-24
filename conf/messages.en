@@ -523,6 +523,4 @@ monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage you
 
 monthlyreturns.deleteMonthlyReturn.title = Are you sure you want to delete the monthly return for {0}?
 monthlyreturns.deleteMonthlyReturn.heading = Are you sure you want to delete the monthly return for {0}?
-monthlyreturns.deleteMonthlyReturn.checkYourAnswersLabel = deleteMonthlyReturn
-monthlyreturns.deleteMonthlyReturn.error.required = Select ‘Yes’ to delete the return. Select ‘No’ if you do not want to delete the return.
-monthlyreturns.deleteMonthlyReturn.change.hidden = DeleteMonthlyReturn
+monthlyreturns.deleteMonthlyReturn.error.required = Select ‘Yes’ to delete the return.
