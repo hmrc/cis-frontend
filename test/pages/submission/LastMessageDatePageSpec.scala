@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package models.submission
+package pages.submission
 
-import play.api.libs.json.{Json, OFormat}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.JsPath
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  lastMessageDate: Option[String]
-)
+class LastMessageDatePageSpec extends AnyWordSpec with Matchers {
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+  "LastMessageDatePage" should {
+
+    "have the expected path" in {
+      LastMessageDatePage.path mustBe (JsPath \ "submission" \ "poll" \ "lastMessageDate")
+    }
+
+    "have the expected toString value" in {
+      LastMessageDatePage.toString mustBe "lastMessageDate"
+    }
+  }
 }
