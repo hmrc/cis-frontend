@@ -608,8 +608,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
 
-      result mustBe PollDecision.Polled("SUBMITTED")
-      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      result mustBe PollDecision.Polled("TIMED_OUT")
       verify(sessionRepository).set(any[UserAnswers])
     }
 
@@ -907,7 +906,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "SUBMITTED"
+      result mustBe "TIMED_OUT"
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -957,8 +956,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "PENDING"
-      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      result mustBe "TIMED_OUT"
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -1009,8 +1007,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "ACCEPTED"
-      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      result mustBe "TIMED_OUT"
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -1020,7 +1017,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe true
     }
 
-    "not mark as timed out when timeout exceeded but status is SUBMITTED" in {
+    "mark as timed out without polling when timeout exceeded and status remains PENDING" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
@@ -1053,75 +1050,19 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
-      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
-
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "SUBMITTED"
-      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      result mustBe "TIMED_OUT"
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
 
       val savedUa = captor.getValue
-      savedUa.get(SubmissionDetailsPage).value.status mustBe "SUBMITTED"
-      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
-    }
-
-    "not mark as timed out when timeout exceeded but status is FATAL_ERROR" in {
-      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration(
-          "submission-poll-timeout-seconds" -> "60"
-        )
-      )
-      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
-
-      import models.submission.SubmissionDetails
-      import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
-
-      val submittedAt       = Instant.now().minusSeconds(120)
-      val submissionDetails = SubmissionDetails(
-        id = "sub-123",
-        status = "PENDING",
-        irMark = "IR-MARK-123",
-        submittedAt = submittedAt
-      )
-
-      val ua = uaBase
-        .set(SubmissionDetailsPage, submissionDetails)
-        .success
-        .value
-        .set(CorrelationIdPage, "123")
-        .success
-        .value
-        .set(PollUrlPage, "someUrl")
-        .success
-        .value
-
-      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"), None, None)))
-
-      when(sessionRepository.set(any[UserAnswers]))
-        .thenReturn(Future.successful(true))
-
-      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
-
-      result mustBe "FATAL_ERROR"
-      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
-
-      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
-      verify(sessionRepository).set(captor.capture())
-
-      val savedUa = captor.getValue
-      savedUa.get(SubmissionDetailsPage).value.status mustBe "FATAL_ERROR"
-      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe false
+      savedUa.get(SubmissionDetailsPage).value.status mustBe "PENDING"
+      savedUa.get(SubmissionStatusTimedOutPage("sub-123")).value mustBe true
     }
   }
 
