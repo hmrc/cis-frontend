@@ -173,7 +173,7 @@ class SubmissionSuccessViewSpec extends SpecBase {
     val empRef                     = "123/AB456"
     val submissionType: ReturnType = ReturnType.MonthlyNilReturn
     val cisId                      = "1"
-    val returnTypeMessage: String = {
+    val returnTypeMessage: String  = {
       val raw = messages(s"monthlyreturns.returnType.${submissionType.toString}")
       s"${raw.head.toUpper}${raw.tail.toLowerCase}"
     }
