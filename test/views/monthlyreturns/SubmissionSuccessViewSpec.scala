@@ -34,10 +34,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title must include(messages("monthlyreturns.submissionSuccess.title"))
+      doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
 
       doc.select(".govuk-panel__title").text must include(
-        messages("monthlyreturns.submissionSuccess.heading")
+        messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)
       )
 
       doc.select(".govuk-panel__body").text must include(reference)
@@ -110,10 +110,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title must include(messages("monthlyreturns.submissionSuccess.title"))
+      doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
 
       doc.select(".govuk-panel__title").text must include(
-        messages("monthlyreturns.submissionSuccess.heading")
+        messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)
       )
 
       doc.select(".govuk-panel__body").text must include(reference)
@@ -173,6 +173,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
     val empRef                     = "123/AB456"
     val submissionType: ReturnType = ReturnType.MonthlyNilReturn
     val cisId                      = "1"
+    val returnTypeMessage: String = {
+      val raw = messages(s"monthlyreturns.returnType.${submissionType.toString}")
+      s"${raw.head.toUpper}${raw.tail.toLowerCase}"
+    }
 
     lazy val html: HtmlFormat.Appendable = view(
       reference = reference,

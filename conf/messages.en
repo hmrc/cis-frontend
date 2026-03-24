@@ -226,8 +226,8 @@ monthlyreturns.submissionAwaiting.links.prefix = For technical problems, contact
 monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk = HMRC Online Services Helpdesk (opens in new tab)
 monthlyreturns.submissionAwaiting.links.submit = Back to Manage your CIS return
 
-monthlyreturns.submissionSuccess.title = Monthly return successfully submitted
-monthlyreturns.submissionSuccess.heading = Monthly return successfully submitted
+monthlyreturns.submissionSuccess.title = {0} successfully submitted
+monthlyreturns.submissionSuccess.heading = {0} successfully submitted
 monthlyreturns.submissionSuccessful.panel.ref = Your reference number
 monthlyreturns.submissionSuccessful.submitted.line = Submitted at {0} on {1}
 monthlyreturns.submissionSuccessful.submissionDetails.heading = Submission details
