@@ -17,11 +17,12 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.UserAnswers
 import models.submission.SubmissionDetails
 import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, Call, MessagesControllerComponents, Result}
 import services.submission.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -78,21 +79,43 @@ class SubmissionSendingController @Inject() (
         case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case Some(submissionStatus) =>
           submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).flatMap {
-            case "PENDING" | "ACCEPTED"               => Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
-            case "TIMED_OUT"                          => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
-            case "SUBMITTED"                          =>
-              submissionService
-                .sendSuccessEmail(request.userAnswers, langCode)
-                .recover { case ex =>
-                  logger.warn("[onPollAndRedirect] Sending success email failed, continuing", ex)
-                  ()
-                }
-                .map(_ => Redirect(routes.SubmissionSuccessController.onPageLoad))
-            case "SUBMITTED_NO_RECEIPT"               => Future.successful(Redirect(routes.SubmittedNoReceiptController.onPageLoad))
-            case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" =>
+            case "PENDING" | "ACCEPTED" => Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
+            case "TIMED_OUT"            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
+            case "SUBMITTED"            =>
+              sendEmailAndRedirect(
+                request.userAnswers,
+                langCode,
+                routes.SubmissionSuccessController.onPageLoad
+              )
+            case "SUBMITTED_NO_RECEIPT" =>
+              sendEmailAndRedirect(
+                request.userAnswers,
+                langCode,
+                routes.SubmittedNoReceiptController.onPageLoad
+              )
+            case "DEPARTMENTAL_ERROR"   =>
+              sendEmailAndRedirect(
+                request.userAnswers,
+                langCode,
+                routes.SubmissionUnsuccessfulController.onPageLoad
+              )
+            case "FATAL_ERROR"          =>
               Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
-            case _                                    => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            case _                      => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
       }
     }
+
+  private def sendEmailAndRedirect(
+    userAnswers: UserAnswers,
+    langCode: String,
+    redirect: Call
+  )(implicit hc: HeaderCarrier) =
+    submissionService
+      .sendSuccessEmail(userAnswers, langCode)
+      .recover { case ex =>
+        logger.warn("[onPollAndRedirect] Sending success email failed, continuing", ex)
+        ()
+      }
+      .map(_ => Redirect(redirect))
 }

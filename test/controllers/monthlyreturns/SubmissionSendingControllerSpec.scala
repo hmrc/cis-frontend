@@ -321,6 +321,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
       verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
     "redirects to SubmissionSuccess when status is SUBMITTED even if sending email fails" in {
@@ -372,6 +373,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.successful("SUBMITTED_NO_RECEIPT"))
 
+      when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful(uaWithSubmission))
+
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
@@ -380,6 +384,40 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successNoReceiptRoute
       verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionSuccess when status is SUBMITTED_NO_RECEIPT even if sending email fails" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("SUBMITTED_NO_RECEIPT"))
+
+      when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("email down")))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe successNoReceiptRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
     "redirects to SubmissionUnsuccessful when status is FATAL_ERROR" in {
@@ -430,6 +468,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.successful("DEPARTMENTAL_ERROR"))
 
+      when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful(uaWithSubmission))
+
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
@@ -438,6 +479,40 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
       verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionUnsuccessful when status is DEPARTMENTAL_ERROR even if sending email fails" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      import models.submission.SubmissionDetails
+      import pages.submission.SubmissionDetailsPage
+      import java.time.Instant
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful("DEPARTMENTAL_ERROR"))
+
+      when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("email down")))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulRoute
+      verify(mockService).checkAndUpdateSubmissionStatus(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
     "redirects to JourneyRecovery when status is unknown" in {
