@@ -114,6 +114,42 @@ class SubmissionService @Inject() (
   def getPollInterval(userAnswers: UserAnswers): Int =
     userAnswers.get(PollIntervalPage).getOrElse(appConfig.submissionPollDefaultIntervalSeconds)
 
+  def checkAndUpdateSubmissionStatusIfAllowed(
+    userAnswers: UserAnswers
+  )(using HeaderCarrier): Future[PollDecision] =
+    userAnswers.get(LastMessageDatePage) match {
+      case Some(receivedAt) =>
+        val pollInterval      = getPollInterval(userAnswers)
+        val nextPollAllowedAt = receivedAt.plusSeconds(pollInterval)
+        val now               = Instant.now() // TODO - val added to support logs for testing, to be deleted after verification
+
+        if (Instant.now().isAfter(nextPollAllowedAt)) {
+          // TODO - logs used for testing, to be deleted after verification
+          logger.info(
+            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL ALLOWED " +
+              s"lastMessageRecieved=$receivedAt," +
+              s"pollIntervalSeconds=$pollInterval, " +
+              s"nextPollAllowed=$nextPollAllowedAt, " +
+              s"now=$now"
+          )
+          checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+        } else {
+          // TODO - logs used for testing, to be deleted after verification
+          logger.info(
+            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL SKIPPED " +
+              s"lastMessageRecieved=$receivedAt," +
+              s"pollIntervalSeconds=$pollInterval, " +
+              s"nextPollAllowed=$nextPollAllowedAt, " +
+              s"now=$now"
+          )
+          Future.successful(PollDecision.Skip)
+        }
+
+      case None =>
+        logger.warn("[checkAndUpdateSubmissionStatusIfAllowed] Missing lastMessageDate, allowing poll by default")
+        checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+    }
+
   def checkAndUpdateSubmissionStatus(
     userAnswers: UserAnswers
   )(using HeaderCarrier): Future[String] = {
@@ -128,20 +164,33 @@ class SubmissionService @Inject() (
         Future.successful("TIMED_OUT")
       case Some(submissionDetails) =>
         val timeoutDateTime = submissionDetails.submittedAt.plusSeconds(timeout)
+        val now             = Instant.now()
 
-        for {
-          pollUrl       <- userAnswers.get(PollUrlPage).toFuture
-          correlationId <- userAnswers.get(CorrelationIdPage).toFuture
-          result        <- cisConnector.getSubmissionStatus(pollUrl, correlationId)
-          newStatus      = result.status
-          timedOut       = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
-          newDetails     = submissionDetails.copy(status = newStatus)
-          ua1           <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
-          ua2           <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
-          ua3           <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
-          ua4           <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
-          _             <- sessionRepository.set(ua4)
-        } yield newStatus
+        if (now.isAfter(timeoutDateTime)) {
+          for {
+            ua1 <- Future.fromTry(userAnswers.set(SubmissionStatusTimedOutPage(submissionDetails.id), true))
+            _   <- sessionRepository.set(ua1)
+          } yield "TIMED_OUT"
+        } else {
+          for {
+            pollUrl       <- userAnswers.get(PollUrlPage).toFuture
+            correlationId <- userAnswers.get(CorrelationIdPage).toFuture
+            result        <- cisConnector.getSubmissionStatus(pollUrl, correlationId)
+            newStatus      = result.status
+            timedOut       = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
+            finalStatus    = if (timedOut) "TIMED_OUT" else newStatus
+            newDetails     = submissionDetails.copy(status = newStatus)
+            ua1           <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
+            ua2           <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
+            ua3           <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
+            ua4           <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
+            ua5           <- result.lastMessageDate match {
+                               case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
+                               case None     => Future.successful(ua4)
+                             }
+            _             <- sessionRepository.set(ua5)
+          } yield finalStatus
+        }
     }
   }
 
