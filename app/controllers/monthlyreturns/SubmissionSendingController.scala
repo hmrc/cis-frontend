@@ -17,7 +17,9 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.submission.SubmissionDetails
+import models.requests.DataRequest
+import models.submission.PollDecision.{Polled, Skip}
+import models.submission.{PollDecision, SubmissionDetails}
 import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -71,28 +73,50 @@ class SubmissionSendingController @Inject() (
 
   def onPollAndRedirect: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
-
       request.userAnswers.get(SubmissionDetailsPage) match {
-        case None                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
         case Some(submissionStatus) =>
-          submissionService.checkAndUpdateSubmissionStatus(request.userAnswers).flatMap {
-            case "STARTED"                            => Future.successful(Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad()))
-            case "PENDING" | "ACCEPTED"               => Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
-            case "TIMED_OUT"                          => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
-            case "SUBMITTED"                          =>
-              submissionService
-                .sendSuccessEmail(request.userAnswers)
-                .recover { case ex =>
-                  logger.warn("[onPollAndRedirect] Sending success email failed, continuing", ex)
-                  ()
-                }
-                .map(_ => Redirect(routes.SubmissionSuccessController.onPageLoad))
-            case "SUBMITTED_NO_RECEIPT"               => Future.successful(Redirect(routes.SubmittedNoReceiptController.onPageLoad))
-            case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" =>
-              Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
-            case _                                    => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-          }
+          val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
+          submissionService
+            .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
+            .flatMap(decision => pollDecisionResult(decision, pollInterval))
       }
     }
+
+  private def pollDecisionResult(decision: PollDecision, pollInterval: String)(implicit
+    request: DataRequest[_]
+  ): Future[Result] =
+    decision match {
+      case Skip           => sendingPage(pollInterval)
+      case Polled(status) => polledStatusResult(status, pollInterval)
+    }
+
+  private def polledStatusResult(status: String, pollInterval: String)(implicit
+    request: DataRequest[_]
+  ): Future[Result] =
+    status match {
+      case "STARTED"                            =>
+        Future.successful(
+          Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
+        )
+      case "PENDING" | "ACCEPTED"               => sendingPage(pollInterval)
+      case "TIMED_OUT"                          => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
+      case "SUBMITTED"                          =>
+        submissionService
+          .sendSuccessEmail(request.userAnswers)
+          .recover { case ex =>
+            logger.warn("[polledStatusResult] Sending success email failed, continuing", ex)
+            ()
+          }
+          .map(_ => Redirect(routes.SubmissionSuccessController.onPageLoad))
+      case "SUBMITTED_NO_RECEIPT"               => Future.successful(Redirect(routes.SubmittedNoReceiptController.onPageLoad))
+      case "DEPARTMENTAL_ERROR" | "FATAL_ERROR" =>
+        Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
+      case _                                    => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+    }
+
+  private def sendingPage(pollInterval: String)(implicit request: DataRequest[_]): Future[Result] =
+    Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
 }
