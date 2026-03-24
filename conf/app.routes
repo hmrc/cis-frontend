@@ -48,7 +48,7 @@ POST       /monthly-return/nil-month-return-inactive                    controll
 
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 
-GET        /monthly-return/submission-awaiting                          controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
+GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad

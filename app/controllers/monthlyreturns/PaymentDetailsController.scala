@@ -23,6 +23,7 @@ import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
+import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -45,12 +46,14 @@ class PaymentDetailsController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  val form = formProvider()
+  val form: Form[BigDecimal] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case None =>
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
         case Some(subcontractor) =>
           val preparedForm = subcontractor.totalPaymentsMade match {
             case None        => form
@@ -64,7 +67,9 @@ class PaymentDetailsController @Inject() (
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
         case Some(subcontractor) =>
           form
             .bindFromRequest()
@@ -74,7 +79,9 @@ class PaymentDetailsController @Inject() (
               value =>
                 for {
                   updatedAnswers <-
-                    Future.fromTry(request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), value))
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index), value)
+                    )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
                   case Some("changeAnswers") =>
