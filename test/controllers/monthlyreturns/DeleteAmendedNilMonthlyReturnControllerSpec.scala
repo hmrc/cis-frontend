@@ -35,6 +35,7 @@ import views.html.monthlyreturns.DeleteAmendedNilMonthlyReturnView
 
 import scala.concurrent.Future
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
 
@@ -43,12 +44,12 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
   val formProvider        = new DeleteAmendedNilMonthlyReturnFormProvider()
   val form: Form[Boolean] = formProvider()
 
-  val periodEndDate: LocalDate = LocalDate.of(2026, 3, 31)
-  val periodEnd                = "March 2026"
+  private val confirmPaymentsDate: LocalDate = LocalDate.of(2026, 3, 1)
+  private val monthYear: String              = confirmPaymentsDate.format(DateTimeFormatter.ofPattern("MMMM uuuu"))
 
   val baseUa: UserAnswers =
     emptyUserAnswers
-      .set(DateConfirmPaymentsPage, periodEndDate)
+      .set(DateConfirmPaymentsPage, confirmPaymentsDate)
       .success
       .value
 
@@ -69,7 +70,7 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
         val view = application.injector.instanceOf[DeleteAmendedNilMonthlyReturnView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, periodEnd, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, monthYear, NormalMode)(request, messages(application)).toString
       }
     }
 
@@ -88,7 +89,7 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), periodEnd, NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(true), monthYear, NormalMode)(
           request,
           messages(application)
         ).toString
@@ -137,7 +138,7 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, periodEnd, NormalMode)(
+        contentAsString(result) mustEqual view(boundForm, monthYear, NormalMode)(
           request,
           messages(application)
         ).toString
@@ -171,6 +172,44 @@ class DeleteAmendedNilMonthlyReturnControllerSpec extends SpecBase with MockitoS
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET when dateConfirmPayments is missing" in {
+      val userAnswers = emptyUserAnswers
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad(NormalMode).url
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST when dateConfirmPayments is missing" in {
+      val userAnswers = emptyUserAnswers
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onPageLoad(NormalMode).url
+          )
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }

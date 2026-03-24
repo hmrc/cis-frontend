@@ -21,9 +21,12 @@ import forms.monthlyreturns.DeleteAmendedNilMonthlyReturnFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import play.api.Application
+import play.api.data.Form
 import play.api.i18n.*
 import play.api.mvc.Request
 import play.api.test.FakeRequest
+import play.twirl.api.HtmlFormat
 import views.html.monthlyreturns.DeleteAmendedNilMonthlyReturnView
 
 class DeleteAmendedNilMonthlyReturnViewSpec extends SpecBase {
@@ -33,10 +36,10 @@ class DeleteAmendedNilMonthlyReturnViewSpec extends SpecBase {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title must include(messages("monthlyreturns.deleteAmendedNilMonthlyReturn.title", periodEnd))
+      doc.title must include(messages("monthlyreturns.deleteAmendedNilMonthlyReturn.title", monthYear))
 
       doc.select("h1").text must include(
-        messages("monthlyreturns.deleteAmendedNilMonthlyReturn.heading", periodEnd)
+        messages("monthlyreturns.deleteAmendedNilMonthlyReturn.heading", monthYear)
       )
 
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
@@ -54,7 +57,7 @@ class DeleteAmendedNilMonthlyReturnViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
       val filledForm = form.fill(true)
-      val filledHtml = view(filledForm, periodEnd, NormalMode)
+      val filledHtml = view(filledForm, monthYear, NormalMode)
       val doc        = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe true
@@ -63,7 +66,7 @@ class DeleteAmendedNilMonthlyReturnViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'false'" in new Setup {
       val filledForm = form.fill(false)
-      val filledHtml = view(filledForm, periodEnd, NormalMode)
+      val filledHtml = view(filledForm, monthYear, NormalMode)
       val doc        = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe false
@@ -72,21 +75,18 @@ class DeleteAmendedNilMonthlyReturnViewSpec extends SpecBase {
   }
 
   trait Setup {
-    val app  = applicationBuilder().build()
-    val view = app.injector.instanceOf[DeleteAmendedNilMonthlyReturnView]
-
-    val formProvider = new DeleteAmendedNilMonthlyReturnFormProvider()
-    val form         = formProvider()
-
-    val periodEnd = "March 2026"
-
-    implicit val request: Request[_] = FakeRequest()
+    val app: Application                        = applicationBuilder().build()
+    val view: DeleteAmendedNilMonthlyReturnView = app.injector.instanceOf[DeleteAmendedNilMonthlyReturnView]
+    val formProvider                            = new DeleteAmendedNilMonthlyReturnFormProvider()
+    val form: Form[Boolean]                     = formProvider()
+    implicit val request: Request[_]            = FakeRequest()
 
     implicit val messages: Messages = MessagesImpl(
       Lang.defaultLang,
       app.injector.instanceOf[MessagesApi]
     )
 
-    val html = view(form, periodEnd, NormalMode)
+    val monthYear                   = "March 2026"
+    val html: HtmlFormat.Appendable = view(form, monthYear, NormalMode)
   }
 }

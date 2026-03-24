@@ -22,8 +22,8 @@ import models.Mode
 import models.requests.DataRequest
 import navigation.Navigator
 import pages.monthlyreturns.{DateConfirmPaymentsPage, DeleteAmendedNilMonthlyReturnPage}
+import play.api.Logging
 import play.api.data.Form
-import play.api.i18n.Lang.logger
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -46,44 +46,53 @@ class DeleteAmendedNilMonthlyReturnController @Inject() (
   view: DeleteAmendedNilMonthlyReturnView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form: Form[Boolean] = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-
-    val preparedForm = request.userAnswers.get(DeleteAmendedNilMonthlyReturnPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
+    getPeriodEnd match {
+      case Some(monthYear) =>
+        val preparedForm = request.userAnswers.get(DeleteAmendedNilMonthlyReturnPage) match {
+          case None        => form
+          case Some(value) => form.fill(value)
+        }
+        Ok(view(preparedForm, monthYear, mode))
+      case None            =>
+        logger.error("[DeleteAmendedNilMonthlyReturn] dateConfirmPayments missing")
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
     }
-    val taxPeriodEnd = getPeriodEnd
-    Ok(view(preparedForm, taxPeriodEnd, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      val taxPeriodEnd = getPeriodEnd
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, taxPeriodEnd, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteAmendedNilMonthlyReturnPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DeleteAmendedNilMonthlyReturnPage, mode, updatedAnswers))
-        )
+      getPeriodEnd match {
+        case Some(monthYear) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, mode))),
+              value =>
+                for {
+                  updatedAnswers <- Future.fromTry(request.userAnswers.set(DeleteAmendedNilMonthlyReturnPage, value))
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield Redirect(navigator.nextPage(DeleteAmendedNilMonthlyReturnPage, mode, updatedAnswers))
+            )
+        case None            =>
+          logger.error("[DeleteAmendedNilMonthlyReturn] dateConfirmPayments missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
   }
 
-  private def getPeriodEnd(implicit request: DataRequest[_]): String = {
-    val dmyFmt = DateTimeFormatter.ofPattern("MMMM uuuu")
+  private def getPeriodEnd(implicit request: DataRequest[_]): Option[String] = {
+    val messages = messagesApi.preferred(request)
+    val fmt      = DateTimeFormatter
+      .ofPattern("MMMM uuuu")
+      .withLocale(messages.lang.locale)
+
     request.userAnswers
       .get(DateConfirmPaymentsPage)
-      .map(_.format(dmyFmt))
-      .getOrElse {
-        logger.error("[DeleteAmendedNilMonthlyReturn] taxPeriodEnd missing")
-        throw new IllegalStateException("taxPeriodEnd missing")
-      }
+      .map(_.format(fmt))
   }
 }

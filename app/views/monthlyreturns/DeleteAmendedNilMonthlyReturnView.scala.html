@@ -24,9 +24,9 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], taxPeriodEnd: String, mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], monthYear: String, mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("monthlyreturns.deleteAmendedNilMonthlyReturn.title", taxPeriodEnd))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.deleteAmendedNilMonthlyReturn.title", monthYear))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.DeleteAmendedNilMonthlyReturnController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
@@ -37,7 +37,7 @@
         @govukRadios(
             RadiosViewModel.yesNo(
                 field = form("value"),
-                legend = LegendViewModel(messages("monthlyreturns.deleteAmendedNilMonthlyReturn.heading", taxPeriodEnd)).asPageHeading(LegendSize.Large)
+                legend = LegendViewModel(messages("monthlyreturns.deleteAmendedNilMonthlyReturn.heading", monthYear)).asPageHeading(LegendSize.Large)
             )
         )
 
