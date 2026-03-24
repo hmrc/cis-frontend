@@ -2,7 +2,7 @@
 
 echo "Running scalafmt check..."
 
-git diff --quiet
+git diff --quiet && git diff --cached --quiet
 HAS_CHANGES=$?  # 0 = no changes, 1 = changes
 
 if [ $HAS_CHANGES -ne 0 ]; then
