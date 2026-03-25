@@ -62,12 +62,12 @@ class SubmissionSendingController @Inject() (
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
       } yield SubmissionStatus.fromString(submitted.status) match {
         // TODO - recoverable error for resubmit: case "STARTED" will be updated to a new page MR-05-b controller when ready
-        case Started            =>
+        case Started                             =>
           logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        case Pending | Accepted =>
+        case Pending | SubmissionStatus.Accepted =>
           Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-        case _                  => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+        case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
       }).recover { case ex =>
         logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
         Redirect(controllers.routes.SystemErrorController.onPageLoad())
@@ -101,29 +101,29 @@ class SubmissionSendingController @Inject() (
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
     SubmissionStatus.fromString(status) match {
-      case Pending | Accepted => sendingPage(pollInterval)
-      case TimedOut           => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
-      case Submitted          =>
+      case Pending | SubmissionStatus.Accepted => sendingPage(pollInterval)
+      case TimedOut                            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
+      case Submitted                           =>
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
           routes.SubmissionSuccessController.onPageLoad
         )
-      case SubmittedNoReceipt =>
+      case SubmittedNoReceipt                  =>
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
           routes.SubmittedNoReceiptController.onPageLoad
         )
-      case DepartmentalError  =>
+      case DepartmentalError                   =>
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
           routes.SubmissionUnsuccessfulController.onPageLoad
         )
-      case FatalError         =>
+      case SubmissionStatus.FatalError         =>
         Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
-      case _                  => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      case _                                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
   private def sendingPage(pollInterval: String)(implicit request: DataRequest[_]): Future[Result] =
