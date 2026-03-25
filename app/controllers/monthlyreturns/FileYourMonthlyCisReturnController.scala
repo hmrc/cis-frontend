@@ -16,8 +16,8 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.{DataRetrievalAction, IdentifierAction}
-import models.{ReturnType, UserAnswers}
+import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import models.{NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
 import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
@@ -29,8 +29,10 @@ import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
 import views.html.monthlyreturns.FileYourNilReturnView
+import utils.UserAnswerUtils.*
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,6 +45,7 @@ class FileYourMonthlyCisReturnController @Inject() (
   nilReturnView: FileYourNilReturnView,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
   sessionRepository: SessionRepository,
   monthlyReturnService: MonthlyReturnService
 )(implicit ec: ExecutionContext)
@@ -58,6 +61,15 @@ class FileYourMonthlyCisReturnController @Inject() (
   def startNilReturn(): Action[AnyContent] =
     (identify andThen getData).async { implicit request =>
       startReturn(ReturnType.MonthlyNilReturn)(nilReturnView())
+    }
+
+  def onSubmit(returnType: ReturnType): Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
+      (for {
+        cleanAnswers <- request.userAnswers.clearMonthlyReturnJourney.toFuture
+        _            <- sessionRepository.set(cleanAnswers)
+      } yield Redirect(routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(returnType))))
+        .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
   private def startReturn(

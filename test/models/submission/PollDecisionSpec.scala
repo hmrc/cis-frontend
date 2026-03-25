@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,23 @@
 
 package models.submission
 
-import play.api.libs.json.{Json, OFormat}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.must.Matchers
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  lastMessageDate: Option[String]
-)
+class PollDecisionSpec extends AnyWordSpec with Matchers {
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+  "PollDecision" should {
+
+    "support Skip" in {
+      val decision: PollDecision = PollDecision.Skip
+
+      decision mustBe PollDecision.Skip
+    }
+
+    "support Polled with a status" in {
+      val decision: PollDecision = PollDecision.Polled("PENDING")
+
+      decision mustBe PollDecision.Polled("PENDING")
+    }
+  }
 }

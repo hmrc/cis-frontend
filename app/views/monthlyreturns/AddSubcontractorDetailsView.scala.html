@@ -43,7 +43,7 @@
         
         @fieldSet(
             legend = "monthlyreturns.addSubcontractorDetails.heading",
-            describedBy = None
+            form = Some(form)
         ) {
 
             @paragraph("monthlyreturns.addSubcontractorDetails.alreadyAdded")
@@ -57,7 +57,7 @@
                     field  = form("value"),
                     items  = AddSubcontractorDetailsController.radioItems(subcontractorsWithoutDetails),
                     legend = Legend()
-                )
+                ).copy(fieldset = None)
             )
         }
 
