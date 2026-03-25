@@ -15,17 +15,33 @@
  *@
 
 @import utils.Utils.emptyString
+@import play.api.data.Form
 
 @this(govukFieldset: GovukFieldset)
 
-@(legend: String, asHeading: Boolean = true, describedBy: Option[String], additionalClasses: Option[String] = None)(content: Html)(implicit messages: Messages)
+@(legend: String,
+  asHeading: Boolean = true,
+  describedBy: Option[String] = None,
+  additionalClasses: Option[String] = None,
+  form: Option[Form[_]] = None,
+  fieldName: String = "value",
+  hasHint: Boolean = false
+)(content: Html)(implicit messages: Messages)
 
-@govukFieldset(Fieldset(
-    legend = Some(Legend(
-        content = Text(messages(legend)),
-        classes = s"${if(asHeading) "govuk-fieldset__legend--l" else emptyString}${additionalClasses.map(" " + _).getOrElse(emptyString)}",
-        isPageHeading = asHeading
-    )),
-    describedBy = describedBy,
-    html = content
-))
+@defining(form.map { f =>
+    val hasErrors = f.hasErrors || f.hasGlobalErrors
+    if (hasErrors && hasHint) Some(s"$fieldName-error $fieldName-hint")
+    else if (hasErrors) Some(s"$fieldName-error")
+    else if (hasHint) Some(s"$fieldName-hint")
+    else None
+}.getOrElse(describedBy)) { effectiveDescribedBy =>
+    @govukFieldset(Fieldset(
+        legend = Some(Legend(
+            content = Text(messages(legend)),
+            classes = s"${if(asHeading) "govuk-fieldset__legend--l" else emptyString}${additionalClasses.map(" " + _).getOrElse(emptyString)}",
+            isPageHeading = asHeading
+        )),
+        describedBy = effectiveDescribedBy,
+        html = content
+    ))
+}

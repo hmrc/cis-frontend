@@ -15,6 +15,7 @@
  *@
 
 @import views.html.components._
+@import utils.Utils.{firstRadioId, withIds}
 
 @this(
     layout: templates.Layout,
@@ -22,8 +23,7 @@
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
     govukButton: GovukButton,
-    fieldSet: FieldSet,
-    paragraph: Paragraph
+    fieldSet: FieldSet
 )
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
@@ -33,33 +33,32 @@
     @formHelper(action = controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> firstRadioId)))
         }
 
-        @fieldSet("monthlyreturns.confirmationByEmail.heading", asHeading = true, describedBy = None, additionalClasses = None) {
+        @fieldSet("monthlyreturns.confirmationByEmail.heading", form = Some(form), hasHint = true) {
 
             @govukRadios(
                 RadiosViewModel(
                     field = form("value"),
-                    items = Seq(
+                    items = withIds(Seq(
                         RadioItem(
                             content = Text(messages("monthlyreturns.confirmationByEmail.yes")),
-                                value = Some("true"),
-                                id = Some("value_0")
-                            ),
-                            RadioItem(
-                                content = Text(messages("monthlyreturns.confirmationByEmail.no")),
-                                value = Some("false"),
-                                id = Some("value_1")
-                            )
+                            value = Some("true")
                         ),
-                        legend = Legend()
-                    ).withHint(Hint(content = Text(messages("monthlyreturns.confirmationByEmail.p"))))
-                     .withCssClass("govuk-radios--inline")
-                )
+                        RadioItem(
+                            content = Text(messages("monthlyreturns.confirmationByEmail.no")),
+                            value = Some("false")
+                        )
+                    )),
+                    legend = Legend()
+                ).copy(fieldset = None)
+                 .withHint(Hint(content = Text(messages("monthlyreturns.confirmationByEmail.p"))))
+                 .inline()
+            )
 
             @govukButton(
-            ButtonViewModel(messages("site.continue"))
+                ButtonViewModel(messages("site.continue"))
             )
         }
     }

@@ -15,6 +15,7 @@
  *@
 
 @import views.html.components._
+@import utils.Utils.{firstRadioId, withIds}
 
 @this(
     layout: templates.Layout,
@@ -36,10 +37,10 @@
     @formHelper(action = controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))
         }
 
-        @fieldSet("monthlyreturns.submitInactivityRequest.heading", asHeading = true, describedBy = None, additionalClasses = Some("govuk-!-margin-bottom-6")) {
+        @fieldSet("monthlyreturns.submitInactivityRequest.heading", additionalClasses = Some("govuk-!-margin-bottom-6"), form = Some(form)) {
 
             @paragraph(messages("monthlyreturns.submitInactivityRequest.p1"))
 
@@ -52,20 +53,19 @@
                 @govukRadios(
                     RadiosViewModel(
                         field = form("value"),
-                        items = Seq(
+                        items = withIds(Seq(
                             RadioItem(
                                 content = Text(messages("monthlyreturns.submitInactivityRequest.yes")),
-                                value = Some("true"),
-                                id = Some("value_0")
+                                value = Some("true")
                             ),
                             RadioItem(
                                 content = Text(messages("monthlyreturns.submitInactivityRequest.no")),
-                                value = Some("false"),
-                                id = Some("value_1")
+                                value = Some("false")
                             )
-                        ),
+                        )),
                         legend = Legend()
-                    ).withCssClass("govuk-radios--inline")
+                    ).copy(fieldset = None)
+                     .inline()
                 )
 
             @govukButton(
