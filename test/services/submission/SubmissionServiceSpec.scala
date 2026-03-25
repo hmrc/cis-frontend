@@ -33,7 +33,7 @@ import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.AnyContent
 import play.api.test.FakeRequest
 import repositories.SessionRepository
@@ -611,7 +611,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -686,7 +686,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None, None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
@@ -715,7 +715,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = uaBase
 
       when(connector.getSubmissionStatus(any, any)(any))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None)))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).failed.futureValue
 
@@ -799,11 +799,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
               "PENDING",
               Some("newPollUrl"),
               Some(30),
+              Some(
+                JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))
+              ),
+              Some("2342345asdfasdgf"),
               Some("2025-01-01T00:00:30Z")
             )
           )
         )
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
@@ -860,7 +863,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
@@ -918,7 +921,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
@@ -969,7 +972,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
 
@@ -1022,7 +1025,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
 
