@@ -16,12 +16,14 @@
 
 package models.submission
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{JsValue, Json, OFormat}
 
 case class ChrisPollResponse(
   status: String,
   pollUrl: Option[String],
   intervalSeconds: Option[Int],
+  error: Option[JsValue],
+  irMarkReceived: Option[String],
   lastMessageDate: Option[String]
 )
 
