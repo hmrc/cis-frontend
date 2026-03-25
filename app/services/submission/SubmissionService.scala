@@ -139,7 +139,7 @@ class SubmissionService @Inject() (
 
   def checkAndUpdateSubmissionStatusIfAllowed(
     userAnswers: UserAnswers
-  )(using HeaderCarrier): Future[PollDecision] =
+  )(using HeaderCarrier, DataRequest[AnyContent]): Future[PollDecision] =
     userAnswers.get(LastMessageDatePage) match {
       case Some(receivedAt) =>
         val pollInterval      = getPollInterval(userAnswers)
@@ -197,29 +197,31 @@ class SubmissionService @Inject() (
         } else {
           for {
             cisId             <- userAnswers.get(CisIdPage).toFuture
-          pollUrl           <- userAnswers.get(PollUrlPage).toFuture
-          submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
-          correlationId     <- userAnswers.get(CorrelationIdPage).toFuture
-          result            <- cisConnector.getSubmissionStatus(pollUrl, correlationId)
-          _                 <- updateSubmission(
-                                 cisId,
-                                 userAnswers,
-                                 submissionDetails.irMark,
-                                 result.status,
-                                 Some(dateFormatter.format(submissionDetails.submittedAt)),
-                                 None
-                               )
-          newStatus          = result.status
-          timedOut           = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")finalStatus    = if (timedOut) "TIMED_OUT" else newStatus
-          newDetails         = submissionDetails.copy(status = newStatus)
-          ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
-          ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
-          ua3               <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
-          ua4               <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
-          ua5           <- result.lastMessageDate match {
-                               case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
-                               case None     => Future.successful(ua4)
-                             }_                 <- sessionRepository.set(ua5)
+            pollUrl           <- userAnswers.get(PollUrlPage).toFuture
+            submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
+            correlationId     <- userAnswers.get(CorrelationIdPage).toFuture
+            result            <- cisConnector.getSubmissionStatus(pollUrl, correlationId)
+            _                 <- updateSubmission(
+                                   cisId,
+                                   userAnswers,
+                                   submissionDetails.irMark,
+                                   result.status,
+                                   Some(dateFormatter.format(submissionDetails.submittedAt)),
+                                   None
+                                 )
+            newStatus          = result.status
+            timedOut           = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
+            finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
+            newDetails         = submissionDetails.copy(status = newStatus)
+            ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
+            ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
+            ua3               <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
+            ua4               <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
+            ua5               <- result.lastMessageDate match {
+                                   case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
+                                   case None     => Future.successful(ua4)
+                                 }
+            _                 <- sessionRepository.set(ua5)
           } yield finalStatus
         }
     }

@@ -205,7 +205,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
       verify(mockService, never()).getPollInterval(any[UserAnswers])
-      verify(mockService, never()).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never()).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+        any[HeaderCarrier],
+        any[DataRequest[AnyContent]]
+      )
     }
 
     "returns OK with Refresh header when decision is Skip" in {
@@ -223,7 +226,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier]))
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+          any[HeaderCarrier],
+          any[DataRequest[AnyContent]]
+        )
+      )
         .thenReturn(Future.successful(PollDecision.Skip))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
@@ -234,7 +242,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+        any[HeaderCarrier],
+        any[DataRequest[AnyContent]]
+      )
     }
 
     "returns OK with Refresh header when decision is Polled(PENDING)" in {
@@ -323,11 +334,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
@@ -360,11 +371,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
@@ -382,10 +393,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
-      verify(mockService).sendSuccessEmail(any[UserAnswers])(using
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[DataRequest[AnyContent]]
+      )
+      verify(mockService).sendSuccessEmail(any[UserAnswers])(using
+        any[HeaderCarrier]
       )
     }
 
@@ -401,11 +414,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
@@ -443,11 +456,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
@@ -480,11 +493,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
@@ -517,11 +530,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
@@ -554,11 +567,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
-      when(
-        mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
           any[DataRequest[AnyContent]]
         )
