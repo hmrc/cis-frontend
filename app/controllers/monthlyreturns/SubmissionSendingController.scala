@@ -136,8 +136,7 @@ class SubmissionSendingController @Inject() (
     submissionService
       .sendSuccessEmail(userAnswers, langCode)
       .recover { case ex =>
-        logger.warn("[onPollAndRedirect] Sending success email failed, continuing", ex)
-        ()
+        logger.warn("[SubmissionSendingController] Sending success email failed, continuing", ex)()
       }
       .map(_ => Redirect(redirect))
 }
