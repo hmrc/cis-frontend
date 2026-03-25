@@ -689,6 +689,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
 
       val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
 
@@ -801,7 +803,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             )
           )
         )
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
@@ -1072,19 +1074,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
-      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"), None)))
-      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
-        .thenReturn(Future.unit)
-
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "FATAL_ERROR"
-      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
-      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
+      result mustBe "TIMED_OUT"
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
