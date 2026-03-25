@@ -20,7 +20,8 @@ import controllers.actions.*
 import models.UserAnswers
 import models.requests.DataRequest
 import models.submission.PollDecision.{Polled, Skip}
-import models.submission.{PollDecision, SubmissionDetails}
+import models.submission.SubmissionStatus.*
+import models.submission.{PollDecision, SubmissionDetails, SubmissionStatus}
 import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -59,16 +60,16 @@ class SubmissionSendingController @Inject() (
         submitted <-
           submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers, request.isAgent)
         _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
-      } yield submitted.status match {
+      } yield SubmissionStatus.fromString(submitted.status) match {
         // TODO - recoverable error for resubmit: case "STARTED" will be updated to a new page MR-05-b controller when ready
-        case "STARTED"              =>
-          logger.info(s"[Submission Sending] submitted.status=${submitted.status}")
+        case Started            =>
+          logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        case "PENDING" | "ACCEPTED" =>
+        case Pending | Accepted =>
           Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-        case _                      => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+        case _                  => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
       }).recover { case ex =>
-        logger.error("[Submission Sending] Create/Submit/Update flow failed", ex)
+        logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
         Redirect(controllers.routes.SystemErrorController.onPageLoad())
       }
     }
@@ -99,30 +100,30 @@ class SubmissionSendingController @Inject() (
     request: DataRequest[_]
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
-    status match {
-      case "PENDING" | "ACCEPTED" => sendingPage(pollInterval)
-      case "TIMED_OUT"            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
-      case "SUBMITTED"            =>
+    SubmissionStatus.fromString(status) match {
+      case Pending | Accepted => sendingPage(pollInterval)
+      case TimedOut           => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
+      case Submitted          =>
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
           routes.SubmissionSuccessController.onPageLoad
         )
-      case "SUBMITTED_NO_RECEIPT" =>
+      case SubmittedNoReceipt =>
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
           routes.SubmittedNoReceiptController.onPageLoad
         )
-      case "DEPARTMENTAL_ERROR"   =>
+      case DepartmentalError  =>
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
           routes.SubmissionUnsuccessfulController.onPageLoad
         )
-      case "FATAL_ERROR"          =>
+      case FatalError         =>
         Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
-      case _                      => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      case _                  => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
   private def sendingPage(pollInterval: String)(implicit request: DataRequest[_]): Future[Result] =
