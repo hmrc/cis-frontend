@@ -15,6 +15,7 @@
  *@
 
 @import views.html.components._
+@import utils.Utils.{firstRadioId, withIds}
 
 @this(
     layout: templates.Layout,
@@ -35,10 +36,10 @@
         @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
             @if(form.errors.nonEmpty) {
-                @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+                @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))
             }
 
-            @fieldSet("verifySubcontractors.heading", asHeading = true, describedBy = None) {
+            @fieldSet("verifySubcontractors.heading", form = Some(form)) {
 
             @govukWarningText(
                 WarningText(
@@ -52,22 +53,20 @@
             @govukRadios(
                 RadiosViewModel(
                     field = form("value"),
-                    items = Seq(
+                    items = withIds(Seq(
                         RadioItem(
                             content = Text(messages("verifySubcontractors.yes")),
                             value = Some("true"),
-                            id = Some("value_0"),
                             hint = Some(Hint(content = Text(messages("verifySubcontractors.yes.hint"))))
                         ),
                         RadioItem(
                             content = Text(messages("verifySubcontractors.no")),
                             value = Some("false"),
-                            id = Some("value_1"),
                             hint = Some(Hint(content = Text(messages("verifySubcontractors.no.hint"))))
                         )
-                    ),
+                    )),
                     legend = Legend()
-                )
+                ).copy(fieldset = None)
             )
 
             @govukButton(

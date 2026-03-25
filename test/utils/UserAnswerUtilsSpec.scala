@@ -17,9 +17,9 @@
 package utils
 
 import base.SpecBase
-import models.UserAnswers
-import models.monthlyreturns.SelectedSubcontractor
-import pages.monthlyreturns.SelectedSubcontractorPage
+import models.{ReturnType, UserAnswers}
+import models.monthlyreturns.{Declaration, InactivityRequest, SelectedSubcontractor}
+import pages.monthlyreturns.*
 import utils.UserAnswerUtils.*
 
 class UserAnswerUtilsSpec extends SpecBase {
@@ -52,6 +52,85 @@ class UserAnswerUtilsSpec extends SpecBase {
         .setOrException(SelectedSubcontractorPage(5), incompleteSub(5))
 
       ua.firstIncompleteSubcontractorIndex mustBe 2
+    }
+  }
+
+  "UserAnswerUtils.clearMonthlyReturnJourney" - {
+
+    "removes all monthly return journey pages from UserAnswers" in {
+      val ua = UserAnswers("id")
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+        .set(ConfirmationByEmailPage, true)
+        .get
+        .set(EnterYourEmailAddressPage, "test@example.com")
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+        .set(SelectedSubcontractorPage(1), completeSub(1))
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+        .set(SubcontractorDetailsAddedPage, true)
+        .get
+        .set(PaymentDetailsConfirmationPage, true)
+        .get
+        .set(EmploymentStatusDeclarationPage, true)
+        .get
+        .set(VerifiedStatusDeclarationPage, true)
+        .get
+        .set(SubmitInactivityRequestPage, true)
+        .get
+        .set(ConfirmEmailAddressPage, "test@example.com")
+        .get
+
+      val result = ua.clearMonthlyReturnJourney
+
+      result.isSuccess mustBe true
+      val cleared = result.get
+
+      cleared.get(DateConfirmPaymentsPage) mustBe None
+      cleared.get(InactivityRequestPage) mustBe None
+      cleared.get(ConfirmationByEmailPage) mustBe None
+      cleared.get(EnterYourEmailAddressPage) mustBe None
+      cleared.get(DeclarationPage) mustBe None
+      cleared.get(SelectedSubcontractorPage(1)) mustBe None
+      cleared.get(VerifySubcontractorsPage) mustBe None
+      cleared.get(SubcontractorDetailsAddedPage) mustBe None
+      cleared.get(PaymentDetailsConfirmationPage) mustBe None
+      cleared.get(EmploymentStatusDeclarationPage) mustBe None
+      cleared.get(VerifiedStatusDeclarationPage) mustBe None
+      cleared.get(SubmitInactivityRequestPage) mustBe None
+      cleared.get(ConfirmEmailAddressPage) mustBe None
+    }
+
+    "retains non-journey pages such as CisIdPage and ReturnTypePage" in {
+      val ua = UserAnswers("id")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+        .get
+        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      val result = ua.clearMonthlyReturnJourney
+
+      result.isSuccess mustBe true
+      val cleared = result.get
+
+      cleared.get(CisIdPage) mustBe Some("CIS-123")
+      cleared.get(ReturnTypePage) mustBe Some(ReturnType.MonthlyStandardReturn)
+      cleared.get(DateConfirmPaymentsPage) mustBe None
+      cleared.get(VerifySubcontractorsPage) mustBe None
+    }
+
+    "succeeds on empty UserAnswers" in {
+      val result = UserAnswers("id").clearMonthlyReturnJourney
+      result.isSuccess mustBe true
     }
   }
 
