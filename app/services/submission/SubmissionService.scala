@@ -103,6 +103,7 @@ class SubmissionService @Inject() (
     chrisResp.hmrcMarkGenerated,
     chrisResp.status,
     chrisResp.gatewayTimestamp,
+    None,
     chrisResp.error
   )
 
@@ -112,6 +113,7 @@ class SubmissionService @Inject() (
     hmrcMarkGenerated: String,
     status: String,
     gatewayTimestamp: Option[String],
+    irMarkRecieved: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
@@ -122,12 +124,14 @@ class SubmissionService @Inject() (
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
       hmrcMarkGenerated = Some(hmrcMarkGenerated),
+      hmrcMarkGgis = irMarkRecieved,
       emailRecipient = email,
       agentId = req.agentReference,
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
       acceptedTime = gatewayTimestamp,
+      // TODO: submissionRequestDate = ???,
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
       govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
@@ -211,7 +215,8 @@ class SubmissionService @Inject() (
                                    submissionDetails.irMark,
                                    result.status,
                                    Some(dateFormatter.format(submissionDetails.submittedAt)),
-                                   None
+                                   result.irMarkReceived,
+                                   result.error
                                  )
             newStatus          = result.status
             timedOut           = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
