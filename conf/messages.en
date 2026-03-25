@@ -520,3 +520,12 @@ monthlyreturns.submissionUnsuccessfulResubmit.p4 = You will need to provide:
 monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference number, also known as an Employer Reference Number (ERN)
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
+
+history.submittedReturnsChooseTaxYear.title = What tax year do you want to view?
+history.submittedReturnsChooseTaxYear.heading = What tax year do you want to view?
+history.submittedReturnsChooseTaxYear.caption = Submitted returns
+history.submittedReturnsChooseTaxYear.option1 = Option 1
+history.submittedReturnsChooseTaxYear.option2 = Option 2
+history.submittedReturnsChooseTaxYear.checkYourAnswersLabel = submittedReturnsChooseTaxYear
+history.submittedReturnsChooseTaxYear.error.required = Select submittedReturnsChooseTaxYear
+history.submittedReturnsChooseTaxYear.change.hidden = SubmittedReturnsChooseTaxYear

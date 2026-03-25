@@ -168,3 +168,8 @@ POST       /monthly-return/change-verified-status-declaration           controll
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
+
+GET        /history/view-tax-year-submission-history                    controllers.history.SubmittedReturnsChooseTaxYearController.onPageLoad(mode: Mode = NormalMode)
+POST       /history/view-tax-year-submission-history                    controllers.history.SubmittedReturnsChooseTaxYearController.onSubmit(mode: Mode = NormalMode)
+GET        /history/change-view-tax-year-submission-history             controllers.history.SubmittedReturnsChooseTaxYearController.onPageLoad(mode: Mode = CheckMode)
+POST       /history/change-view-tax-year-submission-history             controllers.history.SubmittedReturnsChooseTaxYearController.onSubmit(mode: Mode = CheckMode)

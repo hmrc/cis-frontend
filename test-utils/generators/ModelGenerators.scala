@@ -16,10 +16,16 @@
 
 package generators
 
+import models.history.SubmittedReturnsChooseTaxYear
 import models.monthlyreturns.{Declaration, InactivityRequest}
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
+
+  implicit lazy val arbitrarySubmittedReturnsChooseTaxYear: Arbitrary[SubmittedReturnsChooseTaxYear] =
+    Arbitrary {
+      Gen.oneOf(SubmittedReturnsChooseTaxYear.values.toSeq)
+    }
 
   implicit lazy val arbitraryVerifySubcontractors: Arbitrary[Boolean] =
     Arbitrary {
