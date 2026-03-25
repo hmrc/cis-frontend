@@ -17,7 +17,6 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import models.NormalMode
 import models.ReturnType.MonthlyStandardReturn
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
@@ -36,14 +35,14 @@ class FileYourMonthlyCisReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourMonthlyCisReturn.p2"))
 
       val expectedUrl: String =
-        controllers.monthlyreturns.routes.DateConfirmPaymentsController
-          .onPageLoad(NormalMode, Some(MonthlyStandardReturn))
+        controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+          .onSubmit(MonthlyStandardReturn)
           .url
 
       val button: Element = doc.getElementsByClass("govuk-button").first()
 
       button.text must include(messages("site.continue"))
-      button.attr("href") mustBe expectedUrl
+      doc.select("form").attr("action") mustBe expectedUrl
     }
   }
 
