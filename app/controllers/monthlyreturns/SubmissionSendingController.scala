@@ -59,7 +59,7 @@ class SubmissionSendingController @Inject() (
         (created, updatedAnswers) <- submissionService.create(request.userAnswers)
         submitted                 <-
           submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
-        _                         <- submissionService.updateSubmission(created.submissionId, updatedAnswers, submitted)
+        _                         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, updatedAnswers, submitted)
       } yield SubmissionStatus.fromString(submitted.status) match {
         case Started                             =>
           logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")

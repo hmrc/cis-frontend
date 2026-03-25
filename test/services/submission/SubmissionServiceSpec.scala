@@ -23,7 +23,7 @@ import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
-import models.requests.SendSuccessEmailRequest
+import models.requests.{DataRequest, SendSuccessEmailRequest}
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -34,6 +34,8 @@ import pages.monthlyreturns.*
 import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.AnyContent
+import play.api.test.FakeRequest
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -45,6 +47,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   implicit val hc: HeaderCarrier    = HeaderCarrier()
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
+  given DataRequest[AnyContent]     = DataRequest(FakeRequest(), userAnswersId, emptyUserAnswers)
 
   private val taxpayer =
     CisTaxpayer(
@@ -466,7 +469,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops"))
       )
 
-      service.updateSubmission("sub-123", ua, chrisResp).futureValue
+      service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
 
       val cap: ArgumentCaptor[UpdateSubmissionRequest] =
         ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
@@ -500,7 +503,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisResp = mkChrisResp()
 
       val ex = intercept[RuntimeException] {
-        service.updateSubmission("sub-123", ua, chrisResp).futureValue
+        service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
       }
       ex.getMessage must include("CIS ID missing")
       verifyNoInteractions(connector)
@@ -527,7 +530,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisResp = mkChrisResp()
 
       val ex = intercept[RuntimeException] {
-        service.updateSubmission("sub-123", ua, chrisResp).futureValue
+        service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
       }
       ex.getMessage must include("Date of return missing for monthly return")
       verifyNoInteractions(connector)
@@ -798,6 +801,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             )
           )
         )
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -805,6 +811,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       result mustBe "PENDING"
       verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -852,6 +859,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -859,6 +868,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       result mustBe "PENDING"
       verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -907,6 +917,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -956,6 +968,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -1007,6 +1021,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -1056,12 +1072,19 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("FATAL_ERROR", Some("someurl"), None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
 
-      result mustBe "TIMED_OUT"
+      result mustBe "FATAL_ERROR"
+      verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
