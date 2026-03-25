@@ -21,6 +21,8 @@ import play.api.test.FakeRequest
 import play.api.i18n.Messages
 import org.jsoup.Jsoup
 import play.twirl.api.Html
+import play.api.data.Form
+import play.api.data.Forms.{nonEmptyText, single}
 
 class FieldSetSpec extends SpecBase with Matchers {
 
@@ -90,6 +92,39 @@ class FieldSetSpec extends SpecBase with Matchers {
       legend.size mustBe 1
     }
 
+    "must set aria-describedby to value-error when form has errors" in new Setup {
+      val formWithErrors = valueForm.bind(Map("value" -> ""))
+      val html           = fieldSet("Test Legend", form = Some(formWithErrors))(testContent)
+      val fieldset       = getFieldsetElement(html)
+      fieldset.attr("aria-describedby") mustBe "value-error"
+    }
+
+    "must set aria-describedby to value-error and value-hint when form has errors and hasHint" in new Setup {
+      val formWithErrors = valueForm.bind(Map("value" -> ""))
+      val html           = fieldSet("Test Legend", form = Some(formWithErrors), hasHint = true)(testContent)
+      val fieldset       = getFieldsetElement(html)
+      fieldset.attr("aria-describedby") mustBe "value-error value-hint"
+    }
+
+    "must set aria-describedby to value-hint when form has no errors and hasHint" in new Setup {
+      val html     = fieldSet("Test Legend", form = Some(valueForm.fill("x")), hasHint = true)(testContent)
+      val fieldset = getFieldsetElement(html)
+      fieldset.attr("aria-describedby") mustBe "value-hint"
+    }
+
+    "must omit aria-describedby when form has no errors and hasHint is false" in new Setup {
+      val html     = fieldSet("Test Legend", form = Some(valueForm.fill("x")))(testContent)
+      val fieldset = getFieldsetElement(html)
+      fieldset.hasAttr("aria-describedby") mustBe false
+    }
+
+    "must use fieldName for aria-describedby ids when fieldName is overridden" in new Setup {
+      val formWithErrors = otherFieldForm.bind(Map("other" -> ""))
+      val html           = fieldSet("Test Legend", form = Some(formWithErrors), fieldName = "other")(testContent)
+      val fieldset       = getFieldsetElement(html)
+      fieldset.attr("aria-describedby") mustBe "other-error"
+    }
+
   }
 
   trait Setup {
@@ -102,6 +137,10 @@ class FieldSetSpec extends SpecBase with Matchers {
     )
 
     val testContent = Html("<p>Test content</p>")
+
+    val valueForm: Form[String] = Form(single("value" -> nonEmptyText))
+
+    val otherFieldForm: Form[String] = Form(single("other" -> nonEmptyText))
 
     def getFieldsetElement(html: play.twirl.api.Html): org.jsoup.select.Elements = {
       val doc = Jsoup.parse(html.body)

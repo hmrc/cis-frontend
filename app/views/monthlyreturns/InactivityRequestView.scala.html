@@ -14,10 +14,8 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.Radios
-@import uk.gov.hmrc.govukfrontend.views.viewmodels.errormessage.ErrorMessage
-@import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 @import models.monthlyreturns.InactivityRequest
+@import utils.Utils.firstRadioId
 
 @this(
     layout: templates.Layout,
@@ -37,13 +35,13 @@
     @formHelper(action = controllers.monthlyreturns.routes.InactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))
         }
 
         @fieldSet(
             legend = "monthlyreturns.inactivityRequest.heading",
             asHeading = true,
-            describedBy = None
+            form = Some(form)
         ) {
             @paragraph("monthlyreturns.inactivityRequest.p1")
             @paragraph("monthlyreturns.inactivityRequest.p2")
@@ -55,15 +53,12 @@
             )
 
             @govukRadios(
-                Radios(
-                    fieldset = None,
-                    name = form("value").name,
-                    items = InactivityRequest.options map (item => item.copy(checked = form("value").value.isDefined && form("value").value == item.value)),
-                    errorMessage = if(form("value").hasErrors) Some(ErrorMessage(
-                        content = Text(messages(form("value").error.get.message, form("value").error.get.args: _*)),
-                        visuallyHiddenText = Some(messages("error.prefix"))
-                    )) else None
-                ).copy(classes = "govuk-radios--inline")
+                RadiosViewModel(
+                    field = form("value"),
+                    items = InactivityRequest.options,
+                    legend = Legend()
+                ).copy(fieldset = None)
+                 .inline()
             )
         }
 
