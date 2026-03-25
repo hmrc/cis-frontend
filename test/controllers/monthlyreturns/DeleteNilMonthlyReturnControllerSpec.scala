@@ -44,7 +44,7 @@ class DeleteNilMonthlyReturnControllerSpec extends SpecBase with MockitoSugar {
   val form: Form[Boolean] = formProvider()
 
   lazy val deleteNilMonthlyReturnRoute: String =
-    controllers.monthlyreturns.routes.DeleteNilMonthlyReturnController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.DeleteNilMonthlyReturnController.onPageLoad().url
 
   private val confirmPaymentsDate: LocalDate = LocalDate.of(2026, 3, 1)
   private val monthYear: String              = confirmPaymentsDate.format(DateTimeFormatter.ofPattern("MMMM uuuu"))
