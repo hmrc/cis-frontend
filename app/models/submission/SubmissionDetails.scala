@@ -19,7 +19,12 @@ package models.submission
 import play.api.libs.json.{Json, OFormat}
 import java.time.Instant
 
-case class SubmissionDetails(id: String, status: String, irMark: String, submittedAt: Instant)
+case class SubmissionDetails(
+  id: String,
+  status: String,
+  irMark: String,
+  submittedAt: Instant
+)
 
 object SubmissionDetails {
   implicit val format: OFormat[SubmissionDetails] = Json.format[SubmissionDetails]

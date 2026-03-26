@@ -57,7 +57,7 @@ class SubmissionSendingController @Inject() (
         created   <- submissionService.create(request.userAnswers)
         submitted <-
           submissionService.submitToChrisAndPersist(created.submissionId, request.userAnswers, request.isAgent)
-        _         <- submissionService.updateSubmission(created.submissionId, request.userAnswers, submitted)
+        _         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, request.userAnswers, submitted)
       } yield submitted.status match {
         // TODO - recoverable error for resubmit: case "STARTED" will be updated to a new page MR-05-b controller when ready
         case "STARTED"              =>
