@@ -283,7 +283,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           }
         }
 
-        "must throw if submissionDetails is missing" in {
+        "must redirect to JourneyRecovery when SubmissionDetailsPage is missing (guard fail)" in {
           val incompleteUa = userAnswersWithCisId
             .set(ReturnTypePage, MonthlyNilReturn)
             .success
@@ -300,10 +300,38 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
           val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
           running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("[SubmissionSuccess] submissionDetails missing from userAnswers")
+            val result = route(app, request).value
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+          }
+        }
+
+        "must redirect to JourneyRecovery when status is not a success status and irMark is empty (guard fail)" in {
+          val uaWithStaleSubmission = userAnswersWithCisId
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+            .set(ContractorNamePage, contractorName)
+            .success
+            .value
+            .set(DateConfirmPaymentsPage, periodEnd)
+            .success
+            .value
+            .set(EnterYourEmailAddressPage, email)
+            .success
+            .value
+            .set(
+              SubmissionDetailsPage,
+              SubmissionDetails(id = "123", status = "PENDING", irMark = "", submittedAt = Instant.now)
+            )
+            .success
+            .value
+
+          val app = applicationBuilder(userAnswers = Some(uaWithStaleSubmission)).build()
+          running(app) {
+            val result = route(app, request).value
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
           }
         }
 

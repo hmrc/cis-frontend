@@ -19,12 +19,14 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.monthlyreturns
 import models.agent.AgentClientData
+import models.submission.SubmissionDetails
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
+import pages.submission.SubmissionDetailsPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -44,6 +46,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
   val contractorName: String     = "PAL 355 Scheme"
   val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
+
+  private val submittedNoReceiptDetails: SubmissionDetails =
+    SubmissionDetails(id = "sub-123", status = "SUBMITTED_NO_RECEIPT", irMark = "", submittedAt = Instant.now())
 
   private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
@@ -70,6 +75,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
       .success
       .value
       .set(ReturnTypePage, submissionType)
+      .success
+      .value
+      .set(
+        SubmissionDetailsPage,
+        SubmissionDetails(id = "sub-123", status = "SUBMITTED_NO_RECEIPT", irMark = "", submittedAt = Instant.now())
+      )
       .success
       .value
 
@@ -121,6 +132,31 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           }
         }
 
+        "must redirect to JourneyRecovery when SubmissionDetailsPage is missing (guard fail)" in {
+
+          val uaWithoutSubmission = userAnswersWithCisId
+            .set(ContractorNamePage, contractorName)
+            .success
+            .value
+            .set(EnterYourEmailAddressPage, email)
+            .success
+            .value
+            .set(DateConfirmPaymentsPage, periodEnd)
+            .success
+            .value
+            .set(ReturnTypePage, submissionType)
+            .success
+            .value
+
+          val app = applicationBuilder(userAnswers = Some(uaWithoutSubmission)).build()
+
+          running(app) {
+            val result = route(app, request).value
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+          }
+        }
+
         "must throw if contractorName missing" in {
 
           val incompleteUa =
@@ -129,6 +165,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
               .set(ReturnTypePage, submissionType)
+              .success
+              .value
+              .set(SubmissionDetailsPage, submittedNoReceiptDetails)
               .success
               .value
 
@@ -153,6 +192,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
               .set(ReturnTypePage, submissionType)
+              .success
+              .value
+              .set(SubmissionDetailsPage, submittedNoReceiptDetails)
               .success
               .value
 
@@ -191,6 +233,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
               .set(ReturnTypePage, submissionType)
+              .success
+              .value
+              .set(SubmissionDetailsPage, submittedNoReceiptDetails)
               .success
               .value
 
@@ -241,6 +286,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
               .set(EnterYourEmailAddressPage, email)
+              .success
+              .value
+              .set(SubmissionDetailsPage, submittedNoReceiptDetails)
               .success
               .value
 
@@ -309,6 +357,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .set(ReturnTypePage, submissionType)
                 .success
                 .value
+                .set(SubmissionDetailsPage, submittedNoReceiptDetails)
+                .success
+                .value
 
             val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true).build()
 
@@ -330,6 +381,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
               .set(DateConfirmPaymentsPage, periodEnd)
+              .success
+              .value
+              .set(SubmissionDetailsPage, submittedNoReceiptDetails)
               .success
               .value
 
@@ -363,6 +417,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .success
                 .value
                 .set(ReturnTypePage, submissionType)
+                .success
+                .value
+                .set(SubmissionDetailsPage, submittedNoReceiptDetails)
                 .success
                 .value
 
@@ -416,6 +473,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .success
                 .value
                 .set(EnterYourEmailAddressPage, email)
+                .success
+                .value
+                .set(SubmissionDetailsPage, submittedNoReceiptDetails)
                 .success
                 .value
 
