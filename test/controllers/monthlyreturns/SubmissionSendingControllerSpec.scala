@@ -498,5 +498,32 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
     }
+
+    "redirects to SubmissionUnsuccessfulResubmit when decision is STARTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.getPollInterval(any[UserAnswers]))
+        .thenReturn(10)
+
+      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful(PollDecision.Polled("STARTED")))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulResubmitRoute
+    }
   }
 }
