@@ -241,6 +241,41 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
+    "Agent: missing instanceId => ton/tor and hasClient=true => missing agent data then redirect JourneyRecovery" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(None)
+        )
+      when(mockRepo.set(any()))
+        .thenReturn(Future.successful(true))
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startMonthlyReturn().url
+          )
+
+        val result = route(app, request).value
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
+        verify(mockRepo, times(1)).set(any())
+      }
+    }
+
     "Agent: hasClient throws => redirect JourneyRecovery" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
@@ -588,7 +623,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Agent: missing instanceId => => ton/tor and hasClient=true => stores ReturnType, CisId and returns OK" in {
+    "Agent: missing instanceId => ton/tor and hasClient=true => stores ReturnType, CisId and returns OK" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
@@ -621,6 +656,41 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
         verify(mockRepo, times(2)).set(any())
+      }
+    }
+
+    "Agent: missing instanceId => ton/tor and hasClient=true => missing agent data then redirect JourneyRecovery" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(None)
+        )
+      when(mockRepo.set(any()))
+        .thenReturn(Future.successful(true))
+
+      val app =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startNilReturn().url
+          )
+
+        val result = route(app, request).value
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
+        verify(mockRepo, times(1)).set(any())
       }
     }
 
