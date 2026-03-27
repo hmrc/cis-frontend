@@ -521,6 +521,10 @@ monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference numb
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
 
+monthlyreturns.deleteMonthlyReturn.title = Are you sure you want to delete the monthly return for {0}?
+monthlyreturns.deleteMonthlyReturn.heading = Are you sure you want to delete the monthly return for {0}?
+monthlyreturns.deleteMonthlyReturn.error.required = Select ‘Yes’ to delete the return.
+
 monthlyreturns.deleteNilMonthlyReturn.title = Are you sure you want to delete the nil monthly return for {0}?
 monthlyreturns.deleteNilMonthlyReturn.heading = Are you sure you want to delete the nil monthly return for {0}?
 monthlyreturns.deleteNilMonthlyReturn.error.required = Select yes to delete this nil monthly return
