@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import models.EmployerReference
 import pages.agent.AgentClientDataPage
@@ -44,7 +45,7 @@ class SubmittedNoReceiptController @Inject() (
   view: SubmittedNoReceiptView,
   clock: Clock,
   monthlyReturnService: MonthlyReturnService
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
@@ -138,7 +139,8 @@ class SubmittedNoReceiptController @Inject() (
             contractorName = contractorName,
             empRef = employerRef,
             email = email,
-            submissionType = submissionType
+            submissionType = submissionType,
+            cisId = cisId
           )
         )
       }

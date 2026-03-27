@@ -44,6 +44,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
   val contractorName: String     = "PAL 355 Scheme"
   val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
   val submissionType: ReturnType = ReturnType.MonthlyNilReturn
+  val cisId                      = "1"
 
   private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
@@ -99,8 +100,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               contractorName = contractorName,
               empRef = employerRef,
               email = email,
-              submissionType = submissionType
-            )(request, messages(app)).toString
+              submissionType = submissionType,
+              cisId = cisId
+            )(request, applicationConfig, messages(app)).toString
 
           running(app) {
             val result = route(app, request).value
@@ -217,8 +219,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               contractorName = contractorName,
               empRef = employerRef,
               email = fallbackEmail,
-              submissionType = submissionType
-            )(request, messages(app)).toString
+              submissionType = submissionType,
+              cisId = cisId
+            )(request, applicationConfig, messages(app)).toString
 
           running(app) {
             val result = route(app, request).value
@@ -277,8 +280,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 contractorName = contractorName,
                 empRef = employerRef,
                 email = email,
-                submissionType = submissionType
-              )(request, messages(app)).toString
+                submissionType = submissionType,
+                cisId = cisId
+              )(request, applicationConfig, messages(app)).toString
 
             running(app) {
               val result = route(app, request).value
@@ -389,8 +393,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 contractorName = contractorName,
                 empRef = employerRef,
                 email = fallbackEmail,
-                submissionType = submissionType
-              )(request, messages(app)).toString
+                submissionType = submissionType,
+                cisId = cisId
+              )(request, applicationConfig, messages(app)).toString
 
             running(app) {
               val result = route(app, request).value
