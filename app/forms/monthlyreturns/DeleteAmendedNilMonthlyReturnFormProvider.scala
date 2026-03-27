@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package models.submission
+package forms.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import forms.mappings.Mappings
+import play.api.data.Form
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  lastMessageDate: Option[String]
-)
+import javax.inject.Inject
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+class DeleteAmendedNilMonthlyReturnFormProvider @Inject() extends Mappings {
+
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("monthlyreturns.deleteAmendedNilMonthlyReturn.error.required")
+    )
 }

@@ -218,7 +218,7 @@ monthlyreturns.submissionAwaiting.paragraph.p1 = Your submission is currently be
 monthlyreturns.submissionAwaiting.paragraph.p2 = You can check if your submission has been processed by refreshing your page or checking your submitted returns.
 monthlyreturns.submissionAwaiting.details.summary = What happens during processing
 monthlyreturns.submissionAwaiting.details.paragraph.p1 = While your submission is being processed:
-monthlyreturns.submissionAwaiting.details.paragraph.p2 = Once processing is complete, you‘ll be able to view your submission confirmation and receipt.
+monthlyreturns.submissionAwaiting.details.paragraph.p2 = Once processing is complete, you’ll be able to view your submission confirmation and receipt.
 monthlyreturns.submissionAwaiting.details.list.l1 = HMRC systems are validating your return
 monthlyreturns.submissionAwaiting.details.list.l2 = your submission is being checked for errors
 monthlyreturns.submissionAwaiting.details.list.l3 = a confirmation receipt is being generated
@@ -360,8 +360,8 @@ monthlyreturns.totalTaxDeducted.title = How much tax in total did you deduct fro
 monthlyreturns.totalTaxDeducted.heading = How much tax in total did you deduct from {0}?
 monthlyreturns.totalTaxDeducted.hintText = Enter the total tax deducted from the subcontractor in pounds and pence, like £300.00 or £450.33
 monthlyreturns.totalTaxDeducted.checkYourAnswersLabel = Total tax deducted from {0}
-monthlyreturns.totalTaxDeducted.error.maxValue = Total tax deducted must not be greater than £99999999.99
-monthlyreturns.totalTaxDeducted.error.maxLength = Total tax deducted must not be greater than £99999999.99
+monthlyreturns.totalTaxDeducted.error.maxValue = Total tax deducted must not be greater than £99,999,999.99
+monthlyreturns.totalTaxDeducted.error.maxLength = Total tax deducted must not be greater than £99,999,999.99
 monthlyreturns.totalTaxDeducted.change.hidden = total tax deducted from {0}
 monthlyreturns.totalTaxDeducted.error.invalid = Enter the total tax deducted, using the correct format of pound and pence
 monthlyreturns.totalTaxDeducted.error.required = Enter the total tax deducted
@@ -399,8 +399,8 @@ paymentDetails.error.invalidNumeric = Enter your paymentDetails using up to two 
 paymentDetails.error.aboveMaximum = PaymentDetails must be {0} or less
 paymentDetails.error.belowMinimum = PaymentDetails must be {0} or more
 paymentDetails.error.invalid = Enter the total payments made in pounds, rounded down to the nearest pound.
-paymentDetails.error.maxLength = Total payments made must not be greater than £99999999
-paymentDetails.error.maxValue = Total payments made must not be greater than £99999999
+paymentDetails.error.maxLength = Total payments made must not be greater than £99,999,999
+paymentDetails.error.maxValue = Total payments made must not be greater than £99,999,999
 paymentDetails.change.hidden = Payment Details
 
 monthlyreturns.costOfMaterials.title = How much did this subcontractor pay in material costs?
@@ -411,8 +411,8 @@ monthlyreturns.costOfMaterials.error.nonNumeric = Enter your cost of materials u
 monthlyreturns.costOfMaterials.error.required = Enter your cost of materials
 monthlyreturns.costOfMaterials.error.invalidNumeric = Enter your costOfMaterials using up to two decimal places
 monthlyreturns.costOfMaterials.error.invalid = Enter the total material costs paid in pounds, rounded down to the nearest pound.
-monthlyreturns.costOfMaterials.error.maxLength = Total material costs paid must not be greater than £99999999
-monthlyreturns.costOfMaterials.error.maxValue = Total material costs paid must not be greater than £99999999
+monthlyreturns.costOfMaterials.error.maxLength = Total material costs paid must not be greater than £99,999,999
+monthlyreturns.costOfMaterials.error.maxValue = Total material costs paid must not be greater than £99,999,999
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
 
 monthlyreturns.submitInactivityRequest.title = Submit inactivity request
@@ -523,3 +523,15 @@ monthlyreturns.submissionUnsuccessfulResubmit.p4 = You will need to provide:
 monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference number, also known as an Employer Reference Number (ERN)
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
+
+monthlyreturns.deleteNilMonthlyReturn.title = Are you sure you want to delete the nil monthly return for {0}?
+monthlyreturns.deleteNilMonthlyReturn.heading = Are you sure you want to delete the nil monthly return for {0}?
+monthlyreturns.deleteNilMonthlyReturn.error.required = Select yes to delete this nil monthly return
+
+monthlyreturns.deleteAmendedMonthlyReturn.title = Are you sure you want to delete the amended monthly return for {0}?
+monthlyreturns.deleteAmendedMonthlyReturn.heading = Are you sure you want to delete the amended monthly return for {0}?
+monthlyreturns.deleteAmendedMonthlyReturn.error.required = Select yes to delete this amended monthly return
+
+monthlyreturns.deleteAmendedNilMonthlyReturn.title = Are you sure you want to delete the amended nil monthly return for {0}?
+monthlyreturns.deleteAmendedNilMonthlyReturn.heading = Are you sure you want to delete the amended nil monthly return for {0}?
+monthlyreturns.deleteAmendedNilMonthlyReturn.error.required = Select yes to delete this amended nil monthly return.

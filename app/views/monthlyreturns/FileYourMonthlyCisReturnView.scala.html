@@ -22,7 +22,8 @@
     layout: templates.Layout,
     govukButton: GovukButton,
     paragraph: Paragraph,
-    h1: H1
+    h1: H1,
+    formHelper: FormWithCSRF
 )
 
 @()(implicit request: Request[_], messages: Messages)
@@ -31,6 +32,7 @@
    pageTitle = titleNoForm(messages("fileYourMonthlyCisReturn.title")),
    showSignOut = false
 ){
+@formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyStandardReturn)) {
 
 @h1(messages("fileYourMonthlyCisReturn.heading"))
 
@@ -44,6 +46,6 @@
 
 @govukButton(Button(
    content = Text(messages("site.continue")),
-   href = Some(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(MonthlyStandardReturn)).url)
 ))
+}
 }

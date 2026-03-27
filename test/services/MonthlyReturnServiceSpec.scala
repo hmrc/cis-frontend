@@ -849,6 +849,78 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       verifyNoMoreInteractions(connector)
     }
 
+    "remove VerifySubcontractorsPage from UserAnswers when previously set to true" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+
+      val selected: Seq[SelectSubcontractorsViewModel] = Seq(
+        SelectSubcontractorsViewModel(
+          id = 1001,
+          name = "A Ltd",
+          verificationRequired = "No",
+          verificationNumber = "",
+          taxTreatment = ""
+        )
+      )
+
+      val ua = UserAnswers("test-user")
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+      when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val resultUa =
+        service.storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected).futureValue
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      uaCaptor.getValue.get(VerifySubcontractorsPage) mustBe None
+      resultUa.get(VerifySubcontractorsPage) mustBe None
+    }
+
+    "remove VerifySubcontractorsPage from UserAnswers when previously set to false" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId    = "CIS-123"
+      val taxYear  = 2024
+      val taxMonth = 10
+
+      val selected: Seq[SelectSubcontractorsViewModel] = Seq(
+        SelectSubcontractorsViewModel(
+          id = 1001,
+          name = "A Ltd",
+          verificationRequired = "No",
+          verificationNumber = "",
+          taxTreatment = ""
+        )
+      )
+
+      val ua = UserAnswers("test-user")
+        .set(VerifySubcontractorsPage, false)
+        .get
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+      when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val resultUa =
+        service.storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected).futureValue
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      uaCaptor.getValue.get(VerifySubcontractorsPage) mustBe None
+      resultUa.get(VerifySubcontractorsPage) mustBe None
+    }
+
     "fail when session repository returns false (and do not call sync)" in {
       val (service, connector, sessionRepo) = newService()
 

@@ -17,7 +17,9 @@
 package utils
 
 import models.UserAnswers
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.*
+
+import scala.util.Try
 
 object UserAnswerUtils {
   extension (userAnswers: UserAnswers) {
@@ -36,5 +38,27 @@ object UserAnswerUtils {
       .toSeq
       .filter(!_.isComplete)
       .map(_.id)
+
+    def clearMonthlyReturnJourney: Try[UserAnswers] =
+      userAnswers
+        .remove(DateConfirmPaymentsPage)
+
+        // monthly nil return
+        .flatMap(_.remove(InactivityRequestPage))
+        .flatMap(_.remove(ConfirmationByEmailPage))
+        .flatMap(_.remove(EnterYourEmailAddressPage))
+        .flatMap(_.remove(DeclarationPage))
+
+        // monthly standard return
+        .flatMap(_.remove(SelectedSubcontractorPage.all))
+        .flatMap(_.remove(VerifySubcontractorsPage))
+        .flatMap(_.remove(SubcontractorDetailsAddedPage))
+        .flatMap(_.remove(SubcontractorDetailsAddedPage))
+        .flatMap(_.remove(PaymentDetailsConfirmationPage))
+        .flatMap(_.remove(EmploymentStatusDeclarationPage))
+        .flatMap(_.remove(VerifiedStatusDeclarationPage))
+        .flatMap(_.remove(SubmitInactivityRequestPage))
+        .flatMap(_.remove(ConfirmEmailAddressPage))
+        .flatMap(_.remove(EnterYourEmailAddressPage))
   }
 }

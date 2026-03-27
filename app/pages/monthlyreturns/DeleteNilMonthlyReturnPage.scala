@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package models.submission
+package pages.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  lastMessageDate: Option[String]
-)
+case object DeleteNilMonthlyReturnPage extends QuestionPage[Boolean] {
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "deleteNilMonthlyReturn"
 }
