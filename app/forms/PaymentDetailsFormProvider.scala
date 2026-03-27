@@ -17,20 +17,21 @@
 package forms
 
 import forms.mappings.Mappings
-import javax.inject.Inject
 import play.api.data.Form
+
+import javax.inject.Inject
 
 class PaymentDetailsFormProvider @Inject() extends Mappings {
 
   def apply(): Form[BigDecimal] =
     Form(
-      "value" -> paymentDetailsCurrency(
-        "paymentDetails.error.required",
-        "paymentDetails.error.invalid",
-        "paymentDetails.error.maxLength"
+      "value" -> currency(
+        requiredKey = "paymentDetails.error.required",
+        invalidKey = "paymentDetails.error.invalid",
+        maxLengthKey = "paymentDetails.error.maxLength",
+        scale = 0
+      ).verifying(
+        maximumCurrency(BigDecimal("99999999.00"), "paymentDetails.error.maxValue", includeFormattedValue = false)
       )
-        .verifying(
-          maximumCurrency(BigDecimal("99999999.00"), "paymentDetails.error.maxValue", includeFormattedValue = false)
-        )
     )
 }

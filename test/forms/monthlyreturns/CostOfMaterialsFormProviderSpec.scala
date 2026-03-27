@@ -45,28 +45,28 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
       validDataGenerator
     )
 
-    behave like mandatoryField(
-      form,
-      fieldName,
-      requiredError = FormError(fieldName, "monthlyreturns.costOfMaterials.error.required")
-    )
-
-    "must not bind when the value exceeds maxLength of 13" in {
-      val result = form.bind(Map(fieldName -> "12345678901234")).apply(fieldName)
-      result.errors mustEqual Seq(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxLength"))
+    "must bind empty value as None" in {
+      val boundForm = form.bind(Map(fieldName -> ""))
+      boundForm.errors mustBe empty
+      boundForm.get mustBe None
     }
 
-    "must bind when the value is exactly 13 characters" in {
+    "must not bind when the value exceeds 99999999" in {
+      val result = form.bind(Map(fieldName -> "999999999")).apply(fieldName)
+      result.errors mustEqual Seq(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
+    }
+
+    "must bind when the value is less than or equal to 99999999" in {
       val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999")
+      boundForm.get mustBe Some(BigDecimal("99999999"))
     }
 
     "must not bind when the value does not match regex pattern" in {
       Seq(
         ("abc", "non-numeric characters"),
         ("12.345", "more than 2 decimal places"),
-        ("£100", "currency symbol"),
+        ("100£", "currency symbol in incorrect position"),
         ("-100", "negative sign"),
         ("100.001", "more than 2 decimal places"),
         ("100.123", "more than 2 decimal places"),
@@ -101,6 +101,8 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
         "100",
         "100.00",
         "100.0",
+        "£100.0",
+        " 1 0 0 ",
         "100.",
         "1000,000",
         "1,000,000",
@@ -111,9 +113,12 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
         "0.0",
         "0."
       )
+
       validValues.foreach { validValue =>
-        val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
-        result.errors mustBe empty
+        withClue(s"Valid value '$validValue' should bind successfully") {
+          val result = form.bind(Map(fieldName -> validValue)).apply(fieldName)
+          result.errors mustBe empty
+        }
       }
     }
 
@@ -128,29 +133,21 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
     "must bind exactly at maximum value boundary" in {
       val boundForm = form.bind(Map(fieldName -> "99999999"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("99999999")
-    }
-
-    "must not bind when value exceeds maximum value" in {
-      val boundForm = form.bind(Map(fieldName -> "100000000"))
-      boundForm.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
+      boundForm.get mustBe Some(BigDecimal("99999999"))
     }
 
     "must correctly parse values with commas" in {
       val boundForm = form.bind(Map(fieldName -> "1,234,567"))
       boundForm.errors mustBe empty
-      boundForm.get mustBe BigDecimal("1234567")
+      boundForm.get mustBe Some(BigDecimal("1234567"))
     }
 
-    "must correctly unbind values" in {
+    "must correctly unbind values with comma grouping" in {
       val value  = BigDecimal("12345")
-      val result = form.fill(value)
-      result.data.get(fieldName) mustBe Some("12345")
-    }
+      val result = form.fill(Some(value))
 
-    "must not bind when the value is greater than the maximum" in {
-      val result = form.bind(Map(fieldName -> "100000000")).apply(fieldName)
-      result.errors must contain(FormError(fieldName, "monthlyreturns.costOfMaterials.error.maxValue"))
+      // Now that currencyFormatter.unbind formats scale=0 with commas
+      result.data.get(fieldName) mustBe Some("12,345")
     }
   }
 }

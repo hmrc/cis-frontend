@@ -42,17 +42,27 @@ class CostOfMaterialsViewSpec extends SpecBase {
       doc.select("button[type=submit]").text mustBe messages("site.continue")
     }
 
-    "must show error summary and messages when form has errors" in new Setup {
+    "must not show error summary when form is bound with empty value (optional)" in new Setup {
+      val companyName  = "Test Company Ltd"
+      val boundNoError = form.bind(Map("value" -> ""))
+      val html         = view(boundNoError, NormalMode, companyName, 1, None)
+      val doc          = Jsoup.parse(html.body)
+
+      doc.title must include(messages("monthlyreturns.costOfMaterials.title"))
+      doc.select(".govuk-error-summary").size() mustBe 0
+      doc.select(".govuk-error-message").size() mustBe 0
+    }
+
+    "must show error summary and messages when form has invalid data" in new Setup {
       val companyName    = "Test Company Ltd"
-      val boundWithError = form.bind(Map("value" -> ""))
+      val boundWithError = form.bind(Map("value" -> "invalid value"))
       val html           = view(boundWithError, NormalMode, companyName, 1, None)
       val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
-
       doc.select(".govuk-error-summary").size() mustBe 1
 
-      val expected = messages("monthlyreturns.costOfMaterials.error.required")
+      val expected = messages("monthlyreturns.costOfMaterials.error.invalid")
       doc.text() must include(expected)
     }
 

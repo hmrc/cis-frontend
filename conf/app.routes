@@ -62,7 +62,9 @@ GET        /monthly-return/select-subcontractors                        controll
 POST       /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
 GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
+POST       /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyStandardReturn)
 GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
+POST       /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyNilReturn)
 
 GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
 GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
@@ -166,3 +168,15 @@ POST       /monthly-return/change-verified-status-declaration           controll
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
+
+GET        /monthly-return/delete-monthly-return                        controllers.monthlyreturns.DeleteMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-monthly-return                        controllers.monthlyreturns.DeleteMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
+
+GET        /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
+
+GET        /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
+
+GET        /monthly-return/delete-amended-nil-monthly-return                        controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-amended-nil-monthly-return                        controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)

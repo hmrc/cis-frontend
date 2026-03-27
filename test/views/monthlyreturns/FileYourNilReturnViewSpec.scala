@@ -17,7 +17,6 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import models.NormalMode
 import models.ReturnType.MonthlyNilReturn
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
@@ -36,14 +35,14 @@ class FileYourNilReturnViewSpec extends SpecBase {
       doc.select("p").text  must include(messages("fileYourNilReturn.p2"))
 
       val expectedUrl: String =
-        controllers.monthlyreturns.routes.DateConfirmPaymentsController
-          .onPageLoad(NormalMode, Some(MonthlyNilReturn))
+        controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+          .onSubmit(MonthlyNilReturn)
           .url
 
       val button: Element = doc.getElementsByClass("govuk-button").first()
 
       button.text                                            must include(messages("site.continue"))
-      button.attr("href") mustBe expectedUrl
+      doc.select("form").attr("action") mustBe expectedUrl
       doc.getElementsByClass("hmrc-sign-out-nav__link").text must include(messages("timeout.signOut"))
     }
   }
