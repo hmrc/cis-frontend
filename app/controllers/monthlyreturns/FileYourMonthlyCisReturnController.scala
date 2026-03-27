@@ -99,48 +99,42 @@ class FileYourMonthlyCisReturnController @Inject() (
       }
     } else {
       (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
-        case (None, Some((taxOfficeNumber, taxOfficeReference, uniqueId)))      =>
-          monthlyReturnService
-            .hasClient(taxOfficeNumber, taxOfficeReference)
-            .flatMap {
-              case true  => storeInstanceId(uniqueId, userAnswers).map(_ => Ok(render))
-              case false =>
-                logger.warn(
-                  s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-                    s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
-                )
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-            }
-            .recover { case NonFatal(e) =>
-              logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-            }
-        case (Some(instanceId), Some((taxOfficeNumber, taxOfficeReference, _))) =>
-          monthlyReturnService
-            .hasClient(taxOfficeNumber, taxOfficeReference)
-            .flatMap {
-              case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
-              case false =>
-                logger.warn(
-                  s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-                    s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
-                )
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-            }
-            .recover { case NonFatal(e) =>
-              logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-            }
-        case (Some(_), None)                                                    =>
+        case (maybeInstanceId, Some((taxOfficeNumber, taxOfficeReference, uniqueId))) =>
+          val instanceId = maybeInstanceId.getOrElse(uniqueId)
+          handleAgentFlow(instanceId, taxOfficeNumber, taxOfficeReference, userAnswers, render)
+        case (Some(_), None)                                                          =>
           logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        case (None, None)                                                       =>
+        case (None, None)                                                             =>
           logger.error(
             s"[FileYourMonthlyCisReturnController] Missing instanceId client tax office number tax office reference"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
+
+  private def handleAgentFlow(
+    instanceId: String,
+    taxOfficeNumber: String,
+    taxOfficeReference: String,
+    userAnswers: UserAnswers,
+    render: => Html
+  )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
+    monthlyReturnService
+      .hasClient(taxOfficeNumber, taxOfficeReference)
+      .flatMap {
+        case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
+        case false =>
+          logger.warn(
+            s"[FileYourMonthlyCisReturnController] hasClient = false for " +
+              s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+      .recover { case NonFatal(e) =>
+        logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
 
   private def getAgentClient(implicit
     request: OptionalDataRequest[_],
