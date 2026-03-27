@@ -87,7 +87,7 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   private def handleRequest(
     instanceIdOpt: Option[String],
-    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String)],
+    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String, String)],
     userAnswers: UserAnswers,
     render: => Html
   )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
@@ -99,15 +99,23 @@ class FileYourMonthlyCisReturnController @Inject() (
       }
     } else {
       (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
-        case (None, _) =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing instanceId for agent request")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-        case (Some(_), None) =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-        case (Some(instanceId), Some((taxOfficeNumber, taxOfficeReference))) =>
+        case (None, Some((taxOfficeNumber, taxOfficeReference, uniqueId)))      =>
+          monthlyReturnService
+            .hasClient(taxOfficeNumber, taxOfficeReference)
+            .flatMap {
+              case true  => storeInstanceId(uniqueId, userAnswers).map(_ => Ok(render))
+              case false =>
+                logger.warn(
+                  s"[FileYourMonthlyCisReturnController] hasClient = false for " +
+                    s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            }
+            .recover { case NonFatal(e) =>
+              logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            }
+        case (Some(instanceId), Some((taxOfficeNumber, taxOfficeReference, _))) =>
           monthlyReturnService
             .hasClient(taxOfficeNumber, taxOfficeReference)
             .flatMap {
@@ -123,6 +131,14 @@ class FileYourMonthlyCisReturnController @Inject() (
               logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
             }
+        case (Some(_), None)                                                    =>
+          logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case (None, None)                                                       =>
+          logger.error(
+            s"[FileYourMonthlyCisReturnController] Missing instanceId client tax office number tax office reference"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 
@@ -130,10 +146,10 @@ class FileYourMonthlyCisReturnController @Inject() (
     request: OptionalDataRequest[_],
     ec: ExecutionContext,
     hc: HeaderCarrier
-  ): Future[Option[(String, String)]] =
+  ): Future[Option[(String, String, String)]] =
     if (request.isAgent) {
       monthlyReturnService.getAgentClient(request.userId).map {
-        case Some(data) => Some((data.taxOfficeNumber, data.taxOfficeReference))
+        case Some(data) => Some((data.taxOfficeNumber, data.taxOfficeReference, data.uniqueId))
         case _          => None
       }
     } else { Future.successful(None) }

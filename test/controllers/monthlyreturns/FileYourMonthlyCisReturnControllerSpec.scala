@@ -64,7 +64,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Org: without instanceId => stores ReturnType and returns OK" in {
+    "Org: without instanceId => fetch and store CisId, stores ReturnType and returns OK" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
@@ -205,7 +205,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Agent: missing instanceId => redirect JourneyRecovery" in {
+    "Agent: missing instanceId => ton/tor and hasClient=true => stores ReturnType, CisId and returns OK" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
@@ -213,7 +213,8 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         .thenReturn(
           Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
         )
-
+      when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
+        .thenReturn(Future.successful(true))
       when(mockRepo.set(any()))
         .thenReturn(Future.successful(true))
 
@@ -233,11 +234,10 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
           )
 
         val result = route(app, request).value
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustBe OK
 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
-        verify(mockRepo).set(any())
+        verify(mockRepo, times(2)).set(any())
       }
     }
 
@@ -447,7 +447,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Org: without instanceId => stores ReturnType and returns OK" in {
+    "Org: without instanceId => fetch and store CisId, stores ReturnType and returns OK" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
@@ -588,7 +588,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "Agent: missing instanceId => redirect JourneyRecovery" in {
+    "Agent: missing instanceId => => ton/tor and hasClient=true => stores ReturnType, CisId and returns OK" in {
       val mockRepo    = mock[SessionRepository]
       val mockService = mock[MonthlyReturnService]
 
@@ -596,7 +596,8 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         .thenReturn(
           Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
         )
-
+      when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
+        .thenReturn(Future.successful(true))
       when(mockRepo.set(any()))
         .thenReturn(Future.successful(true))
 
@@ -616,11 +617,10 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
           )
 
         val result = route(app, request).value
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustBe OK
 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
-        verify(mockRepo).set(any())
+        verify(mockRepo, times(2)).set(any())
       }
     }
 
