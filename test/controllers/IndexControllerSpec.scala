@@ -17,19 +17,17 @@
 package controllers
 
 import base.SpecBase
-import models.NormalMode
-import play.api.test.FakeRequest
-import repositories.SessionRepository
-import play.api.test.Helpers.*
-import controllers.routes as mainRoutes
 import controllers.monthlyreturns.routes as monthlyReturnsRoutes
-import models.ReturnType.MonthlyNilReturn
+import controllers.routes as mainRoutes
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
 import play.api.mvc.Call
+import play.api.test.FakeRequest
+import play.api.test.Helpers.*
+import repositories.SessionRepository
 
 import scala.concurrent.Future
 
@@ -58,8 +56,8 @@ class IndexControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
 
-        redirectLocation(result).value mustEqual monthlyReturnsRoutes.DateConfirmPaymentsController
-          .onPageLoad(NormalMode, Some(MonthlyNilReturn))
+        redirectLocation(result).value mustEqual monthlyReturnsRoutes.FileYourMonthlyCisReturnController
+          .startNilReturn()
           .url
       }
     }
