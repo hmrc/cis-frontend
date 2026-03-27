@@ -169,6 +169,9 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
+GET        /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
+
 GET        /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
 
