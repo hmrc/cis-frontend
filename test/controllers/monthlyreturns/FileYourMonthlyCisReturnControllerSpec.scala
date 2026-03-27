@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.agent.AgentClientData
-import models.{NormalMode, ReturnType}
+import models.{NormalMode, ReturnType, UserAnswers}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -69,6 +69,8 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       val mockService = mock[MonthlyReturnService]
 
       when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
+        .thenReturn(Future.successful(("CIS-123", userAnswersWithCisId)))
 
       val app =
         applicationBuilder(userAnswers = None)
@@ -89,7 +91,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(result) mustBe OK
 
         verify(mockRepo).set(any())
-        verifyNoInteractions(mockService)
+        verify(mockService).resolveAndStoreCisId(any(), any())(any())
       }
     }
 
@@ -450,6 +452,8 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
       val mockService = mock[MonthlyReturnService]
 
       when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
+        .thenReturn(Future.successful(("CIS-123", userAnswersWithCisId)))
 
       val app =
         applicationBuilder(userAnswers = None)
@@ -470,7 +474,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(result) mustBe OK
 
         verify(mockRepo).set(any())
-        verifyNoInteractions(mockService)
+        verify(mockService).resolveAndStoreCisId(any(), any())(any())
       }
     }
 

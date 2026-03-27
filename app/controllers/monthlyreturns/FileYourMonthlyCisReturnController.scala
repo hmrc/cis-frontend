@@ -94,7 +94,8 @@ class FileYourMonthlyCisReturnController @Inject() (
     if (!request.isAgent) {
       instanceIdOpt match {
         case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
-        case None             => Future.successful(Ok(render))
+        case None             =>
+          monthlyReturnService.resolveAndStoreCisId(userAnswers, false).map(_ => Ok(render))
       }
     } else {
       (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
