@@ -247,8 +247,8 @@ monthlyreturns.submissionSuccessful.feedback.heading = Before you go
 monthlyreturns.submissionSuccessful.feedback.p1 = Your feedback helps us make our service better.
 monthlyreturns.submissionSuccessful.feedback.p2 = to share your feedback on this service.
 monthlyreturns.submissionSuccessful.feedback.p2.link = Take a short survey
-monthlyreturns.returnType.monthlyNilReturn = Monthly Nil Return
-monthlyreturns.returnType.monthlyStandardReturn = Monthly Return
+monthlyreturns.returnType.monthlyNilReturn = Nil return
+monthlyreturns.returnType.monthlyStandardReturn = Monthly return
 monthlyreturns.submissionSuccessful.whatHappensNext.h2 = What happens next
 monthlyreturns.submissionSuccessful.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
@@ -299,7 +299,7 @@ monthlyreturns.submittedNoReceipt.feedback.p1 = Your feedback helps us make our 
 monthlyreturns.submittedNoReceipt.feedback.p2 = to share your feedback on this service.
 monthlyreturns.submittedNoReceipt.feedback.p2.link = Take a short survey
 monthlyreturns.submittedNoReceipt.whatHappensNext.heading = What happens next
-monthlyreturns.submittedNoReceipt.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services.’
+monthlyreturns.submittedNoReceipt.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
 fileYourMonthlyCisReturn.title = File your monthly CIS return
 fileYourMonthlyCisReturn.heading = File your monthly CIS return
