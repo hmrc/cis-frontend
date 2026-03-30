@@ -19,7 +19,6 @@ package controllers.history
 import controllers.actions.*
 import forms.history.SubmittedReturnsChooseTaxYearFormProvider
 import models.Mode
-import models.history.SubmittedReturnsChooseTaxYear
 import navigation.Navigator
 import pages.history.SubmittedReturnsChooseTaxYearPage
 import play.api.data.Form
@@ -33,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SubmittedReturnsChooseTaxYearController @Inject() (
-override val messagesApi: MessagesApi,
+  override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
@@ -42,33 +41,35 @@ override val messagesApi: MessagesApi,
   formProvider: SubmittedReturnsChooseTaxYearFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: SubmittedReturnsChooseTaxYearView
-)(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport {
 
-  val form: Form[SubmittedReturnsChooseTaxYear] = formProvider()
+  val taxYears: Seq[String] =
+    Seq("2021 to 2202", "2022 to 2023", "2023 to 2024", "2024 to 2025")
+  val form: Form[String]    = formProvider(taxYears)
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(SubmittedReturnsChooseTaxYearPage) match {
-        case None => form
-        case Some(value) => form.fill(value)
-      }
+    val preparedForm = request.userAnswers.get(SubmittedReturnsChooseTaxYearPage) match {
+      case None        => form
+      case Some(value) => form.fill(value)
+    }
 
-      Ok(view(preparedForm, mode))
+    Ok(view(preparedForm, mode, taxYears))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmittedReturnsChooseTaxYearPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(SubmittedReturnsChooseTaxYearPage, mode, updatedAnswers))
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, taxYears))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmittedReturnsChooseTaxYearPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(SubmittedReturnsChooseTaxYearPage, mode, updatedAnswers))
+        )
   }
 }

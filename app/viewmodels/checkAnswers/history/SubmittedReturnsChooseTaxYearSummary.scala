@@ -16,7 +16,6 @@
 
 package viewmodels.checkAnswers.history
 
-import controllers.routes
 import models.{CheckMode, UserAnswers}
 import pages.history.SubmittedReturnsChooseTaxYearPage
 import play.api.i18n.Messages
@@ -26,25 +25,27 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object SubmittedReturnsChooseTaxYearSummary  {
+object SubmittedReturnsChooseTaxYearSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(SubmittedReturnsChooseTaxYearPage).map {
-      answer =>
+    answers.get(SubmittedReturnsChooseTaxYearPage).map { answer =>
 
-        val value = ValueViewModel(
-          HtmlContent(
-            HtmlFormat.escape(messages(s"history.submittedReturnsChooseTaxYear.$answer"))
-          )
+      val value = ValueViewModel(
+        HtmlContent(
+          HtmlFormat.escape(messages(s"history.submittedReturnsChooseTaxYear.$answer"))
         )
+      )
 
-        SummaryListRowViewModel(
-          key     = "history.submittedReturnsChooseTaxYear.checkYourAnswersLabel",
-          value   = value,
-          actions = Seq(
-            ActionItemViewModel("site.change", controllers.history.routes.SubmittedReturnsChooseTaxYearController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("history.submittedReturnsChooseTaxYear.change.hidden"))
+      SummaryListRowViewModel(
+        key = "history.submittedReturnsChooseTaxYear.checkYourAnswersLabel",
+        value = value,
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.history.routes.SubmittedReturnsChooseTaxYearController.onPageLoad(CheckMode).url
           )
+            .withVisuallyHiddenText(messages("history.submittedReturnsChooseTaxYear.change.hidden"))
         )
+      )
     }
 }

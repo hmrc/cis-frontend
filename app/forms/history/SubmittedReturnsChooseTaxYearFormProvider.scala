@@ -17,15 +17,15 @@
 package forms.history
 
 import forms.mappings.Mappings
-import models.history.SubmittedReturnsChooseTaxYear
 import play.api.data.Form
 
 import javax.inject.Inject
 
 class SubmittedReturnsChooseTaxYearFormProvider @Inject() extends Mappings {
 
-  def apply(): Form[SubmittedReturnsChooseTaxYear] =
+  def apply(taxYears: Seq[String]): Form[String] =
     Form(
-      "value" -> enumerable[SubmittedReturnsChooseTaxYear]("history.submittedReturnsChooseTaxYear.error.required")
+      "value" -> text("history.submittedReturnsChooseTaxYear.error.required")
+        .verifying("error.invalid", taxYears.contains(_))
     )
 }

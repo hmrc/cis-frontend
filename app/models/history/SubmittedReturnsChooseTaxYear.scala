@@ -15,33 +15,33 @@
  */
 
 package models.history
-
-import models.{Enumerable, WithName}
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.Aliases.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 
-sealed trait SubmittedReturnsChooseTaxYear
+object SubmittedReturnsChooseTaxYear {
 
-object SubmittedReturnsChooseTaxYear extends Enumerable.Implicits {
-
-  case object Option1 extends WithName("option1") with SubmittedReturnsChooseTaxYear
-  case object Option2 extends WithName("option2") with SubmittedReturnsChooseTaxYear
-
-  val values: Seq[SubmittedReturnsChooseTaxYear] = Seq(
-    Option1, Option2
-  )
-
-  def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map {
-    case (value, index) =>
+  def options(taxYears: Seq[String])(implicit messages: Messages): Seq[RadioItem] = {
+    val yearItems = taxYears.zipWithIndex.map { case (year, index) =>
       RadioItem(
-        // TODO: here I am displaying the options from messages.en e.g: Option1 & Option2. Need to do that with test data
-        content = Text(messages(s"history.submittedReturnsChooseTaxYear.${value.toString}")),
-        value   = Some(value.toString),
-        id      = Some(s"value_$index")
+        content = Text(year),
+        value = Some(year),
+        id = Some(s"value_$index")
       )
-  }
+    }
 
-  implicit val enumerable: Enumerable[SubmittedReturnsChooseTaxYear] =
-    Enumerable(values.map(v => v.toString -> v): _*)
+    val divider = Seq(
+      RadioItem(divider = Some(messages("site.or")))
+    )
+
+    val viewAll = Seq(
+      RadioItem(
+        content = Text(messages("history.submittedReturnsChooseTaxYear.viewAll")),
+        value = Some("all"),
+        id = Some(s"value_all")
+      )
+    )
+
+    yearItems ++ divider ++ viewAll
+  }
 }

@@ -1,16 +1,30 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package controllers.history
 
 import base.SpecBase
 import controllers.routes
 import forms.history.SubmittedReturnsChooseTaxYearFormProvider
-import models.history.SubmittedReturnsChooseTaxYear
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.history.SubmittedReturnsChooseTaxYearPage
-import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -24,10 +38,13 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val submittedReturnsChooseTaxYearRoute: String = controllers.history.routes.SubmittedReturnsChooseTaxYearController.onPageLoad(NormalMode).url
+  lazy val submittedReturnsChooseTaxYearRoute: String =
+    controllers.history.routes.SubmittedReturnsChooseTaxYearController.onPageLoad(NormalMode).url
+  val taxYears: Seq[String]                           =
+    Seq("2021 to 2202", "2022 to 2023", "2023 to 2024", "2024 to 2025")
 
   val formProvider = new SubmittedReturnsChooseTaxYearFormProvider()
-  val form: Form[SubmittedReturnsChooseTaxYear] = formProvider()
+  val form         = formProvider(taxYears)
 
   "SubmittedReturnsChooseTaxYear Controller" - {
 
@@ -43,13 +60,16 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
         val view = application.injector.instanceOf[SubmittedReturnsChooseTaxYearView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, taxYears)(request, messages(application)).toString
       }
     }
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(SubmittedReturnsChooseTaxYearPage, SubmittedReturnsChooseTaxYear.values.head).success.value
+      val userAnswers = UserAnswers(userAnswersId)
+        .set(SubmittedReturnsChooseTaxYearPage, taxYears.head)
+        .success
+        .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -61,7 +81,10 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(SubmittedReturnsChooseTaxYear.values.head), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(taxYears.head), NormalMode, taxYears)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -82,7 +105,7 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
       running(application) {
         val request =
           FakeRequest(POST, submittedReturnsChooseTaxYearRoute)
-            .withFormUrlEncodedBody(("value", SubmittedReturnsChooseTaxYear.values.head.toString))
+            .withFormUrlEncodedBody(("value", taxYears.head))
 
         val result = route(application, request).value
 
@@ -93,7 +116,12 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val userAnswers = emptyUserAnswers
+        .set(SubmittedReturnsChooseTaxYearPage, taxYears.head)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request =
@@ -107,7 +135,7 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, taxYears)(request, messages(application)).toString
       }
     }
 
@@ -132,7 +160,7 @@ class SubmittedReturnsChooseTaxYearControllerSpec extends SpecBase with MockitoS
       running(application) {
         val request =
           FakeRequest(POST, submittedReturnsChooseTaxYearRoute)
-            .withFormUrlEncodedBody(("value", SubmittedReturnsChooseTaxYear.values.head.toString))
+            .withFormUrlEncodedBody(("value", taxYears.head.toString))
 
         val result = route(application, request).value
 

@@ -26,7 +26,7 @@
     caption: components.Caption
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, taxYears: Seq[String])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("history.submittedReturnsChooseTaxYear.title"))) {
 
@@ -41,7 +41,7 @@
             RadiosViewModel(
                 field  = form("value"),
                 legend = LegendViewModel(messages("history.submittedReturnsChooseTaxYear.heading")).asPageHeading(LegendSize.Large),
-                items  = SubmittedReturnsChooseTaxYear.options
+                items  = SubmittedReturnsChooseTaxYear.options(taxYears)
             )
         )
 
