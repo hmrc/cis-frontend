@@ -46,7 +46,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
@@ -62,7 +62,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(PaymentDetailsConfirmationPage, true).success.value
+      val userAnswers = userAnswersWithCisId.set(PaymentDetailsConfirmationPage, true).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -85,7 +85,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -106,7 +106,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request =

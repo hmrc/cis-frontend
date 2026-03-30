@@ -51,7 +51,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
   "CheckAnswersTotalPayments Controller" - {
 
     "GET must return OK and the correct view" in {
-      val ua          = emptyUserAnswers.set(SelectedSubcontractorPage(index), subcontractor).success.value
+      val ua          = userAnswersWithCisId.set(SelectedSubcontractorPage(index), subcontractor).success.value
       val application = applicationBuilder(userAnswers = Some(ua)).build()
 
       running(application) {
@@ -68,7 +68,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
     }
 
     "GET must redirect to JourneyRecovery when subcontractor is missing" in {
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, routes.CheckAnswersTotalPaymentsController.onPageLoad(index).url)
@@ -86,7 +86,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
       when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn None
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[MonthlyReturnService].toInstance(mockService),
             bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder)
@@ -124,7 +124,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         .thenReturn(Future.successful(()))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[MonthlyReturnService].toInstance(mockService),
             bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder)
@@ -165,7 +165,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         .thenReturn(Future.failed(UpstreamErrorResponse("boom", 500)))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[MonthlyReturnService].toInstance(mockService),
             bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder)
@@ -201,7 +201,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[MonthlyReturnService].toInstance(mockService),
             bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder)
