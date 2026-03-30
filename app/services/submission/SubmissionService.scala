@@ -37,7 +37,7 @@ import utils.TypeUtils.*
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, YearMonth}
-import java.util.{TimeZone, Locale}
+import java.util.{Locale, TimeZone}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}

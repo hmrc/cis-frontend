@@ -397,13 +397,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         any[HeaderCarrier],
         any[DataRequest[AnyContent]]
       )
-      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using
-        any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
-      )
-      verify(mockService).sendSuccessEmail(any[UserAnswers])(using
-        any[HeaderCarrier]
-      )
+      verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
     "redirects to SubmissionSuccess when decision is Polled(SUBMITTED) even if sending email fails" in {
@@ -482,7 +476,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successNoReceiptRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+        any[HeaderCarrier],
+        any[DataRequest[AnyContent]]
+      )
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
@@ -501,7 +498,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier]))
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+          any[HeaderCarrier],
+          any[DataRequest[AnyContent]]
+        )
+      )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED_NO_RECEIPT")))
 
       when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
@@ -593,7 +595,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+        any[HeaderCarrier],
+        any[DataRequest[AnyContent]]
+      )
     }
 
     "redirects to SubmissionUnsuccessful when decision is Polled(DEPARTMENTAL_ERROR) even if sending email fails" in {
@@ -611,7 +616,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier]))
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+          any[HeaderCarrier],
+          any[DataRequest[AnyContent]]
+        )
+      )
         .thenReturn(Future.successful(PollDecision.Polled("DEPARTMENTAL_ERROR")))
 
       when(mockService.sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier]))
