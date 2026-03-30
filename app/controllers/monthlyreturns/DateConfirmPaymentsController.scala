@@ -48,6 +48,7 @@ class DateConfirmPaymentsController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: DateConfirmPaymentsFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -58,13 +59,13 @@ class DateConfirmPaymentsController @Inject() (
     with Logging {
 
   def onPageLoad(mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
       val userAnswers                = request.userAnswers
       val form                       = formProvider()
 
-      (for {
+      for {
         uaWithReturnType <-
           returnType.fold(Future.successful(userAnswers))(r => userAnswers.set(ReturnTypePage, r).toFuture)
         _                <- sessionRepository.set(uaWithReturnType)
@@ -76,13 +77,7 @@ class DateConfirmPaymentsController @Inject() (
                               case None        => form
                               case Some(value) => form.fill(value)
                             }
-      } yield Ok(view(preparedForm, mode, messagePrefix))).recover {
-        case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        case NonFatal(ex)                                          =>
-          logger.error(s"[DateConfirmPaymentsController] Failed to retrieve cisId: ${ex.getMessage}", ex)
-          Redirect(controllers.routes.SystemErrorController.onPageLoad())
-      }
+      } yield Ok(view(preparedForm, mode, messagePrefix))
     }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
