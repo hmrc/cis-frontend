@@ -18,10 +18,12 @@ package utils
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.shouldBe
 import play.api.i18n.Lang
 import utils.DateTimeFormats.dateTimeFormat
 
 import java.time.LocalDate
+import java.util.Locale
 
 class DateTimeFormatsSpec extends AnyFreeSpec with Matchers {
 
@@ -43,6 +45,26 @@ class DateTimeFormatsSpec extends AnyFreeSpec with Matchers {
       val formatter = dateTimeFormat()(Lang("de"))
       val result    = LocalDate.of(2023, 1, 1).format(formatter)
       result mustEqual "January 2023"
+    }
+  }
+
+  "monthFormatter" - {
+
+    "format month correctly in UK English locale" in {
+      val formatter = DateTimeFormats.monthFormatter(Locale.UK)
+      val date      = LocalDate.of(2026, 3, 15) // March
+
+      val formatted = date.format(formatter)
+      formatted shouldBe "March"
+    }
+
+    "format month correctly in Welsh locale" in {
+      val welshLocale = new Locale("cy", "GB")
+      val formatter   = DateTimeFormats.monthFormatter(welshLocale)
+      val date        = LocalDate.of(2026, 3, 15)
+
+      val formatted = date.format(formatter)
+      formatted shouldBe "Mawrth"
     }
   }
 }
