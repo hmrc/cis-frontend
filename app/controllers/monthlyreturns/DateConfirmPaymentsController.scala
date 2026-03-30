@@ -28,9 +28,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
@@ -57,9 +55,6 @@ class DateConfirmPaymentsController @Inject() (
 
   def onPageLoad(mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      implicit val hc: HeaderCarrier =
-        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
