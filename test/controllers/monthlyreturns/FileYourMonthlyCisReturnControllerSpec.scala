@@ -30,6 +30,7 @@ import play.api.test.Helpers.*
 import play.api.inject.bind
 import repositories.SessionRepository
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar {
 
@@ -89,6 +90,39 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val result = route(app, request).value
         status(result) mustBe OK
+
+        verify(mockRepo).set(any())
+        verify(mockService).resolveAndStoreCisId(any(), any())(any())
+      }
+    }
+
+    "Org: without instanceId => resolveAndStoreCisId returns NOT_FOUND then redirects to Journey Recovery" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND)))
+
+      val app =
+        applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startMonthlyReturn().url
+          )
+
+        val result = route(app, request).value
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockRepo).set(any())
         verify(mockService).resolveAndStoreCisId(any(), any())(any())
@@ -507,6 +541,39 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val result = route(app, request).value
         status(result) mustBe OK
+
+        verify(mockRepo).set(any())
+        verify(mockService).resolveAndStoreCisId(any(), any())(any())
+      }
+    }
+
+    "Org: without instanceId => resolveAndStoreCisId returns NOT_FOUND then redirects to Journey Recovery" in {
+      val mockRepo    = mock[SessionRepository]
+      val mockService = mock[MonthlyReturnService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND)))
+
+      val app =
+        applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startNilReturn().url
+          )
+
+        val result = route(app, request).value
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockRepo).set(any())
         verify(mockService).resolveAndStoreCisId(any(), any())(any())

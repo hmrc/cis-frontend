@@ -435,48 +435,5 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-//    "onPageLoad (agent): must redirect to system error when agent has no access to client" in {
-//      val mockSessionRepository = mock[SessionRepository]
-//      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-//
-//      val mockMonthlyReturnService = mock[MonthlyReturnService]
-//
-//      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-//        .overrides(
-//          bind[SessionRepository].toInstance(mockSessionRepository),
-//          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-//        )
-//        .build()
-//
-//      running(application) {
-//        val result = route(application, getRequest).value
-//
-//        status(result) mustEqual SEE_OTHER
-//        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-//      }
-//    }
-
-//    "onPageLoad (agent): must redirect to system error when agent client data is missing" in {
-//      val mockSessionRepository = mock[SessionRepository]
-//      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-//
-//      val mockMonthlyReturnService = mock[MonthlyReturnService]
-//      when(mockMonthlyReturnService.getAgentClient(any())(any(), any()))
-//        .thenReturn(Future.successful(None))
-//
-//      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-//        .overrides(
-//          bind[SessionRepository].toInstance(mockSessionRepository),
-//          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-//        )
-//        .build()
-//
-//      running(application) {
-//        val result = route(application, getRequest).value
-//
-//        status(result) mustEqual SEE_OTHER
-//        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-//      }
-//    }
   }
 }

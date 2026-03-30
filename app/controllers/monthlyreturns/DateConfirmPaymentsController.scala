@@ -127,37 +127,11 @@ class DateConfirmPaymentsController @Inject() (
                                     uaWithStatus <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
                                   } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
                                 }
-            } yield result).recover {
-              case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              case NonFatal(ex)                                          =>
-                logger.error(s"[DateConfirmPaymentsController] Failed to process submission: ${ex.getMessage}", ex)
-                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            } yield result).recover { case NonFatal(ex) =>
+              logger.error(s"[DateConfirmPaymentsController] Failed to process submission: ${ex.getMessage}", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
             }
           }
         )
   }
-
-//  private def prepareUserAnswers(ua: UserAnswers, request: DataRequest[_])(implicit
-//    hc: HeaderCarrier
-//  ): Future[UserAnswers] =
-//    if request.isAgent then
-//      monthlyReturnService.getAgentClient(request.userId).flatMap {
-//        case Some(data) =>
-//          monthlyReturnService
-//            .hasClient(data.taxOfficeNumber, data.taxOfficeReference)
-//            .flatMap {
-//              case true  => storeAgentClientData(data, ua)
-//              case false => Future.failed(new RuntimeException("Agent has no access to this client"))
-//            }
-//        case _          => Future.failed(new RuntimeException("Missing agent client data"))
-//      }
-//    else Future.successful(ua)
-//
-//  private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
-//    for {
-//      updatedUaWithCisId           <- Future.fromTry(ua.set(CisIdPage, data.uniqueId))
-//      updatedUaWithAgentClientData <- Future.fromTry(updatedUaWithCisId.set(AgentClientDataPage, data))
-//      _                            <- sessionRepository.set(updatedUaWithAgentClientData)
-//    } yield updatedUaWithAgentClientData
 }

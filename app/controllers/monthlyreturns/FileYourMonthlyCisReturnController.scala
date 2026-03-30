@@ -95,7 +95,16 @@ class FileYourMonthlyCisReturnController @Inject() (
       instanceIdOpt match {
         case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
         case None             =>
-          monthlyReturnService.resolveAndStoreCisId(userAnswers, false).map(_ => Ok(render))
+          monthlyReturnService
+            .resolveAndStoreCisId(userAnswers, false)
+            .map(_ => Ok(render))
+            .recover { case NonFatal(ex) =>
+              logger.error(
+                s"[DateConfirmPaymentsController] Failed to resolve CIS ID: ${ex.getMessage}",
+                ex
+              )
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            }
       }
     } else {
       (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
