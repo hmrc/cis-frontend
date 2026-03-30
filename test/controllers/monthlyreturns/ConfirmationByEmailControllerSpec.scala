@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
-import models.{NormalMode, UserAnswers}
+import models.NormalMode
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when

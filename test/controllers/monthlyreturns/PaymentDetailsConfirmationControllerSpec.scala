@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
-import models.{NormalMode, UserAnswers}
+import models.NormalMode
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -27,7 +27,7 @@ import pages.monthlyreturns.PaymentDetailsConfirmationPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.PaymentDetailsConfirmationView
 

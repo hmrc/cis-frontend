@@ -17,7 +17,6 @@
 package forms.monthlyreturns
 
 import forms.behaviours.BooleanFieldBehaviours
-import forms.monthlyreturns.DeleteAmendedNilMonthlyReturnFormProvider
 import play.api.data.FormError
 
 class DeleteAmendedNilMonthlyReturnFormProviderSpec extends BooleanFieldBehaviours {
