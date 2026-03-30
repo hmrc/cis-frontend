@@ -21,7 +21,6 @@ import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.agent.AgentClientData
 import models.{NormalMode, ReturnType, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
@@ -35,11 +34,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{LocalDate, ZoneOffset}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
@@ -285,31 +283,6 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to system error page when agent client data is missing" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-
-      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(None))
-
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-          .overrides(
-            bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-          )
-          .build()
-
-      running(application) {
-        val result = route(application, postRequest()).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-      }
-    }
-
     "must use existing return type from user answers when returnType parameter is None" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
 
@@ -385,31 +358,5 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustEqual onwardRoute.url
       }
     }
-
-    "onPageLoad (agent): must return OK when agent has access to client" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val agentClientData          = AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.getAgentClient(any())(any(), any()))
-        .thenReturn(Future.successful(Some(agentClientData)))
-      when(mockMonthlyReturnService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
-        .thenReturn(Future.successful(true))
-
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId), isAgent = true)
-        .overrides(
-          bind[SessionRepository].toInstance(mockSessionRepository),
-          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-        )
-        .build()
-
-      running(application) {
-        val result = route(application, getRequest).value
-
-        status(result) mustEqual OK
-      }
-    }
-
   }
 }

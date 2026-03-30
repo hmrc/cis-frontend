@@ -82,7 +82,7 @@ class SelectSubcontractorsController @Inject() (
     }
 
   def onSubmit(): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
 
       val requiredAnswers = for {
         cisId   <- request.userAnswers.get(CisIdPage)

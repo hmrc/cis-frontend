@@ -58,8 +58,8 @@ class ConfirmationByEmailController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
         .bindFromRequest()
         .fold(
@@ -70,5 +70,5 @@ class ConfirmationByEmailController @Inject() (
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(ConfirmationByEmailPage, mode, updatedAnswers))
         )
-  }
+    }
 }

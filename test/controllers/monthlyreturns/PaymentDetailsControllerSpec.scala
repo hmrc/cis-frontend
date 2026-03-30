@@ -190,7 +190,7 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to Journey Recovery for a POST if no subcontractor is found for the index" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request =
