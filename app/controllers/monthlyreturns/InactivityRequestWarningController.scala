@@ -30,12 +30,13 @@ class InactivityRequestWarningController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
     val nextUrl = mode match {
       case CheckMode  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
       case NormalMode => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url

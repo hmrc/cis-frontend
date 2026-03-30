@@ -28,7 +28,7 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
 
     "must return OK and render the view with ConfirmationByEmail as next URL in NormalMode" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request =
@@ -49,7 +49,7 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
 
     "must return OK and render the view with CheckYourAnswers as next URL in CheckMode" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request =

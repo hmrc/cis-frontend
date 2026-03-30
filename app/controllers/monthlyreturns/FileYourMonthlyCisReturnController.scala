@@ -100,7 +100,7 @@ class FileYourMonthlyCisReturnController @Inject() (
             .map(_ => Ok(render))
             .recover { case NonFatal(ex) =>
               logger.error(
-                s"[DateConfirmPaymentsController] Failed to resolve CIS ID: ${ex.getMessage}",
+                s"[FileYourMonthlyCisReturnController] Failed to resolve CIS ID: ${ex.getMessage}",
                 ex
               )
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
