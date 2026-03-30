@@ -57,6 +57,9 @@ class DateConfirmPaymentsController @Inject() (
 
   def onPageLoad(mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      implicit val hc: HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
