@@ -18,6 +18,7 @@ package controllers.actions
 
 import javax.inject.Inject
 import models.requests.DataRequest
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.CisIdPage
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{ActionRefiner, Result}
@@ -31,9 +32,16 @@ class CisIdRequiredActionImpl @Inject() (implicit val executionContext: Executio
       case Some(cisId) =>
         Future.successful(Right(request))
       case None        =>
-        Future.successful(
-          Left(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
-        )
+        request.userAnswers.get(AgentClientDataPage) match {
+          case Some(agentData) =>
+            Future.successful(
+              Left(Redirect(controllers.routes.UnauthorisedAgentAffinityController.onPageLoad()))
+            )
+          case None            =>
+            Future.successful(
+              Left(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+            )
+        }
     }
 }
 
