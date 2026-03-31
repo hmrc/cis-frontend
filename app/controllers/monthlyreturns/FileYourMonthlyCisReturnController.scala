@@ -20,6 +20,7 @@ import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierA
 import models.{NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -80,14 +81,14 @@ class FileYourMonthlyCisReturnController @Inject() (
     for {
       updatedAnswers <- Future.fromTry(userAnswer.set(ReturnTypePage, returnType))
       _              <- sessionRepository.set(updatedAnswers)
-      clientInfoOpt  <- getAgentClient(request)
-      result         <- handleRequest(instanceIdOpt, clientInfoOpt, updatedAnswers, render)
+      agentData      <- getAgentClient(request)
+      result         <- handleRequest(instanceIdOpt, agentData, updatedAnswers, render)
     } yield result
   }
 
   private def handleRequest(
     instanceIdOpt: Option[String],
-    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String, String)],
+    agentDataOpt: Option[AgentClientData],
     userAnswers: UserAnswers,
     render: => Html
   )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
@@ -107,14 +108,14 @@ class FileYourMonthlyCisReturnController @Inject() (
             }
       }
     } else {
-      (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
-        case (maybeInstanceId, Some((taxOfficeNumber, taxOfficeReference, uniqueId))) =>
-          val instanceId = maybeInstanceId.getOrElse(uniqueId)
-          handleAgentFlow(instanceId, taxOfficeNumber, taxOfficeReference, userAnswers, render)
-        case (Some(_), None)                                                          =>
+      (instanceIdOpt, agentDataOpt) match {
+        case (maybeInstanceId, Some(agentData)) =>
+          val instanceId = maybeInstanceId.getOrElse(agentData.uniqueId)
+          handleAgentFlow(instanceId, agentData, userAnswers, render)
+        case (Some(_), None)                    =>
           logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        case (None, None)                                                             =>
+        case (None, None)                       =>
           logger.error(
             s"[FileYourMonthlyCisReturnController] Missing instanceId client tax office number tax office reference"
           )
@@ -124,19 +125,21 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   private def handleAgentFlow(
     instanceId: String,
-    taxOfficeNumber: String,
-    taxOfficeReference: String,
+    agentData: AgentClientData,
     userAnswers: UserAnswers,
     render: => Html
   )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
     monthlyReturnService
-      .hasClient(taxOfficeNumber, taxOfficeReference)
+      .hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference)
       .flatMap {
-        case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
+        case true  =>
+          storeAgentClientData(agentData, userAnswers).flatMap(userAnswersWithAgentDate =>
+            storeInstanceId(instanceId, userAnswersWithAgentDate).map(_ => Ok(render))
+          )
         case false =>
           logger.warn(
             s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-              s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
+              s"taxOfficeNumber: ${agentData.taxOfficeNumber}, taxOfficeReference: ${agentData.taxOfficeReference}"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
@@ -149,10 +152,10 @@ class FileYourMonthlyCisReturnController @Inject() (
     request: OptionalDataRequest[_],
     ec: ExecutionContext,
     hc: HeaderCarrier
-  ): Future[Option[(String, String, String)]] =
+  ): Future[Option[AgentClientData]] =
     if (request.isAgent) {
       monthlyReturnService.getAgentClient(request.userId).map {
-        case Some(data) => Some((data.taxOfficeNumber, data.taxOfficeReference, data.uniqueId))
+        case Some(data) => Some(data)
         case _          => None
       }
     } else { Future.successful(None) }
@@ -162,4 +165,12 @@ class FileYourMonthlyCisReturnController @Inject() (
       updated <- Future.fromTry(userAnswers.set(CisIdPage, instanceId))
       _       <- sessionRepository.set(updated)
     } yield ()
+
+  private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
+    for {
+      updatedUaWithCisId           <- Future.fromTry(ua.set(CisIdPage, data.uniqueId))
+      updatedUaWithAgentClientData <- Future.fromTry(updatedUaWithCisId.set(AgentClientDataPage, data))
+      _                            <- sessionRepository.set(updatedUaWithAgentClientData)
+    } yield updatedUaWithAgentClientData
+
 }

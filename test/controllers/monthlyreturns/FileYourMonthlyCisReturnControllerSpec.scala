@@ -161,7 +161,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(res) mustBe OK
 
         verify(mockService).hasClient(eqTo("163"), eqTo("AB0063"))(any())
-        verify(mockRepo, times(2)).set(any())
+        verify(mockRepo, times(3)).set(any())
       }
     }
 
@@ -271,7 +271,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(result) mustBe OK
 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
-        verify(mockRepo, times(2)).set(any())
+        verify(mockRepo, times(3)).set(any())
       }
     }
 
@@ -612,7 +612,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(res) mustBe OK
 
         verify(mockService).hasClient(eqTo("163"), eqTo("AB0063"))(any())
-        verify(mockRepo, times(2)).set(any())
+        verify(mockRepo, times(3)).set(any())
       }
     }
 
@@ -722,7 +722,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         status(result) mustBe OK
 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
-        verify(mockRepo, times(2)).set(any())
+        verify(mockRepo, times(3)).set(any())
       }
     }
 
