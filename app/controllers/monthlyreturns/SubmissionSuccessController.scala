@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.ReturnType
@@ -47,7 +48,7 @@ class SubmissionSuccessController @Inject() (
   view: SubmissionSuccessView,
   clock: Clock,
   monthlyReturnService: MonthlyReturnService
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport
     with SubmissionViewDataSupport {
@@ -102,7 +103,8 @@ class SubmissionSuccessController @Inject() (
             contractorName = contractorNameFrom(request),
             empRef = employerRefFrom(request),
             email = email,
-            submissionType = submissionType
+            submissionType = submissionType,
+            cisId = cisId
           )
         )
       }
