@@ -526,6 +526,6 @@ history.submittedReturnsChooseTaxYear.title = What tax year do you want to view?
 history.submittedReturnsChooseTaxYear.heading = What tax year do you want to view?
 history.submittedReturnsChooseTaxYear.caption = Submitted returns
 history.submittedReturnsChooseTaxYear.viewAll = View all tax years
-history.submittedReturnsChooseTaxYear.checkYourAnswersLabel = submittedReturnsChooseTaxYear
+history.submittedReturnsChooseTaxYear.checkYourAnswersLabel = Submitted returns choose tax year
 history.submittedReturnsChooseTaxYear.error.required = Select a tax year or all tax years
 history.submittedReturnsChooseTaxYear.change.hidden = Submitted Returns Choose Tax Year
