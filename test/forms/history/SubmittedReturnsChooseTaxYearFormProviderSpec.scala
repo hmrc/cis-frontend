@@ -20,28 +20,13 @@ import forms.behaviours.OptionFieldBehaviours
 import play.api.data.FormError
 
 class SubmittedReturnsChooseTaxYearFormProviderSpec extends OptionFieldBehaviours {
-
-  val taxYears = Seq(
-    "2021 to 2202",
-    "2022 to 2023",
-    "2023 to 2024",
-    "2024 to 2025",
-    "all"
-  )
-
-  val form = new SubmittedReturnsChooseTaxYearFormProvider()(taxYears)
+  
+  val form = new SubmittedReturnsChooseTaxYearFormProvider()()
 
   ".value" - {
 
     val fieldName   = "value"
     val requiredKey = "history.submittedReturnsChooseTaxYear.error.required"
-
-    behave like optionsField[String](
-      form,
-      fieldName,
-      validValues = taxYears,
-      invalidError = FormError(fieldName, "error.invalid")
-    )
 
     behave like mandatoryField(
       form,

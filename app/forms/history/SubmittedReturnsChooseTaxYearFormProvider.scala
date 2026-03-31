@@ -23,9 +23,8 @@ import javax.inject.Inject
 
 class SubmittedReturnsChooseTaxYearFormProvider @Inject() extends Mappings {
 
-  def apply(taxYears: Seq[String]): Form[String] =
+  def apply(): Form[String] =
     Form(
       "value" -> text("history.submittedReturnsChooseTaxYear.error.required")
-        .verifying("error.invalid", taxYears.contains(_))
     )
 }

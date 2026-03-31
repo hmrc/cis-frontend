@@ -47,7 +47,7 @@ class SubmittedReturnsChooseTaxYearController @Inject() (
 
   val taxYears: Seq[String] =
     Seq("2021 to 2202", "2022 to 2023", "2023 to 2024", "2024 to 2025")
-  val form: Form[String]    = formProvider(taxYears)
+  val form: Form[String]    = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
