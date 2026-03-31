@@ -20,7 +20,7 @@ import forms.behaviours.OptionFieldBehaviours
 import play.api.data.FormError
 
 class SubmittedReturnsChooseTaxYearFormProviderSpec extends OptionFieldBehaviours {
-  
+
   val form = new SubmittedReturnsChooseTaxYearFormProvider()()
 
   ".value" - {
