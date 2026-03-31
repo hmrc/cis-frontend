@@ -35,4 +35,7 @@ object DateTimeFormats {
 
   val dateTimeHintFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d M yyyy")
+
+  def monthFormatter(locale: Locale): DateTimeFormatter =
+    DateTimeFormatter.ofPattern("MMMM").withLocale(locale)
 }
