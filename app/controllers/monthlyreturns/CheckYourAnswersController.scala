@@ -80,39 +80,40 @@ class CheckYourAnswersController @Inject() (
       Ok(view(returnDetailsList, emailList))
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    request.userAnswers.get(ReturnTypePage) match {
-      case None =>
-        logger.warn(
-          "[CheckYourAnswersController] C6 submit without FormP record (missing ReturnTypePage); redirecting to journey recovery"
-        )
-        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+    implicit request =>
+      request.userAnswers.get(ReturnTypePage) match {
+        case None =>
+          logger.warn(
+            "[CheckYourAnswersController] C6 submit without FormP record (missing ReturnTypePage); redirecting to journey recovery"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-      case Some(returnType) =>
-        implicit val hc: HeaderCarrier =
-          HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+        case Some(returnType) =>
+          implicit val hc: HeaderCarrier =
+            HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-        val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
+          val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
 
-        updateRequest match {
-          case Left(error) =>
-            logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
-            Future.successful(InternalServerError)
+          updateRequest match {
+            case Left(error) =>
+              logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
+              Future.successful(InternalServerError)
 
-          case Right(req) =>
-            monthlyReturnService
-              .updateMonthlyReturn(req)
-              .map { _ =>
-                logger.info(
-                  s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
-                )
-                Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-              }
-              .recover { case t =>
-                logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
-                Redirect(controllers.routes.SystemErrorController.onPageLoad())
-              }
-        }
-    }
+            case Right(req) =>
+              monthlyReturnService
+                .updateMonthlyReturn(req)
+                .map { _ =>
+                  logger.info(
+                    s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
+                  )
+                  Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+                }
+                .recover { case t =>
+                  logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
+                  Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                }
+          }
+      }
   }
 }
