@@ -23,7 +23,7 @@ import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
-import models.requests.SendSuccessEmailRequest
+import models.requests.{DataRequest, SendSuccessEmailRequest}
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -33,7 +33,9 @@ import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsString, Json}
+import play.api.mvc.AnyContent
+import play.api.test.FakeRequest
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -45,6 +47,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   implicit val hc: HeaderCarrier    = HeaderCarrier()
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
+  given DataRequest[AnyContent]     = DataRequest(FakeRequest(), userAnswersId, emptyUserAnswers)
 
   private val taxpayer =
     CisTaxpayer(
@@ -460,7 +463,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops"))
       )
 
-      service.updateSubmission("sub-123", ua, chrisResp).futureValue
+      service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
 
       val cap: ArgumentCaptor[UpdateSubmissionRequest] =
         ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
@@ -494,7 +497,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisResp = mkChrisResp()
 
       val ex = intercept[RuntimeException] {
-        service.updateSubmission("sub-123", ua, chrisResp).futureValue
+        service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
       }
       ex.getMessage must include("CIS ID missing")
       verifyNoInteractions(connector)
@@ -521,7 +524,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisResp = mkChrisResp()
 
       val ex = intercept[RuntimeException] {
-        service.updateSubmission("sub-123", ua, chrisResp).futureValue
+        service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
       }
       ex.getMessage must include("Date of return missing for monthly return")
       verifyNoInteractions(connector)
@@ -602,7 +605,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -677,9 +680,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None, None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
 
       val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
 
@@ -704,7 +709,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = uaBase
 
       when(connector.getSubmissionStatus(any, any)(any))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None)))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).failed.futureValue
 
@@ -788,10 +793,16 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
               "PENDING",
               Some("newPollUrl"),
               Some(30),
+              Some(
+                JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))
+              ),
+              Some("2342345asdfasdgf"),
               Some("2025-01-01T00:00:30Z")
             )
           )
         )
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -799,6 +810,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       result mustBe "PENDING"
       verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -845,7 +857,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None, None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -853,6 +867,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       result mustBe "PENDING"
       verify(connector).getSubmissionStatus(any, any[String])(any[HeaderCarrier])
+      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
 
       val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepository).set(captor.capture())
@@ -900,7 +915,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -949,7 +966,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None, None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
@@ -1000,7 +1019,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None, None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
 
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))

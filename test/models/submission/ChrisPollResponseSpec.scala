@@ -18,7 +18,7 @@ package models.submission
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{JsObject, JsString, JsSuccess, Json}
 
 class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
 
@@ -31,6 +31,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
           |  "status": "PENDING",
           |  "pollUrl": "https://poll.example.com/submission/123",
           |  "intervalSeconds": 1,
+          |  "error": { "number": "5005", "type": "fatal", "text": "Boom" },
+          |  "irMarkReceived": "2342345asdfasdgf",
           |  "lastMessageDate": "2026-03-20T10:15:30Z"
           |}
         """.stripMargin
@@ -41,6 +43,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
           "PENDING",
           Some("https://poll.example.com/submission/123"),
           Some(1),
+          Some(JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))),
+          Some("2342345asdfasdgf"),
           Some("2026-03-20T10:15:30Z")
         )
       )
@@ -59,6 +63,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
       out.status mustBe "SUBMITTED"
       out.pollUrl mustBe None
       out.intervalSeconds mustBe None
+      out.error mustBe None
+      out.irMarkReceived mustBe None
       out.lastMessageDate mustBe None
     }
 
@@ -67,6 +73,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
         "SUBMITTED",
         Some("https://poll.example.com/submission/456"),
         Some(1),
+        Some(JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))),
+        Some("2342345asdfasdgf"),
         Some("2026-03-20T10:15:30Z")
       )
       val js    = Json.toJson(model)
@@ -74,16 +82,22 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
       (js \ "status").as[String] mustBe "SUBMITTED"
       (js \ "pollUrl").as[String] mustBe "https://poll.example.com/submission/456"
       (js \ "intervalSeconds").as[Int] mustBe 1
+      (js \ "error").as[JsObject] mustBe JsObject(
+        Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom"))
+      )
+      (js \ "irMarkReceived").as[String] mustBe "2342345asdfasdgf"
       (js \ "lastMessageDate").as[String] mustBe "2026-03-20T10:15:30Z"
     }
 
     "write to expected JSON when pollUrl is None" in {
-      val model = ChrisPollResponse("SUBMITTED", None, None, None)
+      val model = ChrisPollResponse("SUBMITTED", None, None, None, None, None)
       val js    = Json.toJson(model)
 
       (js \ "status").as[String] mustBe "SUBMITTED"
       (js \ "pollUrl").asOpt[String] mustBe None
       (js \ "intervalSeconds").asOpt[Int] mustBe None
+      (js \ "error").asOpt[Int] mustBe None
+      (js \ "irMarkReceived").asOpt[String] mustBe None
       (js \ "lastMessageDate").asOpt[String] mustBe None
     }
 
@@ -92,6 +106,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
         "ACCEPTED",
         Some("https://poll.example.com/submission/789"),
         Some(1),
+        Some(JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))),
+        Some("2342345asdfasdgf"),
         Some("2026-03-20T10:15:30Z")
       )
 
@@ -102,7 +118,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "round-trip (write then read) preserves values without pollUrl" in {
-      val model = ChrisPollResponse("ACCEPTED", None, None, None)
+      val model = ChrisPollResponse("ACCEPTED", None, None, None, None, None)
 
       val js  = Json.toJson(model)
       val out = js.as[ChrisPollResponse]
