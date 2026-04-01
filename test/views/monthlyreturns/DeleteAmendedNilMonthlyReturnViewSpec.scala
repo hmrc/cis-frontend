@@ -51,8 +51,8 @@ class DeleteAmendedNilMonthlyReturnViewSpec extends SpecBase {
       doc.select("input[type=radio][value=true]").size() mustBe 1
       doc.select("input[type=radio][value=false]").size() mustBe 1
 
-      doc.select("label[for=value]").text()    must include(messages("site.yes"))
-      doc.select("label[for=value-no]").text() must include(messages("site.no"))
+      doc.select("label[for=value_0]").text() must include(messages("site.yes"))
+      doc.select("label[for=value_1]").text() must include(messages("site.no"))
     }
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
