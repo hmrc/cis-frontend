@@ -17,7 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.ReturnType
+import models.{ReturnType, UserAnswers}
 import models.ReturnType.MonthlyNilReturn
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -25,6 +25,7 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
+import services.submission.SubmissionService
 import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
 import views.html.monthlyreturns.CheckYourAnswersView
@@ -198,8 +199,16 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
 
+      val mockSubmissionService = mock[SubmissionService]
+
+      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
+        .thenReturn(false)
+
       val application = applicationBuilder(userAnswers = Some(userAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
         .build()
 
       running(application) {
@@ -241,12 +250,18 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .success
         .value
 
-      val mockService = mock[MonthlyReturnService]
+      val mockService           = mock[MonthlyReturnService]
       when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.failed(new RuntimeException("service error")))
+      val mockSubmissionService = mock[SubmissionService]
 
+      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
+        .thenReturn(false)
       val application = applicationBuilder(userAnswers = Some(userAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
         .build()
 
       running(application) {
@@ -265,10 +280,16 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .success
         .value
 
-      val mockService = mock[MonthlyReturnService]
+      val mockService           = mock[MonthlyReturnService]
+      val mockSubmissionService = mock[SubmissionService]
 
+      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
+        .thenReturn(false)
       val application = applicationBuilder(userAnswers = Some(userAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
         .build()
 
       running(application) {
@@ -276,6 +297,33 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val result  = route(application, request).value
 
         status(result) mustEqual INTERNAL_SERVER_ERROR
+      }
+    }
+
+    "must redirect to journey recovery on POST when submission is already created" in {
+      val userAnswers = emptyUserAnswers
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+
+      val mockService           = mock[MonthlyReturnService]
+      val mockSubmissionService = mock[SubmissionService]
+
+      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
+        .thenReturn(true)
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }

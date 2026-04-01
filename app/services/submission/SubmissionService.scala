@@ -50,11 +50,13 @@ class SubmissionService @Inject() (
 
   // Orchestration
 
-  def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[CreateSubmissionResponse] =
+  def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
-      req      <- buildCreateRequest(ua)
-      response <- cisConnector.createSubmission(req)
-    } yield response
+      req            <- buildCreateRequest(ua)
+      response       <- cisConnector.createSubmission(req)
+      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
+      _              <- sessionRepository.set(updatedAnswers)
+    } yield (response, updatedAnswers)
 
   def submitToChrisAndPersist(
     submissionId: String,
@@ -249,7 +251,15 @@ class SubmissionService @Inject() (
     }
   }
 
-// UserAnswer helpers
+  def isAlreadySubmitted(userAnswers: UserAnswers): Boolean = {
+    val ym = selectedYearMonth(userAnswers)
+
+    userAnswers
+      .get(SubmissionCreatedPage(ym.toString))
+      .getOrElse(false)
+  }
+
+  // UserAnswer helpers
 
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
