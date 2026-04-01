@@ -19,17 +19,17 @@ package services.submission
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.CisTaxpayer
 import models.requests.{DataRequest, SendSuccessEmailRequest}
 import models.submission.*
+import models.{ReturnType, UserAnswers}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import pages.submission.*
 import play.api.Logging
-import play.api.libs.json.{JsObject, JsValue}
-import play.api.mvc.{AnyContent, Request}
 import play.api.i18n.Lang
+import play.api.libs.json.JsValue
+import play.api.mvc.AnyContent
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
@@ -113,7 +113,7 @@ class SubmissionService @Inject() (
     hmrcMarkGenerated: String,
     status: String,
     gatewayTimestamp: Option[String],
-    irMarkRecieved: Option[String] = None,
+    irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
 
@@ -124,7 +124,7 @@ class SubmissionService @Inject() (
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
       hmrcMarkGenerated = Some(hmrcMarkGenerated),
-      hmrcMarkGgis = irMarkRecieved,
+      hmrcMarkGgis = irMarkReceived,
       emailRecipient = email,
       agentId = req.agentReference,
       taxYear = ym.getYear,
@@ -210,7 +210,7 @@ class SubmissionService @Inject() (
             submissionId     <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
             result            <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
             _                 <- updateSubmission(
-                                   cisId,
+                                   submissionDetails.id,
                                    userAnswers,
                                    submissionDetails.irMark,
                                    result.status,
