@@ -16,15 +16,9 @@
 
 package pages.submission
 
-import models.UserAnswers
-import models.submission.SubmissionDetails
-import org.scalatest.OptionValues.*
-import org.scalatest.TryValues.*
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.JsPath
-
-import java.time.Instant
 
 class SubmissionCreatedPageSpec extends AnyWordSpec with Matchers {
 

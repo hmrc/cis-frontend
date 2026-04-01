@@ -90,6 +90,9 @@ class CheckYourAnswersController @Inject() (
 
       case Some(returnType) =>
         if (submissionService.isAlreadySubmitted(request.userAnswers)) {
+          logger.warn(
+            "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         } else {
           val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
