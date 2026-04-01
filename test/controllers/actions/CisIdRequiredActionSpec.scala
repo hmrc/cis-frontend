@@ -54,14 +54,13 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
       }
 
       "must return Left and redirect to Unauthorised Agent" in {
-        val agentClientData =
-          AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
 
         val result = Harness.callRefine(
           DataRequest(
             FakeRequest(),
             "id",
-            emptyUserAnswers.set(AgentClientDataPage, agentClientData).success.value
+            emptyUserAnswers,
+            isAgent = true
           )
         )
 
@@ -86,9 +85,7 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
           result.isRight mustBe true
         }
       }
-
     }
-
   }
 
 }
