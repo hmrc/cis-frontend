@@ -28,7 +28,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
-import pages.submission.SubmissionDetailsPage
+import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage}
 import services.submission.SubmissionService
 
 import java.time.Instant
@@ -82,7 +82,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     )
 
     when(service.create(any[UserAnswers])(using any[HeaderCarrier]))
-      .thenReturn(Future.successful(created))
+      .thenReturn(
+        Future
+          .successful(created, userAnswersWithCisId.set(SubmissionCreatedPage("submission-period"), true).success.value)
+      )
 
     when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers], any[Boolean])(using any[HeaderCarrier]))
       .thenReturn(Future.successful(submitted))

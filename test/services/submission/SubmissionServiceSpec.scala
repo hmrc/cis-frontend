@@ -86,16 +86,19 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       )
 
       val beResp = CreateSubmissionResponse("sub-123")
+
       when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(beResp))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
       val out = service.create(uaBase).futureValue
-      out mustBe beResp
+      out._1 mustBe beResp
 
       val cap: ArgumentCaptor[CreateSubmissionRequest] =
         ArgumentCaptor.forClass(classOf[CreateSubmissionRequest])
       verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
       cap.getValue mustBe expectedReq
+      verify(sessionRepository).set(any[UserAnswers])
     }
 
     "fail when CIS ID is missing" in {
@@ -172,6 +175,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val beResp = CreateSubmissionResponse("sub-123")
       when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(beResp))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
       service.create(ua).futureValue
 
@@ -180,6 +184,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
       cap.getValue.taxYear mustBe 2025
       cap.getValue.taxMonth mustBe 11
+
+      verify(sessionRepository).set(any[UserAnswers])
     }
 
     "fail when Month/Year is missing for monthly standard return" in {

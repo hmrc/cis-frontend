@@ -50,11 +50,13 @@ class SubmissionService @Inject() (
 
   // Orchestration
 
-  def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[CreateSubmissionResponse] =
+  def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
-      req      <- buildCreateRequest(ua)
-      response <- cisConnector.createSubmission(req)
-    } yield response
+      req            <- buildCreateRequest(ua)
+      response       <- cisConnector.createSubmission(req)
+      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
+      _              <- sessionRepository.set(updatedAnswers)
+    } yield (response, updatedAnswers)
 
   def submitToChrisAndPersist(
     submissionId: String,
