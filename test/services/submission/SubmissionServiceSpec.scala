@@ -31,13 +31,13 @@ import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Instant, LocalDate}
+import java.time.{Instant, LocalDate, YearMonth}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -1459,6 +1459,55 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       }
 
       ex.getMessage mustBe "Month/Year not selected"
+    }
+  }
+
+  "isAlreadySubmitted" - {
+    "should return true when submission exists and is true" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val ym = YearMonth.of(2026, 3)
+
+      val userAnswers = emptyUserAnswers
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 3, 5))
+        .success
+        .value
+        .set(SubmissionCreatedPage(ym.toString), true)
+        .success
+        .value
+
+      val result = service.isAlreadySubmitted(userAnswers)
+
+      result mustBe true
+    }
+
+    "should return false when submission does not exist" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val userAnswers = emptyUserAnswers
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 3, 5))
+        .success
+        .value
+
+      val result = service.isAlreadySubmitted(userAnswers)
+
+      result mustBe false
     }
   }
 

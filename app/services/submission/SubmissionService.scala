@@ -249,7 +249,15 @@ class SubmissionService @Inject() (
     }
   }
 
-// UserAnswer helpers
+  def isAlreadySubmitted(userAnswers: UserAnswers): Boolean = {
+    val ym = selectedYearMonth(userAnswers)
+
+    userAnswers
+      .get(SubmissionCreatedPage(ym.toString))
+      .getOrElse(false)
+  }
+
+  // UserAnswer helpers
 
   private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
