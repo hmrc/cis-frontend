@@ -66,7 +66,7 @@ class DateConfirmPaymentsController @Inject() (
         messagePrefix     = if (returnType == MonthlyStandardReturn) {
                               "monthlyreturns.dateConfirmPayments"
                             } else { "monthlyreturns.dateConfirmPayments.nilreturn" }
-        preparedForm      = userAnswers.get(DateConfirmPaymentsPage) match {
+        preparedForm      = uaWithReturnType.get(DateConfirmPaymentsPage) match {
                               case None        => form
                               case Some(value) => form.fill(value)
                             }
