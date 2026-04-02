@@ -113,11 +113,11 @@ class FileYourMonthlyCisReturnController @Inject() (
           val instanceId = maybeInstanceId.getOrElse(agentData.uniqueId)
           handleAgentFlow(instanceId, agentData, userAnswers, render)
         case (Some(_), None)                    =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
+          logger.warn(s"[FileYourMonthlyCisReturnController] Missing AgentClientData")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case (None, None)                       =>
           logger.error(
-            s"[FileYourMonthlyCisReturnController] Missing instanceId client tax office number tax office reference"
+            s"[FileYourMonthlyCisReturnController] Missing instanceId and AgentClientData"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
@@ -154,11 +154,10 @@ class FileYourMonthlyCisReturnController @Inject() (
     hc: HeaderCarrier
   ): Future[Option[AgentClientData]] =
     if (request.isAgent) {
-      monthlyReturnService.getAgentClient(request.userId).map {
-        case Some(data) => Some(data)
-        case _          => None
-      }
-    } else { Future.successful(None) }
+      monthlyReturnService.getAgentClient(request.userId)
+    } else {
+      Future.successful(None)
+    }
 
   private def storeInstanceId(instanceId: String, userAnswers: UserAnswers): Future[Unit] =
     for {
