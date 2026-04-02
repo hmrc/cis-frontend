@@ -133,9 +133,10 @@ class FileYourMonthlyCisReturnController @Inject() (
       .hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference)
       .flatMap {
         case true  =>
-          storeAgentClientData(agentData, userAnswers).flatMap(userAnswersWithAgentData =>
-            storeInstanceId(instanceId, userAnswersWithAgentData).map(_ => Ok(render))
-          )
+          for {
+            uaWithAgent <- storeAgentClientData(agentData, userAnswers)
+            _           <- storeInstanceId(instanceId, uaWithAgent)
+          } yield Ok(render)
         case false =>
           logger.warn(
             s"[FileYourMonthlyCisReturnController] hasClient = false for " +
@@ -167,9 +168,8 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
     for {
-      updatedUaWithCisId           <- Future.fromTry(ua.set(CisIdPage, data.uniqueId))
-      updatedUaWithAgentClientData <- Future.fromTry(updatedUaWithCisId.set(AgentClientDataPage, data))
-      _                            <- sessionRepository.set(updatedUaWithAgentClientData)
-    } yield updatedUaWithAgentClientData
+      uaWithAgentClientData <- Future.fromTry(ua.set(AgentClientDataPage, data))
+      _                     <- sessionRepository.set(uaWithAgentClientData)
+    } yield uaWithAgentClientData
 
 }
