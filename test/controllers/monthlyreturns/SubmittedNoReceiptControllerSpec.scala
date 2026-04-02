@@ -291,7 +291,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             }
           }
 
-          "must redirect to Unauthorised Organisation Affinity if cisId is missing from UserAnswers" in {
+          "must redirect to Unauthorised Agent Affinity if cisId is missing from UserAnswers" in {
 
             val app = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true).build()
 

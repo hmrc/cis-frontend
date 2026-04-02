@@ -419,7 +419,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           }
         }
 
-        "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+        "must redirect to Unauthorised Agent Affinity if cisId is not found in UserAnswer" in {
 
           val app = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true).build()
 
@@ -431,7 +431,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
             redirectLocation(
               result
-            ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+            ).value mustEqual controllers.routes.UnauthorisedAgentAffinityController.onPageLoad().url
           }
         }
 
