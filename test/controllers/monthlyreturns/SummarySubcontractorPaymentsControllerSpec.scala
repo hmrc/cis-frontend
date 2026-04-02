@@ -37,7 +37,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
   private val mockSessionRepository = mock[SessionRepository]
 
   private def buildUserAnswers(subcontractors: Map[Int, SelectedSubcontractor]) =
-    subcontractors.foldLeft(emptyUserAnswers) { case (ua, (index, sub)) =>
+    subcontractors.foldLeft(userAnswersWithCisId) { case (ua, (index, sub)) =>
       ua.set(SelectedSubcontractorPage(index), sub).success.value
     }
 
@@ -131,7 +131,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
         .overrides(bind[SessionRepository].toInstance(mockSessionRepository))
         .build()
 

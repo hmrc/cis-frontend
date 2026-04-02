@@ -37,6 +37,7 @@ class CheckAnswersTotalPaymentsController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   monthlyReturnService: MonthlyReturnService,
   payloadBuilder: MonthlyReturnItemPayloadBuilder,
   val controllerComponents: MessagesControllerComponents,
@@ -46,16 +47,17 @@ class CheckAnswersTotalPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-      case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-      case Some(subcontractor) =>
-        Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
-    }
+  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case Some(subcontractor) =>
+          Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
+      }
   }
 
   def onSubmit(index: Int): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       val ua = request.userAnswers
 
       payloadBuilder.build(ua, index) match {

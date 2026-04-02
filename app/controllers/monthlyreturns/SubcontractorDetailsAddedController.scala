@@ -37,6 +37,7 @@ class SubcontractorDetailsAddedController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: SubcontractorDetailsAddedFormProvider,
   sessionRepository: SessionRepository,
   val controllerComponents: MessagesControllerComponents,
@@ -48,19 +49,20 @@ class SubcontractorDetailsAddedController @Inject() (
 
   val form: Form[Boolean] = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val ua = request.userAnswers
-    SubcontractorDetailsAddedBuilder.build(ua) match {
-      case Some(viewModel) =>
-        Ok(view(form, mode, viewModel))
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
+      val ua = request.userAnswers
+      SubcontractorDetailsAddedBuilder.build(ua) match {
+        case Some(viewModel) =>
+          Ok(view(form, mode, viewModel))
 
-      case None =>
-        Redirect(controllers.routes.SystemErrorController.onPageLoad())
-    }
+        case None =>
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+      }
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       SubcontractorDetailsAddedBuilder.build(request.userAnswers) match {
         case None =>
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
@@ -94,5 +96,5 @@ class SubcontractorDetailsAddedController @Inject() (
                 }
             )
       }
-  }
+    }
 }

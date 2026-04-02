@@ -38,6 +38,7 @@ class TotalTaxDeductedController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: TotalTaxDeductedFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: TotalTaxDeductedView
@@ -48,7 +49,7 @@ class TotalTaxDeductedController @Inject() (
   val form: Form[Option[BigDecimal]] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
@@ -62,7 +63,7 @@ class TotalTaxDeductedController @Inject() (
     }
 
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       def redirect(updatedAnswers: UserAnswers): Result =
         returnTo match {
           case Some("changeAnswers") =>

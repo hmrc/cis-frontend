@@ -38,6 +38,7 @@ class VerifySubcontractorsController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: VerifySubcontractorsFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: VerifySubcontractorsView
@@ -47,17 +48,18 @@ class VerifySubcontractorsController @Inject() (
 
   val form: Form[Boolean] = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    val preparedForm = request.userAnswers.get(VerifySubcontractorsPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
+      val preparedForm = request.userAnswers.get(VerifySubcontractorsPage) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
 
-    Ok(view(preparedForm, mode))
+      Ok(view(preparedForm, mode))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
         .bindFromRequest()
         .fold(
@@ -71,5 +73,5 @@ class VerifySubcontractorsController @Inject() (
               case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
             }
         )
-  }
+    }
 }

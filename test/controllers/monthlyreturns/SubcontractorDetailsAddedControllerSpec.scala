@@ -32,6 +32,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
     UserAnswers(
       id = userAnswersId,
       data = Json.obj(
+        "cisId"          -> "1",
         "subcontractors" -> JsObject(subs.map { case (i, o) => i.toString -> o })
       ),
       lastUpdated = now

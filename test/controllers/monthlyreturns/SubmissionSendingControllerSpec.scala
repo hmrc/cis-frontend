@@ -581,7 +581,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = Instant.parse("2025-01-01T00:00:00Z")
       )
-      val uaWithSubmission = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
