@@ -299,7 +299,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               val result = route(app, request).value
               status(result) mustBe SEE_OTHER
               redirectLocation(result).value mustBe
-                controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+                controllers.routes.UnauthorisedAgentAffinityController.onPageLoad().url
             }
           }
 
