@@ -133,8 +133,8 @@ class FileYourMonthlyCisReturnController @Inject() (
       .hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference)
       .flatMap {
         case true  =>
-          storeAgentClientData(agentData, userAnswers).flatMap(userAnswersWithAgentDate =>
-            storeInstanceId(instanceId, userAnswersWithAgentDate).map(_ => Ok(render))
+          storeAgentClientData(agentData, userAnswers).flatMap(userAnswersWithAgentData =>
+            storeInstanceId(instanceId, userAnswersWithAgentData).map(_ => Ok(render))
           )
         case false =>
           logger.warn(
