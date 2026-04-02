@@ -51,14 +51,16 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
   private def mkRequest                   = FakeRequest(GET, submissionSendingRoute)
 
-  private def successRoute          = controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url
-  private def successNoReceiptRoute = controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoad.url
-  private def awaitingRoute         = controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url
-  private def pollingRoute          = controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
-  private def unsuccessfulRoute     = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
-  private def recoveryRoute         = controllers.routes.JourneyRecoveryController.onPageLoad().url
-  private def systemErrorRoute      = controllers.routes.SystemErrorController.onPageLoad().url
-  given hc: HeaderCarrier           = HeaderCarrier()
+  private def successRoute              = controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url
+  private def successNoReceiptRoute     = controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoad.url
+  private def awaitingRoute             = controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url
+  private def pollingRoute              = controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
+  private def unsuccessfulRoute         = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
+  private def unsuccessfulResubmitRoute =
+    controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url
+  private def recoveryRoute             = controllers.routes.JourneyRecoveryController.onPageLoad().url
+  private def systemErrorRoute          = controllers.routes.SystemErrorController.onPageLoad().url
+  given hc: HeaderCarrier               = HeaderCarrier()
 
   private def stubSubmissionFlow(
     service: SubmissionService,
@@ -162,7 +164,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService, never()).updateSubmission(any[String], any[UserAnswers], any())(any[HeaderCarrier])
     }
 
-    "redirects to JourneyRecovery when status is STARTED" in {
+    "redirects to Submission Unsuccessful Resubmit page when status is STARTED" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "STARTED")
@@ -173,7 +175,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe recoveryRoute
+      redirectLocation(result).value mustBe unsuccessfulResubmitRoute
     }
   }
 
@@ -567,6 +569,33 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe recoveryRoute
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to SubmissionUnsuccessfulResubmit when decision is STARTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+      val uaWithSubmission = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+
+      when(mockService.getPollInterval(any[UserAnswers]))
+        .thenReturn(10)
+
+      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful(PollDecision.Polled("STARTED")))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulResubmitRoute
     }
   }
 }
