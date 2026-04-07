@@ -523,3 +523,6 @@ monthlyreturns.submissionUnsuccessfulResubmit.p4 = You will need to provide:
 monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference number, also known as an Employer Reference Number (ERN)
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
+
+printSubmissionDetails.title = Monthly return for period ending {0}
+printSubmissionDetails.heading = Monthly return for period ending {0}
