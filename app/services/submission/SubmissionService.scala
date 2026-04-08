@@ -207,7 +207,7 @@ class SubmissionService @Inject() (
             cisId             <- userAnswers.get(CisIdPage).toFuture
             pollUrl           <- userAnswers.get(PollUrlPage).toFuture
             submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
-            submissionId     <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
+            submissionId      <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
             result            <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
             _                 <- updateSubmission(
                                    submissionDetails.id,

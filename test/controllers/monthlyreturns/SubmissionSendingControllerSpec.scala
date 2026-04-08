@@ -698,7 +698,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
 
-      when(mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any[HeaderCarrier]))
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+          any[HeaderCarrier],
+          any[DataRequest[AnyContent]]
+        )
+      )
         .thenReturn(Future.successful(PollDecision.Polled("STARTED")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
