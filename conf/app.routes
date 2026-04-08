@@ -168,15 +168,3 @@ POST       /monthly-return/change-verified-status-declaration           controll
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
-
-GET        /monthly-return/delete-monthly-return                        controllers.monthlyreturns.DeleteMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/delete-monthly-return                        controllers.monthlyreturns.DeleteMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
-
-GET        /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/delete-nil-monthly-return                        controllers.monthlyreturns.DeleteNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
-
-GET        /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/delete-amended-monthly-return                        controllers.monthlyreturns.DeleteAmendedMonthlyReturnController.onSubmit(mode: Mode = NormalMode)
-
-GET        /monthly-return/delete-amended-nil-monthly-return                        controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/delete-amended-nil-monthly-return                        controllers.monthlyreturns.DeleteAmendedNilMonthlyReturnController.onSubmit(mode: Mode = NormalMode)

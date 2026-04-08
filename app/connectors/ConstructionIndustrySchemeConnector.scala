@@ -154,11 +154,11 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .withBody(Json.toJson(request))
       .execute[ChrisSubmissionResponse]
 
-  def getSubmissionStatus(pollUrl: String, correlationId: String)(implicit
+  def getSubmissionStatus(pollUrl: String, submissionId: String)(implicit
     hc: HeaderCarrier
   ): Future[ChrisPollResponse] =
     http
-      .get(url"$cisBaseUrl/submissions/poll?correlationId=$correlationId&pollUrl=$pollUrl")
+      .get(url"$cisBaseUrl/submissions/poll?submissionId=$submissionId&pollUrl=$pollUrl")
       .execute[ChrisPollResponse]
 
   def updateSubmission(
