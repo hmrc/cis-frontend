@@ -47,7 +47,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, verifySubcontractorsRoute)
@@ -63,7 +63,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "must prepopulate the form with 'true' when the answer exists in user answers" in {
 
-      val userAnswers = emptyUserAnswers.set(VerifySubcontractorsPage, true).success.value
+      val userAnswers = userAnswersWithCisId.set(VerifySubcontractorsPage, true).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -81,7 +81,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "must prepopulate the form with 'false' when the answer exists in user answers" in {
 
-      val userAnswers = emptyUserAnswers.set(VerifySubcontractorsPage, false).success.value
+      val userAnswers = userAnswersWithCisId.set(VerifySubcontractorsPage, false).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -104,7 +104,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -130,7 +130,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -151,7 +151,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request =

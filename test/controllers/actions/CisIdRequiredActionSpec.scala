@@ -19,9 +19,12 @@ package controllers.actions
 import base.SpecBase
 import controllers.Execution.trampoline
 import models.requests.DataRequest
+import org.scalatest.EitherValues.convertLeftProjectionToValuable
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.http.Status.SEE_OTHER
 import play.api.mvc.Result
 import play.api.test.FakeRequest
+import play.api.test.Helpers.LOCATION
 
 import scala.concurrent.Future
 
@@ -40,6 +43,32 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
 
         whenReady(result) { result =>
           result.isLeft mustBe true
+
+          val redirect = result.left.value
+          redirect.header.status mustBe SEE_OTHER
+          redirect.header.headers(LOCATION) mustBe
+            controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        }
+      }
+
+      "must return Left and redirect to Unauthorised Agent" in {
+
+        val result = Harness.callRefine(
+          DataRequest(
+            FakeRequest(),
+            "id",
+            emptyUserAnswers,
+            isAgent = true
+          )
+        )
+
+        whenReady(result) { result =>
+          result.isLeft mustBe true
+
+          val redirect = result.left.value
+          redirect.header.status mustBe SEE_OTHER
+          redirect.header.headers(LOCATION) mustBe
+            controllers.routes.UnauthorisedAgentAffinityController.onPageLoad().url
         }
       }
 
@@ -54,9 +83,7 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
           result.isRight mustBe true
         }
       }
-
     }
-
   }
 
 }
