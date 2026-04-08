@@ -302,6 +302,23 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
+      "returns BadRequest when no subcontractors are selected" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
+
+        val app = applicationWith(subcontractorService, monthlyReturnService)
+
+        running(app) {
+          val request =
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+              .withFormUrlEncodedBody()
+
+          val result = route(app, request).value
+          status(result) mustBe BAD_REQUEST
+        }
+      }
+
       "redirects to JourneyRecovery when no user answers exist" in {
         val subcontractorService = mock[SubcontractorService]
         val monthlyReturnService = mock[MonthlyReturnService]
