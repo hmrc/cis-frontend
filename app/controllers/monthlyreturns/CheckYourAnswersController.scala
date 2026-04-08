@@ -90,7 +90,7 @@ class CheckYourAnswersController @Inject() (
 
       case Some(returnType) =>
         if (submissionService.isAlreadySubmitted(request.userAnswers)) {
-          logger.warn(
+          logger.info(
             "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
