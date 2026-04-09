@@ -14,17 +14,115 @@
  * limitations under the License.
  *@
 
+@import models.monthlyreturns.SubcontractorPayment
+
 @this(
+    govukSummaryList: GovukSummaryList,
+    govukTable: GovukTable,
     layout: templates.Layout,
     govukButton: GovukButton,
     h1: components.H1,
     h2: components.H2,
-    paragraph: components.Paragraph
+    paragraph: components.Paragraph,
+    printLink: components.PrintLink,
+    link: components.Link
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(
+    monthYear: String,
+    submittedTime: String,
+    submittedDate: String,
+    receiptReferenceNumber: String,
+    submissionType: String,
+    contractorName: String,
+    payeReference: String,
+    totalPaymentsMade: String,
+    totalCostOfMaterials: String,
+    totalTaxDeducted: String,
+    subcontractors: Seq[SubcontractorPayment]
+)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("printSubmissionDetails.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.printSubmissionDetails.title", monthYear))) {
 
-    <h1 class="govuk-heading-xl">@messages("printSubmissionDetails.heading")</h1>
+    @h1(messages("monthlyreturns.printSubmissionDetails.heading", monthYear))
+
+    @h2(messages("monthlyreturns.printSubmissionDetails.submissionDetails.heading"))
+    @paragraph(
+        message = "monthlyreturns.printSubmissionDetails.submissionDetails.p",
+        args    = Seq(submittedTime, submittedDate)
+    )
+
+    @govukSummaryList(
+        SummaryListViewModel(Seq(
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.submissionDetails.referenceNumber"))),
+                value = ValueViewModel(Text(receiptReferenceNumber))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.submissionDetails.submissionType"))),
+                value = ValueViewModel(Text(messages(submissionType)))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.submissionDetails.contractorName"))),
+                value = ValueViewModel(Text(contractorName))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.submissionDetails.payeReference"))),
+                value = ValueViewModel(Text(payeReference))
+            )
+        ))
+    )
+
+    @h2(messages("monthlyreturns.printSubmissionDetails.paymentDetails.heading"))
+    @govukSummaryList(
+        SummaryListViewModel(Seq(
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.paymentDetails.numberOfSubcontractorAdded"))),
+                value = ValueViewModel(Text(subcontractors.size.toString))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.paymentDetails.totalPaymentsMade"))),
+                value = ValueViewModel(Text(messages(totalPaymentsMade)))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.paymentDetails.totalCostOfMaterials"))),
+                value = ValueViewModel(Text(totalCostOfMaterials))
+            ),
+            SummaryListRowViewModel(
+                key   = KeyViewModel(Text(messages("monthlyreturns.printSubmissionDetails.paymentDetails.totalTaxDeducted"))),
+                value = ValueViewModel(Text(totalTaxDeducted))
+            )
+        ))
+    )
+
+    @h2(messages("monthlyreturns.printSubmissionDetails.paymentsMadeToSubcontractors.heading"))
+    @govukTable(
+        Table(
+            classes = "cis-payments-table",
+            head = Some(
+                Seq(
+                    messages("monthlyreturns.printSubmissionDetails.paymentsMadeToSubcontractors.subcontractor"),
+                    messages("monthlyreturns.printSubmissionDetails.paymentsMadeToSubcontractors.paymentsMade"),
+                    messages("monthlyreturns.printSubmissionDetails.paymentsMadeToSubcontractors.costOfMaterials"),
+                    messages("monthlyreturns.printSubmissionDetails.paymentsMadeToSubcontractors.taxDeducted")
+                ).map { heading =>
+                    HeadCell(content = Text(heading))
+                }
+            ),
+            rows =  subcontractors.map { subcontractor =>
+                Seq(
+                    TableRow(Text(subcontractor.name), classes = "govuk-table__header"),
+                    TableRow(Text(subcontractor.paymentsMade)),
+                    TableRow(Text(subcontractor.costOfMaterials)),
+                    TableRow(Text(subcontractor.taxDeducted))
+                )
+            }
+        )
+    )
+
+    @printLink(messages("monthlyreturns.printSubmissionDetails.printThisPage.link"))
+    @link(
+        "monthlyreturns.printSubmissionDetails.monthlyReturnHistory.link",
+        "#"
+    )
 }

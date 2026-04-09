@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.monthlyreturns.SubcontractorPayment
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -31,10 +32,40 @@ class PrintSubmissionDetailsController @Inject() (
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: PrintSubmissionDetailsView
-) extends FrontendBaseController with I18nSupport {
+) extends FrontendBaseController
+    with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
-      Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+    val monthYear              = "April 2026"
+    val submittedTime          = "8:46am"
+    val submittedDate          = "16 March 2025"
+    val receiptReferenceNumber = "6QEDAHDREBY455GDNCPMDCNDFBDBJSJSJDNDDHDJDZ5"
+    val submissionType         = "Monthly return"
+    val contractorName         = "PAL 355 Scheme"
+    val payeReference          = "123/AB456"
+    val totalPaymentsMade      = "£1900"
+    val totalCostOfMaterials   = "£616"
+    val totalTaxDeducted       = "£380"
+    val subcontractors         = Seq(
+      SubcontractorPayment("BuildRight Construction", "£165", "£95", "£95"),
+      SubcontractorPayment("Northern Trades Ltd", "£75", "£55", "£55"),
+      SubcontractorPayment("TyneWear Ltd", "£165", "£125", "£55")
+    )
+
+    Ok(
+      view(
+        monthYear,
+        submittedTime,
+        submittedDate,
+        receiptReferenceNumber,
+        submissionType,
+        contractorName,
+        payeReference,
+        totalPaymentsMade,
+        totalCostOfMaterials,
+        totalTaxDeducted,
+        subcontractors
+      )
+    )
   }
 }
