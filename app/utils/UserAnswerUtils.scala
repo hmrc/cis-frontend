@@ -16,6 +16,7 @@
 
 package utils
 
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import pages.monthlyreturns.*
 
@@ -53,12 +54,45 @@ object UserAnswerUtils {
         .flatMap(_.remove(SelectedSubcontractorPage.all))
         .flatMap(_.remove(VerifySubcontractorsPage))
         .flatMap(_.remove(SubcontractorDetailsAddedPage))
-        .flatMap(_.remove(SubcontractorDetailsAddedPage))
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmEmailAddressPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
+
+    def isJourneyComplete: Boolean =
+      userAnswers.get(ReturnTypePage) match {
+        case None                        => false
+        case Some(MonthlyNilReturn)      =>
+          Seq(
+            userAnswers.get(DateConfirmPaymentsPage).isDefined,
+            userAnswers.get(InactivityRequestPage).isDefined,
+            userAnswers.get(ConfirmationByEmailPage).isDefined,
+            userAnswers.get(ConfirmationByEmailPage).contains(false)
+              || userAnswers.get(EnterYourEmailAddressPage).isDefined,
+            userAnswers.get(DeclarationPage).isDefined
+          ).forall(_ == true)
+        case Some(MonthlyStandardReturn) =>
+          val seq = Seq(
+            userAnswers.get(DateConfirmPaymentsPage).isDefined,
+            userAnswers
+              .get(SelectedSubcontractorPage.all)
+              .getOrElse(Map())
+              .values
+              .forall(_.isComplete),
+            userAnswers.get(SubcontractorDetailsAddedPage).contains(true),
+            userAnswers.get(PaymentDetailsConfirmationPage).contains(true),
+            userAnswers.get(EmploymentStatusDeclarationPage).isDefined,
+            userAnswers.get(VerifiedStatusDeclarationPage).isDefined,
+            userAnswers.get(SubmitInactivityRequestPage).isDefined,
+            userAnswers.get(ConfirmationByEmailPage).isDefined,
+            userAnswers.get(ConfirmationByEmailPage).contains(false)
+              || userAnswers.get(EnterYourEmailAddressPage).isDefined
+          )
+
+          seq.forall(_ == true)
+      }
+
   }
 }

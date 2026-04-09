@@ -18,7 +18,8 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.{ReturnType, UserAnswers}
-import models.ReturnType.MonthlyNilReturn
+import models.monthlyreturns.Declaration.Confirmed
+import models.monthlyreturns.InactivityRequest
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.inject.bind
@@ -36,6 +37,14 @@ import java.time.LocalDate
 import scala.concurrent.Future
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
+
+  private val completeAnswers = emptyUserAnswers
+    .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
+    .setOrException(CisIdPage, "test-cis-id")
+    .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+    .setOrException(InactivityRequestPage, InactivityRequest.Option1)
+    .setOrException(ConfirmationByEmailPage, false)
+    .setOrException(DeclarationPage, Set(Confirmed))
 
   "Check Your Answers Controller" - {
 
@@ -180,21 +189,31 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must call updateMonthlyReturn and redirect to submission sending on POST when ReturnTypePage is present" in {
-      val userAnswers = emptyUserAnswers
-        .set(CisIdPage, "test-cis-id")
-        .success
-        .value
-        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
-        .success
-        .value
-        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-        .success
-        .value
-        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
-        .success
-        .value
+    "must redirect to journey recovery on POST when Journey is incomplete" in {
+      val userAnswers = completeAnswers
 
+      val mockService = mock[MonthlyReturnService]
+      when(mockService.updateMonthlyReturn(any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[MonthlyReturnService].toInstance(mockService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
+          .onPageLoad()
+          .url
+      }
+    }
+
+    "must call updateMonthlyReturn and redirect to submission sending on POST when Journey is complete" in {
+      val userAnswers = completeAnswers
       val mockService = mock[MonthlyReturnService]
       when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
@@ -239,16 +258,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must redirect to SystemError on POST when updateNilMonthlyReturn fails" in {
 
-      val userAnswers = emptyUserAnswers
-        .set(CisIdPage, "test-cis-id")
-        .success
-        .value
-        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
-        .success
-        .value
-        .set(ReturnTypePage, MonthlyNilReturn)
-        .success
-        .value
+      val userAnswers = completeAnswers
 
       val mockService           = mock[MonthlyReturnService]
       when(mockService.updateMonthlyReturn(any())(any()))

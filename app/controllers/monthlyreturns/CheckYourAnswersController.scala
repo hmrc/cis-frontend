@@ -29,6 +29,8 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.summarylist.*
 import views.html.monthlyreturns.CheckYourAnswersView
+import play.api.Logging
+import utils.UserAnswerUtils.isJourneyComplete
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -83,13 +85,17 @@ class CheckYourAnswersController @Inject() (
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       request.userAnswers.get(ReturnTypePage) match {
-        case None =>
+        case None                                                       =>
           logger.warn(
             "[CheckYourAnswersController] C6 submit without FormP record (missing ReturnTypePage); redirecting to journey recovery"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-        case Some(returnType) =>
+        case Some(returnType) if !request.userAnswers.isJourneyComplete =>
+          logger.warn(
+            "[CheckYourAnswersController] incomplete journy submission attempt"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case Some(returnType)                                           =>
           if (submissionService.isAlreadySubmitted(request.userAnswers)) {
             logger.info(
               "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"

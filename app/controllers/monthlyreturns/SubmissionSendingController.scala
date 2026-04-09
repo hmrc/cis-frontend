@@ -30,6 +30,7 @@ import services.submission.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import utils.UserAnswerUtils.isJourneyComplete
 import views.html.monthlyreturns.SubmissionSendingView
 
 import javax.inject.Inject
@@ -55,22 +56,25 @@ class SubmissionSendingController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      (for {
-        (created, updatedAnswers) <- submissionService.create(request.userAnswers)
-        submitted                 <-
-          submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
-        _                         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, updatedAnswers, submitted)
-      } yield SubmissionStatus.fromString(submitted.status) match {
-        case Started                             =>
-          logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
-          Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
-        case Pending | SubmissionStatus.Accepted =>
-          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-        case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-      }).recover { case ex =>
-        logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
-        Redirect(controllers.routes.SystemErrorController.onPageLoad())
-      }
+      if (!request.userAnswers.isJourneyComplete)
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      else
+        (for {
+          (created, updatedAnswers) <- submissionService.create(request.userAnswers)
+          submitted <-
+            submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
+          _         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, updatedAnswers, submitted)
+        } yield SubmissionStatus.fromString(submitted.status) match {
+          case Started                             =>
+            logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
+            Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
+          case Pending | SubmissionStatus.Accepted =>
+            Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
+          case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+        }).recover { case ex =>
+          logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
     }
 
   def onPollAndRedirect: Action[AnyContent] =
