@@ -84,6 +84,7 @@ class SubmissionSendingController @Inject() (
           submissionService
             .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
             .flatMap(decision => pollDecisionResult(decision, pollInterval))
+            .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 
