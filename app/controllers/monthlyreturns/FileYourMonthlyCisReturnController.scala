@@ -20,6 +20,7 @@ import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierA
 import models.{NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -80,66 +81,95 @@ class FileYourMonthlyCisReturnController @Inject() (
     for {
       updatedAnswers <- Future.fromTry(userAnswer.set(ReturnTypePage, returnType))
       _              <- sessionRepository.set(updatedAnswers)
-      clientInfoOpt  <- getAgentClient(request)
-      result         <- handleRequest(instanceIdOpt, clientInfoOpt, updatedAnswers, render)
+      agentData      <- getAgentClient(request)
+      result         <- handleRequest(instanceIdOpt, agentData, updatedAnswers, render)
     } yield result
   }
 
   private def handleRequest(
     instanceIdOpt: Option[String],
-    clientTaxOfficeNumberTaxOfficeReference: Option[(String, String)],
+    agentDataOpt: Option[AgentClientData],
     userAnswers: UserAnswers,
     render: => Html
   )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
     if (!request.isAgent) {
       instanceIdOpt match {
         case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
-        case None             => Future.successful(Ok(render))
-      }
-    } else {
-      (instanceIdOpt, clientTaxOfficeNumberTaxOfficeReference) match {
-        case (None, _) =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing instanceId for agent request")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-        case (Some(_), None) =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing client tax office number tax office reference")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-        case (Some(instanceId), Some((taxOfficeNumber, taxOfficeReference))) =>
+        case None             =>
           monthlyReturnService
-            .hasClient(taxOfficeNumber, taxOfficeReference)
-            .flatMap {
-              case true  => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
-              case false =>
-                logger.warn(
-                  s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-                    s"taxOfficeNumber: $taxOfficeNumber, taxOfficeReference: $taxOfficeReference"
-                )
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-            }
-            .recover { case NonFatal(e) =>
-              logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
+            .resolveAndStoreCisId(userAnswers, false)
+            .map(_ => Ok(render))
+            .recover { case NonFatal(ex) =>
+              logger.error(
+                s"[FileYourMonthlyCisReturnController] Failed to resolve CIS ID: ${ex.getMessage}",
+                ex
+              )
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
             }
       }
+    } else {
+      (instanceIdOpt, agentDataOpt) match {
+        case (maybeInstanceId, Some(agentData)) =>
+          val instanceId = maybeInstanceId.getOrElse(agentData.uniqueId)
+          handleAgentFlow(instanceId, agentData, userAnswers, render)
+        case (Some(_), None)                    =>
+          logger.warn(s"[FileYourMonthlyCisReturnController] Missing AgentClientData")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        case (None, None)                       =>
+          logger.error(
+            s"[FileYourMonthlyCisReturnController] Missing instanceId and AgentClientData"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
     }
+
+  private def handleAgentFlow(
+    instanceId: String,
+    agentData: AgentClientData,
+    userAnswers: UserAnswers,
+    render: => Html
+  )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
+    monthlyReturnService
+      .hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference)
+      .flatMap {
+        case true  =>
+          for {
+            uaWithAgent <- storeAgentClientData(agentData, userAnswers)
+            _           <- storeInstanceId(instanceId, uaWithAgent)
+          } yield Ok(render)
+        case false =>
+          logger.warn(
+            s"[FileYourMonthlyCisReturnController] hasClient = false for " +
+              s"taxOfficeNumber: ${agentData.taxOfficeNumber}, taxOfficeReference: ${agentData.taxOfficeReference}"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+      .recover { case NonFatal(e) =>
+        logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
 
   private def getAgentClient(implicit
     request: OptionalDataRequest[_],
     ec: ExecutionContext,
     hc: HeaderCarrier
-  ): Future[Option[(String, String)]] =
+  ): Future[Option[AgentClientData]] =
     if (request.isAgent) {
-      monthlyReturnService.getAgentClient(request.userId).map {
-        case Some(data) => Some((data.taxOfficeNumber, data.taxOfficeReference))
-        case _          => None
-      }
-    } else { Future.successful(None) }
+      monthlyReturnService.getAgentClient(request.userId)
+    } else {
+      Future.successful(None)
+    }
 
   private def storeInstanceId(instanceId: String, userAnswers: UserAnswers): Future[Unit] =
     for {
       updated <- Future.fromTry(userAnswers.set(CisIdPage, instanceId))
       _       <- sessionRepository.set(updated)
     } yield ()
+
+  private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
+    for {
+      uaWithAgentClientData <- Future.fromTry(ua.set(AgentClientDataPage, data))
+      _                     <- sessionRepository.set(uaWithAgentClientData)
+    } yield uaWithAgentClientData
+
 }

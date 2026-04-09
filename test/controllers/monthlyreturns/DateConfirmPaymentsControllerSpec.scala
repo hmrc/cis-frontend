@@ -21,7 +21,6 @@ import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.agent.AgentClientData
 import models.{NormalMode, ReturnType, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
@@ -35,11 +34,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{LocalDate, ZoneOffset}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
@@ -63,7 +61,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   override val emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
   val standardReturnUserAnswers: UserAnswers =
-    UserAnswers(userAnswersId).setOrException(ReturnTypePage, MonthlyStandardReturn)
+    userAnswersWithCisId.setOrException(ReturnTypePage, MonthlyStandardReturn)
 
   def getRequest: FakeRequest[AnyContentAsEmpty.type] =
     FakeRequest(GET, dateConfirmPaymentsRoute)
@@ -79,13 +77,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
   "DateConfirmPayments Controller" - {
 
     "must return OK and the correct view for a GET" in {
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
-        .build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).overrides().build()
 
       running(application) {
         val result = route(application, getRequest).value
@@ -99,50 +91,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Journey Recovery when service returns NOT_FOUND" in {
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND)))
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
-        .build()
-
-      running(application) {
-        val result = route(application, getRequest).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to system error page if unable to retrieve cisId" in {
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.failed(new RuntimeException("boom")))
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
-        .build()
-
-      running(application) {
-        val result = route(application, getRequest).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-      }
-    }
-
     "must populate the view correctly on a GET when the question has previously been answered" in {
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
+      val userAnswers = userAnswersWithCisId.set(DateConfirmPaymentsPage, validAnswer).success.value
 
-      val userAnswers = UserAnswers(userAnswersId).set(DateConfirmPaymentsPage, validAnswer).success.value
-
-      val application = applicationBuilder(userAnswers = Some(userAnswers))
-        .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
-        .build()
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).overrides().build()
 
       running(application) {
         val view   = application.injector.instanceOf[DateConfirmPaymentsView]
@@ -165,15 +117,15 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
-      when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
+      when(mockMonthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(false))
       when(mockMonthlyReturnService.createMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers.setOrException(ReturnTypePage, MonthlyStandardReturn)))
+        applicationBuilder(userAnswers =
+          Some(userAnswersWithCisId.setOrException(ReturnTypePage, MonthlyStandardReturn))
+        )
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
@@ -191,7 +143,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return a Bad Request and errors when invalid data is submitted" in {
       val application = applicationBuilder(userAnswers =
-        Some(emptyUserAnswers.setOrException(ReturnTypePage, MonthlyStandardReturn))
+        Some(userAnswersWithCisId.setOrException(ReturnTypePage, MonthlyStandardReturn))
       ).build()
 
       val request =
@@ -238,13 +190,11 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
-      when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
+      when(mockMonthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(true))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
@@ -266,13 +216,12 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
-      when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
+
+      when(mockMonthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
@@ -291,7 +240,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
           .build()
 
@@ -306,49 +255,13 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Journey Recovery on POST when resolveAndStoreCisId returns NOT_FOUND" in {
+    "must redirect to next page when StandardReturn and valid data is submitted" in {
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND)))
 
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
-          .overrides(
-            bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-          )
-          .build()
-
-      running(application) {
-        val result = route(application, postRequest()).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must prepare user answers for agent and redirect to next page when valid data is submitted" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      val agentClientData          = AgentClientData(
-        uniqueId = "CIS-AGENT-123",
-        taxOfficeNumber = "123",
-        taxOfficeReference = "AB456",
-        schemeName = Some("Test Employer")
-      )
-
-      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some(agentClientData)))
-      when(mockMonthlyReturnService.hasClient(eqTo("123"), eqTo("AB456"))(any()))
-        .thenReturn(Future.successful(true))
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], eqTo(true))(any()))
-        .thenReturn(Future.successful(("CIS-AGENT-123", standardReturnUserAnswers)))
-      when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-AGENT-123"), anyInt(), anyInt())(any()))
+      when(mockMonthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(false))
       when(mockMonthlyReturnService.createMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))
@@ -370,70 +283,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to system error page when agent has no access to this client" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      val agentClientData          = AgentClientData(
-        uniqueId = "CIS-AGENT-123",
-        taxOfficeNumber = "123",
-        taxOfficeReference = "AB456",
-        schemeName = Some("Test Employer")
-      )
-
-      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(Some(agentClientData)))
-      when(mockMonthlyReturnService.hasClient(eqTo("123"), eqTo("AB456"))(any()))
-        .thenReturn(Future.successful(false))
-
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-          .overrides(
-            bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-          )
-          .build()
-
-      running(application) {
-        val result = route(application, postRequest()).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-      }
-    }
-
-    "must redirect to system error page when agent client data is missing" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-
-      when(mockMonthlyReturnService.getAgentClient(any[String])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.successful(None))
-
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-          .overrides(
-            bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-          )
-          .build()
-
-      running(application) {
-        val result = route(application, postRequest()).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-      }
-    }
-
     "must use existing return type from user answers when returnType parameter is None" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
 
-      val userAnswers = emptyUserAnswers.setOrException(ReturnTypePage, MonthlyStandardReturn)
+      val userAnswers = userAnswersWithCisId.setOrException(ReturnTypePage, MonthlyStandardReturn)
       val application = applicationBuilder(userAnswers = Some(userAnswers))
         .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
         .build()
@@ -456,10 +309,8 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
     "must return OK with nil return message prefix when returnType is MonthlyNilReturn" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
         .overrides(bind[MonthlyReturnService].toInstance(mockMonthlyReturnService))
         .build()
 
@@ -486,15 +337,13 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CIS-123", emptyUserAnswers)))
-      when(mockMonthlyReturnService.isDuplicate(eqTo("CIS-123"), anyInt(), anyInt())(any()))
+      when(mockMonthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
         .thenReturn(Future.successful(false))
       when(mockMonthlyReturnService.createNilMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(emptyUserAnswers))
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers.setOrException(ReturnTypePage, MonthlyNilReturn)))
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId.setOrException(ReturnTypePage, MonthlyNilReturn)))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
@@ -507,82 +356,6 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual onwardRoute.url
-      }
-    }
-
-    "onPageLoad (agent): must return OK when agent has access to client" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val agentClientData          = AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.getAgentClient(any())(any(), any()))
-        .thenReturn(Future.successful(Some(agentClientData)))
-      when(mockMonthlyReturnService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
-        .thenReturn(Future.successful(true))
-      when(mockMonthlyReturnService.resolveAndStoreCisId(any[UserAnswers], any[Boolean])(any()))
-        .thenReturn(Future.successful(("CLIENT-123", emptyUserAnswers)))
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-        .overrides(
-          bind[SessionRepository].toInstance(mockSessionRepository),
-          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-        )
-        .build()
-
-      running(application) {
-        val result = route(application, getRequest).value
-
-        status(result) mustEqual OK
-      }
-    }
-
-    "onPageLoad (agent): must redirect to system error when agent has no access to client" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val agentClientData          = AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.getAgentClient(any())(any(), any()))
-        .thenReturn(Future.successful(Some(agentClientData)))
-      when(mockMonthlyReturnService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
-        .thenReturn(Future.successful(false))
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-        .overrides(
-          bind[SessionRepository].toInstance(mockSessionRepository),
-          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-        )
-        .build()
-
-      running(application) {
-        val result = route(application, getRequest).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
-      }
-    }
-
-    "onPageLoad (agent): must redirect to system error when agent client data is missing" in {
-      val mockSessionRepository = mock[SessionRepository]
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
-      when(mockMonthlyReturnService.getAgentClient(any())(any(), any()))
-        .thenReturn(Future.successful(None))
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
-        .overrides(
-          bind[SessionRepository].toInstance(mockSessionRepository),
-          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-        )
-        .build()
-
-      running(application) {
-        val result = route(application, getRequest).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
   }

@@ -39,6 +39,7 @@ class PaymentDetailsController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: PaymentDetailsFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: PaymentDetailsView
@@ -49,7 +50,7 @@ class PaymentDetailsController @Inject() (
   val form: Form[BigDecimal] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -65,7 +66,7 @@ class PaymentDetailsController @Inject() (
     }
 
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
