@@ -49,12 +49,14 @@ class SelectSubcontractorsFormProviderSpec extends FieldBehaviours {
       )
     }
 
-    "bind empty sequence when no subcontractors provided" in {
+    "fail to bind when no subcontractors are selected" in {
       val data   = Map.empty[String, String]
       val result = form.bind(data)
-      result.errors mustBe empty
-      result.value.value mustBe SelectSubcontractorsFormData(
-        subcontractorsToInclude = Seq.empty
+      result.errors must contain(
+        FormError(
+          "subcontractorsToInclude",
+          "monthlyreturns.selectSubcontractors.error.required"
+        )
       )
     }
 

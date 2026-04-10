@@ -29,7 +29,7 @@ class SelectSubcontractorsFormProvider extends Mappings {
           "monthlyreturns.selectSubcontractors.subcontractorsToInclude.required",
           "monthlyreturns.selectSubcontractors.subcontractorsToInclude.wholeNumber",
           "monthlyreturns.selectSubcontractors.subcontractorsToInclude.nonNumeric"
-        )
+        ).verifying("monthlyreturns.selectSubcontractors.error.required", _.nonEmpty)
       )(SelectSubcontractorsFormData.apply)(selectSubcontractorsFormData =>
         Some(selectSubcontractorsFormData.subcontractorsToInclude)
       )

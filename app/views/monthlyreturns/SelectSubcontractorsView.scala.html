@@ -47,7 +47,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()) {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractors.headOption.map(s => Map("subcontractorsToInclude" -> s"subcontractor-${s.id}")).getOrElse(Map.empty)))
         }
 
         @link(
