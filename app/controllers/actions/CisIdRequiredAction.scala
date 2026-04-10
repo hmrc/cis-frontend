@@ -31,9 +31,11 @@ class CisIdRequiredActionImpl @Inject() (implicit val executionContext: Executio
       case Some(cisId) =>
         Future.successful(Right(request))
       case None        =>
-        Future.successful(
-          Left(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
-        )
+        if (request.isAgent) {
+          Future.successful(Left(Redirect(controllers.routes.UnauthorisedAgentAffinityController.onPageLoad())))
+        } else {
+          Future.successful(Left(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
+        }
     }
 }
 

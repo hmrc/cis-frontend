@@ -35,39 +35,41 @@ class SummarySubcontractorPaymentsController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SummarySubcontractorPaymentsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    val subcontractors = request.userAnswers
-      .get(SelectedSubcontractorPage.all)
-      .getOrElse(Map.empty)
-      .values
-      .filter(s => s.totalPaymentsMade.isDefined && s.costOfMaterials.isDefined && s.totalTaxDeducted.isDefined)
-      .toSeq
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+    implicit request =>
+      val subcontractors = request.userAnswers
+        .get(SelectedSubcontractorPage.all)
+        .getOrElse(Map.empty)
+        .values
+        .filter(s => s.totalPaymentsMade.isDefined && s.costOfMaterials.isDefined && s.totalTaxDeducted.isDefined)
+        .toSeq
 
-    val totalPayments      = subcontractors.flatMap(_.totalPaymentsMade).sum.setScale(2, RoundingMode.HALF_DOWN)
-    val totalMaterialsCost = subcontractors.flatMap(_.costOfMaterials).sum.setScale(2, RoundingMode.HALF_DOWN)
-    val totalCisDeductions = subcontractors.flatMap(_.totalTaxDeducted).sum.setScale(2, RoundingMode.HALF_DOWN)
+      val totalPayments      = subcontractors.flatMap(_.totalPaymentsMade).sum.setScale(2, RoundingMode.HALF_DOWN)
+      val totalMaterialsCost = subcontractors.flatMap(_.costOfMaterials).sum.setScale(2, RoundingMode.HALF_DOWN)
+      val totalCisDeductions = subcontractors.flatMap(_.totalTaxDeducted).sum.setScale(2, RoundingMode.HALF_DOWN)
 
-    val viewModel = SummarySubcontractorPaymentsViewModel(
-      subcontractorCount = subcontractors.size,
-      totalPayments = totalPayments,
-      totalMaterialsCost = totalMaterialsCost,
-      totalCisDeductions = totalCisDeductions
-    )
+      val viewModel = SummarySubcontractorPaymentsViewModel(
+        subcontractorCount = subcontractors.size,
+        totalPayments = totalPayments,
+        totalMaterialsCost = totalMaterialsCost,
+        totalCisDeductions = totalCisDeductions
+      )
 
-    for {
-      updatedAnswers <- Future.fromTry(
-                          request.userAnswers
-                            .set(SummaryTotalPaymentsPage, totalPayments)
-                            .flatMap(_.set(SummaryTotalMaterialsCostPage, totalMaterialsCost))
-                            .flatMap(_.set(SummaryTotalCisDeductionsPage, totalCisDeductions))
-                        )
-      _              <- sessionRepository.set(updatedAnswers)
-    } yield Ok(view(viewModel))
+      for {
+        updatedAnswers <- Future.fromTry(
+                            request.userAnswers
+                              .set(SummaryTotalPaymentsPage, totalPayments)
+                              .flatMap(_.set(SummaryTotalMaterialsCostPage, totalMaterialsCost))
+                              .flatMap(_.set(SummaryTotalCisDeductionsPage, totalCisDeductions))
+                          )
+        _              <- sessionRepository.set(updatedAnswers)
+      } yield Ok(view(viewModel))
   }
 }

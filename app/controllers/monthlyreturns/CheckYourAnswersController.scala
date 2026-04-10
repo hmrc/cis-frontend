@@ -80,7 +80,7 @@ class CheckYourAnswersController @Inject() (
       Ok(view(returnDetailsList, emailList))
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
     request.userAnswers.get(ReturnTypePage) match {
       case None =>
         logger.warn(

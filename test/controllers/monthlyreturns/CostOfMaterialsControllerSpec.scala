@@ -47,7 +47,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
   val validAnswer: BigDecimal = BigDecimal(0)
   val companyName             = "TyneWear Ltd"
 
-  val userAnswers: UserAnswers = emptyUserAnswers
+  val userAnswers: UserAnswers = userAnswersWithCisId
     .set(SelectedSubcontractorPage(1), SelectedSubcontractor(123, companyName, None, None, None))
     .success
     .value
@@ -194,7 +194,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to Journey Recovery for a GET if no subcontractor is found for the index" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(GET, costOfMaterialsRoute)
@@ -225,7 +225,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to Journey Recovery for a POST if no subcontractor is found for the index" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request =

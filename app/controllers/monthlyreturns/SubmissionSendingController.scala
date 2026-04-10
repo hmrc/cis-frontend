@@ -61,10 +61,9 @@ class SubmissionSendingController @Inject() (
           submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
         _                         <- submissionService.updateSubmission(created.submissionId, updatedAnswers, submitted)
       } yield SubmissionStatus.fromString(submitted.status) match {
-        // TODO - recoverable error for resubmit: case "STARTED" will be updated to a new page MR-05-b controller when ready
         case Started                             =>
           logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
         case Pending | SubmissionStatus.Accepted =>
           Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
         case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
@@ -101,6 +100,7 @@ class SubmissionSendingController @Inject() (
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
     SubmissionStatus.fromString(status) match {
+      case Started                             => Future.successful(Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad()))
       case Pending | SubmissionStatus.Accepted => sendingPage(pollInterval)
       case TimedOut                            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
       case Submitted                           =>

@@ -225,7 +225,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must redirect to journey recovery on POST when ReturnTypePage is missing" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
@@ -275,7 +275,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     }
 
     "must return InternalServerError on POST when update request cannot be built" in {
-      val userAnswers = emptyUserAnswers
+      val userAnswers = userAnswersWithCisId
         .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
         .success
         .value
