@@ -24,15 +24,15 @@
     link: Link
 )
 
-@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(messagePrefix: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("monthlyreturns.alreadySubmitted.title")),
+    pageTitle = titleNoForm(messages(s"$messagePrefix.title")),
     showSignOut = false,
     showBackLink = false
 ) {
 
-    @heading((messages("monthlyreturns.alreadySubmitted.heading")), classes = "govuk-heading-xl")
+    @heading((messages(s"$messagePrefix.heading")), classes = "govuk-heading-xl")
 
     @link(
         linkTextKey = "monthlyreturns.alreadySubmitted.link",

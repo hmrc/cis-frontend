@@ -27,8 +27,18 @@ class AlreadySubmittedViewSpec extends SpecBase with Matchers {
 
   "AlreadySubmittedView" - {
 
-    "must render the page with the correct heading and paragraph with link" in new Setup {
-      val html = view()
+    "must render the page with the correct heading and paragraph with link for nil return" in new Setup {
+      val html = view("monthlyreturns.alreadySubmitted.nilreturn")
+      val doc  = Jsoup.parse(html.body)
+
+      doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.nilreturn.title"))
+      doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.nilreturn.heading"))
+      doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
+      doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+    }
+
+    "must render the page with the correct heading and paragraph with link for standard return" in new Setup {
+      val html = view("monthlyreturns.alreadySubmitted")
       val doc  = Jsoup.parse(html.body)
 
       doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.title"))

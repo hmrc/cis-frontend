@@ -17,6 +17,11 @@
 package controllers.monthlyreturns
 
 import config.FrontendAppConfig
+import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import models.ReturnType
+import models.ReturnType.MonthlyStandardReturn
+import pages.monthlyreturns.ReturnTypePage
+import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -26,12 +31,27 @@ import javax.inject.Inject
 
 class AlreadySubmittedController @Inject() (
   val controllerComponents: MessagesControllerComponents,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   view: AlreadySubmittedView
 )(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
-  def onPageLoad: Action[AnyContent] = Action { implicit request =>
-    Ok(view())
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
+      val returnType    = request.userAnswers.get(ReturnTypePage).getOrElse {
+        logger.error("[AlreadySubmittedController] ReturnTypePage missing from userAnswers")
+        throw new IllegalStateException("ReturnTypePage missing from userAnswers")
+      }
+      val messagePrefix = if (returnType == MonthlyStandardReturn) {
+        "monthlyreturns.alreadySubmitted"
+      } else {
+        "monthlyreturns.alreadySubmitted.nilreturn"
+      }
+      Ok(view(messagePrefix))
   }
 }
