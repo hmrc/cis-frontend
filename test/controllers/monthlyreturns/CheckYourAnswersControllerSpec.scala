@@ -301,7 +301,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     }
 
     "must redirect to journey recovery on POST when submission is already created" in {
-      val userAnswers = emptyUserAnswers
+      val userAnswers = userAnswersWithCisId
         .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
         .success
         .value
