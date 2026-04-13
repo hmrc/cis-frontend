@@ -256,6 +256,35 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
+    "must redirect to journey recovery on POST when journey is incomplete is missing" in {
+
+      val userAnswers = completeAnswers.remove(InactivityRequestPage).get
+      val mockService = mock[MonthlyReturnService]
+      when(mockService.updateMonthlyReturn(any())(any()))
+        .thenReturn(Future.successful(()))
+
+      val mockSubmissionService = mock[SubmissionService]
+
+      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
+        .thenReturn(false)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
     "must redirect to SystemError on POST when updateNilMonthlyReturn fails" in {
 
       val userAnswers = completeAnswers
@@ -284,37 +313,8 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
-    "must return InternalServerError on POST when update request cannot be built" in {
-      val userAnswers = userAnswersWithCisId
-        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-        .success
-        .value
-
-      val mockService           = mock[MonthlyReturnService]
-      val mockSubmissionService = mock[SubmissionService]
-
-      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
-        .thenReturn(false)
-      val application = applicationBuilder(userAnswers = Some(userAnswers))
-        .overrides(
-          bind[MonthlyReturnService].toInstance(mockService),
-          bind[SubmissionService].toInstance(mockSubmissionService)
-        )
-        .build()
-
-      running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
-        val result  = route(application, request).value
-
-        status(result) mustEqual INTERNAL_SERVER_ERROR
-      }
-    }
-
     "must redirect to journey recovery on POST when submission is already created" in {
-      val userAnswers = userAnswersWithCisId
-        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-        .success
-        .value
+      val userAnswers = completeAnswers
 
       val mockService           = mock[MonthlyReturnService]
       val mockSubmissionService = mock[SubmissionService]
