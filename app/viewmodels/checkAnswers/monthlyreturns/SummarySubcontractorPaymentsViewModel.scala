@@ -19,6 +19,7 @@ package viewmodels.checkAnswers.monthlyreturns
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
+import utils.MoneyFormat
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
@@ -30,7 +31,7 @@ case class SummarySubcontractorPaymentsViewModel(
 object SummarySubcontractorPaymentsViewModel {
 
   private def formatAmount(amt: BigDecimal): String =
-    f"£$amt%.2f"
+    s"£${MoneyFormat.twoDp(amt)}"
 
   def apply(
     subcontractorCount: Int,
