@@ -17,19 +17,18 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import pages.monthlyreturns.ReturnTypePage
-import models.ReturnType
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
+import services.submission.SubmissionService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import viewmodels.govuk.summarylist.*
 import viewmodels.checkAnswers.monthlyreturns.*
+import viewmodels.govuk.summarylist.*
 import views.html.monthlyreturns.CheckYourAnswersView
-import play.api.Logging
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,6 +39,7 @@ class CheckYourAnswersController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
+  submissionService: SubmissionService,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView
@@ -90,29 +90,33 @@ class CheckYourAnswersController @Inject() (
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(returnType) =>
-          implicit val hc: HeaderCarrier =
-            HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+          if (submissionService.isAlreadySubmitted(request.userAnswers)) {
+            logger.info(
+              "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"
+            )
+            Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+          } else {
+            val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
 
-          val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
+            updateRequest match {
+              case Left(error) =>
+                logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
+                Future.successful(InternalServerError)
 
-          updateRequest match {
-            case Left(error) =>
-              logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
-              Future.successful(InternalServerError)
-
-            case Right(req) =>
-              monthlyReturnService
-                .updateMonthlyReturn(req)
-                .map { _ =>
-                  logger.info(
-                    s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
-                  )
-                  Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
-                }
-                .recover { case t =>
-                  logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
-                  Redirect(controllers.routes.SystemErrorController.onPageLoad())
-                }
+              case Right(req) =>
+                monthlyReturnService
+                  .updateMonthlyReturn(req)
+                  .map { _ =>
+                    logger.info(
+                      s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
+                    )
+                    Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+                  }
+                  .recover { case t =>
+                    logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
+                    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                  }
+            }
           }
       }
   }
