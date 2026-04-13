@@ -28,7 +28,7 @@ import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import services.submission.SubmissionService
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
