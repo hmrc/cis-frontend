@@ -271,10 +271,11 @@ class SubmissionService @Inject() (
 
       emailOpt match {
         case None =>
-          val updated = userAnswers.set(SuccessEmailSentPage(submissionId), true)
-          Future
-            .fromTry(updated)
-            .flatMap(updatedUa => sessionRepository.set(updatedUa).map(_ => updatedUa))
+          for {
+            latestUa  <- sessionRepository.get(userAnswers.id).map(_.getOrElse(userAnswers))
+            updatedUa <- Future.fromTry(latestUa.set(SuccessEmailSentPage(submissionId), true))
+            _         <- sessionRepository.set(updatedUa)
+          } yield updatedUa
 
         case Some(email) =>
           val locale: Locale = Lang.get(langCode).map(_.locale).getOrElse(Locale.UK)
@@ -284,11 +285,10 @@ class SubmissionService @Inject() (
             year = yearMonth.getYear.toString
           )
 
-          val updatedUaFuture = Future.fromTry(userAnswers.set(SuccessEmailSentPage(submissionId), true))
-
           for {
             _         <- cisConnector.sendSuccessfulEmail(submissionId, request)
-            updatedUa <- updatedUaFuture
+            latestUa  <- sessionRepository.get(userAnswers.id).map(_.getOrElse(userAnswers))
+            updatedUa <- Future.fromTry(latestUa.set(SuccessEmailSentPage(submissionId), true))
             _         <- sessionRepository.set(updatedUa)
           } yield updatedUa
       }
