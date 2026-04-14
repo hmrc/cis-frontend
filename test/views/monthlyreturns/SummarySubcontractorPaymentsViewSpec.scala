@@ -82,7 +82,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
       keys.get(2) mustEqual messages("monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label")
 
       val values = summaryRows.select(".govuk-summary-list__value").eachText()
-      values.get(0) mustEqual "£3600.00"
+      values.get(0) mustEqual "£3,600.00"
       values.get(1) mustEqual "£900.00"
       values.get(2) mustEqual "£540.00"
     }
@@ -99,7 +99,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
       val doc: Document               = Jsoup.parse(html.body)
 
       val values = doc.select(".govuk-summary-list__value").eachText()
-      values.get(0) mustEqual "£1234.56"
+      values.get(0) mustEqual "£1,234.56"
       values.get(1) mustEqual "£789.01"
       values.get(2) mustEqual "£234.56"
     }
