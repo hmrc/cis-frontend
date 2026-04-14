@@ -87,10 +87,11 @@ class SubmissionService @Inject() (
         cisConnector.getCisTaxpayer()
 
     for {
-      taxpayer <- taxpayerFut
-      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
-      response <- cisConnector.submitToChris(submissionId, csr)
-      _        <- writeToFeMongo(ua, submissionId, response)
+      taxpayer  <- taxpayerFut
+      csr       <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
+      response  <- cisConnector.submitToChris(submissionId, csr)
+      amendment <- fetchAmendmentFlag(ua)
+      _         <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
   def updateSubmissionFromChrisResponse(
@@ -204,9 +205,7 @@ class SubmissionService @Inject() (
           } yield "TIMED_OUT"
         } else {
           for {
-            cisId             <- userAnswers.get(CisIdPage).toFuture
             pollUrl           <- userAnswers.get(PollUrlPage).toFuture
-            submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
             submissionId      <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
             result            <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
             _                 <- updateSubmission(
@@ -221,7 +220,12 @@ class SubmissionService @Inject() (
             newStatus          = result.status
             timedOut           = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
             finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
-            newDetails         = submissionDetails.copy(status = newStatus)
+            irMarkValidated    = newStatus == "SUBMITTED" || newStatus == "SUBMITTED_NO_RECEIPT"
+            newDetails         = submissionDetails.copy(
+                                   status = newStatus,
+                                   hmrcMarkGgis =
+                                     if (irMarkValidated) Some(submissionDetails.irMark) else submissionDetails.hmrcMarkGgis
+                                 )
             ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
             ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
             ua3               <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
@@ -323,10 +327,23 @@ class SubmissionService @Inject() (
         throw new RuntimeException("Date of return missing for monthly return")
       )
 
+  private def fetchAmendmentFlag(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
+    val ym         = selectedYearMonth(ua)
+    cisConnector
+      .retrieveMonthlyReturnForEditDetails(instanceId, ym.getMonthValue, ym.getYear)
+      .map(_.monthlyReturn.headOption.flatMap(_.amendment))
+      .recover { case ex =>
+        logger.warn("[fetchAmendmentFlag] Failed to retrieve amendment flag, defaulting to None", ex)
+        None
+      }
+  }
+
   private def writeToFeMongo(
     ua: UserAnswers,
     submissionId: String,
-    response: ChrisSubmissionResponse
+    response: ChrisSubmissionResponse,
+    amendment: Option[String]
   ): Future[Boolean] = {
     val updatedUa: Try[UserAnswers] = for {
       ua1 <- ua.set(
@@ -337,7 +354,9 @@ class SubmissionService @Inject() (
                  irMark = response.hmrcMarkGenerated,
                  submittedAt = response.gatewayTimestamp
                    .flatMap(t => Try(Instant.parse(t)).toOption)
-                   .getOrElse(Instant.now)
+                   .getOrElse(Instant.now),
+                 amendment = amendment,
+                 hmrcMarkGgis = None
                )
              )
       ua2 <- response.responseEndPoint match {
