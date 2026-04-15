@@ -76,7 +76,7 @@
                         "monthlyreturns.selectSubcontractors.table.th.name",
                         "monthlyreturns.selectSubcontractors.table.th.verificationRequired",
                         "monthlyreturns.selectSubcontractors.table.th.verificationNumber",
-                        "monthlyreturns.selectSubcontractors.table.th.taxTreatment",
+                        "monthlyreturns.selectSubcontractors.table.th.taxTreatment"
                     ).map { key =>
                         HeadCell(content = Text(messages(key)))
                     }
@@ -117,7 +117,7 @@
                             TableRow(content = Text(subcontractor.name),  classes = "govuk-table__header"),
                             TableRow(content = Text(subcontractor.verificationRequired)),
                             TableRow(content = Text(subcontractor.verificationNumber)),
-                            TableRow(content = Text(subcontractor.taxTreatment)),
+                            TableRow(content = Text(subcontractor.taxTreatment))
                         )
                     }
                 }
