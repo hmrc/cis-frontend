@@ -19,16 +19,14 @@ package services.guard
 import models.UserAnswers
 import models.requests.DataRequest
 import models.submission.SubmissionDetails
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pages.submission.SubmissionDetailsPage
 import play.api.test.FakeRequest
-import services.guard.SubmissionSuccessfulCheck.{GuardFailed, GuardPassed}
 
 import java.time.Instant
 
-class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers with ScalaFutures {
+class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
 
   private val guard  = new SubmissionSuccessfulServiceGuardImpl
   private val irMark = "Pyy1LRJh053AE+nuyp0GJR7oESw="
@@ -61,64 +59,64 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers wit
 
   "SubmissionSuccessfulServiceGuardImpl.check" should {
 
-    "return GuardFailed when SubmissionDetailsPage is absent" in {
+    "return false when SubmissionDetailsPage is absent" in {
       implicit val request: DataRequest[_] = dataRequest(emptyUserAnswers())
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
 
-    "return GuardPassed when status is SUBMITTED and IRMarks match" in {
+    "return true when status is SUBMITTED and IRMarks match" in {
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, submissionDetails()).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardPassed
+      guard.check mustBe true
     }
 
-    "return GuardPassed when amendment is Y and IRMarks match (even if status is not SUBMITTED)" in {
+    "return true when amendment is Y and IRMarks match (even if status is not SUBMITTED)" in {
       val details                          = submissionDetails(status = "PENDING", amendment = Some("Y"))
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardPassed
+      guard.check mustBe true
     }
 
-    "return GuardFailed when status is not SUBMITTED and amendment is not Y" in {
+    "return false when status is not SUBMITTED and amendment is not Y" in {
       val details                          = submissionDetails(status = "PENDING", amendment = Some("N"))
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
 
-    "return GuardFailed when status is not SUBMITTED and amendment is None" in {
+    "return false when status is not SUBMITTED and amendment is None" in {
       val details                          = submissionDetails(status = "ACCEPTED", amendment = None)
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
 
-    "return GuardFailed when irMark is empty" in {
+    "return false when irMark is empty" in {
       val details                          = submissionDetails(irMark = "", hmrcMarkGgis = Some(""))
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
 
-    "return GuardFailed when hmrcMarkGgis is None" in {
+    "return false when hmrcMarkGgis is None" in {
       val details                          = submissionDetails(hmrcMarkGgis = None)
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
 
-    "return GuardFailed when hmrcMarkGgis does not match irMark" in {
+    "return false when hmrcMarkGgis does not match irMark" in {
       val details                          = submissionDetails(hmrcMarkGgis = Some("differentMark"))
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
 
-    "return GuardFailed when hmrcMarkGgis is empty string" in {
+    "return false when hmrcMarkGgis is empty string" in {
       val details                          = submissionDetails(hmrcMarkGgis = Some(""))
       val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
       implicit val request: DataRequest[_] = dataRequest(ua)
-      guard.check.futureValue mustBe GuardFailed
+      guard.check mustBe false
     }
   }
 }

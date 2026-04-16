@@ -32,7 +32,6 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
-import services.guard.SubmissionSuccessfulCheck.{GuardFailed, GuardPassed}
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.IrMarkReferenceGenerator
@@ -136,7 +135,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
     "contractor" - {
 
       "must return OK and render key fields" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val app = buildApp(baseUa())
 
         running(app) {
@@ -153,7 +152,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must not call getSchemeEmail when email is present in user answers" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val app = buildApp(baseUa(withEmail = Some(email)))
 
         running(app) {
@@ -164,7 +163,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must call getSchemeEmail and use returned email when EnterYourEmailAddressPage is missing" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(fallbackEmail)))
         val app = buildApp(baseUa(withEmail = None))
@@ -178,7 +177,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must default to empty email if getSchemeEmail fails" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
           .thenReturn(Future.failed(new RuntimeException("boom")))
         val app = buildApp(baseUa(withEmail = None))
@@ -203,7 +202,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must throw if ReturnTypePage is missing" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val app = buildApp(baseUa(withReturnType = false))
 
         running(app) {
@@ -213,7 +212,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must throw if contractorName is missing" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val app = buildApp(baseUa(withContractorName = false))
 
         running(app) {
@@ -223,7 +222,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must throw if employerReference is missing" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val app = buildApp(baseUa(), hasEmployeeRef = false)
 
         running(app) {
@@ -233,7 +232,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must throw if taxPeriodEnd is missing" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val app = buildApp(baseUa(withPeriodEnd = false))
 
         running(app) {
@@ -243,7 +242,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must redirect to JourneyRecovery when guard fails" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardFailed))
+        when(mockGuard.check(any())).thenReturn(false)
         val app = buildApp(baseUa())
 
         running(app) {
@@ -254,7 +253,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must redirect to JourneyRecovery when submission details are missing (guard fails)" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardFailed))
+        when(mockGuard.check(any())).thenReturn(false)
         val app = buildApp(baseUa(withSubmissionDetails = false))
 
         running(app) {
@@ -268,7 +267,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
     "agent" - {
 
       "must return OK and render key fields using AgentClientData" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val agentData = AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some(contractorName))
         val ua        = baseUa().set(AgentClientDataPage, agentData).success.value
         val app       = buildApp(ua, isAgent = true)
@@ -283,7 +282,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must throw if agent employerReference is missing" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val agentDataMissing = AgentClientData("CLIENT-123", "", "taxOfficeReference", Some(contractorName))
         val ua               = baseUa().set(AgentClientDataPage, agentDataMissing).success.value
         val app              = buildApp(ua, isAgent = true, hasAgentRef = false)
@@ -295,7 +294,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must call getSchemeEmail when email is missing for agent" in {
-        when(mockGuard.check(any())).thenReturn(Future.successful(GuardPassed))
+        when(mockGuard.check(any())).thenReturn(true)
         val agentData = AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some(contractorName))
         val ua        = baseUa(withEmail = None).set(AgentClientDataPage, agentData).success.value
         when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))

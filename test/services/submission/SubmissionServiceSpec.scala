@@ -340,6 +340,110 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         saved.get(LastMessageDatePage) mustBe None
       }
 
+      "persist amendment flag as Some(Y) when monthly return has amendment Y" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        val amendmentResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, amendment = Some("Y"))),
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(amendmentResponse))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe Some("Y")
+      }
+
+      "persist amendment flag as None when monthly return list is empty" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        val emptyResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq.empty,
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(emptyResponse))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe None
+      }
+
+      "default amendment flag to None when retrieveMonthlyReturnForEditDetails fails" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("BE unavailable")))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe None
+      }
+
       "fails fast and does not persist if updating UserAnswers fails" in {
         val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
         val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])

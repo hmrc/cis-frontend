@@ -24,7 +24,6 @@ import pages.submission.SubmissionDetailsPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
-import services.guard.SubmissionSuccessfulCheck.{GuardFailed, GuardPassed}
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -64,57 +63,55 @@ class SubmissionSuccessController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      submissionSuccessGuard.check.flatMap {
-        case GuardFailed =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      if (!submissionSuccessGuard.check) {
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      } else {
+        val ua = request.userAnswers
 
-        case GuardPassed =>
-          val ua = request.userAnswers
+        val cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
 
-          val cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
+        val submissionType = required(
+          ua.get(ReturnTypePage),
+          "[SubmissionSuccess] ReturnTypePage missing from userAnswers"
+        )
 
-          val submissionType = required(
-            ua.get(ReturnTypePage),
-            "[SubmissionSuccess] ReturnTypePage missing from userAnswers"
-          )
+        val periodEnd = required(
+          periodEndFromUserAnswers(ua, submissionType),
+          s"[SubmissionSuccess] taxPeriodEnd missing from userAnswers for submissionType $submissionType"
+        )
 
-          val periodEnd = required(
-            periodEndFromUserAnswers(ua, submissionType),
-            s"[SubmissionSuccess] taxPeriodEnd missing from userAnswers for submissionType $submissionType"
-          )
+        val submissionDetails = required(
+          ua.get(SubmissionDetailsPage),
+          "[SubmissionSuccess] submissionDetails missing from userAnswers"
+        )
 
-          val submissionDetails = required(
-            ua.get(SubmissionDetailsPage),
-            "[SubmissionSuccess] submissionDetails missing from userAnswers"
-          )
+        val reference = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
+        val ukNow     = ZonedDateTime.now(clock).withZoneSameInstant(ukZone)
 
-          val reference = IrMarkReferenceGenerator.fromBase64(submissionDetails.irMark)
-          val ukNow     = ZonedDateTime.now(clock).withZoneSameInstant(ukZone)
-
-          val emailF: Future[String] = emailfromUserAnswers(ua, submissionType).fold {
-            monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse("")).recover { case ex =>
-              logger.warn(s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
-              ""
-            }
-          }(Future.successful)
-
-          emailF.map { email =>
-            val submittedTime = ukNow.format(submittedTimeFmt).toLowerCase(Locale.UK)
-            val submittedDate = ukNow.format(dayMonthYearFmt)
-            Ok(
-              view(
-                reference = reference,
-                periodEnd = periodEnd.format(monthYearFmt),
-                submittedTime = submittedTime,
-                submittedDate = submittedDate,
-                contractorName = contractorNameFrom(request),
-                empRef = employerRefFrom(request),
-                email = email,
-                submissionType = submissionType,
-                cisId = cisId
-              )
-            )
+        val emailF: Future[String] = emailfromUserAnswers(ua, submissionType).fold {
+          monthlyReturnService.getSchemeEmail(cisId).map(_.getOrElse("")).recover { case ex =>
+            logger.warn(s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+            ""
           }
+        }(Future.successful)
+
+        emailF.map { email =>
+          val submittedTime = ukNow.format(submittedTimeFmt).toLowerCase(Locale.UK)
+          val submittedDate = ukNow.format(dayMonthYearFmt)
+          Ok(
+            view(
+              reference = reference,
+              periodEnd = periodEnd.format(monthYearFmt),
+              submittedTime = submittedTime,
+              submittedDate = submittedDate,
+              contractorName = contractorNameFrom(request),
+              empRef = employerRefFrom(request),
+              email = email,
+              submissionType = submissionType,
+              cisId = cisId
+            )
+          )
+        }
       }
   }
 }
