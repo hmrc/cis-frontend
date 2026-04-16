@@ -19,28 +19,20 @@ package services.guard
 import models.requests.DataRequest
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
-import services.guard.SubmissionSuccessfulCheck.{GuardFailed, GuardPassed}
 
 import javax.inject.Singleton
-import scala.concurrent.Future
-
-sealed trait SubmissionSuccessfulCheck
-object SubmissionSuccessfulCheck {
-  case object GuardPassed extends SubmissionSuccessfulCheck
-  case object GuardFailed extends SubmissionSuccessfulCheck
-}
 
 trait SubmissionSuccessfulServiceGuard {
-  def check(implicit request: DataRequest[_]): Future[SubmissionSuccessfulCheck]
+  def check(implicit request: DataRequest[_]): Boolean
 }
 
 @Singleton
 class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGuard with Logging {
 
-  def check(implicit request: DataRequest[_]): Future[SubmissionSuccessfulCheck] = {
-    val result = request.userAnswers.get(SubmissionDetailsPage).exists { details =>
+  def check(implicit request: DataRequest[_]): Boolean =
+    request.userAnswers.get(SubmissionDetailsPage).exists { details =>
       val submittedOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
-      val irMarksValid      = details.irMark.nonEmpty &&
+      val irMarksValid         = details.irMark.nonEmpty &&
         details.hmrcMarkGgis.exists(g => g.nonEmpty && g == details.irMark)
 
       if (!submittedOrAmendment)
@@ -52,7 +44,4 @@ class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGu
 
       submittedOrAmendment && irMarksValid
     }
-
-    Future.successful(if (result) GuardPassed else GuardFailed)
-  }
 }
