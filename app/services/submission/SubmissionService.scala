@@ -220,11 +220,9 @@ class SubmissionService @Inject() (
             newStatus          = result.status
             timedOut           = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
             finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
-            irMarkValidated    = newStatus == "SUBMITTED" || newStatus == "SUBMITTED_NO_RECEIPT"
             newDetails         = submissionDetails.copy(
                                    status = newStatus,
-                                   hmrcMarkGgis =
-                                     if (irMarkValidated) Some(submissionDetails.irMark) else submissionDetails.hmrcMarkGgis
+                                   hmrcMarkGgis = result.irMarkReceived.orElse(submissionDetails.hmrcMarkGgis)
                                  )
             ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
             ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))

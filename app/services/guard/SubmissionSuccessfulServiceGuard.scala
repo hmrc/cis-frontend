@@ -39,18 +39,18 @@ class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGu
 
   def check(implicit request: DataRequest[_]): Future[SubmissionSuccessfulCheck] = {
     val result = request.userAnswers.get(SubmissionDetailsPage).exists { details =>
-      val statusOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
+      val submittedOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
       val irMarksValid      = details.irMark.nonEmpty &&
         details.hmrcMarkGgis.exists(g => g.nonEmpty && g == details.irMark)
 
-      if (!statusOrAmendment)
+      if (!submittedOrAmendment)
         logger.warn(
           s"[SubmissionSuccessfulServiceGuard] Guard failed: status=${details.status}, amendment=${details.amendment}"
         )
       if (!irMarksValid)
         logger.warn(s"[SubmissionSuccessfulServiceGuard] Guard failed: irMark empty or hmrcMarkGgis mismatch")
 
-      statusOrAmendment && irMarksValid
+      submittedOrAmendment && irMarksValid
     }
 
     Future.successful(if (result) GuardPassed else GuardFailed)
