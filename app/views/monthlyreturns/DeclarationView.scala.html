@@ -27,7 +27,8 @@
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
     fieldSet: components.FieldSet,
-    paragraph: components.Paragraph
+    paragraph: components.Paragraph,
+    bulletList: components.BulletList
 )
 
 @(form: Form[_], mode: Mode, formattedDate: String)(implicit request: Request[_], messages: Messages)
@@ -44,20 +45,15 @@
             legend = "monthlyreturns.declaration.heading",
             form = Some(form)
         ) {
-            @paragraph(messages("monthlyreturns.declaration.paragraph", formattedDate))
+            @paragraph(messages("monthlyreturns.declaration.paragraph"))
+            @bulletList(Seq(
+                "monthlyreturns.declaration.listItem1",
+                "monthlyreturns.declaration.listItem2",
+            ))
             
             @govukWarningText(
                 WarningTextViewModel(
                     content = Text(messages("monthlyreturns.declaration.warning"))
-                )
-            )
-
-            @govukCheckboxes(
-                CheckboxesViewModel(
-                    form   = form,
-                    name   = "value",
-                    legend = LegendViewModel(messages("monthlyreturns.declaration.checkbox")).withCssClass("govuk-visually-hidden"),
-                    items  = Declaration.checkboxItems
                 )
             )
         }
