@@ -17,12 +17,216 @@
 package utils
 
 import base.SpecBase
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.{Declaration, InactivityRequest, SelectedSubcontractor}
 import pages.monthlyreturns.*
 import utils.UserAnswerUtils.*
 
 class UserAnswerUtilsSpec extends SpecBase {
+
+  "UserAnswerUtils.isJourneyComplete" - {
+
+    "when ReturnType is MonthlyNilReturn" - {
+
+      "returns true when all nil return pages are answered (email not requested)" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyNilReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .get
+          .set(ConfirmationByEmailPage, false)
+          .get
+          .set(DeclarationPage, Set(Declaration.Confirmed))
+          .get
+
+        ua.isJourneyComplete mustBe true
+      }
+
+      "returns true when all nil return pages are answered (email requested and provided)" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyNilReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .get
+          .set(ConfirmationByEmailPage, true)
+          .get
+          .set(EnterYourEmailAddressPage, "test@test.com")
+          .get
+          .set(DeclarationPage, Set(Declaration.Confirmed))
+          .get
+
+        ua.isJourneyComplete mustBe true
+      }
+
+      "returns false when a required page is missing" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyNilReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          // InactivityRequestPage missing
+          .set(ConfirmationByEmailPage, false)
+          .get
+          .set(DeclarationPage, Set(Declaration.Confirmed))
+          .get
+
+        ua.isJourneyComplete mustBe false
+      }
+
+      "returns false when email is requested but not provided" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyNilReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .get
+          .set(ConfirmationByEmailPage, true)
+          .get
+          // EnterYourEmailAddressPage missing
+          .set(DeclarationPage, Set(Declaration.Confirmed))
+          .get
+
+        ua.isJourneyComplete mustBe false
+      }
+    }
+
+    "when ReturnType is MonthlyStandardReturn" - {
+
+      "returns true when all standard return pages are answered (email not requested)" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyStandardReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(SelectedSubcontractorPage(0), completeSub(0))
+          .get
+          .set(SubcontractorDetailsAddedPage, true)
+          .get
+          .set(PaymentDetailsConfirmationPage, true)
+          .get
+          .set(EmploymentStatusDeclarationPage, true)
+          .get
+          .set(VerifiedStatusDeclarationPage, true)
+          .get
+          .set(SubmitInactivityRequestPage, true)
+          .get
+          .set(ConfirmationByEmailPage, false)
+          .get
+
+        ua.isJourneyComplete mustBe true
+      }
+
+      "returns true when all standard return pages are answered (email requested and provided)" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyStandardReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(SelectedSubcontractorPage(0), completeSub(0))
+          .get
+          .set(SubcontractorDetailsAddedPage, true)
+          .get
+          .set(PaymentDetailsConfirmationPage, true)
+          .get
+          .set(EmploymentStatusDeclarationPage, true)
+          .get
+          .set(VerifiedStatusDeclarationPage, true)
+          .get
+          .set(SubmitInactivityRequestPage, true)
+          .get
+          .set(ConfirmationByEmailPage, true)
+          .get
+          .set(EnterYourEmailAddressPage, "test@test.com")
+          .get
+
+        ua.isJourneyComplete mustBe true
+      }
+
+      "returns false when a required page is missing" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyStandardReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(SelectedSubcontractorPage(0), completeSub(0))
+          .get
+          // SubcontractorDetailsAddedPage missing
+          .set(PaymentDetailsConfirmationPage, true)
+          .get
+          .set(EmploymentStatusDeclarationPage, true)
+          .get
+          .set(VerifiedStatusDeclarationPage, true)
+          .get
+          .set(SubmitInactivityRequestPage, true)
+          .get
+          .set(ConfirmationByEmailPage, false)
+          .get
+
+        ua.isJourneyComplete mustBe false
+      }
+
+      "returns false when not all subcontractors are complete" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyStandardReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(SelectedSubcontractorPage(0), incompleteSub(0))
+          .get
+          .set(SubcontractorDetailsAddedPage, true)
+          .get
+          .set(PaymentDetailsConfirmationPage, true)
+          .get
+          .set(EmploymentStatusDeclarationPage, true)
+          .get
+          .set(VerifiedStatusDeclarationPage, true)
+          .get
+          .set(SubmitInactivityRequestPage, true)
+          .get
+          .set(ConfirmationByEmailPage, false)
+          .get
+
+        ua.isJourneyComplete mustBe false
+      }
+
+      "returns false when SubcontractorDetailsAddedPage is false" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyStandardReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(SelectedSubcontractorPage(0), completeSub(0))
+          .get
+          .set(SubcontractorDetailsAddedPage, false)
+          .get
+          .set(PaymentDetailsConfirmationPage, true)
+          .get
+          .set(EmploymentStatusDeclarationPage, true)
+          .get
+          .set(VerifiedStatusDeclarationPage, true)
+          .get
+          .set(SubmitInactivityRequestPage, true)
+          .get
+          .set(ConfirmationByEmailPage, false)
+          .get
+
+        ua.isJourneyComplete mustBe false
+      }
+    }
+
+    "when ReturnType is not set" - {
+
+      "returns false" in {
+        UserAnswers("id").isJourneyComplete mustBe false
+      }
+    }
+  }
 
   "UserAnswerUtils.firstIncompleteSubcontractorIndex" - {
 
