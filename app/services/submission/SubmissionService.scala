@@ -131,7 +131,7 @@ class SubmissionService @Inject() (
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
       acceptedTime = gatewayTimestamp,
-      // TODO: submissionRequestDate = ???,
+      submissionRequestDate = Some(Instant.now()),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
       govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
