@@ -16,11 +16,12 @@
 
 package models.submission
 
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues.convertOptionToValuable
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import java.time.Instant
+
+import java.time.LocalDateTime
 
 class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
 
@@ -37,7 +38,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "submittableStatus": "ACCEPTED",
           |  "amendment": "N",
           |  "hmrcMarkGgis": "GGIRmark",
-          |  "submissionRequestDate": "2025-01-02T03:04:05Z",
+          |  "submissionRequestDate": "2025-01-02T03:04:05",
           |  "acceptedTime": "10:15:30 GMT",
           |  "emailRecipient": "test@test.com",
           |  "agentId": "AG123",
@@ -57,7 +58,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
       out.submittableStatus mustBe "ACCEPTED"
       out.amendment.value mustBe "N"
       out.hmrcMarkGgis.value mustBe "GGIRmark"
-      out.submissionRequestDate.value mustBe Instant.parse("2025-01-02T03:04:05Z")
+      out.submissionRequestDate.value mustBe LocalDateTime.parse("2025-01-02T03:04:05")
       out.acceptedTime.value mustBe "10:15:30 GMT"
       out.emailRecipient.value mustBe "test@test.com"
       out.agentId.value mustBe "AG123"
@@ -126,7 +127,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
         submittableStatus = "SUBMITTED_NO_RECEIPT",
         amendment = Some("Y"),
         hmrcMarkGgis = Some("GGIRmark"),
-        submissionRequestDate = Some(Instant.parse("2025-03-04T05:06:07Z")),
+        submissionRequestDate = Some(LocalDateTime.parse("2025-03-04T05:06:07")),
         acceptedTime = Some("11:22:33 GMT"),
         emailRecipient = Some("test@test.com"),
         agentId = Some("Agent"),
