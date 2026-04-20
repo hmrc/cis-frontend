@@ -21,12 +21,14 @@ import connectors.ConstructionIndustrySchemeConnector
 import repositories.SessionRepository
 import models.monthlyreturns.*
 import pages.monthlyreturns.*
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
+import models.requests.GetMonthlyReturnForEditRequest
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 
+import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -187,6 +189,167 @@ class MonthlyReturnService @Inject() (
         }
       }
   }
+
+  def populateUserAnswersForContinueJourney(
+    ua: UserAnswers,
+    editRequest: GetMonthlyReturnForEditRequest
+  )(implicit hc: HeaderCarrier): Future[Either[String, UserAnswers]] =
+    retrieveMonthlyReturnForEditDetails(
+      instanceId = editRequest.instanceId,
+      taxMonth = editRequest.taxMonth,
+      taxYear = editRequest.taxYear
+    ).map { response =>
+      for {
+        monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
+        updatedUa     <- populateContinueJourneyAnswers(
+                           ua = ua,
+                           instanceId = editRequest.instanceId,
+                           monthlyReturn = monthlyReturn,
+                           monthlyReturnItems = response.monthlyReturnItems,
+                           submissions = response.submission
+                         )
+      } yield updatedUa
+    }
+
+  private def populateContinueJourneyAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    monthlyReturn: MonthlyReturn,
+    monthlyReturnItems: Seq[MonthlyReturnItem],
+    submissions: Seq[Submission]
+  ): Either[String, UserAnswers] = {
+    val emailRecipient = submissions.headOption.flatMap(_.emailRecipient)
+
+    monthlyReturn.nilReturnIndicator match {
+      case Some("Y") =>
+        populateNilReturnAnswers(
+          ua = ua,
+          instanceId = instanceId,
+          monthlyReturn = monthlyReturn,
+          emailRecipient = emailRecipient
+        )
+
+      case Some("N") =>
+        populateStandardReturnAnswers(
+          ua = ua,
+          instanceId = instanceId,
+          monthlyReturn = monthlyReturn,
+          monthlyReturnItems = monthlyReturnItems,
+          emailRecipient = emailRecipient
+        )
+
+      case _ =>
+        Left("Missing nil return indicator")
+    }
+  }
+
+  private def populateNilReturnAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    monthlyReturn: MonthlyReturn,
+    emailRecipient: Option[String]
+  ): Either[String, UserAnswers] = {
+    val declarationSet =
+      if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
+
+    for {
+      ua1 <- ua.set(CisIdPage, instanceId).toEither.left.map(_.getMessage)
+      ua2 <- ua1.set(ReturnTypePage, ReturnType.MonthlyNilReturn).toEither.left.map(_.getMessage)
+      ua3 <- ua2.set(
+                 DateConfirmPaymentsPage,
+                 LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
+               )
+               .toEither.left.map(_.getMessage)
+      ua4 <- ua3.set(DeclarationPage, declarationSet).toEither.left.map(_.getMessage)
+      ua5 <- ua4.set(
+                 SubmitInactivityRequestPage,
+                 monthlyReturn.decNilReturnNoPayments.contains("Y")
+               )
+               .toEither.left.map(_.getMessage)
+      ua6 <- emailRecipient match {
+               case Some(email) if email.nonEmpty =>
+                 ua5.set(EnterYourEmailAddressPage, email).toEither.left.map(_.getMessage)
+               case None                          => Right(ua5)
+             }
+    } yield ua6
+  }
+
+  private def populateStandardReturnAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    monthlyReturn: MonthlyReturn,
+    monthlyReturnItems: Seq[MonthlyReturnItem],
+    emailRecipient: Option[String]
+  ): Either[String, UserAnswers] =
+    for {
+      ua1 <- ua.set(CisIdPage, instanceId).toEither.left.map(_.getMessage)
+      ua2 <- ua1.set(ReturnTypePage, ReturnType.MonthlyStandardReturn).toEither.left.map(_.getMessage)
+      ua3 <- ua2.set(
+                 DateConfirmPaymentsPage,
+                 LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
+               )
+               .toEither.left.map(_.getMessage)
+      ua4 <- ua3.set(
+                 EmploymentStatusDeclarationPage,
+                 monthlyReturn.decEmpStatusConsidered.contains("Y")
+               )
+               .toEither.left.map(_.getMessage)
+      ua5 <- ua4.set(
+                 VerifiedStatusDeclarationPage,
+                 monthlyReturn.decAllSubsVerified.contains("Y")
+               )
+               .toEither.left.map(_.getMessage)
+      ua6 <- ua5.set(
+                 DeclarationPage,
+                 if (monthlyReturn.decInformationCorrect.contains("Y")) {
+                   Set(Declaration.Confirmed)
+                 } else {
+                   Set.empty[Declaration]
+                 }
+               )
+               .toEither.left.map(_.getMessage)
+      ua7 <- ua6.set(
+                 SubmitInactivityRequestPage,
+                 monthlyReturn.decNilReturnNoPayments.contains("Y")
+               )
+               .toEither.left.map(_.getMessage)
+      ua8 <- populateStandardReturnItems(ua7, monthlyReturnItems)
+      ua9 <- emailRecipient match {
+               case Some(email) if email.nonEmpty =>
+                 ua3.set(EnterYourEmailAddressPage, email).toEither.left.map(_.getMessage)
+               case None                          =>
+                 Right(ua8)
+             }
+    } yield ua9
+
+  private def populateStandardReturnItems(
+    ua: UserAnswers,
+    items: Seq[MonthlyReturnItem]
+  ): Either[String, UserAnswers] =
+    for {
+      cleared <- ua.remove(SelectedSubcontractorPage.all).toEither.left.map(_.getMessage)
+      updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
+                   case (accEither, (item, index)) =>
+                     for {
+                       acc  <- accEither
+                       next <- acc
+                                 .set(
+                                   SelectedSubcontractorPage(index + 1),
+                                   SelectedSubcontractor(
+                                     id = item.subcontractorId.getOrElse(0L),
+                                     name = item.subcontractorName.getOrElse(""),
+                                     totalPaymentsMade = toBigDecimal(item.totalPayments),
+                                     costOfMaterials = toBigDecimal(item.costOfMaterials),
+                                     totalTaxDeducted = toBigDecimal(item.totalDeducted)
+                                   )
+                                 )
+                                 .toEither.left.map(_.getMessage)
+                     } yield next
+                 }
+    } yield updated
+
+  private def toBigDecimal(value: Option[String]): Option[BigDecimal] =
+    value.flatMap(v => Try(BigDecimal(v)).toOption)
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
