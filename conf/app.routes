@@ -36,7 +36,7 @@ GET        /monthly-return/change-confirm-email-address                 controll
 POST       /monthly-return/change-confirm-email-address                 controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)
 
 GET        /monthly-return/declaration-no-payments-made                 controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/declaration-no-payments-made                 controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/declaration-no-payments-made/continue        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-declaration-no-payments-made          controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-declaration-no-payments-made          controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = CheckMode)
 

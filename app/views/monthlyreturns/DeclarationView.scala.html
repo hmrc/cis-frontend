@@ -21,44 +21,35 @@
 
 @this(
     layout: templates.Layout,
-    formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukButton: GovukButton,
     govukWarningText: GovukWarningText,
     fieldSet: components.FieldSet,
     paragraph: components.Paragraph,
-    bulletList: components.BulletList
+    bulletList: components.BulletList,
+    govukInput: GovukInput,
+    h1: components.H1
 )
 
-@(form: Form[_], mode: Mode, formattedDate: String)(implicit request: Request[_], messages: Messages)
+@(mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("monthlyreturns.declaration.title"))) {
+@layout(pageTitle = titleNoForm(messages("monthlyreturns.declaration.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @h1(messages("monthlyreturns.declaration.heading"))
+    @paragraph(messages("monthlyreturns.declaration.paragraph"))
+    @bulletList(Seq(
+        "monthlyreturns.declaration.listItem1",
+        "monthlyreturns.declaration.listItem2",
+    ))
 
-        @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> firstRadioId)))
-        }
-
-        @fieldSet(
-            legend = "monthlyreturns.declaration.heading",
-            form = Some(form)
-        ) {
-            @paragraph(messages("monthlyreturns.declaration.paragraph"))
-            @bulletList(Seq(
-                "monthlyreturns.declaration.listItem1",
-                "monthlyreturns.declaration.listItem2",
-            ))
-            
-            @govukWarningText(
-                WarningTextViewModel(
-                    content = Text(messages("monthlyreturns.declaration.warning"))
-                )
-            )
-        }
-
-        @govukButton(
-            ButtonViewModel(messages("monthlyreturns.declaration.submit"))
+    @govukWarningText(
+        WarningTextViewModel(
+            content = Text(messages("monthlyreturns.declaration.warning"))
         )
-    }
+    )
+
+    @govukButton(
+        ButtonViewModel(messages("monthlyreturns.declaration.submit"))
+            .asLink(controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode).url)
+    )
 }

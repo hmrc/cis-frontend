@@ -17,7 +17,6 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import forms.monthlyreturns.DeclarationFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
@@ -29,48 +28,25 @@ class DeclarationViewSpec extends SpecBase with Matchers {
 
   "DeclarationView" - {
 
-    "must render the page with heading, paragraph, checkbox and button" in new Setup {
-      val html = view(form, NormalMode, "5 April 2024")
+    "must render the page with heading, paragraph and button" in new Setup {
+      val html = view(NormalMode)
       val doc  = Jsoup.parse(html.body)
 
-      doc.title                 must include(messages("monthlyreturns.declaration.title"))
-      doc.select("legend").text must include(messages("monthlyreturns.declaration.heading"))
+      doc.title             must include(messages("monthlyreturns.declaration.title"))
+      doc.select("h1").text must include(messages("monthlyreturns.declaration.heading"))
 
-      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph"))
-
-      doc.select("button[type=submit]").text mustBe messages("monthlyreturns.declaration.submit")
+      doc.select("p").text                        must include(messages("monthlyreturns.declaration.paragraph"))
+      doc.getElementsByClass("govuk-button").text must include(messages("monthlyreturns.declaration.submit"))
     }
 
-    "must show error summary and messages when form has errors" in new Setup {
-      val boundWithError = form.bind(Map("value" -> ""))
-      val html           = view(boundWithError, NormalMode, "5 April 2024")
-      val doc            = Jsoup.parse(html.body)
-
-      doc.title must startWith(messages("error.title.prefix"))
-
-      doc.select(".govuk-error-summary").size() mustBe 1
-
-      val expected = messages("monthlyreturns.declaration.error.required")
-      doc.text() must include(expected)
+    trait Setup {
+      val app                                       = applicationBuilder().build()
+      val view                                      = app.injector.instanceOf[DeclarationView]
+      implicit val request: play.api.mvc.Request[_] = FakeRequest()
+      implicit val messages: Messages               = play.api.i18n.MessagesImpl(
+        play.api.i18n.Lang.defaultLang,
+        app.injector.instanceOf[play.api.i18n.MessagesApi]
+      )
     }
-
-    "must render with empty date when no date is provided" in new Setup {
-      val html = view(form, NormalMode, "")
-      val doc  = Jsoup.parse(html.body)
-
-      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph", ""))
-    }
-  }
-
-  trait Setup {
-    val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[DeclarationView]
-    val formProvider                              = app.injector.instanceOf[DeclarationFormProvider]
-    val form                                      = formProvider()
-    implicit val request: play.api.mvc.Request[_] = FakeRequest()
-    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
-      play.api.i18n.Lang.defaultLang,
-      app.injector.instanceOf[play.api.i18n.MessagesApi]
-    )
   }
 }

@@ -17,19 +17,18 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import forms.monthlyreturns.DeclarationFormProvider
 
 import javax.inject.Inject
 import models.Mode
 import models.monthlyreturns.Declaration
 import navigation.Navigator
-import pages.monthlyreturns.{DateConfirmPaymentsPage, DeclarationPage}
-import play.api.i18n.{I18nSupport, Lang, MessagesApi}
+import pages.monthlyreturns.DeclarationPage
+import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import utils.DateTimeFormats.dateTimeFormat
 import views.html.monthlyreturns.DeclarationView
+import models.monthlyreturns.Declaration.Confirmed
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,54 +40,22 @@ class DeclarationController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  formProvider: DeclarationFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: DeclarationView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
-  val form = formProvider()
-
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
-
-      val preparedForm = request.userAnswers.get(DeclarationPage) match {
-        case None        => form
-        case Some(value) => form.fill(value.head)
-      }
-
-      val formattedDate = request.userAnswers
-        .get(DateConfirmPaymentsPage)
-        .map { date =>
-          implicit val lang: Lang = messagesApi.preferred(request).lang
-          date.format(dateTimeFormat())
-        }
-        .getOrElse("")
-
-      Ok(view(preparedForm, mode, formattedDate))
+      Ok(view(mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => {
-            val formattedDate = request.userAnswers
-              .get(DateConfirmPaymentsPage)
-              .map { date =>
-                implicit val lang: Lang = messagesApi.preferred(request).lang
-                date.format(dateTimeFormat())
-              }
-              .getOrElse("")
-            Future.successful(BadRequest(view(formWithErrors, mode, formattedDate)))
-          },
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(value)))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
-        )
+      for {
+        updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(Confirmed)))
+        _              <- sessionRepository.set(updatedAnswers)
+      } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
   }
 }

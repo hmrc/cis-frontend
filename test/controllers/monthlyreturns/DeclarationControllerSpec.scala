@@ -17,33 +17,21 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import forms.monthlyreturns.DeclarationFormProvider
 import models.monthlyreturns.Declaration
 import models.NormalMode
-import navigation.{FakeNavigator, Navigator}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{DateConfirmPaymentsPage, DeclarationPage}
-import play.api.data.Form
-import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import repositories.SessionRepository
 import views.html.monthlyreturns.DeclarationView
-
 import java.time.LocalDate
-import scala.concurrent.Future
 
 class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute: Call = Call("GET", "/foo")
 
   lazy val declarationRoute: String = routes.DeclarationController.onPageLoad(NormalMode).url
-
-  val formProvider            = new DeclarationFormProvider()
-  val form: Form[Declaration] = formProvider()
 
   "Declaration Controller" - {
 
@@ -60,7 +48,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual OK
 
-        contentAsString(result) mustEqual view(form, NormalMode, "")(request, messages(application)).toString
+        contentAsString(result) mustEqual view(NormalMode)(request, messages(application)).toString
       }
     }
 
@@ -95,7 +83,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(Declaration.Confirmed), NormalMode, "")(
+        contentAsString(result) mustEqual view(NormalMode)(
           request,
           messages(application)
         ).toString
@@ -120,56 +108,10 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, "April 2024")(
+        contentAsString(result) mustEqual view(NormalMode)(
           request,
           messages(application)
         ).toString
-      }
-    }
-
-    "must redirect to the next page when valid data is submitted" in {
-
-      val mockSessionRepository = mock[SessionRepository]
-
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
-          .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
-          )
-          .build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, declarationRoute)
-            .withFormUrlEncodedBody(("value", Declaration.Confirmed.toString))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
-      }
-    }
-
-    "must return a Bad Request and errors when invalid data is submitted" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, declarationRoute)
-            .withFormUrlEncodedBody(("value", "invalid value"))
-
-        val boundForm = form.bind(Map("value" -> "invalid value"))
-
-        val view = application.injector.instanceOf[DeclarationView]
-
-        val result = route(application, request).value
-
-        status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, "")(request, messages(application)).toString
       }
     }
 
@@ -179,22 +121,6 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request = FakeRequest(GET, declarationRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, declarationRoute)
-            .withFormUrlEncodedBody(("value", Declaration.Confirmed.toString))
 
         val result = route(application, request).value
 
