@@ -36,7 +36,7 @@ import utils.DateTimeFormats
 import utils.TypeUtils.*
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, YearMonth}
+import java.time.{Instant, LocalDateTime, YearMonth}
 import java.util.{Locale, TimeZone}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -131,7 +131,7 @@ class SubmissionService @Inject() (
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
       acceptedTime = gatewayTimestamp,
-      submissionRequestDate = Some(Instant.now()),
+      submissionRequestDate = Some(LocalDateTime.now()),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
       govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
@@ -195,7 +195,7 @@ class SubmissionService @Inject() (
         Future.successful("TIMED_OUT")
       case Some(submissionDetails) =>
         val timeoutDateTime = submissionDetails.submittedAt.plusSeconds(timeout)
-        val now             = Instant.now()
+        val now             = LocalDateTime.now()
 
         if (now.isAfter(timeoutDateTime)) {
           for {
@@ -219,7 +219,8 @@ class SubmissionService @Inject() (
                                    result.error
                                  )
             newStatus          = result.status
-            timedOut           = Instant.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
+            timedOut           =
+              LocalDateTime.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
             finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
             newDetails         = submissionDetails.copy(status = newStatus)
             ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
@@ -336,8 +337,8 @@ class SubmissionService @Inject() (
                  status = response.status,
                  irMark = response.hmrcMarkGenerated,
                  submittedAt = response.gatewayTimestamp
-                   .flatMap(t => Try(Instant.parse(t)).toOption)
-                   .getOrElse(Instant.now)
+                   .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
+                   .getOrElse(LocalDateTime.now)
                )
              )
       ua2 <- response.responseEndPoint match {
