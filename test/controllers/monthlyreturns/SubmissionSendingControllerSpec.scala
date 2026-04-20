@@ -18,23 +18,22 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
-import models.monthlyreturns.InactivityRequest
-import play.api.test.FakeRequest
+import models.requests.DataRequest
+import models.submission.*
 import models.{ReturnType, UserAnswers}
-import models.submission.{ChrisSubmissionResponse, CreateSubmissionResponse, PollDecision, ResponseEndPointDto, SubmissionDetails}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage, ReturnTypePage}
+import pages.monthlyreturns.*
+import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.AnyContent
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import uk.gov.hmrc.http.HeaderCarrier
-import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage}
-import models.requests.DataRequest
-import play.api.mvc.AnyContent
 import services.submission.SubmissionService
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Instant, LocalDate}
 import scala.concurrent.Future
@@ -56,7 +55,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
     .setOrException(CisIdPage, "test-cis-id")
     .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
-    .setOrException(InactivityRequestPage, InactivityRequest.Option1)
+    .setOrException(SubmitInactivityRequestPage, true)
     .setOrException(ConfirmationByEmailPage, false)
     .setOrException(DeclarationPage, Set(Confirmed))
 

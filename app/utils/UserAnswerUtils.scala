@@ -69,7 +69,7 @@ object UserAnswerUtils {
         .remove(DateConfirmPaymentsPage)
 
         // monthly nil return
-        .flatMap(_.remove(InactivityRequestPage))
+        .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
         .flatMap(_.remove(DeclarationPage))
@@ -88,13 +88,15 @@ object UserAnswerUtils {
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
         case Some(MonthlyNilReturn) =>
-          Seq(
+          val checks = Seq(
             answered(DateConfirmPaymentsPage),
-            answered(InactivityRequestPage),
+            answered(SubmitInactivityRequestPage),
             answered(ConfirmationByEmailPage),
             emailSatisfied,
             answered(DeclarationPage)
-          ).forall(identity)
+          )
+
+          checks.forall(identity)
 
         case Some(MonthlyStandardReturn) =>
           Seq(

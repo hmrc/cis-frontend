@@ -17,21 +17,21 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.Declaration.Confirmed
-import models.monthlyreturns.InactivityRequest
+
+import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import services.submission.SubmissionService
-import viewmodels.govuk.SummaryListFluency
 import viewmodels.checkAnswers.monthlyreturns.*
+import viewmodels.govuk.SummaryListFluency
 import views.html.monthlyreturns.CheckYourAnswersView
-import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.*
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -42,7 +42,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
     .setOrException(CisIdPage, "test-cis-id")
     .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
-    .setOrException(InactivityRequestPage, InactivityRequest.Option1)
+    .setOrException(SubmitInactivityRequestPage, true)
     .setOrException(ConfirmationByEmailPage, false)
     .setOrException(DeclarationPage, Set(Confirmed))
 
@@ -190,7 +190,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     }
 
     "must redirect to journey recovery on POST when Journey is incomplete" in {
-      val userAnswers = completeAnswers
+      val userAnswers = completeAnswers.remove(SubmitInactivityRequestPage).get
 
       val mockService = mock[MonthlyReturnService]
       when(mockService.updateMonthlyReturn(any())(any()))
@@ -206,9 +206,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
-          .onPageLoad()
-          .url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -258,7 +256,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must redirect to journey recovery on POST when journey is incomplete is missing" in {
 
-      val userAnswers = completeAnswers.remove(InactivityRequestPage).get
+      val userAnswers = completeAnswers.remove(SubmitInactivityRequestPage).get
       val mockService = mock[MonthlyReturnService]
       when(mockService.updateMonthlyReturn(any())(any()))
         .thenReturn(Future.successful(()))

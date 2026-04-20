@@ -18,8 +18,8 @@ package utils
 
 import base.SpecBase
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.monthlyreturns.{Declaration, SelectedSubcontractor}
 import models.{ReturnType, UserAnswers}
-import models.monthlyreturns.{Declaration, InactivityRequest, SelectedSubcontractor}
 import pages.monthlyreturns.*
 import utils.UserAnswerUtils.*
 
@@ -35,7 +35,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
           .get
-          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .set(SubmitInactivityRequestPage, true)
           .get
           .set(ConfirmationByEmailPage, false)
           .get
@@ -51,7 +51,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
           .get
-          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .set(SubmitInactivityRequestPage, true)
           .get
           .set(ConfirmationByEmailPage, true)
           .get
@@ -69,7 +69,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
           .get
-          // InactivityRequestPage missing
+          // SubmitInactivityRequestPage missing
           .set(ConfirmationByEmailPage, false)
           .get
           .set(DeclarationPage, Set(Declaration.Confirmed))
@@ -84,7 +84,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
           .get
-          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .set(SubmitInactivityRequestPage, true)
           .get
           .set(ConfirmationByEmailPage, true)
           .get
@@ -265,7 +265,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
         .get
-        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .set(SubmitInactivityRequestPage, true)
         .get
         .set(ConfirmationByEmailPage, true)
         .get
@@ -296,7 +296,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val cleared = result.get
 
       cleared.get(DateConfirmPaymentsPage) mustBe None
-      cleared.get(InactivityRequestPage) mustBe None
+      cleared.get(SubmitInactivityRequestPage) mustBe None
       cleared.get(ConfirmationByEmailPage) mustBe None
       cleared.get(EnterYourEmailAddressPage) mustBe None
       cleared.get(DeclarationPage) mustBe None
