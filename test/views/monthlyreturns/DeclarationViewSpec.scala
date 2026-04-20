@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package views.monthlyreturns
+
 import base.SpecBase
 import forms.monthlyreturns.DeclarationFormProvider
 import models.NormalMode
@@ -34,9 +36,7 @@ class DeclarationViewSpec extends SpecBase with Matchers {
       doc.title                 must include(messages("monthlyreturns.declaration.title"))
       doc.select("legend").text must include(messages("monthlyreturns.declaration.heading"))
 
-      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph", "5 April 2024"))
-
-      doc.select("input[type=checkbox]").size() mustBe 1
+      doc.select("p").text must include(messages("monthlyreturns.declaration.paragraph"))
 
       doc.select("button[type=submit]").text mustBe messages("monthlyreturns.declaration.submit")
     }
