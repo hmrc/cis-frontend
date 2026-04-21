@@ -48,16 +48,10 @@ object UpdateMonthlyReturnRequest {
     ua.get(DateConfirmPaymentsPage).toRight("Missing confirmed payment date")
 
   private def inactivityY(returnType: ReturnType, ua: UserAnswers): Option[String] =
-    returnType match {
-      case MonthlyStandardReturn =>
-        ua.get(SubmitInactivityRequestPage) match {
-          case Some(true)  => Some("Y")
-          case Some(false) => None
-          case None        => None
-        }
-
-      case MonthlyNilReturn =>
-        ua.get(InactivityRequestPage).collect { case InactivityRequest.Option1 => "Y" }
+    ua.get(SubmitInactivityRequestPage) match {
+      case Some(true)  => Some("Y")
+      case Some(false) => None
+      case None        => None
     }
 
   private def nilIndicator(returnType: ReturnType): String =

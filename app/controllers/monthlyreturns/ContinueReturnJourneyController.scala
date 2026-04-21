@@ -37,8 +37,6 @@ class ContinueReturnJourneyController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
@@ -47,25 +45,24 @@ class ContinueReturnJourneyController @Inject() (
     with Logging {
 
   def continueReturnJourney: Action[AnyContent] =
-    (identify andThen getData).async { implicit request =>
+    identify.async { implicit request =>
       buildEditRequest(request) match {
-        case Left(_) =>
+        case Left(error) =>
+          logger.warn(s"[continueReturnJourney] Invalid edit request: $error")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Right(editRequest) =>
           monthlyReturnService
             .populateUserAnswersForContinueJourney(
-              request.userAnswers.getOrElse(UserAnswers(request.userId)),
+              UserAnswers(request.userId),
               editRequest
             )
             .flatMap {
-              case Left(_) =>
+              case Left(error) =>
+                logger.warn(s"[continueReturnJourney] Failed to populate user answers: $error for request: $editRequest")
                 Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
               case Right(updatedUserAnswers) =>
-                logger.info(
-                  s"[continueReturnJourney] Succeed to populate user answers for continue journey with request: $editRequest"
-                )
                 sessionRepository.set(updatedUserAnswers).map { _ =>
                   Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, updatedUserAnswers))
                 }

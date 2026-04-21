@@ -18,13 +18,15 @@ package services
 
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import repositories.SessionRepository
 import models.monthlyreturns.*
 import pages.monthlyreturns.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.GetMonthlyReturnForEditRequest
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import pages.QuestionPage
+import play.api.libs.json.{Format, JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 
@@ -243,6 +245,39 @@ class MonthlyReturnService @Inject() (
     }
   }
 
+  private def setOrError[A: Format](ua: UserAnswers, page: QuestionPage[A], value: A): Either[String, UserAnswers] =
+    ua.set(page, value).toEither.left.map(_.getMessage)
+
+  private def hasEmail(emailRecipient: Option[String]): Boolean =
+    emailRecipient.exists(_.nonEmpty)
+
+  private def populateCommonReturnAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    returnType: ReturnType,
+    monthlyReturn: MonthlyReturn,
+    emailRecipient: Option[String]
+  ): Either[String, UserAnswers] =
+    for {
+      ua1 <- setOrError(ua, CisIdPage, instanceId)
+      ua2 <- setOrError(ua1, ReturnTypePage, returnType)
+      ua3 <- setOrError(
+               ua2,
+               DateConfirmPaymentsPage,
+               LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
+             )
+      ua4 <- setOrError(
+               ua3,
+               SubmitInactivityRequestPage,
+               monthlyReturn.decNilReturnNoPayments.contains("Y")
+             )
+      ua5 <- setOrError(ua4, ConfirmationByEmailPage, hasEmail(emailRecipient))
+      ua6 <- emailRecipient.filter(_.nonEmpty) match {
+               case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
+               case None        => Right(ua5)
+             }
+    } yield ua6
+
   private def populateNilReturnAnswers(
     ua: UserAnswers,
     instanceId: String,
@@ -253,25 +288,15 @@ class MonthlyReturnService @Inject() (
       if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
 
     for {
-      ua1 <- ua.set(CisIdPage, instanceId).toEither.left.map(_.getMessage)
-      ua2 <- ua1.set(ReturnTypePage, ReturnType.MonthlyNilReturn).toEither.left.map(_.getMessage)
-      ua3 <- ua2.set(
-                 DateConfirmPaymentsPage,
-                 LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
-               )
-               .toEither.left.map(_.getMessage)
-      ua4 <- ua3.set(DeclarationPage, declarationSet).toEither.left.map(_.getMessage)
-      ua5 <- ua4.set(
-                 SubmitInactivityRequestPage,
-                 monthlyReturn.decNilReturnNoPayments.contains("Y")
-               )
-               .toEither.left.map(_.getMessage)
-      ua6 <- emailRecipient match {
-               case Some(email) if email.nonEmpty =>
-                 ua5.set(EnterYourEmailAddressPage, email).toEither.left.map(_.getMessage)
-               case None                          => Right(ua5)
-             }
-    } yield ua6
+      ua1 <- populateCommonReturnAnswers(
+               ua = ua,
+               instanceId = instanceId,
+               returnType = MonthlyNilReturn,
+               monthlyReturn = monthlyReturn,
+               emailRecipient = emailRecipient
+             )
+      ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
+    } yield ua2
   }
 
   private def populateStandardReturnAnswers(
@@ -282,45 +307,35 @@ class MonthlyReturnService @Inject() (
     emailRecipient: Option[String]
   ): Either[String, UserAnswers] =
     for {
-      ua1 <- ua.set(CisIdPage, instanceId).toEither.left.map(_.getMessage)
-      ua2 <- ua1.set(ReturnTypePage, ReturnType.MonthlyStandardReturn).toEither.left.map(_.getMessage)
-      ua3 <- ua2.set(
-                 DateConfirmPaymentsPage,
-                 LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
-               )
-               .toEither.left.map(_.getMessage)
-      ua4 <- ua3.set(
-                 EmploymentStatusDeclarationPage,
-                 monthlyReturn.decEmpStatusConsidered.contains("Y")
-               )
-               .toEither.left.map(_.getMessage)
-      ua5 <- ua4.set(
-                 VerifiedStatusDeclarationPage,
-                 monthlyReturn.decAllSubsVerified.contains("Y")
-               )
-               .toEither.left.map(_.getMessage)
-      ua6 <- ua5.set(
-                 DeclarationPage,
-                 if (monthlyReturn.decInformationCorrect.contains("Y")) {
-                   Set(Declaration.Confirmed)
-                 } else {
-                   Set.empty[Declaration]
-                 }
-               )
-               .toEither.left.map(_.getMessage)
-      ua7 <- ua6.set(
-                 SubmitInactivityRequestPage,
-                 monthlyReturn.decNilReturnNoPayments.contains("Y")
-               )
-               .toEither.left.map(_.getMessage)
-      ua8 <- populateStandardReturnItems(ua7, monthlyReturnItems)
-      ua9 <- emailRecipient match {
-               case Some(email) if email.nonEmpty =>
-                 ua3.set(EnterYourEmailAddressPage, email).toEither.left.map(_.getMessage)
-               case None                          =>
-                 Right(ua8)
-             }
-    } yield ua9
+      ua1 <- populateCommonReturnAnswers(
+               ua = ua,
+               instanceId = instanceId,
+               returnType = MonthlyStandardReturn,
+               monthlyReturn = monthlyReturn,
+               emailRecipient = emailRecipient
+             )
+      ua2 <- setOrError(
+               ua1,
+               EmploymentStatusDeclarationPage,
+               monthlyReturn.decEmpStatusConsidered.contains("Y")
+             )
+      ua3 <- setOrError(
+               ua2,
+               VerifiedStatusDeclarationPage,
+               monthlyReturn.decAllSubsVerified.contains("Y")
+             )
+      ua4 <- setOrError(
+               ua3,
+               VerifySubcontractorsPage,
+               monthlyReturn.decAllSubsVerified.contains("Y")
+             )
+      ua5 <- setOrError(
+               ua4,
+               PaymentDetailsConfirmationPage,
+               true
+             )
+      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems)
+    } yield ua6
 
   private def populateStandardReturnItems(
     ua: UserAnswers,
@@ -331,7 +346,26 @@ class MonthlyReturnService @Inject() (
       updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
                    case (accEither, (item, index)) =>
                      for {
-                       acc  <- accEither
+                       acc <- accEither
+
+                       totalPayments    = toBigDecimal(item.totalPayments)
+                       costOfMaterials  = toBigDecimal(item.costOfMaterials)
+                       totalTaxDeducted = toBigDecimal(item.totalDeducted)
+                       pageIndex        = index + 1
+
+                       _     = logger.info(
+                                 s"""[populateStandardReturnItems]
+                            |pageIndex=$pageIndex
+                            |subcontractorId=${item.subcontractorId}
+                            |subcontractorName=${item.subcontractorName}
+                            |rawTotalPayments=${item.totalPayments}
+                            |rawCostOfMaterials=${item.costOfMaterials}
+                            |rawTotalDeducted=${item.totalDeducted}
+                            |convertedTotalPayments=$totalPayments
+                            |convertedCostOfMaterials=$costOfMaterials
+                            |convertedTotalTaxDeducted=$totalTaxDeducted
+                            |""".stripMargin
+                               )
                        next <- acc
                                  .set(
                                    SelectedSubcontractorPage(index + 1),
@@ -343,13 +377,24 @@ class MonthlyReturnService @Inject() (
                                      totalTaxDeducted = toBigDecimal(item.totalDeducted)
                                    )
                                  )
-                                 .toEither.left.map(_.getMessage)
+                                 .toEither
+                                 .left
+                                 .map(_.getMessage)
+
+                       _ = logger.info(
+                             s"[populateStandardReturnItems] saved SelectedSubcontractorPage($pageIndex) = ${next
+                                 .get(SelectedSubcontractorPage(pageIndex))}"
+                           )
                      } yield next
                  }
     } yield updated
 
   private def toBigDecimal(value: Option[String]): Option[BigDecimal] =
-    value.flatMap(v => Try(BigDecimal(v)).toOption)
+    value
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map(_.replace(",", ""))
+      .flatMap(value => Try(BigDecimal(value)).toOption)
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
@@ -378,15 +423,10 @@ class MonthlyReturnService @Inject() (
     }
 
   private def getNilNoPaymentsOrDefault(ua: UserAnswers): Future[String] =
-    ua.get(InactivityRequestPage) match {
-      case Some(ir) => Future.successful(mapInactivityRequestToYN(ir))
-      case None     => Future.successful("N")
+    ua.get(SubmitInactivityRequestPage) match {
+      case Some(true) => Future.successful("Y")
+      case _          => Future.successful("N")
     }
-
-  private def mapInactivityRequestToYN(ir: InactivityRequest): String = ir match {
-    case InactivityRequest.Option1 => "Y"
-    case InactivityRequest.Option2 => "N"
-  }
 
   private def callBackendToCreate(
     cisId: String,

@@ -39,7 +39,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
     val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
     val common             = buildCommon(ua, taxpayer, isAgent)
     val informationCorrect = true
-    val inactivityBool     = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
+    val inactivityBool     = ua.get(SubmitInactivityRequestPage).contains(true)
 
     returnType match {
       case MonthlyNilReturn =>

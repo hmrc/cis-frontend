@@ -41,24 +41,22 @@ object UserAnswerUtils {
 
     def clearMonthlyReturnJourney: Try[UserAnswers] =
       userAnswers
+        // common
         .remove(DateConfirmPaymentsPage)
-
-        // monthly nil return
-        .flatMap(_.remove(InactivityRequestPage))
+        .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
+
+        // monthly nil return
+        .flatMap(_.remove(ConfirmEmailAddressPage))
         .flatMap(_.remove(DeclarationPage))
 
         // monthly standard return
         .flatMap(_.remove(SelectedSubcontractorPage.all))
         .flatMap(_.remove(VerifySubcontractorsPage))
         .flatMap(_.remove(SubcontractorDetailsAddedPage))
-        .flatMap(_.remove(SubcontractorDetailsAddedPage))
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
-        .flatMap(_.remove(SubmitInactivityRequestPage))
-        .flatMap(_.remove(ConfirmEmailAddressPage))
-        .flatMap(_.remove(EnterYourEmailAddressPage))
   }
 }
