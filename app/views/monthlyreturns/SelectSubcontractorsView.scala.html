@@ -72,11 +72,11 @@
                 classes = "cis-select-subcontractors-table",
                 head = Some(
                     Seq(
+                        "monthlyreturns.selectSubcontractors.table.th.includeThisMonth",
                         "monthlyreturns.selectSubcontractors.table.th.name",
                         "monthlyreturns.selectSubcontractors.table.th.verificationRequired",
                         "monthlyreturns.selectSubcontractors.table.th.verificationNumber",
-                        "monthlyreturns.selectSubcontractors.table.th.taxTreatment",
-                        "monthlyreturns.selectSubcontractors.table.th.includeThisMonth",
+                        "monthlyreturns.selectSubcontractors.table.th.taxTreatment"
                     ).map { key =>
                         HeadCell(content = Text(messages(key)))
                     }
@@ -87,10 +87,6 @@
                 ))) else {
                     subcontractors.zipWithIndex.map { (subcontractor, index) =>
                         Seq(
-                            TableRow(content = Text(subcontractor.name),  classes = "govuk-table__header"),
-                            TableRow(content = Text(subcontractor.verificationRequired)),
-                            TableRow(content = Text(subcontractor.verificationNumber)),
-                            TableRow(content = Text(subcontractor.taxTreatment)),
                             TableRow(
                                 content = HtmlContent(
                                     govukCheckboxes(
@@ -110,14 +106,18 @@
                                                         }</span>"""
                                                     ),
                                                     checked = form.value.toList
-                                                      .flatMap(_.subcontractorsToInclude)
-                                                      .contains(subcontractor.id)
+                                                        .flatMap(_.subcontractorsToInclude)
+                                                        .contains(subcontractor.id)
                                                 )
                                             )
                                         )
                                     )
                                 )
-                            )
+                            ),
+                            TableRow(content = Text(subcontractor.name),  classes = "govuk-table__header"),
+                            TableRow(content = Text(subcontractor.verificationRequired)),
+                            TableRow(content = Text(subcontractor.verificationNumber)),
+                            TableRow(content = Text(subcontractor.taxTreatment))
                         )
                     }
                 }

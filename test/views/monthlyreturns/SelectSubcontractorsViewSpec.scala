@@ -74,11 +74,11 @@ class SelectSubcontractorsViewSpec extends SpecBase {
       val headers = doc.select("table thead th").eachText()
 
       headers must contain theSameElementsInOrderAs Seq(
+        messages("monthlyreturns.selectSubcontractors.table.th.includeThisMonth"),
         messages("monthlyreturns.selectSubcontractors.table.th.name"),
         messages("monthlyreturns.selectSubcontractors.table.th.verificationRequired"),
         messages("monthlyreturns.selectSubcontractors.table.th.verificationNumber"),
-        messages("monthlyreturns.selectSubcontractors.table.th.taxTreatment"),
-        messages("monthlyreturns.selectSubcontractors.table.th.includeThisMonth")
+        messages("monthlyreturns.selectSubcontractors.table.th.taxTreatment")
       )
     }
 
