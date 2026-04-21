@@ -48,6 +48,6 @@
 
     @govukButton(
         ButtonViewModel(messages("monthlyreturns.declaration.submit"))
-            .asLink(controllers.monthlyreturns.routes.DeclarationController.onSubmit(mode).url)
+            .asLink(controllers.monthlyreturns.routes.DeclarationController.onSubmit().url)
     )
 }
