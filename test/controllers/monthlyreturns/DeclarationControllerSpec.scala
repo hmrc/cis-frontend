@@ -35,7 +35,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute: Call = Call("GET", "/foo")
 
   lazy val declarationRoute: String = routes.DeclarationController.onPageLoad().url
-  lazy val submitRoute: String = routes.DeclarationController.onSubmit().url
+  lazy val submitRoute: String      = routes.DeclarationController.onSubmit().url
 
   "Declaration Controller" - {
 
