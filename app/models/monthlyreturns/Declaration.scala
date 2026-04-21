@@ -32,16 +32,6 @@ object Declaration extends Enumerable.Implicits {
     Confirmed
   )
 
-  def checkboxItems(implicit messages: Messages): Seq[CheckboxItem] =
-    values.zipWithIndex.map { case (value, index) =>
-      CheckboxItemViewModel(
-        content = Text(messages("monthlyreturns.declaration.checkbox")),
-        fieldId = "value",
-        index = index,
-        value = value.toString
-      )
-    }
-
   implicit val enumerable: Enumerable[Declaration] =
     Enumerable(values.map(v => v.toString -> v): _*)
 }
