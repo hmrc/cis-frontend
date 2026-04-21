@@ -19,12 +19,15 @@ package controllers.monthlyreturns
 import base.SpecBase
 import models.monthlyreturns.Declaration
 import models.NormalMode
+import navigation.Navigator
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{DateConfirmPaymentsPage, DeclarationPage}
+import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.DeclarationView
+
 import java.time.LocalDate
 
 class DeclarationControllerSpec extends SpecBase with MockitoSugar {
@@ -32,6 +35,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute: Call = Call("GET", "/foo")
 
   lazy val declarationRoute: String = routes.DeclarationController.onPageLoad().url
+  lazy val submitRoute: String = routes.DeclarationController.onSubmit().url
 
   "Declaration Controller" - {
 
@@ -126,6 +130,26 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to the next page when the button is submitted (GET)" in {
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[Navigator].toInstance(new navigation.FakeNavigator(onwardRoute))
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(GET, submitRoute)
+            .withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
       }
     }
   }
