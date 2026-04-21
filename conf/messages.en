@@ -187,8 +187,6 @@ monthlyreturns.declaration.paragraph = By continuing, I confirm that:
 monthlyreturns.declaration.listItem1 = no payments have been made to subcontractors in this period
 monthlyreturns.declaration.listItem2 = the information provided in this return is correct to the best of my knowledge
 monthlyreturns.declaration.warning = If you give any false information, you may face financial penalties and prosecution.
-monthlyreturns.declaration.checkYourAnswersLabel = Declaration
-monthlyreturns.declaration.change.hidden = Declaration
 monthlyreturns.declaration.submit = Confirm and continue
 
 monthlyreturns.submissionSending.title = Submission - Sending
