@@ -61,8 +61,6 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
         .get
-        .set(InactivityRequestPage, InactivityRequest.Option1)
-        .get
         .set(ConfirmationByEmailPage, true)
         .get
         .set(EnterYourEmailAddressPage, "test@example.com")
@@ -92,7 +90,6 @@ class UserAnswerUtilsSpec extends SpecBase {
       val cleared = result.get
 
       cleared.get(DateConfirmPaymentsPage) mustBe None
-      cleared.get(InactivityRequestPage) mustBe None
       cleared.get(ConfirmationByEmailPage) mustBe None
       cleared.get(EnterYourEmailAddressPage) mustBe None
       cleared.get(DeclarationPage) mustBe None

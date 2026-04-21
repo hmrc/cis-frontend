@@ -118,7 +118,7 @@ class ChrisSubmissionRequestBuilderSpec
           .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
           .success
           .value
-          .set(InactivityRequestPage, InactivityRequest.Option1)
+          .set(SubmitInactivityRequestPage, true)
           .success
           .value
           .set(EnterYourEmailAddressPage, "  test@test.com  ")

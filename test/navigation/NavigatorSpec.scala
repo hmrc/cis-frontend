@@ -40,11 +40,12 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
       }
 
-      "must go from InactivityRequestPage to ConfirmationByEmailController" in {
+      "must go from SubmitInactivityRequestPage to ConfirmationByEmailController when inactivity request is NO" in {
+        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, false)
         navigator.nextPage(
-          InactivityRequestPage,
+          SubmitInactivityRequestPage,
           NormalMode,
-          UserAnswers("id")
+          ua
         ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
       }
 
@@ -296,21 +297,21 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from InactivityRequestPage to InactivityWarning in CheckMode when inactivity request is YES" in {
-        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option1)
+      "must go from SubmitInactivityRequestPage to InactivityRequestWarningController in CheckMode when inactivity request is YES" in {
+        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
         navigator.nextPage(
-          InactivityRequestPage,
+          SubmitInactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
       }
 
-      "must go from InactivityRequestPage to InactivityWarning in CheckMode when inactivity request is missing" in {
+      "must go from SubmitInactivityRequestPage to JourneyRecovery in CheckMode when inactivity request is missing" in {
         navigator.nextPage(
-          InactivityRequestPage,
+          SubmitInactivityRequestPage,
           CheckMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
       }
 
       "must go from ConfirmEmailAddressPage to CheckYourAnswers Page in CheckMode" in {

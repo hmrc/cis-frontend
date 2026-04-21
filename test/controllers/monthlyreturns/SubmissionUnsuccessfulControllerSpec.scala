@@ -41,35 +41,51 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
         }
       }
 
-      "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+      "must return OK and the correct view when cisId is provided in query param" in {
+        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            routes.SubmissionUnsuccessfulController.onPageLoad.url + "?cisId=123"
+          )
+          val result = route(application, request).value
+          val view   = application.injector.instanceOf[SubmissionUnsuccessfulView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view("123")(request, messages(application)).toString
+        }
+      }
+
+      "must throw exception when cisId is missing from both UserAnswers and query param" in {
         val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
         running(application) {
           val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
+          val result  = route(application, request).value
 
-          val result = route(application, request).value
+          val ex = intercept[IllegalStateException] {
+            await(result)
+          }
 
-          status(result) mustEqual SEE_OTHER
-
-          redirectLocation(
-            result
-          ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+          ex.getMessage must include("cisId missing from userAnswers")
         }
       }
 
-      "must redirect to Journey Recovery when no existing data is found" in {
+      "must throw exception when no existing data is found and no cisId query param is provided" in {
         val application = applicationBuilder(userAnswers = None).build()
 
         running(application) {
           val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
           val result  = route(application, request).value
 
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+          val ex = intercept[IllegalStateException] {
+            await(result)
+          }
+
+          ex.getMessage must include("cisId missing from userAnswers")
         }
       }
     }
-
   }
 }

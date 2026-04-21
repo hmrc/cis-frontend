@@ -16,27 +16,28 @@
 
 package services
 
+import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
+import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import pages.monthlyreturns.*
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 
+import java.time.LocalDate
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 
-class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matchers {
+class MonthlyReturnServiceSpec extends SpecBase {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -89,7 +90,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       enrolledSig = None
     )
 
-  "resolveAndStoreCisId" should {
+  "resolveAndStoreCisId" - {
 
     "return existing cisId from UserAnswers without calling BE" in {
       val (service, connector, sessionRepo) = newService()
@@ -184,7 +185,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "retrieveAllMonthlyReturns" should {
+  "retrieveAllMonthlyReturns" - {
 
     "delegate to connector with the given cisId and return the payload" in {
       val (service, connector, _) = newService()
@@ -220,7 +221,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "isDuplicate" should {
+  "isDuplicate" - {
 
     "return true when a monthly return with the same (year, month) exists" in {
       val (service, connector, _) = newService()
@@ -269,7 +270,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "retrieveMonthlyReturnForEditDetails" should {
+  "retrieveMonthlyReturnForEditDetails" - {
 
     "delegate to connector and return the payload" in {
       val (service, connector, _) = newService()
@@ -396,7 +397,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "getSchemeEmail" should {
+  "getSchemeEmail" - {
 
     "delegate to connector and return the email when present" in {
       val (service, connector, _) = newService()
@@ -437,7 +438,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "createNilMonthlyReturn" should {
+  "createNilMonthlyReturn" - {
 
     "successfully create nil monthly return and mirror to session" in {
       val (service, connector, sessionRepo) = newService()
@@ -474,7 +475,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       capturedRequest.instanceId mustBe cisId
       capturedRequest.taxYear mustBe taxYear
       capturedRequest.taxMonth mustBe taxMonth
-      capturedRequest.decNilReturnNoPayments mustBe "Y"
+      capturedRequest.decNilReturnNoPayments mustBe "N"
       capturedRequest.decInformationCorrect mustBe "Y"
 
       val sessionCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -638,7 +639,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "updateMonthlyReturn" should {
+  "updateMonthlyReturn" - {
 
     "delegate to connector and complete successfully" in {
       val (service, connector, sessionRepo) = newService()
@@ -689,7 +690,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "hasClient" should {
+  "hasClient" - {
 
     "delegate to connector and return the boolean" in {
       val (service, connector, sessionRepo) = newService()
@@ -704,7 +705,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "createMonthlyReturn" should {
+  "createMonthlyReturn" - {
 
     "delegate to connector and complete successfully" in {
       val (service, connector, sessionRepo) = newService()
@@ -721,7 +722,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "syncMonthlyReturnItems" should {
+  "syncMonthlyReturnItems" - {
 
     "delegate to connector with SelectedSubcontractorsRequest payload" in {
       val (service, connector, sessionRepo) = newService()
@@ -752,7 +753,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "deleteMonthlyReturnItem" should {
+  "deleteMonthlyReturnItem" - {
 
     "delegate to connector with DeleteMonthlyReturnItemRequest payload" in {
       val (service, connector, sessionRepo) = newService()
@@ -785,7 +786,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "storeAndSyncSelectedSubcontractors" should {
+  "storeAndSyncSelectedSubcontractors" - {
 
     "store selected subcontractors into session, call sync, and return updated UserAnswers" in {
       val (service, connector, sessionRepo) = newService()
@@ -956,7 +957,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
     }
   }
 
-  "getAgentClient" should {
+  "getAgentClient" - {
 
     "delegate to connector and return the agent client data when present" in {
       val (service, connector, _) = newService()
@@ -1001,6 +1002,189 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
 
       verify(connector).getAgentClient(eqTo("baz"))(any[HeaderCarrier])
 
+    }
+  }
+
+  "populateUserAnswersForContinueJourney" - {
+
+    "populate nil return answers from edit details response" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Nil,
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("Y"),
+            decInformationCorrect = Some("Y"),
+            decNilReturnNoPayments = Some("Y")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Seq(
+          Submission(
+            submissionId = 1,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = Some("test@example.com"),
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+
+      ua.get(CisIdPage) mustBe Some("CIS-123")
+      ua.get(ReturnTypePage) mustBe Some(MonthlyNilReturn)
+      ua.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 3, 5))
+      ua.get(SubmitInactivityRequestPage) mustBe Some(true)
+      ua.get(ConfirmationByEmailPage) mustBe Some(true)
+      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      ua.get(DeclarationPage) mustBe Some(Set(Declaration.Confirmed))
+    }
+
+    "populate standard return answers and subcontractor items from edit details response" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Nil,
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N"),
+            decNilReturnNoPayments = Some("N"),
+            decEmpStatusConsidered = Some("Y"),
+            decAllSubsVerified = Some("Y")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Seq(
+          MonthlyReturnItem(
+            monthlyReturnId = 101,
+            monthlyReturnItemId = 2001,
+            totalPayments = Some("1,000.00"),
+            costOfMaterials = Some("100.00"),
+            totalDeducted = Some("100.00"),
+            unmatchedTaxRateIndicator = None,
+            subcontractorId = Some(1001),
+            subcontractorName = Some("A Ltd"),
+            verificationNumber = None,
+            itemResourceReference = None
+          )
+        ),
+        submission = Seq(
+          Submission(
+            submissionId = 1,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = Some("test@example.com"),
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+
+      ua.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
+      ua.get(SubmitInactivityRequestPage) mustBe Some(false)
+      ua.get(ConfirmationByEmailPage) mustBe Some(true)
+      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      ua.get(EmploymentStatusDeclarationPage) mustBe Some(true)
+      ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
+      ua.get(VerifySubcontractorsPage) mustBe Some(true)
+      ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
+
+      ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
+        id = 1001L,
+        name = "A Ltd",
+        totalPaymentsMade = Some(BigDecimal("1000.00")),
+        costOfMaterials = Some(BigDecimal("100.00")),
+        totalTaxDeducted = Some(BigDecimal("100.00"))
+      )
+    }
+
+    "return Left when nil return indicator is missing" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Nil,
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = None
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue mustBe
+        Left("Missing nil return indicator")
     }
   }
 
