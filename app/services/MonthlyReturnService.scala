@@ -347,25 +347,7 @@ class MonthlyReturnService @Inject() (
                    case (accEither, (item, index)) =>
                      for {
                        acc <- accEither
-
-                       totalPayments    = toBigDecimal(item.totalPayments)
-                       costOfMaterials  = toBigDecimal(item.costOfMaterials)
-                       totalTaxDeducted = toBigDecimal(item.totalDeducted)
                        pageIndex        = index + 1
-
-                       _     = logger.info(
-                                 s"""[populateStandardReturnItems]
-                            |pageIndex=$pageIndex
-                            |subcontractorId=${item.subcontractorId}
-                            |subcontractorName=${item.subcontractorName}
-                            |rawTotalPayments=${item.totalPayments}
-                            |rawCostOfMaterials=${item.costOfMaterials}
-                            |rawTotalDeducted=${item.totalDeducted}
-                            |convertedTotalPayments=$totalPayments
-                            |convertedCostOfMaterials=$costOfMaterials
-                            |convertedTotalTaxDeducted=$totalTaxDeducted
-                            |""".stripMargin
-                               )
                        next <- acc
                                  .set(
                                    SelectedSubcontractorPage(index + 1),
@@ -380,11 +362,6 @@ class MonthlyReturnService @Inject() (
                                  .toEither
                                  .left
                                  .map(_.getMessage)
-
-                       _ = logger.info(
-                             s"[populateStandardReturnItems] saved SelectedSubcontractorPage($pageIndex) = ${next
-                                 .get(SelectedSubcontractorPage(pageIndex))}"
-                           )
                      } yield next
                  }
     } yield updated
