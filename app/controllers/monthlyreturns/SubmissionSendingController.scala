@@ -51,41 +51,51 @@ class SubmissionSendingController @Inject() (
 
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      guardCompletedJourney {
+        implicit val hc: HeaderCarrier =
+          HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      implicit val hc: HeaderCarrier =
-        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
-      (for {
-        (created, updatedAnswers) <- submissionService.create(request.userAnswers)
-        submitted                 <-
-          submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
-        _                         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, updatedAnswers, submitted)
-      } yield SubmissionStatus.fromString(submitted.status) match {
-        case Started                             =>
-          logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
-          Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
-        case Pending | SubmissionStatus.Accepted =>
-          Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-        case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-      }).recover { case ex =>
-        logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
-        Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        (for {
+          (created, updatedAnswers) <- submissionService.create(request.userAnswers)
+          submitted                 <-
+            submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
+          _                         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, updatedAnswers, submitted)
+        } yield SubmissionStatus.fromString(submitted.status) match {
+          case Started                             =>
+            logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
+            Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
+          case Pending | SubmissionStatus.Accepted =>
+            Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
+          case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+        }).recover { case ex =>
+          logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
       }
     }
 
   def onPollAndRedirect: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      request.userAnswers.get(SubmissionDetailsPage) match {
-        case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      guardCompletedJourney {
+        request.userAnswers.get(SubmissionDetailsPage) match {
+          case None =>
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-        case Some(submissionStatus) =>
-          val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
-          submissionService
-            .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
-            .flatMap(decision => pollDecisionResult(decision, pollInterval))
-            .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          case Some(submissionStatus) =>
+            val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
+            submissionService
+              .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
+              .flatMap(decision => pollDecisionResult(decision, pollInterval))
+              .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
       }
+    }
+
+  private def guardCompletedJourney(block: => Future[Result])(implicit request: DataRequest[_]): Future[Result] =
+    if (request.userAnswers.get(SubmissionJourneyCompletedPage).contains(true)) {
+      Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+    } else {
+      block
     }
 
   private def pollDecisionResult(decision: PollDecision, pollInterval: String)(implicit

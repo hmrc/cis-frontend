@@ -17,14 +17,16 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import controllers.helpers.SubmissionViewDataSupport
 import pages.monthlyreturns.CisIdPage
-import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionAwaitingView
 
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 
 class SubmissionAwaitingController @Inject() (
   override val messagesApi: MessagesApi,
@@ -33,17 +35,22 @@ class SubmissionAwaitingController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: SubmissionAwaitingView
-) extends FrontendBaseController
+  view: SubmissionAwaitingView,
+  monthlyReturnService: MonthlyReturnService
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
     with I18nSupport
-    with Logging {
+    with SubmissionViewDataSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
-      val cisId = request.userAnswers.get(CisIdPage).getOrElse {
-        logger.error("[SubmissionAwaiting] cisId missing from userAnswers")
-        throw new IllegalStateException("cisId missing from userAnswers")
-      }
-      Ok(view(cisId))
-  }
+  def onPageLoad: Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      val cisId = required(
+        request.userAnswers.get(CisIdPage),
+        "[SubmissionAwaiting] cisId missing from userAnswers"
+      )
+
+      monthlyReturnService
+        .completeSubmissionJourney(request.userAnswers)
+        .map(_ => Ok(view(cisId)))
+    }
 }
