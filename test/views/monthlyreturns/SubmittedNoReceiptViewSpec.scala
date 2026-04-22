@@ -24,6 +24,7 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
 class SubmittedNoReceiptViewSpec extends SpecBase {
@@ -172,7 +173,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       s"${raw.head.toUpper}${raw.tail.toLowerCase}"
     }
 
-    lazy val html: HtmlFormat.Appendable = view(
+    lazy val vm: SubmittedNoReceiptViewModel = SubmittedNoReceiptViewModel(
       periodEnd = periodEnd,
       submittedTime = submittedTime,
       submittedDate = submittedDate,
@@ -182,5 +183,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       submissionType = submissionType,
       cisId = cisId
     )
+
+    lazy val html: HtmlFormat.Appendable = view(vm)
   }
 }

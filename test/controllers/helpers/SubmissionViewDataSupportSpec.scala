@@ -16,9 +16,8 @@
 
 package controllers.helpers
 
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.agent.AgentClientData
-import models.{EmployerReference, ReturnType, UserAnswers}
+import models.{EmployerReference, UserAnswers}
 import models.requests.DataRequest
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
@@ -35,11 +34,11 @@ import play.api.test.FakeRequest
 class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with MockitoSugar {
 
   private object Harness extends SubmissionViewDataSupport {
-    def requiredPublic[A](opt: Option[A], err: String): A                  = required(opt, err)
-    def emailPublic(ua: UserAnswers, t: ReturnType): Option[String]        = emailfromUserAnswers(ua, t)
-    def periodEndPublic(ua: UserAnswers, t: ReturnType): Option[LocalDate] = periodEndFromUserAnswers(ua, t)
-    def contractorNamePublic(r: DataRequest[_]): String                    = contractorNameFrom(r)
-    def employerRefPublic(r: DataRequest[_]): String                       = employerRefFrom(r)
+    def requiredPublic[A](opt: Option[A], err: String): A   = required(opt, err)
+    def emailPublic(ua: UserAnswers): Option[String]        = emailfromUserAnswers(ua)
+    def periodEndPublic(ua: UserAnswers): Option[LocalDate] = periodEndFromUserAnswers(ua)
+    def contractorNamePublic(r: DataRequest[_]): String     = contractorNameFrom(r)
+    def employerRefPublic(r: DataRequest[_]): String        = employerRefFrom(r)
   }
 
   private def uaEmpty: UserAnswers = UserAnswers("id", Json.obj())
@@ -72,12 +71,12 @@ class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with Mocki
 
     "emailfromUserAnswers trims and filters empty values from EnterYourEmailAddressPage" in {
       val uaWithEmail = uaEmpty.set(EnterYourEmailAddressPage, "  test@test.com  ").get
-      Harness.emailPublic(uaWithEmail, MonthlyNilReturn) mustBe Some("test@test.com")
-      Harness.emailPublic(uaWithEmail, MonthlyStandardReturn) mustBe Some("test@test.com")
+      Harness.emailPublic(uaWithEmail) mustBe Some("test@test.com")
+      Harness.emailPublic(uaWithEmail) mustBe Some("test@test.com")
 
       val uaBlank = uaEmpty.set(EnterYourEmailAddressPage, "   ").get
-      Harness.emailPublic(uaBlank, MonthlyNilReturn) mustBe None
-      Harness.emailPublic(uaBlank, MonthlyStandardReturn) mustBe None
+      Harness.emailPublic(uaBlank) mustBe None
+      Harness.emailPublic(uaBlank) mustBe None
     }
 
     "periodEndFromUserAnswers uses correct page per return type" in {
@@ -87,7 +86,7 @@ class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with Mocki
         .set(DateConfirmPaymentsPage, date)
         .get
 
-      Harness.periodEndPublic(ua, MonthlyNilReturn) mustBe Some(date)
+      Harness.periodEndPublic(ua) mustBe Some(date)
     }
 
     "contractorNameFrom uses ContractorNamePage for contractor" in {

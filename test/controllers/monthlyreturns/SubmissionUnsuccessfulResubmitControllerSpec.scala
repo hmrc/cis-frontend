@@ -56,7 +56,7 @@ class SubmissionUnsuccessfulResubmitControllerSpec extends SpecBase {
         val exception = controller.onPageLoad()(request).failed.futureValue
 
         exception mustBe a[IllegalStateException]
-        exception.getMessage mustBe "cisId missing from userAnswers"
+        exception.getMessage mustBe "[SubmissionUnsuccessfulResubmit] cisId missing from userAnswers"
       }
     }
   }
