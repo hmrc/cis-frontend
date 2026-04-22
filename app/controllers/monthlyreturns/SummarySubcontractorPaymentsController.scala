@@ -18,7 +18,8 @@ package controllers.monthlyreturns
 
 import controllers.actions._
 import javax.inject.Inject
-import pages.monthlyreturns.{SelectedSubcontractorPage, SummaryTotalCisDeductionsPage, SummaryTotalMaterialsCostPage, SummaryTotalPaymentsPage}
+import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.SelectedSubcontractorPage.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -42,18 +43,18 @@ class SummarySubcontractorPaymentsController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
       val subcontractors = request.userAnswers
         .get(SelectedSubcontractorPage.all)
         .getOrElse(Map.empty)
         .values
-        .filter(s => s.totalPaymentsMade.isDefined && s.costOfMaterials.isDefined && s.totalTaxDeducted.isDefined)
+        .filter(_.isComplete)
         .toSeq
 
-      val totalPayments      = subcontractors.flatMap(_.totalPaymentsMade).sum.setScale(2, RoundingMode.HALF_DOWN)
-      val totalMaterialsCost = subcontractors.flatMap(_.costOfMaterials).sum.setScale(2, RoundingMode.HALF_DOWN)
-      val totalCisDeductions = subcontractors.flatMap(_.totalTaxDeducted).sum.setScale(2, RoundingMode.HALF_DOWN)
+      val totalPayments      = request.userAnswers.summaryTotalPayments.getOrElse(BigDecimal(0))
+      val totalMaterialsCost = request.userAnswers.summaryTotalMaterialsCost.getOrElse(BigDecimal(0))
+      val totalCisDeductions = request.userAnswers.summaryTotalCisDeductions.getOrElse(BigDecimal(0))
 
       val viewModel = SummarySubcontractorPaymentsViewModel(
         subcontractorCount = subcontractors.size,
@@ -62,14 +63,6 @@ class SummarySubcontractorPaymentsController @Inject() (
         totalCisDeductions = totalCisDeductions
       )
 
-      for {
-        updatedAnswers <- Future.fromTry(
-                            request.userAnswers
-                              .set(SummaryTotalPaymentsPage, totalPayments)
-                              .flatMap(_.set(SummaryTotalMaterialsCostPage, totalMaterialsCost))
-                              .flatMap(_.set(SummaryTotalCisDeductionsPage, totalCisDeductions))
-                          )
-        _              <- sessionRepository.set(updatedAnswers)
-      } yield Ok(view(viewModel))
+      Ok(view(viewModel))
   }
 }

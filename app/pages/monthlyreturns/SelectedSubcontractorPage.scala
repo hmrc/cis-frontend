@@ -16,9 +16,12 @@
 
 package pages.monthlyreturns
 
+import models.UserAnswers
 import models.monthlyreturns.SelectedSubcontractor
 import pages.{IndexedQuestionPage, QuestionPage}
 import play.api.libs.json.JsPath
+
+import scala.math.BigDecimal.RoundingMode
 
 case class SelectedSubcontractorIdPage(index: Int) extends QuestionPage[Long] {
   override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
@@ -54,5 +57,20 @@ object SelectedSubcontractorPage {
   def all: IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
     override def path: JsPath     = JsPath \ toString
     override def toString: String = "subcontractors"
+  }
+
+  extension (ua: UserAnswers) {
+    private def sumPaymentsField(getField: SelectedSubcontractor => Option[BigDecimal]): Option[BigDecimal] =
+      ua.get(all).map { subcontractors =>
+        subcontractors.values
+          .filter(_.isComplete)
+          .flatMap(x => getField(x).toList)
+          .sum
+          .setScale(2, RoundingMode.HALF_DOWN)
+      }
+
+    def summaryTotalPayments: Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade)
+    def summaryTotalMaterialsCost: Option[BigDecimal] = sumPaymentsField(_.costOfMaterials)
+    def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted)
   }
 }
