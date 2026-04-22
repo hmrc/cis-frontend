@@ -16,31 +16,26 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
-import javax.inject.Inject
+import controllers.actions.*
 import pages.monthlyreturns.SelectedSubcontractorPage
 import pages.monthlyreturns.SelectedSubcontractorPage.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.math.BigDecimal.RoundingMode
+import javax.inject.Inject
 
 class SummarySubcontractorPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
-  sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SummarySubcontractorPaymentsView
-)(implicit ec: ExecutionContext)
-    extends FrontendBaseController
+) extends FrontendBaseController
     with I18nSupport {
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
