@@ -180,15 +180,13 @@ monthlyreturns.confirmEmailAddress.error.length = Email address must be 254 char
 monthlyreturns.confirmEmailAddress.error.invalid = Enter the email address in the correct format, using letters a to z, numbers, full stops, hyphens, underscores and @ signs, name@example.com
 monthlyreturns.confirmEmailAddress.change.hidden = Confirm your email address
 
-monthlyreturns.declaration.title = Declaration that no payments have been made
-monthlyreturns.declaration.heading = Declaration that no payments have been made
-monthlyreturns.declaration.paragraph = By submitting this declaration I confirm that no payments have been made to subcontractors during the tax month {0}.
-monthlyreturns.declaration.warning = You may face financial penalties and prosecution if you give any false information.
-monthlyreturns.declaration.checkbox = Yes, I confirm the information I have provided is correct to the best of my knowledge.
-monthlyreturns.declaration.checkYourAnswersLabel = Declaration
-monthlyreturns.declaration.error.required = Check the box to confirm that the information given on this return is correct and complete to the best of your knowledge
-monthlyreturns.declaration.change.hidden = Declaration
-monthlyreturns.declaration.submit = Confirm
+monthlyreturns.declaration.title = Declaration
+monthlyreturns.declaration.heading = Declaration
+monthlyreturns.declaration.paragraph = By continuing, I confirm that:
+monthlyreturns.declaration.listItem1 = no payments have been made to subcontractors in this period
+monthlyreturns.declaration.listItem2 = the information provided in this return is correct to the best of my knowledge
+monthlyreturns.declaration.warning = If you give any false information, you may face financial penalties and prosecution.
+monthlyreturns.declaration.submit = Confirm and continue
 
 monthlyreturns.submissionSending.title = Submission - Sending
 monthlyreturns.submissionSending.h1 = Your submission is being sent to HMRC

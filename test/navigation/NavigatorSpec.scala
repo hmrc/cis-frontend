@@ -54,7 +54,7 @@ class NavigatorSpec extends SpecBase {
           ConfirmEmailAddressPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
       }
 
       "must go from DeclarationPage to CheckYourAnswers" in {
@@ -227,7 +227,7 @@ class NavigatorSpec extends SpecBase {
           ConfirmationByEmailPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
       }
 
       "must go from ConfirmationByEmailPage to CheckYourAnswers when answer is false and employment status declaration exists" in {
@@ -254,7 +254,7 @@ class NavigatorSpec extends SpecBase {
           EnterYourEmailAddressPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
       }
 
       "must go from EnterYourEmailAddressPage to CheckYourAnswers when employment status declaration exists" in {
