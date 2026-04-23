@@ -68,26 +68,21 @@ class SubcontractorDetailsAddedController @Inject() (
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
         case Some(viewModel) =>
-          val subcontractors = request.userAnswers.get(SelectedSubcontractorPage.all).getOrElse(Map())
           form
             .bindFromRequest()
             .fold(
               formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
               answer =>
                 val updatedUa =
-                  request.userAnswers.set(SubcontractorDetailsAddedPage, answer).getOrElse(request.userAnswers)
+                  request.userAnswers.set(SubcontractorDetailsAddedPage, !answer).getOrElse(request.userAnswers)
 
                 sessionRepository.set(updatedUa).map { _ =>
-                  if (answer && viewModel.hasIncomplete) {
+                  if (!answer && viewModel.hasIncomplete) {
                     val withError =
                       form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
                     BadRequest(view(withError, mode, viewModel))
-                  } else if (answer) {
+                  } else if (!answer) {
                     Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
-                  } else if (!answer && subcontractors.values.exists(!_.isComplete)) {
-                    Redirect(
-                      controllers.monthlyreturns.routes.AddSubcontractorDetailsController.onPageLoad(NormalMode)
-                    )
                   } else {
                     Redirect(
                       controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
