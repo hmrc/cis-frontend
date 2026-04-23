@@ -27,10 +27,11 @@ import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import services.submission.SubmissionService
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.{ConfirmationByEmailSummary, DateConfirmPaymentsSummary, EmploymentStatusDeclarationSummary, EnterYourEmailAddressSummary, PaymentsToSubcontractorsSummary, ReturnTypeSummary}
+import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
+import pages.submission.SubmissionJourneyCompletedPage
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -326,6 +327,55 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.AlreadySubmittedController
           .onPageLoad()
           .url
+      }
+    }
+
+    "must redirect to already submitted page for a GET when submission journey is already completed" in {
+      val userAnswers = userAnswersWithCisId
+        .set(SubmissionJourneyCompletedPage, true)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+      }
+    }
+
+    "must redirect to already submitted page on POST when submission journey is already completed" in {
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage, true)
+        .success
+        .value
+
+      val mockService           = mock[MonthlyReturnService]
+      val mockSubmissionService = mock[SubmissionService]
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
       }
     }
   }

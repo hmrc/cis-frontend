@@ -17,18 +17,35 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.UserAnswers
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.any
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import play.api.inject.bind
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
 
-class SubmissionUnsuccessfulControllerSpec extends SpecBase {
+import scala.concurrent.Future
+
+class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
 
   "SubmissionUnsuccessful Controller" - {
 
     "GET onPageLoad" - {
 
       "must return OK and the correct view when user answers exist" in {
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
 
         running(application) {
           val request   = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
@@ -38,6 +55,8 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
+
+          verify(mockMonthlyReturnService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
       }
 
