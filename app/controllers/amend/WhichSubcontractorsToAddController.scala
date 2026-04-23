@@ -31,45 +31,45 @@ import views.html.amend.WhichSubcontractorsToAddView
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class WhichSubcontractorsToAddController @Inject()(
-                                        override val messagesApi: MessagesApi,
-                                        sessionRepository: SessionRepository,
-                                        navigator: Navigator,
-                                        identify: IdentifierAction,
-                                        getData: DataRetrievalAction,
-                                        requireData: DataRequiredAction,
-                                        formProvider: WhichSubcontractorsToAddFormProvider,
-                                        val controllerComponents: MessagesControllerComponents,
-                                        view: WhichSubcontractorsToAddView
-                                      )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+class WhichSubcontractorsToAddController @Inject() (
+  override val messagesApi: MessagesApi,
+  sessionRepository: SessionRepository,
+  navigator: Navigator,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  formProvider: WhichSubcontractorsToAddFormProvider,
+  val controllerComponents: MessagesControllerComponents,
+  view: WhichSubcontractorsToAddView
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport {
 
   private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
   private val checkboxItems  = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
   val form                   = formProvider(subcontractors)
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(WhichSubcontractorsToAddPage) match {
-        case None => form
-        case Some(value) => form.fill(value)
-      }
+    val preparedForm = request.userAnswers.get(WhichSubcontractorsToAddPage) match {
+      case None        => form
+      case Some(value) => form.fill(value)
+    }
 
-      Ok(view(preparedForm, mode, checkboxItems))
+    Ok(view(preparedForm, mode, checkboxItems))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode, checkboxItems))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, checkboxItems))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+        )
   }
 }
