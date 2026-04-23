@@ -18,54 +18,41 @@
 @import uk.gov.hmrc.govukfrontend.views.Aliases._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.panel.Panel
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.button.Button
-@import models.ReturnType
 @import config.FrontendAppConfig
+@import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 
 @this(
     layout: templates.Layout,
     govukPanel: GovukPanel,
     govukSummaryList: GovukSummaryList,
-    govukDetails: GovukDetails,
-    govukButton: GovukButton,
     govukInsetText: GovukInsetText,
-    h1: components.H1,
     h2: components.H2,
     paragraph: components.Paragraph,
-    bulletList: components.BulletList,
     sectionBreak: components.SectionBreak,
     printLink: components.PrintLink,
     link: components.Link
 )
 
-@(reference: String,
-  periodEnd: String,
-  submittedTime: String,
-  submittedDate: String,
-  contractorName: String,
-  empRef: String,
-  email: String,
-  submissionType: ReturnType,
-  cisId: String
-)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(vm: SubmissionSuccessViewModel)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(
         messages(
             "monthlyreturns.submissionSuccess.title",
-            messages(s"monthlyreturns.returnType.${submissionType.toString}")
+            messages(s"monthlyreturns.returnType.${vm.submissionType.toString}")
         )
     ),
-    showBackLink = true
+    showBackLink = false
 ) {
 
     @govukPanel(
         Panel(
-            title   = Text(messages("monthlyreturns.submissionSuccess.heading", messages(s"monthlyreturns.returnType.${submissionType.toString}"))),
+            title   = Text(messages("monthlyreturns.submissionSuccess.heading", messages(s"monthlyreturns.returnType.${vm.submissionType.toString}"))),
             content = HtmlContent(
                 HtmlFormat.raw(
                     messages("monthlyreturns.submissionSuccessful.panel.ref") +
                     "<br><strong>" +
-                    HtmlFormat.escape(reference).body.grouped(22).mkString("<br>") +
+                    HtmlFormat.escape(vm.reference).body.grouped(22).mkString("<br>") +
                     "</strong>"
                 )
             )
@@ -74,7 +61,7 @@
 
     @paragraph(
         message = "monthlyreturns.submissionSuccessful.submitted.line",
-        args    = Seq(submittedTime, submittedDate)
+        args    = Seq(vm.submittedTime, vm.submittedDate)
     )
 
     @h2("monthlyreturns.submissionSuccessful.submissionDetails.heading")
@@ -83,27 +70,27 @@
         SummaryListViewModel(Seq(
             SummaryListRowViewModel(
                 key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.contractorName"))),
-                value = ValueViewModel(Text(contractorName))
+                value = ValueViewModel(Text(vm.contractorName))
             ),
             SummaryListRowViewModel(
                 key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.payeReference"))),
-                value = ValueViewModel(Text(empRef))
+                value = ValueViewModel(Text(vm.empRef))
             ),
             SummaryListRowViewModel(
                 key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.submissionType"))),
-                value = ValueViewModel(Text(messages(s"monthlyreturns.returnType.${submissionType.toString}")))
+                value = ValueViewModel(Text(messages(s"monthlyreturns.returnType.${vm.submissionType.toString}")))
             ),
             SummaryListRowViewModel(
                 key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.returnPeriodEnded"))),
-                value = ValueViewModel(Text(periodEnd))
+                value = ValueViewModel(Text(vm.periodEnd))
             )
         ))
     )
 
-    @if(!email.trim.isEmpty) {
+    @if(!vm.email.trim.isEmpty) {
         @paragraph(messages(
             "monthlyreturns.submissionSuccessful.confirmationOfSuccessfulSubmission",
-            Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(email)}</span>""")
+            Html(s"""<span class="govuk-!-font-weight-bold">${HtmlFormat.escape(vm.email)}</span>""")
         ))
     }
 
@@ -125,14 +112,14 @@
         )
     )
 
-    @if(email.trim.isEmpty) {
+    @if(vm.email.trim.isEmpty) {
         @h2("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
         @paragraph(messages("monthlyreturns.submissionSuccessful.whatHappensNext.p"))
     }
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
-        linkUrl = appConfig.manageYourCisReturn + cisId
+        linkUrl = appConfig.manageYourCisReturn + vm.cisId
     )
 
     @sectionBreak()

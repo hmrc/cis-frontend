@@ -17,7 +17,7 @@
 package controllers.helpers
 
 import models.requests.DataRequest
-import models.{EmployerReference, ReturnType, UserAnswers}
+import models.{EmployerReference, UserAnswers}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import play.api.Logging
@@ -36,10 +36,10 @@ trait SubmissionViewDataSupport extends Logging {
   protected def required[A](opt: Option[A], error: String): A =
     opt.getOrElse(fail(error))
 
-  protected def emailfromUserAnswers(ua: UserAnswers, submissionType: ReturnType): Option[String] =
+  protected def emailfromUserAnswers(ua: UserAnswers): Option[String] =
     ua.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
 
-  protected def periodEndFromUserAnswers(ua: UserAnswers, submissionType: ReturnType): Option[LocalDate] =
+  protected def periodEndFromUserAnswers(ua: UserAnswers): Option[LocalDate] =
     ua.get(DateConfirmPaymentsPage)
 
   protected def contractorNameFrom(request: DataRequest[_]): String = {

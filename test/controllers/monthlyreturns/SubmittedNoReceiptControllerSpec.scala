@@ -29,6 +29,8 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
+import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
@@ -94,14 +96,16 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val expectedHtml =
             view(
-              periodEnd = periodEnd.format(dmyFmt),
-              submittedTime = submittedTime,
-              submittedDate = submittedDate,
-              contractorName = contractorName,
-              empRef = employerRef,
-              email = email,
-              submissionType = submissionType,
-              cisId = cisId
+              SubmittedNoReceiptViewModel(
+                periodEnd = periodEnd.format(dmyFmt),
+                submittedTime = submittedTime,
+                submittedDate = submittedDate,
+                contractorName = contractorName,
+                empRef = employerRef,
+                email = email,
+                submissionType = submissionType,
+                cisId = cisId
+              )
             )(request, applicationConfig, messages(app)).toString
 
           running(app) {
@@ -201,6 +205,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           when(mockService.getSchemeEmail(any())(any()))
             .thenReturn(Future.successful(Some(fallbackEmail)))
 
+          when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+            .thenReturn(Future.unit)
+
           val app =
             applicationBuilder(userAnswers = Some(uaWithoutEmail))
               .overrides(
@@ -213,14 +220,16 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val expectedHtml =
             view(
-              periodEnd = periodEnd.format(dmyFmt),
-              submittedTime = submittedTime,
-              submittedDate = submittedDate,
-              contractorName = contractorName,
-              empRef = employerRef,
-              email = fallbackEmail,
-              submissionType = submissionType,
-              cisId = cisId
+              SubmittedNoReceiptViewModel(
+                periodEnd = periodEnd.format(dmyFmt),
+                submittedTime = submittedTime,
+                submittedDate = submittedDate,
+                contractorName = contractorName,
+                empRef = employerRef,
+                email = fallbackEmail,
+                submissionType = submissionType,
+                cisId = cisId
+              )
             )(request, applicationConfig, messages(app)).toString
 
           running(app) {
@@ -231,6 +240,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           }
 
           verify(mockService).getSchemeEmail(any())(any())
+          verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
 
         "must throw if returnTypePage is missing" in {
@@ -274,14 +284,16 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val expectedHtml =
               view(
-                periodEnd = periodEnd.format(dmyFmt),
-                submittedTime = submittedTime,
-                submittedDate = submittedDate,
-                contractorName = contractorName,
-                empRef = employerRef,
-                email = email,
-                submissionType = submissionType,
-                cisId = cisId
+                SubmittedNoReceiptViewModel(
+                  periodEnd = periodEnd.format(dmyFmt),
+                  submittedTime = submittedTime,
+                  submittedDate = submittedDate,
+                  contractorName = contractorName,
+                  empRef = employerRef,
+                  email = email,
+                  submissionType = submissionType,
+                  cisId = cisId
+                )
               )(request, applicationConfig, messages(app)).toString
 
             running(app) {
@@ -375,6 +387,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             when(mockService.getSchemeEmail(any())(any()))
               .thenReturn(Future.successful(Some(fallbackEmail)))
 
+            when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+              .thenReturn(Future.unit)
+
             val app =
               applicationBuilder(userAnswers = Some(uaWithoutEmail), isAgent = true)
                 .overrides(
@@ -387,14 +402,16 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val expectedHtml =
               view(
-                periodEnd = periodEnd.format(dmyFmt),
-                submittedTime = submittedTime,
-                submittedDate = submittedDate,
-                contractorName = contractorName,
-                empRef = employerRef,
-                email = fallbackEmail,
-                submissionType = submissionType,
-                cisId = cisId
+                SubmittedNoReceiptViewModel(
+                  periodEnd = periodEnd.format(dmyFmt),
+                  submittedTime = submittedTime,
+                  submittedDate = submittedDate,
+                  contractorName = agentDateWithoutTaxRefTaxNumber.schemeName.value,
+                  empRef = employerRef,
+                  email = fallbackEmail,
+                  submissionType = submissionType,
+                  cisId = cisId
+                )
               )(request, applicationConfig, messages(app)).toString
 
             running(app) {
@@ -405,6 +422,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             }
 
             verify(mockService).getSchemeEmail(any())(any())
+            verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
           }
 
           "must throw if returnTypePage is missing" in {

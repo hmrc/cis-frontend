@@ -28,7 +28,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
-import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage}
+import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage, SubmissionJourneyCompletedPage}
 import models.requests.DataRequest
 import play.api.mvc.AnyContent
 import services.submission.SubmissionService
@@ -189,6 +189,28 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulResubmitRoute
+    }
+
+    "redirects to AlreadySubmitted when submission journey is already completed" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val completedAnswers = userAnswersWithCisId
+        .set(SubmissionJourneyCompletedPage, true)
+        .success
+        .value
+
+      val app        = buildAppWith(Some(completedAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe
+        controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+
+      verifyNoInteractions(mockService)
+      verifyNoInteractions(mockMongoDb)
     }
   }
 
@@ -713,6 +735,28 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulResubmitRoute
+    }
+
+    "redirects to AlreadySubmitted when submission journey is already completed" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val completedAnswers = userAnswersWithCisId
+        .set(SubmissionJourneyCompletedPage, true)
+        .success
+        .value
+
+      val app = buildAppWith(Some(completedAnswers), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe
+        controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+
+      verifyNoInteractions(mockService)
+      verifyNoInteractions(mockMongoDb)
     }
   }
 }

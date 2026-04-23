@@ -23,8 +23,10 @@ import models.monthlyreturns.*
 import pages.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
+import pages.submission.SubmissionJourneyCompletedPage
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.UserAnswerUtils.clearMonthlyReturnJourney
 import viewmodels.SelectSubcontractorsViewModel
 
 import javax.inject.{Inject, Singleton}
@@ -186,6 +188,19 @@ class MonthlyReturnService @Inject() (
               .map(_ => updatedUa)
         }
       }
+  }
+
+  def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val updatedTry =
+      for {
+        withCompleted <- userAnswers.set(SubmissionJourneyCompletedPage, true)
+        cleared       <- withCompleted.clearMonthlyReturnJourney
+      } yield cleared
+
+    updatedTry match {
+      case scala.util.Success(updatedAnswers) => sessionRepository.set(updatedAnswers).map(_ => ())
+      case scala.util.Failure(_)              => Future.unit
+    }
   }
 
   private def getCisId(ua: UserAnswers): Future[String] =
