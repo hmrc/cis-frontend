@@ -57,6 +57,7 @@ class SubcontractorDetailsAddedViewModelSpec extends AnyFreeSpec with Matchers {
           subcontractorId = 1001L,
           name = "TyneWear Ltd",
           detailsAdded = true,
+          changeLabel = "monthlyreturns.subcontractorDetailsAdded.amend",
           changeCall = Call("GET", "/change-0"),
           removeCall = Call("GET", "/remove-0")
         )

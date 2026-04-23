@@ -23,6 +23,7 @@ case class SubcontractorDetailsAddedRow(
   subcontractorId: Long,
   name: String,
   detailsAdded: Boolean,
+  changeLabel: String,
   changeCall: Call,
   removeCall: Call
 )

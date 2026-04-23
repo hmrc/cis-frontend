@@ -189,7 +189,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "onSubmit" - {
 
-      "redirects to PaymentDetailsController when no selected subcontractor requires verification" in {
+      "redirects to SubcontractorDetailsAddedController when no selected subcontractor requires verification" in {
         val subcontractorService = mock[SubcontractorService]
         val monthlyReturnService = mock[MonthlyReturnService]
         stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
@@ -216,8 +216,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.monthlyreturns.routes.PaymentDetailsController
-            .onPageLoad(models.NormalMode, 1, None)
+          redirectLocation(result).value mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoad(models.NormalMode)
             .url
         }
       }

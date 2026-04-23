@@ -108,7 +108,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
     val subs = selectedSubcontractors(ua)
-    if (subs.isEmpty || !anyWithDetailsAdded(ua)) {
+    if (subs.isEmpty) {
       Redirect(
         controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
       )

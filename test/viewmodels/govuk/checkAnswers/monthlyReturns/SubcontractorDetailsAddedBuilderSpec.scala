@@ -17,11 +17,12 @@
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
-import models.UserAnswers
+import models.{CheckMode, NormalMode, UserAnswers}
 import models.monthlyreturns.SelectedSubcontractor
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.libs.json.Json
-import viewmodels.checkAnswers.monthlyreturns.{SubcontractorDetailsAddedBuilder, SubcontractorDetailsAddedViewModel}
+import play.api.mvc.Call
+import viewmodels.checkAnswers.monthlyreturns.{SubcontractorDetailsAddedBuilder, SubcontractorDetailsAddedRow, SubcontractorDetailsAddedViewModel}
 
 import java.time.Instant
 
@@ -61,7 +62,7 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
 
   "SubcontractorDetailsAddedBuilder.build" - {
 
-    "must return Some(viewModel) with hasIncomplete=true, only display completed rows, and single heading" in {
+    "must return Some(viewModel) with hasIncomplete=true, display all rows" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd", payments = 1000, materials = 200, tax = 200),
         2 -> incompleteSub(1002L, "Northern Trades Ltd"),
@@ -71,11 +72,41 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
       val vm = SubcontractorDetailsAddedBuilder.build(ua).value
 
       vm.hasIncomplete mustBe true
-      vm.rows.map(_.name) mustBe Seq("TyneWear Ltd")
-      vm.rows.foreach(_.detailsAdded mustBe true)
-
-      vm.headingKey mustBe "monthlyreturns.subcontractorDetailsAdded.heading.single"
-      vm.headingArgs mustBe empty
+      vm.rows mustBe Seq(
+        SubcontractorDetailsAddedRow(
+          index = 1,
+          subcontractorId = 1001L,
+          name = "TyneWear Ltd",
+          detailsAdded = true,
+          changeLabel = "monthlyreturns.subcontractorDetailsAdded.amend",
+          changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+            .onPageLoad(1),
+          removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+            .onPageLoad(CheckMode, 1)
+        ),
+        SubcontractorDetailsAddedRow(
+          index = 2,
+          subcontractorId = 1002L,
+          name = "Northern Trades Ltd",
+          detailsAdded = false,
+          changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
+          changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
+            .onPageLoad(NormalMode, 2, None),
+          removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+            .onPageLoad(CheckMode, 2)
+        ),
+        SubcontractorDetailsAddedRow(
+          index = 3,
+          subcontractorId = 1003L,
+          name = "BuildRight Construction",
+          detailsAdded = false,
+          changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
+          changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
+            .onPageLoad(NormalMode, 3, None),
+          removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+            .onPageLoad(CheckMode, 3)
+        )
+      )
     }
 
     "must return Some(viewModel) with hasIncomplete=false and multiple heading when more than one completed" in {
@@ -100,7 +131,30 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
         2 -> incompleteSub(2L, "Incomplete 2")
       )
 
-      SubcontractorDetailsAddedBuilder.build(ua) mustBe None
+      SubcontractorDetailsAddedBuilder.build(ua).value.rows mustBe Seq(
+        SubcontractorDetailsAddedRow(
+          index = 1,
+          subcontractorId = 1L,
+          name = "Incomplete 1",
+          detailsAdded = false,
+          changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
+          changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
+            .onPageLoad(NormalMode, 1, None),
+          removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+            .onPageLoad(CheckMode, 1)
+        ),
+        SubcontractorDetailsAddedRow(
+          index = 2,
+          subcontractorId = 2L,
+          name = "Incomplete 2",
+          detailsAdded = false,
+          changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
+          changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
+            .onPageLoad(NormalMode, 2, None),
+          removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+            .onPageLoad(CheckMode, 2)
+        )
+      )
     }
   }
 }

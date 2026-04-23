@@ -46,7 +46,6 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
       doc.getElementsByClass("govuk-button").text() must include(messages("site.continue"))
 
       doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.question"))
-      doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.hint"))
     }
 
     "must display error summary when form has errors" in new Setup {
@@ -95,6 +94,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
             subcontractorId = 1001L,
             name = "TyneWear Ltd",
             detailsAdded = true,
+            changeLabel = "monthlyreturns.subcontractorDetailsAdded.amend",
             changeCall = Call("GET", "/change-1"),
             removeCall = Call("GET", "/remove-1")
           ),
@@ -103,6 +103,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
             subcontractorId = 1002L,
             name = "Northern Trades Ltd",
             detailsAdded = false,
+            changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
             changeCall = Call("GET", "/change-2"),
             removeCall = Call("GET", "/remove-2")
           )

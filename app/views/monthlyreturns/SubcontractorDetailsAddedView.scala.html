@@ -51,7 +51,7 @@
                 (
                     row.name,
                     Seq(
-                      (row.changeCall.url, "site.change", "monthlyreturns.subcontractorDetailsAdded.change.hidden"),
+                      (row.changeCall.url, row.changeLabel, s"${row.changeLabel}.hidden"),
                       (row.removeCall.url, "site.remove", "monthlyreturns.subcontractorDetailsAdded.remove.hidden")
                     )
                 )
@@ -65,7 +65,6 @@
                     legend = LegendViewModel(messages("monthlyreturns.subcontractorDetailsAdded.question"))
                         .withCssClass("govuk-fieldset__legend--m")
                 )
-                .withHint(HintViewModel(Text(messages("monthlyreturns.subcontractorDetailsAdded.hint"))))
         )
 
         @govukButton(

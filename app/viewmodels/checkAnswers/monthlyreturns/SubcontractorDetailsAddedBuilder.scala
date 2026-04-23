@@ -17,9 +17,8 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
-import models.UserAnswers
+import models.{CheckMode, NormalMode, UserAnswers}
 import pages.monthlyreturns.SelectedSubcontractorPage
-import models.CheckMode
 
 object SubcontractorDetailsAddedBuilder {
 
@@ -48,15 +47,24 @@ object SubcontractorDetailsAddedBuilder {
         indexes.flatMap { index =>
           subcontractorByIndex.get(index).map { sub =>
 
-            val added = detailsAdded(sub)
+            val added      = detailsAdded(sub)
+            val changeCall =
+              if (added)
+                controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                  .onPageLoad(index)
+              else
+                controllers.monthlyreturns.routes.PaymentDetailsController
+                  .onPageLoad(NormalMode, index, None)
 
             SubcontractorDetailsAddedRow(
               index = index,
               subcontractorId = sub.id,
               name = sub.name,
               detailsAdded = added,
-              changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
-                .onPageLoad(index),
+              changeLabel =
+                if (added) "monthlyreturns.subcontractorDetailsAdded.amend"
+                else "monthlyreturns.subcontractorDetailsAdded.add",
+              changeCall = changeCall,
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
                 .onPageLoad(CheckMode, index)
             )
@@ -64,22 +72,17 @@ object SubcontractorDetailsAddedBuilder {
         }
 
       val hasIncomplete = rows.exists(!_.detailsAdded)
-      val rowsToDisplay = rows.filter(_.detailsAdded)
-      val addedCount    = rowsToDisplay.size
+      val addedCount    = rows.size
 
-      if (addedCount == 0) {
-        None
-      } else {
-        val (key, args) = headingKeyAndArgs(addedCount)
-        Some(
-          SubcontractorDetailsAddedViewModel(
-            headingKey = key,
-            headingArgs = args,
-            rows = rowsToDisplay,
-            hasIncomplete = hasIncomplete
-          )
+      val (key, args) = headingKeyAndArgs(addedCount)
+      Some(
+        SubcontractorDetailsAddedViewModel(
+          headingKey = key,
+          headingArgs = args,
+          rows = rows,
+          hasIncomplete = hasIncomplete
         )
-      }
+      )
     }
   }
 }

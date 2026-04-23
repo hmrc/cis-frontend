@@ -72,15 +72,15 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from VerifySubcontractorsPage to PaymentDetailsController at index 1 when no subcontractors are saved" in {
+      "must go from VerifySubcontractorsPage to SubcontractorDetailsAddedController" in {
         navigator.nextPage(
           VerifySubcontractorsPage,
           NormalMode,
           UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 1, None)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
       }
 
-      "must go from VerifySubcontractorsPage to PaymentDetailsController at the first incomplete subcontractor index" in {
+      "must go from VerifySubcontractorsPage to SubcontractorDetailsAddedController when subcontractors are present" in {
         val ua = UserAnswers("id")
           .setOrException(SelectedSubcontractorPage(0), completeSub)
           .setOrException(SelectedSubcontractorPage(2), incompleteSub)
@@ -90,7 +90,7 @@ class NavigatorSpec extends SpecBase {
           VerifySubcontractorsPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, 2, None)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
       }
 
       "must go from DateConfirmPaymentsPage to SelectSubcontractorsController" in {

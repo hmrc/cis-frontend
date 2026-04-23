@@ -457,11 +457,13 @@ monthlyreturns.confirmationByEmail.change.hidden = do you want submission confir
 
 monthlyreturns.subcontractorDetailsAdded.error.required = Select yes to submit your return, or no to add more subcontractors
 monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors
-monthlyreturns.subcontractorDetailsAdded.heading.single = You have added details for a single subcontractor
-monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added details for {0} subcontractors
-monthlyreturns.subcontractorDetailsAdded.question = Have you added all the subcontractors you are submitting returns for?
-monthlyreturns.subcontractorDetailsAdded.hint = Select yes to submit your return, or no to add more subcontractors
-monthlyreturns.subcontractorDetailsAdded.change.hidden = Change {0}
+monthlyreturns.subcontractorDetailsAdded.heading.single = You have added single subcontractor
+monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added {0} subcontractors
+monthlyreturns.subcontractorDetailsAdded.question = Do you need to add more subcontractors?
+monthlyreturns.subcontractorDetailsAdded.amend = Amend payment details
+monthlyreturns.subcontractorDetailsAdded.amend.hidden = Amend payment details for {0}
+monthlyreturns.subcontractorDetailsAdded.add = Add payment details
+monthlyreturns.subcontractorDetailsAdded.add.hidden = Add payment details for {0}s
 monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list
 
 monthlyreturns.paymentDetailsConfirmation.title = Do you confirm the information in this return is correct?
