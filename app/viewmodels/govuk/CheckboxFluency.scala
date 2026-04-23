@@ -56,7 +56,7 @@ trait CheckboxFluency {
         name = name,
         errorMessage = errorMessage(form(name)),
         items = items.map { item =>
-          item.copy(checked = form(name).value.contains(item.value))
+          item.copy(checked = form.data.exists(data => data._2 == item.value))
         }
       )
   }
@@ -78,7 +78,7 @@ trait CheckboxFluency {
       CheckboxItem(
         content = content,
         id = Some(s"${fieldId}_$index"),
-        name = Some(fieldId),
+        name = Some(s"$fieldId[$index]"),
         value = value
       )
   }
