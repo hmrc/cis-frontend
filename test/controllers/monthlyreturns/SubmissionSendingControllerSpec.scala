@@ -17,23 +17,25 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import play.api.test.FakeRequest
-import models.UserAnswers
-import models.submission.{ChrisSubmissionResponse, CreateSubmissionResponse, PollDecision, ResponseEndPointDto, SubmissionDetails}
+import models.monthlyreturns.Declaration.Confirmed
+import models.requests.DataRequest
+import models.submission.*
+import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
+import pages.monthlyreturns.*
+import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.AnyContent
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import uk.gov.hmrc.http.HeaderCarrier
-import pages.submission.{SubmissionCreatedPage, SubmissionDetailsPage}
-import models.requests.DataRequest
-import play.api.mvc.AnyContent
 import services.submission.SubmissionService
+import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 import scala.concurrent.Future
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
@@ -48,6 +50,14 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         bind[SubmissionService].toInstance(service),
         bind[SessionRepository].toInstance(sessionDb)
       )
+
+  private val completeAnswers = emptyUserAnswers
+    .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
+    .setOrException(CisIdPage, "test-cis-id")
+    .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+    .setOrException(SubmitInactivityRequestPage, true)
+    .setOrException(ConfirmationByEmailPage, false)
+    .setOrException(DeclarationPage, Set(Confirmed))
 
   lazy val submissionSendingRoute: String =
     controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
@@ -115,7 +125,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
 
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)
@@ -129,7 +139,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
 
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)
@@ -143,7 +153,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "FATAL_ERROR")
 
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)
@@ -159,7 +169,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(mockService.create(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)
@@ -182,7 +192,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
       stubSubmissionFlow(mockService, mockMongoDb, status = "STARTED")
 
-      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)
