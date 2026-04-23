@@ -33,7 +33,7 @@ import models.requests.DataRequest
 import play.api.mvc.AnyContent
 import services.submission.SubmissionService
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime}
 import scala.concurrent.Future
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
@@ -81,7 +81,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       hmrcMarkGenerated = irMark,
       correlationId = Some("CID123"),
       responseEndPoint = endpoint,
-      gatewayTimestamp = Some("2025-01-01T00:00:00Z"),
+      gatewayTimestamp = Some("2025-01-01T00:00:00"),
       error = None
     )
 
@@ -224,7 +224,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -261,7 +261,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -298,7 +298,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "ACCEPTED",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -335,7 +335,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -372,7 +372,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -413,7 +413,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -455,7 +455,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -496,7 +496,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -537,7 +537,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -574,7 +574,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -614,7 +614,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -654,7 +654,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 
@@ -691,7 +691,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
       val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
 

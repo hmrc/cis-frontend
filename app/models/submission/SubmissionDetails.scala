@@ -17,13 +17,14 @@
 package models.submission
 
 import play.api.libs.json.{Json, OFormat}
-import java.time.Instant
+
+import java.time.{Instant, LocalDateTime}
 
 case class SubmissionDetails(
   id: String,
   status: String,
   irMark: String,
-  submittedAt: Instant
+  submittedAt: LocalDateTime
 )
 
 object SubmissionDetails {

@@ -24,7 +24,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.JsPath
 
-import java.time.Instant
+import java.time.LocalDateTime
 
 class SubmissionDetailsPageSpec extends AnyWordSpec with Matchers {
 
@@ -42,7 +42,7 @@ class SubmissionDetailsPageSpec extends AnyWordSpec with Matchers {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
 
       val ua1 = UserAnswers("test").set(SubmissionDetailsPage, submissionDetails).success.value
