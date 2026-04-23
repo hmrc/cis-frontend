@@ -346,22 +346,22 @@ class MonthlyReturnService @Inject() (
       updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
                    case (accEither, (item, index)) =>
                      for {
-                       acc <- accEither
-                       pageIndex        = index + 1
-                       next <- acc
-                                 .set(
-                                   SelectedSubcontractorPage(index + 1),
-                                   SelectedSubcontractor(
-                                     id = item.subcontractorId.getOrElse(0L),
-                                     name = item.subcontractorName.getOrElse(""),
-                                     totalPaymentsMade = toBigDecimal(item.totalPayments),
-                                     costOfMaterials = toBigDecimal(item.costOfMaterials),
-                                     totalTaxDeducted = toBigDecimal(item.totalDeducted)
-                                   )
-                                 )
-                                 .toEither
-                                 .left
-                                 .map(_.getMessage)
+                       acc      <- accEither
+                       pageIndex = index + 1
+                       next     <- acc
+                                     .set(
+                                       SelectedSubcontractorPage(index + 1),
+                                       SelectedSubcontractor(
+                                         id = item.subcontractorId.getOrElse(0L),
+                                         name = item.subcontractorName.getOrElse(""),
+                                         totalPaymentsMade = toBigDecimal(item.totalPayments),
+                                         costOfMaterials = toBigDecimal(item.costOfMaterials),
+                                         totalTaxDeducted = toBigDecimal(item.totalDeducted)
+                                       )
+                                     )
+                                     .toEither
+                                     .left
+                                     .map(_.getMessage)
                      } yield next
                  }
     } yield updated

@@ -18,16 +18,18 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.{NormalMode, UserAnswers}
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 
 import javax.inject.Inject
 import navigation.Navigator
-import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage}
+import pages.agent.AgentClientDataPage
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Request}
 import repositories.SessionRepository
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -59,13 +61,24 @@ class ContinueReturnJourneyController @Inject() (
             )
             .flatMap {
               case Left(error) =>
-                logger.warn(s"[continueReturnJourney] Failed to populate user answers: $error for request: $editRequest")
+                logger.warn(
+                  s"[continueReturnJourney] Failed to populate user answers: $error for request: $editRequest"
+                )
                 Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
               case Right(updatedUserAnswers) =>
-                sessionRepository.set(updatedUserAnswers).map { _ =>
-                  Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, updatedUserAnswers))
-                }
+                populateAgentClientDataIfRequired(updatedUserAnswers)
+                  .flatMap { finalUserAnswers =>
+                    sessionRepository.set(finalUserAnswers).map { _ =>
+                      Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, updatedUserAnswers))
+                    }
+                  }
+                  .recover { case ex =>
+                    logger.warn(
+                      s"[continueReturnJourney] Error populating agent client data for request: $editRequest, error: ${ex.getMessage}"
+                    )
+                    Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                  }
             }
       }
     }
@@ -81,4 +94,33 @@ class ContinueReturnJourneyController @Inject() (
       taxMonth = taxMonth.toInt
     )
 
+  private def populateAgentClientDataIfRequired(
+    ua: UserAnswers
+  )(implicit request: IdentifierRequest[AnyContent], hc: HeaderCarrier): Future[UserAnswers] =
+    if (!request.isAgent) {
+      Future.successful(ua)
+    } else {
+      monthlyReturnService.getAgentClient(request.userId).flatMap {
+        case Some(agentData) =>
+          monthlyReturnService
+            .hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference)
+            .flatMap {
+              case true =>
+                Future.fromTry(ua.set(AgentClientDataPage, agentData))
+
+              case false =>
+                logger.warn(
+                  s"[ContinueReturnJourneyController] Agent ${request.userId} does not have a client with " +
+                    s"taxOfficeNumber: ${agentData.taxOfficeNumber}, taxOfficeReference: ${agentData.taxOfficeReference}"
+                )
+                Future.failed(new RuntimeException("Agent no longer authorised for client"))
+            }
+
+        case None =>
+          logger.warn(
+            s"[ContinueReturnJourneyController] Missing AgentClientData for agent user ${request.userId}"
+          )
+          Future.failed(new RuntimeException("Agent data not found"))
+      }
+    }
 }

@@ -22,7 +22,6 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.monthlyreturns.InactivityRequest
 import utils.UserAnswerUtils.*
 
 @Singleton

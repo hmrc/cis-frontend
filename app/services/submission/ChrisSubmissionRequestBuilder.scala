@@ -19,7 +19,7 @@ package services.submission
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{ReturnType, UserAnswers}
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
+import models.monthlyreturns.CisTaxpayer
 import models.submission.*
 import pages.monthlyreturns.*
 import uk.gov.hmrc.http.HeaderCarrier

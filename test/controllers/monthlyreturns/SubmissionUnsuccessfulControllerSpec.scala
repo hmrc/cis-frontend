@@ -49,8 +49,8 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase {
             GET,
             routes.SubmissionUnsuccessfulController.onPageLoad.url + "?cisId=123"
           )
-          val result = route(application, request).value
-          val view   = application.injector.instanceOf[SubmissionUnsuccessfulView]
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[SubmissionUnsuccessfulView]
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual view("123")(request, messages(application)).toString

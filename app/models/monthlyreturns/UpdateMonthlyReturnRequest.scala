@@ -47,7 +47,7 @@ object UpdateMonthlyReturnRequest {
   private def dateFor(ua: UserAnswers): Either[String, LocalDate] =
     ua.get(DateConfirmPaymentsPage).toRight("Missing confirmed payment date")
 
-  private def inactivityY(returnType: ReturnType, ua: UserAnswers): Option[String] =
+  private def inactivityY(ua: UserAnswers): Option[String] =
     ua.get(SubmitInactivityRequestPage) match {
       case Some(true)  => Some("Y")
       case Some(false) => None
@@ -92,12 +92,12 @@ object UpdateMonthlyReturnRequest {
           base.copy(
             decEmpStatusConsidered = ua.get(EmploymentStatusDeclarationPage).map(toYN),
             decAllSubsVerified = ua.get(VerifiedStatusDeclarationPage).map(toYN),
-            decNoMoreSubPayments = inactivityY(returnType, ua)
+            decNoMoreSubPayments = inactivityY(ua)
           )
 
         case MonthlyNilReturn =>
           base.copy(
-            decNilReturnNoPayments = inactivityY(returnType, ua)
+            decNilReturnNoPayments = inactivityY(ua)
           )
       }
     }

@@ -47,9 +47,9 @@ class SubmissionAwaitingControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request   = FakeRequest(GET, submissionAwaitingRoute + "?cisId=123")
-        val result    = route(application, request).value
-        val view      = application.injector.instanceOf[SubmissionAwaitingView]
+        val request = FakeRequest(GET, submissionAwaitingRoute + "?cisId=123")
+        val result  = route(application, request).value
+        val view    = application.injector.instanceOf[SubmissionAwaitingView]
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view("123")(request, messages(application)).toString
@@ -62,7 +62,7 @@ class SubmissionAwaitingControllerSpec extends SpecBase {
 
       running(application) {
         val request = FakeRequest(GET, submissionAwaitingRoute)
-        val result = route(application, request).value
+        val result  = route(application, request).value
 
         val ex = intercept[IllegalStateException] {
           await(result)
@@ -77,7 +77,7 @@ class SubmissionAwaitingControllerSpec extends SpecBase {
 
       running(application) {
         val request = FakeRequest(GET, submissionAwaitingRoute)
-        val result = route(application, request).value
+        val result  = route(application, request).value
 
         val ex = intercept[IllegalStateException] {
           await(result)
