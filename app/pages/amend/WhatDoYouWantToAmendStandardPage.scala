@@ -16,7 +16,7 @@
 
 package pages.amend
 
-import models.WhatDoYouWantToAmendStandard
+import models.amend.WhatDoYouWantToAmendStandard
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 

@@ -17,7 +17,7 @@
 package controllers.amend
 
 import controllers.actions._
-import forms.WhatDoYouWantToAmendStandardFormProvider
+import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
@@ -30,43 +30,43 @@ import views.html.amend.WhatDoYouWantToAmendStandardView
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class WhatDoYouWantToAmendStandardController @Inject()(
-                                       override val messagesApi: MessagesApi,
-                                       sessionRepository: SessionRepository,
-                                       navigator: Navigator,
-                                       identify: IdentifierAction,
-                                       getData: DataRetrievalAction,
-                                       requireData: DataRequiredAction,
-                                       formProvider: WhatDoYouWantToAmendStandardFormProvider,
-                                       val controllerComponents: MessagesControllerComponents,
-                                       view: WhatDoYouWantToAmendStandardView
-                                     )(implicit ec: ExecutionContext) extends FrontendBaseController with I18nSupport {
+class WhatDoYouWantToAmendStandardController @Inject() (
+  override val messagesApi: MessagesApi,
+  sessionRepository: SessionRepository,
+  navigator: Navigator,
+  identify: IdentifierAction,
+  getData: DataRetrievalAction,
+  requireData: DataRequiredAction,
+  formProvider: WhatDoYouWantToAmendStandardFormProvider,
+  val controllerComponents: MessagesControllerComponents,
+  view: WhatDoYouWantToAmendStandardView
+)(implicit ec: ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport {
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage) match {
-        case None => form
-        case Some(value) => form.fill(value)
-      }
+    val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage) match {
+      case None        => form
+      case Some(value) => form.fill(value)
+    }
 
-      Ok(view(preparedForm, mode))
+    Ok(view(preparedForm, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-
-      form.bindFromRequest().fold(
-        formWithErrors =>
-          Future.successful(BadRequest(view(formWithErrors, mode))),
-
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(WhatDoYouWantToAmendStandardPage, mode, updatedAnswers))
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(WhatDoYouWantToAmendStandardPage, mode, updatedAnswers))
+        )
   }
 }
