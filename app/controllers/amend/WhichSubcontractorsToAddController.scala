@@ -46,17 +46,17 @@ class WhichSubcontractorsToAddController @Inject() (
     with I18nSupport {
 
   private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-  private val checkboxItems  = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
   val form                   = formProvider(subcontractors)
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
-    val preparedForm = request.userAnswers.get(WhichSubcontractorsToAddPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
+    val selectedIds = request.userAnswers
+      .get(WhichSubcontractorsToAddPage)
+      .getOrElse(WhichSubcontractorsToAdd.mockPreSelectedIds)
 
-    Ok(view(preparedForm, mode, checkboxItems))
+    val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
+
+    Ok(view(form, mode, checkboxItems))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -64,7 +64,10 @@ class WhichSubcontractorsToAddController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, checkboxItems))),
+          formWithErrors =>
+            Future.successful(
+              BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractors)))
+            ),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))

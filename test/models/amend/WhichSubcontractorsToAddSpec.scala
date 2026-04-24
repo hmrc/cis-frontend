@@ -39,13 +39,21 @@ class WhichSubcontractorsToAddSpec extends AnyFreeSpec with Matchers with Option
       WhichSubcontractorsToAdd.mockSubcontractors must not be empty
     }
 
-    "checkboxItems must return one item per subcontractor" in {
-      val subs  = Seq(Subcontractor("1", "Alice, A"), Subcontractor("2", "Bob, B"))
+    "checkboxItems must return one item per subcontractor sorted by name" in {
+      val subs  = Seq(Subcontractor("2", "Bob, B"), Subcontractor("1", "Alice, A"))
       val items = WhichSubcontractorsToAdd.checkboxItems(subs)
 
       items.length mustEqual 2
       items.head.value mustEqual "1"
       items(1).value mustEqual "2"
+    }
+
+    "checkboxItems must mark pre-selected items as checked" in {
+      val subs  = Seq(Subcontractor("1", "Alice, A"), Subcontractor("2", "Bob, B"))
+      val items = WhichSubcontractorsToAdd.checkboxItems(subs, Set("2"))
+
+      items.head.checked mustEqual false
+      items(1).checked mustEqual true
     }
 
     "checkboxItems must return items of type CheckboxItem" in {

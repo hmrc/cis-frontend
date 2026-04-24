@@ -40,10 +40,12 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   lazy val whichSubcontractorsToAddRoute = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
-  private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-  private val checkboxItems  = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
-  val formProvider           = new WhichSubcontractorsToAddFormProvider()
-  val form                   = formProvider(subcontractors)
+  private val subcontractors   = WhichSubcontractorsToAdd.mockSubcontractors
+  private val preSelectedItems =
+    WhichSubcontractorsToAdd.checkboxItems(subcontractors, WhichSubcontractorsToAdd.mockPreSelectedIds)
+  private val emptyItems       = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
+  val formProvider             = new WhichSubcontractorsToAddFormProvider()
+  val form                     = formProvider(subcontractors)
 
   "WhichSubcontractorsToAdd Controller" - {
 
@@ -60,7 +62,10 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         status(result) mustEqual OK
 
-        contentAsString(result) mustEqual view(form, NormalMode, checkboxItems)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, preSelectedItems)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -82,8 +87,10 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         val result = route(application, request).value
 
+        val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
+
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(selectedIds), NormalMode, checkboxItems)(
+        contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
           request,
           messages(application)
         ).toString
@@ -132,7 +139,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, checkboxItems)(
+        contentAsString(result) mustEqual view(boundForm, NormalMode, emptyItems)(
           request,
           messages(application)
         ).toString

@@ -48,13 +48,15 @@ object WhichSubcontractorsToAdd {
     Subcontractor("15", "SubbyCo Ltd")
   )
 
-  def checkboxItems(subcontractors: Seq[Subcontractor]): Seq[CheckboxItem] =
-    subcontractors.zipWithIndex.map { case (sub, index) =>
+  val mockPreSelectedIds: Set[String] = Set("2", "4", "6", "12", "15")
+
+  def checkboxItems(subcontractors: Seq[Subcontractor], preSelectedIds: Set[String] = Set.empty): Seq[CheckboxItem] =
+    subcontractors.sortBy(_.name).zipWithIndex.map { case (sub, index) =>
       CheckboxItemViewModel(
         content = Text(sub.name),
         fieldId = "value",
         index = index,
         value = sub.id
-      )
+      ).copy(checked = preSelectedIds.contains(sub.id))
     }
 }
