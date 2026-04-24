@@ -22,7 +22,7 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
+import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn}
 import models.requests.{DataRequest, SendSuccessEmailRequest}
 import models.submission.*
 import org.mockito.ArgumentCaptor
@@ -249,6 +249,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
 
+        stubRetrieveMonthlyReturnForEditDetails(connector)
+
         val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
         out mustBe beResp
 
@@ -298,6 +300,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
 
+        stubRetrieveMonthlyReturnForEditDetails(connector)
+
         val beRespWithEndpoint = ChrisSubmissionResponse(
           submissionId = "sub-123",
           status = "SUBMITTED",
@@ -336,6 +340,110 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         saved.get(LastMessageDatePage) mustBe None
       }
 
+      "persist amendment flag as Some(Y) when monthly return has amendment Y" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        val amendmentResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, amendment = Some("Y"))),
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(amendmentResponse))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe Some("Y")
+      }
+
+      "persist amendment flag as None when monthly return list is empty" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        val emptyResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq.empty,
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(emptyResponse))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe None
+      }
+
+      "default amendment flag to None when retrieveMonthlyReturnForEditDetails fails" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("BE unavailable")))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe None
+      }
+
       "fails fast and does not persist if updating UserAnswers fails" in {
         val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
         val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
@@ -358,6 +466,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val ua    = uaWithInactivityYes
         val uaSpy = spy(ua)
@@ -402,6 +512,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val uaWithAgentClientData = uaWithInactivityYes.set(AgentClientDataPage, agentDate).success.value
         val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true).futureValue
@@ -1159,6 +1271,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       )
         .thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
+
       val savedCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       when(sessionRepository.set(savedCaptor.capture()))
         .thenReturn(Future.successful(true))
@@ -1304,6 +1418,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       ).thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1353,6 +1468,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1404,6 +1520,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       ).thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1558,6 +1675,18 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   private lazy val agentDate: AgentClientData =
     AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
+
+  private val emptyMonthlyReturnDetailsResponse = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq.empty,
+    monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, amendment = Some("N"))),
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
+  private def stubRetrieveMonthlyReturnForEditDetails(connector: ConstructionIndustrySchemeConnector): Unit =
+    when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      .thenReturn(Future.successful(emptyMonthlyReturnDetailsResponse))
 
   private def mkChrisResp(
     status: String = "SUBMITTED",

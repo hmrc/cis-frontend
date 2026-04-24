@@ -23,7 +23,9 @@ case class SubmissionDetails(
   id: String,
   status: String,
   irMark: String,
-  submittedAt: Instant
+  submittedAt: Instant,
+  amendment: Option[String] = None,
+  hmrcMarkGgis: Option[String] = None
 )
 
 object SubmissionDetails {

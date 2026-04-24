@@ -21,19 +21,19 @@ import models.ReturnType.MonthlyNilReturn
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails
-import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.*
+import org.scalatest.BeforeAndAfterEach
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
+import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import play.api.inject.bind
-import play.api.mvc.AnyContentAsEmpty
 import services.MonthlyReturnService
+import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
-import views.html.monthlyreturns.SubmissionSuccessView
 import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter
@@ -41,463 +41,273 @@ import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.Locale
 import scala.concurrent.Future
 
-class SubmissionSuccessControllerSpec extends SpecBase {
+class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
-  val email: String              = "test@test.com"
-  val periodEnd: LocalDate       = LocalDate.of(2018, 3, 5)
-  val fixedInstant: Instant      = Instant.parse("2017-01-06T08:46:00Z")
-  val irMarkBase64: String       = "Pyy1LRJh053AE+nuyp0GJR7oESw="
-  val reference: String          = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
-  val contractorName: String     = "PAL 355 Scheme"
-  val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
-  val submissionType: ReturnType = ReturnType.MonthlyNilReturn
-  val cisId                      = "1"
+  private val email: String          = "test@test.com"
+  private val fallbackEmail: String  = "fallback@test.com"
+  private val periodEnd: LocalDate   = LocalDate.of(2018, 3, 5)
+  private val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
+  private val irMarkBase64: String   = "Pyy1LRJh053AE+nuyp0GJR7oESw="
+  private val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
+  private val contractorName: String = "PAL 355 Scheme"
+  private val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
-  private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
-  private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
-  private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
-  private val london                   = ZoneId.of("Europe/London")
-  private val mockMonthlyReturnService = mock(classOf[MonthlyReturnService])
+  private val london: ZoneId                      = ZoneId.of("Europe/London")
+  private val monthYearFmt: DateTimeFormatter     = DateTimeFormatter.ofPattern("MMMM uuuu", Locale.UK)
+  private val dayMonthYearFmt: DateTimeFormatter  = DateTimeFormatter.ofPattern("d MMMM uuuu", Locale.UK)
+  private val submittedTimeFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mma", Locale.UK)
+  private val ukNow: ZonedDateTime                = ZonedDateTime.ofInstant(fixedInstant, london)
+  private val submittedTime: String               = ukNow.format(submittedTimeFmt).toLowerCase(Locale.UK)
+  private val submittedDate: String               = ukNow.format(dayMonthYearFmt)
 
-  protected lazy val ukNow: ZonedDateTime =
-    ZonedDateTime.ofInstant(fixedInstant, london)
+  private val mockMonthlyReturnService: MonthlyReturnService = mock(classOf[MonthlyReturnService])
+  private val mockGuard: SubmissionSuccessfulServiceGuard    = mock(classOf[SubmissionSuccessfulServiceGuard])
 
-  protected lazy val submittedTime: String =
-    ukNow.format(timeFmt)
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockMonthlyReturnService, mockGuard)
+  }
 
-  protected lazy val submittedDate: String =
-    ukNow.format(fullDateFmt)
+  private def submissionDetails(
+    status: String = "SUBMITTED",
+    irMark: String = irMarkBase64,
+    amendment: Option[String] = None,
+    hmrcMarkGgis: Option[String] = Some(irMarkBase64)
+  ): SubmissionDetails =
+    SubmissionDetails(
+      id = "123",
+      status = status,
+      irMark = irMark,
+      submittedAt = Instant.now,
+      amendment = amendment,
+      hmrcMarkGgis = hmrcMarkGgis
+    )
 
-  val ua: UserAnswers =
-    userAnswersWithCisId
-      .set(ContractorNamePage, contractorName)
-      .success
-      .value
-      .set(EnterYourEmailAddressPage, email)
-      .success
-      .value
-      .set(DateConfirmPaymentsPage, periodEnd)
-      .success
-      .value
-      .set(
-        SubmissionDetailsPage,
-        SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+  private def baseUa(
+    withReturnType: Boolean = true,
+    withEmail: Option[String] = Some(email),
+    withContractorName: Boolean = true,
+    withPeriodEnd: Boolean = true,
+    withSubmissionDetails: Boolean = true,
+    submissionStatus: String = "SUBMITTED",
+    irMark: String = irMarkBase64,
+    hmrcMarkGgis: Option[String] = Some(irMarkBase64)
+  ): UserAnswers = {
+    val start = userAnswersWithCisId
+    val ua1   = if (withContractorName) start.set(ContractorNamePage, contractorName).success.value else start
+    val ua2   = withEmail match {
+      case Some(e) => ua1.set(EnterYourEmailAddressPage, e).success.value
+      case None    => ua1.remove(EnterYourEmailAddressPage).success.value
+    }
+    val ua3   = if (withReturnType) ua2.set(ReturnTypePage, MonthlyNilReturn).success.value else ua2
+    val ua4   = if (withPeriodEnd) ua3.set(DateConfirmPaymentsPage, periodEnd).success.value else ua3
+    if (withSubmissionDetails)
+      ua4
+        .set(SubmissionDetailsPage, submissionDetails(submissionStatus, irMark, hmrcMarkGgis = hmrcMarkGgis))
+        .success
+        .value
+    else
+      ua4.remove(SubmissionDetailsPage).success.value
+  }
+
+  private def buildApp(
+    userAnswers: UserAnswers,
+    isAgent: Boolean = false,
+    hasEmployeeRef: Boolean = true,
+    hasAgentRef: Boolean = true
+  ): Application =
+    applicationBuilder(
+      userAnswers = Some(userAnswers),
+      isAgent = isAgent,
+      hasEmployeeRef = hasEmployeeRef,
+      hasAgentRef = hasAgentRef,
+      additionalBindings = Seq(
+        bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+        bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+        bind[SubmissionSuccessfulServiceGuard].toInstance(mockGuard)
       )
-      .success
-      .value
+    ).build()
 
-  lazy val request: FakeRequest[AnyContentAsEmpty.type] =
-    FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad.url)
-  lazy val view: SubmissionSuccessView                  = app.injector.instanceOf[SubmissionSuccessView]
-
-  lazy val expectedHtml: String =
-    view(
-      reference = reference,
-      periodEnd = periodEnd.format(monthYearFmt),
-      submittedTime = submittedTime,
-      submittedDate = submittedDate,
-      contractorName = contractorName,
-      empRef = employerRef,
-      email = email,
-      submissionType = submissionType,
-      cisId = cisId
-    )(request, applicationConfig, messages(app)).toString
-
-  lazy val agentDate: AgentClientData =
-    AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
+  private lazy val request = FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad.url)
 
   "SubmissionSuccessController" - {
 
     "contractor" - {
 
-      "onPageLoad" - {
+      "must return OK and render key fields" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val app = buildApp(baseUa())
 
-        val userAnswersWithReturnType = ua
-          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-          .success
-          .value
-
-        lazy val app: Application =
-          applicationBuilder(userAnswers = Some(userAnswersWithReturnType))
-            .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
-            .build()
-
-        "must return OK and render the expected view" in {
-          running(app) {
-            val result = route(app, request).value
-
-            status(result) mustBe OK
-            contentAsString(result) mustBe expectedHtml
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          val body   = contentAsString(result)
+          body must include(periodEnd.format(monthYearFmt))
+          body must include(submittedDate)
+          body must include(submittedTime)
+          body must include(contractorName)
+          body must include(employerRef)
+          body must include(email)
         }
+      }
 
-        "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+      "must not call getSchemeEmail when email is present in user answers" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val app = buildApp(baseUa(withEmail = Some(email)))
 
-          val app = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-          running(app) {
-
-            val result = route(app, request).value
-
-            status(result) mustEqual SEE_OTHER
-
-            redirectLocation(
-              result
-            ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          verifyNoInteractions(mockMonthlyReturnService)
         }
+      }
 
-        "must throw if ReturnTypePage is missing" in {
-          val incompleteUa = ua // note: ua does not set ReturnTypePage
+      "must call getSchemeEmail and use returned email when EnterYourEmailAddressPage is missing" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(fallbackEmail)))
+        val app = buildApp(baseUa(withEmail = None))
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
-
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("[SubmissionSuccess] ReturnTypePage missing from userAnswers")
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          contentAsString(result) must include(fallbackEmail)
+          verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
         }
+      }
 
-        "must use scheme email when email is missing from user answers" in {
-          val uaWithoutEmail = userAnswersWithCisId
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-            .success
-            .value
-            .set(DateConfirmPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+      "must default to empty email if getSchemeEmail fails" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+          .thenReturn(Future.failed(new RuntimeException("boom")))
+        val app = buildApp(baseUa(withEmail = None))
 
-          when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
-            .thenReturn(Future.successful(Some(email)))
-
-          val app =
-            applicationBuilder(userAnswers = Some(uaWithoutEmail))
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-              )
-              .build()
-
-          running(app) {
-            val result = route(app, request).value
-
-            status(result) mustBe OK
-            contentAsString(result) must include(email)
-
-            verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
         }
+      }
 
-        "must throw if contractorName is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(EnterYourEmailAddressPage, email)
-            .success
-            .value
-            .set(DateConfirmPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+      "must redirect to Unauthorised Organisation Affinity if cisId is missing" in {
+        val app = buildApp(emptyUserAnswers)
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
-
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("contractorName missing for userId=")
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.UnauthorisedOrganisationAffinityController
+            .onPageLoad()
+            .url
         }
+      }
 
-        "must throw if employerReference is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(EnterYourEmailAddressPage, email)
-            .success
-            .value
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(DateConfirmPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+      "must throw if ReturnTypePage is missing" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val app = buildApp(baseUa(withReturnType = false))
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa), hasEmployeeRef = false).build()
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("employerReference missing for userId=")
-          }
+        running(app) {
+          val ex = intercept[IllegalStateException](await(route(app, request).get))
+          ex.getMessage must include("[SubmissionSuccess] ReturnTypePage missing from userAnswers")
         }
+      }
 
-        "must throw if taxPeriodEnd is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(EnterYourEmailAddressPage, "test@test.com")
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+      "must throw if contractorName is missing" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val app = buildApp(baseUa(withContractorName = false))
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
-          }
+        running(app) {
+          val ex = intercept[IllegalStateException](await(route(app, request).get))
+          ex.getMessage must include("contractorName missing for userId=")
         }
+      }
 
-        "must throw if submissionDetails is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(ContractorNamePage, contractorName)
-            .success
-            .value
-            .set(DateConfirmPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(EnterYourEmailAddressPage, "test@test.com")
-            .success
-            .value
+      "must throw if employerReference is missing" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val app = buildApp(baseUa(), hasEmployeeRef = false)
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("[SubmissionSuccess] submissionDetails missing from userAnswers")
-          }
+        running(app) {
+          val ex = intercept[IllegalStateException](await(route(app, request).get))
+          ex.getMessage must include("employerReference missing for userId=")
         }
+      }
 
-        "must throw if returnTypePage is missing" in {
+      "must throw if taxPeriodEnd is missing" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val app = buildApp(baseUa(withPeriodEnd = false))
 
-          val incompleteUa =
-            userAnswersWithCisId
-              .set(ContractorNamePage, contractorName)
-              .success
-              .value
-              .set(DateConfirmPaymentsPage, periodEnd)
-              .success
-              .value
-              .set(EnterYourEmailAddressPage, email)
-              .success
-              .value
-              .set(
-                SubmissionDetailsPage,
-                SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-              )
-              .success
-              .value
-
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
-
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("ReturnTypePage missing from userAnswers")
-          }
+        running(app) {
+          val ex = intercept[IllegalStateException](await(route(app, request).get))
+          ex.getMessage must include("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
         }
+      }
 
-        "must call monthlyReturnService and use returned email when EnterYourEmailAddressPage is missing" in {
+      "must redirect to JourneyRecovery when guard fails" in {
+        when(mockGuard.check(any())).thenReturn(false)
+        val app = buildApp(baseUa())
 
-          val fallbackEmail = "fallback@test.com"
-
-          val uaWithoutEmail: UserAnswers = ua
-            .remove(EnterYourEmailAddressPage)
-            .success
-            .value
-            .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-            .success
-            .value
-
-          val mockService = mock(classOf[MonthlyReturnService])
-
-          when(mockService.getSchemeEmail(any())(any()))
-            .thenReturn(Future.successful(Some(fallbackEmail)))
-
-          val app =
-            applicationBuilder(userAnswers = Some(uaWithoutEmail))
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockService)
-              )
-              .build()
-
-          val view = app.injector.instanceOf[SubmissionSuccessView]
-
-          lazy val expectedHtml: String =
-            view(
-              reference = reference,
-              periodEnd = periodEnd.format(monthYearFmt),
-              submittedTime = submittedTime,
-              submittedDate = submittedDate,
-              contractorName = contractorName,
-              empRef = employerRef,
-              email = fallbackEmail,
-              submissionType = submissionType,
-              cisId = cisId
-            )(request, applicationConfig, messages(app)).toString
-
-          running(app) {
-            val result = route(app, request).value
-
-            status(result) mustBe OK
-            contentAsString(result) mustBe expectedHtml
-          }
-
-          verify(mockService).getSchemeEmail(any())(any())
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
         }
+      }
 
+      "must redirect to JourneyRecovery when submission details are missing (guard fails)" in {
+        when(mockGuard.check(any())).thenReturn(false)
+        val app = buildApp(baseUa(withSubmissionDetails = false))
+
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
       }
     }
 
     "agent" - {
 
-      "onPageLoad" - {
+      "must return OK and render key fields using AgentClientData" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val agentData = AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some(contractorName))
+        val ua        = baseUa().set(AgentClientDataPage, agentData).success.value
+        val app       = buildApp(ua, isAgent = true)
 
-        val userAnswersWithAgentClientData = ua
-          .set(AgentClientDataPage, agentDate)
-          .success
-          .value
-
-        val userAnswersWithReturnType = userAnswersWithAgentClientData
-          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
-          .success
-          .value
-
-        lazy val app: Application =
-          applicationBuilder(userAnswers = Some(userAnswersWithReturnType), isAgent = true)
-            .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
-            .build()
-
-        "must return OK and render the expected view" in {
-          running(app) {
-            val result = route(app, request).value
-
-            status(result) mustBe OK
-            contentAsString(result) mustBe expectedHtml
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          val body   = contentAsString(result)
+          body must include(contractorName)
+          body must include(employerRef)
         }
+      }
 
-        "must redirect to Unauthorised Agent Affinity if cisId is not found in UserAnswer" in {
+      "must throw if agent employerReference is missing" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val agentDataMissing = AgentClientData("CLIENT-123", "", "taxOfficeReference", Some(contractorName))
+        val ua               = baseUa().set(AgentClientDataPage, agentDataMissing).success.value
+        val app              = buildApp(ua, isAgent = true, hasAgentRef = false)
 
-          val app = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true).build()
-
-          running(app) {
-
-            val result = route(app, request).value
-
-            status(result) mustEqual SEE_OTHER
-
-            redirectLocation(
-              result
-            ).value mustEqual controllers.routes.UnauthorisedAgentAffinityController.onPageLoad().url
-          }
+        running(app) {
+          val ex = intercept[IllegalStateException](await(route(app, request).get))
+          ex.getMessage must include("employerReference missing for userId=")
         }
+      }
 
-        "must throw if contractorName is missing" in {
-          val incompleteUa = userAnswersWithCisId
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(EnterYourEmailAddressPage, email)
-            .success
-            .value
-            .set(DateConfirmPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
+      "must call getSchemeEmail when email is missing for agent" in {
+        when(mockGuard.check(any())).thenReturn(true)
+        val agentData = AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some(contractorName))
+        val ua        = baseUa(withEmail = None).set(AgentClientDataPage, agentData).success.value
+        when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(fallbackEmail)))
+        val app       = buildApp(ua, isAgent = true)
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true).build()
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("contractorName missing for userId=")
-          }
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          contentAsString(result) must include(fallbackEmail)
+          verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
         }
-
-        "must throw if employerReference is missing" in {
-          lazy val agentDateWithoutTaxRefTaxNumber: AgentClientData =
-            AgentClientData("CLIENT-123", "", "taxOfficeReference", Some("PAL 355 Scheme"))
-
-          val incompleteUa = userAnswersWithCisId
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(EnterYourEmailAddressPage, email)
-            .success
-            .value
-            .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
-            .success
-            .value
-            .set(DateConfirmPaymentsPage, periodEnd)
-            .success
-            .value
-            .set(
-              SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
-            )
-            .success
-            .value
-
-          val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true, hasAgentRef = false).build()
-          running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("employerReference missing for userId=")
-          }
-        }
-
       }
     }
-
   }
-
 }
