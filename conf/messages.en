@@ -551,3 +551,11 @@ whatDoYouWantToAmendNil.heading = What do you want to amend?
 whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
 whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
 whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make
+
+amend.whatDoYouWantToAmendStandard.title = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.heading = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.amendToNilReturn = I want to amend this standard return to a nil return
+amend.whatDoYouWantToAmendStandard.amendPaymentOrSubcontractorDetails = I want to amend payment or subcontractor details on this return
+amend.whatDoYouWantToAmendStandard.checkYourAnswersLabel = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.error.required = Select the type of amendment you want to make
+amend.whatDoYouWantToAmendStandard.change.hidden = what do you want to amend?
