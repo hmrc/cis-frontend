@@ -19,7 +19,7 @@ package services.submission
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{ReturnType, UserAnswers}
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
+import models.monthlyreturns.CisTaxpayer
 import models.submission.*
 import pages.monthlyreturns.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,7 +39,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
     val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
     val common             = buildCommon(ua, taxpayer, isAgent)
     val informationCorrect = true
-    val inactivityBool     = ua.get(InactivityRequestPage).contains(InactivityRequest.Option1)
+    val inactivityBool     = ua.get(SubmitInactivityRequestPage).contains(true)
 
     returnType match {
       case MonthlyNilReturn =>

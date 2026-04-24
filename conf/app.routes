@@ -25,11 +25,6 @@ GET         /unauthorised/organisation                                  controll
 GET         /unauthorised/individual                                    controllers.UnauthorisedIndividualAffinityController.onPageLoad()
 GET         /unauthorised/agent                                         controllers.UnauthorisedAgentAffinityController.onPageLoad()
 
-GET        /monthly-return/submit-inactive-request                      controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/submit-inactive-request                      controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-submit-inactive-request               controllers.monthlyreturns.InactivityRequestController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-submit-inactive-request               controllers.monthlyreturns.InactivityRequestController.onSubmit(mode: Mode = CheckMode)
-
 GET        /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-confirm-email-address                 controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
@@ -166,3 +161,5 @@ POST       /monthly-return/change-verified-status-declaration           controll
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
+
+GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)

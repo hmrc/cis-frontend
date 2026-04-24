@@ -22,18 +22,19 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.monthlyreturns.InactivityRequest
 import utils.UserAnswerUtils.*
 
 @Singleton
 class Navigator @Inject() () {
 
   private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
+    // common
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(NormalMode)(userAnswers)
+
     // nil return
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
       _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
-    case (InactivityRequestPage, _)                  =>
-      _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
     case (DeclarationPage, _)                        =>
@@ -60,28 +61,19 @@ class Navigator @Inject() () {
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
     case (VerifiedStatusDeclarationPage, _)                 =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(NormalMode)(userAnswers)
-    case (SubmitInactivityRequestPage, _)                   =>
-      userAnswers => navigatorFromSubmitInactivityRequestPage(NormalMode)(userAnswers)
     case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
     case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
-        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
+        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-        else
+        } else {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+        }
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
-    case (InactivityRequestPage, _)                         =>
-      userAnswers =>
-        userAnswers.get(InactivityRequestPage) match {
-          case Some(InactivityRequest.Option2)        =>
-            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-          case Some(InactivityRequest.Option1) | None =>
-            controllers.monthlyreturns.routes.InactivityWarningController.onPageLoad
-        }
     case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case (SelectedSubcontractorMaterialCostsPage(index), _) =>
@@ -161,10 +153,11 @@ class Navigator @Inject() () {
       case (Some(true), mode)        =>
         controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(mode)
       case (Some(false), NormalMode) =>
-        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
+        if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-        else
+        } else {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+        }
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
