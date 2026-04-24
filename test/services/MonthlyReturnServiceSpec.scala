@@ -1212,7 +1212,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "must set AgentClientDataPage when user is an authorised agent" in {
       val (service, connector, _) = newService()
 
-      val ua = UserAnswers("test-user")
+      val ua     = UserAnswers("test-user")
       val userId = "user-123"
 
       val agentData = AgentClientData(

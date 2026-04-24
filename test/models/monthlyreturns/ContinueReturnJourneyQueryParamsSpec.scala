@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package models.monthlyreturns
 
 import org.scalatest.matchers.must.Matchers
@@ -13,8 +29,8 @@ class ContinueReturnJourneyQueryParamsSpec extends AnyWordSpec with Matchers {
     "bind valid query params" in {
       val params = Map(
         "instanceId" -> Seq("CIS-123"),
-        "taxYear"   -> Seq("2025"),
-        "taxMonth"  -> Seq("7")
+        "taxYear"    -> Seq("2025"),
+        "taxMonth"   -> Seq("7")
       )
 
       binder.bind("", params) mustBe Some(
@@ -31,7 +47,7 @@ class ContinueReturnJourneyQueryParamsSpec extends AnyWordSpec with Matchers {
     "return None when a required query param is missing" in {
       val params = Map(
         "instanceId" -> Seq("CIS-123"),
-        "taxYear"   -> Seq("2025")
+        "taxYear"    -> Seq("2025")
       )
 
       binder.bind("", params) mustBe None
@@ -40,8 +56,8 @@ class ContinueReturnJourneyQueryParamsSpec extends AnyWordSpec with Matchers {
     "return Left when a query param cannot be parsed" in {
       val params = Map(
         "instanceId" -> Seq("CIS-123"),
-        "taxYear"   -> Seq("not-a-year"),
-        "taxMonth"  -> Seq("7")
+        "taxYear"    -> Seq("not-a-year"),
+        "taxMonth"   -> Seq("7")
       )
 
       binder.bind("", params) mustBe Some(

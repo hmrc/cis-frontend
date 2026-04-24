@@ -207,9 +207,10 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
-        verify(mockService).populateUserAnswersForContinueJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
-          any[HeaderCarrier]
-        )
+        verify(mockService)
+          .populateUserAnswersForContinueJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
 
         verify(mockService).populateAgentClientDataIfRequired(
           ua = any[UserAnswers],
