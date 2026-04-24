@@ -16,10 +16,16 @@
 
 package generators
 
+import models.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{Declaration, InactivityRequest}
 import org.scalacheck.{Arbitrary, Gen}
 
 trait ModelGenerators {
+
+  implicit lazy val arbitraryWhatDoYouWantToAmendStandard: Arbitrary[WhatDoYouWantToAmendStandard] =
+    Arbitrary {
+      Gen.oneOf(WhatDoYouWantToAmendStandard.values.toSeq)
+    }
 
   implicit lazy val arbitraryVerifySubcontractors: Arbitrary[Boolean] =
     Arbitrary {

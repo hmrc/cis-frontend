@@ -523,3 +523,11 @@ monthlyreturns.submissionUnsuccessfulResubmit.p4 = You will need to provide:
 monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference number, also known as an Employer Reference Number (ERN)
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
+
+amend.whatDoYouWantToAmendStandard.title = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.heading = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.amendToNilReturn = I want to amend this standard return to a nil return
+amend.whatDoYouWantToAmendStandard.amendPaymentOrSubcontractorDetails = I want to amend payment or subcontractor details on this return
+amend.whatDoYouWantToAmendStandard.checkYourAnswersLabel = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.error.required = Select the type of amendment you want to make
+amend.whatDoYouWantToAmendStandard.change.hidden = what do you want to amend?
