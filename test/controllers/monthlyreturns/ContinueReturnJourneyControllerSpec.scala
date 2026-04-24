@@ -39,16 +39,8 @@ import scala.concurrent.Future
 
 class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
 
-  private val queryParams = ContinueReturnJourneyQueryParams(
-    instanceId = "CIS-123",
-    taxYear = 2025,
-    taxMonth = 1
-  )
-
   private val continueReturnJourneyUrl =
-    controllers.monthlyreturns.routes.ContinueReturnJourneyController
-      .continueReturnJourney(queryParams)
-      .url
+    "/monthly-return/continue-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1"
 
   "ContinueReturnJourneyController" - {
 
