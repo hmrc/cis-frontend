@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package models
+package models.amend
 
+import models.{Enumerable, WithName}
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.Aliases.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
@@ -25,19 +26,21 @@ sealed trait WhatDoYouWantToAmendStandard
 object WhatDoYouWantToAmendStandard extends Enumerable.Implicits {
 
   case object AmendToNilReturn extends WithName("amendToNilReturn") with WhatDoYouWantToAmendStandard
-  case object AmendPaymentOrSubcontractorDetails extends WithName("amendPaymentOrSubcontractorDetails") with WhatDoYouWantToAmendStandard
+  case object AmendPaymentOrSubcontractorDetails
+      extends WithName("amendPaymentOrSubcontractorDetails")
+      with WhatDoYouWantToAmendStandard
 
   val values: Seq[WhatDoYouWantToAmendStandard] = Seq(
-    AmendToNilReturn, AmendPaymentOrSubcontractorDetails
+    AmendToNilReturn,
+    AmendPaymentOrSubcontractorDetails
   )
 
-  def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map {
-    case (value, index) =>
-      RadioItem(
-        content = Text(messages(s"amend.whatDoYouWantToAmendStandard.${value.toString}")),
-        value   = Some(value.toString),
-        id      = Some(s"value_$index")
-      )
+  def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map { case (value, index) =>
+    RadioItem(
+      content = Text(messages(s"amend.whatDoYouWantToAmendStandard.${value.toString}")),
+      value = Some(value.toString),
+      id = Some(s"value_$index")
+    )
   }
 
   implicit val enumerable: Enumerable[WhatDoYouWantToAmendStandard] =

@@ -17,7 +17,7 @@
 package generators
 
 import models.amend.WhatDoYouWantToAmendNil
-import models.WhatDoYouWantToAmendStandard
+import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{Declaration, InactivityRequest}
 import org.scalacheck.{Arbitrary, Gen}
 

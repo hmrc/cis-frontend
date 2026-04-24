@@ -17,8 +17,9 @@
 package views.amend
 
 import base.SpecBase
-import forms.WhatDoYouWantToAmendStandardFormProvider
-import models.{NormalMode, WhatDoYouWantToAmendStandard}
+import forms.amend.WhatDoYouWantToAmendStandardFormProvider
+import models.NormalMode
+import models.amend.WhatDoYouWantToAmendStandard
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
@@ -62,7 +63,7 @@ class WhatDoYouWantToAmendStandardViewSpec extends SpecBase {
       val errorHtml      = view(formWithErrors, NormalMode)
       val doc: Document  = Jsoup.parse(errorHtml.toString)
 
-      doc.title must startWith(messages("error.title.prefix"))
+      doc.title  must startWith(messages("error.title.prefix"))
       doc.select(".govuk-error-summary").size() mustBe 1
       doc.text() must include(messages("amend.whatDoYouWantToAmendStandard.error.required"))
     }

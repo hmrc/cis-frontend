@@ -17,8 +17,9 @@
 package controllers.amend
 
 import base.SpecBase
-import forms.WhatDoYouWantToAmendStandardFormProvider
-import models.{NormalMode, WhatDoYouWantToAmendStandard, UserAnswers}
+import forms.amend.WhatDoYouWantToAmendStandardFormProvider
+import models.{NormalMode, UserAnswers}
+import models.amend.WhatDoYouWantToAmendStandard
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -40,7 +41,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
   lazy val whatDoYouWantToAmendStandardRoute = routes.WhatDoYouWantToAmendStandardController.onPageLoad(NormalMode).url
 
   val formProvider = new WhatDoYouWantToAmendStandardFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   "WhatDoYouWantToAmendStandard Controller" - {
 
@@ -62,7 +63,10 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(WhatDoYouWantToAmendStandardPage, WhatDoYouWantToAmendStandard.values.head).success.value
+      val userAnswers = UserAnswers(userAnswersId)
+        .set(WhatDoYouWantToAmendStandardPage, WhatDoYouWantToAmendStandard.values.head)
+        .success
+        .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -74,7 +78,10 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(WhatDoYouWantToAmendStandard.values.head), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(WhatDoYouWantToAmendStandard.values.head), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
