@@ -26,6 +26,7 @@ import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
@@ -1185,6 +1186,113 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue mustBe
         Left("Missing nil return indicator")
+    }
+  }
+
+  "populateAgentClientDataIfRequired" - {
+
+    "must return unchanged UserAnswers when user is not an agent" in {
+      val (service, connector, _) = newService()
+
+      val ua = UserAnswers("test-user")
+
+      val result = service
+        .populateAgentClientDataIfRequired(
+          ua = ua,
+          userId = "user-123",
+          isAgent = false
+        )
+        .futureValue
+
+      result mustBe ua
+
+      verifyNoInteractions(connector)
+    }
+
+    "must set AgentClientDataPage when user is an authorised agent" in {
+      val (service, connector, _) = newService()
+
+      val ua = UserAnswers("test-user")
+      val userId = "user-123"
+
+      val agentData = AgentClientData(
+        uniqueId = "CLIENT-123",
+        taxOfficeNumber = "163",
+        taxOfficeReference = "AB0063",
+        schemeName = Some("ABC Construction Ltd")
+      )
+
+      when(connector.getAgentClient(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some(Json.toJson(agentData))))
+
+      when(connector.hasClient(any[String], any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
+
+      val result = service
+        .populateAgentClientDataIfRequired(
+          ua = ua,
+          userId = userId,
+          isAgent = true
+        )
+        .futureValue
+
+      result.get(AgentClientDataPage) mustBe Some(agentData)
+
+      verify(connector).getAgentClient(any[String])(any[HeaderCarrier])
+      verify(connector).hasClient(any[String], any[String])(any[HeaderCarrier])
+    }
+
+    "must fail when user is an agent but agent client data is missing" in {
+      val (service, connector, _) = newService()
+
+      when(connector.getAgentClient(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(None))
+
+      val ex = service
+        .populateAgentClientDataIfRequired(
+          ua = UserAnswers("test-user"),
+          userId = "user-123",
+          isAgent = true
+        )
+        .failed
+        .futureValue
+
+      ex mustBe a[RuntimeException]
+      ex.getMessage must include("Agent data not found")
+
+      verify(connector).getAgentClient(any[String])(any[HeaderCarrier])
+    }
+
+    "must fail when user is an agent but no longer authorised for client" in {
+      val (service, connector, _) = newService()
+
+      val agentData = AgentClientData(
+        uniqueId = "CLIENT-123",
+        taxOfficeNumber = "163",
+        taxOfficeReference = "AB0063",
+        schemeName = Some("ABC Construction Ltd")
+      )
+
+      when(connector.getAgentClient(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some(Json.toJson(agentData))))
+
+      when(connector.hasClient(any[String], any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(false))
+
+      val ex = service
+        .populateAgentClientDataIfRequired(
+          ua = UserAnswers("test-user"),
+          userId = "user-123",
+          isAgent = true
+        )
+        .failed
+        .futureValue
+
+      ex mustBe a[RuntimeException]
+      ex.getMessage must include("Agent no longer authorised for client")
+
+      verify(connector).getAgentClient(any[String])(any[HeaderCarrier])
+      verify(connector).hasClient(any[String], any[String])(any[HeaderCarrier])
     }
   }
 

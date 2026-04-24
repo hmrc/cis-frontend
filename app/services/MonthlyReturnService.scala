@@ -26,6 +26,7 @@ import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.QuestionPage
+import pages.agent.AgentClientDataPage
 import play.api.libs.json.{Format, JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -213,6 +214,29 @@ class MonthlyReturnService @Inject() (
       } yield updatedUa
     }
 
+  def populateAgentClientDataIfRequired(
+    ua: UserAnswers,
+    userId: String,
+    isAgent: Boolean
+  )(implicit hc: HeaderCarrier): Future[UserAnswers] =
+    if (!isAgent) {
+      Future.successful(ua)
+    } else {
+      getAgentClient(userId).flatMap {
+        case Some(agentData) =>
+          hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference).flatMap {
+            case true =>
+              Future.fromTry(ua.set(AgentClientDataPage, agentData))
+
+            case false =>
+              Future.failed(new RuntimeException("Agent no longer authorised for client"))
+          }
+
+        case None =>
+          Future.failed(new RuntimeException("Agent data not found"))
+      }
+    }
+
   private def populateContinueJourneyAnswers(
     ua: UserAnswers,
     instanceId: String,
@@ -248,9 +272,6 @@ class MonthlyReturnService @Inject() (
   private def setOrError[A: Format](ua: UserAnswers, page: QuestionPage[A], value: A): Either[String, UserAnswers] =
     ua.set(page, value).toEither.left.map(_.getMessage)
 
-  private def hasEmail(emailRecipient: Option[String]): Boolean =
-    emailRecipient.exists(_.nonEmpty)
-
   private def populateCommonReturnAnswers(
     ua: UserAnswers,
     instanceId: String,
@@ -271,7 +292,7 @@ class MonthlyReturnService @Inject() (
                SubmitInactivityRequestPage,
                monthlyReturn.decNilReturnNoPayments.contains("Y")
              )
-      ua5 <- setOrError(ua4, ConfirmationByEmailPage, hasEmail(emailRecipient))
+      ua5 <- setOrError(ua4, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
       ua6 <- emailRecipient.filter(_.nonEmpty) match {
                case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
                case None        => Right(ua5)
