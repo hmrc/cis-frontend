@@ -23,6 +23,8 @@
     h1: H1,
     customSummaryList: CustomSummaryList,
     formHelper: FormWithCSRF,
+    buttonGroup: ButtonGroup,
+    link: Link,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
     govukButton: GovukButton
@@ -67,9 +69,16 @@
                 )
         )
 
-        @govukButton(
-            ButtonViewModel(messages("site.continue"))
-        )
+        @buttonGroup {
+            @govukButton(
+                ButtonViewModel(messages("site.continue"))
+            )
+            @link(
+                    "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
+                    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url,
+                    paragraphWrapped = false
+            )
+        }
 
     }
 }

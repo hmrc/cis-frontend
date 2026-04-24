@@ -92,4 +92,9 @@ class SubcontractorDetailsAddedController @Inject() (
             )
       }
     }
+
+  def onCancelAmendment(): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
+      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+    }
 }

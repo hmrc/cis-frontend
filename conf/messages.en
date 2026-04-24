@@ -465,6 +465,7 @@ monthlyreturns.subcontractorDetailsAdded.amend.hidden = Amend payment details fo
 monthlyreturns.subcontractorDetailsAdded.add = Add payment details
 monthlyreturns.subcontractorDetailsAdded.add.hidden = Add payment details for {0}s
 monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list
+monthlyreturns.subcontractorDetailsAdded.cancelAmendment = Cancel amendment
 
 monthlyreturns.paymentDetailsConfirmation.title = Do you confirm the information in this return is correct?
 monthlyreturns.paymentDetailsConfirmation.heading = Do you confirm the information in this return is correct?
