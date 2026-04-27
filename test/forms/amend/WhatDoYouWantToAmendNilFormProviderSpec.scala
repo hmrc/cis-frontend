@@ -26,13 +26,13 @@ class WhatDoYouWantToAmendNilFormProviderSpec extends OptionFieldBehaviours {
 
   ".value" - {
 
-    val fieldName = "value"
+    val fieldName   = "value"
     val requiredKey = "whatDoYouWantToAmendNil.error.required"
 
     behave like optionsField[WhatDoYouWantToAmendNil](
       form,
       fieldName,
-      validValues  = WhatDoYouWantToAmendNil.values,
+      validValues = WhatDoYouWantToAmendNil.values,
       invalidError = FormError(fieldName, "error.invalid")
     )
 

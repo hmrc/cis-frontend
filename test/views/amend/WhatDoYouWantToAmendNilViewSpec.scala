@@ -38,7 +38,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
 
     "render the page with title, heading, radios and submit button" in new Setup {
       val html: HtmlFormat.Appendable = view(form, NormalMode)
-      val doc: Document = org.jsoup.Jsoup.parse(html.toString())
+      val doc: Document               = org.jsoup.Jsoup.parse(html.toString())
       doc.select("title").text() must include(messages("whatDoYouWantToAmendNil.title"))
 
       val legend: Elements = doc.select("fieldset legend")
@@ -66,7 +66,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
         form.withError("value", "whatDoYouWantToAmendNil.error.required")
 
       val html: HtmlFormat.Appendable = view(errorForm, NormalMode)
-      val doc: Document = org.jsoup.Jsoup.parse(html.toString())
+      val doc: Document               = org.jsoup.Jsoup.parse(html.toString())
 
       val summary: Elements = doc.select(".govuk-error-summary")
       summary.text() must include(messages("whatDoYouWantToAmendNil.error.required"))
@@ -79,7 +79,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
   }
 
   trait Setup {
-    val formProvider                    = new WhatDoYouWantToAmendNilFormProvider()
+    val formProvider                        = new WhatDoYouWantToAmendNilFormProvider()
     val form: Form[WhatDoYouWantToAmendNil] = formProvider()
 
     implicit val request: Request[_] = FakeRequest()

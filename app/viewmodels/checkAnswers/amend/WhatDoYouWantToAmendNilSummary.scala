@@ -25,25 +25,27 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object WhatDoYouWantToAmendNilSummary  {
+object WhatDoYouWantToAmendNilSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(WhatDoYouWantToAmendNilPage).map {
-      answer =>
+    answers.get(WhatDoYouWantToAmendNilPage).map { answer =>
 
-        val value = ValueViewModel(
-          HtmlContent(
-            HtmlFormat.escape(messages(s"whatDoYouWantToAmendNil.$answer"))
-          )
+      val value = ValueViewModel(
+        HtmlContent(
+          HtmlFormat.escape(messages(s"whatDoYouWantToAmendNil.$answer"))
         )
+      )
 
-        SummaryListRowViewModel(
-          key     = "whatDoYouWantToAmendNil.checkYourAnswersLabel",
-          value   = value,
-          actions = Seq(
-            ActionItemViewModel("site.change", controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(CheckMode).url)
-              .withVisuallyHiddenText(messages("whatDoYouWantToAmendNil.change.hidden"))
+      SummaryListRowViewModel(
+        key = "whatDoYouWantToAmendNil.checkYourAnswersLabel",
+        value = value,
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(CheckMode).url
           )
+            .withVisuallyHiddenText(messages("whatDoYouWantToAmendNil.change.hidden"))
         )
+      )
     }
 }

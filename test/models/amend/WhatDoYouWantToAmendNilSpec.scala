@@ -33,10 +33,11 @@ class WhatDoYouWantToAmendNilSpec extends AnyFreeSpec with Matchers with ScalaCh
 
       val gen = Gen.oneOf(WhatDoYouWantToAmendNil.values.toSeq)
 
-      forAll(gen) {
-        whatDoYouWantToAmendNil =>
-
-          JsString(whatDoYouWantToAmendNil.toString).validate[WhatDoYouWantToAmendNil].asOpt.value mustEqual whatDoYouWantToAmendNil
+      forAll(gen) { whatDoYouWantToAmendNil =>
+        JsString(whatDoYouWantToAmendNil.toString)
+          .validate[WhatDoYouWantToAmendNil]
+          .asOpt
+          .value mustEqual whatDoYouWantToAmendNil
       }
     }
 
@@ -44,10 +45,8 @@ class WhatDoYouWantToAmendNilSpec extends AnyFreeSpec with Matchers with ScalaCh
 
       val gen = arbitrary[String] suchThat (!WhatDoYouWantToAmendNil.values.map(_.toString).contains(_))
 
-      forAll(gen) {
-        invalidValue =>
-
-          JsString(invalidValue).validate[WhatDoYouWantToAmendNil] mustEqual JsError("error.invalid")
+      forAll(gen) { invalidValue =>
+        JsString(invalidValue).validate[WhatDoYouWantToAmendNil] mustEqual JsError("error.invalid")
       }
     }
 
@@ -55,10 +54,8 @@ class WhatDoYouWantToAmendNilSpec extends AnyFreeSpec with Matchers with ScalaCh
 
       val gen = Gen.oneOf(WhatDoYouWantToAmendNil.values.toSeq)
 
-      forAll(gen) {
-        whatDoYouWantToAmendNil =>
-
-          Json.toJson(whatDoYouWantToAmendNil) mustEqual JsString(whatDoYouWantToAmendNil.toString)
+      forAll(gen) { whatDoYouWantToAmendNil =>
+        Json.toJson(whatDoYouWantToAmendNil) mustEqual JsString(whatDoYouWantToAmendNil.toString)
       }
     }
   }

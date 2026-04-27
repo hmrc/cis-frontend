@@ -26,19 +26,21 @@ sealed trait WhatDoYouWantToAmendNil
 object WhatDoYouWantToAmendNil extends Enumerable.Implicits {
 
   case object AmendNilReturn extends WithName("amendNilReturn") with WhatDoYouWantToAmendNil
-  case object AddPaymentOrSubcontractorDetails extends WithName("addPaymentOrSubcontractorDetails") with WhatDoYouWantToAmendNil
+  case object AddPaymentOrSubcontractorDetails
+      extends WithName("addPaymentOrSubcontractorDetails")
+      with WhatDoYouWantToAmendNil
 
   val values: Seq[WhatDoYouWantToAmendNil] = Seq(
-    AmendNilReturn, AddPaymentOrSubcontractorDetails
+    AmendNilReturn,
+    AddPaymentOrSubcontractorDetails
   )
 
-  def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map {
-    case (value, index) =>
-      RadioItem(
-        content = Text(messages(s"whatDoYouWantToAmendNil.${value.toString}")),
-        value   = Some(value.toString),
-        id      = Some(s"value_$index")
-      )
+  def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map { case (value, index) =>
+    RadioItem(
+      content = Text(messages(s"whatDoYouWantToAmendNil.${value.toString}")),
+      value = Some(value.toString),
+      id = Some(s"value_$index")
+    )
   }
 
   implicit val enumerable: Enumerable[WhatDoYouWantToAmendNil] =

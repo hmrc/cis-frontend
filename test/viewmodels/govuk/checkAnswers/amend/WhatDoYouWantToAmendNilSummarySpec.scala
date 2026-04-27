@@ -16,7 +16,6 @@
 
 package viewmodels.govuk.checkAnswers.amend
 
-
 import models.amend.WhatDoYouWantToAmendNil
 import models.{CheckMode, UserAnswers}
 import org.scalatest.OptionValues.convertOptionToValuable
@@ -29,7 +28,7 @@ import play.api.test.Helpers.stubMessages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.*
 import viewmodels.checkAnswers.amend.WhatDoYouWantToAmendNilSummary
 
-class WhatDoYouWantToAmendNilSummarySpec extends AnyFreeSpec with Matchers{
+class WhatDoYouWantToAmendNilSummarySpec extends AnyFreeSpec with Matchers {
 
   implicit val messages: Messages = stubMessages()
 
@@ -59,7 +58,7 @@ class WhatDoYouWantToAmendNilSummarySpec extends AnyFreeSpec with Matchers{
       val changeAction = actions.head
       changeAction.content.asHtml.toString should include(messages("site.change"))
 
-      changeAction.href shouldBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(CheckMode).url
+      changeAction.href                     shouldBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(CheckMode).url
       changeAction.visuallyHiddenText.value shouldBe messages("whatDoYouWantToAmendNil.change.hidden")
     }
 
