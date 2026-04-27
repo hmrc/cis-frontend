@@ -1034,7 +1034,7 @@ class MonthlyReturnServiceSpec extends AnyWordSpec with ScalaFutures with Matche
       savedUa.get(SubmissionJourneyCompletedPage) mustBe Some(true)
       savedUa.get(VerifySubcontractorsPage) mustBe None
       savedUa.get(DeclarationPage) mustBe None
-      savedUa.get(InactivityRequestPage) mustBe None
+      savedUa.get(SubmitInactivityRequestPage) mustBe None
 
       verifyNoMoreInteractions(sessionRepo)
     }

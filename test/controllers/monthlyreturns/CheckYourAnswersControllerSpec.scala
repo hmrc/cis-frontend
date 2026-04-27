@@ -31,10 +31,7 @@ import services.MonthlyReturnService
 import services.submission.SubmissionService
 import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.SummaryListFluency
-import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.CheckYourAnswersView
-import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.*
 import pages.submission.SubmissionJourneyCompletedPage
 
 import java.time.LocalDate
