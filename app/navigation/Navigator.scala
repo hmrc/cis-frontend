@@ -22,7 +22,9 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.amend.WhatDoYouWantToAmendNil.*
 import models.monthlyreturns.InactivityRequest
+import pages.amend.WhatDoYouWantToAmendNilPage
 import utils.UserAnswerUtils.*
 
 @Singleton
@@ -70,7 +72,12 @@ class Navigator @Inject() () {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
         else
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
-    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+
+    // amend return
+    case (WhatDoYouWantToAmendNilPage, _) =>
+      userAnswers => navigatorFromWhatDoYouWantToAmendNilPage(NormalMode)(userAnswers)
+
+    case (_, _) => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
@@ -98,6 +105,8 @@ class Navigator @Inject() () {
       userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
     case (EnterYourEmailAddressPage, _)                     =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (WhatDoYouWantToAmendNilPage, _)                   =>
+      userAnswers => navigatorFromWhatDoYouWantToAmendNilPage(CheckMode)(userAnswers)
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
@@ -167,5 +176,17 @@ class Navigator @Inject() () {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromWhatDoYouWantToAmendNilPage(
+    mode: Mode
+  )(userAnswers: UserAnswers): Call =
+    (userAnswers.get(WhatDoYouWantToAmendNilPage), mode) match {
+      case (Some(AmendNilReturn), NormalMode)                   =>
+        controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode)
+      case (Some(AddPaymentOrSubcontractorDetails), NormalMode) =>
+        controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode)
+      case (Some(_), CheckMode)                                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case (None, _)                                            => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 }
