@@ -167,4 +167,4 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
-GET        /manage-cis-return/amend-monthly-return/confirm-amendments                       controllers.ConfirmAmendmentController.onPageLoad()
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad()

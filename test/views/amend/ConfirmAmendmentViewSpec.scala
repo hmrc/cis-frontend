@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package views
+package views.amend
 
 import base.SpecBase
 import org.jsoup.Jsoup
@@ -23,7 +23,7 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
-import views.html.ConfirmAmendmentView
+import views.html.amend.ConfirmAmendmentView
 
 class ConfirmAmendmentViewSpec extends SpecBase {
 

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers.amend
 
 import base.SpecBase
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import views.html.ConfirmAmendmentView
+import play.api.test.Helpers.*
+import views.html.amend.ConfirmAmendmentView
 
 class ConfirmAmendmentControllerSpec extends SpecBase {
 
@@ -30,7 +30,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.ConfirmAmendmentController.onPageLoad().url)
+        val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad().url)
 
         val result = route(application, request).value
 
