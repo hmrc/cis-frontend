@@ -525,6 +525,12 @@ monthlyreturns.submissionUnsuccessfulResubmit.list.l1 = your PAYE reference numb
 monthlyreturns.submissionUnsuccessfulResubmit.list.l2 = the date when you tried to submit the return
 monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text = Back to Manage your CIS return
 
+amend.whichSubcontractorsToAdd.title = Which subcontractor do you want to add to this return?
+amend.whichSubcontractorsToAdd.heading = Which subcontractor do you want to add to this return?
+amend.whichSubcontractorsToAdd.checkYourAnswersLabel = Which subcontractor do you want to add to this return?
+amend.whichSubcontractorsToAdd.error.required = Select a subcontractor
+amend.whichSubcontractorsToAdd.change.hidden = which subcontractor do you want to add to this return?
+
 confirmAmendment.title = Confirm amendment
 confirmAmendment.heading = Confirm amendment
 confirmAmendment.p1 = You are about to amend a monthly return. Any information you enter will be saved.

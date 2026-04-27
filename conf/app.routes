@@ -167,4 +167,9 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
+GET        /amend-monthly-return/which-subcontractors-to-add                        controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
+POST       /amend-monthly-return/which-subcontractors-to-add                        controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)
+GET        /amend-monthly-return/change-which-subcontractors-to-add                  controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = CheckMode)
+POST       /amend-monthly-return/change-which-subcontractors-to-add                  controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
+
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad()
