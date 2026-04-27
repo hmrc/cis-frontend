@@ -17,9 +17,6 @@
 package models.monthlyreturns
 
 import models.{Enumerable, WithName}
-import play.api.i18n.Messages
-import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.CheckboxItem
-import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import viewmodels.govuk.checkbox._
 
 sealed trait Declaration
@@ -31,16 +28,6 @@ object Declaration extends Enumerable.Implicits {
   val values: Seq[Declaration] = Seq(
     Confirmed
   )
-
-  def checkboxItems(implicit messages: Messages): Seq[CheckboxItem] =
-    values.zipWithIndex.map { case (value, index) =>
-      CheckboxItemViewModel(
-        content = Text(messages("monthlyreturns.declaration.checkbox")),
-        fieldId = "value",
-        index = index,
-        value = value.toString
-      )
-    }
 
   implicit val enumerable: Enumerable[Declaration] =
     Enumerable(values.map(v => v.toString -> v): _*)

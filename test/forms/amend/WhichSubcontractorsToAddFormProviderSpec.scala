@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package forms.amend
 
-import forms.behaviours.EnumFieldBehaviours
-import models.monthlyreturns.Declaration
+import forms.behaviours.CheckboxFieldBehaviours
+import models.amend.WhichSubcontractorsToAdd
 import play.api.data.FormError
 
-class DeclarationFormProviderSpec extends EnumFieldBehaviours {
+class WhichSubcontractorsToAddFormProviderSpec extends CheckboxFieldBehaviours {
 
-  val form = new DeclarationFormProvider()()
+  private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
+  val form                   = new WhichSubcontractorsToAddFormProvider()(subcontractors)
 
   ".value" - {
 
     val fieldName   = "value"
-    val requiredKey = "monthlyreturns.declaration.error.required"
+    val requiredKey = "amend.whichSubcontractorsToAdd.error.required"
 
-    behave like enumField[Declaration](
+    behave like checkboxField[String](
       form,
       fieldName,
-      validValues = Declaration.values,
-      invalidError = FormError(fieldName, "error.invalid")
+      validValues = subcontractors.map(_.id),
+      invalidError = FormError(s"$fieldName[0]", "error.invalid")
     )
 
-    behave like mandatoryEnumField(
+    behave like mandatoryCheckboxField(
       form,
       fieldName,
       requiredKey

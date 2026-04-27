@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package pages.amend
 
-import javax.inject.Inject
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-import forms.mappings.Mappings
-import play.api.data.Form
-import models.monthlyreturns.Declaration
+case object WhichSubcontractorsToAddPage extends QuestionPage[Set[String]] {
 
-class DeclarationFormProvider @Inject() extends Mappings {
+  override def path: JsPath = JsPath \ toString
 
-  def apply(): Form[Declaration] =
-    Form(
-      "value" -> enumerable[Declaration]("monthlyreturns.declaration.error.required")
-    )
+  override def toString: String = "whichSubcontractorsToAdd"
 }

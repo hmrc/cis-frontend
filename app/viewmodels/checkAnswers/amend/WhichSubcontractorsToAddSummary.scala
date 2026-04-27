@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package viewmodels.checkAnswers.amend
 
-import controllers.monthlyreturns.routes
+import controllers.amend.routes
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.DeclarationPage
+import models.amend.WhichSubcontractorsToAdd
+import pages.amend.WhichSubcontractorsToAddPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent
@@ -26,29 +27,29 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object DeclarationSummary {
+object WhichSubcontractorsToAddSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(DeclarationPage).map { answers =>
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subcontractorMap = WhichSubcontractorsToAdd.mockSubcontractors.map(s => s.id -> s.name).toMap
 
+    answers.get(WhichSubcontractorsToAddPage).map { selectedIds =>
       val value = ValueViewModel(
         HtmlContent(
-          answers
-            .map { answer =>
-              HtmlFormat.escape(messages(s"monthlyreturns.declaration.$answer")).toString
-            }
+          selectedIds
+            .map(id => HtmlFormat.escape(subcontractorMap.getOrElse(id, id)).toString)
             .mkString(",<br>")
         )
       )
 
       SummaryListRowViewModel(
-        key = "monthlyreturns.declaration.checkYourAnswersLabel",
+        key = "amend.whichSubcontractorsToAdd.checkYourAnswersLabel",
         value = value,
         actions = Seq(
-          ActionItemViewModel("site.change", routes.DeclarationController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("monthlyreturns.declaration.change.hidden"))
-            .withAttribute("id" -> "change-declaration")
+          ActionItemViewModel("site.change", routes.WhichSubcontractorsToAddController.onPageLoad(CheckMode).url)
+            .withVisuallyHiddenText(messages("amend.whichSubcontractorsToAdd.change.hidden"))
+            .withAttribute("id" -> "which-subcontractors-to-add")
         )
       )
     }
+  }
 }

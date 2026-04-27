@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package pages.amend
 
-import pages.QuestionPage
+import base.SpecBase
 import play.api.libs.json.JsPath
 
-case object SummaryTotalPaymentsPage extends QuestionPage[BigDecimal] {
-  override def path: JsPath     = JsPath \ toString
-  override def toString: String = "summaryTotalPayments"
-}
+class WhichSubcontractorsToAddPageSpec extends SpecBase {
 
-case object SummaryTotalMaterialsCostPage extends QuestionPage[BigDecimal] {
-  override def path: JsPath     = JsPath \ toString
-  override def toString: String = "summaryTotalMaterialsCost"
-}
+  "WhichSubcontractorsToAddPage" - {
 
-case object SummaryTotalCisDeductionsPage extends QuestionPage[BigDecimal] {
-  override def path: JsPath     = JsPath \ toString
-  override def toString: String = "summaryTotalCisDeductions"
+    "have the correct path" in {
+      WhichSubcontractorsToAddPage.path mustBe (JsPath \ "whichSubcontractorsToAdd")
+    }
+
+    "have the correct toString" in {
+      WhichSubcontractorsToAddPage.toString mustBe "whichSubcontractorsToAdd"
+    }
+  }
 }

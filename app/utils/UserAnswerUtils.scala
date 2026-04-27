@@ -16,35 +16,60 @@
 
 package utils
 
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
+import pages.QuestionPage
 import pages.monthlyreturns.*
+import play.api.libs.json.Reads
 
 import scala.util.Try
 
 object UserAnswerUtils {
-  extension (userAnswers: UserAnswers) {
-    def firstIncompleteSubcontractorIndex: Int = userAnswers
-      .get(SelectedSubcontractorPage.all)
-      .getOrElse(Map())
-      .filter((_, subcontractor) => !subcontractor.isComplete)
-      .keys
-      .minOption
-      .getOrElse(1)
 
-    def incompleteSubcontractorIds: Seq[Long] = userAnswers
-      .get(SelectedSubcontractorPage.all)
-      .getOrElse(Map())
-      .values
-      .toSeq
-      .filter(!_.isComplete)
-      .map(_.id)
+  extension (userAnswers: UserAnswers) {
+
+    private def answered[A](page: QuestionPage[A])(using Reads[A]): Boolean =
+      userAnswers.get(page).nonEmpty
+
+    private def isTrue(page: QuestionPage[Boolean]): Boolean =
+      userAnswers.get(page).contains(true)
+
+    private def allSubcontractorsComplete: Boolean =
+      userAnswers
+        .get(SelectedSubcontractorPage.all)
+        .getOrElse(Map.empty)
+        .values
+        .forall(_.isComplete)
+
+    private def emailSatisfied: Boolean = {
+      val byEmail = userAnswers.get(ConfirmationByEmailPage)
+      byEmail.contains(false) || answered(EnterYourEmailAddressPage)
+    }
+
+    def firstIncompleteSubcontractorIndex: Int =
+      userAnswers
+        .get(SelectedSubcontractorPage.all)
+        .getOrElse(Map.empty)
+        .collect { case (idx, subcontractor) if !subcontractor.isComplete => idx }
+        .minOption
+        .getOrElse(1)
+
+    def incompleteSubcontractorIds: Seq[Long] =
+      userAnswers
+        .get(SelectedSubcontractorPage.all)
+        .getOrElse(Map.empty)
+        .values
+        .iterator
+        .filterNot(_.isComplete)
+        .map(_.id)
+        .toSeq
 
     def clearMonthlyReturnJourney: Try[UserAnswers] =
       userAnswers
         .remove(DateConfirmPaymentsPage)
 
         // monthly nil return
-        .flatMap(_.remove(InactivityRequestPage))
+        .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
         .flatMap(_.remove(DeclarationPage))
@@ -53,12 +78,41 @@ object UserAnswerUtils {
         .flatMap(_.remove(SelectedSubcontractorPage.all))
         .flatMap(_.remove(VerifySubcontractorsPage))
         .flatMap(_.remove(SubcontractorDetailsAddedPage))
-        .flatMap(_.remove(SubcontractorDetailsAddedPage))
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmEmailAddressPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
+
+    def isJourneyComplete: Boolean =
+      userAnswers.get(ReturnTypePage) match {
+        case Some(MonthlyNilReturn) =>
+          val checks = Seq(
+            answered(DateConfirmPaymentsPage),
+            answered(SubmitInactivityRequestPage),
+            answered(ConfirmationByEmailPage),
+            emailSatisfied,
+            answered(DeclarationPage)
+          )
+
+          checks.forall(identity)
+
+        case Some(MonthlyStandardReturn) =>
+          Seq(
+            answered(DateConfirmPaymentsPage),
+            allSubcontractorsComplete,
+            isTrue(SubcontractorDetailsAddedPage),
+            isTrue(PaymentDetailsConfirmationPage),
+            answered(EmploymentStatusDeclarationPage),
+            answered(VerifiedStatusDeclarationPage),
+            answered(SubmitInactivityRequestPage),
+            answered(ConfirmationByEmailPage),
+            emailSatisfied
+          ).forall(identity)
+
+        case None =>
+          false
+      }
   }
 }

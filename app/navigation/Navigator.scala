@@ -35,7 +35,7 @@ class Navigator @Inject() () {
     case (InactivityRequestPage, _)                  =>
       _ => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
-      _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+      _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
     case (DeclarationPage, _)                        =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
     case (InactivityWarningPage, _)                  =>
@@ -69,7 +69,7 @@ class Navigator @Inject() () {
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
         else
-          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
@@ -164,7 +164,7 @@ class Navigator @Inject() () {
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined)
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
         else
-          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(NormalMode)
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
