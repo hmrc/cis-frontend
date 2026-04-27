@@ -14,14 +14,31 @@
  * limitations under the License.
  *@
 
+@import views.html.components._
+
 @this(
-        layout: templates.Layout,
-        govukButton: GovukButton
+    layout: templates.Layout,
+    govukButton: GovukButton,
+    h1: H1,
+    paragraph: Paragraph,
+    bulletList: BulletList
 )
 
 @()(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("confirmAmendment.title"))) {
+@defining(Seq(
+        "confirmAmendment.bullet1",
+        "confirmAmendment.bullet2",
+        "confirmAmendment.bullet3"
+    )) { items =>
 
-    <h1 class="govuk-heading-xl">@messages("confirmAmendment.heading")</h1>
+        @layout(pageTitle = titleNoForm(messages("confirmAmendment.title"))) {
+
+        @h1(messages("confirmAmendment.heading"))
+        @paragraph(messages("confirmAmendment.p1"))
+        @paragraph(messages("confirmAmendment.p2"))
+
+        @bulletList(items)
+        @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))
+    }
 }
