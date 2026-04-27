@@ -18,8 +18,8 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
-import models.{Mode, NormalMode}
-import pages.monthlyreturns.{SelectedSubcontractorPage, SubcontractorDetailsAddedPage}
+import models.Mode
+import pages.monthlyreturns.SubcontractorDetailsAddedPage
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}

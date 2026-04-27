@@ -17,8 +17,10 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.{NormalMode, UserAnswers}
-import pages.monthlyreturns.CisIdPage
+import models.ReturnType.MonthlyStandardReturn
+import models.UserAnswers
+import models.monthlyreturns.AmendmentDetails
+import pages.monthlyreturns.{AmendmentDetailsPage, CisIdPage}
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -83,6 +85,22 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
         val result  = route(application, request).value
 
         status(result) mustBe OK
+      }
+    }
+
+    "must display cancel amendment link on GET when builder returns a view model with isAmendment = true" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "TyneWear Ltd")
+      ).set(AmendmentDetailsPage, AmendmentDetails(MonthlyStandardReturn)).get
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+        contentAsString(result) must include("Cancel amendment")
       }
     }
 

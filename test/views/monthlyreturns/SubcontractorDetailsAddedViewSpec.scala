@@ -46,6 +46,21 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
       doc.getElementsByClass("govuk-button").text() must include(messages("site.continue"))
 
       doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.question"))
+      doc.text() must not include messages("monthlyreturns.subcontractorDetailsAdded.cancelAmendment")
+    }
+
+    "must display the 'Cancel amendment' link when isAmendment is true" in new Setup {
+      val amendmentViewModel = viewModel.copy(isAmendment = true)
+      val amendmentHtml      = view(form, NormalMode, amendmentViewModel)
+      val doc: Document      = Jsoup.parse(amendmentHtml.toString)
+
+      doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.cancelAmendment"))
+
+      val cancelLink =
+        doc.getElementsMatchingOwnText(messages("monthlyreturns.subcontractorDetailsAdded.cancelAmendment"))
+      cancelLink.attr("href") mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+        .onCancelAmendment()
+        .url
     }
 
     "must display error summary when form has errors" in new Setup {

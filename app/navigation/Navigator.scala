@@ -16,13 +16,13 @@
 
 package navigation
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.Call
-import pages.*
-import pages.monthlyreturns.*
 import models.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import utils.UserAnswerUtils.*
+import pages.*
+import pages.monthlyreturns.*
+import play.api.mvc.Call
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class Navigator @Inject() () {

@@ -17,12 +17,11 @@
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
-import models.{CheckMode, NormalMode, UserAnswers}
 import models.monthlyreturns.SelectedSubcontractor
+import models.{CheckMode, NormalMode, UserAnswers}
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.libs.json.Json
-import play.api.mvc.Call
-import viewmodels.checkAnswers.monthlyreturns.{SubcontractorDetailsAddedBuilder, SubcontractorDetailsAddedRow, SubcontractorDetailsAddedViewModel}
+import viewmodels.checkAnswers.monthlyreturns.{SubcontractorDetailsAddedBuilder, SubcontractorDetailsAddedRow}
 
 import java.time.Instant
 

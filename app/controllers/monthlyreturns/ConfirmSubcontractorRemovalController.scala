@@ -134,9 +134,4 @@ class ConfirmSubcontractorRemovalController @Inject() (
   private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
     ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
 
-  private def anyWithDetailsAdded(ua: UserAnswers): Boolean =
-    selectedSubcontractors(ua).values.exists(sub =>
-      sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
-    )
-
 }

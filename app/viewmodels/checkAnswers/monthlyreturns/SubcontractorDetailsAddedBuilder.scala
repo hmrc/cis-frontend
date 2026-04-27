@@ -18,7 +18,7 @@ package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
 import models.{CheckMode, NormalMode, UserAnswers}
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{AmendmentDetailsPage, SelectedSubcontractorPage}
 
 object SubcontractorDetailsAddedBuilder {
 
@@ -36,7 +36,7 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
-
+    val isAmendment          = ua.get(AmendmentDetailsPage).isDefined
     val subcontractorByIndex = selectedSubcontractors(ua)
     val indexes              = subcontractorByIndex.keys.toSeq.sorted
 
@@ -80,7 +80,8 @@ object SubcontractorDetailsAddedBuilder {
           headingKey = key,
           headingArgs = args,
           rows = rows,
-          hasIncomplete = hasIncomplete
+          hasIncomplete = hasIncomplete,
+          isAmendment = isAmendment
         )
       )
     }
