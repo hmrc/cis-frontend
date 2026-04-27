@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.Mode
-import pages.monthlyreturns.SubcontractorDetailsAddedPage
+import pages.monthlyreturns.AllSubcontractorDetailsAdded
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -72,16 +72,20 @@ class SubcontractorDetailsAddedController @Inject() (
             .bindFromRequest()
             .fold(
               formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
-              answer =>
+              isAddingMoreSubcontractors =>
+                val allSubcontractorDetailsAdded = !isAddingMoreSubcontractors
+
                 val updatedUa =
-                  request.userAnswers.set(SubcontractorDetailsAddedPage, !answer).getOrElse(request.userAnswers)
+                  request.userAnswers
+                    .set(AllSubcontractorDetailsAdded, allSubcontractorDetailsAdded)
+                    .getOrElse(request.userAnswers)
 
                 sessionRepository.set(updatedUa).map { _ =>
-                  if (!answer && viewModel.hasIncomplete) {
+                  if (allSubcontractorDetailsAdded && viewModel.hasIncomplete) {
                     val withError =
                       form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
                     BadRequest(view(withError, mode, viewModel))
-                  } else if (!answer) {
+                  } else if (allSubcontractorDetailsAdded) {
                     Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
                   } else {
                     Redirect(

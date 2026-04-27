@@ -49,21 +49,21 @@ object SubcontractorDetailsAddedBuilder {
 
             val added      = detailsAdded(sub)
             val changeCall =
-              if (added)
+              if (added) {
                 controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
                   .onPageLoad(index)
-              else
+              } else {
                 controllers.monthlyreturns.routes.PaymentDetailsController
                   .onPageLoad(NormalMode, index, None)
+              }
 
             SubcontractorDetailsAddedRow(
               index = index,
               subcontractorId = sub.id,
               name = sub.name,
               detailsAdded = added,
-              changeLabel =
-                if (added) "monthlyreturns.subcontractorDetailsAdded.amend"
-                else "monthlyreturns.subcontractorDetailsAdded.add",
+              changeLabel = if (added) { "monthlyreturns.subcontractorDetailsAdded.amend" }
+              else { "monthlyreturns.subcontractorDetailsAdded.add" },
               changeCall = changeCall,
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
                 .onPageLoad(CheckMode, index)
