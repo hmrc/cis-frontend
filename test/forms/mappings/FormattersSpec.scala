@@ -317,6 +317,18 @@ class FormattersSpec extends AnyFreeSpec with Matchers with Formatters {
         formatter.unbind("key", BigDecimal("123.00")) mustBe Map("key" -> "123")
       }
 
+      "must unbind with 2 decimal places when displayScale is 2" in {
+        val formatter = currencyFormatter(
+          requiredKey = "required",
+          invalidKey = "invalid",
+          maxLengthKey = "maxLength",
+          scale = 0,
+          displayScale = Some(2)
+        )
+
+        formatter.unbind("key", BigDecimal("0")) mustBe Map("key" -> "0.00")
+      }
+
     }
 
     "scale=2 (pounds and pence)" - {

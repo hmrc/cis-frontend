@@ -80,9 +80,12 @@ trait Mappings extends Formatters with Constraints {
     invalidKey: String = "error.invalid",
     maxLengthKey: String = "error.maxLength",
     scale: Int,
+    displayScale: Option[Int] = None,
     args: Seq[String] = Seq.empty
   ): FieldMapping[BigDecimal] =
-    of(currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = scale, args = args))
+    of(
+      currencyFormatter(requiredKey, invalidKey, maxLengthKey, scale = scale, displayScale = displayScale, args = args)
+    )
 
   protected def monthYearPaymentDate(
     invalidKey: String,

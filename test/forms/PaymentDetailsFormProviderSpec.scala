@@ -147,7 +147,7 @@ class PaymentDetailsFormProviderSpec extends CurrencyFieldBehaviours {
       val value  = BigDecimal("12345")
       val result = form.fill(value)
 
-      result.data.get(fieldName) mustBe Some("12,345")
+      result.data.get(fieldName) mustBe Some("12,345.00")
     }
 
     "must not bind when the value is greater than the maximum" in {
