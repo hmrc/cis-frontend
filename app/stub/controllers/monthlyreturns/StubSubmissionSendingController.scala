@@ -18,7 +18,7 @@ package stub.controllers.monthlyreturns
 
 import controllers.actions.*
 import models.UserAnswers
-import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmPaymentsPage, DeclarationPage, InactivityRequestPage}
+import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmPaymentsPage, DeclarationPage, SubmitInactivityRequestPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -45,7 +45,7 @@ class StubSubmissionSendingController @Inject() (
 
     def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
       val pagesToRemove =
-        Seq(DateConfirmPaymentsPage, InactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
+        Seq(DateConfirmPaymentsPage, SubmitInactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
 
       pagesToRemove.foldLeft(Try(userAnswers)) { (currentUserAnswers, page) =>
         currentUserAnswers.flatMap(_.remove(page))
