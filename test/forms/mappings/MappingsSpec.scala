@@ -307,4 +307,31 @@ class MappingsSpec extends AnyFreeSpec with Matchers with OptionValues with Mapp
       nonNumericResult.errors must contain(FormError("value.0", "custom.nonNumeric"))
     }
   }
+
+  "currency" - {
+
+    "must unbind scale 0 without decimal places by default" in {
+      val form = Form("value" -> currency(scale = 0))
+
+      val result = form.fill(BigDecimal(0))
+
+      result("value").value.value mustEqual "0"
+    }
+
+    "must unbind scale 0 with decimal places when displayScale is 2" in {
+      val form = Form("value" -> currency(scale = 0, displayScale = Some(2)))
+
+      val result = form.fill(BigDecimal(0))
+
+      result("value").value.value mustEqual "0.00"
+    }
+
+    "must still reject pence when scale is 0 and displayScale is 2" in {
+      val form = Form("value" -> currency(scale = 0, displayScale = Some(2)))
+
+      val result = form.bind(Map("value" -> "1.23"))
+
+      result.errors must contain(FormError("value", "error.invalid"))
+    }
+  }
 }

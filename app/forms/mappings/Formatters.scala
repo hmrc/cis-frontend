@@ -149,11 +149,16 @@ trait Formatters {
     invalidKey: String,
     maxLengthKey: String,
     scale: Int, // 0 or 2
+    displayScale: Option[Int] = None,
     args: Seq[String] = Seq.empty
   ): Formatter[BigDecimal] =
     new Formatter[BigDecimal] {
 
       require(scale == 0 || scale == 2, s"Unsupported scale: $scale (expected 0 or 2)")
+      require(
+        displayScale.forall(display => display == 0 || display == 2),
+        s"Unsupported displayScale: ${displayScale.getOrElse("None")} (expected 0 or 2)"
+      )
 
       private val maxLength     = 16
       private val baseFormatter = stringFormatter(requiredKey, args)
@@ -239,7 +244,7 @@ trait Formatters {
         val symbols = DecimalFormatSymbols.getInstance(Locale.UK)
 
         val rendered =
-          scale match {
+          displayScale.getOrElse(scale) match {
             case 0 =>
               val df = new DecimalFormat("#,##0", symbols)
               df.format(value.setScale(0).bigDecimal)
