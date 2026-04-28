@@ -529,3 +529,7 @@ amend.whichSubcontractorsToAdd.heading = Which subcontractor do you want to add 
 amend.whichSubcontractorsToAdd.checkYourAnswersLabel = Which subcontractor do you want to add to this return?
 amend.whichSubcontractorsToAdd.error.required = Select a subcontractor
 amend.whichSubcontractorsToAdd.change.hidden = which subcontractor do you want to add to this return?
+
+amend.confirmCancelAmendmentYesNo.title = Are you sure you want to cancel the amended monthly return for {0}?
+amend.confirmCancelAmendmentYesNo.heading = Are you sure you want to cancel the amended monthly return for {0}?
+amend.confirmCancelAmendmentYesNo.error.required = Select yes to cancel this return

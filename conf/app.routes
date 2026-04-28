@@ -171,3 +171,6 @@ GET        /amend-monthly-return/which-subcontractors-to-add                    
 POST       /amend-monthly-return/which-subcontractors-to-add                        controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)
 GET        /amend-monthly-return/change-which-subcontractors-to-add                  controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = CheckMode)
 POST       /amend-monthly-return/change-which-subcontractors-to-add                  controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
+
+GET        /cancel-amended-monthly-return                        controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
+POST       /cancel-amended-monthly-return                        controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
