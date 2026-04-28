@@ -558,10 +558,10 @@ amend.whatDoYouWantToAmendStandard.amendToNilReturn = I want to amend this stand
 amend.whatDoYouWantToAmendStandard.amendPaymentOrSubcontractorDetails = I want to amend payment or subcontractor details on this return
 amend.whatDoYouWantToAmendStandard.error.required = Select the type of amendment you want to make
 
-aeYouSureYouWantToAmend.title = Are you sure you want to amend this return to a nil return?
-aeYouSureYouWantToAmend.heading = Are you sure you want to amend this return to a nil return?
-aeYouSureYouWantToAmend.option1 = Option 1
-aeYouSureYouWantToAmend.option2 = Option 2
-aeYouSureYouWantToAmend.checkYourAnswersLabel = Are you sure you want to amend this return to a nil return?
-aeYouSureYouWantToAmend.error.required = Select aeYouSureYouWantToAmend
-aeYouSureYouWantToAmend.change.hidden = AeYouSureYouWantToAmend
+amend.areYouSureYouWantToAmend.title = Are you sure you want to amend this return to a nil return?
+amend.areYouSureYouWantToAmend.heading = Are you sure you want to amend this return to a nil return?
+amend.areYouSureYouWantToAmend.yes = Yes
+amend.areYouSureYouWantToAmend.no = No, I want to make a different amendment
+amend.areYouSureYouWantToAmend.checkYourAnswersLabel = Are you sure you want to amend this return to a nil return?
+amend.areYouSureYouWantToAmend.error.required = You must select one option to amend
+amend.areYouSureYouWantToAmend.change.hidden = are you sure you want to amend this return to a nil return
