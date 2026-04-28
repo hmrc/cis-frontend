@@ -22,9 +22,7 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.ReturnType.MonthlyNilReturn
-import models.amend.WhatDoYouWantToAmendNil
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
-import pages.amend.WhatDoYouWantToAmendNilPage
 
 class NavigatorSpec extends SpecBase {
 
@@ -268,34 +266,6 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       }
 
-      "must go from WhatDoYouWantToAmendNilPage to WhatDoYouWantToAmendNilPage when AmendNilReturn is selected" in {
-        val ua = UserAnswers("id").setOrException(WhatDoYouWantToAmendNilPage, WhatDoYouWantToAmendNil.AmendNilReturn)
-        navigator.nextPage(
-          WhatDoYouWantToAmendNilPage,
-          NormalMode,
-          ua
-        ) mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode)
-      }
-
-      "must go from WhatDoYouWantToAmendNilPage to WhatDoYouWantToAmendNilPage when AddPaymentOrSubcontractorDetails is selected" in {
-        val ua = UserAnswers("id")
-          .setOrException(WhatDoYouWantToAmendNilPage, WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails)
-        navigator.nextPage(
-          WhatDoYouWantToAmendNilPage,
-          NormalMode,
-          ua
-        ) mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode)
-      }
-
-      "must go from WhatDoYouWantToAmendNilPage to JourneyRecovery when incomplete info provided" in {
-        val ua = UserAnswers("id")
-        navigator.nextPage(
-          WhatDoYouWantToAmendNilPage,
-          NormalMode,
-          ua
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
-      }
-
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
 
         case object UnknownPage extends Page
@@ -468,34 +438,6 @@ class NavigatorSpec extends SpecBase {
           CheckMode,
           UserAnswers("id")
         ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      }
-
-      "must go from WhatDoYouWantToAmendNilPage to JourneyRecovery in CheckMode when AmendNilReturn is selected" in {
-        val ua = UserAnswers("id").setOrException(WhatDoYouWantToAmendNilPage, WhatDoYouWantToAmendNil.AmendNilReturn)
-        navigator.nextPage(
-          WhatDoYouWantToAmendNilPage,
-          CheckMode,
-          ua
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
-      }
-
-      "must go from WhatDoYouWantToAmendNilPage to JourneyRecovery in CheckMode when AddPaymentOrSubcontractorDetails is selected" in {
-        val ua = UserAnswers("id")
-          .setOrException(WhatDoYouWantToAmendNilPage, WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails)
-        navigator.nextPage(
-          WhatDoYouWantToAmendNilPage,
-          CheckMode,
-          ua
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
-      }
-
-      "must go from WhatDoYouWantToAmendNilPage to JourneyRecovery in CheckMode when incomplete info provided" in {
-        val ua = UserAnswers("id")
-        navigator.nextPage(
-          WhatDoYouWantToAmendNilPage,
-          CheckMode,
-          ua
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
       }
 
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {

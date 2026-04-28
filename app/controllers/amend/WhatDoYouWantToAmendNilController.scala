@@ -18,9 +18,8 @@ package controllers.amend
 
 import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
-import models.Mode
+import models.{Mode, NormalMode}
 import models.amend.WhatDoYouWantToAmendNil
-import navigation.Navigator
 import pages.amend.WhatDoYouWantToAmendNilPage
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -35,7 +34,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class WhatDoYouWantToAmendNilController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
-  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -68,7 +66,12 @@ class WhatDoYouWantToAmendNilController @Inject() (
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(WhatDoYouWantToAmendNilPage, mode, updatedAnswers))
+            } yield value match {
+              case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
+                Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode))
+              case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
+                Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode))
+            }
         )
   }
 }
