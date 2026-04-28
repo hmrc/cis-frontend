@@ -30,21 +30,21 @@ class SubmissionUnsuccessfulController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionUnsuccessfulView
 ) extends FrontendBaseController
     with I18nSupport
     with Logging {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
-      val cisId = request.userAnswers.get(CisIdPage).getOrElse {
+  def onPageLoad: Action[AnyContent] = (identify andThen getData) { implicit request =>
+    val cisId = request.userAnswers
+      .flatMap(_.get(CisIdPage))
+      .orElse(request.getQueryString("cisId"))
+      .getOrElse {
         logger.error("[SubmissionUnsuccessful] cisId missing from userAnswers")
         throw new IllegalStateException("cisId missing from userAnswers")
       }
-      Ok(view(cisId))
+    Ok(view(cisId))
   }
 
 }
