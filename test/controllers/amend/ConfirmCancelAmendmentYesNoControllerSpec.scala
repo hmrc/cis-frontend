@@ -2,7 +2,7 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
-import models.{NormalMode, UserAnswers}
+import models.UserAnswers
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
