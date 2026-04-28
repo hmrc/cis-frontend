@@ -557,3 +557,11 @@ amend.whatDoYouWantToAmendStandard.heading = What do you want to amend?
 amend.whatDoYouWantToAmendStandard.amendToNilReturn = I want to amend this standard return to a nil return
 amend.whatDoYouWantToAmendStandard.amendPaymentOrSubcontractorDetails = I want to amend payment or subcontractor details on this return
 amend.whatDoYouWantToAmendStandard.error.required = Select the type of amendment you want to make
+
+aeYouSureYouWantToAmend.title = Are you sure you want to amend this return to a nil return?
+aeYouSureYouWantToAmend.heading = Are you sure you want to amend this return to a nil return?
+aeYouSureYouWantToAmend.option1 = Option 1
+aeYouSureYouWantToAmend.option2 = Option 2
+aeYouSureYouWantToAmend.checkYourAnswersLabel = Are you sure you want to amend this return to a nil return?
+aeYouSureYouWantToAmend.error.required = Select aeYouSureYouWantToAmend
+aeYouSureYouWantToAmend.change.hidden = AeYouSureYouWantToAmend
