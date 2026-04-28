@@ -534,6 +534,4 @@ whatDoYouWantToAmendNil.title = What do you want to amend?
 whatDoYouWantToAmendNil.heading = What do you want to amend?
 whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
 whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
-whatDoYouWantToAmendNil.checkYourAnswersLabel = What do you want to amend?
 whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make
-whatDoYouWantToAmendNil.change.hidden = what do you want to amend?
