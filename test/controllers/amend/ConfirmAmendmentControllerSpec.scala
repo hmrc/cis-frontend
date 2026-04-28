@@ -42,4 +42,3 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
     }
   }
 }
-
