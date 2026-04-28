@@ -17,44 +17,45 @@
 package controllers.amend
 
 import base.SpecBase
-import forms.amend.AreYouSureYouWantToAmendFormProvider
+import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 import models.{NormalMode, UserAnswers}
-import models.amend.AreYouSureYouWantToAmend
+import models.amend.AreYouSureYouWantToAmendYesNo
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.amend.AreYouSureYouWantToAmendPage
+import pages.amend.AreYouSureYouWantToAmendYesNoPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
-import views.html.amend.AreYouSureYouWantToAmendView
+import views.html.amend.AreYouSureYouWantToAmendYesNoView
 
 import scala.concurrent.Future
 
-class AreYouSureYouWantToAmendControllerSpec extends SpecBase with MockitoSugar {
+class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val areYouSureYouWantToAmendRoute = routes.AreYouSureYouWantToAmendController.onPageLoad(NormalMode).url
+  lazy val areYouSureYouWantToAmendYesNoRoute =
+    routes.AreYouSureYouWantToAmendYesNoController.onPageLoad(NormalMode).url
 
-  val formProvider = new AreYouSureYouWantToAmendFormProvider()
+  val formProvider = new AreYouSureYouWantToAmendYesNoFormProvider()
   val form         = formProvider()
 
-  "AreYouSureYouWantToAmend Controller" - {
+  "AreYouSureYouWantToAmendYesNo Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, areYouSureYouWantToAmendRoute)
+        val request = FakeRequest(GET, areYouSureYouWantToAmendYesNoRoute)
 
         val result = route(application, request).value
 
-        val view = application.injector.instanceOf[AreYouSureYouWantToAmendView]
+        val view = application.injector.instanceOf[AreYouSureYouWantToAmendYesNoView]
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
@@ -64,19 +65,22 @@ class AreYouSureYouWantToAmendControllerSpec extends SpecBase with MockitoSugar 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
       val userAnswers =
-        UserAnswers(userAnswersId).set(AreYouSureYouWantToAmendPage, AreYouSureYouWantToAmend.values.head).success.value
+        UserAnswers(userAnswersId)
+          .set(AreYouSureYouWantToAmendYesNoPage, AreYouSureYouWantToAmendYesNo.values.head)
+          .success
+          .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, areYouSureYouWantToAmendRoute)
+        val request = FakeRequest(GET, areYouSureYouWantToAmendYesNoRoute)
 
-        val view = application.injector.instanceOf[AreYouSureYouWantToAmendView]
+        val view = application.injector.instanceOf[AreYouSureYouWantToAmendYesNoView]
 
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(AreYouSureYouWantToAmend.values.head), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(AreYouSureYouWantToAmendYesNo.values.head), NormalMode)(
           request,
           messages(application)
         ).toString
@@ -99,8 +103,8 @@ class AreYouSureYouWantToAmendControllerSpec extends SpecBase with MockitoSugar 
 
       running(application) {
         val request =
-          FakeRequest(POST, areYouSureYouWantToAmendRoute)
-            .withFormUrlEncodedBody(("value", AreYouSureYouWantToAmend.values.head.toString))
+          FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
+            .withFormUrlEncodedBody(("value", AreYouSureYouWantToAmendYesNo.values.head.toString))
 
         val result = route(application, request).value
 
@@ -115,12 +119,12 @@ class AreYouSureYouWantToAmendControllerSpec extends SpecBase with MockitoSugar 
 
       running(application) {
         val request =
-          FakeRequest(POST, areYouSureYouWantToAmendRoute)
+          FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
             .withFormUrlEncodedBody(("value", "invalid value"))
 
         val boundForm = form.bind(Map("value" -> "invalid value"))
 
-        val view = application.injector.instanceOf[AreYouSureYouWantToAmendView]
+        val view = application.injector.instanceOf[AreYouSureYouWantToAmendYesNoView]
 
         val result = route(application, request).value
 
@@ -134,7 +138,7 @@ class AreYouSureYouWantToAmendControllerSpec extends SpecBase with MockitoSugar 
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
-        val request = FakeRequest(GET, areYouSureYouWantToAmendRoute)
+        val request = FakeRequest(GET, areYouSureYouWantToAmendYesNoRoute)
 
         val result = route(application, request).value
 
@@ -149,8 +153,8 @@ class AreYouSureYouWantToAmendControllerSpec extends SpecBase with MockitoSugar 
 
       running(application) {
         val request =
-          FakeRequest(POST, areYouSureYouWantToAmendRoute)
-            .withFormUrlEncodedBody(("value", AreYouSureYouWantToAmend.values.head.toString))
+          FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
+            .withFormUrlEncodedBody(("value", AreYouSureYouWantToAmendYesNo.values.head.toString))
 
         val result = route(application, request).value
 

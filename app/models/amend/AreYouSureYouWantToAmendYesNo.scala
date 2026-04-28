@@ -21,26 +21,26 @@ import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.Aliases.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 
-sealed trait AreYouSureYouWantToAmend
+sealed trait AreYouSureYouWantToAmendYesNo
 
-object AreYouSureYouWantToAmend extends Enumerable.Implicits {
+object AreYouSureYouWantToAmendYesNo extends Enumerable.Implicits {
 
-  case object Yes extends WithName("yes") with AreYouSureYouWantToAmend
-  case object No extends WithName("no") with AreYouSureYouWantToAmend
+  case object Yes extends WithName("yes") with AreYouSureYouWantToAmendYesNo
+  case object No extends WithName("no") with AreYouSureYouWantToAmendYesNo
 
-  val values: Seq[AreYouSureYouWantToAmend] = Seq(
+  val values: Seq[AreYouSureYouWantToAmendYesNo] = Seq(
     Yes,
     No
   )
 
   def options(implicit messages: Messages): Seq[RadioItem] = values.zipWithIndex.map { case (value, index) =>
     RadioItem(
-      content = Text(messages(s"amend.areYouSureYouWantToAmend.${value.toString}")),
+      content = Text(messages(s"amend.areYouSureYouWantToAmendYesNo.${value.toString}")),
       value = Some(value.toString),
       id = Some(s"value_$index")
     )
   }
 
-  implicit val enumerable: Enumerable[AreYouSureYouWantToAmend] =
+  implicit val enumerable: Enumerable[AreYouSureYouWantToAmendYesNo] =
     Enumerable(values.map(v => v.toString -> v): _*)
 }

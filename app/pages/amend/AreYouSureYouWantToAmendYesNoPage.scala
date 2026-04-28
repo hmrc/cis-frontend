@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package forms.amend
+package pages.amend
 
-import javax.inject.Inject
+import models.amend.AreYouSureYouWantToAmendYesNo
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-import forms.mappings.Mappings
-import play.api.data.Form
-import models.amend.AreYouSureYouWantToAmend
+case object AreYouSureYouWantToAmendYesNoPage extends QuestionPage[AreYouSureYouWantToAmendYesNo] {
 
-class AreYouSureYouWantToAmendFormProvider @Inject() extends Mappings {
+  override def path: JsPath = JsPath \ toString
 
-  def apply(): Form[AreYouSureYouWantToAmend] =
-    Form(
-      "value" -> enumerable[AreYouSureYouWantToAmend]("amend.areYouSureYouWantToAmend.error.required")
-    )
+  override def toString: String = "areYouSureYouWantToAmendYesNo"
 }

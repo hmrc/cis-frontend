@@ -24,37 +24,41 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
 import play.api.libs.json.{JsError, JsString, Json}
 
-class AreYouSureYouWantToAmendSpec extends AnyFreeSpec with Matchers with ScalaCheckPropertyChecks with OptionValues {
+class AreYouSureYouWantToAmendYesNoSpec
+    extends AnyFreeSpec
+    with Matchers
+    with ScalaCheckPropertyChecks
+    with OptionValues {
 
-  "AreYouSureYouWantToAmend" - {
+  "AreYouSureYouWantToAmendYesNo" - {
 
     "must deserialise valid values" in {
 
-      val gen = Gen.oneOf(AreYouSureYouWantToAmend.values.toSeq)
+      val gen = Gen.oneOf(AreYouSureYouWantToAmendYesNo.values.toSeq)
 
-      forAll(gen) { areYouSureYouWantToAmend =>
-        JsString(areYouSureYouWantToAmend.toString)
-          .validate[AreYouSureYouWantToAmend]
+      forAll(gen) { areYouSureYouWantToAmendYesNo =>
+        JsString(areYouSureYouWantToAmendYesNo.toString)
+          .validate[AreYouSureYouWantToAmendYesNo]
           .asOpt
-          .value mustEqual areYouSureYouWantToAmend
+          .value mustEqual areYouSureYouWantToAmendYesNo
       }
     }
 
     "must fail to deserialise invalid values" in {
 
-      val gen = arbitrary[String] suchThat (!AreYouSureYouWantToAmend.values.map(_.toString).contains(_))
+      val gen = arbitrary[String] suchThat (!AreYouSureYouWantToAmendYesNo.values.map(_.toString).contains(_))
 
       forAll(gen) { invalidValue =>
-        JsString(invalidValue).validate[AreYouSureYouWantToAmend] mustEqual JsError("error.invalid")
+        JsString(invalidValue).validate[AreYouSureYouWantToAmendYesNo] mustEqual JsError("error.invalid")
       }
     }
 
     "must serialise" in {
 
-      val gen = Gen.oneOf(AreYouSureYouWantToAmend.values.toSeq)
+      val gen = Gen.oneOf(AreYouSureYouWantToAmendYesNo.values.toSeq)
 
-      forAll(gen) { areYouSureYouWantToAmend =>
-        Json.toJson(areYouSureYouWantToAmend) mustEqual JsString(areYouSureYouWantToAmend.toString)
+      forAll(gen) { areYouSureYouWantToAmendYesNo =>
+        Json.toJson(areYouSureYouWantToAmendYesNo) mustEqual JsString(areYouSureYouWantToAmendYesNo.toString)
       }
     }
   }

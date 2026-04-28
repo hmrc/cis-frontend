@@ -18,7 +18,7 @@ package viewmodels.checkAnswers.amend
 
 import controllers.amend.routes
 import models.{CheckMode, UserAnswers}
-import pages.amend.AreYouSureYouWantToAmendPage
+import pages.amend.AreYouSureYouWantToAmendYesNoPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent
@@ -26,23 +26,23 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
-object AreYouSureYouWantToAmendSummary {
+object AreYouSureYouWantToAmendYesNoSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(AreYouSureYouWantToAmendPage).map { answer =>
+    answers.get(AreYouSureYouWantToAmendYesNoPage).map { answer =>
 
       val value = ValueViewModel(
         HtmlContent(
-          HtmlFormat.escape(messages(s"amend.areYouSureYouWantToAmend.$answer"))
+          HtmlFormat.escape(messages(s"amend.areYouSureYouWantToAmendYesNo.$answer"))
         )
       )
 
       SummaryListRowViewModel(
-        key = "amend.areYouSureYouWantToAmend.checkYourAnswersLabel",
+        key = "amend.areYouSureYouWantToAmendYesNo.checkYourAnswersLabel",
         value = value,
         actions = Seq(
-          ActionItemViewModel("site.change", routes.AreYouSureYouWantToAmendController.onPageLoad(CheckMode).url)
-            .withVisuallyHiddenText(messages("amend.areYouSureYouWantToAmend.change.hidden"))
+          ActionItemViewModel("site.change", routes.AreYouSureYouWantToAmendYesNoController.onPageLoad(CheckMode).url)
+            .withVisuallyHiddenText(messages("amend.areYouSureYouWantToAmendYesNo.change.hidden"))
         )
       )
     }

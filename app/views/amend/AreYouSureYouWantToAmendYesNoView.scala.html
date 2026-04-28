@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import models.amend.AreYouSureYouWantToAmend
+@import models.amend.AreYouSureYouWantToAmendYesNo
 @import viewmodels.LegendSize
 
 @this(
@@ -27,9 +27,9 @@
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("amend.areYouSureYouWantToAmend.title"))) {
+@layout(pageTitle = title(form, messages("amend.areYouSureYouWantToAmendYesNo.title"))) {
 
-    @formHelper(action = controllers.amend.routes.AreYouSureYouWantToAmendController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
@@ -38,8 +38,8 @@
         @govukRadios(
             RadiosViewModel(
                 field  = form("value"),
-                legend = LegendViewModel(messages("amend.areYouSureYouWantToAmend.heading")).asPageHeading(LegendSize.Large),
-                items  = AreYouSureYouWantToAmend.options
+                legend = LegendViewModel(messages("amend.areYouSureYouWantToAmendYesNo.heading")).asPageHeading(LegendSize.Large),
+                items  = AreYouSureYouWantToAmendYesNo.options
             )
         )
 

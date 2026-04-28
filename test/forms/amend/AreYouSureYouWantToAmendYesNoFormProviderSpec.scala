@@ -17,22 +17,22 @@
 package forms.amend
 
 import forms.behaviours.OptionFieldBehaviours
-import models.amend.AreYouSureYouWantToAmend
+import models.amend.AreYouSureYouWantToAmendYesNo
 import play.api.data.FormError
 
-class AreYouSureYouWantToAmendFormProviderSpec extends OptionFieldBehaviours {
+class AreYouSureYouWantToAmendYesNoFormProviderSpec extends OptionFieldBehaviours {
 
-  val form = new AreYouSureYouWantToAmendFormProvider()()
+  val form = new AreYouSureYouWantToAmendYesNoFormProvider()()
 
   ".value" - {
 
     val fieldName   = "value"
-    val requiredKey = "amend.areYouSureYouWantToAmend.error.required"
+    val requiredKey = "amend.areYouSureYouWantToAmendYesNo.error.required"
 
-    behave like optionsField[AreYouSureYouWantToAmend](
+    behave like optionsField[AreYouSureYouWantToAmendYesNo](
       form,
       fieldName,
-      validValues = AreYouSureYouWantToAmend.values,
+      validValues = AreYouSureYouWantToAmendYesNo.values,
       invalidError = FormError(fieldName, "error.invalid")
     )
 

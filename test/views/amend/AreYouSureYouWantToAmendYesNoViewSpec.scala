@@ -17,22 +17,22 @@
 package views.amend
 
 import base.SpecBase
-import forms.amend.AreYouSureYouWantToAmendFormProvider
+import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 import models.NormalMode
-import models.amend.AreYouSureYouWantToAmend
+import models.amend.AreYouSureYouWantToAmendYesNo
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
-import views.html.amend.AreYouSureYouWantToAmendView
+import views.html.amend.AreYouSureYouWantToAmendYesNoView
 
-class AreYouSureYouWantToAmendViewSpec extends SpecBase {
+class AreYouSureYouWantToAmendYesNoViewSpec extends SpecBase {
 
-  "AreYouSureYouWantToAmendView" - {
+  "AreYouSureYouWantToAmendYesNoView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title                                   must include(messages("amend.areYouSureYouWantToAmend.title"))
-      doc.select("h1").text                       must include(messages("amend.areYouSureYouWantToAmend.heading"))
+      doc.title                                   must include(messages("amend.areYouSureYouWantToAmendYesNo.title"))
+      doc.select("h1").text                       must include(messages("amend.areYouSureYouWantToAmendYesNo.heading"))
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
 
@@ -42,12 +42,12 @@ class AreYouSureYouWantToAmendViewSpec extends SpecBase {
       doc.select("input[type=radio][value=yes]").size() mustBe 1
       doc.select("input[type=radio][value=no]").size() mustBe 1
 
-      doc.select("label[for=value_0]").text() must include(messages("amend.areYouSureYouWantToAmend.yes"))
-      doc.select("label[for=value_1]").text() must include(messages("amend.areYouSureYouWantToAmend.no"))
+      doc.select("label[for=value_0]").text() must include(messages("amend.areYouSureYouWantToAmendYesNo.yes"))
+      doc.select("label[for=value_1]").text() must include(messages("amend.areYouSureYouWantToAmendYesNo.no"))
     }
 
     "must pre-populate the form when user has previously answered 'Yes'" in new Setup {
-      val filledForm    = form.fill(AreYouSureYouWantToAmend.Yes)
+      val filledForm    = form.fill(AreYouSureYouWantToAmendYesNo.Yes)
       val filledHtml    = view(filledForm, NormalMode)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
@@ -56,7 +56,7 @@ class AreYouSureYouWantToAmendViewSpec extends SpecBase {
     }
 
     "must pre-populate the form when user has previously answered 'No'" in new Setup {
-      val filledForm    = form.fill(AreYouSureYouWantToAmend.No)
+      val filledForm    = form.fill(AreYouSureYouWantToAmendYesNo.No)
       val filledHtml    = view(filledForm, NormalMode)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
@@ -76,8 +76,8 @@ class AreYouSureYouWantToAmendViewSpec extends SpecBase {
 
   trait Setup {
     val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[AreYouSureYouWantToAmendView]
-    val formProvider                              = new AreYouSureYouWantToAmendFormProvider()
+    val view                                      = app.injector.instanceOf[AreYouSureYouWantToAmendYesNoView]
+    val formProvider                              = new AreYouSureYouWantToAmendYesNoFormProvider()
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
