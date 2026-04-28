@@ -33,16 +33,16 @@ class ConfirmAmendmentViewSpec extends SpecBase {
       val html: HtmlFormat.Appendable = view()
       val doc: Document               = Jsoup.parse(html.body)
 
-      doc.title             must include(messages("confirmAmendment.title"))
+      doc.title             must include(messages("amend.confirmAmendment.title"))
       doc.select("h1").text must include(
-        messages("confirmAmendment.heading")
+        messages("amend.confirmAmendment.heading")
       )
 
-      doc.select("p").text()  must include(messages("confirmAmendment.p1"))
-      doc.select("p").text()  must include(messages("confirmAmendment.p2"))
-      doc.select("li").text() must include(messages("confirmAmendment.bullet1"))
-      doc.select("li").text() must include(messages("confirmAmendment.bullet2"))
-      doc.select("li").text() must include(messages("confirmAmendment.bullet3"))
+      doc.select("p").text()  must include(messages("amend.confirmAmendment.p1"))
+      doc.select("p").text()  must include(messages("amend.confirmAmendment.p2"))
+      doc.select("li").text() must include(messages("amend.confirmAmendment.bullet1"))
+      doc.select("li").text() must include(messages("amend.confirmAmendment.bullet2"))
+      doc.select("li").text() must include(messages("amend.confirmAmendment.bullet3"))
     }
   }
   trait Setup {

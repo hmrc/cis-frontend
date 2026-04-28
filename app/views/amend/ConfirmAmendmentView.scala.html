@@ -27,16 +27,16 @@
 @()(implicit request: Request[_], messages: Messages)
 
 @defining(Seq(
-        "confirmAmendment.bullet1",
-        "confirmAmendment.bullet2",
-        "confirmAmendment.bullet3"
+        "amend.confirmAmendment.bullet1",
+        "amend.confirmAmendment.bullet2",
+        "amend.confirmAmendment.bullet3"
     )) { items =>
 
-        @layout(pageTitle = titleNoForm(messages("confirmAmendment.title"))) {
+        @layout(pageTitle = titleNoForm(messages("amend.confirmAmendment.title"))) {
 
-        @h1(messages("confirmAmendment.heading"))
-        @paragraph(messages("confirmAmendment.p1"))
-        @paragraph(messages("confirmAmendment.p2"))
+        @h1(messages("amend.confirmAmendment.heading"))
+        @paragraph(messages("amend.confirmAmendment.p1"))
+        @paragraph(messages("amend.confirmAmendment.p2"))
 
         @bulletList(items)
         @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))

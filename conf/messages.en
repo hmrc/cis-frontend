@@ -531,10 +531,10 @@ amend.whichSubcontractorsToAdd.checkYourAnswersLabel = Which subcontractor do yo
 amend.whichSubcontractorsToAdd.error.required = Select a subcontractor
 amend.whichSubcontractorsToAdd.change.hidden = which subcontractor do you want to add to this return?
 
-confirmAmendment.title = Confirm amendment
-confirmAmendment.heading = Confirm amendment
-confirmAmendment.p1 = You are about to amend a monthly return. Any information you enter will be saved.
-confirmAmendment.p2 = You must confirm you understand that:
-confirmAmendment.bullet1 = you are about to change the data for a return you have submitted previously
-confirmAmendment.bullet2 = the original data will be deleted when you submit this amended return
-confirmAmendment.bullet3 = the tax treatment for this return may be different from the one previously applied
+amend.confirmAmendment.title = Confirm amendment
+amend.confirmAmendment.heading = Confirm amendment
+amend.confirmAmendment.p1 = You are about to amend a monthly return. Any information you enter will be saved.
+amend.confirmAmendment.p2 = You must confirm you understand that:
+amend.confirmAmendment.bullet1 = you are about to change the data for a return you have submitted previously
+amend.confirmAmendment.bullet2 = the original data will be deleted when you submit this amended return
+amend.confirmAmendment.bullet3 = the tax treatment for this return may be different from the one previously applied
