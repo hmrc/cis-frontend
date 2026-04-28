@@ -66,12 +66,14 @@ object UserAnswerUtils {
 
     def clearMonthlyReturnJourney: Try[UserAnswers] =
       userAnswers
+        // common
         .remove(DateConfirmPaymentsPage)
-
-        // monthly nil return
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
+
+        // monthly nil return
+        .flatMap(_.remove(ConfirmEmailAddressPage))
         .flatMap(_.remove(DeclarationPage))
 
         // monthly standard return
@@ -81,9 +83,6 @@ object UserAnswerUtils {
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
-        .flatMap(_.remove(SubmitInactivityRequestPage))
-        .flatMap(_.remove(ConfirmEmailAddressPage))
-        .flatMap(_.remove(EnterYourEmailAddressPage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
