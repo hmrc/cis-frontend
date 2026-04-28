@@ -147,7 +147,7 @@ class CostOfMaterialsFormProviderSpec extends CurrencyFieldBehaviours {
       val result = form.fill(Some(value))
 
       // Now that currencyFormatter.unbind formats scale=0 with commas
-      result.data.get(fieldName) mustBe Some("12,345")
+      result.data.get(fieldName) mustBe Some("12,345.00")
     }
   }
 }

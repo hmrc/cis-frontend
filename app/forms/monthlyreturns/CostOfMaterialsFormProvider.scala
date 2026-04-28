@@ -29,7 +29,8 @@ class CostOfMaterialsFormProvider extends Mappings {
           requiredKey = "monthlyreturns.costOfMaterials.error.required", // not used when optional
           invalidKey = "monthlyreturns.costOfMaterials.error.invalid",
           maxLengthKey = "monthlyreturns.costOfMaterials.error.maxLength",
-          scale = 0
+          scale = 0,
+          displayScale = Some(2)
         )
       ).verifying(
         "monthlyreturns.costOfMaterials.error.maxValue",

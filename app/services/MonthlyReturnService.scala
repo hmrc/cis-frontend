@@ -18,15 +18,20 @@ package services
 
 import play.api.Logging
 import connectors.ConstructionIndustrySchemeConnector
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import repositories.SessionRepository
 import models.monthlyreturns.*
 import pages.monthlyreturns.*
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import models.requests.GetMonthlyReturnForEditRequest
+import pages.QuestionPage
+import pages.agent.AgentClientDataPage
+import play.api.libs.json.{Format, JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
 
+import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -188,6 +193,207 @@ class MonthlyReturnService @Inject() (
       }
   }
 
+  def populateUserAnswersForContinueJourney(
+    ua: UserAnswers,
+    editRequest: GetMonthlyReturnForEditRequest
+  )(implicit hc: HeaderCarrier): Future[Either[String, UserAnswers]] =
+    retrieveMonthlyReturnForEditDetails(
+      instanceId = editRequest.instanceId,
+      taxMonth = editRequest.taxMonth,
+      taxYear = editRequest.taxYear
+    ).map { response =>
+      for {
+        monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
+        updatedUa     <- populateContinueJourneyAnswers(
+                           ua = ua,
+                           instanceId = editRequest.instanceId,
+                           monthlyReturn = monthlyReturn,
+                           monthlyReturnItems = response.monthlyReturnItems,
+                           submissions = response.submission
+                         )
+      } yield updatedUa
+    }
+
+  def populateAgentClientDataIfRequired(
+    ua: UserAnswers,
+    userId: String,
+    isAgent: Boolean
+  )(implicit hc: HeaderCarrier): Future[UserAnswers] =
+    if (!isAgent) {
+      Future.successful(ua)
+    } else {
+      getAgentClient(userId).flatMap {
+        case Some(agentData) =>
+          hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference).flatMap {
+            case true =>
+              Future.fromTry(ua.set(AgentClientDataPage, agentData))
+
+            case false =>
+              Future.failed(new RuntimeException("Agent no longer authorised for client"))
+          }
+
+        case None =>
+          Future.failed(new RuntimeException("Agent data not found"))
+      }
+    }
+
+  private def populateContinueJourneyAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    monthlyReturn: MonthlyReturn,
+    monthlyReturnItems: Seq[MonthlyReturnItem],
+    submissions: Seq[Submission]
+  ): Either[String, UserAnswers] = {
+    val emailRecipient = submissions.headOption.flatMap(_.emailRecipient)
+
+    monthlyReturn.nilReturnIndicator match {
+      case Some("Y") =>
+        populateNilReturnAnswers(
+          ua = ua,
+          instanceId = instanceId,
+          monthlyReturn = monthlyReturn,
+          emailRecipient = emailRecipient
+        )
+
+      case Some("N") =>
+        populateStandardReturnAnswers(
+          ua = ua,
+          instanceId = instanceId,
+          monthlyReturn = monthlyReturn,
+          monthlyReturnItems = monthlyReturnItems,
+          emailRecipient = emailRecipient
+        )
+
+      case _ =>
+        Left("Missing nil return indicator")
+    }
+  }
+
+  private def setOrError[A: Format](ua: UserAnswers, page: QuestionPage[A], value: A): Either[String, UserAnswers] =
+    ua.set(page, value).toEither.left.map(_.getMessage)
+
+  private def populateCommonReturnAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    returnType: ReturnType,
+    monthlyReturn: MonthlyReturn,
+    emailRecipient: Option[String]
+  ): Either[String, UserAnswers] =
+    for {
+      ua1 <- setOrError(ua, CisIdPage, instanceId)
+      ua2 <- setOrError(ua1, ReturnTypePage, returnType)
+      ua3 <- setOrError(
+               ua2,
+               DateConfirmPaymentsPage,
+               LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
+             )
+      ua4 <- setOrError(
+               ua3,
+               SubmitInactivityRequestPage,
+               monthlyReturn.decNilReturnNoPayments.contains("Y")
+             )
+      ua5 <- setOrError(ua4, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
+      ua6 <- emailRecipient.filter(_.nonEmpty) match {
+               case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
+               case None        => Right(ua5)
+             }
+    } yield ua6
+
+  private def populateNilReturnAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    monthlyReturn: MonthlyReturn,
+    emailRecipient: Option[String]
+  ): Either[String, UserAnswers] = {
+    val declarationSet =
+      if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
+
+    for {
+      ua1 <- populateCommonReturnAnswers(
+               ua = ua,
+               instanceId = instanceId,
+               returnType = MonthlyNilReturn,
+               monthlyReturn = monthlyReturn,
+               emailRecipient = emailRecipient
+             )
+      ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
+    } yield ua2
+  }
+
+  private def populateStandardReturnAnswers(
+    ua: UserAnswers,
+    instanceId: String,
+    monthlyReturn: MonthlyReturn,
+    monthlyReturnItems: Seq[MonthlyReturnItem],
+    emailRecipient: Option[String]
+  ): Either[String, UserAnswers] =
+    for {
+      ua1 <- populateCommonReturnAnswers(
+               ua = ua,
+               instanceId = instanceId,
+               returnType = MonthlyStandardReturn,
+               monthlyReturn = monthlyReturn,
+               emailRecipient = emailRecipient
+             )
+      ua2 <- setOrError(
+               ua1,
+               EmploymentStatusDeclarationPage,
+               monthlyReturn.decEmpStatusConsidered.contains("Y")
+             )
+      ua3 <- setOrError(
+               ua2,
+               VerifiedStatusDeclarationPage,
+               monthlyReturn.decAllSubsVerified.contains("Y")
+             )
+      ua4 <- setOrError(
+               ua3,
+               VerifySubcontractorsPage,
+               monthlyReturn.decAllSubsVerified.contains("Y")
+             )
+      ua5 <- setOrError(
+               ua4,
+               PaymentDetailsConfirmationPage,
+               true
+             )
+      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems)
+    } yield ua6
+
+  private def populateStandardReturnItems(
+    ua: UserAnswers,
+    items: Seq[MonthlyReturnItem]
+  ): Either[String, UserAnswers] =
+    for {
+      cleared <- ua.remove(SelectedSubcontractorPage.all).toEither.left.map(_.getMessage)
+      updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
+                   case (accEither, (item, index)) =>
+                     for {
+                       acc      <- accEither
+                       pageIndex = index + 1
+                       next     <- acc
+                                     .set(
+                                       SelectedSubcontractorPage(index + 1),
+                                       SelectedSubcontractor(
+                                         id = item.subcontractorId.getOrElse(0L),
+                                         name = item.subcontractorName.getOrElse(""),
+                                         totalPaymentsMade = toBigDecimal(item.totalPayments),
+                                         costOfMaterials = toBigDecimal(item.costOfMaterials),
+                                         totalTaxDeducted = toBigDecimal(item.totalDeducted)
+                                       )
+                                     )
+                                     .toEither
+                                     .left
+                                     .map(_.getMessage)
+                     } yield next
+                 }
+    } yield updated
+
+  private def toBigDecimal(value: Option[String]): Option[BigDecimal] =
+    value
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map(_.replace(",", ""))
+      .flatMap(value => Try(BigDecimal(value)).toOption)
+
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
       case Some(id) => Future.successful(id)
@@ -215,15 +421,10 @@ class MonthlyReturnService @Inject() (
     }
 
   private def getNilNoPaymentsOrDefault(ua: UserAnswers): Future[String] =
-    ua.get(InactivityRequestPage) match {
-      case Some(ir) => Future.successful(mapInactivityRequestToYN(ir))
-      case None     => Future.successful("N")
+    ua.get(SubmitInactivityRequestPage) match {
+      case Some(true) => Future.successful("Y")
+      case _          => Future.successful("N")
     }
-
-  private def mapInactivityRequestToYN(ir: InactivityRequest): String = ir match {
-    case InactivityRequest.Option1 => "Y"
-    case InactivityRequest.Option2 => "N"
-  }
 
   private def callBackendToCreate(
     cisId: String,

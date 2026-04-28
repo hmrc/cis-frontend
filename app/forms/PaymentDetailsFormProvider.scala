@@ -29,7 +29,8 @@ class PaymentDetailsFormProvider @Inject() extends Mappings {
         requiredKey = "paymentDetails.error.required",
         invalidKey = "paymentDetails.error.invalid",
         maxLengthKey = "paymentDetails.error.maxLength",
-        scale = 0
+        scale = 0,
+        displayScale = Some(2)
       ).verifying(
         maximumCurrency(BigDecimal("99999999.00"), "paymentDetails.error.maxValue", includeFormattedValue = false)
       )
