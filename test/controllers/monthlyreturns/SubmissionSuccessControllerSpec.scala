@@ -35,6 +35,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.SubmissionSuccessView
 import utils.IrMarkReferenceGenerator
+import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
@@ -92,15 +93,17 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
   lazy val expectedHtml: String =
     view(
-      reference = reference,
-      periodEnd = periodEnd.format(monthYearFmt),
-      submittedTime = submittedTime,
-      submittedDate = submittedDate,
-      contractorName = contractorName,
-      empRef = employerRef,
-      email = email,
-      submissionType = submissionType,
-      cisId = cisId
+      SubmissionSuccessViewModel(
+        reference = reference,
+        periodEnd = periodEnd.format(monthYearFmt),
+        submittedTime = submittedTime,
+        submittedDate = submittedDate,
+        contractorName = contractorName,
+        empRef = employerRef,
+        email = email,
+        submissionType = submissionType,
+        cisId = cisId
+      )
     )(request, applicationConfig, messages(app)).toString
 
   lazy val agentDate: AgentClientData =
@@ -181,6 +184,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
             .thenReturn(Future.successful(Some(email)))
 
+          when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+            .thenReturn(Future.unit)
+
           val app =
             applicationBuilder(userAnswers = Some(uaWithoutEmail))
               .overrides(
@@ -196,6 +202,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             contentAsString(result) must include(email)
 
             verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+            verify(mockMonthlyReturnService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
           }
         }
 
@@ -355,6 +362,9 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           when(mockService.getSchemeEmail(any())(any()))
             .thenReturn(Future.successful(Some(fallbackEmail)))
 
+          when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+            .thenReturn(Future.unit)
+
           val app =
             applicationBuilder(userAnswers = Some(uaWithoutEmail))
               .overrides(
@@ -367,15 +377,17 @@ class SubmissionSuccessControllerSpec extends SpecBase {
 
           lazy val expectedHtml: String =
             view(
-              reference = reference,
-              periodEnd = periodEnd.format(monthYearFmt),
-              submittedTime = submittedTime,
-              submittedDate = submittedDate,
-              contractorName = contractorName,
-              empRef = employerRef,
-              email = fallbackEmail,
-              submissionType = submissionType,
-              cisId = cisId
+              SubmissionSuccessViewModel(
+                reference = reference,
+                periodEnd = periodEnd.format(monthYearFmt),
+                submittedTime = submittedTime,
+                submittedDate = submittedDate,
+                contractorName = contractorName,
+                empRef = employerRef,
+                email = fallbackEmail,
+                submissionType = submissionType,
+                cisId = cisId
+              )
             )(request, applicationConfig, messages(app)).toString
 
           running(app) {
@@ -386,6 +398,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
           }
 
           verify(mockService).getSchemeEmail(any())(any())
+          verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
 
       }

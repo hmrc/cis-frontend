@@ -17,73 +17,98 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.UserAnswers
+import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.any
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import play.api.inject.bind
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
 
-class SubmissionUnsuccessfulControllerSpec extends SpecBase {
+import scala.concurrent.Future
+
+class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
+
+  private lazy val submissionUnsuccessfulRoute =
+    routes.SubmissionUnsuccessfulController.onPageLoad.url
 
   "SubmissionUnsuccessful Controller" - {
 
     "GET onPageLoad" - {
 
-      "must return OK and the correct view when user answers exist" in {
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      "must return OK and the correct view when cisId exists in UserAnswers" in {
+
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
 
         running(application) {
-          val request   = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
+          val request   = FakeRequest(GET, submissionUnsuccessfulRoute)
           val fakeCisId = "1"
           val result    = route(application, request).value
           val view      = application.injector.instanceOf[SubmissionUnsuccessfulView]
 
           status(result) mustEqual OK
           contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
+
+          verify(mockMonthlyReturnService)
+            .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
       }
 
-      "must return OK and the correct view when cisId is provided in query param" in {
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      "must redirect to unauthorised organisation when cisId is missing from UserAnswers" in {
 
-        running(application) {
-          val request = FakeRequest(
-            GET,
-            routes.SubmissionUnsuccessfulController.onPageLoad.url + "?cisId=123"
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
           )
-          val result  = route(application, request).value
-          val view    = application.injector.instanceOf[SubmissionUnsuccessfulView]
+          .build()
 
-          status(result) mustEqual OK
-          contentAsString(result) mustEqual view("123")(request, messages(application)).toString
+        running(application) {
+          val request = FakeRequest(GET, submissionUnsuccessfulRoute)
+          val result  = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
+            .onPageLoad()
+            .url
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
       }
 
-      "must throw exception when cisId is missing from both UserAnswers and query param" in {
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      "must redirect to Journey Recovery when no existing data is found" in {
+
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+        val application = applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
 
         running(application) {
-          val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
+          val request = FakeRequest(GET, submissionUnsuccessfulRoute)
           val result  = route(application, request).value
 
-          val ex = intercept[IllegalStateException] {
-            await(result)
-          }
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
 
-          ex.getMessage must include("cisId missing from userAnswers")
-        }
-      }
-
-      "must throw exception when no existing data is found and no cisId query param is provided" in {
-        val application = applicationBuilder(userAnswers = None).build()
-
-        running(application) {
-          val request = FakeRequest(GET, routes.SubmissionUnsuccessfulController.onPageLoad.url)
-          val result  = route(application, request).value
-
-          val ex = intercept[IllegalStateException] {
-            await(result)
-          }
-
-          ex.getMessage must include("cisId missing from userAnswers")
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
       }
     }

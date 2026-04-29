@@ -24,11 +24,13 @@ import models.monthlyreturns.*
 import pages.monthlyreturns.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
+import pages.submission.SubmissionJourneyCompletedPage
+import play.api.libs.json.*
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.QuestionPage
 import pages.agent.AgentClientDataPage
-import play.api.libs.json.{Format, JsError, JsSuccess, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.UserAnswerUtils.clearMonthlyReturnJourney
 import viewmodels.SelectSubcontractorsViewModel
 
 import java.time.LocalDate
@@ -191,6 +193,19 @@ class MonthlyReturnService @Inject() (
               .map(_ => updatedUa)
         }
       }
+  }
+
+  def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val updatedTry =
+      for {
+        withCompleted <- userAnswers.set(SubmissionJourneyCompletedPage, true)
+        cleared       <- withCompleted.clearMonthlyReturnJourney
+      } yield cleared
+
+    updatedTry match {
+      case scala.util.Success(updatedAnswers) => sessionRepository.set(updatedAnswers).map(_ => ())
+      case scala.util.Failure(_)              => Future.unit
+    }
   }
 
   def populateUserAnswersForContinueJourney(
