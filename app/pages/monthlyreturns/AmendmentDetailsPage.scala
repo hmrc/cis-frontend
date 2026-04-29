@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,10 @@
 
 package pages.monthlyreturns
 
-import base.SpecBase
-import play.api.libs.json.JsPath
+import models.monthlyreturns.AmendmentDetails
+import pages.QuestionPage
+import play.api.libs.json.*
 
-class SubcontractorDetailsAddedPageSpec extends SpecBase {
-
-  "SubcontractorDetailsAddedPage" - {
-
-    "must have the correct toString and path" in {
-      SubcontractorDetailsAddedPage.toString mustBe "subcontractorDetailsAdded"
-      SubcontractorDetailsAddedPage.path mustBe (JsPath \ "subcontractorDetailsAdded")
-    }
-  }
+object AmendmentDetailsPage extends QuestionPage[AmendmentDetails] {
+  override def path: JsPath = JsPath \ "amendmentDetails"
 }

@@ -14,26 +14,14 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package pages.monthlyreturns
 
-import play.api.mvc.Call
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class SubcontractorDetailsAddedRow(
-  index: Int,
-  subcontractorId: Long,
-  name: String,
-  detailsAdded: Boolean,
-  changeLabel: String,
-  changeCall: Call,
-  removeCall: Call
-)
+case object AllSubcontractorDetailsAdded extends QuestionPage[Boolean] {
 
-case class SubcontractorDetailsAddedViewModel(
-  headingKey: String,
-  headingArgs: Seq[AnyRef],
-  rows: Seq[SubcontractorDetailsAddedRow],
-  hasIncomplete: Boolean,
-  isAmendment: Boolean = false
-) {
-  def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "subcontractorDetailsAdded"
 }

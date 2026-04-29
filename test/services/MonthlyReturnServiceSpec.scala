@@ -28,6 +28,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
+import pages.submission.SubmissionJourneyCompletedPage
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -1003,6 +1004,73 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       verify(connector).getAgentClient(eqTo("baz"))(any[HeaderCarrier])
 
+    }
+  }
+
+  "completeSubmissionJourney" - {
+
+    "mark the journey as completed, clear monthly return journey data, and persist updated answers" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = UserAnswers("test-user")
+        .set(SubmissionJourneyCompletedPage, false)
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .get
+        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .get
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedUa = uaCaptor.getValue
+      savedUa.get(SubmissionJourneyCompletedPage) mustBe Some(true)
+      savedUa.get(VerifySubcontractorsPage) mustBe None
+      savedUa.get(DeclarationPage) mustBe None
+      savedUa.get(SubmitInactivityRequestPage) mustBe None
+
+      verifyNoMoreInteractions(sessionRepo)
+    }
+
+    "return unit and not persist when setting SubmissionJourneyCompletedPage fails" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = mock(classOf[UserAnswers])
+
+      when(originalUa.set(SubmissionJourneyCompletedPage, true))
+        .thenReturn(scala.util.Failure(new RuntimeException("set failed")))
+
+      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+
+      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "return unit and not persist when clearing monthly return journey fails" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = mock(classOf[UserAnswers])
+      val updatedUa  = mock(classOf[UserAnswers])
+
+      when(originalUa.set(SubmissionJourneyCompletedPage, true))
+        .thenReturn(scala.util.Success(updatedUa))
+      when(updatedUa.remove(DateConfirmPaymentsPage))
+        .thenReturn(scala.util.Failure(new RuntimeException("clear failed")))
+
+      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+
+      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(updatedUa).remove(DateConfirmPaymentsPage)
+      verifyNoInteractions(sessionRepo)
     }
   }
 

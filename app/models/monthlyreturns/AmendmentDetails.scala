@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package models.monthlyreturns
 
-import javax.inject.Inject
+import models.ReturnType
+import play.api.libs.json.{Json, OFormat}
 
-import forms.mappings.Mappings
-import play.api.data.Form
+case class AmendmentDetails(originalReturnType: ReturnType)
 
-class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
-
-  def apply(): Form[Int] =
-    Form(
-      "value" ->
-        int("monthlyreturns.addSubcontractorDetails.error.required")
-    )
+object AmendmentDetails {
+  given OFormat[AmendmentDetails] = Json.format[AmendmentDetails]
 }

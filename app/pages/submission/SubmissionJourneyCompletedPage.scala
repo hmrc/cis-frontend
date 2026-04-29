@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package pages.submission
 
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object AddSubcontractorDetailsPage extends QuestionPage[String] {
+case object SubmissionJourneyCompletedPage extends QuestionPage[Boolean] {
 
-  override def path: JsPath = JsPath \ toString
+  override def path: JsPath = JsPath \ "submissionJourneyCompleted"
 
-  override def toString: String = "addSubcontractorDetails"
+  override def toString: String = "submissionJourneyCompleted"
 }

@@ -23,6 +23,8 @@
     h1: H1,
     customSummaryList: CustomSummaryList,
     formHelper: FormWithCSRF,
+    buttonGroup: ButtonGroup,
+    link: Link,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
     govukButton: GovukButton
@@ -51,7 +53,7 @@
                 (
                     row.name,
                     Seq(
-                      (row.changeCall.url, "site.change", "monthlyreturns.subcontractorDetailsAdded.change.hidden"),
+                      (row.changeCall.url, row.changeLabel, s"${row.changeLabel}.hidden"),
                       (row.removeCall.url, "site.remove", "monthlyreturns.subcontractorDetailsAdded.remove.hidden")
                     )
                 )
@@ -65,12 +67,20 @@
                     legend = LegendViewModel(messages("monthlyreturns.subcontractorDetailsAdded.question"))
                         .withCssClass("govuk-fieldset__legend--m")
                 )
-                .withHint(HintViewModel(Text(messages("monthlyreturns.subcontractorDetailsAdded.hint"))))
         )
 
-        @govukButton(
-            ButtonViewModel(messages("site.continue"))
-        )
+        @buttonGroup {
+            @govukButton(
+                ButtonViewModel(messages("site.continue"))
+            )
+            @if(viewModel.isAmendment) {
+                @link(
+                        "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
+                        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url,
+                        paragraphWrapped = false
+                )
+            }
+        }
 
     }
 }
