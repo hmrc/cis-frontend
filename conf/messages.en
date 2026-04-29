@@ -532,3 +532,9 @@ amend.whichSubcontractorsToAdd.heading = Which subcontractor do you want to add 
 amend.whichSubcontractorsToAdd.checkYourAnswersLabel = Which subcontractor do you want to add to this return?
 amend.whichSubcontractorsToAdd.error.required = Select a subcontractor
 amend.whichSubcontractorsToAdd.change.hidden = which subcontractor do you want to add to this return?
+
+whatDoYouWantToAmendNil.title = What do you want to amend?
+whatDoYouWantToAmendNil.heading = What do you want to amend?
+whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
+whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
+whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make
