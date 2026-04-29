@@ -18,7 +18,7 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
-import models.{NormalMode, UserAnswers}
+import models.UserAnswers
 import models.amend.AreYouSureYouWantToAmendYesNo
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
@@ -39,7 +39,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
   def onwardRoute = Call("GET", "/foo")
 
   lazy val areYouSureYouWantToAmendYesNoRoute =
-    routes.AreYouSureYouWantToAmendYesNoController.onPageLoad(NormalMode).url
+    routes.AreYouSureYouWantToAmendYesNoController.onPageLoad().url
 
   val formProvider = new AreYouSureYouWantToAmendYesNoFormProvider()
   val form         = formProvider()
@@ -58,7 +58,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
         val view = application.injector.instanceOf[AreYouSureYouWantToAmendYesNoView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form)(request, messages(application)).toString
       }
     }
 
@@ -80,7 +80,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(AreYouSureYouWantToAmendYesNo.values.head), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(AreYouSureYouWantToAmendYesNo.values.head))(
           request,
           messages(application)
         ).toString
@@ -129,7 +129,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm)(request, messages(application)).toString
       }
     }
 
