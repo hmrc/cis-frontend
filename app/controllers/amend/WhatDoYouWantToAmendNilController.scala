@@ -18,7 +18,6 @@ package controllers.amend
 
 import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
-import models.{Mode, NormalMode}
 import models.amend.WhatDoYouWantToAmendNil
 import pages.amend.WhatDoYouWantToAmendNilPage
 import play.api.data.Form
@@ -46,32 +45,31 @@ class WhatDoYouWantToAmendNilController @Inject() (
 
   val form: Form[WhatDoYouWantToAmendNil] = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
 
     val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage) match {
       case None        => form
       case Some(value) => form.fill(value)
     }
 
-    Ok(view(preparedForm, mode))
+    Ok(view(preparedForm))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield value match {
-              case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
-                Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode))
-              case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
-                Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode))
-            }
-        )
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+    form
+      .bindFromRequest()
+      .fold(
+        formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
+        value =>
+          for {
+            updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
+            _              <- sessionRepository.set(updatedAnswers)
+          } yield value match {
+            case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
+              Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad())
+            case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
+              Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad())
+          }
+      )
   }
 }

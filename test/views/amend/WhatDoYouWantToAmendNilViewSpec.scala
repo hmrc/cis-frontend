@@ -17,7 +17,6 @@
 package views.amend
 
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
-import models.NormalMode
 import models.amend.WhatDoYouWantToAmendNil
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
@@ -37,7 +36,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
   "WhatDoYouWantToAmendNilView" should {
 
     "render the page with title, heading, radios and submit button" in new Setup {
-      val html: HtmlFormat.Appendable = view(form, NormalMode)
+      val html: HtmlFormat.Appendable = view(form)
       val doc: Document               = org.jsoup.Jsoup.parse(html.toString())
       doc.select("title").text() must include(messages("whatDoYouWantToAmendNil.title"))
 
@@ -53,7 +52,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
       labels must contain(messages("whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails"))
 
       doc.select("form").attr("action") mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController
-        .onSubmit(NormalMode)
+        .onSubmit()
         .url
 
       doc.select("form").attr("autocomplete") mustBe "off"
@@ -65,7 +64,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
       val errorForm: Form[WhatDoYouWantToAmendNil] =
         form.withError("value", "whatDoYouWantToAmendNil.error.required")
 
-      val html: HtmlFormat.Appendable = view(errorForm, NormalMode)
+      val html: HtmlFormat.Appendable = view(errorForm)
       val doc: Document               = org.jsoup.Jsoup.parse(html.toString())
 
       val summary: Elements = doc.select(".govuk-error-summary")

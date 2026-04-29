@@ -20,7 +20,7 @@ import base.SpecBase
 import controllers.routes
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.amend.WhatDoYouWantToAmendNil
-import models.{NormalMode, UserAnswers}
+import models.UserAnswers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
@@ -36,7 +36,7 @@ import scala.concurrent.Future
 class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
   private lazy val whatDoYouWantToAmendNilRoute =
-    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(NormalMode).url
+    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
 
   private val formProvider = new WhatDoYouWantToAmendNilFormProvider()
   private val form         = formProvider()
@@ -55,7 +55,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[WhatDoYouWantToAmendNilView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form)(request, messages(application)).toString
       }
     }
 
@@ -74,7 +74,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(WhatDoYouWantToAmendNil.values.head), NormalMode)(
+        contentAsString(result) mustEqual view(form.fill(WhatDoYouWantToAmendNil.values.head))(
           request,
           messages(application)
         ).toString
@@ -103,7 +103,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.amend.routes.WhatDoYouWantToAmendNilController
-          .onPageLoad(NormalMode)
+          .onPageLoad()
           .url
       }
     }
@@ -130,7 +130,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.amend.routes.WhatDoYouWantToAmendNilController
-          .onPageLoad(NormalMode)
+          .onPageLoad()
           .url
       }
     }
@@ -151,7 +151,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm)(request, messages(application)).toString
       }
     }
 
