@@ -562,6 +562,4 @@ amend.areYouSureYouWantToAmendYesNo.title = Are you sure you want to amend this 
 amend.areYouSureYouWantToAmendYesNo.heading = Are you sure you want to amend this return to a nil return?
 amend.areYouSureYouWantToAmendYesNo.yes = Yes
 amend.areYouSureYouWantToAmendYesNo.no = No, I want to make a different amendment
-amend.areYouSureYouWantToAmendYesNo.checkYourAnswersLabel = Are you sure you want to amend this return to a nil return?
 amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option to amend
-amend.areYouSureYouWantToAmendYesNo.change.hidden = are you sure you want to amend this return to a nil return

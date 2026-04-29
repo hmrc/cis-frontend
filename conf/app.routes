@@ -179,5 +179,3 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-standard             
 
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
-GET        /amend-monthly-return/change-are-you-sure-you-want-to-amend                  controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = CheckMode)
-POST       /amend-monthly-return/change-are-you-sure-you-want-to-amend                  controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = CheckMode)
