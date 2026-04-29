@@ -174,5 +174,5 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil                  
 GET        /manage-cis-return/amend-monthly-return/confirm-amendment   controllers.amend.ConfirmAmendmentController.onPageLoad()
 POST       /manage-cis-return/amend-monthly-return/confirm-amendment   controllers.amend.ConfirmAmendmentController.onSubmit()
 
-GET        /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad(mode: Mode = NormalMode)
-POST       /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit(mode: Mode = NormalMode)
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()

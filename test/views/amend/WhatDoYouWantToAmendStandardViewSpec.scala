@@ -18,7 +18,6 @@ package views.amend
 
 import base.SpecBase
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
-import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -51,7 +50,7 @@ class WhatDoYouWantToAmendStandardViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered" in new Setup {
       val filledForm    = form.fill(WhatDoYouWantToAmendStandard.AmendToNilReturn)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(filledForm)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=amendToNilReturn]").hasAttr("checked") mustBe true
@@ -60,7 +59,7 @@ class WhatDoYouWantToAmendStandardViewSpec extends SpecBase {
 
     "must show error summary when form has errors" in new Setup {
       val formWithErrors = form.bind(Map("value" -> ""))
-      val errorHtml      = view(formWithErrors, NormalMode)
+      val errorHtml      = view(formWithErrors)
       val doc: Document  = Jsoup.parse(errorHtml.toString)
 
       doc.title  must startWith(messages("error.title.prefix"))
@@ -70,7 +69,7 @@ class WhatDoYouWantToAmendStandardViewSpec extends SpecBase {
 
     "must render error summary with correct link when form has errors" in new Setup {
       val formWithErrors = form.bind(Map("value" -> ""))
-      val errorHtml      = view(formWithErrors, NormalMode)
+      val errorHtml      = view(formWithErrors)
       val doc: Document  = Jsoup.parse(errorHtml.toString)
 
       doc.select(".govuk-error-summary__list a").attr("href") mustBe "#value_0"
@@ -93,6 +92,6 @@ class WhatDoYouWantToAmendStandardViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode)
+    val html = view(form)
   }
 }
