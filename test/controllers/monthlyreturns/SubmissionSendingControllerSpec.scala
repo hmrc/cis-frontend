@@ -232,7 +232,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      val app = buildAppWith(Some(incompleteAnswers), mockService, mockMongoDb).build()
+      val app        = buildAppWith(Some(incompleteAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
       val result = controller.onPageLoad()(mkRequest)

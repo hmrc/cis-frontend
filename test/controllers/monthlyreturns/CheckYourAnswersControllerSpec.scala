@@ -393,11 +393,11 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val userAnswers = spy(completeAnswers)
 
       doReturn(
-        Some(LocalDate.of(2024, 3, 1)), // used by isJourneyComplete
-        None // used by UpdateMonthlyReturnRequest.fromUserAnswers
+        Some(LocalDate.of(2024, 3, 1)),
+        None
       ).when(userAnswers).get(DateConfirmPaymentsPage)
 
-      val mockService = mock[MonthlyReturnService]
+      val mockService           = mock[MonthlyReturnService]
       val mockSubmissionService = mock[SubmissionService]
 
       when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
