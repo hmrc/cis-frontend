@@ -16,12 +16,16 @@
 
 package pages.monthlyreturns
 
-import pages.QuestionPage
+import base.SpecBase
 import play.api.libs.json.JsPath
 
-case object AddSubcontractorDetailsPage extends QuestionPage[String] {
+class AllSubcontractorDetailsAddedSpec extends SpecBase {
 
-  override def path: JsPath = JsPath \ toString
+  "SubcontractorDetailsAddedPage" - {
 
-  override def toString: String = "addSubcontractorDetails"
+    "must have the correct toString and path" in {
+      AllSubcontractorDetailsAdded.toString mustBe "subcontractorDetailsAdded"
+      AllSubcontractorDetailsAdded.path mustBe (JsPath \ "subcontractorDetailsAdded")
+    }
+  }
 }

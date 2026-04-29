@@ -16,13 +16,13 @@
 
 package navigation
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.Call
-import pages.*
-import pages.monthlyreturns.*
 import models.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import utils.UserAnswerUtils.*
+import pages.*
+import pages.monthlyreturns.*
+import play.api.mvc.Call
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class Navigator @Inject() () {
@@ -44,9 +44,7 @@ class Navigator @Inject() () {
 
     // monthly return
     case (VerifySubcontractorsPage, _)                      =>
-      ua =>
-        controllers.monthlyreturns.routes.PaymentDetailsController
-          .onPageLoad(NormalMode, ua.firstIncompleteSubcontractorIndex, None)
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
     case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
     case (SelectedSubcontractorPaymentsMadePage(index), _)  =>

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package models.monthlyreturns
 
-import pages.QuestionPage
-import play.api.libs.json.JsPath
+import models.ReturnType
+import play.api.libs.json.{Json, OFormat}
 
-case object SubcontractorDetailsAddedPage extends QuestionPage[Boolean] {
+case class AmendmentDetails(originalReturnType: ReturnType)
 
-  override def path: JsPath = JsPath \ toString
-
-  override def toString: String = "subcontractorDetailsAdded"
+object AmendmentDetails {
+  given OFormat[AmendmentDetails] = Json.format[AmendmentDetails]
 }

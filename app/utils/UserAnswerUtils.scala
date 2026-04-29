@@ -79,7 +79,7 @@ object UserAnswerUtils {
         // monthly standard return
         .flatMap(_.remove(SelectedSubcontractorPage.all))
         .flatMap(_.remove(VerifySubcontractorsPage))
-        .flatMap(_.remove(SubcontractorDetailsAddedPage))
+        .flatMap(_.remove(AllSubcontractorDetailsAdded))
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
@@ -101,7 +101,7 @@ object UserAnswerUtils {
           Seq(
             answered(DateConfirmPaymentsPage),
             allSubcontractorsComplete,
-            isTrue(SubcontractorDetailsAddedPage),
+            isTrue(AllSubcontractorDetailsAdded),
             isTrue(PaymentDetailsConfirmationPage),
             answered(EmploymentStatusDeclarationPage),
             answered(VerifiedStatusDeclarationPage),
