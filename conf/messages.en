@@ -455,9 +455,9 @@ monthlyreturns.confirmationByEmail.error.required = Select yes to provide an ema
 monthlyreturns.confirmationByEmail.checkYourAnswersLabel = Do you want submission confirmation by email?
 monthlyreturns.confirmationByEmail.change.hidden = do you want submission confirmation by email
 
-monthlyreturns.subcontractorDetailsAdded.error.required = Select yes to submit your return, or no to add more subcontractors
+monthlyreturns.subcontractorDetailsAdded.error.required = Select yes to add another subcontractor
 monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors
-monthlyreturns.subcontractorDetailsAdded.heading.single = You have added single subcontractor
+monthlyreturns.subcontractorDetailsAdded.heading.single = You have added a single subcontractor
 monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added {0} subcontractors
 monthlyreturns.subcontractorDetailsAdded.question = Do you need to add more subcontractors?
 monthlyreturns.subcontractorDetailsAdded.amend = Amend payment details
