@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package pages.monthlyreturns
 
-import javax.inject.Inject
+import models.monthlyreturns.AmendmentDetails
+import pages.QuestionPage
+import play.api.libs.json.*
 
-import forms.mappings.Mappings
-import play.api.data.Form
-
-class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
-
-  def apply(): Form[Int] =
-    Form(
-      "value" ->
-        int("monthlyreturns.addSubcontractorDetails.error.required")
-    )
+object AmendmentDetailsPage extends QuestionPage[AmendmentDetails] {
+  override def path: JsPath = JsPath \ "amendmentDetails"
 }

@@ -116,11 +116,9 @@ class SelectSubcontractorsController @Inject() (
                             .filter(x => updatedAnswers.incompleteSubcontractorIds.contains(x.id))
                             .exists(_.verificationRequired == "Yes")
                         ) {
-
                           Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
                         } else {
-                          val firstIncompleteIndex = updatedAnswers.firstIncompleteSubcontractorIndex
-                          Redirect(routes.PaymentDetailsController.onPageLoad(NormalMode, firstIncompleteIndex, None))
+                          Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
                         }
                       }
                       .recover { error =>

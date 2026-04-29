@@ -17,9 +17,8 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
-import models.UserAnswers
-import pages.monthlyreturns.SelectedSubcontractorPage
-import models.CheckMode
+import models.{CheckMode, NormalMode, UserAnswers}
+import pages.monthlyreturns.{AmendmentDetailsPage, SelectedSubcontractorPage}
 
 object SubcontractorDetailsAddedBuilder {
 
@@ -37,7 +36,7 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
-
+    val isAmendment          = ua.get(AmendmentDetailsPage).isDefined
     val subcontractorByIndex = selectedSubcontractors(ua)
     val indexes              = subcontractorByIndex.keys.toSeq.sorted
 
@@ -48,15 +47,24 @@ object SubcontractorDetailsAddedBuilder {
         indexes.flatMap { index =>
           subcontractorByIndex.get(index).map { sub =>
 
-            val added = detailsAdded(sub)
+            val added      = detailsAdded(sub)
+            val changeCall =
+              if (added) {
+                controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                  .onPageLoad(index)
+              } else {
+                controllers.monthlyreturns.routes.PaymentDetailsController
+                  .onPageLoad(NormalMode, index, None)
+              }
 
             SubcontractorDetailsAddedRow(
               index = index,
               subcontractorId = sub.id,
               name = sub.name,
               detailsAdded = added,
-              changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
-                .onPageLoad(index),
+              changeLabel = if (added) { "monthlyreturns.subcontractorDetailsAdded.amend" }
+              else { "monthlyreturns.subcontractorDetailsAdded.add" },
+              changeCall = changeCall,
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
                 .onPageLoad(CheckMode, index)
             )
@@ -64,22 +72,18 @@ object SubcontractorDetailsAddedBuilder {
         }
 
       val hasIncomplete = rows.exists(!_.detailsAdded)
-      val rowsToDisplay = rows.filter(_.detailsAdded)
-      val addedCount    = rowsToDisplay.size
+      val addedCount    = rows.size
 
-      if (addedCount == 0) {
-        None
-      } else {
-        val (key, args) = headingKeyAndArgs(addedCount)
-        Some(
-          SubcontractorDetailsAddedViewModel(
-            headingKey = key,
-            headingArgs = args,
-            rows = rowsToDisplay,
-            hasIncomplete = hasIncomplete
-          )
+      val (key, args) = headingKeyAndArgs(addedCount)
+      Some(
+        SubcontractorDetailsAddedViewModel(
+          headingKey = key,
+          headingArgs = args,
+          rows = rows,
+          hasIncomplete = hasIncomplete,
+          isAmendment = isAmendment
         )
-      }
+      )
     }
   }
 }

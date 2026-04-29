@@ -106,7 +106,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(SelectedSubcontractorPage(0), completeSub(0))
           .get
-          .set(SubcontractorDetailsAddedPage, true)
+          .set(AllSubcontractorDetailsAdded, true)
           .get
           .set(PaymentDetailsConfirmationPage, true)
           .get
@@ -130,7 +130,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(SelectedSubcontractorPage(0), completeSub(0))
           .get
-          .set(SubcontractorDetailsAddedPage, true)
+          .set(AllSubcontractorDetailsAdded, true)
           .get
           .set(PaymentDetailsConfirmationPage, true)
           .get
@@ -179,7 +179,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(SelectedSubcontractorPage(0), incompleteSub(0))
           .get
-          .set(SubcontractorDetailsAddedPage, true)
+          .set(AllSubcontractorDetailsAdded, true)
           .get
           .set(PaymentDetailsConfirmationPage, true)
           .get
@@ -203,7 +203,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           .get
           .set(SelectedSubcontractorPage(0), completeSub(0))
           .get
-          .set(SubcontractorDetailsAddedPage, false)
+          .set(AllSubcontractorDetailsAdded, false)
           .get
           .set(PaymentDetailsConfirmationPage, true)
           .get
@@ -277,7 +277,7 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(VerifySubcontractorsPage, true)
         .get
-        .set(SubcontractorDetailsAddedPage, true)
+        .set(AllSubcontractorDetailsAdded, true)
         .get
         .set(PaymentDetailsConfirmationPage, true)
         .get
@@ -302,7 +302,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(DeclarationPage) mustBe None
       cleared.get(SelectedSubcontractorPage(1)) mustBe None
       cleared.get(VerifySubcontractorsPage) mustBe None
-      cleared.get(SubcontractorDetailsAddedPage) mustBe None
+      cleared.get(AllSubcontractorDetailsAdded) mustBe None
       cleared.get(PaymentDetailsConfirmationPage) mustBe None
       cleared.get(EmploymentStatusDeclarationPage) mustBe None
       cleared.get(VerifiedStatusDeclarationPage) mustBe None
