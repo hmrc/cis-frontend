@@ -83,7 +83,9 @@ class SubcontractorDetailsAddedController @Inject() (
                 sessionRepository.set(updatedUa).map { _ =>
                   if (allSubcontractorDetailsAdded && viewModel.hasIncomplete) {
                     val withError =
-                      form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+                      form
+                        .fill(isAddingMoreSubcontractors)
+                        .withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
                     BadRequest(view(withError, mode, viewModel))
                   } else if (allSubcontractorDetailsAdded) {
                     Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
