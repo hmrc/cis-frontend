@@ -19,7 +19,6 @@ package controllers.monthlyreturns
 import base.SpecBase
 import models.NormalMode
 import models.UserAnswers
-import models.monthlyreturns.ContinueReturnJourneyQueryParams
 import models.requests.GetMonthlyReturnForEditRequest
 import navigation.Navigator
 import org.mockito.ArgumentCaptor

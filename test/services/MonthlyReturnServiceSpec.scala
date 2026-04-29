@@ -1007,7 +1007,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
     }
   }
 
-  "completeSubmissionJourney" should {
+  "completeSubmissionJourney" - {
 
     "mark the journey as completed, clear monthly return journey data, and persist updated answers" in {
       val (service, _, sessionRepo) = newService()
