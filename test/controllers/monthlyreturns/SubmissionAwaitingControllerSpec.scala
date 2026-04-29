@@ -36,7 +36,7 @@ class SubmissionAwaitingControllerSpec extends SpecBase with MockitoSugar {
 
   "SubmissionAwaiting Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "must return OK and the correct view for a GET when cisId in UserAnswers" in {
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
@@ -61,34 +61,49 @@ class SubmissionAwaitingControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+    "must return OK when cisId is provided via query param" in {
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, submissionAwaitingRoute + "?cisId=123")
+        val result  = route(application, request).value
+        val view    = application.injector.instanceOf[SubmissionAwaitingView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view("123")(request, messages(application)).toString
+      }
+    }
+
+    "must throw exception when cisId missing from both UserAnswers and query param" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, submissionAwaitingRoute)
+        val result  = route(application, request).value
 
-        val result = route(application, request).value
+        val ex = intercept[IllegalStateException] {
+          await(result)
+        }
 
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(
-          result
-        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        ex.getMessage must include("cisId missing from userAnswers")
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must throw exception for a GET if no existing data is found and no cisId query param is provided" in {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
         val request = FakeRequest(GET, submissionAwaitingRoute)
         val result  = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        val ex = intercept[IllegalStateException] {
+          await(result)
+        }
+
+        ex.getMessage must include("cisId missing from userAnswers")
       }
     }
-
   }
 }

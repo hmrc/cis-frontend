@@ -58,7 +58,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(InactivityRequestPage, InactivityRequest.Option1)
+        .set(SubmitInactivityRequestPage, true)
         .success
         .value
 

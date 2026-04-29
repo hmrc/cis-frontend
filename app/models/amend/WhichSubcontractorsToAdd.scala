@@ -57,6 +57,6 @@ object WhichSubcontractorsToAdd {
         fieldId = "value",
         index = index,
         value = sub.id
-      ).copy(checked = preSelectedIds.contains(sub.id))
+      ).copy(checked = preSelectedIds.contains(sub.id), name = Some("value[]"))
     }
 }
