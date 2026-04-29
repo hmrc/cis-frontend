@@ -170,3 +170,4 @@ GET        /amend-monthly-return/change-which-subcontractors-to-add     controll
 POST       /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
 
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad()
+POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()

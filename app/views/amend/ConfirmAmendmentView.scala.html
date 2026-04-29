@@ -19,6 +19,7 @@
 @this(
     layout: templates.Layout,
     govukButton: GovukButton,
+    formHelper: FormWithCSRF,
     h1: H1,
     paragraph: Paragraph,
     bulletList: BulletList
@@ -33,12 +34,14 @@
     )) { items =>
 
         @layout(pageTitle = titleNoForm(messages("amend.confirmAmendment.title"))) {
+            @formHelper(action = controllers.amend.routes.ConfirmAmendmentController.onSubmit(), Symbol("autoComplete") -> "off") {
 
-        @h1(messages("amend.confirmAmendment.heading"))
-        @paragraph(messages("amend.confirmAmendment.p1"))
-        @paragraph(messages("amend.confirmAmendment.p2"))
+                @h1(messages("amend.confirmAmendment.heading"))
+                @paragraph(messages("amend.confirmAmendment.p1"))
+                @paragraph(messages("amend.confirmAmendment.p2"))
 
-        @bulletList(items)
-        @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))
+                @bulletList(items)
+                @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))
+        }
     }
 }

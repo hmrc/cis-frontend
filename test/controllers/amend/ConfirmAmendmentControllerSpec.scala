@@ -17,11 +17,20 @@
 package controllers.amend
 
 import base.SpecBase
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar.mock
+import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import repositories.SessionRepository
 import views.html.amend.ConfirmAmendmentView
 
+import scala.concurrent.Future
+
 class ConfirmAmendmentControllerSpec extends SpecBase {
+  val confirmAmendmentRoute: String = controllers.amend.routes.ConfirmAmendmentController.onSubmit().url
 
   "ConfirmAmendment Controller" - {
 
@@ -38,6 +47,31 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view()(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to the same page when onSubmit is true" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmAmendmentRoute)
+            .withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.amend.routes.ConfirmAmendmentController.onPageLoad().url
       }
     }
   }
