@@ -113,7 +113,7 @@ class CheckYourAnswersController @Inject() (
               updateRequest match {
                 case Left(error) =>
                   logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
-                  Future.successful(InternalServerError)
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
                 case Right(req) =>
                   monthlyReturnService

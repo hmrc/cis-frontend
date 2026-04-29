@@ -18,10 +18,10 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
-
+import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
 import play.api.inject.bind
@@ -33,6 +33,7 @@ import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.SummaryListFluency
 import views.html.monthlyreturns.CheckYourAnswersView
 import pages.submission.SubmissionJourneyCompletedPage
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -384,6 +385,38 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
           controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+      }
+    }
+
+    "must redirect to JourneyRecovery on POST when update request cannot be built from UserAnswers" in {
+
+      val userAnswers = spy(completeAnswers)
+
+      doReturn(
+        Some(LocalDate.of(2024, 3, 1)), // used by isJourneyComplete
+        None // used by UpdateMonthlyReturnRequest.fromUserAnswers
+      ).when(userAnswers).get(DateConfirmPaymentsPage)
+
+      val mockService = mock[MonthlyReturnService]
+      val mockSubmissionService = mock[SubmissionService]
+
+      when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers]))
+        .thenReturn(false)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SubmissionService].toInstance(mockSubmissionService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }

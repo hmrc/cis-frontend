@@ -222,6 +222,27 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verifyNoInteractions(mockService)
       verifyNoInteractions(mockMongoDb)
     }
+
+    "redirects to JourneyRecovery when journey is incomplete" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val incompleteAnswers = completeAnswers
+        .remove(DateConfirmPaymentsPage)
+        .success
+        .value
+
+      val app = buildAppWith(Some(incompleteAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verifyNoInteractions(mockService)
+      verifyNoInteractions(mockMongoDb)
+    }
   }
 
   lazy val pollAndRedirectRoute: String =
@@ -767,6 +788,47 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       verifyNoInteractions(mockService)
       verifyNoInteractions(mockMongoDb)
+    }
+
+    "redirects to JourneyRecovery when checking submission status fails" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+      )
+
+      val uaWithSubmission = userAnswersWithCisId
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+
+      when(mockService.getPollInterval(any[UserAnswers]))
+        .thenReturn(10)
+
+      when(
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+          any[HeaderCarrier],
+          any[DataRequest[AnyContent]]
+        )
+      ).thenReturn(Future.failed(new RuntimeException("poll failed")))
+
+      val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
+      val ctl = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = ctl.onPollAndRedirect()(mkPollRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
+        any[HeaderCarrier],
+        any[DataRequest[AnyContent]]
+      )
     }
   }
 }
