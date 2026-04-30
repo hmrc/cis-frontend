@@ -33,7 +33,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
           |  "intervalSeconds": 1,
           |  "error": { "number": "5005", "type": "fatal", "text": "Boom" },
           |  "irMarkReceived": "2342345asdfasdgf",
-          |  "lastMessageDate": "2026-03-20T10:15:30Z"
+          |  "lastMessageDate": "2026-03-20T10:15:30Z",
+          |  "acceptedTime": "2026-03-20T10:15:30"
           |}
         """.stripMargin
       )
@@ -45,7 +46,8 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
           Some(1),
           Some(JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))),
           Some("2342345asdfasdgf"),
-          Some("2026-03-20T10:15:30Z")
+          Some("2026-03-20T10:15:30Z"),
+          Some("2026-03-20T10:15:30")
         )
       )
     }
@@ -75,6 +77,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
         Some(1),
         Some(JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))),
         Some("2342345asdfasdgf"),
+        Some("2026-03-20T10:15:30Z"),
         Some("2026-03-20T10:15:30Z")
       )
       val js    = Json.toJson(model)
@@ -90,7 +93,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "write to expected JSON when pollUrl is None" in {
-      val model = ChrisPollResponse("SUBMITTED", None, None, None, None, None)
+      val model = ChrisPollResponse("SUBMITTED", None, None, None, None, None, None)
       val js    = Json.toJson(model)
 
       (js \ "status").as[String] mustBe "SUBMITTED"
@@ -108,6 +111,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
         Some(1),
         Some(JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))),
         Some("2342345asdfasdgf"),
+        Some("2026-03-20T10:15:30Z"),
         Some("2026-03-20T10:15:30Z")
       )
 
@@ -118,7 +122,7 @@ class ChrisPollResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "round-trip (write then read) preserves values without pollUrl" in {
-      val model = ChrisPollResponse("ACCEPTED", None, None, None, None, None)
+      val model = ChrisPollResponse("ACCEPTED", None, None, None, None, None, None)
 
       val js  = Json.toJson(model)
       val out = js.as[ChrisPollResponse]
