@@ -116,6 +116,11 @@ class SubmissionService @Inject() (
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+    val acceptedTime = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
+      gatewayTimestamp
+        .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
+        .getOrElse(LocalDateTime.now())
+    }
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
@@ -130,7 +135,7 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
-      acceptedTime = gatewayTimestamp,
+      acceptedTime = acceptedTime,
       submissionRequestDate = Some(LocalDateTime.now()),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
@@ -214,7 +219,7 @@ class SubmissionService @Inject() (
                                    userAnswers,
                                    submissionDetails.irMark,
                                    result.status,
-                                   Some(dateFormatter.format(submissionDetails.submittedAt)),
+                                   result.lastMessageDate,
                                    result.irMarkReceived,
                                    result.error
                                  )
