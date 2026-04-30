@@ -541,3 +541,9 @@ amend.confirmAmendment.p2 = You must confirm you understand that:
 amend.confirmAmendment.bullet1 = you are about to change the data for a return you have submitted previously
 amend.confirmAmendment.bullet2 = the original data will be deleted when you submit this amended return
 amend.confirmAmendment.bullet3 = the tax treatment for this return may be different from the one previously applied
+
+whatDoYouWantToAmendNil.title = What do you want to amend?
+whatDoYouWantToAmendNil.heading = What do you want to amend?
+whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
+whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
+whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make
