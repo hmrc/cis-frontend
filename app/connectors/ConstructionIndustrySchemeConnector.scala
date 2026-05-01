@@ -16,6 +16,7 @@
 
 package connectors
 
+import models.amend.CreateAmendedMonthlyReturnRequest
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
@@ -231,6 +232,18 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         response.status match {
           case NO_CONTENT => Future.unit
           case status     => Future.failed(UpstreamErrorResponse(response.body, status, status))
+        }
+      }
+
+  def createAmendedMonthlyReturn(request: CreateAmendedMonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/amend-monthly-return/create")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case CREATED => Future.unit
+          case status  => Future.failed(UpstreamErrorResponse(response.body, status, status))
         }
       }
 

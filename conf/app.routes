@@ -169,5 +169,5 @@ POST       /amend-monthly-return/change-which-subcontractors-to-add     controll
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
 
-GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad()
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
