@@ -168,3 +168,6 @@ POST       /amend-monthly-return/change-which-subcontractors-to-add     controll
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
+
+GET        /manage-cis-return/amend-monthly-return/confirm-amendment   controllers.amend.ConfirmAmendmentController.onPageLoad()
+POST       /manage-cis-return/amend-monthly-return/confirm-amendment   controllers.amend.ConfirmAmendmentController.onSubmit()
