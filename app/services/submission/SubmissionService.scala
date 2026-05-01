@@ -104,12 +104,12 @@ class SubmissionService @Inject() (
     ua: UserAnswers,
     hmrcMarkGenerated: String,
     status: String,
-    gatewayTimestamp: Option[String],
+    acceptedTime: Option[String],
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
-    val acceptedTime = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
-      gatewayTimestamp
+    val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
+      acceptedTime
         .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
         .getOrElse(LocalDateTime.now())
     }
@@ -127,7 +127,7 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
-      acceptedTime = acceptedTime.map(_.toString),
+      acceptedTime = acceptedTimestamp.map(_.toString),
       submissionRequestDate = Some(LocalDateTime.now()),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
