@@ -108,7 +108,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
     val subs = selectedSubcontractors(ua)
-    if (subs.isEmpty || !anyWithDetailsAdded(ua)) {
+    if (subs.isEmpty) {
       Redirect(
         controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
       )
@@ -133,10 +133,5 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
     ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
-
-  private def anyWithDetailsAdded(ua: UserAnswers): Boolean =
-    selectedSubcontractors(ua).values.exists(sub =>
-      sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
-    )
 
 }

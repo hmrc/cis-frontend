@@ -455,14 +455,17 @@ monthlyreturns.confirmationByEmail.error.required = Select yes to provide an ema
 monthlyreturns.confirmationByEmail.checkYourAnswersLabel = Do you want submission confirmation by email?
 monthlyreturns.confirmationByEmail.change.hidden = do you want submission confirmation by email
 
-monthlyreturns.subcontractorDetailsAdded.error.required = Select yes to submit your return, or no to add more subcontractors
+monthlyreturns.subcontractorDetailsAdded.error.required = Select yes to add another subcontractor
 monthlyreturns.subcontractorDetailsAdded.error.incomplete = You have not entered payment details for all of your selected subcontractors
-monthlyreturns.subcontractorDetailsAdded.heading.single = You have added details for a single subcontractor
-monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added details for {0} subcontractors
-monthlyreturns.subcontractorDetailsAdded.question = Have you added all the subcontractors you are submitting returns for?
-monthlyreturns.subcontractorDetailsAdded.hint = Select yes to submit your return, or no to add more subcontractors
-monthlyreturns.subcontractorDetailsAdded.change.hidden = Change {0}
+monthlyreturns.subcontractorDetailsAdded.heading.single = You have added a single subcontractor
+monthlyreturns.subcontractorDetailsAdded.heading.multiple = You have added {0} subcontractors
+monthlyreturns.subcontractorDetailsAdded.question = Do you need to add more subcontractors?
+monthlyreturns.subcontractorDetailsAdded.amend = Amend payment details
+monthlyreturns.subcontractorDetailsAdded.amend.hidden = Amend payment details for {0}
+monthlyreturns.subcontractorDetailsAdded.add = Add payment details
+monthlyreturns.subcontractorDetailsAdded.add.hidden = Add payment details for {0}s
 monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list
+monthlyreturns.subcontractorDetailsAdded.cancelAmendment = Cancel amendment
 
 monthlyreturns.paymentDetailsConfirmation.title = Do you confirm the information in this return is correct?
 monthlyreturns.paymentDetailsConfirmation.heading = Do you confirm the information in this return is correct?
@@ -533,3 +536,9 @@ amend.whichSubcontractorsToAdd.change.hidden = which subcontractor do you want t
 amend.confirmCancelAmendmentYesNo.title = Are you sure you want to cancel the amended monthly return for {0}?
 amend.confirmCancelAmendmentYesNo.heading = Are you sure you want to cancel the amended monthly return for {0}?
 amend.confirmCancelAmendmentYesNo.error.required = Select yes to cancel this return
+
+whatDoYouWantToAmendNil.title = What do you want to amend?
+whatDoYouWantToAmendNil.heading = What do you want to amend?
+whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
+whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
+whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make

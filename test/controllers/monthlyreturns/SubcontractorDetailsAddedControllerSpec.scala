@@ -17,7 +17,10 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.{NormalMode, UserAnswers}
+import models.ReturnType.MonthlyStandardReturn
+import models.UserAnswers
+import models.monthlyreturns.AmendmentDetails
+import pages.monthlyreturns.{AmendmentDetailsPage, CisIdPage}
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -85,10 +88,24 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect to SystemError on GET when builder returns None (no details-added rows)" in {
+    "must display cancel amendment link on GET when builder returns a view model with isAmendment = true" in {
       val ua = uaWithSubcontractors(
-        1 -> incompleteSub(1001L, "Incomplete Ltd")
-      )
+        1 -> completeSub(1001L, "TyneWear Ltd")
+      ).set(AmendmentDetailsPage, AmendmentDetails(MonthlyStandardReturn)).get
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+        contentAsString(result) must include("Cancel amendment")
+      }
+    }
+
+    "must redirect to SystemError on GET when builder returns None (no rows)" in {
+      val ua = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
 
       val application = buildApp(ua)
 
@@ -101,7 +118,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must return BadRequest on POST Yes when viewModel.hasIncomplete = true (incomplete error)" in {
+    "must return BadRequest on POST No when viewModel.hasIncomplete = true (incomplete error)" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd"),
         2 -> incompleteSub(1002L, "Incomplete Ltd")
@@ -112,7 +129,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       running(application) {
         val request =
           FakeRequest(POST, postUrl)
-            .withFormUrlEncodedBody("value" -> "true")
+            .withFormUrlEncodedBody("value" -> "false")
 
         val result = route(application, request).value
 
@@ -124,9 +141,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
     }
 
     "must redirect to SystemError on POST when builder returns None" in {
-      val ua = uaWithSubcontractors(
-        1 -> incompleteSub(1001L, "Incomplete Ltd")
-      )
+      val ua = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
 
       val application = buildApp(ua)
 
@@ -157,7 +172,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect on POST Yes when viewModel.hasIncomplete = false" in {
+    "must redirect on POST No when viewModel.hasIncomplete = false" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd"),
         2 -> completeSub(1002L, "Also Complete Ltd")
@@ -168,7 +183,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       running(application) {
         val request =
           FakeRequest(POST, postUrl)
-            .withFormUrlEncodedBody("value" -> "true")
+            .withFormUrlEncodedBody("value" -> "false")
 
         val result = route(application, request).value
 
@@ -180,7 +195,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect to AddSubcontractorDetails on POST No when there are incomplete subcontractors" in {
+    "must return 400 error on POST No when there are incomplete subcontractors" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd"),
         2 -> incompleteSub(1002L, "Incomplete Ltd")
@@ -195,11 +210,10 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
         val result = route(application, request).value
 
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.AddSubcontractorDetailsController
-            .onPageLoad(NormalMode)
-            .url
+        status(result) mustBe BAD_REQUEST
+        contentAsString(result) must include(
+          "You have not entered payment details for all of your selected subcontractors"
+        )
       }
     }
 
@@ -213,7 +227,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       running(application) {
         val request =
           FakeRequest(POST, postUrl)
-            .withFormUrlEncodedBody("value" -> "false")
+            .withFormUrlEncodedBody("value" -> "true")
 
         val result = route(application, request).value
 

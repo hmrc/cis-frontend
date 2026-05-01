@@ -24,6 +24,7 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 import views.html.monthlyreturns.SubmissionSuccessView
 
 class SubmissionSuccessViewSpec extends SpecBase {
@@ -175,7 +176,7 @@ class SubmissionSuccessViewSpec extends SpecBase {
     val cisId                      = "1"
     val returnTypeMessage: String  = messages(s"monthlyreturns.returnType.${submissionType.toString}")
 
-    lazy val html: HtmlFormat.Appendable = view(
+    lazy val vm: SubmissionSuccessViewModel = SubmissionSuccessViewModel(
       reference = reference,
       periodEnd = periodEnd,
       submittedTime = submittedTime,
@@ -186,5 +187,7 @@ class SubmissionSuccessViewSpec extends SpecBase {
       submissionType = submissionType,
       cisId = cisId
     )
+
+    lazy val html: HtmlFormat.Appendable = view(vm)
   }
 }

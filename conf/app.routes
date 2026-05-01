@@ -171,3 +171,6 @@ POST       /amend-monthly-return/change-which-subcontractors-to-add     controll
 
 GET        /monthly-return/cancel-amended-monthly-return                        controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
 POST       /monthly-return/cancel-amended-monthly-return                        controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
+
+GET        /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
+POST       /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()

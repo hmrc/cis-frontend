@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package pages.monthlyreturns
 
-import javax.inject.Inject
+import base.SpecBase
+import play.api.libs.json.JsPath
 
-import forms.mappings.Mappings
-import play.api.data.Form
+class AllSubcontractorDetailsAddedSpec extends SpecBase {
 
-class AddSubcontractorDetailsFormProvider @Inject() extends Mappings {
+  "SubcontractorDetailsAddedPage" - {
 
-  def apply(): Form[Int] =
-    Form(
-      "value" ->
-        int("monthlyreturns.addSubcontractorDetails.error.required")
-    )
+    "must have the correct toString and path" in {
+      AllSubcontractorDetailsAdded.toString mustBe "subcontractorDetailsAdded"
+      AllSubcontractorDetailsAdded.path mustBe (JsPath \ "subcontractorDetailsAdded")
+    }
+  }
 }

@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package forms.amend
 
-import base.SpecBase
-import play.api.libs.json.JsPath
+import forms.mappings.Mappings
+import models.amend.WhatDoYouWantToAmendNil
+import play.api.data.Form
 
-class SubcontractorDetailsAddedPageSpec extends SpecBase {
+import javax.inject.Inject
 
-  "SubcontractorDetailsAddedPage" - {
+class WhatDoYouWantToAmendNilFormProvider @Inject() extends Mappings {
 
-    "must have the correct toString and path" in {
-      SubcontractorDetailsAddedPage.toString mustBe "subcontractorDetailsAdded"
-      SubcontractorDetailsAddedPage.path mustBe (JsPath \ "subcontractorDetailsAdded")
-    }
-  }
+  def apply(): Form[WhatDoYouWantToAmendNil] =
+    Form(
+      "value" -> enumerable[WhatDoYouWantToAmendNil]("whatDoYouWantToAmendNil.error.required")
+    )
 }

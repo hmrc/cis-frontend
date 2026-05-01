@@ -14,26 +14,13 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package models.monthlyreturns
 
-import play.api.mvc.Call
+import models.ReturnType
+import play.api.libs.json.{Json, OFormat}
 
-case class SubcontractorDetailsAddedRow(
-  index: Int,
-  subcontractorId: Long,
-  name: String,
-  detailsAdded: Boolean,
-  changeLabel: String,
-  changeCall: Call,
-  removeCall: Call
-)
+case class AmendmentDetails(originalReturnType: ReturnType)
 
-case class SubcontractorDetailsAddedViewModel(
-  headingKey: String,
-  headingArgs: Seq[AnyRef],
-  rows: Seq[SubcontractorDetailsAddedRow],
-  hasIncomplete: Boolean,
-  isAmendment: Boolean = false
-) {
-  def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
+object AmendmentDetails {
+  given OFormat[AmendmentDetails] = Json.format[AmendmentDetails]
 }

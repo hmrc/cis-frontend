@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package pages.amend
 
-import play.api.mvc.Call
+import base.SpecBase
+import play.api.libs.json.JsPath
 
-case class SubcontractorDetailsAddedRow(
-  index: Int,
-  subcontractorId: Long,
-  name: String,
-  detailsAdded: Boolean,
-  changeLabel: String,
-  changeCall: Call,
-  removeCall: Call
-)
+class WhatDoYouWantToAmendNilPageSpec extends SpecBase {
+  "have the correct path" in {
+    WhatDoYouWantToAmendNilPage.path mustBe (JsPath \ "whatDoYouWantToAmendNil")
+  }
 
-case class SubcontractorDetailsAddedViewModel(
-  headingKey: String,
-  headingArgs: Seq[AnyRef],
-  rows: Seq[SubcontractorDetailsAddedRow],
-  hasIncomplete: Boolean,
-  isAmendment: Boolean = false
-) {
-  def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
+  "have the correct toString" in {
+    WhatDoYouWantToAmendNilPage.toString mustBe "whatDoYouWantToAmendNil"
+  }
 }

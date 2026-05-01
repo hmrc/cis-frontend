@@ -16,24 +16,16 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
-import play.api.mvc.Call
+import models.ReturnType
 
-case class SubcontractorDetailsAddedRow(
-  index: Int,
-  subcontractorId: Long,
-  name: String,
-  detailsAdded: Boolean,
-  changeLabel: String,
-  changeCall: Call,
-  removeCall: Call
+case class SubmissionSuccessViewModel(
+  reference: String,
+  periodEnd: String,
+  submittedTime: String,
+  submittedDate: String,
+  contractorName: String,
+  empRef: String,
+  email: String,
+  submissionType: ReturnType,
+  cisId: String
 )
-
-case class SubcontractorDetailsAddedViewModel(
-  headingKey: String,
-  headingArgs: Seq[AnyRef],
-  rows: Seq[SubcontractorDetailsAddedRow],
-  hasIncomplete: Boolean,
-  isAmendment: Boolean = false
-) {
-  def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
-}

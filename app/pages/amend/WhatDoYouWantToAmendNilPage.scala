@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package pages.monthlyreturns
+package pages.amend
 
+import models.amend.WhatDoYouWantToAmendNil
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object SubcontractorDetailsAddedPage extends QuestionPage[Boolean] {
+case object WhatDoYouWantToAmendNilPage extends QuestionPage[WhatDoYouWantToAmendNil] {
 
   override def path: JsPath = JsPath \ toString
 
-  override def toString: String = "subcontractorDetailsAdded"
+  override def toString: String = "whatDoYouWantToAmendNil"
 }

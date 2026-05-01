@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package forms
+package forms.amend
 
 import forms.behaviours.OptionFieldBehaviours
-import forms.monthlyreturns.AddSubcontractorDetailsFormProvider
+import models.amend.WhatDoYouWantToAmendNil
 import play.api.data.FormError
 
-class AddSubcontractorDetailsFormProviderSpec extends OptionFieldBehaviours {
+class WhatDoYouWantToAmendNilFormProviderSpec extends OptionFieldBehaviours {
 
-  val form = new AddSubcontractorDetailsFormProvider()()
+  val form = new WhatDoYouWantToAmendNilFormProvider()()
 
   ".value" - {
 
     val fieldName   = "value"
-    val requiredKey = "monthlyreturns.addSubcontractorDetails.error.required"
+    val requiredKey = "whatDoYouWantToAmendNil.error.required"
 
-    "bind a non-empty string value" in {
-      val result = form.bind(Map(fieldName -> "123")).apply(fieldName)
-      result.value.value mustBe "123"
-      result.errors mustBe empty
-    }
+    behave like optionsField[WhatDoYouWantToAmendNil](
+      form,
+      fieldName,
+      validValues = WhatDoYouWantToAmendNil.values,
+      invalidError = FormError(fieldName, "error.invalid")
+    )
 
     behave like mandatoryField(
       form,
