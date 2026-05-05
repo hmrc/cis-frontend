@@ -542,6 +542,10 @@ amend.confirmAmendment.bullet1 = you are about to change the data for a return y
 amend.confirmAmendment.bullet2 = the original data will be deleted when you submit this amended return
 amend.confirmAmendment.bullet3 = the tax treatment for this return may be different from the one previously applied
 
+amend.confirmCancelAmendmentYesNo.title = Are you sure you want to cancel the amended monthly return for {0}?
+amend.confirmCancelAmendmentYesNo.heading = Are you sure you want to cancel the amended monthly return for {0}?
+amend.confirmCancelAmendmentYesNo.error.required = Select yes to cancel this return
+
 whatDoYouWantToAmendNil.title = What do you want to amend?
 whatDoYouWantToAmendNil.heading = What do you want to amend?
 whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
