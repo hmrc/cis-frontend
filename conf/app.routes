@@ -173,3 +173,6 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil                  
 
 GET        /manage-cis-return/amend-monthly-return/confirm-amendment   controllers.amend.ConfirmAmendmentController.onPageLoad()
 POST       /manage-cis-return/amend-monthly-return/confirm-amendment   controllers.amend.ConfirmAmendmentController.onSubmit()
+
+GET         /contractor-details                                         controllers.contractordetails.ContractorDetailsController.onPageLoad()
+POST        /contractor-details                                         controllers.contractordetails.ContractorDetailsController.onSubmit()

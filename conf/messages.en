@@ -551,3 +551,8 @@ whatDoYouWantToAmendNil.heading = What do you want to amend?
 whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
 whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
 whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make
+
+contractorDetails.title    = Contractor details
+contractorDetails.heading  = Contractor details
+contractorDetails.p1       = Use this service to confirm or change the contractor's email or scheme name associated with this account.
+contractorDetails.p2       = You will need the contractor Unique Tax Reference (UTR) to do this.
