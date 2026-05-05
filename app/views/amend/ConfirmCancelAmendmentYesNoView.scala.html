@@ -21,7 +21,7 @@
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukRadios: GovukRadios,
-    govukButton: GovukButton
+    govukButton: GovukButton,
 )
 
 @(form: Form[_], monthYear: String)(implicit request: Request[_], messages: Messages)
@@ -31,14 +31,26 @@
     @formHelper(action = controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmit(), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
         }
 
         @govukRadios(
-            RadiosViewModel.yesNo(
+            RadiosViewModel(
                 field = form("value"),
+                items = Seq(
+                    RadioItem(
+                        content = Text(messages("site.yes")),
+                        value = Some("true"),
+                        id = Some("value_0")
+                    ),
+                    RadioItem(
+                        content = Text(messages("site.no")),
+                        value = Some("false"),
+                        id = Some("value_1")
+                    )
+                ),
                 legend = LegendViewModel(messages("amend.confirmCancelAmendmentYesNo.heading", monthYear)).asPageHeading(LegendSize.Large)
-            )
+            ).inline()
         )
 
         @govukButton(
