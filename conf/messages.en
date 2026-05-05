@@ -13,6 +13,7 @@ site.startAgain = Start again
 site.signIn = Sign in
 site.govuk = GOV.UK
 site.acceptAndContinue = Accept and continue
+site.confirmAndContinue = Confirm and continue
 
 currency.pounds=£{0}
 
@@ -532,6 +533,14 @@ amend.whichSubcontractorsToAdd.heading = Which subcontractor do you want to add 
 amend.whichSubcontractorsToAdd.checkYourAnswersLabel = Which subcontractor do you want to add to this return?
 amend.whichSubcontractorsToAdd.error.required = Select a subcontractor
 amend.whichSubcontractorsToAdd.change.hidden = which subcontractor do you want to add to this return?
+
+amend.confirmAmendment.title = Confirm amendment
+amend.confirmAmendment.heading = Confirm amendment
+amend.confirmAmendment.p1 = You are about to amend a monthly return. Any information you enter will be saved.
+amend.confirmAmendment.p2 = You must confirm you understand that:
+amend.confirmAmendment.bullet1 = you are about to change the data for a return you have submitted previously
+amend.confirmAmendment.bullet2 = the original data will be deleted when you submit this amended return
+amend.confirmAmendment.bullet3 = the tax treatment for this return may be different from the one previously applied
 
 amend.confirmCancelAmendmentYesNo.title = Are you sure you want to cancel the amended monthly return for {0}?
 amend.confirmCancelAmendmentYesNo.heading = Are you sure you want to cancel the amended monthly return for {0}?
