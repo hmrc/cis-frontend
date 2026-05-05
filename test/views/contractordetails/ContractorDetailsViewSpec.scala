@@ -51,14 +51,14 @@ class ContractorDetailsViewSpec extends SpecBase {
   }
 
   trait Setup {
-    val app: Application                                  = applicationBuilder().build()
-    val view: ContractorDetailsView                       = app.injector.instanceOf[ContractorDetailsView]
-    implicit val request: play.api.mvc.Request[_]        = FakeRequest()
-    implicit val messages: Messages                       = play.api.i18n.MessagesImpl(
+    val app: Application                          = applicationBuilder().build()
+    val view: ContractorDetailsView               = app.injector.instanceOf[ContractorDetailsView]
+    implicit val request: play.api.mvc.Request[_] = FakeRequest()
+    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
-    val html: HtmlFormat.Appendable = view()
-    val doc: Document               = Jsoup.parse(html.body)
+    val html: HtmlFormat.Appendable               = view()
+    val doc: Document                             = Jsoup.parse(html.body)
   }
 }

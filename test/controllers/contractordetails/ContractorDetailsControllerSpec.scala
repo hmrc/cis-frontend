@@ -30,7 +30,8 @@ class ContractorDetailsControllerSpec extends SpecBase {
       val application = applicationBuilder().build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.contractordetails.routes.ContractorDetailsController.onPageLoad().url)
+        val request =
+          FakeRequest(GET, controllers.contractordetails.routes.ContractorDetailsController.onPageLoad().url)
 
         val result = route(application, request).value
 
