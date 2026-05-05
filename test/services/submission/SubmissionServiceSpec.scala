@@ -39,7 +39,7 @@ import play.api.test.FakeRequest
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Instant, LocalDate, YearMonth}
+import java.time.{Instant, LocalDate, LocalDateTime, YearMonth}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -309,7 +309,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
               pollIntervalSeconds = 15
             )
           ),
-          gatewayTimestamp = Some("2025-01-01T00:00:00Z"),
+          gatewayTimestamp = Some("2025-01-01T00:00:00"),
           error = None
         )
 
@@ -465,7 +465,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       val chrisResp = mkChrisResp(
         status = "DEPARTMENTAL_ERROR",
-        ts = "2025-02-02T10:20:30Z",
+        ts = "2025-02-02T10:20:30",
         err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops"))
       )
 
@@ -481,7 +481,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.taxMonth mustBe 10
       upd.hmrcMarkGenerated mustBe Some("Dj5TVJDyRYCn9zta5EdySeY4fyA=")
       upd.submittableStatus mustBe "DEPARTMENTAL_ERROR"
-      upd.acceptedTime mustBe Some("2025-02-02T10:20:30Z")
+      upd.acceptedTime mustBe Some("2025-02-02T10:20:30")
       upd.emailRecipient mustBe Some("test@test.com")
       upd.govtalkErrorCode mustBe Some("123")
       upd.govtalkErrorType mustBe Some("business")
@@ -591,7 +591,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val submittedAt       = Instant.now().minusSeconds(60)
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -660,7 +660,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val submittedAt       = Instant.now().minusSeconds(10)
+      val submittedAt       = LocalDateTime.now().minusSeconds(10)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -744,7 +744,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         id = "sub-123",
         status = "PENDING",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
 
       val ua = uaBase
@@ -773,7 +773,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val submittedAt       = Instant.now().minusSeconds(60)
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -843,7 +843,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 
-      val submittedAt       = Instant.now().minusSeconds(60)
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -896,7 +896,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
       val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
 
-      val submittedAt       = Instant.now().minusSeconds(60)
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -952,7 +952,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 
-      val submittedAt       = Instant.now().minusSeconds(120)
+      val submittedAt       = LocalDateTime.now().minusSeconds(120)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -1005,7 +1005,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 
-      val submittedAt       = Instant.now().minusSeconds(120)
+      val submittedAt       = LocalDateTime.now().minusSeconds(120)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "ACCEPTED",
@@ -1058,7 +1058,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 
-      val submittedAt       = Instant.now().minusSeconds(120)
+      val submittedAt       = LocalDateTime.now().minusSeconds(120)
       val submissionDetails = SubmissionDetails(
         id = "sub-123",
         status = "PENDING",
@@ -1112,7 +1112,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1144,7 +1144,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1202,7 +1202,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         id = submissionId,
         status = "SUBMITTED",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
 
       val ua = UserAnswers("id", Json.obj())
@@ -1237,7 +1237,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         id = submissionId,
         status = "SUBMITTED",
         irMark = "IR-MARK-123",
-        submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+        submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
 
       val ua = UserAnswers("id", Json.obj())
@@ -1279,7 +1279,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1335,7 +1335,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1379,7 +1379,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1434,7 +1434,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1466,7 +1466,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             id = submissionId,
             status = "SUBMITTED",
             irMark = "IR-MARK-123",
-            submittedAt = Instant.parse("2025-01-01T00:00:00Z")
+            submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
           )
         )
         .success
@@ -1563,7 +1563,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     status: String = "SUBMITTED",
     irmark: String = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
     corr: String = "CID123",
-    ts: String = "2025-01-01T00:00:00Z",
+    ts: String = "2025-01-01T00:00:00",
     err: Option[JsObject] = None
   ): ChrisSubmissionResponse =
     ChrisSubmissionResponse(
