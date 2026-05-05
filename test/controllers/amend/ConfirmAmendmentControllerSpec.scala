@@ -17,41 +17,33 @@
 package controllers.amend
 
 import base.SpecBase
+import models.amend.AmendmentDetails
+import models.monthlyreturns.ContinueReturnJourneyQueryParams
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.mockito.MockitoSugar.mock
+import pages.amend.AmendmentDetailsPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
 import views.html.amend.ConfirmAmendmentView
 
 import scala.concurrent.Future
 
 class ConfirmAmendmentControllerSpec extends SpecBase {
-  val confirmAmendmentRoute: String = controllers.amend.routes.ConfirmAmendmentController.onSubmit().url
+
+  private val queryParams = ContinueReturnJourneyQueryParams(
+    instanceId = "1234567890",
+    taxYear = 2025,
+    taxMonth = 1
+  )
 
   "ConfirmAmendment Controller" - {
 
     "must return OK and the correct view for a GET" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad().url)
-
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[ConfirmAmendmentView]
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
-      }
-    }
-
-    "must redirect to the same page when onSubmit is true" in {
-
       val mockSessionRepository = mock[SessionRepository]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -64,14 +56,69 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
           .build()
 
       running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.amend.routes.ConfirmAmendmentController
+            .onPageLoad(queryParams)
+            .url
+        )
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[ConfirmAmendmentView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view()(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to the same page when onSubmit succeeds" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = queryParams.instanceId,
+        taxYear = queryParams.taxYear,
+        taxMonth = queryParams.taxMonth
+      )
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(AmendmentDetailsPage, amendmentDetails)
+          .success
+          .value
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.createAmendedMonthlyReturn(any())(any())
+      ) thenReturn Future.successful(())
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
         val request =
-          FakeRequest(POST, confirmAmendmentRoute)
-            .withFormUrlEncodedBody()
+          FakeRequest(
+            POST,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onSubmit()
+              .url
+          ).withFormUrlEncodedBody()
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.amend.routes.ConfirmAmendmentController.onPageLoad().url
+
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.ConfirmAmendmentController
+            .onPageLoad(queryParams)
+            .url
       }
     }
   }

@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package pages.submission
+package pages.amend
 
 import base.SpecBase
 import play.api.libs.json.JsPath
 
-class SubmissionJourneyCompletedPageSpec extends SpecBase {
+class AmendmentDetailsPageSpec extends SpecBase {
 
-  "SubmissionJourneyCompletedPage" - {
+  "AmendmentDetailsPage" - {
 
-    "must have the correct path" in {
-      SubmissionJourneyCompletedPage.path mustBe JsPath \ "submissionJourneyCompleted"
-    }
-
-    "must have the correct toString value" in {
-      SubmissionJourneyCompletedPage.toString mustBe "submissionJourneyCompleted"
+    "must use amendmentDetails path" in {
+      AmendmentDetailsPage.path mustBe JsPath \ "amendmentDetails"
+      AmendmentDetailsPage.toString mustBe "amendmentDetails"
     }
   }
 }

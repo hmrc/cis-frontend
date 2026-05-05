@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package pages.submission
+package models.amend
 
 import base.SpecBase
-import play.api.libs.json.JsPath
+import play.api.libs.json.Json
 
-class SubmissionJourneyCompletedPageSpec extends SpecBase {
+class CreateAmendedMonthlyReturnRequestSpec extends SpecBase {
 
-  "SubmissionJourneyCompletedPage" - {
+  "CreateAmendedMonthlyReturnRequest" - {
 
-    "must have the correct path" in {
-      SubmissionJourneyCompletedPage.path mustBe JsPath \ "submissionJourneyCompleted"
-    }
+    "must round-trip JSON" in {
+      val model = CreateAmendedMonthlyReturnRequest(
+        instanceId = "1234567890",
+        taxYear = 2025,
+        taxMonth = 1,
+        version = 0
+      )
 
-    "must have the correct toString value" in {
-      SubmissionJourneyCompletedPage.toString mustBe "submissionJourneyCompleted"
+      Json.fromJson[CreateAmendedMonthlyReturnRequest](Json.toJson(model)).get mustBe model
     }
   }
 }
