@@ -18,7 +18,6 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
-import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
@@ -33,7 +32,6 @@ import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.SummaryListFluency
 import views.html.monthlyreturns.CheckYourAnswersView
 import pages.submission.SubmissionJourneyCompletedPage
-import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDate
 import scala.concurrent.Future
