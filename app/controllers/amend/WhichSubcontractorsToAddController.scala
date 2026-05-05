@@ -18,17 +18,20 @@ package controllers.amend
 
 import controllers.actions._
 import forms.amend.WhichSubcontractorsToAddFormProvider
-import javax.inject.Inject
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.SubcontractorService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.WhichSubcontractorsToAddView
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class WhichSubcontractorsToAddController @Inject() (
@@ -39,40 +42,75 @@ class WhichSubcontractorsToAddController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
+  subcontractorService: SubcontractorService,
   val controllerComponents: MessagesControllerComponents,
   view: WhichSubcontractorsToAddView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
-  private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-  val form                   = formProvider(subcontractors)
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+    implicit request =>
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-
-    val selectedIds = request.userAnswers
-      .get(WhichSubcontractorsToAddPage)
-      .getOrElse(WhichSubcontractorsToAdd.mockPreSelectedIds)
-
-    val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
-
-    Ok(view(form, mode, checkboxItems))
+      requiredAnswers
+        .map { case (cisId, taxMonth, taxYear) =>
+          subcontractorService
+            .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
+            .map { model =>
+              val form          = formProvider(model.subcontractors)
+              val selectedIds   = request.userAnswers
+                .get(WhichSubcontractorsToAddPage)
+                .getOrElse(model.preSelectedIds)
+              val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(model.subcontractors, selectedIds)
+              Ok(view(form, mode, checkboxItems))
+            }
+            .recover { case ex =>
+              logger.error(s"[WhichSubcontractorsToAddController] Failed to load subcontractors: ${ex.getMessage}", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+        }
+        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors =>
-            Future.successful(
-              BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractors)))
-            ),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
-        )
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+      requiredAnswers
+        .map { case (cisId, taxMonth, taxYear) =>
+          subcontractorService
+            .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
+            .flatMap { model =>
+              val form = formProvider(model.subcontractors)
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors =>
+                    Future.successful(
+                      BadRequest(
+                        view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(model.subcontractors))
+                      )
+                    ),
+                  value =>
+                    for {
+                      updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                      _              <- sessionRepository.set(updatedAnswers)
+                    } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+                )
+            }
+            .recover { case ex =>
+              logger.error(s"[WhichSubcontractorsToAddController] Submit failed: ${ex.getMessage}", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+        }
+        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
   }
 }

@@ -17,10 +17,14 @@
 package services
 
 import models.UserAnswers
-import models.monthlyreturns.SelectSubcontractorsPageModel
+import models.amend.{Subcontractor as AmendSubcontractor, WhichSubcontractorsToAddPageModel}
+import models.monthlyreturns.{SelectSubcontractorsPageModel, Subcontractor}
+import models.submission.SubcontractorType
 import pages.monthlyreturns.SelectedSubcontractorPage
-import services.SubcontractorService.{TAX_YEAR_START_DAY, TAX_YEAR_START_MONTH}
+import scala.util.Try
+import services.SubcontractorService.{TAX_YEAR_START_DAY, TAX_YEAR_START_MONTH, resolveSubcontractorName}
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.Normalise.nonBlank
 import viewmodels.SelectSubcontractorsViewModel
 
 import java.time.{LocalDate, LocalDateTime}
@@ -148,9 +152,66 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
       )
     }
 
+  def buildAmendWhichSubcontractorsPage(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    userAnswers: Option[UserAnswers] = None
+  )(implicit hc: HeaderCarrier): Future[WhichSubcontractorsToAddPageModel] =
+    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+
+      val previouslyIncludedResourceRefs: Set[Long] =
+        data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+
+      val subcontractors: Seq[AmendSubcontractor] =
+        data.subcontractors.map { sub =>
+          AmendSubcontractor(
+            id = sub.subcontractorId.toString,
+            name = resolveSubcontractorName(sub)
+          )
+        }
+
+      val preSelectedIds: Set[String] =
+        userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
+          case Some(ids) => ids
+          case None      =>
+            data.subcontractors
+              .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
+              .map(_.subcontractorId.toString)
+              .toSet
+        }
+
+      WhichSubcontractorsToAddPageModel(
+        subcontractors = subcontractors,
+        preSelectedIds = preSelectedIds
+      )
+    }
+
 }
 
 object SubcontractorService {
   private val TAX_YEAR_START_MONTH = 4
   private val TAX_YEAR_START_DAY   = 6
+
+  private val NoNameProvided = "No name provided"
+
+  def resolveSubcontractorName(sub: Subcontractor): String =
+    sub.subcontractorType.flatMap(t => Try(SubcontractorType.fromString(t)).toOption) match {
+      case Some(SubcontractorType.SoleTrader)  =>
+        (nonBlank(sub.firstName), nonBlank(sub.surname)) match {
+          case (Some(first), Some(last)) => s"$first $last"
+          case (_, Some(last))           => last
+          case _                         => nonBlank(sub.tradingName).getOrElse(NoNameProvided)
+        }
+      case Some(SubcontractorType.Company)     =>
+        nonBlank(sub.tradingName).getOrElse(NoNameProvided)
+      case Some(SubcontractorType.Trust)       =>
+        nonBlank(sub.tradingName).getOrElse(NoNameProvided)
+      case Some(SubcontractorType.Partnership) =>
+        nonBlank(sub.partnershipTradingName)
+          .orElse(nonBlank(sub.tradingName))
+          .getOrElse(NoNameProvided)
+      case _                                   =>
+        NoNameProvided
+    }
 }

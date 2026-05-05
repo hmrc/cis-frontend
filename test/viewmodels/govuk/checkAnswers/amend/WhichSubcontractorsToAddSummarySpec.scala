@@ -18,7 +18,6 @@ package viewmodels.govuk.checkAnswers.amend
 
 import base.SpecBase
 import models.CheckMode
-import models.amend.WhichSubcontractorsToAdd
 import org.scalatest.OptionValues
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.i18n.Messages
@@ -29,14 +28,12 @@ class WhichSubcontractorsToAddSummarySpec extends SpecBase with OptionValues {
 
   private implicit val messages: Messages = Helpers.stubMessages()
 
-  private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-
   "WhichSubcontractorsToAddSummary" - {
 
     "when answer is present" - {
 
-      "must return a SummaryListRow with selected subcontractor names" in {
-        val selectedIds = Set(subcontractors.head.id, subcontractors(1).id)
+      "must return a SummaryListRow with selected subcontractor IDs" in {
+        val selectedIds = Set("1", "2")
 
         val answers = emptyUserAnswers
           .set(WhichSubcontractorsToAddPage, selectedIds)
@@ -49,8 +46,8 @@ class WhichSubcontractorsToAddSummarySpec extends SpecBase with OptionValues {
           messages("amend.whichSubcontractorsToAdd.checkYourAnswersLabel")
         )
 
-        result.value.content.asHtml.toString must include(subcontractors.head.name)
-        result.value.content.asHtml.toString must include(subcontractors(1).name)
+        result.value.content.asHtml.toString must include("1")
+        result.value.content.asHtml.toString must include("2")
 
         result.actions.value.items.head.href mustBe
           controllers.amend.routes.WhichSubcontractorsToAddController
@@ -61,19 +58,6 @@ class WhichSubcontractorsToAddSummarySpec extends SpecBase with OptionValues {
           messages("amend.whichSubcontractorsToAdd.change.hidden")
 
         result.actions.value.items.head.attributes must contain("id" -> "which-subcontractors-to-add")
-      }
-
-      "must fall back to showing id when subcontractor is not in the map" in {
-        val unknownId = "unknown-id"
-
-        val answers = emptyUserAnswers
-          .set(WhichSubcontractorsToAddPage, Set(unknownId))
-          .success
-          .value
-
-        val result = WhichSubcontractorsToAddSummary.row(answers).value
-
-        result.value.content.asHtml.toString must include(unknownId)
       }
     }
 
