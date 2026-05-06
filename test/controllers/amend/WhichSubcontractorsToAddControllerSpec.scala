@@ -302,5 +302,53 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must redirect to Journey Recovery for a POST when required answers are missing" in {
+
+      val subcontractorService = mock[SubcontractorService]
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to SystemError when the service call fails on POST" in {
+
+      val subcontractorService = mock[SubcontractorService]
+      when(
+        subcontractorService.buildAmendWhichSubcontractorsPage(
+          eqTo(cisId),
+          eqTo(taxDate.getMonthValue),
+          eqTo(taxDate.getYear),
+          any[Option[UserAnswers]]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
   }
 }
