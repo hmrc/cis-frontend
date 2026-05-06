@@ -45,6 +45,9 @@ class MonthlyReturnService @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
+  def getCisTaxpayer(implicit hc: HeaderCarrier): Future[CisTaxpayer] =
+    cisConnector.getCisTaxpayer()
+
   def resolveAndStoreCisId(ua: UserAnswers, isAgent: Boolean)(implicit
     hc: HeaderCarrier
   ): Future[(String, UserAnswers)] =

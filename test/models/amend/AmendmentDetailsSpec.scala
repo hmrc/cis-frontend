@@ -17,6 +17,7 @@
 package models.amend
 
 import base.SpecBase
+import models.ReturnType
 import play.api.libs.json.Json
 
 class AmendmentDetailsSpec extends SpecBase {
@@ -25,9 +26,11 @@ class AmendmentDetailsSpec extends SpecBase {
 
     "must round-trip JSON" in {
       val model = AmendmentDetails(
-        instanceId = "1234567890",
+        instanceId = "1",
         taxYear = 2025,
-        taxMonth = 1
+        taxMonth = 1,
+        returnType = ReturnType.MonthlyNilReturn,
+        acceptedTime = Some("2025-01-01T12:00:00Z")
       )
 
       Json.fromJson[AmendmentDetails](Json.toJson(model)).get mustBe model

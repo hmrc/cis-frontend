@@ -92,6 +92,43 @@ class MonthlyReturnServiceSpec extends SpecBase {
       enrolledSig = None
     )
 
+  "getCisTaxpayer" - {
+
+    "delegate to connector and return the taxpayer" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val taxpayer = createTaxpayer()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(taxpayer))
+
+      val result = service.getCisTaxpayer.futureValue
+
+      result mustBe taxpayer
+
+      verify(connector).getCisTaxpayer()(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+      verifyNoMoreInteractions(connector)
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+
+      val ex = intercept[RuntimeException] {
+        service.getCisTaxpayer.futureValue
+      }
+
+      ex.getMessage must include("upstream failed")
+
+      verify(connector).getCisTaxpayer()(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+      verifyNoMoreInteractions(connector)
+    }
+  }
+
   "resolveAndStoreCisId" - {
 
     "return existing cisId from UserAnswers without calling BE" in {
