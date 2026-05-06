@@ -121,5 +121,76 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
             .url
       }
     }
+
+    "must redirect to Journey Recovery when create amended monthly return fails" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = queryParams.instanceId,
+        taxYear = queryParams.taxYear,
+        taxMonth = queryParams.taxMonth
+      )
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(AmendmentDetailsPage, amendmentDetails)
+          .success
+          .value
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.createAmendedMonthlyReturn(any())(any())
+      ) thenReturn Future.failed(new RuntimeException("failed"))
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onSubmit()
+              .url
+          ).withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery when AmendmentDetails are missing from userAnswers" in {
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onSubmit()
+              .url
+          ).withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
   }
 }

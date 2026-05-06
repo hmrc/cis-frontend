@@ -107,7 +107,6 @@ class ConfirmAmendmentController @Inject() (
             s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers}"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
       }
     }
 }
