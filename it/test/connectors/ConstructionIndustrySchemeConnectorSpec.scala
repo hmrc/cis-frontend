@@ -19,6 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
+import models.amend.CreateAmendedMonthlyReturnRequest
 import models.requests.SendSuccessEmailRequest
 import models.monthlyreturns.*
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
@@ -985,6 +986,46 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = connector.deleteMonthlyReturnItem(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "createAmendedMonthlyReturn(payload)" should {
+
+    "POST /cis/amend-monthly-return/create and return Unit on 201" in {
+      val req = CreateAmendedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        version = 0
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/amend-monthly-return/create"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(CREATED))
+      )
+
+      connector.createAmendedMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-201 (e.g. 500)" in {
+      val req = CreateAmendedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        version = 0
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/amend-monthly-return/create"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.createAmendedMonthlyReturn(req).failed.futureValue
+
       ex mustBe a[UpstreamErrorResponse]
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
