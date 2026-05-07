@@ -173,3 +173,6 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil                  
 
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
+
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()

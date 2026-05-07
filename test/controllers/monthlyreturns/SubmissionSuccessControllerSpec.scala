@@ -38,7 +38,7 @@ import utils.IrMarkReferenceGenerator
 import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.Locale
 import scala.concurrent.Future
 
@@ -82,7 +82,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
       .value
       .set(
         SubmissionDetailsPage,
-        SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+        SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
       )
       .success
       .value
@@ -176,7 +176,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .value
             .set(
               SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
             )
             .success
             .value
@@ -219,7 +219,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .value
             .set(
               SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
             )
             .success
             .value
@@ -250,7 +250,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .value
             .set(
               SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
             )
             .success
             .value
@@ -277,7 +277,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .value
             .set(
               SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
             )
             .success
             .value
@@ -330,7 +330,12 @@ class SubmissionSuccessControllerSpec extends SpecBase {
               .value
               .set(
                 SubmissionDetailsPage,
-                SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+                SubmissionDetails(
+                  id = "123",
+                  status = "ACCEPTED",
+                  irMark = irMarkBase64,
+                  submittedAt = LocalDateTime.now
+                )
               )
               .success
               .value
@@ -461,7 +466,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .value
             .set(
               SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
             )
             .success
             .value
@@ -494,7 +499,7 @@ class SubmissionSuccessControllerSpec extends SpecBase {
             .value
             .set(
               SubmissionDetailsPage,
-              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = Instant.now)
+              SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
             )
             .success
             .value
