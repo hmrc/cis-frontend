@@ -28,28 +28,6 @@ object Subcontractor {
 }
 
 object WhichSubcontractorsToAdd {
-
-  // TODO: Replace with real data from backend
-  val mockSubcontractors: Seq[Subcontractor] = Seq(
-    Subcontractor("1", "Alice, A"),
-    Subcontractor("2", "Apex Construction Solutions"),
-    Subcontractor("3", "Bob, B"),
-    Subcontractor("4", "Bloggs, Joe"),
-    Subcontractor("5", "Bloggs, Joseph"),
-    Subcontractor("6", "Build Right Construction"),
-    Subcontractor("7", "Charles, C"),
-    Subcontractor("8", "Dave, D"),
-    Subcontractor("9", "Draft Services Ltd"),
-    Subcontractor("10", "Elise, E"),
-    Subcontractor("11", "Frank, F"),
-    Subcontractor("12", "Northern Trades Ltd"),
-    Subcontractor("13", "Pro-Build Subcontractors"),
-    Subcontractor("14", "Tynewear Ltd"),
-    Subcontractor("15", "SubbyCo Ltd")
-  )
-
-  val mockPreSelectedIds: Set[String] = Set("2", "4", "6", "12", "15")
-
   def checkboxItems(subcontractors: Seq[Subcontractor], preSelectedIds: Set[String] = Set.empty): Seq[CheckboxItem] =
     subcontractors.sortBy(_.name).zipWithIndex.map { case (sub, index) =>
       CheckboxItemViewModel(

@@ -24,6 +24,7 @@ import models.Mode
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd}
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -46,74 +47,72 @@ class WhichSubcontractorsToAddController @Inject() (
   view: WhichSubcontractorsToAddView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
-
-  // private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-  // val form                   = formProvider(subcontractors)
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      monthlyReturnService.retrieveMonthlyReturnForEditDetails("1", 2026, 4).map { data =>
-        val subcontractorsInDb = data.subcontractors.map { item =>
-          Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
+      monthlyReturnService
+        .retrieveMonthlyReturnForEditDetails("1", 2026, 4)
+        .map { data =>
+          val subcontractorsInDb = data.subcontractors.map { item =>
+            Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
+          }
+
+          val selectedIds: Set[String] = request.userAnswers
+            .get(WhichSubcontractorsToAddPage)
+            .getOrElse(data.monthlyReturnItems.flatMap(_.subcontractorId.map(_.toString)).toSet)
+
+          val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractorsInDb, selectedIds)
+
+          Ok(view(formProvider(subcontractorsInDb), mode, checkboxItems))
         }
-
-        val selectedIds: Set[String] = data.monthlyReturnItems.flatMap(_.subcontractorId.map(_.toString)).toSet
-
-        val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractorsInDb, selectedIds)
-
-        Ok(view(formProvider(subcontractorsInDb), mode, checkboxItems))
-      }
+        .recover { error =>
+          logger.error(
+            s"[WhichSubcontractorsToAddController] Failed to fetch monthly return for edit : ${error.toString}",
+            error
+          )
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      monthlyReturnService.retrieveMonthlyReturnForEditDetails("1", 2026, 4).flatMap { data =>
-        val subcontractorsInDb = data.subcontractors.map { item =>
-          Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
+      monthlyReturnService
+        .retrieveMonthlyReturnForEditDetails("1", 2026, 4)
+        .flatMap { data =>
+
+          val submissionStatus = data.submission.headOption.flatMap(_.status)
+
+          submissionStatus match {
+            case Some("STARTED") | Some("VALIDATED") =>
+              val subcontractorsInDb = data.subcontractors.map { item =>
+                Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
+              }
+              formProvider(subcontractorsInDb)
+                .bindFromRequest()
+                .fold(
+                  formWithErrors =>
+                    Future.successful(
+                      BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractorsInDb)))
+                    ),
+                  value =>
+                    for {
+                      updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                      _              <- sessionRepository.set(updatedAnswers)
+                      _              <- monthlyReturnService.syncMonthlyReturnItems("1", 2026, 4, value.toSeq.map(_.toLong))
+                    } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+                )
+            case _                                   =>
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
         }
-
-        formProvider(subcontractorsInDb)
-          .bindFromRequest()
-          .fold(
-            formWithErrors =>
-              Future.successful(
-                BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractorsInDb)))
-              ),
-            value =>
-              for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-                _              <- sessionRepository.set(updatedAnswers)
-              } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+        .recover { error =>
+          logger.error(
+            s"[WhichSubcontractorsToAddController] Failed during submission : ${error.toString}",
+            error
           )
-      }
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
   }
-
-//  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-//
-//    val selectedIds = request.userAnswers
-//      .get(WhichSubcontractorsToAddPage)
-//      .getOrElse(WhichSubcontractorsToAdd.mockPreSelectedIds)
-//
-//    val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
-//
-//    Ok(view(form, mode, checkboxItems))
-//  }
-//
-//  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-//    implicit request =>
-//      form
-//        .bindFromRequest()
-//        .fold(
-//          formWithErrors =>
-//            Future.successful(
-//              BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractors)))
-//            ),
-//          value =>
-//            for {
-//              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-//              _              <- sessionRepository.set(updatedAnswers)
-//            } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
-//        )
-//  }
 }
