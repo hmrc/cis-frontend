@@ -16,16 +16,18 @@
 
 package controllers.amend
 
-import controllers.actions._
+import controllers.actions.*
 import forms.amend.WhichSubcontractorsToAddFormProvider
+
 import javax.inject.Inject
 import models.Mode
-import models.amend.WhichSubcontractorsToAdd
+import models.amend.{Subcontractor, WhichSubcontractorsToAdd}
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.WhichSubcontractorsToAddView
 
@@ -39,40 +41,79 @@ class WhichSubcontractorsToAddController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: WhichSubcontractorsToAddView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
-  private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-  val form                   = formProvider(subcontractors)
+  // private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
+  // val form                   = formProvider(subcontractors)
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+    implicit request =>
+      monthlyReturnService.retrieveMonthlyReturnForEditDetails("1", 2026, 4).map { data =>
+        val subcontractorsInDb = data.subcontractors.map { item =>
+          Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
+        }
 
-    val selectedIds = request.userAnswers
-      .get(WhichSubcontractorsToAddPage)
-      .getOrElse(WhichSubcontractorsToAdd.mockPreSelectedIds)
+        val selectedIds: Set[String] = data.monthlyReturnItems.flatMap(_.subcontractorId.map(_.toString)).toSet
 
-    val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
+        val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractorsInDb, selectedIds)
 
-    Ok(view(form, mode, checkboxItems))
+        Ok(view(formProvider(subcontractorsInDb), mode, checkboxItems))
+      }
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors =>
-            Future.successful(
-              BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractors)))
-            ),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
-        )
+      monthlyReturnService.retrieveMonthlyReturnForEditDetails("1", 2026, 4).flatMap { data =>
+        val subcontractorsInDb = data.subcontractors.map { item =>
+          Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
+        }
+
+        formProvider(subcontractorsInDb)
+          .bindFromRequest()
+          .fold(
+            formWithErrors =>
+              Future.successful(
+                BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractorsInDb)))
+              ),
+            value =>
+              for {
+                updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                _              <- sessionRepository.set(updatedAnswers)
+              } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+          )
+      }
   }
+
+//  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+//
+//    val selectedIds = request.userAnswers
+//      .get(WhichSubcontractorsToAddPage)
+//      .getOrElse(WhichSubcontractorsToAdd.mockPreSelectedIds)
+//
+//    val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
+//
+//    Ok(view(form, mode, checkboxItems))
+//  }
+//
+//  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
+//    implicit request =>
+//      form
+//        .bindFromRequest()
+//        .fold(
+//          formWithErrors =>
+//            Future.successful(
+//              BadRequest(view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(subcontractors)))
+//            ),
+//          value =>
+//            for {
+//              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+//              _              <- sessionRepository.set(updatedAnswers)
+//            } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+//        )
+//  }
 }
