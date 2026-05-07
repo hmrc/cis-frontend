@@ -18,7 +18,7 @@ package services
 
 import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
-import models.amend.CreateAmendedMonthlyReturnRequest
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -50,9 +50,37 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
 
       val service = new AmendMonthlyReturnService(mockConnector)
 
-      service.createAmendedMonthlyReturn(request).futureValue mustBe ((): Unit)
+      service.createAmendedMonthlyReturn(request).futureValue mustBe ()
 
       verify(mockConnector).createAmendedMonthlyReturn(request)(hc)
+    }
+
+    "getAmendmentHandoff should delegate to the CIS connector" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val mockConnector = mock[ConstructionIndustrySchemeConnector]
+
+      val handoffId = "handoff-123"
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = "1",
+        taxYear = 2025,
+        taxMonth = 1,
+        returnType = "Standard",
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      when(
+        mockConnector.getAmendmentHandoff(any[String]())(
+          any[HeaderCarrier]()
+        )
+      ) thenReturn Future.successful(Some(amendmentDetails))
+
+      val service = new AmendMonthlyReturnService(mockConnector)
+
+      service.getAmendmentHandoff(handoffId).futureValue mustBe Some(amendmentDetails)
+
+      verify(mockConnector).getAmendmentHandoff(handoffId)(hc)
     }
   }
 }

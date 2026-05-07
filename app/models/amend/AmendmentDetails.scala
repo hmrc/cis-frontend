@@ -21,7 +21,9 @@ import play.api.libs.json.{Json, OFormat}
 case class AmendmentDetails(
   instanceId: String,
   taxYear: Int,
-  taxMonth: Int
+  taxMonth: Int,
+  returnType: String,
+  acceptedTime: Option[String]
 )
 
 object AmendmentDetails {

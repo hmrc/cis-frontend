@@ -25,9 +25,23 @@ class AmendmentDetailsSpec extends SpecBase {
 
     "must round-trip JSON" in {
       val model = AmendmentDetails(
-        instanceId = "1234567890",
+        instanceId = "1",
         taxYear = 2025,
-        taxMonth = 1
+        taxMonth = 1,
+        returnType = "Standard",
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      Json.fromJson[AmendmentDetails](Json.toJson(model)).get mustBe model
+    }
+
+    "must round-trip JSON when acceptedTime is missing" in {
+      val model = AmendmentDetails(
+        instanceId = "1",
+        taxYear = 2025,
+        taxMonth = 1,
+        returnType = "Nil",
+        acceptedTime = None
       )
 
       Json.fromJson[AmendmentDetails](Json.toJson(model)).get mustBe model

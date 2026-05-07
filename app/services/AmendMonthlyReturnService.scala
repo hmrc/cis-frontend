@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.amend.CreateAmendedMonthlyReturnRequest
+import models.amend.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -28,5 +28,8 @@ class AmendMonthlyReturnService @Inject() (cisConnector: ConstructionIndustrySch
 
   def createAmendedMonthlyReturn(request: CreateAmendedMonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.createAmendedMonthlyReturn(request)
+
+  def getAmendmentHandoff(handoffId: String)(implicit hc: HeaderCarrier): Future[Option[AmendmentDetails]] =
+    cisConnector.getAmendmentHandoff(handoffId)
 
 }
