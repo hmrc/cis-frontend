@@ -71,9 +71,7 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
       )
 
       when(
-        mockConnector.getAmendmentHandoff(any[String]())(
-          any[HeaderCarrier]()
-        )
+        mockConnector.getAmendmentHandoff(any())(any())
       ) thenReturn Future.successful(Some(amendmentDetails))
 
       val service = new AmendMonthlyReturnService(mockConnector)
