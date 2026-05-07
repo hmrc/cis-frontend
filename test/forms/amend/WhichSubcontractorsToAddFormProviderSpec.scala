@@ -17,13 +17,18 @@
 package forms.amend
 
 import forms.behaviours.CheckboxFieldBehaviours
-import models.amend.WhichSubcontractorsToAdd
+import models.amend.Subcontractor
 import play.api.data.FormError
 
 class WhichSubcontractorsToAddFormProviderSpec extends CheckboxFieldBehaviours {
 
-  private val subcontractors = WhichSubcontractorsToAdd.mockSubcontractors
-  val form                   = new WhichSubcontractorsToAddFormProvider()(subcontractors)
+  private val subcontractors: Seq[Subcontractor] = Seq(
+    Subcontractor("1", "Alice, A"),
+    Subcontractor("2", "Apex Construction Solutions"),
+    Subcontractor("3", "Bob, B")
+  )
+
+  val form = new WhichSubcontractorsToAddFormProvider()(subcontractors)
 
   ".value" - {
 

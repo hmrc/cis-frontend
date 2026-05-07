@@ -41,6 +41,7 @@ class WhichSubcontractorsToAddController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -50,8 +51,8 @@ class WhichSubcontractorsToAddController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       monthlyReturnService
         .retrieveMonthlyReturnForEditDetails("1", 2026, 4)
         .map { data =>
@@ -74,10 +75,10 @@ class WhichSubcontractorsToAddController @Inject() (
           )
           Redirect(controllers.routes.SystemErrorController.onPageLoad())
         }
-  }
+    }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       monthlyReturnService
         .retrieveMonthlyReturnForEditDetails("1", 2026, 4)
         .flatMap { data =>
@@ -114,5 +115,5 @@ class WhichSubcontractorsToAddController @Inject() (
           )
           Redirect(controllers.routes.SystemErrorController.onPageLoad())
         }
-  }
+    }
 }

@@ -19,16 +19,17 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.{NormalMode, UserAnswers}
-import models.amend.WhichSubcontractorsToAdd
+import models.amend.{Subcontractor, WhichSubcontractorsToAdd}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.amend.WhichSubcontractorsToAddView
 
@@ -38,34 +39,54 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val whichSubcontractorsToAddRoute = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+  lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
-  private val subcontractors   = WhichSubcontractorsToAdd.mockSubcontractors
-  private val preSelectedItems =
-    WhichSubcontractorsToAdd.checkboxItems(subcontractors, WhichSubcontractorsToAdd.mockPreSelectedIds)
-  private val emptyItems       = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
-  val formProvider             = new WhichSubcontractorsToAddFormProvider()
-  val form                     = formProvider(subcontractors)
+  val mockPreSelectedIds: Set[String]        = Set("2", "4", "6", "12", "15")
+  val mockSubcontractors: Seq[Subcontractor] = Seq(
+    Subcontractor("1", "Alice, A"),
+    Subcontractor("2", "Apex Construction Solutions"),
+    Subcontractor("3", "Bob, B"),
+    Subcontractor("4", "Bloggs, Joe"),
+    Subcontractor("5", "Bloggs, Joseph"),
+    Subcontractor("6", "Build Right Construction"),
+    Subcontractor("7", "Charles, C"),
+    Subcontractor("8", "Dave, D"),
+    Subcontractor("9", "Draft Services Ltd"),
+    Subcontractor("10", "Elise, E"),
+    Subcontractor("11", "Frank, F"),
+    Subcontractor("12", "Northern Trades Ltd"),
+    Subcontractor("13", "Pro-Build Subcontractors"),
+    Subcontractor("14", "Tynewear Ltd"),
+    Subcontractor("15", "SubbyCo Ltd")
+  )
+  private val subcontractors                 = mockSubcontractors
+  private val preSelectedItems               = WhichSubcontractorsToAdd.checkboxItems(subcontractors, mockPreSelectedIds)
+  private val emptyItems                     = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
+  val formProvider                           = new WhichSubcontractorsToAddFormProvider()
+  val form: Form[Set[String]]                = formProvider(subcontractors)
 
   "WhichSubcontractorsToAdd Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "onPageLoad" - {
+      "must return OK and the correct view" in {
+        val monthlyReturnService = mock[MonthlyReturnService]
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
-      running(application) {
-        val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        running(application) {
+          val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
 
-        val result = route(application, request).value
+          val result = route(application, request).value
 
-        val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
+          val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
 
-        status(result) mustEqual OK
+          status(result) mustEqual OK
 
-        contentAsString(result) mustEqual view(form, NormalMode, preSelectedItems)(
-          request,
-          messages(application)
-        ).toString
+          contentAsString(result) mustEqual view(form, NormalMode, preSelectedItems)(
+            request,
+            messages(application)
+          ).toString
+        }
       }
     }
 
