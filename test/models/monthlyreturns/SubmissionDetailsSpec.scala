@@ -21,14 +21,14 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 
-import java.time.Instant
+import java.time.LocalDateTime
 
 class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
 
   "SubmissionDetails JSON format" should {
 
     "round-trip (writes -> reads) with all fields populated" in {
-      val submittedAt = Instant.parse("2025-01-15T10:30:00Z")
+      val submittedAt = LocalDateTime.parse("2025-01-15T10:30:00")
       val model       = SubmissionDetails(
         id = "sub-12345",
         status = "PENDING",
@@ -47,7 +47,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
           |  "id": "sub-12345",
           |  "status": "COMPLETED",
           |  "irMark": "IR-MARK-67890",
-          |  "submittedAt": "2025-01-15T10:30:00Z"
+          |  "submittedAt": "2025-01-15T10:30:00"
           |}
         """.stripMargin
       )
@@ -56,7 +56,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
       parsed.id mustBe "sub-12345"
       parsed.status mustBe "COMPLETED"
       parsed.irMark mustBe "IR-MARK-67890"
-      parsed.submittedAt mustBe Instant.parse("2025-01-15T10:30:00Z")
+      parsed.submittedAt mustBe LocalDateTime.parse("2025-01-15T10:30:00")
     }
 
     "fail to parse when id field is missing" in {
@@ -65,7 +65,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
           |{
           |  "status": "PENDING",
           |  "irMark": "IR-MARK-67890",
-          |  "submittedAt": "2025-01-15T10:30:00Z"
+          |  "submittedAt": "2025-01-15T10:30:00"
           |}
         """.stripMargin
       )
@@ -79,7 +79,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
           |{
           |  "id": "sub-12345",
           |  "irMark": "IR-MARK-67890",
-          |  "submittedAt": "2025-01-15T10:30:00Z"
+          |  "submittedAt": "2025-01-15T10:30:00"
           |}
         """.stripMargin
       )
@@ -93,7 +93,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
           |{
           |  "id": "sub-12345",
           |  "status": "PENDING",
-          |  "submittedAt": "2025-01-15T10:30:00Z"
+          |  "submittedAt": "2025-01-15T10:30:00"
           |}
         """.stripMargin
       )
@@ -131,7 +131,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
     }
 
     "serialize to JSON correctly" in {
-      val submittedAt = Instant.parse("2025-01-15T10:30:00Z")
+      val submittedAt = LocalDateTime.parse("2025-01-15T10:30:00")
       val model       = SubmissionDetails(
         id = "sub-12345",
         status = "PENDING",
@@ -143,7 +143,7 @@ class SubmissionDetailsSpec extends AnyWordSpec with Matchers {
       (json \ "id").as[String] mustBe "sub-12345"
       (json \ "status").as[String] mustBe "PENDING"
       (json \ "irMark").as[String] mustBe "IR-MARK-67890"
-      (json \ "submittedAt").as[Instant] mustBe submittedAt
+      (json \ "submittedAt").as[LocalDateTime] mustBe submittedAt
     }
   }
 }

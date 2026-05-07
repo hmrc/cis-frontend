@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package models.submission
+package forms.amend
 
-import play.api.libs.json.{Json, OFormat}
+import javax.inject.Inject
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.amend.WhatDoYouWantToAmendStandard
 
-import java.time.LocalDateTime
+class WhatDoYouWantToAmendStandardFormProvider @Inject() extends Mappings {
 
-case class SubmissionDetails(
-  id: String,
-  status: String,
-  irMark: String,
-  submittedAt: LocalDateTime
-)
-
-object SubmissionDetails {
-  implicit val format: OFormat[SubmissionDetails] = Json.format[SubmissionDetails]
+  def apply(): Form[WhatDoYouWantToAmendStandard] =
+    Form(
+      "value" -> enumerable[WhatDoYouWantToAmendStandard]("amend.whatDoYouWantToAmendStandard.error.required")
+    )
 }

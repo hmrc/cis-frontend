@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import viewmodels.LegendSize
+@import models.amend.WhatDoYouWantToAmendStandard
 
 @this(
     layout: templates.Layout,
@@ -24,20 +24,21 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], monthYear: String)(implicit request: Request[_], messages: Messages)
+@(form: Form[_])(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("amend.confirmCancelAmendmentYesNo.title", monthYear))) {
+@layout(pageTitle = title(form, messages("amend.whatDoYouWantToAmendStandard.title"))) {
 
-    @formHelper(action = controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmit(), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmit(), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
         }
 
         @govukRadios(
-            RadiosViewModel.yesNo(
-                field = form("value"),
-                legend = LegendViewModel(messages("amend.confirmCancelAmendmentYesNo.heading", monthYear)).asPageHeading(LegendSize.Large)
+            RadiosViewModel(
+                field  = form("value"),
+                legend = LegendViewModel(messages("amend.whatDoYouWantToAmendStandard.heading")).asPageHeading(),
+                items  = WhatDoYouWantToAmendStandard.options
             )
         )
 
