@@ -27,7 +27,7 @@
 
 @(form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("monthlyreturns.costOfMaterials.title", companyName))) {
+@layout(pageTitle = title(form, messages("monthlyreturns.costOfMaterials.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmit(mode, index, returnTo), Symbol("autoComplete") -> "off") {
 
