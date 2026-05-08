@@ -18,10 +18,11 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
-import models.{NormalMode, UserAnswers}
-import models.amend.{Subcontractor, WhichSubcontractorsToAdd}
+import models.NormalMode
+import models.amend.{WhichSubcontractorsToAdd, Subcontractor as AmendSubcontractor}
+import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Submission, Subcontractor as MonthlyReturnSubcontractor}
 import navigation.{FakeNavigator, Navigator}
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
@@ -31,6 +32,8 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
 
 import scala.concurrent.Future
@@ -41,37 +44,164 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
-  val mockPreSelectedIds: Set[String]        = Set("2", "4", "6", "12", "15")
-  val mockSubcontractors: Seq[Subcontractor] = Seq(
-    Subcontractor("1", "Alice, A"),
-    Subcontractor("2", "Apex Construction Solutions"),
-    Subcontractor("3", "Bob, B"),
-    Subcontractor("4", "Bloggs, Joe"),
-    Subcontractor("5", "Bloggs, Joseph"),
-    Subcontractor("6", "Build Right Construction"),
-    Subcontractor("7", "Charles, C"),
-    Subcontractor("8", "Dave, D"),
-    Subcontractor("9", "Draft Services Ltd"),
-    Subcontractor("10", "Elise, E"),
-    Subcontractor("11", "Frank, F"),
-    Subcontractor("12", "Northern Trades Ltd"),
-    Subcontractor("13", "Pro-Build Subcontractors"),
-    Subcontractor("14", "Tynewear Ltd"),
-    Subcontractor("15", "SubbyCo Ltd")
+  private val mockResponse = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq(
+      ContractorScheme(
+        schemeId = 1,
+        instanceId = "1",
+        accountsOfficeReference = "123PA12345678",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456"
+      )
+    ),
+    monthlyReturn = Seq(
+      MonthlyReturn(monthlyReturnId = 101, taxYear = 2026, taxMonth = 4)
+    ),
+    subcontractors = Seq(
+      MonthlyReturnSubcontractor(
+        subcontractorId = 1001,
+        utr = None,
+        pageVisited = None,
+        partnerUtr = None,
+        crn = None,
+        firstName = Some("John"),
+        nino = None,
+        secondName = None,
+        surname = Some("Doe"),
+        partnershipTradingName = None,
+        tradingName = Some("Test Subcontractor Ltd"),
+        subcontractorType = None,
+        addressLine1 = None,
+        addressLine2 = None,
+        addressLine3 = None,
+        addressLine4 = None,
+        country = None,
+        postCode = None,
+        emailAddress = None,
+        phoneNumber = None,
+        mobilePhoneNumber = None,
+        worksReferenceNumber = None,
+        createDate = None,
+        lastUpdate = None,
+        subbieResourceRef = None,
+        matched = None,
+        autoVerified = None,
+        verified = None,
+        verificationNumber = None,
+        taxTreatment = None,
+        verificationDate = None,
+        version = None,
+        updatedTaxTreatment = None,
+        lastMonthlyReturnDate = None,
+        pendingVerifications = None,
+        displayName = Some("Test Subcontractor Ltd")
+      ),
+      MonthlyReturnSubcontractor(
+        subcontractorId = 1002,
+        utr = None,
+        pageVisited = None,
+        partnerUtr = None,
+        crn = None,
+        firstName = Some("John"),
+        nino = None,
+        secondName = None,
+        surname = Some("Doe"),
+        partnershipTradingName = None,
+        tradingName = Some("Test Subcontractor2 Ltd"),
+        subcontractorType = None,
+        addressLine1 = None,
+        addressLine2 = None,
+        addressLine3 = None,
+        addressLine4 = None,
+        country = None,
+        postCode = None,
+        emailAddress = None,
+        phoneNumber = None,
+        mobilePhoneNumber = None,
+        worksReferenceNumber = None,
+        createDate = None,
+        lastUpdate = None,
+        subbieResourceRef = None,
+        matched = None,
+        autoVerified = None,
+        verified = None,
+        verificationNumber = None,
+        taxTreatment = None,
+        verificationDate = None,
+        version = None,
+        updatedTaxTreatment = None,
+        lastMonthlyReturnDate = None,
+        pendingVerifications = None,
+        displayName = Some("Test Subcontractor2 Ltd")
+      )
+    ),
+    monthlyReturnItems = Seq(
+      MonthlyReturnItem(
+        monthlyReturnId = 101,
+        monthlyReturnItemId = 2001,
+        totalPayments = None,
+        costOfMaterials = None,
+        totalDeducted = None,
+        unmatchedTaxRateIndicator = None,
+        subcontractorId = Some(1001),
+        subcontractorName = None,
+        verificationNumber = None,
+        itemResourceReference = None
+      )
+    ),
+    submission = Seq(
+      Submission(
+        submissionId = 3001,
+        submissionType = "MONTHLY_RETURN",
+        activeObjectId = None,
+        status = Some("STARTED"),
+        hmrcMarkGenerated = None,
+        hmrcMarkGgis = None,
+        emailRecipient = None,
+        acceptedTime = None,
+        createDate = None,
+        lastUpdate = None,
+        schemeId = 1,
+        agentId = None,
+        l_Migrated = None,
+        submissionRequestDate = None,
+        govTalkErrorCode = None,
+        govTalkErrorType = None,
+        govTalkErrorMessage = None
+      )
+    )
   )
-  private val subcontractors                 = mockSubcontractors
-  private val preSelectedItems               = WhichSubcontractorsToAdd.checkboxItems(subcontractors, mockPreSelectedIds)
-  private val emptyItems                     = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
-  val formProvider                           = new WhichSubcontractorsToAddFormProvider()
-  val form: Form[Set[String]]                = formProvider(subcontractors)
+
+  val mockPreSelectedIds: Set[String]             = Set("1001")
+  val mockSubcontractors: Seq[AmendSubcontractor] = Seq(
+    AmendSubcontractor("1001", "Test Subcontractor Ltd"),
+    AmendSubcontractor("1002", "Test Subcontractor2 Ltd")
+  )
+
+  private val subcontractors   = mockSubcontractors
+  private val preSelectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, mockPreSelectedIds)
+  private val emptyItems       = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
+  val formProvider             = new WhichSubcontractorsToAddFormProvider()
+  val form: Form[Set[String]]  = formProvider(subcontractors)
 
   "WhichSubcontractorsToAdd Controller" - {
 
     "onPageLoad" - {
-      "must return OK and the correct view" in {
-        val monthlyReturnService = mock[MonthlyReturnService]
 
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      "must return OK and the correct view" in {
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.successful(mockResponse))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
 
         running(application) {
           val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
@@ -88,138 +218,346 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           ).toString
         }
       }
-    }
 
-    "must populate the view correctly on a GET when the question has previously been answered" in {
+      "must populate the view correctly when the question has previously been answered" in {
 
-      val selectedIds = Set(subcontractors.head.id)
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
 
-      val userAnswers = UserAnswers(userAnswersId)
-        .set(WhichSubcontractorsToAddPage, selectedIds)
-        .success
-        .value
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.successful(mockResponse))
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+        val selectedIds = Set(subcontractors.head.id)
 
-      running(application) {
-        val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        val userAnswers = userAnswersWithCisId
+          .set(WhichSubcontractorsToAddPage, selectedIds)
+          .success
+          .value
 
-        val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
-
-        val result = route(application, request).value
-
-        val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
-          request,
-          messages(application)
-        ).toString
-      }
-    }
-
-    "must redirect to the next page when valid data is submitted" in {
-
-      val mockSessionRepository = mock[SessionRepository]
-
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
-
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
           )
           .build()
 
-      running(application) {
-        val request =
-          FakeRequest(POST, whichSubcontractorsToAddRoute)
-            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+        running(application) {
+          val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
 
-        val result = route(application, request).value
+          val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+          val result = route(application, request).value
+
+          val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
+            request,
+            messages(application)
+          ).toString
+        }
       }
-    }
 
-    "must redirect to the next page when multiple checkboxes are selected" in {
+      "must redirect to Journey Recovery if no existing data is found" in {
 
-      val mockSessionRepository = mock[SessionRepository]
+        val application = applicationBuilder(userAnswers = None).build()
 
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+        running(application) {
+          val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
 
-      val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to System Error when API failed" in {
+
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.failed(new RuntimeException("boom")))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
           .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
           )
           .build()
 
-      running(application) {
-        val request =
-          FakeRequest(POST, whichSubcontractorsToAddRoute)
-            .withFormUrlEncodedBody(("value[]", subcontractors.head.id), ("value[]", subcontractors(1).id))
+        running(application) {
+          val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
 
-        val result = route(application, request).value
+          val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+        }
       }
     }
 
-    "must return a Bad Request and errors when invalid data is submitted" in {
+    "onSubmit" - {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      "must redirect to the next page when valid data is submitted and Submission status = STARTED" in {
 
-      running(application) {
-        val request =
-          FakeRequest(POST, whichSubcontractorsToAddRoute)
-            .withFormUrlEncodedBody(("value", ""))
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
 
-        val boundForm = form.bind(Map("value" -> ""))
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.successful(mockResponse))
 
-        val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
+        when(
+          monthlyReturnService.syncMonthlyReturnItems(
+            eqTo("1"),
+            eqTo(2026),
+            eqTo(4),
+            eqTo(mockPreSelectedIds.toSeq.map(_.toLong))
+          )(any[HeaderCarrier])
+        ).thenReturn(Future.successful(()))
 
-        val result = route(application, request).value
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-        status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, emptyItems)(
-          request,
-          messages(application)
-        ).toString
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual onwardRoute.url
+        }
       }
-    }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+      "must redirect to the next page when valid data is submitted and Submission status = VALIDATED" in {
 
-      val application = applicationBuilder(userAnswers = None).build()
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
 
-      running(application) {
-        val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(
+            mockResponse.copy(
+              submission = mockResponse.submission.updated(
+                0,
+                mockResponse.submission.head.copy(status = Some("VALIDATED"))
+              )
+            )
+          )
+        )
 
-        val result = route(application, request).value
+        when(
+          monthlyReturnService.syncMonthlyReturnItems(
+            eqTo("1"),
+            eqTo(2026),
+            eqTo(4),
+            eqTo(mockPreSelectedIds.toSeq.map(_.toLong))
+          )(any[HeaderCarrier])
+        ).thenReturn(Future.successful(()))
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual onwardRoute.url
+        }
       }
-    }
 
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
+      "must redirect to the next page when multiple checkboxes are selected" in {
 
-      val application = applicationBuilder(userAnswers = None).build()
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
 
-      running(application) {
-        val request =
-          FakeRequest(POST, whichSubcontractorsToAddRoute)
-            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.successful(mockResponse))
 
-        val result = route(application, request).value
+        val selectedIds: Set[String] = Set("1001", "1002")
+        when(
+          monthlyReturnService.syncMonthlyReturnItems(
+            eqTo("1"),
+            eqTo(2026),
+            eqTo(4),
+            eqTo(selectedIds.toSeq.map(_.toLong))
+          )(any[HeaderCarrier])
+        ).thenReturn(Future.successful(()))
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value[]", subcontractors.head.id), ("value[]", subcontractors(1).id))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual onwardRoute.url
+        }
+      }
+
+      "must return a Bad Request and errors when invalid data is submitted" in {
+
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.successful(mockResponse))
+
+        when(
+          monthlyReturnService.syncMonthlyReturnItems(
+            eqTo("1"),
+            eqTo(2026),
+            eqTo(4),
+            eqTo(mockPreSelectedIds.toSeq.map(_.toLong))
+          )(any[HeaderCarrier])
+        ).thenReturn(Future.successful(()))
+
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value", ""))
+
+          val boundForm = form.bind(Map("value" -> ""))
+
+          val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
+
+          val result = route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
+          contentAsString(result) mustEqual view(boundForm, NormalMode, emptyItems)(
+            request,
+            messages(application)
+          ).toString
+        }
+      }
+
+      "must redirect to Journey Recovery if no existing data is found" in {
+
+        val application = applicationBuilder(userAnswers = None).build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to Journey Recovery when Submission status is not STARTED or VALIDATED" in {
+
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(
+            mockResponse.copy(
+              submission = mockResponse.submission.updated(
+                0,
+                mockResponse.submission.head.copy(status = Some("SUBMITTED"))
+              )
+            )
+          )
+        )
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to System Error when API failed" in {
+
+        val monthlyReturnService  = mock[MonthlyReturnService]
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+        ).thenReturn(Future.failed(new RuntimeException("boom")))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(POST, whichSubcontractorsToAddRoute)
+              .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+        }
       }
     }
   }

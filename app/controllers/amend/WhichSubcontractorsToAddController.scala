@@ -54,7 +54,7 @@ class WhichSubcontractorsToAddController @Inject() (
   def onPageLoad(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       monthlyReturnService
-        .retrieveMonthlyReturnForEditDetails("1", 2026, 4)
+        .retrieveMonthlyReturnForEditDetails("1", 4, 2026)
         .map { data =>
           val subcontractorsInDb = data.subcontractors.map { item =>
             Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
@@ -80,7 +80,7 @@ class WhichSubcontractorsToAddController @Inject() (
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       monthlyReturnService
-        .retrieveMonthlyReturnForEditDetails("1", 2026, 4)
+        .retrieveMonthlyReturnForEditDetails("1", 4, 2026)
         .flatMap { data =>
 
           val submissionStatus = data.submission.headOption.flatMap(_.status)
