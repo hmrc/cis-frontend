@@ -17,38 +17,96 @@
 package controllers.amend
 
 import controllers.actions.*
-import pages.amend.ConfirmAmendmentPage
+import models.UserAnswers
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import models.monthlyreturns.ContinueReturnJourneyQueryParams
+import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
+import pages.monthlyreturns.CisIdPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmAmendmentView
 
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ConfirmAmendmentController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
   sessionRepository: SessionRepository,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmAmendmentView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view())
+  def onPageLoad(queryParams: ContinueReturnJourneyQueryParams): Action[AnyContent] = identify.async {
+    implicit request =>
+      val amendmentDetails = AmendmentDetails(
+        instanceId = queryParams.instanceId,
+        taxYear = queryParams.taxYear,
+        taxMonth = queryParams.taxMonth
+      )
+
+      val updatedUserAnswers =
+        UserAnswers(request.userId)
+          .set(CisIdPage, queryParams.instanceId)
+          .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
+          .get
+
+      sessionRepository.set(updatedUserAnswers).map { _ =>
+        Ok(view())
+      }
   }
 
   def onSubmit: Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
-      val updatedAnswers = request.userAnswers.set(ConfirmAmendmentPage, true).get
+    (identify andThen getData).async { implicit request =>
+      request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
+        case Some(amendmentDetails) =>
+          implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      sessionRepository.set(updatedAnswers).map { _ =>
-        Redirect(controllers.amend.routes.ConfirmAmendmentController.onPageLoad())
+          val createRequest = CreateAmendedMonthlyReturnRequest(
+            instanceId = amendmentDetails.instanceId,
+            taxYear = amendmentDetails.taxYear,
+            taxMonth = amendmentDetails.taxMonth,
+            version = 0
+          )
+
+          (
+            for {
+              _             <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
+              updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
+              _             <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(
+              controllers.amend.routes.ConfirmAmendmentController.onPageLoad(
+                ContinueReturnJourneyQueryParams(
+                  instanceId = amendmentDetails.instanceId,
+                  taxYear = amendmentDetails.taxYear,
+                  taxMonth = amendmentDetails.taxMonth
+                )
+              )
+            ) // TODO: DTR-4657
+          ).recover { case ex =>
+            logger.warn(
+              s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
+              ex
+            )
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+
+        case None =>
+          logger.warn(
+            s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers}"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 }
