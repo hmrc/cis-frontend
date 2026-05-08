@@ -19,7 +19,6 @@ package controllers.amend
 import controllers.actions.*
 import models.UserAnswers
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
-import models.monthlyreturns.ContinueReturnJourneyQueryParams
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
 import pages.monthlyreturns.CisIdPage
 import play.api.Logging
@@ -48,22 +47,34 @@ class ConfirmAmendmentController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(queryParams: ContinueReturnJourneyQueryParams): Action[AnyContent] = identify.async {
-    implicit request =>
-      val amendmentDetails = AmendmentDetails(
-        instanceId = queryParams.instanceId,
-        taxYear = queryParams.taxYear,
-        taxMonth = queryParams.taxMonth
-      )
+  def onPageLoad(handoffId: String): Action[AnyContent] = identify.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      val updatedUserAnswers =
-        UserAnswers(request.userId)
-          .set(CisIdPage, queryParams.instanceId)
-          .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
-          .get
+    amendMonthlyReturnService
+      .getAmendmentHandoff(handoffId)
+      .flatMap {
+        case Some(handoff) =>
+          val amendmentDetails = AmendmentDetails(
+            instanceId = handoff.instanceId,
+            taxYear = handoff.taxYear,
+            taxMonth = handoff.taxMonth,
+            returnType = handoff.returnType,
+            acceptedTime = handoff.acceptedTime
+          )
 
-      sessionRepository.set(updatedUserAnswers).map { _ =>
-        Ok(view())
+          val updatedUserAnswers =
+            UserAnswers(request.userId)
+              .set(CisIdPage, handoff.instanceId)
+              .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
+              .get
+
+          sessionRepository.set(updatedUserAnswers).map { _ =>
+            Ok(view())
+          }
+
+        case None =>
+          logger.warn(s"[ConfirmAmendmentController] No handoff found for handoffId: $handoffId")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
   }
 
@@ -85,15 +96,7 @@ class ConfirmAmendmentController @Inject() (
               _             <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
               updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
               _             <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(
-              controllers.amend.routes.ConfirmAmendmentController.onPageLoad(
-                ContinueReturnJourneyQueryParams(
-                  instanceId = amendmentDetails.instanceId,
-                  taxYear = amendmentDetails.taxYear,
-                  taxMonth = amendmentDetails.taxMonth
-                )
-              )
-            ) // TODO: DTR-4657
+            } yield Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()) // TODO: DTR-4657
           ).recover { case ex =>
             logger.warn(
               s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
@@ -104,7 +107,7 @@ class ConfirmAmendmentController @Inject() (
 
         case None =>
           logger.warn(
-            s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers}"
+            s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
