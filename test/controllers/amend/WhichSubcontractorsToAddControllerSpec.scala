@@ -44,20 +44,23 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
-  private val amendmentDetails = AmendmentDetails("1", 2026, 4)
+  private val instanceId       = "1"
+  private val taxYear          = 2026
+  private val taxMonth         = 4
+  private val amendmentDetails = AmendmentDetails(instanceId, taxYear, taxMonth)
 
   private val mockResponse = GetAllMonthlyReturnDetailsResponse(
     scheme = Seq(
       ContractorScheme(
         schemeId = 1,
-        instanceId = "1",
+        instanceId = instanceId,
         accountsOfficeReference = "123PA12345678",
         taxOfficeNumber = "123",
         taxOfficeReference = "AB456"
       )
     ),
     monthlyReturn = Seq(
-      MonthlyReturn(monthlyReturnId = 101, taxYear = 2026, taxMonth = 4)
+      MonthlyReturn(monthlyReturnId = 101, taxYear = taxYear, taxMonth = taxMonth)
     ),
     subcontractors = Seq(
       MonthlyReturnSubcontractor(
@@ -197,7 +200,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.successful(mockResponse))
 
         val application = applicationBuilder(userAnswers = Some(userAnswers))
@@ -229,7 +234,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.successful(mockResponse))
 
         val selectedIds = Set(subcontractors.head.id)
@@ -286,7 +293,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.failed(new RuntimeException("boom")))
 
         val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
@@ -317,7 +326,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.successful(mockResponse))
 
         when(
@@ -359,7 +370,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(
           Future.successful(
             mockResponse.copy(
@@ -373,9 +386,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         when(
           monthlyReturnService.syncMonthlyReturnItems(
-            eqTo("1"),
-            eqTo(2026),
-            eqTo(4),
+            eqTo(instanceId),
+            eqTo(taxYear),
+            eqTo(taxMonth),
             eqTo(mockPreSelectedIds.toSeq.map(_.toLong))
           )(any[HeaderCarrier])
         ).thenReturn(Future.successful(()))
@@ -410,15 +423,17 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.successful(mockResponse))
 
         val selectedIds: Set[String] = Set("1001", "1002")
         when(
           monthlyReturnService.syncMonthlyReturnItems(
-            eqTo("1"),
-            eqTo(2026),
-            eqTo(4),
+            eqTo(instanceId),
+            eqTo(taxYear),
+            eqTo(taxMonth),
             eqTo(selectedIds.toSeq.map(_.toLong))
           )(any[HeaderCarrier])
         ).thenReturn(Future.successful(()))
@@ -453,14 +468,16 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.successful(mockResponse))
 
         when(
           monthlyReturnService.syncMonthlyReturnItems(
-            eqTo("1"),
-            eqTo(2026),
-            eqTo(4),
+            eqTo(instanceId),
+            eqTo(taxYear),
+            eqTo(taxMonth),
             eqTo(mockPreSelectedIds.toSeq.map(_.toLong))
           )(any[HeaderCarrier])
         ).thenReturn(Future.successful(()))
@@ -518,7 +535,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(
           Future.successful(
             mockResponse.copy(
@@ -557,7 +576,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val mockSessionRepository = mock[SessionRepository]
 
         when(
-          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
+          monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+            any[HeaderCarrier]
+          )
         ).thenReturn(Future.failed(new RuntimeException("boom")))
 
         val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
