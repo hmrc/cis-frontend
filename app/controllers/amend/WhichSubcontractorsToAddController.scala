@@ -17,13 +17,14 @@
 package controllers.amend
 
 import controllers.actions.*
+import controllers.helpers.SubmissionViewDataSupport
 import forms.amend.WhichSubcontractorsToAddFormProvider
 
 import javax.inject.Inject
 import models.Mode
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd}
 import navigation.Navigator
-import pages.amend.WhichSubcontractorsToAddPage
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -49,12 +50,23 @@ class WhichSubcontractorsToAddController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
-    with Logging {
+    with Logging
+    with SubmissionViewDataSupport {
 
   def onPageLoad(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+
+      val amendmentDetails = required(
+        request.userAnswers.get(AmendmentDetailsPage),
+        "[WhichSubcontractorsToAddController] AmendmentDetailsPage missing from userAnswers"
+      )
+
       monthlyReturnService
-        .retrieveMonthlyReturnForEditDetails("1", 4, 2026)
+        .retrieveMonthlyReturnForEditDetails(
+          amendmentDetails.instanceId,
+          amendmentDetails.taxMonth,
+          amendmentDetails.taxYear
+        )
         .map { data =>
           val subcontractorsInDb = data.subcontractors.map { item =>
             Subcontractor(item.subcontractorId.toString, item.displayName.getOrElse("No name provided"))
@@ -79,8 +91,18 @@ class WhichSubcontractorsToAddController @Inject() (
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+
+      val amendmentDetails = required(
+        request.userAnswers.get(AmendmentDetailsPage),
+        "[WhichSubcontractorsToAddController] AmendmentDetailsPage missing from userAnswers"
+      )
+
       monthlyReturnService
-        .retrieveMonthlyReturnForEditDetails("1", 4, 2026)
+        .retrieveMonthlyReturnForEditDetails(
+          amendmentDetails.instanceId,
+          amendmentDetails.taxMonth,
+          amendmentDetails.taxYear
+        )
         .flatMap { data =>
 
           val submissionStatus = data.submission.headOption.flatMap(_.status)

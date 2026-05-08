@@ -19,13 +19,13 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.NormalMode
-import models.amend.{Subcontractor as AmendSubcontractor, WhichSubcontractorsToAdd}
+import models.amend.{AmendmentDetails, Subcontractor as AmendSubcontractor, WhichSubcontractorsToAdd}
 import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor as MonthlyReturnSubcontractor, Submission}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.amend.WhichSubcontractorsToAddPage
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -43,6 +43,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
   def onwardRoute = Call("GET", "/foo")
 
   lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+
+  private val amendmentDetails = AmendmentDetails("1", 2026, 4)
 
   private val mockResponse = GetAllMonthlyReturnDetailsResponse(
     scheme = Seq(
@@ -192,11 +194,13 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val monthlyReturnService  = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
         when(
           monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
         ).thenReturn(Future.successful(mockResponse))
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(monthlyReturnService)
@@ -231,6 +235,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val selectedIds = Set(subcontractors.head.id)
 
         val userAnswers = userAnswersWithCisId
+          .set(AmendmentDetailsPage, amendmentDetails)
+          .success
+          .value
           .set(WhichSubcontractorsToAddPage, selectedIds)
           .success
           .value
@@ -282,7 +289,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
         ).thenReturn(Future.failed(new RuntimeException("boom")))
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(monthlyReturnService)
@@ -322,7 +331,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
@@ -371,7 +382,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
@@ -412,7 +425,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
@@ -452,7 +467,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
@@ -513,7 +530,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           )
         )
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(monthlyReturnService)
@@ -541,7 +560,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(4), eqTo(2026))(any[HeaderCarrier])
         ).thenReturn(Future.failed(new RuntimeException("boom")))
 
-        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        val userAnswers = userAnswersWithCisId.set(AmendmentDetailsPage, amendmentDetails).success.value
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(monthlyReturnService)
