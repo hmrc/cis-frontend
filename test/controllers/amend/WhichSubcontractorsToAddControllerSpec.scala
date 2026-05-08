@@ -19,8 +19,8 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.NormalMode
-import models.amend.{WhichSubcontractorsToAdd, Subcontractor as AmendSubcontractor}
-import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Submission, Subcontractor as MonthlyReturnSubcontractor}
+import models.amend.{Subcontractor as AmendSubcontractor, WhichSubcontractorsToAdd}
+import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor as MonthlyReturnSubcontractor, Submission}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
@@ -172,24 +172,24 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     )
   )
 
-  val mockPreSelectedIds: Set[String]             = Set("1001")
+  val mockPreSelectedIds: Set[String] = Set("1001")
   val mockSubcontractors: Seq[AmendSubcontractor] = Seq(
     AmendSubcontractor("1001", "Test Subcontractor Ltd"),
     AmendSubcontractor("1002", "Test Subcontractor2 Ltd")
   )
 
-  private val subcontractors   = mockSubcontractors
+  private val subcontractors = mockSubcontractors
   private val preSelectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, mockPreSelectedIds)
-  private val emptyItems       = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
-  val formProvider             = new WhichSubcontractorsToAddFormProvider()
-  val form: Form[Set[String]]  = formProvider(subcontractors)
+  private val emptyItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
+  val formProvider = new WhichSubcontractorsToAddFormProvider()
+  val form: Form[Set[String]] = formProvider(subcontractors)
 
   "WhichSubcontractorsToAdd Controller" - {
 
     "onPageLoad" - {
 
       "must return OK and the correct view" in {
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -221,7 +221,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must populate the view correctly when the question has previously been answered" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -275,7 +275,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must redirect to System Error when API failed" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -304,7 +304,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must redirect to the next page when valid data is submitted and Submission status = STARTED" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -344,7 +344,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must redirect to the next page when valid data is submitted and Submission status = VALIDATED" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -393,7 +393,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must redirect to the next page when multiple checkboxes are selected" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -434,7 +434,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must return a Bad Request and errors when invalid data is submitted" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -497,7 +497,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must redirect to Journey Recovery when Submission status is not STARTED or VALIDATED" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
@@ -534,7 +534,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       "must redirect to System Error when API failed" in {
 
-        val monthlyReturnService  = mock[MonthlyReturnService]
+        val monthlyReturnService = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
 
         when(
