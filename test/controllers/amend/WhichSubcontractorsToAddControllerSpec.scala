@@ -273,7 +273,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         }
       }
 
-      "must redirect to System Error when API failed" in {
+      "must redirect to System Error Page when API failed" in {
 
         val monthlyReturnService  = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
@@ -532,7 +532,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         }
       }
 
-      "must redirect to System Error when API failed" in {
+      "must redirect to System Error Page when API failed" in {
 
         val monthlyReturnService  = mock[MonthlyReturnService]
         val mockSessionRepository = mock[SessionRepository]
