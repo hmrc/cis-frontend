@@ -34,7 +34,7 @@ class WhatDoYouWantToAmendStandardSpec
 
     "must deserialise valid values" in {
 
-      val gen = Gen.oneOf(WhatDoYouWantToAmendStandard.values.toSeq)
+      val gen = Gen.oneOf(WhatDoYouWantToAmendStandard.values)
 
       forAll(gen) { whatDoYouWantToAmendStandard =>
         JsString(whatDoYouWantToAmendStandard.toString)
@@ -55,7 +55,7 @@ class WhatDoYouWantToAmendStandardSpec
 
     "must serialise" in {
 
-      val gen = Gen.oneOf(WhatDoYouWantToAmendStandard.values.toSeq)
+      val gen = Gen.oneOf(WhatDoYouWantToAmendStandard.values)
 
       forAll(gen) { whatDoYouWantToAmendStandard =>
         Json.toJson(whatDoYouWantToAmendStandard) mustEqual JsString(whatDoYouWantToAmendStandard.toString)
