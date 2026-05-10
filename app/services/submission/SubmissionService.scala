@@ -87,10 +87,11 @@ class SubmissionService @Inject() (
         cisConnector.getCisTaxpayer()
 
     for {
-      taxpayer <- taxpayerFut
-      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
-      response <- cisConnector.submitToChris(submissionId, csr)
-      _        <- writeToFeMongo(ua, submissionId, response)
+      taxpayer  <- taxpayerFut
+      csr       <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
+      response  <- cisConnector.submitToChris(submissionId, csr)
+      amendment <- fetchAmendmentFlag(ua)
+      _         <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
   def updateSubmissionFromChrisResponse(
@@ -204,34 +205,38 @@ class SubmissionService @Inject() (
           } yield "TIMED_OUT"
         } else {
           for {
-            cisId             <- userAnswers.get(CisIdPage).toFuture
-            pollUrl           <- userAnswers.get(PollUrlPage).toFuture
-            submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
-            submissionId      <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
-            result            <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
-            _                 <- updateSubmission(
-                                   submissionDetails.id,
-                                   userAnswers,
-                                   submissionDetails.irMark,
-                                   result.status,
-                                   Some(dateFormatter.format(submissionDetails.submittedAt)),
-                                   result.irMarkReceived,
-                                   result.error
-                                 )
-            newStatus          = result.status
-            timedOut           =
+            pollUrl        <- userAnswers.get(PollUrlPage).toFuture
+            submissionId   <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
+            result         <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
+            _              <- updateSubmission(
+                                submissionDetails.id,
+                                userAnswers,
+                                submissionDetails.irMark,
+                                result.status,
+                                Some(dateFormatter.format(submissionDetails.submittedAt)),
+                                result.irMarkReceived,
+                                result.error
+                              )
+            newStatus       = result.status
+            timedOut        =
               LocalDateTime.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
-            finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
-            newDetails         = submissionDetails.copy(status = newStatus)
-            ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
-            ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
-            ua3               <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
-            ua4               <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
-            ua5               <- result.lastMessageDate match {
-                                   case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
-                                   case None     => Future.successful(ua4)
-                                 }
-            _                 <- sessionRepository.set(ua5)
+            finalStatus     = if (timedOut) "TIMED_OUT" else newStatus
+            irMarkValidated = newStatus == "SUBMITTED"
+            newDetails      = submissionDetails.copy(
+                                status = newStatus,
+                                hmrcMarkGgis = result.irMarkReceived.orElse(
+                                  if (irMarkValidated) Some(submissionDetails.irMark) else submissionDetails.hmrcMarkGgis
+                                )
+                              )
+            ua1            <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
+            ua2            <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
+            ua3            <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
+            ua4            <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
+            ua5            <- result.lastMessageDate match {
+                                case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
+                                case None     => Future.successful(ua4)
+                              }
+            _              <- sessionRepository.set(ua5)
           } yield finalStatus
         }
     }
@@ -268,10 +273,11 @@ class SubmissionService @Inject() (
 
       emailOpt match {
         case None =>
-          val updated = userAnswers.set(SuccessEmailSentPage(submissionId), true)
-          Future
-            .fromTry(updated)
-            .flatMap(updatedUa => sessionRepository.set(updatedUa).map(_ => updatedUa))
+          for {
+            latestUa  <- sessionRepository.get(userAnswers.id).map(_.getOrElse(userAnswers))
+            updatedUa <- Future.fromTry(latestUa.set(SuccessEmailSentPage(submissionId), true))
+            _         <- sessionRepository.set(updatedUa)
+          } yield updatedUa
 
         case Some(email) =>
           val locale: Locale = Lang.get(langCode).map(_.locale).getOrElse(Locale.UK)
@@ -281,11 +287,10 @@ class SubmissionService @Inject() (
             year = yearMonth.getYear.toString
           )
 
-          val updatedUaFuture = Future.fromTry(userAnswers.set(SuccessEmailSentPage(submissionId), true))
-
           for {
             _         <- cisConnector.sendSuccessfulEmail(submissionId, request)
-            updatedUa <- updatedUaFuture
+            latestUa  <- sessionRepository.get(userAnswers.id).map(_.getOrElse(userAnswers))
+            updatedUa <- Future.fromTry(latestUa.set(SuccessEmailSentPage(submissionId), true))
             _         <- sessionRepository.set(updatedUa)
           } yield updatedUa
       }
@@ -324,10 +329,23 @@ class SubmissionService @Inject() (
         throw new RuntimeException("Date of return missing for monthly return")
       )
 
+  private def fetchAmendmentFlag(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
+    val ym         = selectedYearMonth(ua)
+    cisConnector
+      .retrieveMonthlyReturnForEditDetails(instanceId, ym.getMonthValue, ym.getYear)
+      .map(_.monthlyReturn.headOption.flatMap(_.amendment))
+      .recover { case ex =>
+        logger.warn("[fetchAmendmentFlag] Failed to retrieve amendment flag, defaulting to None", ex)
+        None
+      }
+  }
+
   private def writeToFeMongo(
     ua: UserAnswers,
     submissionId: String,
-    response: ChrisSubmissionResponse
+    response: ChrisSubmissionResponse,
+    amendment: Option[String]
   ): Future[Boolean] = {
     val updatedUa: Try[UserAnswers] = for {
       ua1 <- ua.set(
@@ -338,7 +356,9 @@ class SubmissionService @Inject() (
                  irMark = response.hmrcMarkGenerated,
                  submittedAt = response.gatewayTimestamp
                    .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
-                   .getOrElse(LocalDateTime.now)
+                   .getOrElse(LocalDateTime.now),
+                 amendment = amendment,
+                 hmrcMarkGgis = None
                )
              )
       ua2 <- response.responseEndPoint match {
