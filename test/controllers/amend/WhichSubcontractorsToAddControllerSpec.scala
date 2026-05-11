@@ -18,10 +18,10 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
-import models.{NormalMode, UserAnswers}
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
+import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
-import org.mockito.ArgumentMatchers.{any, eq as eqTo, startsWith}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
@@ -31,8 +31,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.SubcontractorService
-import services.MonthlyReturnService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
 

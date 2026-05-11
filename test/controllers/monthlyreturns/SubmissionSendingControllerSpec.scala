@@ -35,7 +35,7 @@ import repositories.SessionRepository
 import services.submission.SubmissionService
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Instant, LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
