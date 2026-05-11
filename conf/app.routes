@@ -171,8 +171,11 @@ POST       /monthly-return/cancel-amended-monthly-return                        
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
 
-GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
+
+GET        /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)

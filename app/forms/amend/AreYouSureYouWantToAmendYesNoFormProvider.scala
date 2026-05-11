@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package models.amend
+package forms.amend
 
-import play.api.libs.json.{Json, OFormat}
+import javax.inject.Inject
 
-case class AmendmentDetails(
-  instanceId: String,
-  taxYear: Int,
-  taxMonth: Int,
-  returnType: String,
-  acceptedTime: Option[String]
-)
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.amend.AreYouSureYouWantToAmendYesNo
 
-object AmendmentDetails {
-  given format: OFormat[AmendmentDetails] = Json.format[AmendmentDetails]
+class AreYouSureYouWantToAmendYesNoFormProvider @Inject() extends Mappings {
+
+  def apply(): Form[AreYouSureYouWantToAmendYesNo] =
+    Form(
+      "value" -> enumerable[AreYouSureYouWantToAmendYesNo]("amend.areYouSureYouWantToAmendYesNo.error.required")
+    )
 }

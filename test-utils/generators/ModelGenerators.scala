@@ -16,6 +16,7 @@
 
 package generators
 
+import models.amend.AreYouSureYouWantToAmendYesNo
 import models.amend.WhatDoYouWantToAmendNil
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{Declaration, InactivityRequest}
@@ -31,6 +32,11 @@ trait ModelGenerators {
   implicit lazy val arbitraryWhatDoYouWantToAmendStandard: Arbitrary[WhatDoYouWantToAmendStandard] =
     Arbitrary {
       Gen.oneOf(WhatDoYouWantToAmendStandard.values.toSeq)
+    }
+
+  implicit lazy val arbitraryAreYouSureYouWantToAmendYesNo: Arbitrary[AreYouSureYouWantToAmendYesNo] =
+    Arbitrary {
+      Gen.oneOf(AreYouSureYouWantToAmendYesNo.values.toSeq)
     }
 
   implicit lazy val arbitraryVerifySubcontractors: Arbitrary[Boolean] =

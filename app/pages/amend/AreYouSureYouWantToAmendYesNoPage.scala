@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package models.amend
+package pages.amend
 
-import play.api.libs.json.{Json, OFormat}
+import models.amend.AreYouSureYouWantToAmendYesNo
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class AmendmentDetails(
-  instanceId: String,
-  taxYear: Int,
-  taxMonth: Int,
-  returnType: String,
-  acceptedTime: Option[String]
-)
+case object AreYouSureYouWantToAmendYesNoPage extends QuestionPage[AreYouSureYouWantToAmendYesNo] {
 
-object AmendmentDetails {
-  given format: OFormat[AmendmentDetails] = Json.format[AmendmentDetails]
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "areYouSureYouWantToAmendYesNo"
 }

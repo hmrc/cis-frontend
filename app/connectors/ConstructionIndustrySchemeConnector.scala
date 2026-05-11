@@ -16,7 +16,7 @@
 
 package connectors
 
-import models.amend.CreateAmendedMonthlyReturnRequest
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
@@ -246,5 +246,10 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
           case status  => Future.failed(UpstreamErrorResponse(response.body, status, status))
         }
       }
+
+  def getAmendmentHandoff(handoffId: String)(implicit hc: HeaderCarrier): Future[Option[AmendmentDetails]] =
+    http
+      .get(url"$cisBaseUrl/journey-handoffs/amend-monthly-return/$handoffId")
+      .execute[Option[AmendmentDetails]]
 
 }
