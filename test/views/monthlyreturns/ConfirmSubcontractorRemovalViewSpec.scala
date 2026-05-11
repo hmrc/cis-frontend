@@ -35,7 +35,7 @@ class ConfirmSubcontractorRemovalViewSpec extends SpecBase {
       val html: HtmlFormat.Appendable = view(form, NormalMode, subcontractorName, index)
       val doc: Document               = Jsoup.parse(html.body)
 
-      doc.title               must include(messages("monthlyreturns.confirmSubcontractorRemoval.title", subcontractorName))
+      doc.title               must include(messages("monthlyreturns.confirmSubcontractorRemoval.title"))
       doc.select("h1").text() must include(
         messages("monthlyreturns.confirmSubcontractorRemoval.heading", subcontractorName)
       )

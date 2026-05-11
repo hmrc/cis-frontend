@@ -428,7 +428,7 @@ monthlyreturns.submitInactivityRequest.error.required = Select yes to submit an 
 monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = Inactivity request
 monthlyreturns.submitInactivityRequest.change.hidden = inactivity request
 
-monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
+monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove the subcontractor?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if you want to remove this subcontractor
 
