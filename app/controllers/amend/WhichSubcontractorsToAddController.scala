@@ -27,6 +27,7 @@ import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import services.SubcontractorService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.WhichSubcontractorsToAddView
@@ -43,6 +44,7 @@ class WhichSubcontractorsToAddController @Inject() (
   requireData: DataRequiredAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
   subcontractorService: SubcontractorService,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: WhichSubcontractorsToAddView
 )(implicit ec: ExecutionContext)
@@ -89,22 +91,29 @@ class WhichSubcontractorsToAddController @Inject() (
           subcontractorService
             .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
             .flatMap { model =>
-              val form = formProvider(model.subcontractors)
-              form
-                .bindFromRequest()
-                .fold(
-                  formWithErrors =>
-                    Future.successful(
-                      BadRequest(
-                        view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(model.subcontractors))
-                      )
-                    ),
-                  value =>
-                    for {
-                      updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-                      _              <- sessionRepository.set(updatedAnswers)
-                    } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
-                )
+              model.status match {
+                case Some("STARTED") | Some("VALIDATED") =>
+                  val form = formProvider(model.subcontractors)
+                  form
+                    .bindFromRequest()
+                    .fold(
+                      formWithErrors =>
+                        Future.successful(
+                          BadRequest(
+                            view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(model.subcontractors))
+                          )
+                        ),
+                      value =>
+                        for {
+                          updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                          _              <- sessionRepository.set(updatedAnswers)
+                          _              <- monthlyReturnService
+                                              .syncMonthlyReturnItems(cisId, taxYear, taxMonth, value.toSeq.map(_.toLong))
+                        } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+                    )
+                case _                                   =>
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
             }
             .recover { case ex =>
               logger.error(s"[WhichSubcontractorsToAddController] Submit failed: ${ex.getMessage}", ex)
