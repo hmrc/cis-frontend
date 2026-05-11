@@ -257,6 +257,8 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
           .build()
       }
 
+      // firstDate = 2016-02-05T00:00:00Z, secondDate = 2016-04-06T00:00:00Z
+
       "must render view with showWarning = true when acceptedTime is within the warning period" in {
         val application = buildAppAndRequest(Some("2016-04-05T00:00:00Z"))
 
@@ -270,7 +272,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
         }
       }
 
-      "must render view with showWarning = true when acceptedTime equals firstDate (inclusive lower bound)" in {
+      "must render view with showWarning = false when acceptedTime equals firstDate (exclusive lower bound)" in {
         val application = buildAppAndRequest(Some("2016-02-05T00:00:00Z"))
 
         running(application) {
@@ -279,7 +281,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
           val view    = application.injector.instanceOf[ConfirmAmendmentView]
 
           status(result) mustEqual OK
-          contentAsString(result) mustEqual view(showWarning = true)(request, messages(application)).toString
+          contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
         }
       }
 

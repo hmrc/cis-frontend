@@ -55,7 +55,7 @@ class ConfirmAmendmentController @Inject() (
   private def isInWarningPeriod(acceptedTime: Option[String]): Boolean =
     acceptedTime
       .flatMap(t => Try(Instant.parse(t)).toOption)
-      .exists(instant => !instant.isBefore(firstDate) && instant.isBefore(secondDate))
+      .exists(instant => instant.isAfter(firstDate) && instant.isBefore(secondDate))
 
   def onPageLoad(handoffId: String): Action[AnyContent] = identify.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
