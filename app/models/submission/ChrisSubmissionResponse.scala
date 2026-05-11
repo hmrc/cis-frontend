@@ -34,6 +34,7 @@ final case class ChrisSubmissionResponse(
   correlationId: Option[String] = None,
   responseEndPoint: Option[ResponseEndPointDto] = None,
   gatewayTimestamp: Option[String] = None,
+  acceptedTime: Option[String] = None,
   error: Option[JsValue] = None
 )
 
