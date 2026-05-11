@@ -17,6 +17,7 @@
 package models.amend
 
 import base.SpecBase
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import play.api.libs.json.Json
 
 class AmendmentDetailsSpec extends SpecBase {
@@ -28,7 +29,7 @@ class AmendmentDetailsSpec extends SpecBase {
         instanceId = "1",
         taxYear = 2025,
         taxMonth = 1,
-        returnType = "Standard",
+        originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
 
@@ -40,7 +41,7 @@ class AmendmentDetailsSpec extends SpecBase {
         instanceId = "1",
         taxYear = 2025,
         taxMonth = 1,
-        returnType = "Nil",
+        originalReturnType = MonthlyNilReturn,
         acceptedTime = None
       )
 

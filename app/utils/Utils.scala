@@ -18,10 +18,21 @@ package utils
 
 import uk.gov.hmrc.govukfrontend.views.viewmodels.radios.RadioItem
 
+import scala.util.Try
+
 object Utils {
   val emptyString  = ""
   val firstRadioId = "value_0"
 
   def withIds(items: Seq[RadioItem], prefix: String = "value"): Seq[RadioItem] =
     items.zipWithIndex.map { case (item, i) => item.copy(id = Some(s"${prefix}_$i")) }
+
+  def toBigDecimal(value: String): Option[BigDecimal] = toBigDecimal(Some(value))
+
+  def toBigDecimal(value: Option[String]): Option[BigDecimal] =
+    value
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map(_.replace(",", ""))
+      .flatMap(value => Try(BigDecimal(value)).toOption)
 }

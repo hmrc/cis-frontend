@@ -1040,7 +1040,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        returnType = "Standard",
+        originalReturnType = "Standard",
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
 

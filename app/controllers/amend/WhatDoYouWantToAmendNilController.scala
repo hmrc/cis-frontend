@@ -18,6 +18,7 @@ package controllers.amend
 
 import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
+import models.NormalMode
 import models.amend.WhatDoYouWantToAmendNil
 import pages.amend.WhatDoYouWantToAmendNilPage
 import play.api.data.Form
@@ -66,9 +67,9 @@ class WhatDoYouWantToAmendNilController @Inject() (
             _              <- sessionRepository.set(updatedAnswers)
           } yield value match {
             case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
-              Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad())
+              Redirect(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode))
             case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
-              Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad())
+              Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
           }
       )
   }

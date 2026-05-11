@@ -16,20 +16,24 @@
 
 package connectors
 
+import models.ReturnType
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import play.api.Logging
 import play.api.http.Status.*
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 
 @Singleton
 class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, http: HttpClientV2)(implicit
@@ -71,15 +75,13 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .execute[MonthlyReturnResponse]
 
   def retrieveMonthlyReturnForEditDetails(
-    instanceId: String,
-    taxMonth: Int,
-    taxYear: Int
+    monthlyReturnRequest: GetMonthlyReturnForEditRequest
   )(implicit
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
     http
       .post(url"$cisBaseUrl/monthly-returns-edit/")
-      .withBody(Json.toJson(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear)))
+      .withBody(Json.toJson(monthlyReturnRequest))
       .execute[GetAllMonthlyReturnDetailsResponse]
 
   def createNilMonthlyReturn(
@@ -251,5 +253,4 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/journey-handoffs/amend-monthly-return/$handoffId")
       .execute[Option[AmendmentDetails]]
-
 }

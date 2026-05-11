@@ -50,7 +50,8 @@ class ContinueReturnJourneyController @Inject() (
       val editRequest = GetMonthlyReturnForEditRequest(
         instanceId = queryParams.instanceId,
         taxYear = queryParams.taxYear,
-        taxMonth = queryParams.taxMonth
+        taxMonth = queryParams.taxMonth,
+        isAmendment = false
       )
 
       monthlyReturnService

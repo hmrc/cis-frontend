@@ -16,6 +16,7 @@
 
 package models
 
+import play.api.libs.json.{Format, JsError, JsResult, JsString, JsSuccess, JsValue}
 import play.api.mvc.{JavascriptLiteral, QueryStringBindable}
 
 sealed trait ReturnType
@@ -37,6 +38,21 @@ object ReturnType extends Enumerable.Implicits {
     override def to(value: ReturnType): String = value match {
       case MonthlyNilReturn      => "MonthlyNilReturn"
       case MonthlyStandardReturn => "MonthlyStandardReturn"
+    }
+  }
+
+  implicit val format: Format[ReturnType] = new Format[ReturnType] {
+    override def reads(json: JsValue): JsResult[ReturnType] = json match {
+      case JsString("monthlyNilReturn")      => JsSuccess(MonthlyNilReturn)
+      case JsString("MonthlyNilReturn")      => JsSuccess(MonthlyNilReturn)
+      case JsString("monthlyStandardReturn") => JsSuccess(MonthlyStandardReturn)
+      case JsString("MonthlyStandardReturn") => JsSuccess(MonthlyStandardReturn)
+      case _                                 => JsError("Not a valid return type")
+    }
+
+    override def writes(o: ReturnType): JsValue = o match {
+      case MonthlyNilReturn      => JsString("monthlyNilReturn")
+      case MonthlyStandardReturn => JsString("monthlyStandardReturn")
     }
   }
 

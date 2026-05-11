@@ -18,6 +18,7 @@ package services
 
 import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
+import models.ReturnType.MonthlyStandardReturn
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
@@ -66,7 +67,7 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         instanceId = "1",
         taxYear = 2025,
         taxMonth = 1,
-        returnType = "Standard",
+        originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
 

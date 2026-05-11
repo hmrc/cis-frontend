@@ -17,6 +17,7 @@
 package controllers.amend
 
 import base.SpecBase
+import models.ReturnType.MonthlyStandardReturn
 import models.UserAnswers
 import models.amend.AmendmentDetails
 import org.mockito.ArgumentMatchers.any
@@ -42,7 +43,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
     instanceId = "1",
     taxYear = 2025,
     taxMonth = 1,
-    returnType = "Standard",
+    originalReturnType = MonthlyStandardReturn,
     acceptedTime = Some("2025-04-01T12:00:00Z")
   )
 
