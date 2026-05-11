@@ -60,7 +60,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       )
     ),
     monthlyReturn = Seq(
-      MonthlyReturn(monthlyReturnId = 101, taxYear = taxYear, taxMonth = taxMonth)
+      MonthlyReturn(monthlyReturnId = 101, taxYear = taxYear, taxMonth = taxMonth, status = Some("STARTED"))
     ),
     subcontractors = Seq(
       MonthlyReturnSubcontractor(
@@ -154,27 +154,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         itemResourceReference = None
       )
     ),
-    submission = Seq(
-      Submission(
-        submissionId = 3001,
-        submissionType = "MONTHLY_RETURN",
-        activeObjectId = None,
-        status = Some("STARTED"),
-        hmrcMarkGenerated = None,
-        hmrcMarkGgis = None,
-        emailRecipient = None,
-        acceptedTime = None,
-        createDate = None,
-        lastUpdate = None,
-        schemeId = 1,
-        agentId = None,
-        l_Migrated = None,
-        submissionRequestDate = None,
-        govTalkErrorCode = None,
-        govTalkErrorType = None,
-        govTalkErrorMessage = None
-      )
-    )
+    submission = Seq.empty
   )
 
   val mockPreSelectedIds: Set[String]             = Set("1001")
@@ -376,9 +356,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         ).thenReturn(
           Future.successful(
             mockResponse.copy(
-              submission = mockResponse.submission.updated(
+              monthlyReturn = mockResponse.monthlyReturn.updated(
                 0,
-                mockResponse.submission.head.copy(status = Some("VALIDATED"))
+                mockResponse.monthlyReturn.head.copy(status = Some("VALIDATED"))
               )
             )
           )
@@ -541,9 +521,9 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         ).thenReturn(
           Future.successful(
             mockResponse.copy(
-              submission = mockResponse.submission.updated(
+              monthlyReturn = mockResponse.monthlyReturn.updated(
                 0,
-                mockResponse.submission.head.copy(status = Some("SUBMITTED"))
+                mockResponse.monthlyReturn.head.copy(status = Some("ACCEPTED"))
               )
             )
           )

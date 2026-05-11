@@ -105,7 +105,7 @@ class WhichSubcontractorsToAddController @Inject() (
         )
         .flatMap { data =>
 
-          val submissionStatus = data.submission.headOption.flatMap(_.status)
+          val submissionStatus = data.monthlyReturn.headOption.flatMap(_.status)
 
           submissionStatus match {
             case Some("STARTED") | Some("VALIDATED") =>
