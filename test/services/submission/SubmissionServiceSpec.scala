@@ -466,7 +466,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisResp = mkChrisResp(
         status = "DEPARTMENTAL_ERROR",
         ts = "2025-02-02T10:20:30",
-        err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops"))
+        err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops")),
+        accepted = Some("2025-02-02T10:20:30")
       )
 
       service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
@@ -481,7 +482,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.taxMonth mustBe 10
       upd.hmrcMarkGenerated mustBe Some("Dj5TVJDyRYCn9zta5EdySeY4fyA=")
       upd.submittableStatus mustBe "DEPARTMENTAL_ERROR"
-      upd.acceptedTime mustBe Some("2025-02-02T10:20:30")
+      upd.acceptedTime mustBe None
       upd.emailRecipient mustBe Some("test@test.com")
       upd.govtalkErrorCode mustBe Some("123")
       upd.govtalkErrorType mustBe Some("business")
@@ -611,7 +612,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -686,7 +687,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None, None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someUrl"), None, None, None, None, None)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
@@ -715,7 +716,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val ua = uaBase
 
       when(connector.getSubmissionStatus(any, any)(any))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("someUrl"), None, None, None, None, None)))
 
       val result = service.checkAndUpdateSubmissionStatus(ua).failed.futureValue
 
@@ -803,6 +804,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
                 JsObject(Seq("number" -> JsString("5005"), "type" -> JsString("fatal"), "text" -> JsString("Boom")))
               ),
               Some("2342345asdfasdgf"),
+              Some("2025-01-01T00:00:30Z"),
               Some("2025-01-01T00:00:30Z")
             )
           )
@@ -863,7 +865,9 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None, None, None)))
+        .thenReturn(
+          Future.successful(ChrisPollResponse("PENDING", Some("newPollUrl"), Some(30), None, None, None, None))
+        )
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
@@ -921,7 +925,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
       when(sessionRepository.set(any[UserAnswers]))
@@ -972,7 +976,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None, None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("PENDING", Some("someurl"), None, None, None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
 
@@ -1025,7 +1029,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .value
 
       when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None, None, None)))
+        .thenReturn(Future.successful(ChrisPollResponse("ACCEPTED", Some("someurl"), None, None, None, None, None)))
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
 
@@ -1564,7 +1568,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     irmark: String = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
     corr: String = "CID123",
     ts: String = "2025-01-01T00:00:00",
-    err: Option[JsObject] = None
+    err: Option[JsObject] = None,
+    accepted: Option[String] = None
   ): ChrisSubmissionResponse =
     ChrisSubmissionResponse(
       submissionId = "sub-123",
@@ -1573,6 +1578,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       correlationId = Some(corr),
       responseEndPoint = None,
       gatewayTimestamp = Some(ts),
+      acceptedTime = accepted,
       error = err
     )
 
