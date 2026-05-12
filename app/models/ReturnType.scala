@@ -23,8 +23,8 @@ sealed trait ReturnType
 
 object ReturnType extends Enumerable.Implicits {
 
-  case object MonthlyNilReturn extends WithName("monthlyNilReturn") with ReturnType
-  case object MonthlyStandardReturn extends WithName("monthlyStandardReturn") with ReturnType
+  case object MonthlyNilReturn extends WithName("MonthlyNilReturn") with ReturnType
+  case object MonthlyStandardReturn extends WithName("MonthlyStandardReturn") with ReturnType
 
   val values: Seq[ReturnType] = Seq(
     MonthlyNilReturn,
@@ -43,16 +43,14 @@ object ReturnType extends Enumerable.Implicits {
 
   implicit val format: Format[ReturnType] = new Format[ReturnType] {
     override def reads(json: JsValue): JsResult[ReturnType] = json match {
-      case JsString("monthlyNilReturn")      => JsSuccess(MonthlyNilReturn)
       case JsString("MonthlyNilReturn")      => JsSuccess(MonthlyNilReturn)
-      case JsString("monthlyStandardReturn") => JsSuccess(MonthlyStandardReturn)
       case JsString("MonthlyStandardReturn") => JsSuccess(MonthlyStandardReturn)
       case _                                 => JsError("Not a valid return type")
     }
 
     override def writes(o: ReturnType): JsValue = o match {
-      case MonthlyNilReturn      => JsString("monthlyNilReturn")
-      case MonthlyStandardReturn => JsString("monthlyStandardReturn")
+      case MonthlyNilReturn      => JsString("MonthlyNilReturn")
+      case MonthlyStandardReturn => JsString("MonthlyStandardReturn")
     }
   }
 

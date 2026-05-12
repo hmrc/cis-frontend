@@ -40,22 +40,22 @@ class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with Ei
   ".toString" - {
 
     "MonthlyNilReturn must have the correct name" in {
-      MonthlyNilReturn.toString mustEqual "monthlyNilReturn"
+      MonthlyNilReturn.toString mustEqual "MonthlyNilReturn"
     }
 
     "MonthlyStandardReturn must have the correct name" in {
-      MonthlyStandardReturn.toString mustEqual "monthlyStandardReturn"
+      MonthlyStandardReturn.toString mustEqual "MonthlyStandardReturn"
     }
   }
 
   ".enumerable (JSON)" - {
 
     "must read MonthlyNilReturn from JSON" in {
-      Json.fromJson[ReturnType](JsString("monthlyNilReturn")).asEither.value mustEqual MonthlyNilReturn
+      Json.fromJson[ReturnType](JsString("MonthlyNilReturn")).asEither.value mustEqual MonthlyNilReturn
     }
 
     "must read MonthlyStandardReturn from JSON" in {
-      Json.fromJson[ReturnType](JsString("monthlyStandardReturn")).asEither.value mustEqual MonthlyStandardReturn
+      Json.fromJson[ReturnType](JsString("MonthlyStandardReturn")).asEither.value mustEqual MonthlyStandardReturn
     }
 
     "must fail to read an unrecognised value from JSON" in {
@@ -63,11 +63,11 @@ class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with Ei
     }
 
     "must write MonthlyNilReturn to JSON" in {
-      Json.toJson[ReturnType](MonthlyNilReturn) mustEqual JsString("monthlyNilReturn")
+      Json.toJson[ReturnType](MonthlyNilReturn) mustEqual JsString("MonthlyNilReturn")
     }
 
     "must write MonthlyStandardReturn to JSON" in {
-      Json.toJson[ReturnType](MonthlyStandardReturn) mustEqual JsString("monthlyStandardReturn")
+      Json.toJson[ReturnType](MonthlyStandardReturn) mustEqual JsString("MonthlyStandardReturn")
     }
   }
 
