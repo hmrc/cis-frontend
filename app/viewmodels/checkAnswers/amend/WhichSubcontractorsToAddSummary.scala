@@ -18,7 +18,6 @@ package viewmodels.checkAnswers.amend
 
 import controllers.amend.routes
 import models.{CheckMode, UserAnswers}
-import models.amend.WhichSubcontractorsToAdd
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.i18n.Messages
 import play.twirl.api.HtmlFormat
@@ -29,14 +28,12 @@ import viewmodels.implicits._
 
 object WhichSubcontractorsToAddSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subcontractorMap = WhichSubcontractorsToAdd.mockSubcontractors.map(s => s.id -> s.name).toMap
-
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(WhichSubcontractorsToAddPage).map { selectedIds =>
       val value = ValueViewModel(
         HtmlContent(
           selectedIds
-            .map(id => HtmlFormat.escape(subcontractorMap.getOrElse(id, id)).toString)
+            .map(id => HtmlFormat.escape(id).toString)
             .mkString(",<br>")
         )
       )
@@ -51,5 +48,4 @@ object WhichSubcontractorsToAddSummary {
         )
       )
     }
-  }
 }

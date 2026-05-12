@@ -19,6 +19,8 @@ package services
 import base.SpecBase
 import models.UserAnswers
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturnItem, SelectedSubcontractor, Subcontractor}
+import models.submission.SubcontractorType
+import pages.amend.WhichSubcontractorsToAddPage
 import play.api.libs.json.Json
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.http.HeaderCarrier
@@ -353,6 +355,197 @@ class SubcontractorServiceSpec extends SpecBase {
       }
     }
   }
+
+  "SubcontractorService.resolveSubcontractorName" - {
+
+    val soleTrader  = Some(SubcontractorType.SoleTrader.value)
+    val company     = Some(SubcontractorType.Company.value)
+    val trust       = Some(SubcontractorType.Trust.value)
+    val partnership = Some(SubcontractorType.Partnership.value)
+
+    "returns 'firstName surname' for a sole trader with both names" in {
+      val sub = mkNameSubcontractor(subcontractorType = soleTrader, firstName = Some("John"), surname = Some("Smith"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "John Smith"
+    }
+
+    "returns surname for a sole trader with only surname" in {
+      val sub = mkNameSubcontractor(subcontractorType = soleTrader, surname = Some("Smith"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Smith"
+    }
+
+    "returns tradingName for a sole trader with only trading name" in {
+      val sub = mkNameSubcontractor(subcontractorType = soleTrader, tradingName = Some("Smith Builders"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Smith Builders"
+    }
+
+    "returns tradingName for a company" in {
+      val sub = mkNameSubcontractor(subcontractorType = company, tradingName = Some("Acme Construction"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Acme Construction"
+    }
+
+    "returns tradingName for a trust" in {
+      val sub = mkNameSubcontractor(subcontractorType = trust, tradingName = Some("Big Trust"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Big Trust"
+    }
+
+    "returns partnershipTradingName for a partnership" in {
+      val sub = mkNameSubcontractor(
+        subcontractorType = partnership,
+        partnershipTradingName = Some("Partner Co"),
+        tradingName = Some("Trading Co")
+      )
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Partner Co"
+    }
+
+    "returns tradingName for a partnership when only trading name is provided" in {
+      val sub = mkNameSubcontractor(subcontractorType = partnership, tradingName = Some("Trading Co"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Trading Co"
+    }
+
+    "returns 'No name provided' when all name fields are null" in {
+      val sub = mkNameSubcontractor(subcontractorType = soleTrader)
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "No name provided"
+    }
+
+    "returns 'No name provided' when subcontractorType is missing" in {
+      val sub = mkNameSubcontractor(tradingName = Some("Should not matter"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "No name provided"
+    }
+
+    "returns 'No name provided' for a company with no trading name" in {
+      val sub = mkNameSubcontractor(subcontractorType = company)
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "No name provided"
+    }
+
+    "returns 'No name provided' for an unknown subcontractor type" in {
+      val sub = mkNameSubcontractor(subcontractorType = Some("unknown"), tradingName = Some("Something"))
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "No name provided"
+    }
+
+    "trims whitespace from name fields" in {
+      val sub = mkNameSubcontractor(
+        subcontractorType = soleTrader,
+        firstName = Some("  John  "),
+        surname = Some("  Smith  ")
+      )
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "John Smith"
+    }
+
+    "treats blank strings as absent" in {
+      val sub = mkNameSubcontractor(
+        subcontractorType = soleTrader,
+        firstName = Some(""),
+        surname = Some("  "),
+        tradingName = Some("Fallback")
+      )
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Fallback"
+    }
+  }
+
+  "SubcontractorService.buildAmendWhichSubcontractorsPage" - {
+
+    "returns subcontractors with resolved names and pre-selects those in monthlyReturnItems" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1001L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+            .copy(
+              subcontractorType = Some(SubcontractorType.SoleTrader.value),
+              firstName = Some("John"),
+              surname = Some("Smith")
+            ),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+            .copy(subcontractorType = Some(SubcontractorType.Company.value), tradingName = Some("Acme Ltd"))
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF = service.buildAmendWhichSubcontractorsPage(
+        cisId = "1",
+        taxMonth = 1,
+        taxYear = 2026
+      )
+
+      whenReady(modelF) { model =>
+        model.subcontractors.map(_.name) mustBe Seq("John Smith", "Acme Ltd")
+        model.subcontractors.map(_.id) mustBe Seq("1", "2")
+        model.preSelectedIds mustBe Set("1")
+      }
+    }
+
+    "uses user answers selection when WhichSubcontractorsToAddPage is already set" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1001L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val ua = emptyUserAnswers
+        .set(WhichSubcontractorsToAddPage, Set("2"))
+        .success
+        .value
+
+      val modelF = service.buildAmendWhichSubcontractorsPage(
+        cisId = "1",
+        taxMonth = 1,
+        taxYear = 2026,
+        userAnswers = Some(ua)
+      )
+
+      whenReady(modelF) { model =>
+        model.preSelectedIds mustBe Set("2")
+      }
+    }
+
+    "pre-selects none when no subcontractors match monthlyReturnItems" in {
+      val response = mkResponse(
+        items = Seq(mkItem(9999L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF = service.buildAmendWhichSubcontractorsPage(
+        cisId = "1",
+        taxMonth = 1,
+        taxYear = 2026
+      )
+
+      whenReady(modelF) { model =>
+        model.preSelectedIds mustBe Set.empty
+      }
+    }
+  }
+
+  private def mkNameSubcontractor(
+    subcontractorType: Option[String] = None,
+    firstName: Option[String] = None,
+    surname: Option[String] = None,
+    tradingName: Option[String] = None,
+    partnershipTradingName: Option[String] = None
+  ): Subcontractor =
+    mkSubcontractor(id = 1L, ref = None, verified = None, verificationDate = None, lastMrDate = None)
+      .copy(
+        subcontractorType = subcontractorType,
+        firstName = firstName,
+        surname = surname,
+        tradingName = tradingName,
+        partnershipTradingName = partnershipTradingName
+      )
 
   private def mkResponse(items: Seq[MonthlyReturnItem], subs: Seq[Subcontractor]) =
     GetAllMonthlyReturnDetailsResponse(

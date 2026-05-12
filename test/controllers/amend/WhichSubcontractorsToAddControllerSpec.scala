@@ -19,19 +19,23 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.{NormalMode, UserAnswers}
-import models.amend.WhichSubcontractorsToAdd
+import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
 import navigation.{FakeNavigator, Navigator}
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
+import services.SubcontractorService
+import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar {
@@ -40,29 +44,64 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   lazy val whichSubcontractorsToAddRoute = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
-  private val subcontractors   = WhichSubcontractorsToAdd.mockSubcontractors
-  private val preSelectedItems =
-    WhichSubcontractorsToAdd.checkboxItems(subcontractors, WhichSubcontractorsToAdd.mockPreSelectedIds)
-  private val emptyItems       = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
-  val formProvider             = new WhichSubcontractorsToAddFormProvider()
-  val form                     = formProvider(subcontractors)
+  private val cisId   = "CIS-123"
+  private val taxDate = LocalDate.of(2025, 10, 5)
+
+  private val subcontractors = Seq(
+    Subcontractor("1", "Alice, A"),
+    Subcontractor("2", "Bob, B"),
+    Subcontractor("3", "Charlie, C")
+  )
+
+  private val preSelectedIds = Set("1", "3")
+
+  private val pageModel = WhichSubcontractorsToAddPageModel(
+    subcontractors = subcontractors,
+    preSelectedIds = preSelectedIds
+  )
+
+  private val userAnswersWithRequiredPages =
+    emptyUserAnswers
+      .set(CisIdPage, cisId)
+      .success
+      .value
+      .set(DateConfirmPaymentsPage, taxDate)
+      .success
+      .value
+
+  val formProvider = new WhichSubcontractorsToAddFormProvider()
+  val form         = formProvider(subcontractors)
+
+  private def stubService(service: SubcontractorService, model: WhichSubcontractorsToAddPageModel): Unit =
+    when(
+      service.buildAmendWhichSubcontractorsPage(
+        eqTo(cisId),
+        eqTo(taxDate.getMonthValue),
+        eqTo(taxDate.getYear),
+        any[Option[UserAnswers]]
+      )(any[HeaderCarrier])
+    ).thenReturn(Future.successful(model))
 
   "WhichSubcontractorsToAdd Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "must return OK and the correct view for a GET with pre-selected subcontractors" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val subcontractorService = mock[SubcontractorService]
+      stubService(subcontractorService, pageModel)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
 
       running(application) {
         val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        val result  = route(application, request).value
+        val view    = application.injector.instanceOf[WhichSubcontractorsToAddView]
 
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
+        val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, preSelectedIds)
 
         status(result) mustEqual OK
-
-        contentAsString(result) mustEqual view(form, NormalMode, preSelectedItems)(
+        contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
           request,
           messages(application)
         ).toString
@@ -71,23 +110,33 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val selectedIds = Set(subcontractors.head.id)
+      val previouslySelected = Set(subcontractors.head.id)
 
-      val userAnswers = UserAnswers(userAnswersId)
-        .set(WhichSubcontractorsToAddPage, selectedIds)
+      val userAnswers = userAnswersWithRequiredPages
+        .set(WhichSubcontractorsToAddPage, previouslySelected)
         .success
         .value
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+      val subcontractorService = mock[SubcontractorService]
+      when(
+        subcontractorService.buildAmendWhichSubcontractorsPage(
+          eqTo(cisId),
+          eqTo(taxDate.getMonthValue),
+          eqTo(taxDate.getYear),
+          any[Option[UserAnswers]]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(pageModel))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
 
       running(application) {
         val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        val view    = application.injector.instanceOf[WhichSubcontractorsToAddView]
+        val result  = route(application, request).value
 
-        val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
-
-        val result = route(application, request).value
-
-        val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, selectedIds)
+        val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, previouslySelected)
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
@@ -100,14 +149,17 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     "must redirect to the next page when valid data is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
+      val subcontractorService  = mock[SubcontractorService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      stubService(subcontractorService, pageModel)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[SubcontractorService].toInstance(subcontractorService)
           )
           .build()
 
@@ -126,14 +178,17 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     "must redirect to the next page when multiple checkboxes are selected" in {
 
       val mockSessionRepository = mock[SessionRepository]
+      val subcontractorService  = mock[SubcontractorService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      stubService(subcontractorService, pageModel)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[SubcontractorService].toInstance(subcontractorService)
           )
           .build()
 
@@ -151,7 +206,12 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val subcontractorService = mock[SubcontractorService]
+      stubService(subcontractorService, pageModel)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
 
       running(application) {
         val request =
@@ -159,10 +219,10 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
             .withFormUrlEncodedBody(("value", ""))
 
         val boundForm = form.bind(Map("value" -> ""))
+        val view      = application.injector.instanceOf[WhichSubcontractorsToAddView]
+        val result    = route(application, request).value
 
-        val view = application.injector.instanceOf[WhichSubcontractorsToAddView]
-
-        val result = route(application, request).value
+        val emptyItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
 
         status(result) mustEqual BAD_REQUEST
         contentAsString(result) mustEqual view(boundForm, NormalMode, emptyItems)(
@@ -178,11 +238,52 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       running(application) {
         val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
-
-        val result = route(application, request).value
+        val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET when required answers are missing" in {
+
+      val subcontractorService = mock[SubcontractorService]
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to SystemError when the service call fails on GET" in {
+
+      val subcontractorService = mock[SubcontractorService]
+      when(
+        subcontractorService.buildAmendWhichSubcontractorsPage(
+          eqTo(cisId),
+          eqTo(taxDate.getMonthValue),
+          eqTo(taxDate.getYear),
+          any[Option[UserAnswers]]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
 
@@ -199,6 +300,54 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST when required answers are missing" in {
+
+      val subcontractorService = mock[SubcontractorService]
+
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to SystemError when the service call fails on POST" in {
+
+      val subcontractorService = mock[SubcontractorService]
+      when(
+        subcontractorService.buildAmendWhichSubcontractorsPage(
+          eqTo(cisId),
+          eqTo(taxDate.getMonthValue),
+          eqTo(taxDate.getYear),
+          any[Option[UserAnswers]]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
       }
     }
   }
