@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package models.submission
+package models.amend
 
-import play.api.libs.json.{JsValue, Json, OFormat}
+import play.api.libs.json.{Json, OFormat}
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  error: Option[JsValue],
-  irMarkReceived: Option[String],
-  lastMessageDate: Option[String],
-  acceptedTime: Option[String]
+case class CreateAmendedMonthlyReturnRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int,
+  version: Int
 )
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+object CreateAmendedMonthlyReturnRequest {
+  given format: OFormat[CreateAmendedMonthlyReturnRequest] = Json.format[CreateAmendedMonthlyReturnRequest]
 }

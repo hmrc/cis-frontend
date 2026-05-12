@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package models.submission
+package forms.amend
 
-import play.api.libs.json.{JsValue, Json, OFormat}
+import javax.inject.Inject
+import forms.mappings.Mappings
+import play.api.data.Form
+import models.amend.WhatDoYouWantToAmendStandard
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  error: Option[JsValue],
-  irMarkReceived: Option[String],
-  lastMessageDate: Option[String],
-  acceptedTime: Option[String]
-)
+class WhatDoYouWantToAmendStandardFormProvider @Inject() extends Mappings {
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+  def apply(): Form[WhatDoYouWantToAmendStandard] =
+    Form(
+      "value" -> enumerable[WhatDoYouWantToAmendStandard]("amend.whatDoYouWantToAmendStandard.error.required")
+    )
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package models.submission
+package models.amend
 
-import play.api.libs.json.{JsValue, Json, OFormat}
+import base.SpecBase
+import play.api.libs.json.Json
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  error: Option[JsValue],
-  irMarkReceived: Option[String],
-  lastMessageDate: Option[String],
-  acceptedTime: Option[String]
-)
+class CreateAmendedMonthlyReturnRequestSpec extends SpecBase {
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+  "CreateAmendedMonthlyReturnRequest" - {
+
+    "must round-trip JSON" in {
+      val model = CreateAmendedMonthlyReturnRequest(
+        instanceId = "1234567890",
+        taxYear = 2025,
+        taxMonth = 1,
+        version = 0
+      )
+
+      Json.fromJson[CreateAmendedMonthlyReturnRequest](Json.toJson(model)).get mustBe model
+    }
+  }
 }

@@ -29,7 +29,7 @@
 
 @(form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("paymentDetails.title", companyName))) {
+@layout(pageTitle = title(form, messages("paymentDetails.title"))) {
 
     @formHelper(action = controllers.monthlyreturns.routes.PaymentDetailsController.onSubmit(mode, index, returnTo), Symbol("autoComplete") -> "off") {
 

@@ -428,7 +428,7 @@ monthlyreturns.submitInactivityRequest.error.required = Select yes to submit an 
 monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = Inactivity request
 monthlyreturns.submitInactivityRequest.change.hidden = inactivity request
 
-monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove {0}?
+monthlyreturns.confirmSubcontractorRemoval.title = Are you sure you want to remove the subcontractor?
 monthlyreturns.confirmSubcontractorRemoval.heading = Are you sure you want to remove {0}?
 monthlyreturns.confirmSubcontractorRemoval.error.required = Select yes if you want to remove this subcontractor
 
@@ -551,3 +551,15 @@ whatDoYouWantToAmendNil.heading = What do you want to amend?
 whatDoYouWantToAmendNil.amendNilReturn = I want to amend this nil return
 whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails = I want to add payment or subcontractor details on this return
 whatDoYouWantToAmendNil.error.required = Select the type of amendment you want to make
+
+amend.whatDoYouWantToAmendStandard.title = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.heading = What do you want to amend?
+amend.whatDoYouWantToAmendStandard.amendToNilReturn = I want to amend this standard return to a nil return
+amend.whatDoYouWantToAmendStandard.amendPaymentOrSubcontractorDetails = I want to amend payment or subcontractor details on this return
+amend.whatDoYouWantToAmendStandard.error.required = Select the type of amendment you want to make
+
+amend.areYouSureYouWantToAmendYesNo.title = Are you sure you want to amend this return to a nil return?
+amend.areYouSureYouWantToAmendYesNo.heading = Are you sure you want to amend this return to a nil return?
+amend.areYouSureYouWantToAmendYesNo.yes = Yes
+amend.areYouSureYouWantToAmendYesNo.no = No, I want to make a different amendment
+amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option to amend

@@ -35,9 +35,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
 import utils.TypeUtils.*
 
-import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDateTime, YearMonth}
-import java.util.{Locale, TimeZone}
+import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -50,13 +49,6 @@ class SubmissionService @Inject() (
   chrisRequestBuilder: ChrisSubmissionRequestBuilder
 )(implicit ec: ExecutionContext)
     extends Logging {
-
-  private val dateFormatter =
-    DateTimeFormatter
-      .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
-      .withZone(TimeZone.getTimeZone("GMT").toZoneId)
-
-  // Orchestration
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
@@ -102,7 +94,7 @@ class SubmissionService @Inject() (
     ua,
     chrisResp.hmrcMarkGenerated,
     chrisResp.status,
-    chrisResp.gatewayTimestamp,
+    chrisResp.acceptedTime,
     None,
     chrisResp.error
   )
@@ -112,10 +104,15 @@ class SubmissionService @Inject() (
     ua: UserAnswers,
     hmrcMarkGenerated: String,
     status: String,
-    gatewayTimestamp: Option[String],
+    acceptedTime: Option[String],
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+    val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
+      acceptedTime
+        .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
+        .getOrElse(LocalDateTime.now())
+    }
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
@@ -130,7 +127,7 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
-      acceptedTime = gatewayTimestamp,
+      acceptedTime = acceptedTimestamp.map(_.toString),
       submissionRequestDate = Some(LocalDateTime.now()),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
@@ -214,7 +211,7 @@ class SubmissionService @Inject() (
                                    userAnswers,
                                    submissionDetails.irMark,
                                    result.status,
-                                   Some(dateFormatter.format(submissionDetails.submittedAt)),
+                                   result.acceptedTime,
                                    result.irMarkReceived,
                                    result.error
                                  )

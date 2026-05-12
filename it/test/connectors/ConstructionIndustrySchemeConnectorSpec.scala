@@ -19,6 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
+import models.amend.{CreateAmendedMonthlyReturnRequest, AmendmentDetails}
 import models.requests.SendSuccessEmailRequest
 import models.monthlyreturns.*
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
@@ -985,6 +986,102 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = connector.deleteMonthlyReturnItem(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "createAmendedMonthlyReturn(payload)" should {
+
+    "POST /cis/amend-monthly-return/create and return Unit on 201" in {
+      val req = CreateAmendedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        version = 0
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/amend-monthly-return/create"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(CREATED))
+      )
+
+      connector.createAmendedMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-201 (e.g. 500)" in {
+      val req = CreateAmendedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        version = 0
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/amend-monthly-return/create"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.createAmendedMonthlyReturn(req).failed.futureValue
+
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "getAmendmentHandoff(handoffId)" should {
+
+    "GET /cis/journey-handoffs/amend-monthly-return/:handoffId and return AmendmentDetails on 200" in {
+      val handoffId = "handoff-123"
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        returnType = "Standard",
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/journey-handoffs/amend-monthly-return/$handoffId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(Json.toJson(amendmentDetails).toString())
+          )
+      )
+
+      connector.getAmendmentHandoff(handoffId).futureValue mustBe Some(amendmentDetails)
+    }
+
+    "return None on 404" in {
+      val handoffId = "missing-handoff"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/journey-handoffs/amend-monthly-return/$handoffId"))
+          .willReturn(aResponse().withStatus(NOT_FOUND))
+      )
+
+      connector.getAmendmentHandoff(handoffId).futureValue mustBe None
+    }
+
+    "fail the future when BE returns non-200/non-404, e.g. 500" in {
+      val handoffId = "handoff-123"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/journey-handoffs/amend-monthly-return/$handoffId"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("boom")
+          )
+      )
+
+      val ex = connector.getAmendmentHandoff(handoffId).failed.futureValue
+
       ex mustBe a[UpstreamErrorResponse]
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
