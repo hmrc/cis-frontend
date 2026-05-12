@@ -473,7 +473,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF = service.buildAmendWhichSubcontractorsPage(
@@ -499,7 +501,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val ua = emptyUserAnswers
@@ -529,7 +533,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF = service.buildAmendWhichSubcontractorsPage(

@@ -21,7 +21,7 @@ import models.monthlyreturns.SelectSubcontractorsPageModel
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.amend.AmendmentDetailsPage
 import models.amend.{Subcontractor as AmendSubcontractor, WhichSubcontractorsToAddPageModel}
-import models.monthlyreturns.{SelectSubcontractorsPageModel, Subcontractor}
+import models.monthlyreturns.Subcontractor
 import models.submission.SubcontractorType
 import pages.monthlyreturns.SelectedSubcontractorPage
 import scala.util.Try
@@ -165,34 +165,36 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     taxYear: Int,
     userAnswers: Option[UserAnswers] = None
   )(implicit hc: HeaderCarrier): Future[WhichSubcontractorsToAddPageModel] =
-    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+    monthlyReturnService
+      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, true))
+      .map { data =>
 
-      val previouslyIncludedResourceRefs: Set[Long] =
-        data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+        val previouslyIncludedResourceRefs: Set[Long] =
+          data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
 
-      val subcontractors: Seq[AmendSubcontractor] =
-        data.subcontractors.map { sub =>
-          AmendSubcontractor(
-            id = sub.subcontractorId.toString,
-            name = resolveSubcontractorName(sub)
-          )
-        }
+        val subcontractors: Seq[AmendSubcontractor] =
+          data.subcontractors.map { sub =>
+            AmendSubcontractor(
+              id = sub.subcontractorId.toString,
+              name = resolveSubcontractorName(sub)
+            )
+          }
 
-      val preSelectedIds: Set[String] =
-        userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
-          case Some(ids) => ids
-          case None      =>
-            data.subcontractors
-              .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
-              .map(_.subcontractorId.toString)
-              .toSet
-        }
+        val preSelectedIds: Set[String] =
+          userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
+            case Some(ids) => ids
+            case None      =>
+              data.subcontractors
+                .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
+                .map(_.subcontractorId.toString)
+                .toSet
+          }
 
-      WhichSubcontractorsToAddPageModel(
-        subcontractors = subcontractors,
-        preSelectedIds = preSelectedIds
-      )
-    }
+        WhichSubcontractorsToAddPageModel(
+          subcontractors = subcontractors,
+          preSelectedIds = preSelectedIds
+        )
+      }
 
 }
 

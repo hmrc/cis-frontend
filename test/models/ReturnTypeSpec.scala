@@ -20,10 +20,10 @@ import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json._
 import play.api.mvc.QueryStringBindable
 
-class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with EitherValues with Enumerable.Implicits {
+class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with EitherValues {
 
   private val binder   = implicitly[QueryStringBindable[ReturnType]]
   private val paramKey = "returnType"
@@ -48,26 +48,40 @@ class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with Ei
     }
   }
 
-  ".enumerable (JSON)" - {
+  ".format" - {
 
-    "must read MonthlyNilReturn from JSON" in {
-      Json.fromJson[ReturnType](JsString("MonthlyNilReturn")).asEither.value mustEqual MonthlyNilReturn
+    "reads" - {
+
+      "must read MonthlyNilReturn from JSON" in {
+        Json.fromJson[ReturnType](JsString("MonthlyNilReturn")).asEither.value mustEqual MonthlyNilReturn
+      }
+
+      "must read MonthlyStandardReturn from JSON" in {
+        Json.fromJson[ReturnType](JsString("MonthlyStandardReturn")).asEither.value mustEqual MonthlyStandardReturn
+      }
+
+      "must fail to read an unrecognised value from JSON" in {
+        val result = Json.fromJson[ReturnType](JsString("invalid"))
+        result.isError mustBe true
+        result mustBe JsError("Not a valid return type")
+      }
+
+      "must fail to read a non-string value from JSON" in {
+        val result = Json.fromJson[ReturnType](Json.obj("invalid" -> "value"))
+        result.isError mustBe true
+        result mustBe JsError("Not a valid return type")
+      }
     }
 
-    "must read MonthlyStandardReturn from JSON" in {
-      Json.fromJson[ReturnType](JsString("MonthlyStandardReturn")).asEither.value mustEqual MonthlyStandardReturn
-    }
+    "writes" - {
 
-    "must fail to read an unrecognised value from JSON" in {
-      Json.fromJson[ReturnType](JsString("invalid")).isError mustBe true
-    }
+      "must write MonthlyNilReturn to JSON" in {
+        Json.toJson[ReturnType](MonthlyNilReturn) mustEqual JsString("MonthlyNilReturn")
+      }
 
-    "must write MonthlyNilReturn to JSON" in {
-      Json.toJson[ReturnType](MonthlyNilReturn) mustEqual JsString("MonthlyNilReturn")
-    }
-
-    "must write MonthlyStandardReturn to JSON" in {
-      Json.toJson[ReturnType](MonthlyStandardReturn) mustEqual JsString("MonthlyStandardReturn")
+      "must write MonthlyStandardReturn to JSON" in {
+        Json.toJson[ReturnType](MonthlyStandardReturn) mustEqual JsString("MonthlyStandardReturn")
+      }
     }
   }
 
