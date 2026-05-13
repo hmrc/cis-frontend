@@ -17,19 +17,38 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
+import models.UserAnswers
 import models.amend.*
+import models.monthlyreturns.UpdateMonthlyReturnRequest
+import pages.amend.AmendmentDetailsPage
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AmendMonthlyReturnService @Inject() (cisConnector: ConstructionIndustrySchemeConnector) {
+class AmendMonthlyReturnService @Inject() (
+  cisConnector: ConstructionIndustrySchemeConnector,
+  monthlyReturnService: MonthlyReturnService
+)(implicit ec: ExecutionContext) {
 
   def createAmendedMonthlyReturn(request: CreateAmendedMonthlyReturnRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.createAmendedMonthlyReturn(request)
 
   def getAmendmentHandoff(handoffId: String)(implicit hc: HeaderCarrier): Future[Option[AmendmentDetails]] =
     cisConnector.getAmendmentHandoff(handoffId)
+
+  def startStandardAmendment(
+    userAnswers: UserAnswers
+  )(implicit hc: HeaderCarrier): Future[Either[String, Unit]] =
+    userAnswers.get(AmendmentDetailsPage) match {
+      case Some(amendmentDetails) =>
+        monthlyReturnService
+          .updateMonthlyReturn(UpdateMonthlyReturnRequest.forStartedStandardAmendment(amendmentDetails))
+          .map(_ => Right(()))
+
+      case None =>
+        Future.successful(Left("Missing amendment details"))
+    }
 
 }
