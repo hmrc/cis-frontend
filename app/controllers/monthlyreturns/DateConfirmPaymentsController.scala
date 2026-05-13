@@ -32,6 +32,8 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
+import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.util.TimeZone
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -58,6 +60,12 @@ class DateConfirmPaymentsController @Inject() (
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
+      // TODO: remove when timezone debugging is done
+      logger.info(
+        s"[DateConfirmPaymentsController] Current Server time: ${LocalDateTime.now} " +
+          s"(${ZoneId.systemDefault}, ${ZonedDateTime.now().getOffset}) " +
+          s"(${Instant.now()} in UTC)"
+      )
       for {
         uaWithReturnType <-
           returnType.fold(Future.successful(userAnswers))(r => userAnswers.set(ReturnTypePage, r).toFuture)
