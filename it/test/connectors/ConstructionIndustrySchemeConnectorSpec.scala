@@ -19,9 +19,10 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
-import models.amend.{CreateAmendedMonthlyReturnRequest, AmendmentDetails}
-import models.requests.SendSuccessEmailRequest
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.monthlyreturns.*
+import models.ReturnType.MonthlyStandardReturn
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -33,13 +34,14 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpException, UpstreamErrorResponse}
 
 import scala.concurrent.ExecutionContext
 
-class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
-  with Matchers
-  with ScalaFutures
-  with IntegrationPatience
-  with ApplicationWithWiremock {
+class ConstructionIndustrySchemeConnectorSpec
+    extends AnyWordSpec
+    with Matchers
+    with ScalaFutures
+    with IntegrationPatience
+    with ApplicationWithWiremock {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier    = HeaderCarrier()
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   val connector: ConstructionIndustrySchemeConnector = app.injector.instanceOf[ConstructionIndustrySchemeConnector]
@@ -117,10 +119,10 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   "getAgentClient" should {
 
-    val userId = "some-user-id"
+    val userId             = "some-user-id"
     val validJson: JsValue = Json.obj(
-      "uniqueId" -> "1",
-      "taxOfficeNumber" -> "123",
+      "uniqueId"           -> "1",
+      "taxOfficeNumber"    -> "123",
       "taxOfficeReference" -> "AB001"
     )
 
@@ -161,7 +163,6 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
               .withStatus(INTERNAL_SERVER_ERROR)
               .withBody("Something broke")
           )
-
       )
 
       val result = connector
@@ -179,7 +180,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
     "return CisTaxpayer when BE returns 200 with valid JSON" in {
       val taxOfficeNumber = "111"
-      val taxOfficeRef = "test111"
+      val taxOfficeRef    = "test111"
 
       stubFor(
         get(urlPathEqualTo(s"/cis/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeRef"))
@@ -207,7 +208,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
     "fail when BE returns 200 with invalid JSON" in {
       val taxOfficeNumber = "111"
-      val taxOfficeRef = "test111"
+      val taxOfficeRef    = "test111"
 
       stubFor(
         get(urlPathEqualTo(s"/cis/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeRef"))
@@ -227,7 +228,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
     "propagate an upstream error when BE returns 500" in {
       val taxOfficeNumber = "111"
-      val taxOfficeRef = "test111"
+      val taxOfficeRef    = "test111"
 
       stubFor(
         get(urlPathEqualTo(s"/cis/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeRef"))
@@ -297,7 +298,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
+      val result = connector
+        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear, false))
+        .futureValue
 
       result.scheme.length mustBe 1
       result.scheme.head.instanceId mustBe instanceId
@@ -338,7 +341,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val result = connector.retrieveMonthlyReturnForEditDetails("CIS-456", 5, 2024).futureValue
+      val result = connector
+        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-456", 5, 2024, false))
+        .futureValue
 
       result.scheme mustBe empty
       result.monthlyReturn mustBe empty
@@ -358,7 +363,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
+        connector
+          .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-ERR", 1, 2025, false))
+          .futureValue
       }
       ex.getMessage must include("returned 500")
     }
@@ -374,7 +381,9 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturnForEditDetails("CIS-NOTFOUND", 3, 2025).futureValue
+        connector
+          .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-NOTFOUND", 3, 2025, false))
+          .futureValue
       }
       ex.getMessage must include("returned 404")
     }
@@ -403,8 +412,8 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val result = connector.retrieveMonthlyReturns("123").futureValue
-      result.monthlyReturnList.map(_.monthlyReturnId) must contain allOf(101L, 102L)
-      result.monthlyReturnList.map(_.taxMonth) must contain allOf(4, 5)
+      result.monthlyReturnList.map(_.monthlyReturnId) must contain allOf (101L, 102L)
+      result.monthlyReturnList.map(_.taxMonth)        must contain allOf (4, 5)
     }
 
     "fail when BE returns 200 with invalid JSON" in {
@@ -418,7 +427,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
           )
       )
 
-      val ex = intercept[Exception] {connector.retrieveMonthlyReturns("123").futureValue}
+      val ex = intercept[Exception](connector.retrieveMonthlyReturns("123").futureValue)
       ex.getMessage.toLowerCase must include("monthlyreturnlist")
     }
 
@@ -492,7 +501,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val req = models.monthlyreturns.NilMonthlyReturnRequest(cisId, 2024, 10, "Y", "Y")
-      val ex = intercept[Exception] { connector.createNilMonthlyReturn(req).futureValue }
+      val ex  = intercept[Exception](connector.createNilMonthlyReturn(req).futureValue)
       ex.getMessage must include("returned 500")
     }
   }
@@ -577,7 +586,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val req = CreateSubmissionRequest("123", 2024, 4)
-      val ex = intercept[Throwable] {
+      val ex  = intercept[Throwable] {
         connector.createSubmission(req).futureValue
       }
       ex.getMessage.toLowerCase must include("400")
@@ -590,7 +599,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
       )
 
       val req = CreateSubmissionRequest("123", 2024, 4)
-      val ex = intercept[Throwable] {
+      val ex  = intercept[Throwable] {
         connector.createSubmission(req).futureValue
       }
       ex.getMessage.toLowerCase must include("502")
@@ -650,9 +659,10 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
       val out = connector.submitToChris("sub-123", payload).futureValue
       out.status mustBe "ACCEPTED"
-      val ep = out.responseEndPoint.value
+      val ep  = out.responseEndPoint.value
       ep.url mustBe "https://chris.example/poll/CID-123"
-      ep.pollIntervalSeconds mustBe 15    }
+      ep.pollIntervalSeconds mustBe 15
+    }
 
     "fail the future when BE returns non-2xx (e.g. 500)" in {
       stubFor(
@@ -703,7 +713,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
   "getSubmissionStatus" should {
 
-    val pollUrl = "https://someurl.com/poll"
+    val pollUrl      = "https://someurl.com/poll"
     val submissionId = "sub-123"
 
     "return ChrisPollResponse with SUBMITTED status when BE returns 200 with valid JSON" in {
@@ -918,7 +928,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
     "POST to /cis/submissions/:submissionId/send-success-email and succeed on 202" in {
       val submissionId = "sub-123"
-      val req = SendSuccessEmailRequest(
+      val req          = SendSuccessEmailRequest(
         email = "test@test.com",
         month = "September",
         year = "2025"
@@ -935,7 +945,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
 
     "fail the future when BE returns non-202 (e.g. 500)" in {
       val submissionId = "sub-err"
-      val req = SendSuccessEmailRequest("test@test.com", "September", "2025")
+      val req          = SendSuccessEmailRequest("test@test.com", "September", "2025")
 
       stubFor(
         post(urlPathEqualTo(s"/cis/submissions/$submissionId/send-success-email"))
@@ -1040,7 +1050,7 @@ class ConstructionIndustrySchemeConnectorSpec extends AnyWordSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        returnType = "Standard",
+        originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
 

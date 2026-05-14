@@ -16,13 +16,14 @@
 
 package models.amend
 
+import models.ReturnType
 import play.api.libs.json.{Json, OFormat}
 
 case class AmendmentDetails(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  returnType: String,
+  originalReturnType: ReturnType,
   acceptedTime: Option[String]
 )
 

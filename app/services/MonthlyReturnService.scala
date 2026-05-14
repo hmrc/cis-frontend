@@ -31,6 +31,7 @@ import pages.QuestionPage
 import pages.agent.AgentClientDataPage
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.UserAnswerUtils.clearMonthlyReturnJourney
+import utils.Utils.toBigDecimal
 import viewmodels.SelectSubcontractorsViewModel
 
 import java.time.LocalDate
@@ -76,13 +77,11 @@ class MonthlyReturnService @Inject() (
     cisConnector.retrieveMonthlyReturns(cisId)
 
   def retrieveMonthlyReturnForEditDetails(
-    instanceId: String,
-    taxMonth: Int,
-    taxYear: Int
+    monthlyReturnRequest: GetMonthlyReturnForEditRequest
   )(implicit
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
-    cisConnector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear)
+    cisConnector.retrieveMonthlyReturnForEditDetails(monthlyReturnRequest)
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)
@@ -213,9 +212,7 @@ class MonthlyReturnService @Inject() (
     editRequest: GetMonthlyReturnForEditRequest
   )(implicit hc: HeaderCarrier): Future[Either[String, UserAnswers]] =
     retrieveMonthlyReturnForEditDetails(
-      instanceId = editRequest.instanceId,
-      taxMonth = editRequest.taxMonth,
-      taxYear = editRequest.taxYear
+      editRequest
     ).map { response =>
       for {
         monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
@@ -401,13 +398,6 @@ class MonthlyReturnService @Inject() (
                      } yield next
                  }
     } yield updated
-
-  private def toBigDecimal(value: Option[String]): Option[BigDecimal] =
-    value
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .map(_.replace(",", ""))
-      .flatMap(value => Try(BigDecimal(value)).toOption)
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {

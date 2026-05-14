@@ -371,16 +371,22 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       when(
-        connector.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+        connector.retrieveMonthlyReturnForEditDetails(
+          eqTo(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear, false))
+        )(
           any[HeaderCarrier]
         )
       )
         .thenReturn(Future.successful(payload))
 
-      val result = service.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
+      val result = service
+        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear, false))
+        .futureValue
       result mustBe payload
 
-      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
+      verify(connector).retrieveMonthlyReturnForEditDetails(
+        eqTo(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear, false))
+      )(
         any[HeaderCarrier]
       )
       verifyNoMoreInteractions(connector)
@@ -389,11 +395,17 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "propagate failures from the connector" in {
       val (service, connector, _) = newService()
 
-      when(connector.retrieveMonthlyReturnForEditDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025))(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(
+          eqTo(GetMonthlyReturnForEditRequest("CIS-ERR", 1, 2025, false))
+        )(any[HeaderCarrier])
+      )
         .thenReturn(Future.failed(new RuntimeException("upstream failed")))
 
       val ex = intercept[RuntimeException] {
-        service.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
+        service
+          .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-ERR", 1, 2025, false))
+          .futureValue
       }
       ex.getMessage must include("upstream failed")
     }
@@ -1082,7 +1094,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val editRequest = GetMonthlyReturnForEditRequest(
         instanceId = "CIS-123",
         taxYear = 2025,
-        taxMonth = 3
+        taxMonth = 3,
+        false
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
@@ -1122,7 +1135,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(payload))
 
       val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
@@ -1145,7 +1158,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val editRequest = GetMonthlyReturnForEditRequest(
         instanceId = "CIS-123",
         taxYear = 2025,
-        taxMonth = 3
+        taxMonth = 3,
+        false
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
@@ -1199,7 +1213,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(payload))
 
       val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
@@ -1231,7 +1245,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val editRequest = GetMonthlyReturnForEditRequest(
         instanceId = "CIS-123",
         taxYear = 2025,
-        taxMonth = 3
+        taxMonth = 3,
+        false
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
@@ -1249,7 +1264,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         submission = Nil
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(payload))
 
       service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue mustBe

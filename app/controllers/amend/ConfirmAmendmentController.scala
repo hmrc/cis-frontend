@@ -17,10 +17,10 @@
 package controllers.amend
 
 import controllers.actions.*
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -31,6 +31,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmAmendmentView
 
+import java.time.LocalDate
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,7 +59,7 @@ class ConfirmAmendmentController @Inject() (
             instanceId = handoff.instanceId,
             taxYear = handoff.taxYear,
             taxMonth = handoff.taxMonth,
-            returnType = handoff.returnType,
+            originalReturnType = handoff.originalReturnType,
             acceptedTime = handoff.acceptedTime
           )
 
@@ -66,6 +67,9 @@ class ConfirmAmendmentController @Inject() (
             UserAnswers(request.userId)
               .set(CisIdPage, handoff.instanceId)
               .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
+              .flatMap(
+                _.set(DateConfirmPaymentsPage, LocalDate.of(amendmentDetails.taxYear, amendmentDetails.taxMonth, 5))
+              )
               .get
 
           sessionRepository.set(updatedUserAnswers).map { _ =>
@@ -96,7 +100,16 @@ class ConfirmAmendmentController @Inject() (
               _             <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
               updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
               _             <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()) // TODO: DTR-4657
+            } yield amendmentDetails.originalReturnType match {
+              case ReturnType.MonthlyStandardReturn =>
+                Redirect(
+                  controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+                )
+              case ReturnType.MonthlyNilReturn      =>
+                Redirect(
+                  controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
+                )
+            }
           ).recover { case ex =>
             logger.warn(
               s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
