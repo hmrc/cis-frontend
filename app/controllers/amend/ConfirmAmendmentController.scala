@@ -49,7 +49,7 @@ class ConfirmAmendmentController @Inject() (
     with I18nSupport
     with Logging {
 
-  private val firstDate: Instant  = Instant.parse("2016-02-05T00:00:00Z")
+  private val firstDate: Instant  = Instant.parse("2016-02-06T00:00:00Z")
   private val secondDate: Instant = Instant.parse("2016-04-06T00:00:00Z")
 
   private def isInWarningPeriod(acceptedTime: Option[String]): Boolean =
