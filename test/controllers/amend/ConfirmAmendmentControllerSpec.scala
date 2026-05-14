@@ -46,6 +46,9 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
     acceptedTime = Some("2025-04-01T12:00:00Z")
   )
 
+  private def amendmentDetailsWithTime(acceptedTime: Option[String]) =
+    amendmentDetails.copy(acceptedTime = acceptedTime)
+
   "ConfirmAmendment Controller" - {
 
     "must return OK and the correct view for a GET when handoff exists" in {
@@ -79,7 +82,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
         val view   = application.injector.instanceOf[ConfirmAmendmentView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
 
         verify(mockAmendMonthlyReturnService).getAmendmentHandoff(any[String]())(
           any[HeaderCarrier]()
@@ -232,6 +235,106 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
 
         redirectLocation(result).value mustEqual
           controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "warning period logic" - {
+
+      def buildAppAndRequest(acceptedTime: Option[String]) = {
+        val mockSessionRepository         = mock[SessionRepository]
+        val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+        when(mockSessionRepository.set(any[UserAnswers]())) thenReturn Future.successful(true)
+        when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+          Some(amendmentDetailsWithTime(acceptedTime))
+        )
+
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+      }
+
+      // firstDate = 2016-02-05T00:00:00Z, secondDate = 2016-04-06T00:00:00Z
+
+      "must render view with showWarning = true when acceptedTime is within the warning period" in {
+        val application = buildAppAndRequest(Some("2016-04-05T00:00:00Z"))
+
+        running(application) {
+          val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[ConfirmAmendmentView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(showWarning = true)(request, messages(application)).toString
+        }
+      }
+
+      "must render view with showWarning = false when acceptedTime equals firstDate (exclusive lower bound)" in {
+        val application = buildAppAndRequest(Some("2016-02-05T00:00:00Z"))
+
+        running(application) {
+          val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[ConfirmAmendmentView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+        }
+      }
+
+      "must render view with showWarning = false when acceptedTime equals secondDate (exclusive upper bound)" in {
+        val application = buildAppAndRequest(Some("2016-04-06T00:00:00Z"))
+
+        running(application) {
+          val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[ConfirmAmendmentView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+        }
+      }
+
+      "must render view with showWarning = false when acceptedTime is before firstDate" in {
+        val application = buildAppAndRequest(Some("2016-02-04T00:00:00Z"))
+
+        running(application) {
+          val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[ConfirmAmendmentView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+        }
+      }
+
+      "must render view with showWarning = false when acceptedTime is after secondDate" in {
+        val application = buildAppAndRequest(Some("2016-04-07T00:00:00Z"))
+
+        running(application) {
+          val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[ConfirmAmendmentView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+        }
+      }
+
+      "must render view with showWarning = false when acceptedTime is None" in {
+        val application = buildAppAndRequest(None)
+
+        running(application) {
+          val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[ConfirmAmendmentView]
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+        }
       }
     }
   }
