@@ -969,7 +969,8 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        subcontractorId = 1234567890L
+        subcontractorId = 1234567890L,
+        amendment = "N"
       )
 
       stubFor(
@@ -987,7 +988,8 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        subcontractorId = 1234567890L
+        subcontractorId = 1234567890L,
+        amendment = "N"
       )
 
       stubFor(

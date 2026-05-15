@@ -18,7 +18,7 @@ package services
 
 import models.UserAnswers
 import models.monthlyreturns.UpdateMonthlyReturnItemRequest
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 import utils.MoneyFormat
 
 import javax.inject.{Inject, Singleton}
@@ -36,6 +36,7 @@ class MonthlyReturnItemPayloadBuilderImpl @Inject() () extends MonthlyReturnItem
       monthDate     <- ua.get(DateConfirmPaymentsPage)
       subcontractor <- ua.get(SelectedSubcontractorPage(index))
       totalPayments <- subcontractor.totalPaymentsMade
+      returnType    <- ua.get(ReturnTypePage)
     } yield {
       val costOfMaterials  = subcontractor.costOfMaterials.getOrElse(BigDecimal(0))
       val totalTaxDeducted = subcontractor.totalTaxDeducted.getOrElse(BigDecimal(0))
@@ -48,7 +49,8 @@ class MonthlyReturnItemPayloadBuilderImpl @Inject() () extends MonthlyReturnItem
         subcontractorName = subcontractor.name,
         totalPayments = MoneyFormat.twoDp(totalPayments),
         costOfMaterials = MoneyFormat.twoDp(costOfMaterials),
-        totalDeducted = MoneyFormat.twoDp(totalTaxDeducted)
+        totalDeducted = MoneyFormat.twoDp(totalTaxDeducted),
+        amendment = returnType.amendmentFlag
       )
     }
 }

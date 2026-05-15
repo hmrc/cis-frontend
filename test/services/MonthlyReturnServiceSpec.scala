@@ -776,7 +776,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
         instanceId = "CIS-123",
         taxYear = 2024,
         taxMonth = 10,
-        subcontractorId = 1001L
+        subcontractorId = 1001L,
+        amendment = "N"
       )
 
       when(connector.deleteMonthlyReturnItem(any[DeleteMonthlyReturnItemRequest])(any[HeaderCarrier]))

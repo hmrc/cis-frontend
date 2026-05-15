@@ -17,9 +17,10 @@
 package services
 
 import base.SpecBase
+import models.ReturnType
 import models.monthlyreturns.SelectedSubcontractor
 import org.scalatest.matchers.must.Matchers
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 
 import java.time.LocalDate
 
@@ -53,6 +54,9 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
           .set(SelectedSubcontractorPage(index), subcontractor)
           .success
           .value
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+          .success
+          .value
 
       val result = builder.build(ua, index).value
 
@@ -80,6 +84,9 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
           .success
           .value
           .set(SelectedSubcontractorPage(index), subcontractorMissingOptionals)
+          .success
+          .value
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
           .success
           .value
 

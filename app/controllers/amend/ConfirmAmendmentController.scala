@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -63,17 +63,27 @@ class ConfirmAmendmentController @Inject() (
             acceptedTime = handoff.acceptedTime
           )
 
-          val updatedUserAnswers =
-            UserAnswers(request.userId)
-              .set(CisIdPage, handoff.instanceId)
-              .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
-              .flatMap(
-                _.set(DateConfirmPaymentsPage, LocalDate.of(amendmentDetails.taxYear, amendmentDetails.taxMonth, 5))
-              )
-              .get
+          ReturnType.amendedFrom(handoff.originalReturnType) match {
+            case Some(amendedReturnType) =>
+              val updatedUserAnswers =
+                UserAnswers(request.userId)
+                  .set(CisIdPage, handoff.instanceId)
+                  .flatMap(_.set(ReturnTypePage, amendedReturnType))
+                  .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
+                  .flatMap(
+                    _.set(DateConfirmPaymentsPage, LocalDate.of(amendmentDetails.taxYear, amendmentDetails.taxMonth, 5))
+                  )
+                  .get
 
-          sessionRepository.set(updatedUserAnswers).map { _ =>
-            Ok(view())
+              sessionRepository.set(updatedUserAnswers).map { _ =>
+                Ok(view())
+              }
+
+            case None =>
+              logger.warn(
+                s"[ConfirmAmendmentController] Unexpected originalReturnType in handoff: ${handoff.originalReturnType}"
+              )
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
 
         case None =>
@@ -109,6 +119,9 @@ class ConfirmAmendmentController @Inject() (
                 Redirect(
                   controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
                 )
+              case unexpected                       =>
+                logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
             }
           ).recover { case ex =>
             logger.warn(
