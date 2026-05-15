@@ -18,11 +18,10 @@ package services.submission
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.CisTaxpayer
 import models.requests.{DataRequest, SendSuccessEmailRequest}
 import models.submission.*
-import models.{ReturnType, UserAnswers}
+import models.UserAnswers
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
 import pages.submission.*
@@ -149,27 +148,10 @@ class SubmissionService @Inject() (
       case Some(receivedAt) =>
         val pollInterval      = getPollInterval(userAnswers)
         val nextPollAllowedAt = receivedAt.plusSeconds(pollInterval)
-        val now               = Instant.now() // TODO - val added to support logs for testing, to be deleted after verification
 
         if (Instant.now().isAfter(nextPollAllowedAt)) {
-          // TODO - logs used for testing, to be deleted after verification
-          logger.info(
-            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL ALLOWED " +
-              s"lastMessageRecieved=$receivedAt," +
-              s"pollIntervalSeconds=$pollInterval, " +
-              s"nextPollAllowed=$nextPollAllowedAt, " +
-              s"now=$now"
-          )
           checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
         } else {
-          // TODO - logs used for testing, to be deleted after verification
-          logger.info(
-            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL SKIPPED " +
-              s"lastMessageRecieved=$receivedAt," +
-              s"pollIntervalSeconds=$pollInterval, " +
-              s"nextPollAllowed=$nextPollAllowedAt, " +
-              s"now=$now"
-          )
           Future.successful(PollDecision.Skip)
         }
 
@@ -246,10 +228,6 @@ class SubmissionService @Inject() (
       .get(SuccessEmailSentPage(submissionId))
       .getOrElse(false)
 
-    val returnType = userAnswers
-      .get(ReturnTypePage)
-      .getOrElse(throw new IllegalStateException("Return type missing"))
-
     if (alreadySent) {
       Future.successful(userAnswers)
     } else {
@@ -258,10 +236,7 @@ class SubmissionService @Inject() (
         .map(YearMonth.from)
         .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 
-      val emailOpt = returnType match {
-        case MonthlyNilReturn | MonthlyStandardReturn =>
-          userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
-      }
+      val emailOpt = userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
 
       emailOpt match {
         case None =>

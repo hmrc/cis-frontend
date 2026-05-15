@@ -17,9 +17,9 @@
 package controllers.amend
 
 import base.SpecBase
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
-import models.amend.AmendmentDetails
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -88,6 +88,49 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
           any[HeaderCarrier]()
         )
         verify(mockSessionRepository).set(any[UserAnswers]())
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET when handoff originalReturnType cannot be amended from" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      val unexpectedHandoff =
+        amendmentDetailsStandard.copy(originalReturnType = MonthlyAmendedStandardReturn)
+
+      when(
+        mockAmendMonthlyReturnService.getAmendmentHandoff(any[String]())(
+          any[HeaderCarrier]()
+        )
+      ) thenReturn Future.successful(Some(unexpectedHandoff))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onPageLoad(handoffId)
+              .url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockAmendMonthlyReturnService).getAmendmentHandoff(eqTo(handoffId))(
+          any[HeaderCarrier]()
+        )
+        verify(mockSessionRepository, never()).set(any[UserAnswers]())
       }
     }
 
@@ -283,6 +326,65 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
 
         redirectLocation(result).value mustEqual
           controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery when onSubmit succeeds but originalReturnType is unexpected" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      val unexpectedAmendmentDetails =
+        amendmentDetailsStandard.copy(originalReturnType = MonthlyAmendedStandardReturn)
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(AmendmentDetailsPage, unexpectedAmendmentDetails)
+          .success
+          .value
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.createAmendedMonthlyReturn(any())(any())
+      ) thenReturn Future.successful(())
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onSubmit()
+              .url
+          ).withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockAmendMonthlyReturnService).createAmendedMonthlyReturn(
+          eqTo(
+            CreateAmendedMonthlyReturnRequest(
+              instanceId = unexpectedAmendmentDetails.instanceId,
+              taxYear = unexpectedAmendmentDetails.taxYear,
+              taxMonth = unexpectedAmendmentDetails.taxMonth,
+              version = 0
+            )
+          )
+        )(any[HeaderCarrier]())
+
+        val userAnswersCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(userAnswersCaptor.capture())
+        userAnswersCaptor.getValue.get(ConfirmAmendmentPage).value mustEqual true
       }
     }
   }

@@ -26,7 +26,8 @@ case class UpdateMonthlyReturnItemRequest(
   subcontractorName: String,
   totalPayments: String,
   costOfMaterials: String,
-  totalDeducted: String
+  totalDeducted: String,
+  amendment: String
 )
 
 object UpdateMonthlyReturnItemRequest {

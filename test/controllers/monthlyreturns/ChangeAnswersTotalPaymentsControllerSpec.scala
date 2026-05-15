@@ -121,7 +121,8 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         subcontractorName = "Tyne Test Ltd",
         totalPayments = "1,200.00",
         costOfMaterials = "500.00",
-        totalDeducted = "240.00"
+        totalDeducted = "240.00",
+        amendment = "N"
       )
 
       when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
@@ -166,7 +167,8 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         subcontractorName = "Tyne Test Ltd",
         totalPayments = "1,200.00",
         costOfMaterials = "500.00",
-        totalDeducted = "240.00"
+        totalDeducted = "240.00",
+        amendment = "N"
       )
 
       when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
@@ -206,7 +208,8 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         subcontractorName = "Tyne Test Ltd",
         totalPayments = "1,200.00",
         costOfMaterials = "500.00",
-        totalDeducted = "240.00"
+        totalDeducted = "240.00",
+        amendment = "N"
       )
 
       when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
