@@ -35,7 +35,8 @@ final case class ChrisSubmissionResponse(
   responseEndPoint: Option[ResponseEndPointDto] = None,
   gatewayTimestamp: Option[String] = None,
   acceptedTime: Option[String] = None,
-  error: Option[JsValue] = None
+  error: Option[JsValue] = None,
+  govTalkErrorStatus: Option[GovTalkErrorStatus] = None
 )
 
 object ChrisSubmissionResponse {

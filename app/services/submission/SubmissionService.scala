@@ -96,7 +96,8 @@ class SubmissionService @Inject() (
     chrisResp.status,
     chrisResp.acceptedTime,
     None,
-    chrisResp.error
+    chrisResp.error,
+    chrisResp.govTalkErrorStatus
   )
 
   def updateSubmission(
@@ -106,7 +107,8 @@ class SubmissionService @Inject() (
     status: String,
     acceptedTime: Option[String],
     irMarkReceived: Option[String] = None,
-    error: Option[JsValue] = None
+    error: Option[JsValue] = None,
+    govTalkErrorStatus: Option[GovTalkErrorStatus] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
     val zone = s"(${ZoneId.systemDefault}, ${ZonedDateTime.now().getOffset})"
     logger.info(
@@ -132,6 +134,8 @@ class SubmissionService @Inject() (
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
 
+    val resolvedGovTalkStatus = govTalkErrorStatus.getOrElse(GovTalkErrorClassifier.classify(status, error))
+
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
       hmrcMarkGenerated = Some(hmrcMarkGenerated),
@@ -150,7 +154,8 @@ class SubmissionService @Inject() (
       },
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
-      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
+      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String]),
+      govTalkResponse = Some(resolvedGovTalkStatus)
     )
 
     cisConnector.updateSubmission(submissionId, update)
@@ -232,7 +237,8 @@ class SubmissionService @Inject() (
                                    result.status,
                                    result.acceptedTime,
                                    result.irMarkReceived,
-                                   result.error
+                                   result.error,
+                                   result.govTalkErrorStatus
                                  )
             newStatus          = result.status
             timedOut           =
