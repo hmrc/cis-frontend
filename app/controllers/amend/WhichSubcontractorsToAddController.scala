@@ -108,7 +108,13 @@ class WhichSubcontractorsToAddController @Inject() (
                           updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
                           _              <- sessionRepository.set(updatedAnswers)
                           _              <- monthlyReturnService
-                                              .syncMonthlyReturnItems(cisId, taxYear, taxMonth, value.toSeq.map(_.toLong))
+                                              .syncMonthlyReturnItems(
+                                                cisId,
+                                                taxYear,
+                                                taxMonth,
+                                                value.toSeq.map(_.toLong),
+                                                isAmendment = Some(true)
+                                              )
                         } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
                     )
                 case _                                   =>

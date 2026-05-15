@@ -26,6 +26,7 @@ import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -42,7 +43,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val whichSubcontractorsToAddRoute = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+  lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
   private val cisId   = "CIS-123"
   private val taxDate = LocalDate.of(2025, 10, 5)
@@ -70,8 +71,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       .success
       .value
 
-  val formProvider = new WhichSubcontractorsToAddFormProvider()
-  val form         = formProvider(subcontractors)
+  val formProvider            = new WhichSubcontractorsToAddFormProvider()
+  val form: Form[Set[String]] = formProvider(subcontractors)
 
   private def stubService(service: SubcontractorService, model: WhichSubcontractorsToAddPageModel): Unit =
     when(
@@ -160,7 +161,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           eqTo(cisId),
           eqTo(taxDate.getYear),
           eqTo(taxDate.getMonthValue),
-          eqTo(Seq(subcontractors.head.id.toLong))
+          eqTo(Seq(subcontractors.head.id.toLong)),
+          eqTo(Some(true))
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
@@ -199,7 +201,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           eqTo(cisId),
           eqTo(taxDate.getYear),
           eqTo(taxDate.getMonthValue),
-          eqTo(Seq(subcontractors.head.id.toLong))
+          eqTo(Seq(subcontractors.head.id.toLong)),
+          eqTo(Some(true))
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
@@ -238,7 +241,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           eqTo(cisId),
           eqTo(taxDate.getYear),
           eqTo(taxDate.getMonthValue),
-          eqTo(Seq(subcontractors.head.id.toLong, subcontractors(1).id.toLong))
+          eqTo(Seq(subcontractors.head.id.toLong, subcontractors(1).id.toLong)),
+          eqTo(Some(true))
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 

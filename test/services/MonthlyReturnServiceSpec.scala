@@ -726,7 +726,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
   "syncMonthlyReturnItems" - {
 
-    "delegate to connector with SelectedSubcontractorsRequest payload" in {
+    "delegate to connector with SelectedSubcontractorsRequest payload when isAmendment = None" in {
       val (service, connector, sessionRepo) = newService()
 
       val instanceId = "CIS-123"
@@ -749,6 +749,35 @@ class MonthlyReturnServiceSpec extends SpecBase {
       sent.taxYear mustBe taxYear
       sent.taxMonth mustBe taxMonth
       sent.selectedSubcontractorIds mustBe ids
+
+      verifyNoInteractions(sessionRepo)
+      verifyNoMoreInteractions(connector)
+    }
+
+    "delegate to connector with SelectedSubcontractorsRequest payload when isAmendment = true" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val instanceId = "CIS-123"
+      val taxYear    = 2024
+      val taxMonth   = 10
+      val ids        = Seq(1001L, 1002L)
+
+      when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.syncMonthlyReturnItems(instanceId, taxYear, taxMonth, ids, Some(true)).futureValue mustBe ()
+
+      val captor: ArgumentCaptor[SelectedSubcontractorsRequest] =
+        ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])
+
+      verify(connector).syncMonthlyReturnItems(captor.capture())(any[HeaderCarrier])
+
+      val sent = captor.getValue
+      sent.instanceId mustBe instanceId
+      sent.taxYear mustBe taxYear
+      sent.taxMonth mustBe taxMonth
+      sent.selectedSubcontractorIds mustBe ids
+      sent.isAmendment mustBe Some(true)
 
       verifyNoInteractions(sessionRepo)
       verifyNoMoreInteractions(connector)
