@@ -18,14 +18,14 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
-import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
+import models.amend.{AmendmentDetails, Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import pages.monthlyreturns.CisIdPage
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -62,12 +62,20 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     status = Some("STARTED")
   )
 
+  private val amendmentDetails = AmendmentDetails(
+    instanceId = "1",
+    taxYear = taxDate.getYear,
+    taxMonth = taxDate.getMonthValue,
+    returnType = "Standard",
+    acceptedTime = Some("2025-04-01T12:00:00Z")
+  )
+
   private val userAnswersWithRequiredPages =
     emptyUserAnswers
       .set(CisIdPage, cisId)
       .success
       .value
-      .set(DateConfirmPaymentsPage, taxDate)
+      .set(AmendmentDetailsPage, amendmentDetails)
       .success
       .value
 

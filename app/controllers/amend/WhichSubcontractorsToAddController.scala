@@ -16,19 +16,18 @@
 
 package controllers.amend
 
-import controllers.actions._
+import controllers.actions.*
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
 import navigation.Navigator
-import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.MonthlyReturnService
-import services.SubcontractorService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.WhichSubcontractorsToAddView
 
@@ -55,9 +54,9 @@ class WhichSubcontractorsToAddController @Inject() (
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
       val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+        cisId        <- request.userAnswers.get(CisIdPage)
+        amendDetails <- request.userAnswers.get(AmendmentDetailsPage)
+      } yield (cisId, amendDetails.taxMonth, amendDetails.taxYear)
 
       requiredAnswers
         .map { case (cisId, taxMonth, taxYear) =>
@@ -82,9 +81,9 @@ class WhichSubcontractorsToAddController @Inject() (
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
       val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+        cisId        <- request.userAnswers.get(CisIdPage)
+        amendDetails <- request.userAnswers.get(AmendmentDetailsPage)
+      } yield (cisId, amendDetails.taxMonth, amendDetails.taxYear)
 
       requiredAnswers
         .map { case (cisId, taxMonth, taxYear) =>
