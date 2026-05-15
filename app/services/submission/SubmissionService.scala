@@ -100,7 +100,8 @@ class SubmissionService @Inject() (
     chrisResp.status,
     chrisResp.acceptedTime,
     None,
-    chrisResp.error
+    chrisResp.error,
+    chrisResp.govTalkErrorStatus
   )
 
   def updateSubmission(
@@ -110,7 +111,8 @@ class SubmissionService @Inject() (
     status: String,
     acceptedTime: Option[String],
     irMarkReceived: Option[String] = None,
-    error: Option[JsValue] = None
+    error: Option[JsValue] = None,
+    govTalkErrorStatus: Option[GovTalkErrorStatus] = None
   )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
     val ukNow = ukLocalDateTimeNow
 
@@ -126,6 +128,8 @@ class SubmissionService @Inject() (
     val email      = ua.get(EnterYourEmailAddressPage)
     val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
 
+    val resolvedGovTalkStatus = govTalkErrorStatus.getOrElse(GovTalkErrorClassifier.classify(status, error))
+
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
       hmrcMarkGenerated = Some(hmrcMarkGenerated),
@@ -140,7 +144,8 @@ class SubmissionService @Inject() (
       submissionRequestDate = Some(ukNow),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
-      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
+      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String]),
+      govTalkResponse = Some(resolvedGovTalkStatus)
     )
 
     cisConnector.updateSubmission(submissionId, update)
@@ -203,7 +208,8 @@ class SubmissionService @Inject() (
                               result.status,
                               result.acceptedTime,
                               result.irMarkReceived,
-                              result.error
+                              result.error,
+                              result.govTalkErrorStatus
                             )
             newStatus     = result.status
             timedOut      =
