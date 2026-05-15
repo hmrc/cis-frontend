@@ -34,7 +34,8 @@ case class UpdateSubmissionRequest(
   agentId: Option[String] = None,
   govtalkErrorCode: Option[String] = None,
   govtalkErrorType: Option[String] = None,
-  govtalkErrorMessage: Option[String] = None
+  govtalkErrorMessage: Option[String] = None,
+  govTalkResponse: Option[GovTalkErrorStatus] = None
 )
 
 object UpdateSubmissionRequest {

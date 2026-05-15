@@ -487,6 +487,33 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.govtalkErrorCode mustBe Some("123")
       upd.govtalkErrorType mustBe Some("business")
       upd.govtalkErrorMessage mustBe Some("oops")
+      upd.govTalkResponse mustBe Some(GovTalkErrorStatus.DepartmentalError("oops"))
+    }
+
+    "prefer a BE-supplied govTalkErrorStatus over local classification" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val chrisResp = mkChrisResp(
+        status = "STARTED",
+        govTalkErrorStatus = Some(GovTalkErrorStatus.ServerError(503))
+      )
+
+      service.updateSubmissionFromChrisResponse("sub-123", uaBase, chrisResp).futureValue
+
+      val cap: ArgumentCaptor[UpdateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
+
+      cap.getValue.govTalkResponse mustBe Some(GovTalkErrorStatus.ServerError(503))
     }
 
     "fail when CIS ID missing" in {
@@ -1569,7 +1596,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     corr: String = "CID123",
     ts: String = "2025-01-01T00:00:00",
     err: Option[JsObject] = None,
-    accepted: Option[String] = None
+    accepted: Option[String] = None,
+    govTalkErrorStatus: Option[GovTalkErrorStatus] = None
   ): ChrisSubmissionResponse =
     ChrisSubmissionResponse(
       submissionId = "sub-123",
@@ -1579,7 +1607,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       responseEndPoint = None,
       gatewayTimestamp = Some(ts),
       acceptedTime = accepted,
-      error = err
+      error = err,
+      govTalkErrorStatus = govTalkErrorStatus
     )
 
 }
