@@ -19,7 +19,7 @@ package services
 import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.MonthlyStandardReturn
-import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest}
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -80,6 +80,31 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
       service.getAmendmentHandoff(handoffId).futureValue mustBe Some(amendmentDetails)
 
       verify(mockConnector).getAmendmentHandoff(handoffId)(hc)
+    }
+
+    "deleteAllMonthlyReturnItems should delegate to the CIS connector" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val mockConnector = mock[ConstructionIndustrySchemeConnector]
+
+      val request = DeleteAllMonthlyReturnItemsRequest(
+        instanceId = "1",
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N"
+      )
+
+      when(
+        mockConnector.deleteAllMonthlyReturnItems(any[DeleteAllMonthlyReturnItemsRequest]())(
+          any[HeaderCarrier]()
+        )
+      ) thenReturn Future.successful(())
+
+      val service = new AmendMonthlyReturnService(mockConnector)
+
+      service.deleteAllMonthlyReturnItems(request).futureValue mustBe ()
+
+      verify(mockConnector).deleteAllMonthlyReturnItems(request)(hc)
     }
   }
 }

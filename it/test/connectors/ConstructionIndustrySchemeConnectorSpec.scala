@@ -19,7 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
-import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest}
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
@@ -998,6 +998,46 @@ class ConstructionIndustrySchemeConnectorSpec
       )
 
       val ex = connector.deleteMonthlyReturnItem(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "deleteAllMonthlyReturnItems(payload)" should {
+
+    "POST /cis/monthly-return-item/delete-all and return Unit on 204" in {
+      val req = DeleteAllMonthlyReturnItemsRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-return-item/delete-all"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.deleteAllMonthlyReturnItems(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-204" in {
+      val req = DeleteAllMonthlyReturnItemsRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-return-item/delete-all"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.deleteAllMonthlyReturnItems(req).failed.futureValue
+
       ex mustBe a[UpstreamErrorResponse]
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }

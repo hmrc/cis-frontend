@@ -742,14 +742,24 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val (service, connector, sessionRepo) = newService()
 
       val instanceId = "CIS-123"
-      val taxYear    = 2024
-      val taxMonth   = 10
+      val monthYear  = LocalDate.of(2026, 1, 5)
       val ids        = Seq(1001L, 1002L)
+
+      val ua = UserAnswers("test")
+        .set(CisIdPage, instanceId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, monthYear)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
 
       when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 
-      service.syncMonthlyReturnItems(instanceId, taxYear, taxMonth, ids).futureValue mustBe ()
+      service.syncMonthlyReturnItems(ua, ids).futureValue mustBe ()
 
       val captor: ArgumentCaptor[SelectedSubcontractorsRequest] =
         ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])
@@ -758,8 +768,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val sent = captor.getValue
       sent.instanceId mustBe instanceId
-      sent.taxYear mustBe taxYear
-      sent.taxMonth mustBe taxMonth
+      sent.taxYear mustBe monthYear.getYear
+      sent.taxMonth mustBe monthYear.getMonthValue
       sent.selectedSubcontractorIds mustBe ids
 
       verifyNoInteractions(sessionRepo)
@@ -806,9 +816,19 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "store selected subcontractors into session, call sync, and return updated UserAnswers" in {
       val (service, connector, sessionRepo) = newService()
 
-      val cisId    = "CIS-123"
-      val taxYear  = 2024
-      val taxMonth = 10
+      val instanceId = "CIS-123"
+      val monthYear  = LocalDate.of(2026, 1, 5)
+
+      val ua = UserAnswers("test")
+        .set(CisIdPage, instanceId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, monthYear)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
 
       val selected: Seq[SelectSubcontractorsViewModel] = Seq(
         SelectSubcontractorsViewModel(
@@ -827,8 +847,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      val ua = UserAnswers("test-user")
-
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -836,7 +854,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.successful(()))
 
       val resultUa =
-        service.storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected).futureValue
+        service.storeAndSyncSelectedSubcontractors(ua, selected).futureValue
 
       val uaCaptor: ArgumentCaptor[UserAnswers] =
         ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -857,9 +875,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
       verify(connector).syncMonthlyReturnItems(reqCaptor.capture())(any[HeaderCarrier])
 
       val sent = reqCaptor.getValue
-      sent.instanceId mustBe cisId
-      sent.taxYear mustBe taxYear
-      sent.taxMonth mustBe taxMonth
+      sent.instanceId mustBe instanceId
+      sent.taxYear mustBe monthYear.getYear
+      sent.taxMonth mustBe monthYear.getMonthValue
       sent.selectedSubcontractorIds mustBe Seq(1001L, 1002L)
 
       verifyNoMoreInteractions(connector)
@@ -868,9 +886,22 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "remove VerifySubcontractorsPage from UserAnswers when previously set to true" in {
       val (service, connector, sessionRepo) = newService()
 
-      val cisId    = "CIS-123"
-      val taxYear  = 2024
-      val taxMonth = 10
+      val instanceId = "CIS-123"
+      val monthYear  = LocalDate.of(2026, 1, 5)
+
+      val ua = UserAnswers("test")
+        .set(CisIdPage, instanceId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, monthYear)
+        .success
+        .value
+        .set(VerifySubcontractorsPage, true)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
 
       val selected: Seq[SelectSubcontractorsViewModel] = Seq(
         SelectSubcontractorsViewModel(
@@ -882,17 +913,13 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      val ua = UserAnswers("test-user")
-        .set(VerifySubcontractorsPage, true)
-        .get
-
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
       when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 
       val resultUa =
-        service.storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected).futureValue
+        service.storeAndSyncSelectedSubcontractors(ua, selected).futureValue
 
       val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepo).set(uaCaptor.capture())
@@ -904,9 +931,22 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "remove VerifySubcontractorsPage from UserAnswers when previously set to false" in {
       val (service, connector, sessionRepo) = newService()
 
-      val cisId    = "CIS-123"
-      val taxYear  = 2024
-      val taxMonth = 10
+      val instanceId = "CIS-123"
+      val monthYear  = LocalDate.of(2026, 1, 5)
+
+      val ua = UserAnswers("test")
+        .set(CisIdPage, instanceId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, monthYear)
+        .success
+        .value
+        .set(VerifySubcontractorsPage, false)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
 
       val selected: Seq[SelectSubcontractorsViewModel] = Seq(
         SelectSubcontractorsViewModel(
@@ -918,17 +958,13 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      val ua = UserAnswers("test-user")
-        .set(VerifySubcontractorsPage, false)
-        .get
-
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
       when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 
       val resultUa =
-        service.storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected).futureValue
+        service.storeAndSyncSelectedSubcontractors(ua, selected).futureValue
 
       val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepo).set(uaCaptor.capture())
@@ -940,9 +976,16 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "fail when session repository returns false (and do not call sync)" in {
       val (service, connector, sessionRepo) = newService()
 
-      val cisId    = "CIS-123"
-      val taxYear  = 2024
-      val taxMonth = 10
+      val instanceId = "CIS-123"
+      val monthYear  = LocalDate.of(2026, 1, 5)
+
+      val ua = UserAnswers("test")
+        .set(CisIdPage, instanceId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, monthYear)
+        .success
+        .value
 
       val selected: Seq[SelectSubcontractorsViewModel] = Seq(
         SelectSubcontractorsViewModel(
@@ -954,13 +997,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      val ua = UserAnswers("test-user")
-
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(false))
 
       val ex = service
-        .storeAndSyncSelectedSubcontractors(ua, cisId, taxYear, taxMonth, selected)
+        .storeAndSyncSelectedSubcontractors(ua, selected)
         .failed
         .futureValue
 

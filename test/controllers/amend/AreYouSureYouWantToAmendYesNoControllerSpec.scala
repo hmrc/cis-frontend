@@ -18,20 +18,25 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
-import models.UserAnswers
-import models.amend.AreYouSureYouWantToAmendYesNo
+import models.ReturnType.MonthlyStandardReturn
+import models.amend.AreYouSureYouWantToAmendYesNo.*
+import models.amend.{AreYouSureYouWantToAmendYesNo, DeleteAllMonthlyReturnItemsRequest}
+import models.monthlyreturns.UpdateMonthlyReturnRequest
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import views.html.amend.AreYouSureYouWantToAmendYesNoView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoSugar {
@@ -44,11 +49,23 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
   val formProvider = new AreYouSureYouWantToAmendYesNoFormProvider()
   val form         = formProvider()
 
+  private val completeUserAnswers =
+    emptyUserAnswers
+      .set(CisIdPage, "cis-123")
+      .success
+      .value
+      .set(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
+      .success
+      .value
+      .set(ReturnTypePage, MonthlyStandardReturn)
+      .success
+      .value
+
   "AreYouSureYouWantToAmendYesNo Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(completeUserAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, areYouSureYouWantToAmendYesNoRoute)
@@ -65,7 +82,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
       val userAnswers =
-        UserAnswers(userAnswersId)
+        completeUserAnswers
           .set(AreYouSureYouWantToAmendYesNoPage, AreYouSureYouWantToAmendYesNo.values.head)
           .success
           .value
@@ -87,14 +104,14 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
       }
     }
 
-    "must redirect to the next page when valid data is submitted" in {
+    "must redirect to the next page when No is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(completeUserAnswers))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
@@ -104,7 +121,43 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
       running(application) {
         val request =
           FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
-            .withFormUrlEncodedBody(("value", AreYouSureYouWantToAmendYesNo.values.head.toString))
+            .withFormUrlEncodedBody(("value", No.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must delete all monthly return items, update monthly return and redirect when Yes is submitted" in {
+
+      val mockSessionRepository     = mock[SessionRepository]
+      val mockAmendMonthlyReturnSvc = mock[AmendMonthlyReturnService]
+      val mockMonthlyReturnService  = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(mockAmendMonthlyReturnSvc.deleteAllMonthlyReturnItems(any[DeleteAllMonthlyReturnItemsRequest]())(any()))
+        .thenReturn(Future.successful(()))
+
+      when(mockMonthlyReturnService.updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any()))
+        .thenReturn(Future.successful(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(completeUserAnswers))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnSvc),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
+            .withFormUrlEncodedBody(("value", Yes.toString))
 
         val result = route(application, request).value
 
@@ -115,7 +168,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(completeUserAnswers)).build()
 
       running(application) {
         val request =
@@ -154,12 +207,11 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
       running(application) {
         val request =
           FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
-            .withFormUrlEncodedBody(("value", AreYouSureYouWantToAmendYesNo.values.head.toString))
+            .withFormUrlEncodedBody(("value", No.toString))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }

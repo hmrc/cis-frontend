@@ -32,4 +32,9 @@ class AmendMonthlyReturnService @Inject() (cisConnector: ConstructionIndustrySch
   def getAmendmentHandoff(handoffId: String)(implicit hc: HeaderCarrier): Future[Option[AmendmentDetails]] =
     cisConnector.getAmendmentHandoff(handoffId)
 
+  def deleteAllMonthlyReturnItems(request: DeleteAllMonthlyReturnItemsRequest)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] =
+    cisConnector.deleteAllMonthlyReturnItems(request)
+
 }

@@ -80,7 +80,7 @@ object UpdateMonthlyReturnRequest {
         instanceId = instanceId,
         taxYear = date.getYear,
         taxMonth = date.getMonthValue,
-        amendment = "N",
+        amendment = returnType.amendmentFlag,
         decInformationCorrect = decInformationCorrect,
         nilReturnIndicator = nilIndicator(returnType),
         status = "STARTED",

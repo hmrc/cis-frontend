@@ -130,26 +130,18 @@ class MonthlyReturnService @Inject() (
     cisConnector.updateMonthlyReturnItem(request)
 
   def syncMonthlyReturnItems(
-    instanceId: String,
-    taxYear: Int,
-    taxMonth: Int,
+    ua: UserAnswers,
     selectedSubcontractorIds: Seq[Long]
   )(implicit hc: HeaderCarrier): Future[Unit] =
-    cisConnector.syncMonthlyReturnItems(
-      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds)
-    )
+    cisConnector.syncMonthlyReturnItems(SelectedSubcontractorsRequest.from(ua, selectedSubcontractorIds))
 
   def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.deleteMonthlyReturnItem(payload)
 
   def storeAndSyncSelectedSubcontractors(
     ua: UserAnswers,
-    cisId: String,
-    taxYear: Int,
-    taxMonth: Int,
     selected: Seq[SelectSubcontractorsViewModel]
   )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
-
     val selectedIds: Seq[Long]         = selected.map(_.id)
     val existingSelectedSubcontractors =
       ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
@@ -180,16 +172,7 @@ class MonthlyReturnService @Inject() (
           case false =>
             Future.failed(new RuntimeException("Failed to persist selected subcontractors in session"))
           case true  =>
-            cisConnector
-              .syncMonthlyReturnItems(
-                SelectedSubcontractorsRequest(
-                  instanceId = cisId,
-                  taxYear = taxYear,
-                  taxMonth = taxMonth,
-                  selectedSubcontractorIds = selectedIds
-                )
-              )
-              .map(_ => updatedUa)
+            syncMonthlyReturnItems(updatedUa, selectedIds).map(_ => updatedUa)
         }
       }
   }
