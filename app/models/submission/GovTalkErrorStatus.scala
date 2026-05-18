@@ -34,54 +34,31 @@ object GovTalkErrorStatus {
 
   case object OtherStatus extends GovTalkErrorStatus
 
-  private val KindField = "kind"
+  private given OFormat[RecoverableError]  = Json.format
+  private given OFormat[FatalError]        = Json.format
+  private given OFormat[DepartmentalError] = Json.format
+  private given OFormat[ServerError]       = Json.format
 
-  private val RecoverableErrorKind  = "RecoverableError"
-  private val FatalErrorKind        = "FatalError"
-  private val DepartmentalErrorKind = "DepartmentalError"
-  private val ServerErrorKind       = "ServerError"
-  private val NoResponseKind        = "NoResponse"
-  private val OtherStatusKind       = "OtherStatus"
-
-  implicit val format: Format[GovTalkErrorStatus] = new Format[GovTalkErrorStatus] {
+  implicit val format: OFormat[GovTalkErrorStatus] = new OFormat[GovTalkErrorStatus] {
 
     override def reads(json: JsValue): JsResult[GovTalkErrorStatus] =
-      (json \ KindField).validate[String].flatMap {
-        case RecoverableErrorKind  =>
-          for {
-            code <- (json \ "errorCode").validate[String]
-            text <- (json \ "errorText").validate[String]
-          } yield RecoverableError(code, text)
-        case FatalErrorKind        =>
-          for {
-            code <- (json \ "errorCode").validate[String]
-            text <- (json \ "errorText").validate[String]
-          } yield FatalError(code, text)
-        case DepartmentalErrorKind =>
-          (json \ "errorText").validate[String].map(DepartmentalError.apply)
-        case ServerErrorKind       =>
-          (json \ "httpStatus").validate[Int].map(ServerError.apply)
-        case NoResponseKind        =>
-          JsSuccess(NoResponse)
-        case OtherStatusKind       =>
-          JsSuccess(OtherStatus)
-        case other                 =>
-          JsError(s"Unknown GovTalkErrorStatus kind: $other")
+      (json \ "kind").validate[String].flatMap {
+        case "RecoverableError"  => json.validate[RecoverableError]
+        case "FatalError"        => json.validate[FatalError]
+        case "DepartmentalError" => json.validate[DepartmentalError]
+        case "ServerError"       => json.validate[ServerError]
+        case "NoResponse"        => JsSuccess(NoResponse)
+        case "OtherStatus"       => JsSuccess(OtherStatus)
+        case other               => JsError(s"Unknown GovTalkErrorStatus kind: $other")
       }
 
-    override def writes(o: GovTalkErrorStatus): JsValue = o match {
-      case RecoverableError(code, text) =>
-        Json.obj(KindField -> RecoverableErrorKind, "errorCode" -> code, "errorText" -> text)
-      case FatalError(code, text)       =>
-        Json.obj(KindField -> FatalErrorKind, "errorCode" -> code, "errorText" -> text)
-      case DepartmentalError(text)      =>
-        Json.obj(KindField -> DepartmentalErrorKind, "errorText" -> text)
-      case ServerError(httpStatus)      =>
-        Json.obj(KindField -> ServerErrorKind, "httpStatus" -> httpStatus)
-      case NoResponse                   =>
-        Json.obj(KindField -> NoResponseKind)
-      case OtherStatus                  =>
-        Json.obj(KindField -> OtherStatusKind)
+    override def writes(o: GovTalkErrorStatus): JsObject = o match {
+      case e: RecoverableError  => Json.toJsObject(e) + ("kind" -> JsString("RecoverableError"))
+      case e: FatalError        => Json.toJsObject(e) + ("kind" -> JsString("FatalError"))
+      case e: DepartmentalError => Json.toJsObject(e) + ("kind" -> JsString("DepartmentalError"))
+      case e: ServerError       => Json.toJsObject(e) + ("kind" -> JsString("ServerError"))
+      case NoResponse           => Json.obj("kind" -> "NoResponse")
+      case OtherStatus          => Json.obj("kind" -> "OtherStatus")
     }
   }
 }
