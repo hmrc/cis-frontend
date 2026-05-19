@@ -144,7 +144,7 @@ class ChrisSubmissionRequestBuilderSpec
       }
 
       verify(connector, times(0))
-        .retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        .retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(any[HeaderCarrier])
     }
 
     "build MonthlyStandardReturn request" in {
@@ -197,7 +197,12 @@ class ChrisSubmissionRequestBuilderSpec
         submission = Seq.empty
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025))(any[HeaderCarrier]))
+      when(
+        connector
+          .retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025), any[Option[Boolean]])(
+            any[HeaderCarrier]
+          )
+      )
         .thenReturn(Future.successful(details))
 
       val reqF = builder.build(ua, mkTaxpayer(), isAgent = true)
@@ -211,7 +216,9 @@ class ChrisSubmissionRequestBuilderSpec
       }
 
       verify(connector, times(1))
-        .retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025))(any[HeaderCarrier])
+        .retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025), any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
     }
 
     "fail when ReturnTypePage missing" in {

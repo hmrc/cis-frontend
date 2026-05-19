@@ -1271,7 +1271,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.successful(payload))
 
       val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
@@ -1348,7 +1352,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.successful(payload))
 
       val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
@@ -1398,7 +1406,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         submission = Nil
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.successful(payload))
 
       service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue mustBe

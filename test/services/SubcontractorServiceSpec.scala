@@ -158,7 +158,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF =
@@ -195,7 +197,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val ua = UserAnswers(
@@ -243,7 +247,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF =
@@ -277,7 +283,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF =
@@ -311,7 +319,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF =
@@ -338,7 +348,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF =
