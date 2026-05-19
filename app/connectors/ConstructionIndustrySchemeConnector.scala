@@ -73,13 +73,14 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
   def retrieveMonthlyReturnForEditDetails(
     instanceId: String,
     taxMonth: Int,
-    taxYear: Int
+    taxYear: Int,
+    isAmendment: Option[Boolean] = None
   )(implicit
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
     http
       .post(url"$cisBaseUrl/monthly-returns-edit/")
-      .withBody(Json.toJson(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear)))
+      .withBody(Json.toJson(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear, isAmendment)))
       .execute[GetAllMonthlyReturnDetailsResponse]
 
   def createNilMonthlyReturn(

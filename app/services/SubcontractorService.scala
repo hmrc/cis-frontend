@@ -158,7 +158,7 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     taxYear: Int,
     userAnswers: Option[UserAnswers] = None
   )(implicit hc: HeaderCarrier): Future[WhichSubcontractorsToAddPageModel] =
-    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear, Some(true)).map { data =>
 
       val previouslyIncludedResourceRefs: Set[Long] =
         data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet

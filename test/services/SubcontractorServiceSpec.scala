@@ -22,7 +22,7 @@ import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn,
 import models.submission.SubcontractorType
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.libs.json.Json
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import uk.gov.hmrc.http.HeaderCarrier
 import org.mockito.Mockito.*
 
@@ -460,7 +460,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(1), eqTo(2026), eqTo(Some(true)))(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF = service.buildAmendWhichSubcontractorsPage(
@@ -487,7 +489,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(1), eqTo(2026), eqTo(Some(true)))(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val ua = emptyUserAnswers
@@ -518,7 +522,9 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier])
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(1), eqTo(2026), eqTo(Some(true)))(
+          any[HeaderCarrier]
+        )
       ).thenReturn(Future.successful(response))
 
       val modelF = service.buildAmendWhichSubcontractorsPage(
