@@ -92,7 +92,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
     "must display cancel amendment link on GET when builder returns a view model with isAmendment = true" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
-      ).set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, MonthlyStandardReturn, None)).get
+      ).set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test Contractor", MonthlyStandardReturn, None)).get
 
       val application = buildApp(ua)
 

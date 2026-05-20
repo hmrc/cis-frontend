@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -59,6 +59,7 @@ class ConfirmAmendmentController @Inject() (
             instanceId = handoff.instanceId,
             taxYear = handoff.taxYear,
             taxMonth = handoff.taxMonth,
+            contractorName = handoff.contractorName,
             originalReturnType = handoff.originalReturnType,
             acceptedTime = handoff.acceptedTime
           )
@@ -68,6 +69,7 @@ class ConfirmAmendmentController @Inject() (
               val updatedUserAnswers =
                 UserAnswers(request.userId)
                   .set(CisIdPage, handoff.instanceId)
+                  .flatMap(_.set(ContractorNamePage, handoff.contractorName))
                   .flatMap(_.set(ReturnTypePage, amendedReturnType))
                   .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
                   .flatMap(

@@ -23,6 +23,7 @@ case class AmendmentDetails(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
+  contractorName: String,
   originalReturnType: ReturnType,
   acceptedTime: Option[String]
 )

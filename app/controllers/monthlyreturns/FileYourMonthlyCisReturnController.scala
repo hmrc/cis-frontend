@@ -21,7 +21,7 @@ import models.{NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -93,6 +93,11 @@ class FileYourMonthlyCisReturnController @Inject() (
     render: => Html
   )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
     if (!request.isAgent) {
+      logger.info(
+        s"[FileYourMonthlyCisReturnController] isAgent=${request.isAgent}, " +
+          s"instanceIdOpt=$instanceIdOpt, " +
+          s"hasContractorName=${userAnswers.get(ContractorNamePage).isDefined}"
+      )
       instanceIdOpt match {
         case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
         case None             =>

@@ -85,6 +85,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         instanceId = "123",
         taxYear = 2025,
         taxMonth = 10,
+        amendment = "N",
         emailRecipient = Some("test@test.com")
       )
 

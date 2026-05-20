@@ -67,6 +67,7 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         instanceId = "1",
         taxYear = 2025,
         taxMonth = 1,
+        contractorName = "Test Contractor",
         originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )

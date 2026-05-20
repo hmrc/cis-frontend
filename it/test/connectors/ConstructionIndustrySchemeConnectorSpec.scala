@@ -572,6 +572,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = "123",
         taxYear = 2024,
         taxMonth = 4,
+        amendment = "N",
         emailRecipient = Some("user@test.com")
       )
 
@@ -585,7 +586,7 @@ class ConstructionIndustrySchemeConnectorSpec
           .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("""{"message":"invalid"}"""))
       )
 
-      val req = CreateSubmissionRequest("123", 2024, 4)
+      val req = CreateSubmissionRequest("123", 2024, 4, "N")
       val ex  = intercept[Throwable] {
         connector.createSubmission(req).futureValue
       }
@@ -598,7 +599,7 @@ class ConstructionIndustrySchemeConnectorSpec
           .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
       )
 
-      val req = CreateSubmissionRequest("123", 2024, 4)
+      val req = CreateSubmissionRequest("123", 2024, 4, "N")
       val ex  = intercept[Throwable] {
         connector.createSubmission(req).futureValue
       }
@@ -690,6 +691,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = "123",
         taxYear = 2024,
         taxMonth = 4,
+        amendment = "N",
         hmrcMarkGenerated = Some("Dj5TVJDyRYCn9zta5EdySeY4fyA="),
         submittableStatus = "FATAL_ERROR"
       )
@@ -703,7 +705,7 @@ class ConstructionIndustrySchemeConnectorSpec
           .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
       )
 
-      val req = UpdateSubmissionRequest("123", 2024, 4, submittableStatus = "FATAL_ERROR")
+      val req = UpdateSubmissionRequest("123", 2024, 4, amendment = "N", submittableStatus = "FATAL_ERROR")
 
       val err = connector.updateSubmission("sub-123", req).failed.futureValue
       err mustBe a[UpstreamErrorResponse]
@@ -1092,6 +1094,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
+        contractorName = "Test Contractor Ltd",
         originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )

@@ -116,6 +116,7 @@ class SubmissionService @Inject() (
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
 
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
@@ -126,6 +127,7 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
+      amendment = returnType.amendmentFlag,
       acceptedTime = acceptedTimestamp.map(_.toString),
       submissionRequestDate = Some(LocalDateTime.now()),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
@@ -278,12 +280,14 @@ class SubmissionService @Inject() (
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
 
     Future.successful(
       CreateSubmissionRequest(
         instanceId = instanceId,
         taxYear = ym.getYear,
         taxMonth = ym.getMonthValue,
+        amendment = returnType.amendmentFlag,
         emailRecipient = email
       )
     )

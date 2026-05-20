@@ -56,7 +56,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
       out.taxMonth mustBe 3
       out.hmrcMarkGenerated.value mustBe "Dj5TVJDyRYCn9zta5EdySeY4fyA="
       out.submittableStatus mustBe "ACCEPTED"
-      out.amendment.value mustBe "N"
+      out.amendment mustBe "N"
       out.hmrcMarkGgis.value mustBe "GGIRmark"
       out.submissionRequestDate.value mustBe LocalDateTime.parse("2025-01-02T03:04:05")
       out.acceptedTime.value mustBe "10:15:30 GMT"
@@ -74,6 +74,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "instanceId": "1",
           |  "taxYear": 2024,
           |  "taxMonth": 4,
+          |  "amendment": "Y",
           |  "submittableStatus": "PENDING"
           |}
         """.stripMargin
@@ -86,7 +87,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
       out.submittableStatus mustBe "PENDING"
 
       out.hmrcMarkGenerated mustBe None
-      out.amendment mustBe None
+      out.amendment mustBe "Y"
       out.hmrcMarkGgis mustBe None
       out.submissionRequestDate mustBe None
       out.acceptedTime mustBe None
@@ -104,6 +105,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "instanceId": "1",
           |  "taxYear": 2025,
           |  "taxMonth": 7,
+          |  "amendment": "Y",
           |  "submittableStatus": "ACCEPTED",
           |  "extra": "ignored",
           |  "another": 123
@@ -125,7 +127,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
         taxMonth = 12,
         hmrcMarkGenerated = Some("Dj5TVJDyRYCn9zta5EdySeY4fyA="),
         submittableStatus = "SUBMITTED_NO_RECEIPT",
-        amendment = Some("Y"),
+        amendment = "Y",
         hmrcMarkGgis = Some("GGIRmark"),
         submissionRequestDate = Some(LocalDateTime.parse("2025-03-04T05:06:07")),
         acceptedTime = Some("11:22:33 GMT"),
