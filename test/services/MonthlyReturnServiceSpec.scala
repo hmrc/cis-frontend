@@ -371,25 +371,145 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       when(
-        connector.retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
-          any[HeaderCarrier]
-        )
+        connector
+          .retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear), eqTo(None))(
+            any[HeaderCarrier]
+          )
       )
         .thenReturn(Future.successful(payload))
 
       val result = service.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
       result mustBe payload
 
-      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear))(
-        any[HeaderCarrier]
+      verify(connector)
+        .retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear), eqTo(None))(
+          any[HeaderCarrier]
+        )
+      verifyNoMoreInteractions(connector)
+    }
+
+    "delegate to connector and return the payload when amendment = true" in {
+      val (service, connector, _) = newService()
+      val instanceId              = "CIS-123"
+      val taxMonth                = 10
+      val taxYear                 = 2025
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(
+          ContractorScheme(
+            schemeId = 1,
+            instanceId = instanceId,
+            accountsOfficeReference = "123PA12345678",
+            taxOfficeNumber = "123",
+            taxOfficeReference = "AB456"
+          )
+        ),
+        monthlyReturn = Seq(
+          MonthlyReturn(monthlyReturnId = 101, taxYear = taxYear, taxMonth = taxMonth)
+        ),
+        subcontractors = Seq(
+          Subcontractor(
+            subcontractorId = 1001,
+            utr = None,
+            pageVisited = None,
+            partnerUtr = None,
+            crn = None,
+            firstName = Some("John"),
+            nino = None,
+            secondName = None,
+            surname = Some("Doe"),
+            partnershipTradingName = None,
+            tradingName = Some("Test Subcontractor Ltd"),
+            subcontractorType = None,
+            addressLine1 = None,
+            addressLine2 = None,
+            addressLine3 = None,
+            addressLine4 = None,
+            country = None,
+            postCode = None,
+            emailAddress = None,
+            phoneNumber = None,
+            mobilePhoneNumber = None,
+            worksReferenceNumber = None,
+            createDate = None,
+            lastUpdate = None,
+            subbieResourceRef = None,
+            matched = None,
+            autoVerified = None,
+            verified = None,
+            verificationNumber = None,
+            taxTreatment = None,
+            verificationDate = None,
+            version = None,
+            updatedTaxTreatment = None,
+            lastMonthlyReturnDate = None,
+            pendingVerifications = None,
+            displayName = Some("Test Subcontractor Ltd")
+          )
+        ),
+        monthlyReturnItems = Seq(
+          MonthlyReturnItem(
+            monthlyReturnId = 101,
+            monthlyReturnItemId = 2001,
+            totalPayments = None,
+            costOfMaterials = None,
+            totalDeducted = None,
+            unmatchedTaxRateIndicator = None,
+            subcontractorId = Some(1001),
+            subcontractorName = None,
+            verificationNumber = None,
+            itemResourceReference = None
+          )
+        ),
+        submission = Seq(
+          Submission(
+            submissionId = 3001,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = None,
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
       )
+
+      when(
+        connector
+          .retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear), eqTo(Some(true)))(
+            any[HeaderCarrier]
+          )
+      )
+        .thenReturn(Future.successful(payload))
+
+      val result = service.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear, Some(true)).futureValue
+      result mustBe payload
+
+      verify(connector)
+        .retrieveMonthlyReturnForEditDetails(eqTo(instanceId), eqTo(taxMonth), eqTo(taxYear), eqTo(Some(true)))(
+          any[HeaderCarrier]
+        )
       verifyNoMoreInteractions(connector)
     }
 
     "propagate failures from the connector" in {
       val (service, connector, _) = newService()
 
-      when(connector.retrieveMonthlyReturnForEditDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025))(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(eqTo("CIS-ERR"), eqTo(1), eqTo(2025), eqTo(None))(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.failed(new RuntimeException("upstream failed")))
 
       val ex = intercept[RuntimeException] {
@@ -726,7 +846,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
   "syncMonthlyReturnItems" - {
 
-    "delegate to connector with SelectedSubcontractorsRequest payload" in {
+    "delegate to connector with SelectedSubcontractorsRequest payload when isAmendment = None" in {
       val (service, connector, sessionRepo) = newService()
 
       val instanceId = "CIS-123"
@@ -749,6 +869,35 @@ class MonthlyReturnServiceSpec extends SpecBase {
       sent.taxYear mustBe taxYear
       sent.taxMonth mustBe taxMonth
       sent.selectedSubcontractorIds mustBe ids
+
+      verifyNoInteractions(sessionRepo)
+      verifyNoMoreInteractions(connector)
+    }
+
+    "delegate to connector with SelectedSubcontractorsRequest payload when isAmendment = true" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val instanceId = "CIS-123"
+      val taxYear    = 2024
+      val taxMonth   = 10
+      val ids        = Seq(1001L, 1002L)
+
+      when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      service.syncMonthlyReturnItems(instanceId, taxYear, taxMonth, ids, Some(true)).futureValue mustBe ()
+
+      val captor: ArgumentCaptor[SelectedSubcontractorsRequest] =
+        ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])
+
+      verify(connector).syncMonthlyReturnItems(captor.capture())(any[HeaderCarrier])
+
+      val sent = captor.getValue
+      sent.instanceId mustBe instanceId
+      sent.taxYear mustBe taxYear
+      sent.taxMonth mustBe taxMonth
+      sent.selectedSubcontractorIds mustBe ids
+      sent.isAmendment mustBe Some(true)
 
       verifyNoInteractions(sessionRepo)
       verifyNoMoreInteractions(connector)
@@ -1122,7 +1271,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.successful(payload))
 
       val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
@@ -1199,7 +1352,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         )
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.successful(payload))
 
       val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
@@ -1249,7 +1406,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
         submission = Nil
       )
 
-      when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      when(
+        connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+          any[HeaderCarrier]
+        )
+      )
         .thenReturn(Future.successful(payload))
 
       service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue mustBe
