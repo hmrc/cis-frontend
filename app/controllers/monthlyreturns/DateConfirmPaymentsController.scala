@@ -33,7 +33,6 @@ import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
-import java.util.TimeZone
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

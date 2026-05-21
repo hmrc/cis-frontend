@@ -50,7 +50,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
   private val amendmentDetailsNil = amendmentDetailsStandard.copy(originalReturnType = MonthlyNilReturn)
 
   private def amendmentDetailsWithTime(acceptedTime: Option[String]) =
-    amendmentDetails.copy(acceptedTime = acceptedTime)
+    amendmentDetailsNil.copy(acceptedTime = acceptedTime)
 
   "ConfirmAmendment Controller" - {
 
