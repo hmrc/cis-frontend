@@ -239,5 +239,23 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
             .url
       }
     }
+
+    "must redirect to confirm cancel amendment page when cancel amendment is selected" in {
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            routes.PaymentDetailsConfirmationController.onCancelAmendment().url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+      }
+    }
   }
 }

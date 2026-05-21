@@ -37,4 +37,9 @@ class AmendMonthlyReturnService @Inject() (cisConnector: ConstructionIndustrySch
   ): Future[Unit] =
     cisConnector.deleteAllMonthlyReturnItems(request)
 
+  def deleteUnsubmittedMonthlyReturn(request: DeleteUnsubmittedMonthlyReturnRequest)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] =
+    cisConnector.deleteUnsubmittedMonthlyReturn(request)
+
 }

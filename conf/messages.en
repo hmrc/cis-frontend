@@ -478,6 +478,7 @@ monthlyreturns.paymentDetailsConfirmation.no = No, I need to make changes
 monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = paymentDetailsConfirmation
 monthlyreturns.paymentDetailsConfirmation.error.required =  Select yes to confirm the information you provided is correct
 monthlyreturns.paymentDetailsConfirmation.change.hidden = PaymentDetailsConfirmation
+monthlyreturns.paymentDetailsConfirmation.cancelAmendment = Cancel amendment
 
 monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
 monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?

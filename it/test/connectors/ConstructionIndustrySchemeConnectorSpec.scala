@@ -19,7 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
-import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest}
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
@@ -1045,6 +1045,46 @@ class ConstructionIndustrySchemeConnectorSpec
     }
   }
 
+  "deleteUnsubmittedMonthlyReturn(payload)" should {
+
+    "POST /cis/monthly-returns/unsubmitted/delete and return Unit on 204" in {
+      val req = DeleteUnsubmittedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/unsubmitted/delete"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.deleteUnsubmittedMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-204" in {
+      val req = DeleteUnsubmittedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/unsubmitted/delete"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.deleteUnsubmittedMonthlyReturn(req).failed.futureValue
+
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+  
   "createAmendedMonthlyReturn(payload)" should {
 
     "POST /cis/amend-monthly-return/create and return Unit on 201" in {

@@ -16,7 +16,7 @@
 
 package connectors
 
-import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest}
+import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
@@ -239,6 +239,20 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
   )(implicit hc: HeaderCarrier): Future[Unit] =
     http
       .post(url"$cisBaseUrl/monthly-return-item/delete-all")
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case NO_CONTENT => Future.unit
+          case status     => Future.failed(UpstreamErrorResponse(response.body, status, status))
+        }
+      }
+
+  def deleteUnsubmittedMonthlyReturn(
+    payload: DeleteUnsubmittedMonthlyReturnRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns/unsubmitted/delete")
       .withBody(Json.toJson(payload))
       .execute[HttpResponse]
       .flatMap { response =>

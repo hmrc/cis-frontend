@@ -18,15 +18,20 @@ package controllers.amend
 
 import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
+import models.amend.DeleteUnsubmittedMonthlyReturnRequest
+import models.requests.DataRequest
 import navigation.Navigator
 import pages.amend.ConfirmCancelAmendmentYesNoPage
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.*
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
 import javax.inject.Inject
@@ -34,6 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ConfirmCancelAmendmentYesNoController @Inject() (
   override val messagesApi: MessagesApi,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
@@ -75,6 +81,10 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
               for {
                 updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmCancelAmendmentYesNoPage, value))
                 _              <- sessionRepository.set(updatedAnswers)
+                result         <- value match {
+                                    case true  => handleYes(updatedAnswers)
+                                    case false => handleNo(updatedAnswers)
+                                  }
               } yield Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, updatedAnswers))
           )
       case None            =>
@@ -82,6 +92,21 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
   }
+
+  private def handleYes(ua: UserAnswers)(implicit request: DataRequest[AnyContent]): Future[Result] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(ua)
+
+    amendMonthlyReturnService
+      .deleteUnsubmittedMonthlyReturn(deleteRequest)
+      .map { _ =>
+        Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, ua))
+      }
+  }
+
+  private def handleNo(ua: UserAnswers): Future[Result] =
+    Future.successful(Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, ua)))
 
   private def getMonthYear: Option[String] =
     Some("April 2026")

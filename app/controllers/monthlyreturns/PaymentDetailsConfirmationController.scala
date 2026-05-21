@@ -16,12 +16,14 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions._
+import controllers.actions.*
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
+
 import javax.inject.Inject
-import models.Mode
+import models.{Mode, UserAnswers}
+import models.ReturnType.*
 import navigation.Navigator
-import pages.monthlyreturns.PaymentDetailsConfirmationPage
+import pages.monthlyreturns.{PaymentDetailsConfirmationPage, ReturnTypePage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -55,7 +57,7 @@ class PaymentDetailsConfirmationController @Inject() (
         case Some(value) => form.fill(value)
       }
 
-      Ok(view(preparedForm, mode))
+      Ok(view(preparedForm, mode, isAmendment(request.userAnswers)))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
@@ -63,12 +65,25 @@ class PaymentDetailsConfirmationController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, isAmendment(request.userAnswers)))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(PaymentDetailsConfirmationPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(PaymentDetailsConfirmationPage, mode, updatedAnswers))
         )
+    }
+
+  def onCancelAmendment(): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
+      Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad())
+    }
+
+  private def isAmendment(ua: UserAnswers): Boolean =
+    ua
+      .get(ReturnTypePage)
+      .getOrElse(throw new RuntimeException("ReturnTypePage not found in user answers")) match {
+      case MonthlyAmendedNilReturn | MonthlyAmendedStandardReturn => true
+      case _                                                      => false
     }
 }
