@@ -30,7 +30,7 @@ class ConfirmAmendmentViewSpec extends SpecBase {
   "ConfirmAmendmentView" - {
     "should display all content on the page" in new Setup {
 
-      val html: HtmlFormat.Appendable = view()
+      val html: HtmlFormat.Appendable = view(true)
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("amend.confirmAmendment.title"))
@@ -40,6 +40,24 @@ class ConfirmAmendmentViewSpec extends SpecBase {
 
       doc.select("p").text()  must include(messages("amend.confirmAmendment.p1"))
       doc.select("p").text()  must include(messages("amend.confirmAmendment.p2"))
+      doc.select("p").text()  must include(messages("amend.confirmAmendment.p3"))
+      doc.select("li").text() must include(messages("amend.confirmAmendment.bullet1"))
+      doc.select("li").text() must include(messages("amend.confirmAmendment.bullet2"))
+      doc.select("li").text() must include(messages("amend.confirmAmendment.bullet3"))
+    }
+
+    "should display content based on the false condition" in new Setup {
+
+      val html: HtmlFormat.Appendable = view(false)
+      val doc: Document               = Jsoup.parse(html.body)
+
+      doc.title             must include(messages("amend.confirmAmendment.title"))
+      doc.select("h1").text must include(
+        messages("amend.confirmAmendment.heading")
+      )
+
+      doc.select("p").text()  must include(messages("amend.confirmAmendment.p1"))
+      doc.select("p").text()  must include(messages("amend.confirmAmendment.p3"))
       doc.select("li").text() must include(messages("amend.confirmAmendment.bullet1"))
       doc.select("li").text() must include(messages("amend.confirmAmendment.bullet2"))
       doc.select("li").text() must include(messages("amend.confirmAmendment.bullet3"))

@@ -31,9 +31,10 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmAmendmentView
 
-import java.time.LocalDate
+import java.time.*
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class ConfirmAmendmentController @Inject() (
   override val messagesApi: MessagesApi,
@@ -47,6 +48,14 @@ class ConfirmAmendmentController @Inject() (
     extends FrontendBaseController
     with I18nSupport
     with Logging {
+
+  private val firstDate: Instant  = Instant.parse("2016-02-06T00:00:00Z")
+  private val secondDate: Instant = Instant.parse("2016-04-06T00:00:00Z")
+
+  private def isInWarningPeriod(acceptedTime: Option[String]): Boolean =
+    acceptedTime
+      .flatMap(t => Try(Instant.parse(t)).toOption)
+      .exists(instant => instant.isAfter(firstDate) && instant.isBefore(secondDate))
 
   def onPageLoad(handoffId: String): Action[AnyContent] = identify.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
@@ -72,8 +81,10 @@ class ConfirmAmendmentController @Inject() (
               )
               .get
 
+          val showWarning = isInWarningPeriod(handoff.acceptedTime)
+
           sessionRepository.set(updatedUserAnswers).map { _ =>
-            Ok(view())
+            Ok(view(showWarning))
           }
 
         case None =>
