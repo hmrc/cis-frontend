@@ -25,7 +25,7 @@
     bulletList: BulletList
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(showWarning: Boolean)(implicit request: Request[_], messages: Messages)
 
 @defining(Seq(
         "amend.confirmAmendment.bullet1",
@@ -38,7 +38,10 @@
 
                 @h1(messages("amend.confirmAmendment.heading"))
                 @paragraph(messages("amend.confirmAmendment.p1"))
-                @paragraph(messages("amend.confirmAmendment.p2"))
+                @if(showWarning) {
+                    @paragraph(messages("amend.confirmAmendment.p2"))
+                }
+                @paragraph(messages("amend.confirmAmendment.p3"))
 
                 @bulletList(items)
                 @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))
