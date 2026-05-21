@@ -133,10 +133,11 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     taxYear: Int,
     taxMonth: Int,
-    selectedSubcontractorIds: Seq[Long]
+    selectedSubcontractorIds: Seq[Long],
+    amendment: String
   )(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.syncMonthlyReturnItems(
-      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds)
+      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds, amendment)
     )
 
   def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =

@@ -29,7 +29,8 @@ object Subcontractor {
 
 case class WhichSubcontractorsToAddPageModel(
   subcontractors: Seq[Subcontractor],
-  preSelectedIds: Set[String]
+  preSelectedIds: Set[String],
+  status: Option[String]
 )
 
 object WhichSubcontractorsToAdd {

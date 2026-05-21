@@ -190,10 +190,13 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
                 .toSet
           }
 
+        val submissionStatus = data.monthlyReturn.headOption.flatMap(_.status)
+
         WhichSubcontractorsToAddPageModel(
           subcontractors = subcontractors,
-          preSelectedIds = preSelectedIds
-        )
+          preSelectedIds = preSelectedIds,
+          status = submissionStatus
+          )
       }
 
 }

@@ -16,16 +16,24 @@
 
 package models.monthlyreturns
 
-import play.api.libs.json.{Json, OFormat}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.*
 
-case class SelectedSubcontractorsRequest(
-  instanceId: String,
-  taxYear: Int,
-  taxMonth: Int,
-  selectedSubcontractorIds: Seq[Long],
-  isAmendment: Option[Boolean] = None
-)
+class SelectedSubcontractorsRequestSpec extends AnyWordSpec with Matchers {
 
-object SelectedSubcontractorsRequest {
-  given format: OFormat[SelectedSubcontractorsRequest] = Json.format[SelectedSubcontractorsRequest]
+  "SelectedSubcontractorsRequest JSON format" should {
+    "serialize and deserialize" in {
+      val model = SelectedSubcontractorsRequest(
+        instanceId = "instance-1",
+        taxYear = 2026,
+        taxMonth = 2,
+        selectedSubcontractorIds = Seq(1L, 2L, 3L),
+        isAmendment = Some(true)
+      )
+
+      val json = Json.toJson(model)
+      json.validate[SelectedSubcontractorsRequest].asOpt shouldBe Some(model)
+    }
+  }
 }

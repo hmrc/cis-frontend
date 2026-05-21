@@ -18,20 +18,21 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
+import models.amend.{AmendmentDetails, Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
 import models.{NormalMode, UserAnswers}
-import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import pages.monthlyreturns.CisIdPage
+import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.SubcontractorService
+import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
 
@@ -42,7 +43,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val whichSubcontractorsToAddRoute = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+  lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
 
   private val cisId   = "CIS-123"
   private val taxDate = LocalDate.of(2025, 10, 5)
@@ -57,7 +58,16 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   private val pageModel = WhichSubcontractorsToAddPageModel(
     subcontractors = subcontractors,
-    preSelectedIds = preSelectedIds
+    preSelectedIds = preSelectedIds,
+    status = Some("STARTED")
+  )
+
+  private val amendmentDetails = AmendmentDetails(
+    instanceId = "1",
+    taxYear = taxDate.getYear,
+    taxMonth = taxDate.getMonthValue,
+    returnType = "Standard",
+    acceptedTime = Some("2025-04-01T12:00:00Z")
   )
 
   private val userAnswersWithRequiredPages =
@@ -65,12 +75,12 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       .set(CisIdPage, cisId)
       .success
       .value
-      .set(DateConfirmPaymentsPage, taxDate)
+      .set(AmendmentDetailsPage, amendmentDetails)
       .success
       .value
 
-  val formProvider = new WhichSubcontractorsToAddFormProvider()
-  val form         = formProvider(subcontractors)
+  val formProvider            = new WhichSubcontractorsToAddFormProvider()
+  val form: Form[Set[String]] = formProvider(subcontractors)
 
   private def stubService(service: SubcontractorService, model: WhichSubcontractorsToAddPageModel): Unit =
     when(
@@ -146,20 +156,71 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       }
     }
 
-    "must redirect to the next page when valid data is submitted" in {
+    "must redirect to the next page when valid data is submitted and monthly return status = STARTED" in {
 
       val mockSessionRepository = mock[SessionRepository]
       val subcontractorService  = mock[SubcontractorService]
+      val monthlyReturnService  = mock[MonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       stubService(subcontractorService, pageModel)
+      when(
+        monthlyReturnService.syncMonthlyReturnItems(
+          eqTo(cisId),
+          eqTo(taxDate.getYear),
+          eqTo(taxDate.getMonthValue),
+          eqTo(Seq(subcontractors.head.id.toLong)),
+          eqTo(Some(true))
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(()))
 
       val application =
         applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[SubcontractorService].toInstance(subcontractorService)
+            bind[SubcontractorService].toInstance(subcontractorService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must redirect to the next page when valid data is submitted and monthly return status = VALIDATED" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      val subcontractorService  = mock[SubcontractorService]
+      val monthlyReturnService  = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      stubService(subcontractorService, pageModel.copy(status = Some("VALIDATED")))
+      when(
+        monthlyReturnService.syncMonthlyReturnItems(
+          eqTo(cisId),
+          eqTo(taxDate.getYear),
+          eqTo(taxDate.getMonthValue),
+          eqTo(Seq(subcontractors.head.id.toLong)),
+          eqTo(Some(true))
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[SubcontractorService].toInstance(subcontractorService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
           )
           .build()
 
@@ -179,9 +240,49 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
       val mockSessionRepository = mock[SessionRepository]
       val subcontractorService  = mock[SubcontractorService]
+      val monthlyReturnService  = mock[MonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       stubService(subcontractorService, pageModel)
+      when(
+        monthlyReturnService.syncMonthlyReturnItems(
+          eqTo(cisId),
+          eqTo(taxDate.getYear),
+          eqTo(taxDate.getMonthValue),
+          eqTo(Seq(subcontractors.head.id.toLong, subcontractors(1).id.toLong)),
+          eqTo(Some(true))
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[SubcontractorService].toInstance(subcontractorService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[]", subcontractors.head.id), ("value[]", subcontractors(1).id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must redirect to Journey Recovery when Submission status is not STARTED or VALIDATED" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      val subcontractorService  = mock[SubcontractorService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      stubService(subcontractorService, pageModel.copy(status = Some("ACCEPTED")))
 
       val application =
         applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
@@ -195,12 +296,12 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       running(application) {
         val request =
           FakeRequest(POST, whichSubcontractorsToAddRoute)
-            .withFormUrlEncodedBody(("value[]", subcontractors.head.id), ("value[]", subcontractors(1).id))
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
