@@ -29,8 +29,10 @@ import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcont
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.TypeUtils.toFuture
 import utils.Utils.toBigDecimal
 import views.html.amend.WhatDoYouWantToAmendStandardView
@@ -40,6 +42,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class WhatDoYouWantToAmendStandardController @Inject() (
   override val messagesApi: MessagesApi,
   monthlyReturnService: MonthlyReturnService,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -64,6 +67,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
     form
       .bindFromRequest()
       .fold(
@@ -107,15 +112,27 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                           .map(x => (x._2 + 1, x._1))
                                           .toMap
 
-            ua1 <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value).toFuture
-            ua2 <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
-            _   <- sessionRepository.set(ua2)
-          } yield value match {
-            case WhatDoYouWantToAmendStandard.AmendToNilReturn                   =>
-              Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad())
-            case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
-              Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
-          }
+            ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value).toFuture
+            ua2    <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
+            _      <- sessionRepository.set(ua2)
+            result <-
+              value match {
+                case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
+                  Future
+                    .successful(Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad()))
+
+                case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
+                  amendMonthlyReturnService.startStandardAmendment(ua2).map {
+                    case Left(_) =>
+                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
+                    case Right(_) =>
+                      Redirect(
+                        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+                      )
+                  }
+              }
+          } yield result
       )
   }
 }

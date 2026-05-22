@@ -19,17 +19,22 @@ package services
 import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.MonthlyStandardReturn
+import models.UserAnswers
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import models.monthlyreturns.UpdateMonthlyReturnRequest
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
 import org.scalatestplus.mockito.MockitoSugar.mock
+import pages.amend.AmendmentDetailsPage
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AmendMonthlyReturnServiceSpec extends SpecBase {
 
   "AmendMonthlyReturnService" - {
+
+    implicit val ec: ExecutionContext = ExecutionContext.global
 
     "createAmendedMonthlyReturn should delegate to the CIS connector" in {
       implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -49,7 +54,8 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         )
       ) thenReturn Future.successful(())
 
-      val service = new AmendMonthlyReturnService(mockConnector)
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val service                  = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
 
       service.createAmendedMonthlyReturn(request).futureValue mustBe ()
 
@@ -75,11 +81,54 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         mockConnector.getAmendmentHandoff(any())(any())
       ) thenReturn Future.successful(Some(amendmentDetails))
 
-      val service = new AmendMonthlyReturnService(mockConnector)
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val service                  = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
 
       service.getAmendmentHandoff(handoffId).futureValue mustBe Some(amendmentDetails)
 
       verify(mockConnector).getAmendmentHandoff(handoffId)(hc)
+    }
+
+    "startStandardAmendment should update monthly return when AmendmentDetailsPage exists" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val mockConnector            = mock[ConstructionIndustrySchemeConnector]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = "1",
+        taxYear = 2025,
+        taxMonth = 1,
+        originalReturnType = MonthlyStandardReturn,
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      val userAnswers = UserAnswers("user-id")
+        .set(AmendmentDetailsPage, amendmentDetails)
+        .success
+        .value
+
+      when(
+        mockMonthlyReturnService.updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(
+          any[HeaderCarrier]()
+        )
+      ) thenReturn Future.successful(())
+
+      val service = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
+
+      service.startStandardAmendment(userAnswers).futureValue mustBe Right(())
+    }
+
+    "startStandardAmendment should return Left when AmendmentDetailsPage is missing" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val mockConnector            = mock[ConstructionIndustrySchemeConnector]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val userAnswers = UserAnswers("user-id")
+      val service     = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
+
+      service.startStandardAmendment(userAnswers).futureValue mustBe Left("Missing amendment details")
     }
   }
 }
