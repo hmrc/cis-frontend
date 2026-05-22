@@ -28,7 +28,6 @@ import models.requests.DataRequest
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
-import services.guard.SubmissionSuccessfulCheck.{GuardFailed, GuardPassed}
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -63,16 +62,14 @@ class SubmissionSuccessController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      submissionSuccessGuard.check.flatMap {
-        case GuardFailed =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-        case GuardPassed =>
-          val ua = request.userAnswers
-          for {
-            vm <- buildViewModel(ua)
-            _  <- monthlyReturnService.completeSubmissionJourney(ua)
-          } yield Ok(view(vm))
+      if (!submissionSuccessGuard.check) {
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      } else {
+        val ua = request.userAnswers
+        for {
+          vm <- buildViewModel(ua)
+          _  <- monthlyReturnService.completeSubmissionJourney(ua)
+        } yield Ok(view(vm))
       }
     }
 
