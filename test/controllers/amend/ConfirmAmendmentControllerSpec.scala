@@ -17,13 +17,14 @@
 package controllers.amend
 
 import base.SpecBase
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.amend.AmendmentDetails
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.mockito.MockitoSugar.mock
-import pages.amend.AmendmentDetailsPage
+import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -34,20 +35,22 @@ import views.html.amend.ConfirmAmendmentView
 
 import scala.concurrent.Future
 
-class ConfirmAmendmentControllerSpec extends SpecBase {
+class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
 
   private val handoffId = "handoff-123"
 
-  private val amendmentDetails = AmendmentDetails(
+  private val amendmentDetailsStandard = AmendmentDetails(
     instanceId = "1",
     taxYear = 2025,
     taxMonth = 1,
-    returnType = "Standard",
+    originalReturnType = MonthlyStandardReturn,
     acceptedTime = Some("2025-04-01T12:00:00Z")
   )
 
+  private val amendmentDetailsNil = amendmentDetailsStandard.copy(originalReturnType = MonthlyNilReturn)
+
   private def amendmentDetailsWithTime(acceptedTime: Option[String]) =
-    amendmentDetails.copy(acceptedTime = acceptedTime)
+    amendmentDetailsNil.copy(acceptedTime = acceptedTime)
 
   "ConfirmAmendment Controller" - {
 
@@ -58,7 +61,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
       when(mockSessionRepository.set(any[UserAnswers]())) thenReturn Future.successful(true)
 
       when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
-        Some(amendmentDetails)
+        Some(amendmentDetailsStandard)
       )
 
       val application =
@@ -84,7 +87,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
 
-        verify(mockAmendMonthlyReturnService).getAmendmentHandoff(any[String]())(
+        verify(mockAmendMonthlyReturnService).getAmendmentHandoff(eqTo(handoffId))(
           any[HeaderCarrier]()
         )
         verify(mockSessionRepository).set(any[UserAnswers]())
@@ -126,13 +129,13 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect to Journey Recovery when onSubmit succeeds" in {
+    "must redirect to What Do You Want To Amend Standard when onSubmit succeeds with MonthlyStandardReturn" in {
       val mockSessionRepository         = mock[SessionRepository]
       val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
       val userAnswers =
         emptyUserAnswers
-          .set(AmendmentDetailsPage, amendmentDetails)
+          .set(AmendmentDetailsPage, amendmentDetailsStandard)
           .success
           .value
 
@@ -163,8 +166,56 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.routes.JourneyRecoveryController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
 
+        val userAnswersCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(userAnswersCaptor.capture())
+        userAnswersCaptor.getValue.get(ConfirmAmendmentPage).value mustEqual true
+      }
+    }
+
+    "must redirect to What Do You Want To Amend Nil when onSubmit succeeds with MonthlyNilReturn" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(AmendmentDetailsPage, amendmentDetailsNil)
+          .success
+          .value
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.createAmendedMonthlyReturn(any())(any())
+      ) thenReturn Future.successful(())
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onSubmit()
+              .url
+          ).withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
+
+        val userAnswersCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(userAnswersCaptor.capture())
+        userAnswersCaptor.getValue.get(ConfirmAmendmentPage).value mustEqual true
       }
     }
 
@@ -174,7 +225,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase {
 
       val userAnswers =
         emptyUserAnswers
-          .set(AmendmentDetailsPage, amendmentDetails)
+          .set(AmendmentDetailsPage, amendmentDetailsStandard)
           .success
           .value
 

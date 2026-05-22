@@ -20,8 +20,9 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
-import models.requests.SendSuccessEmailRequest
+import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.monthlyreturns.*
+import models.ReturnType.MonthlyStandardReturn
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -297,7 +298,9 @@ class ConstructionIndustrySchemeConnectorSpec
           )
       )
 
-      val result = connector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear).futureValue
+      val result = connector
+        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(instanceId, taxMonth, taxYear, false))
+        .futureValue
 
       result.scheme.length mustBe 1
       result.scheme.head.instanceId mustBe instanceId
@@ -338,7 +341,9 @@ class ConstructionIndustrySchemeConnectorSpec
           )
       )
 
-      val result = connector.retrieveMonthlyReturnForEditDetails("CIS-456", 5, 2024).futureValue
+      val result = connector
+        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-456", 5, 2024, false))
+        .futureValue
 
       result.scheme mustBe empty
       result.monthlyReturn mustBe empty
@@ -358,7 +363,9 @@ class ConstructionIndustrySchemeConnectorSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturnForEditDetails("CIS-ERR", 1, 2025).futureValue
+        connector
+          .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-ERR", 1, 2025, false))
+          .futureValue
       }
       ex.getMessage must include("returned 500")
     }
@@ -374,7 +381,9 @@ class ConstructionIndustrySchemeConnectorSpec
       )
 
       val ex = intercept[Exception] {
-        connector.retrieveMonthlyReturnForEditDetails("CIS-NOTFOUND", 3, 2025).futureValue
+        connector
+          .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest("CIS-NOTFOUND", 3, 2025, false))
+          .futureValue
       }
       ex.getMessage must include("returned 404")
     }
@@ -953,47 +962,6 @@ class ConstructionIndustrySchemeConnectorSpec
     }
   }
 
-  "syncMonthlyReturnItems(payload)" should {
-
-    "POST /cis/monthly-return-item/sync and return Unit on 204" in {
-      val req = SelectedSubcontractorsRequest(
-        instanceId = cisId,
-        taxYear = 2025,
-        taxMonth = 1,
-        selectedSubcontractorIds = Seq(1001L, 1002L),
-        isAmendment = Some(true)
-      )
-
-      stubFor(
-        post(urlPathEqualTo("/cis/monthly-return-item/sync"))
-          .withHeader("Content-Type", equalTo("application/json"))
-          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
-          .willReturn(aResponse().withStatus(NO_CONTENT))
-      )
-
-      connector.syncMonthlyReturnItems(req).futureValue mustBe ((): Unit)
-    }
-
-    "fail the future when BE returns non-204 (e.g. 500)" in {
-      val req = SelectedSubcontractorsRequest(
-        instanceId = cisId,
-        taxYear = 2025,
-        taxMonth = 1,
-        selectedSubcontractorIds = Seq(1001L, 1002L),
-        isAmendment = Some(true)
-      )
-
-      stubFor(
-        post(urlPathEqualTo("/cis/monthly-return-item/sync"))
-          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
-      )
-
-      val ex = connector.syncMonthlyReturnItems(req).failed.futureValue
-      ex mustBe a[UpstreamErrorResponse]
-      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
-    }
-  }
-
   "deleteMonthlyReturnItem(payload)" should {
 
     "POST /cis/monthly-return-item/delete and return Unit on 204" in {
@@ -1082,7 +1050,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        returnType = "Standard",
+        originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
 

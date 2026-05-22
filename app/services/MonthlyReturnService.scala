@@ -29,8 +29,10 @@ import play.api.libs.json.*
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.QuestionPage
 import pages.agent.AgentClientDataPage
+import pages.amend.AmendmentDetailsPage
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.UserAnswerUtils.clearMonthlyReturnJourney
+import utils.Utils.toBigDecimal
 import viewmodels.SelectSubcontractorsViewModel
 
 import java.time.LocalDate
@@ -76,14 +78,11 @@ class MonthlyReturnService @Inject() (
     cisConnector.retrieveMonthlyReturns(cisId)
 
   def retrieveMonthlyReturnForEditDetails(
-    instanceId: String,
-    taxMonth: Int,
-    taxYear: Int,
-    isAmendment: Option[Boolean] = None
+    monthlyReturnRequest: GetMonthlyReturnForEditRequest
   )(implicit
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
-    cisConnector.retrieveMonthlyReturnForEditDetails(instanceId, taxMonth, taxYear, isAmendment)
+    cisConnector.retrieveMonthlyReturnForEditDetails(monthlyReturnRequest)
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)
@@ -136,10 +135,10 @@ class MonthlyReturnService @Inject() (
     taxYear: Int,
     taxMonth: Int,
     selectedSubcontractorIds: Seq[Long],
-    isAmendment: Option[Boolean] = None
+    amendment: String
   )(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.syncMonthlyReturnItems(
-      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds, isAmendment)
+      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds, amendment)
     )
 
   def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
@@ -189,7 +188,10 @@ class MonthlyReturnService @Inject() (
                   instanceId = cisId,
                   taxYear = taxYear,
                   taxMonth = taxMonth,
-                  selectedSubcontractorIds = selectedIds
+                  selectedSubcontractorIds = selectedIds,
+                  amendment =
+                    if (updatedUa.get(AmendmentDetailsPage).isDefined) "Y"
+                    else "N" // Todo: to be updated once 4682 merged
                 )
               )
               .map(_ => updatedUa)
@@ -215,9 +217,7 @@ class MonthlyReturnService @Inject() (
     editRequest: GetMonthlyReturnForEditRequest
   )(implicit hc: HeaderCarrier): Future[Either[String, UserAnswers]] =
     retrieveMonthlyReturnForEditDetails(
-      instanceId = editRequest.instanceId,
-      taxMonth = editRequest.taxMonth,
-      taxYear = editRequest.taxYear
+      editRequest
     ).map { response =>
       for {
         monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
@@ -403,13 +403,6 @@ class MonthlyReturnService @Inject() (
                      } yield next
                  }
     } yield updated
-
-  private def toBigDecimal(value: Option[String]): Option[BigDecimal] =
-    value
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .map(_.replace(",", ""))
-      .flatMap(value => Try(BigDecimal(value)).toOption)
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {

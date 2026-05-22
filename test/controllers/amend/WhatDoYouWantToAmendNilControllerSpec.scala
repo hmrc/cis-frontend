@@ -20,7 +20,7 @@ import base.SpecBase
 import controllers.routes
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.amend.WhatDoYouWantToAmendNil
-import models.UserAnswers
+import models.{NormalMode, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
@@ -81,7 +81,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to the WhatDoYouWantToAmendNil page when valid data AmendNilReturn is submitted" in {
+    "must redirect to the SubmitInactivityRequestController page when valid data AmendNilReturn is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
 
@@ -102,13 +102,13 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.amend.routes.WhatDoYouWantToAmendNilController
-          .onPageLoad()
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmitInactivityRequestController
+          .onPageLoad(NormalMode)
           .url
       }
     }
 
-    "must redirect to the WhatDoYouWantToAmendNil page when valid data AddPaymentOrSubcontractorDetails is submitted" in {
+    "must redirect to the WhichSubcontractorsToAddController page when valid data AddPaymentOrSubcontractorDetails is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
 
@@ -129,8 +129,8 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.amend.routes.WhatDoYouWantToAmendNilController
-          .onPageLoad()
+        redirectLocation(result).value mustEqual controllers.amend.routes.WhichSubcontractorsToAddController
+          .onPageLoad(NormalMode)
           .url
       }
     }

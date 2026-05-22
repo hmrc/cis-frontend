@@ -20,28 +20,99 @@ import base.SpecBase
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 import models.UserAnswers
 import models.amend.WhatDoYouWantToAmendStandard
-import navigation.{FakeNavigator, Navigator}
+import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendStandardPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.inject.bind
-import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSugar {
-
-  def onwardRoute = Call("GET", "/foo")
 
   lazy val whatDoYouWantToAmendStandardRoute = routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
 
   val formProvider = new WhatDoYouWantToAmendStandardFormProvider()
   val form         = formProvider()
+
+  val cisId   = "12345678"
+  val taxDate = LocalDate.of(2023, 1, 5)
+
+  val baseAnswers = emptyUserAnswers
+    .set(CisIdPage, cisId)
+    .success
+    .value
+    .set(DateConfirmPaymentsPage, taxDate)
+    .success
+    .value
+
+  val mockMonthlyReturn = GetAllMonthlyReturnDetailsResponse(
+    scheme = Nil,
+    monthlyReturn = Seq(MonthlyReturn(1L, 2023, 1)),
+    subcontractors = Seq(
+      Subcontractor(
+        1L,
+        Some("utr"),
+        None,
+        None,
+        None,
+        Some("First"),
+        None,
+        None,
+        Some("Last"),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(100L),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some("First Last")
+      )
+    ),
+    monthlyReturnItems = Seq(
+      MonthlyReturnItem(
+        1L,
+        1L,
+        Some("100.00"),
+        Some("20.00"),
+        Some("10.00"),
+        None,
+        Some(1L),
+        Some("First Last"),
+        None,
+        Some(100L)
+      )
+    ),
+    submission = Nil
+  )
 
   "WhatDoYouWantToAmendStandard Controller" - {
 
@@ -85,29 +156,73 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
       }
     }
 
-    "must redirect to the next page when valid data is submitted" in {
+    "must redirect to Are You Sure You Want To Amend when 'Amend to Nil Return' is submitted" in {
 
-      val mockSessionRepository = mock[SessionRepository]
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn Future.successful(
+        mockMonthlyReturn
+      )
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(baseAnswers))
           .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
           )
           .build()
 
       running(application) {
         val request =
           FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
-            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.values.head.toString))
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendToNilReturn.toString))
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+        redirectLocation(result).value mustEqual routes.AreYouSureYouWantToAmendYesNoController.onPageLoad().url
+
+        verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
+        verify(mockSessionRepository).set(any())
+      }
+    }
+
+    "must redirect to Subcontractor Details Added when 'Amend Payment or Subcontractor Details' is submitted" in {
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn Future.successful(
+        mockMonthlyReturn
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(baseAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(
+          result
+        ).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onPageLoad(models.NormalMode)
+          .url
+
+        verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
+        verify(mockSessionRepository).set(any())
       }
     }
 

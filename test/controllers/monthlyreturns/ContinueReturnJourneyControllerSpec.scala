@@ -106,7 +106,8 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         requestCaptor.getValue mustBe GetMonthlyReturnForEditRequest(
           instanceId = "CIS-123",
           taxYear = 2025,
-          taxMonth = 1
+          taxMonth = 1,
+          false
         )
       }
     }
@@ -156,7 +157,8 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         requestCaptor.getValue mustBe GetMonthlyReturnForEditRequest(
           instanceId = "CIS-123",
           taxYear = 2025,
-          taxMonth = 1
+          taxMonth = 1,
+          isAmendment = false
         )
       }
     }

@@ -18,7 +18,8 @@ package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
 import models.{CheckMode, NormalMode, UserAnswers}
-import pages.monthlyreturns.{AmendmentDetailsPage, SelectedSubcontractorPage}
+import pages.amend.AmendmentDetailsPage
+import pages.monthlyreturns.SelectedSubcontractorPage
 
 object SubcontractorDetailsAddedBuilder {
 

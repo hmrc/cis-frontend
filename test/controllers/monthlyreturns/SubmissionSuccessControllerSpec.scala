@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.ReturnType.MonthlyNilReturn
+import models.ReturnType.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.submission.SubmissionDetails

@@ -18,11 +18,12 @@ package services
 
 import base.SpecBase
 import models.UserAnswers
-import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, SelectedSubcontractor, Subcontractor}
+import models.monthlyreturns.*
+import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.SubcontractorType
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.libs.json.Json
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.http.HeaderCarrier
 import org.mockito.Mockito.*
 
@@ -158,7 +159,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -197,7 +198,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -247,7 +248,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -283,7 +284,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -319,7 +320,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -348,7 +349,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -472,7 +473,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(1), eqTo(2026), eqTo(Some(true)))(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -501,7 +502,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(1), eqTo(2026), eqTo(Some(true)))(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))
@@ -534,7 +535,7 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(eqTo("1"), eqTo(1), eqTo(2026), eqTo(Some(true)))(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
           any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(response))

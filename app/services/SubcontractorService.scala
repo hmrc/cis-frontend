@@ -17,8 +17,11 @@
 package services
 
 import models.UserAnswers
+import models.monthlyreturns.SelectSubcontractorsPageModel
+import models.requests.GetMonthlyReturnForEditRequest
+import pages.amend.AmendmentDetailsPage
 import models.amend.{Subcontractor as AmendSubcontractor, WhichSubcontractorsToAddPageModel}
-import models.monthlyreturns.{SelectSubcontractorsPageModel, Subcontractor}
+import models.monthlyreturns.Subcontractor
 import models.submission.SubcontractorType
 import pages.monthlyreturns.SelectedSubcontractorPage
 import scala.util.Try
@@ -81,76 +84,80 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     defaultSelection: Option[Boolean],
     userAnswers: Option[UserAnswers] = None,
     today: LocalDate = LocalDate.now()
-  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
-    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear).map { data =>
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] = {
+    val isAmendment = userAnswers.exists(_.get(AmendmentDetailsPage).isDefined)
+    monthlyReturnService
+      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
+      .map { data =>
 
-      val previouslyIncludedResourceRefs: Set[Long] =
-        data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+        val previouslyIncludedResourceRefs: Set[Long] =
+          data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
 
-      val periodStart = verificationPeriodStart(today)
+        val periodStart = verificationPeriodStart(today)
 
-      val rows: Seq[(SelectSubcontractorsViewModel, Boolean)] =
-        data.subcontractors.map { subcontractor =>
-          val includedLastMonth = subcontractor.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
+        val rows: Seq[(SelectSubcontractorsViewModel, Boolean)] =
+          data.subcontractors.map { subcontractor =>
+            val includedLastMonth = subcontractor.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains)
 
-          val required = verificationRequired(
-            subcontractor.verified,
-            subcontractor.verificationDate,
-            subcontractor.lastMonthlyReturnDate,
-            periodStart
-          )
+            val required = verificationRequired(
+              subcontractor.verified,
+              subcontractor.verificationDate,
+              subcontractor.lastMonthlyReturnDate,
+              periodStart
+            )
 
-          val verificationNumber: String =
-            if (!required) {
-              subcontractor.verificationNumber.map(_.trim).filter(_.nonEmpty).getOrElse("Unknown")
-            } else {
-              "Unknown"
-            }
+            val verificationNumber: String =
+              if (!required) {
+                subcontractor.verificationNumber.map(_.trim).filter(_.nonEmpty).getOrElse("Unknown")
+              } else {
+                "Unknown"
+              }
 
-          val taxTreatment: String =
-            if (!required && subcontractor.taxTreatment.isDefined) {
-              subcontractor.taxTreatment
-                .map(_.trim.toLowerCase)
-                .collect {
-                  case "net"       => "Standard rate"
-                  case "unmatched" => "Higher rate"
-                  case "gross"     => "Gross"
-                }
-                .getOrElse("Unknown")
-            } else {
-              "Unknown"
-            }
+            val taxTreatment: String =
+              if (!required && subcontractor.taxTreatment.isDefined) {
+                subcontractor.taxTreatment
+                  .map(_.trim.toLowerCase)
+                  .collect {
+                    case "net"       => "Standard rate"
+                    case "unmatched" => "Higher rate"
+                    case "gross"     => "Gross"
+                  }
+                  .getOrElse("Unknown")
+              } else {
+                "Unknown"
+              }
 
-          val viewModel = SelectSubcontractorsViewModel(
-            id = subcontractor.subcontractorId.toInt,
-            name = subcontractor.displayName.getOrElse("No name provided"),
-            verificationRequired = if (required) "Yes" else "No",
-            verificationNumber = verificationNumber,
-            taxTreatment = taxTreatment
-          )
+            val viewModel = SelectSubcontractorsViewModel(
+              id = subcontractor.subcontractorId.toInt,
+              name = subcontractor.displayName.getOrElse("No name provided"),
+              verificationRequired = if (required) "Yes" else "No",
+              verificationNumber = verificationNumber,
+              taxTreatment = taxTreatment
+            )
 
-          (viewModel, includedLastMonth)
+            (viewModel, includedLastMonth)
+          }
+
+        val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
+
+        val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all)).getOrElse(Map())
+
+        val initiallySelectedIds: Seq[Int] = defaultSelection match {
+          case Some(true)                              => subcontractorViewModels.map(_.id)
+          case Some(false)                             => Seq.empty
+          case None if selectedSubcontractors.nonEmpty => selectedSubcontractors.values.map(_.id.toInt).toSeq
+          case None                                    =>
+            subcontractorViewModels
+              .zip(includedLastMonthFlags)
+              .collect { case (vm, true) => vm.id }
         }
 
-      val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
-
-      val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all)).getOrElse(Map())
-
-      val initiallySelectedIds: Seq[Int] = defaultSelection match {
-        case Some(true)                              => subcontractorViewModels.map(_.id)
-        case Some(false)                             => Seq.empty
-        case None if selectedSubcontractors.nonEmpty => selectedSubcontractors.values.map(_.id.toInt).toSeq
-        case None                                    =>
-          subcontractorViewModels
-            .zip(includedLastMonthFlags)
-            .collect { case (vm, true) => vm.id }
+        SelectSubcontractorsPageModel(
+          subcontractors = subcontractorViewModels,
+          initiallySelectedIds = initiallySelectedIds
+        )
       }
-
-      SelectSubcontractorsPageModel(
-        subcontractors = subcontractorViewModels,
-        initiallySelectedIds = initiallySelectedIds
-      )
-    }
+  }
 
   def buildAmendWhichSubcontractorsPage(
     cisId: String,
@@ -158,37 +165,39 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     taxYear: Int,
     userAnswers: Option[UserAnswers] = None
   )(implicit hc: HeaderCarrier): Future[WhichSubcontractorsToAddPageModel] =
-    monthlyReturnService.retrieveMonthlyReturnForEditDetails(cisId, taxMonth, taxYear, Some(true)).map { data =>
+    monthlyReturnService
+      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, true))
+      .map { data =>
 
-      val previouslyIncludedResourceRefs: Set[Long] =
-        data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+        val previouslyIncludedResourceRefs: Set[Long] =
+          data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
 
-      val subcontractors: Seq[AmendSubcontractor] =
-        data.subcontractors.map { sub =>
-          AmendSubcontractor(
-            id = sub.subcontractorId.toString,
-            name = resolveSubcontractorName(sub)
-          )
-        }
+        val subcontractors: Seq[AmendSubcontractor] =
+          data.subcontractors.map { sub =>
+            AmendSubcontractor(
+              id = sub.subcontractorId.toString,
+              name = resolveSubcontractorName(sub)
+            )
+          }
 
-      val preSelectedIds: Set[String] =
-        userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
-          case Some(ids) => ids
-          case None      =>
-            data.subcontractors
-              .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
-              .map(_.subcontractorId.toString)
-              .toSet
-        }
+        val preSelectedIds: Set[String] =
+          userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
+            case Some(ids) => ids
+            case None      =>
+              data.subcontractors
+                .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
+                .map(_.subcontractorId.toString)
+                .toSet
+          }
 
-      val submissionStatus = data.monthlyReturn.headOption.flatMap(_.status)
+        val submissionStatus = data.monthlyReturn.headOption.flatMap(_.status)
 
-      WhichSubcontractorsToAddPageModel(
-        subcontractors = subcontractors,
-        preSelectedIds = preSelectedIds,
-        status = submissionStatus
-      )
-    }
+        WhichSubcontractorsToAddPageModel(
+          subcontractors = subcontractors,
+          preSelectedIds = preSelectedIds,
+          status = submissionStatus
+        )
+      }
 
 }
 

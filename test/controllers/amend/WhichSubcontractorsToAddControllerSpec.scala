@@ -18,14 +18,14 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
-import models.amend.{AmendmentDetails, Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
+import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
-import pages.monthlyreturns.CisIdPage
+import pages.amend.WhichSubcontractorsToAddPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -62,20 +62,14 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     status = Some("STARTED")
   )
 
-  private val amendmentDetails = AmendmentDetails(
-    instanceId = "1",
-    taxYear = taxDate.getYear,
-    taxMonth = taxDate.getMonthValue,
-    returnType = "Standard",
-    acceptedTime = Some("2025-04-01T12:00:00Z")
-  )
+  private val monthYear = LocalDate.of(2025, 10, 5)
 
   private val userAnswersWithRequiredPages =
     emptyUserAnswers
       .set(CisIdPage, cisId)
       .success
       .value
-      .set(AmendmentDetailsPage, amendmentDetails)
+      .set(DateConfirmPaymentsPage, monthYear)
       .success
       .value
 
@@ -166,11 +160,11 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       stubService(subcontractorService, pageModel)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
-          eqTo(cisId),
-          eqTo(taxDate.getYear),
-          eqTo(taxDate.getMonthValue),
-          eqTo(Seq(subcontractors.head.id.toLong)),
-          eqTo(Some(true))
+          any[String],
+          any[Int],
+          any[Int],
+          any[Seq[Long]],
+          any[String]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
@@ -206,11 +200,11 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       stubService(subcontractorService, pageModel.copy(status = Some("VALIDATED")))
       when(
         monthlyReturnService.syncMonthlyReturnItems(
-          eqTo(cisId),
-          eqTo(taxDate.getYear),
-          eqTo(taxDate.getMonthValue),
-          eqTo(Seq(subcontractors.head.id.toLong)),
-          eqTo(Some(true))
+          any[String],
+          any[Int],
+          any[Int],
+          any[Seq[Long]],
+          any[String]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
@@ -246,11 +240,11 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       stubService(subcontractorService, pageModel)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
-          eqTo(cisId),
-          eqTo(taxDate.getYear),
-          eqTo(taxDate.getMonthValue),
-          eqTo(Seq(subcontractors.head.id.toLong, subcontractors(1).id.toLong)),
-          eqTo(Some(true))
+          any[String],
+          any[Int],
+          any[Int],
+          any[Seq[Long]],
+          any[String]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 

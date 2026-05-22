@@ -16,24 +16,31 @@
 
 package controllers.amend
 
-import controllers.actions._
+import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
+
 import javax.inject.Inject
 import models.NormalMode
-import navigation.Navigator
+import models.amend.WhatDoYouWantToAmendStandard
+import models.monthlyreturns.SelectedSubcontractor
+import models.requests.GetMonthlyReturnForEditRequest
 import pages.amend.WhatDoYouWantToAmendStandardPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import utils.TypeUtils.toFuture
+import utils.Utils.toBigDecimal
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class WhatDoYouWantToAmendStandardController @Inject() (
   override val messagesApi: MessagesApi,
+  monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
-  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -62,10 +69,53 @@ class WhatDoYouWantToAmendStandardController @Inject() (
       .fold(
         formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
         value =>
+          val requiredAnswers = for {
+            cisId   <- request.userAnswers.get(CisIdPage)
+            taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+          } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
           for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-          } yield Redirect(navigator.nextPage(WhatDoYouWantToAmendStandardPage, NormalMode, updatedAnswers))
+            (cisId, month, year)     <- requiredAnswers.toFuture
+            monthlyReturn            <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+                                          GetMonthlyReturnForEditRequest(
+                                            cisId,
+                                            taxMonth = month,
+                                            taxYear = year,
+                                            isAmendment = true
+                                          )
+                                        )
+            itemsAndSubcontractors    = monthlyReturn.subcontractors
+                                          .map { subcontractor =>
+                                            val item = monthlyReturn.monthlyReturnItems
+                                              .find(_.itemResourceReference == subcontractor.subbieResourceRef)
+                                            (subcontractor, item)
+                                          }
+                                          .collect { case (subcontractor, Some(item)) =>
+                                            (subcontractor, item)
+                                          }
+            preselectedSubcontractors = itemsAndSubcontractors
+                                          .map((sub, item) =>
+                                            SelectedSubcontractor(
+                                              id = sub.subcontractorId,
+                                              name = sub.displayName.getOrElse("No name provided"),
+                                              totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                              costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                              totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                            )
+                                          )
+                                          .zipWithIndex
+                                          .map(x => (x._2 + 1, x._1))
+                                          .toMap
+
+            ua1 <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value).toFuture
+            ua2 <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
+            _   <- sessionRepository.set(ua2)
+          } yield value match {
+            case WhatDoYouWantToAmendStandard.AmendToNilReturn                   =>
+              Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad())
+            case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
+              Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+          }
       )
   }
 }

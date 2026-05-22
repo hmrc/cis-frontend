@@ -20,6 +20,7 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.*
+import models.requests.GetMonthlyReturnForEditRequest
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.concurrent.ScalaFutures
@@ -33,6 +34,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 class ChrisSubmissionRequestBuilderSpec
     extends AnyWordSpec
@@ -144,7 +146,7 @@ class ChrisSubmissionRequestBuilderSpec
       }
 
       verify(connector, times(0))
-        .retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int], any[Option[Boolean]])(any[HeaderCarrier])
+        .retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier])
     }
 
     "build MonthlyStandardReturn request" in {
@@ -198,10 +200,9 @@ class ChrisSubmissionRequestBuilderSpec
       )
 
       when(
-        connector
-          .retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025), any[Option[Boolean]])(
-            any[HeaderCarrier]
-          )
+        connector.retrieveMonthlyReturnForEditDetails(
+          eqTo(GetMonthlyReturnForEditRequest("instance-1", 9, 2025, false))
+        )(any[HeaderCarrier])
       )
         .thenReturn(Future.successful(details))
 
@@ -216,7 +217,7 @@ class ChrisSubmissionRequestBuilderSpec
       }
 
       verify(connector, times(1))
-        .retrieveMonthlyReturnForEditDetails(eqTo("instance-1"), eqTo(9), eqTo(2025), any[Option[Boolean]])(
+        .retrieveMonthlyReturnForEditDetails(eqTo(GetMonthlyReturnForEditRequest("instance-1", 9, 2025, false)))(
           any[HeaderCarrier]
         )
     }
@@ -449,11 +450,9 @@ class ChrisSubmissionRequestBuilderSpec
           .success
           .value
 
-      val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
-      }
+      val result = builder.build(ua, mkTaxpayer(), isAgent = false)
 
-      ex.getMessage mustBe "CIS ID missing"
+      result.value mustBe a[Some[Failure[RuntimeException]]]
     }
   }
 }

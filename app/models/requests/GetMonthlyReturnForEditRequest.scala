@@ -22,7 +22,7 @@ case class GetMonthlyReturnForEditRequest(
   instanceId: String,
   taxMonth: Int,
   taxYear: Int,
-  isAmendment: Option[Boolean] = None
+  isAmendment: Boolean
 )
 
 object GetMonthlyReturnForEditRequest:

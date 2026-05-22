@@ -20,8 +20,10 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.CisTaxpayer
+import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.*
 import pages.monthlyreturns.*
+import pages.amend.AmendmentDetailsPage
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.Normalise.yesNo
 
@@ -134,14 +136,21 @@ class ChrisSubmissionRequestBuilder @Inject() (
       verification = verification
     )
 
-    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
-    val ym         = YearMonth.from(ua.get(DateConfirmPaymentsPage).get)
+    val requiredAnswers = for {
+      cisId      <- ua.get(CisIdPage)
+      taxDate    <- ua.get(DateConfirmPaymentsPage)
+      isAmendment = ua.get(AmendmentDetailsPage).isDefined
+    } yield (cisId, taxDate.getMonthValue, taxDate.getYear, isAmendment)
 
-    cisConnector
-      .retrieveMonthlyReturnForEditDetails(instanceId, ym.getMonthValue, ym.getYear)
-      .map { details =>
-        val subcontractors = StandardReturnSubcontractorsBuilder.build(ua, details.subcontractors)
-        ChrisStandardMonthlyReturn(subcontractors, declarations)
-      }
+    requiredAnswers.fold(
+      Future.failed(RuntimeException("Could not build CHRIS request due to missing user answers"))
+    ) { (cisId, taxMonth, taxYear, isAmendment) =>
+      cisConnector
+        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
+        .map { details =>
+          val subcontractors = StandardReturnSubcontractorsBuilder.build(ua, details.subcontractors)
+          ChrisStandardMonthlyReturn(subcontractors, declarations)
+        }
+    }
   }
 }
