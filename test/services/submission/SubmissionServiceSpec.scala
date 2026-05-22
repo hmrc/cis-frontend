@@ -1299,6 +1299,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       )
         .thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
+
       val savedCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       when(sessionRepository.set(savedCaptor.capture()))
         .thenReturn(Future.successful(true))
@@ -1444,6 +1446,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       ).thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1493,6 +1496,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1544,6 +1548,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       ).thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
