@@ -33,8 +33,7 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.{MonthlyReturnService, AmendMonthlyReturnService}
-import services.AmendMonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import java.time.LocalDate
@@ -137,8 +136,8 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to the WhichSubcontractorsToAddController page when valid data AddPaymentOrSubcontractorDetails is submitted" in {
 
-      val mockSessionRepository    = mock[SessionRepository]
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
       val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)

@@ -21,7 +21,7 @@ import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
 import navigation.Navigator
-import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -108,13 +108,8 @@ class WhichSubcontractorsToAddController @Inject() (
                           _              <- sessionRepository.set(updatedAnswers)
                           _              <- monthlyReturnService
                                               .syncMonthlyReturnItems(
-                                                cisId,
-                                                taxYear,
-                                                taxMonth,
-                                                value.toSeq.map(_.toLong),
-                                                amendment =
-                                                  if (updatedAnswers.get(AmendmentDetailsPage).isDefined) "Y"
-                                                  else "N" // Todo: to be updated when 4682 merged
+                                                updatedAnswers,
+                                                value.toSeq.map(_.toLong)
                                               )
                         } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
                     )

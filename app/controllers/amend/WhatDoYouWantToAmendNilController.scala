@@ -27,7 +27,7 @@ import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.{MonthlyReturnService, AmendMonthlyReturnService}
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -73,29 +73,36 @@ class WhatDoYouWantToAmendNilController @Inject() (
         .bindFromRequest()
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
-          {
-            case AmendNilReturn =>
-              for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, AmendNilReturn))
-                _              <- sessionRepository.set(updatedAnswers)
-                updateRequest  <- UpdateMonthlyReturnRequest
-                                    .fromUserAnswers(updatedAnswers)
-                                    .fold(
-                                      error => Future.failed(new RuntimeException(error)),
-                                      request => Future.successful(request)
-                                    )
-                _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
-              } yield Redirect(
-                controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
-              )
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+              result         <-
+                value match {
+                  case AddPaymentOrSubcontractorDetails =>
+                    amendMonthlyReturnService
+                      .startStandardAmendment(updatedAnswers)
+                      .map {
+                        case Left(_)  =>
+                          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                        case Right(_) =>
+                          Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                      }
 
-            case AddPaymentOrSubcontractorDetails =>
-              for {
-                updatedAnswers <-
-                  Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, AddPaymentOrSubcontractorDetails))
-                _              <- sessionRepository.set(updatedAnswers)
-              } yield Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
-          }
+                  case AmendNilReturn =>
+                    for {
+                      updateRequest <- UpdateMonthlyReturnRequest
+                                         .fromUserAnswers(updatedAnswers)
+                                         .fold(
+                                           error => Future.failed(new RuntimeException(error)),
+                                           request => Future.successful(request)
+                                         )
+                      _             <- monthlyReturnService.updateMonthlyReturn(updateRequest)
+                    } yield Redirect(
+                      controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+                    )
+                }
+            } yield result
         )
   }
 }

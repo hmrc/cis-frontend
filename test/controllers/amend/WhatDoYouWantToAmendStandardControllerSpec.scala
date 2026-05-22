@@ -191,7 +191,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
     "must redirect to Subcontractor Details Added when 'Amend Payment or Subcontractor Details' is submitted" in {
 
-      val mockSessionRepository    = mock[SessionRepository]
+      val mockSessionRepository         = mock[SessionRepository]
       val mockMonthlyReturnService      = mock[MonthlyReturnService]
       val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 

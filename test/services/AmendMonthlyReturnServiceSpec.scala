@@ -93,7 +93,8 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
     "deleteAllMonthlyReturnItems should delegate to the CIS connector" in {
       implicit val hc: HeaderCarrier = HeaderCarrier()
 
-      val mockConnector = mock[ConstructionIndustrySchemeConnector]
+      val mockConnector            = mock[ConstructionIndustrySchemeConnector]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
 
       val request = DeleteAllMonthlyReturnItemsRequest(
         instanceId = "1",
@@ -108,7 +109,7 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         )
       ) thenReturn Future.successful(())
 
-      val service = new AmendMonthlyReturnService(mockConnector)
+      val service = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
 
       service.deleteAllMonthlyReturnItems(request).futureValue mustBe ()
 
@@ -118,7 +119,8 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
     "deleteUnsubmittedMonthlyReturn should delegate to the CIS connector" in {
       implicit val hc: HeaderCarrier = HeaderCarrier()
 
-      val mockConnector = mock[ConstructionIndustrySchemeConnector]
+      val mockConnector            = mock[ConstructionIndustrySchemeConnector]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
 
       val request = DeleteUnsubmittedMonthlyReturnRequest(
         instanceId = "1",
@@ -133,7 +135,7 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         )
       ) thenReturn Future.successful(())
 
-      val service = new AmendMonthlyReturnService(mockConnector)
+      val service = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
 
       service.deleteUnsubmittedMonthlyReturn(request).futureValue mustBe ()
 
@@ -150,6 +152,7 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
         instanceId = "1",
         taxYear = 2025,
         taxMonth = 1,
+        contractorName = "Test Contractor",
         originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
