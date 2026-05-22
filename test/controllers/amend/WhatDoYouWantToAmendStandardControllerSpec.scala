@@ -196,6 +196,9 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
       val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn Future.successful(
+        mockMonthlyReturn
+      )
 
       when(
         mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())

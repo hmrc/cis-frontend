@@ -16,11 +16,11 @@
 
 package models
 
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.*
 import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.QueryStringBindable
 
 class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with EitherValues {
@@ -33,7 +33,12 @@ class ReturnTypeSpec extends AnyFreeSpec with Matchers with OptionValues with Ei
   ".values" - {
 
     "must contain all return types" in {
-      ReturnType.values mustEqual Seq(MonthlyNilReturn, MonthlyStandardReturn)
+      ReturnType.values mustEqual Seq(
+        MonthlyNilReturn,
+        MonthlyStandardReturn,
+        MonthlyAmendedNilReturn,
+        MonthlyAmendedStandardReturn
+      )
     }
   }
 

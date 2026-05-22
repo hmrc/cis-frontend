@@ -224,6 +224,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         taxYear = 2025,
         taxMonth = 4,
         originalReturnType = MonthlyNilReturn,
+        contractorName = "Test Contractor",
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )
 

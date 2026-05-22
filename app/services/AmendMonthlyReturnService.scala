@@ -38,6 +38,16 @@ class AmendMonthlyReturnService @Inject() (
   def getAmendmentHandoff(handoffId: String)(implicit hc: HeaderCarrier): Future[Option[AmendmentDetails]] =
     cisConnector.getAmendmentHandoff(handoffId)
 
+  def deleteAllMonthlyReturnItems(request: DeleteAllMonthlyReturnItemsRequest)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] =
+    cisConnector.deleteAllMonthlyReturnItems(request)
+
+  def deleteUnsubmittedMonthlyReturn(request: DeleteUnsubmittedMonthlyReturnRequest)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] =
+    cisConnector.deleteUnsubmittedMonthlyReturn(request)
+
   def startStandardAmendment(
     userAnswers: UserAnswers
   )(implicit hc: HeaderCarrier): Future[Either[String, Unit]] =

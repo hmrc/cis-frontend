@@ -16,7 +16,7 @@
 
 package models.monthlyreturns
 
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.*
 import models.amend.AmendmentDetails
 import models.{ReturnType, UserAnswers}
 import pages.monthlyreturns.*
@@ -61,8 +61,8 @@ object UpdateMonthlyReturnRequest {
 
   private def nilIndicator(returnType: ReturnType): String =
     returnType match {
-      case MonthlyNilReturn      => "Y"
-      case MonthlyStandardReturn => "N"
+      case MonthlyNilReturn | MonthlyAmendedNilReturn           => "Y"
+      case MonthlyStandardReturn | MonthlyAmendedStandardReturn => "N"
     }
 
   def fromUserAnswers(ua: UserAnswers): Either[String, UpdateMonthlyReturnRequest] =
@@ -72,12 +72,12 @@ object UpdateMonthlyReturnRequest {
       date       <- dateFor(ua)
 
       decInformationCorrect = returnType match {
-                                case MonthlyNilReturn =>
+                                case MonthlyNilReturn | MonthlyAmendedNilReturn =>
                                   ua.get(DeclarationPage).flatMap { declaration =>
                                     if (declaration.nonEmpty) Some("Y") else None
                                   }
 
-                                case MonthlyStandardReturn =>
+                                case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
                                   ua.get(PaymentDetailsConfirmationPage).map(toYN)
                               }
     } yield {
@@ -85,7 +85,7 @@ object UpdateMonthlyReturnRequest {
         instanceId = instanceId,
         taxYear = date.getYear,
         taxMonth = date.getMonthValue,
-        amendment = "N",
+        amendment = returnType.amendmentFlag,
         decInformationCorrect = decInformationCorrect,
         nilReturnIndicator = nilIndicator(returnType),
         status = "STARTED",
@@ -93,14 +93,14 @@ object UpdateMonthlyReturnRequest {
       )
 
       returnType match {
-        case MonthlyStandardReturn =>
+        case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
           base.copy(
             decEmpStatusConsidered = ua.get(EmploymentStatusDeclarationPage).map(toYN),
             decAllSubsVerified = ua.get(VerifiedStatusDeclarationPage).map(toYN),
             decNoMoreSubPayments = inactivityY(ua)
           )
 
-        case MonthlyNilReturn =>
+        case MonthlyNilReturn | MonthlyAmendedNilReturn =>
           base.copy(
             decNilReturnNoPayments = inactivityY(ua)
           )

@@ -20,12 +20,14 @@ import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.NormalMode
 import models.amend.WhatDoYouWantToAmendNil
+import models.amend.WhatDoYouWantToAmendNil.{AddPaymentOrSubcontractorDetails, AmendNilReturn}
+import models.monthlyreturns.UpdateMonthlyReturnRequest
 import pages.amend.WhatDoYouWantToAmendNilPage
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.AmendMonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -36,11 +38,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class WhatDoYouWantToAmendNilController @Inject() (
   override val messagesApi: MessagesApi,
+  monthlyReturnService: MonthlyReturnService,
   amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: WhatDoYouWantToAmendNilFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendNilView
@@ -50,42 +54,55 @@ class WhatDoYouWantToAmendNilController @Inject() (
 
   val form: Form[WhatDoYouWantToAmendNil] = formProvider()
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
 
-    val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
 
-    Ok(view(preparedForm))
+      Ok(view(preparedForm))
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+    implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    form
-      .bindFromRequest()
-      .fold(
-        formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
-        value =>
-          for {
-            updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
-            _              <- sessionRepository.set(updatedAnswers)
-            result         <-
-              value match {
-                case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
-                  Future.successful(
-                    Redirect(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode))
-                  )
-                case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
-                  amendMonthlyReturnService.startStandardAmendment(updatedAnswers).map {
-                    case Left(_)  =>
-                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-                    case Right(_) =>
-                      Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
-                  }
-              }
-          } yield result
-      )
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
+              _              <- sessionRepository.set(updatedAnswers)
+              result         <-
+                value match {
+                  case AddPaymentOrSubcontractorDetails =>
+                    amendMonthlyReturnService
+                      .startStandardAmendment(updatedAnswers)
+                      .map {
+                        case Left(_)  =>
+                          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                        case Right(_) =>
+                          Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                      }
+
+                  case AmendNilReturn =>
+                    for {
+                      updateRequest <- UpdateMonthlyReturnRequest
+                                         .fromUserAnswers(updatedAnswers)
+                                         .fold(
+                                           error => Future.failed(new RuntimeException(error)),
+                                           request => Future.successful(request)
+                                         )
+                      _             <- monthlyReturnService.updateMonthlyReturn(updateRequest)
+                    } yield Redirect(
+                      controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+                    )
+                }
+            } yield result
+        )
   }
 }

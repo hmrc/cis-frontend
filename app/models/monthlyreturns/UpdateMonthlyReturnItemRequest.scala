@@ -27,7 +27,7 @@ case class UpdateMonthlyReturnItemRequest(
   totalPayments: String,
   costOfMaterials: String,
   totalDeducted: String,
-  isAmendment: Option[Boolean] = None
+  amendment: String
 )
 
 object UpdateMonthlyReturnItemRequest {

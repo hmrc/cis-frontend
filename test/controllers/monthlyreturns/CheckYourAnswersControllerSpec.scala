@@ -50,38 +50,20 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
-
-        val result = route(application, request).value
-
-        val view              = application.injector.instanceOf[CheckYourAnswersView]
-        val returnDetailsList = SummaryListViewModel(
-          Seq(
-            ReturnTypeSummary.row(userAnswersWithCisId)(messages(application)).get,
-            PaymentsToSubcontractorsSummary.row(messages(application)).get
-          )
-        )
-        val emailList         = SummaryListViewModel(Seq.empty)
-
-        status(result) mustEqual OK
-        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
-        contentAsString(result) mustEqual rendered
-      }
-    }
-
-    "must include Return period ended and ConfirmationByEmail rows for monthly standard return" in {
-
       val userAnswers = userAnswersWithCisId
-        .set(EmploymentStatusDeclarationPage, true)
+        .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
         .success
         .value
-        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
-        .set(ConfirmationByEmailPage, true)
+        .set(SubmitInactivityRequestPage, true)
+        .success
+        .value
+        .set(ConfirmationByEmailPage, false)
+        .success
+        .value
+        .set(DeclarationPage, Set(Confirmed))
         .success
         .value
 
@@ -92,18 +74,79 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
         val result = route(application, request).value
 
-        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val view = application.injector.instanceOf[CheckYourAnswersView]
+
         val returnDetailsList = SummaryListViewModel(
-          Seq(
-            ReturnTypeSummary.row(userAnswers)(messages(application)).get,
-            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
-            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
-          )
+          rows = Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)),
+            DateConfirmNilPaymentsSummary.row(userAnswers)(messages(application)),
+            PaymentsToSubcontractorsSummary.row(messages(application)),
+            SubmitInactivityRequestSummary.row(userAnswers)(messages(application))
+          ).flatten
         )
-        val emailList         = SummaryListViewModel(
-          Seq(
-            ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get
-          )
+
+        val emailList = SummaryListViewModel(
+          rows = Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)),
+            EnterYourEmailAddressSummary.row(userAnswers)(messages(application))
+          ).flatten
+        )
+
+        status(result) mustEqual OK
+        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        contentAsString(result) mustEqual rendered
+      }
+    }
+
+    "must include Return period ended and ConfirmationByEmail rows for monthly standard return" in {
+
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+        .success
+        .value
+        .set(EmploymentStatusDeclarationPage, true)
+        .success
+        .value
+        .set(VerifiedStatusDeclarationPage, true)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
+        .set(SubmitInactivityRequestPage, true)
+        .success
+        .value
+        .set(ConfirmationByEmailPage, true)
+        .success
+        .value
+        .set(DeclarationPage, Set(Confirmed))
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[CheckYourAnswersView]
+
+        val returnDetailsList = SummaryListViewModel(
+          rows = Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)),
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)),
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)),
+            VerifiedStatusDeclarationSummary.row(userAnswers)(messages(application)),
+            SubmitInactivityRequestSummary.row(userAnswers)(messages(application))
+          ).flatten
+        )
+
+        val emailList = SummaryListViewModel(
+          rows = Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)),
+            EnterYourEmailAddressSummary.row(userAnswers)(messages(application))
+          ).flatten
         )
 
         status(result) mustEqual OK
@@ -115,16 +158,28 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     "must include Email address row in emailList when confirmation by email is Yes and email is entered" in {
 
       val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+        .success
+        .value
         .set(EmploymentStatusDeclarationPage, true)
         .success
         .value
+        .set(VerifiedStatusDeclarationPage, true)
+        .success
+        .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2025, 2, 5))
+        .success
+        .value
+        .set(SubmitInactivityRequestPage, true)
         .success
         .value
         .set(ConfirmationByEmailPage, true)
         .success
         .value
         .set(EnterYourEmailAddressPage, "test@example.com")
+        .success
+        .value
+        .set(DeclarationPage, Set(Confirmed))
         .success
         .value
 
@@ -135,19 +190,23 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
         val result = route(application, request).value
 
-        val view              = application.injector.instanceOf[CheckYourAnswersView]
+        val view = application.injector.instanceOf[CheckYourAnswersView]
+
         val returnDetailsList = SummaryListViewModel(
-          Seq(
-            ReturnTypeSummary.row(userAnswers)(messages(application)).get,
-            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)).get,
-            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)).get
-          )
+          rows = Seq(
+            ReturnTypeSummary.row(userAnswers)(messages(application)),
+            DateConfirmPaymentsSummary.row(userAnswers)(messages(application)),
+            EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)),
+            VerifiedStatusDeclarationSummary.row(userAnswers)(messages(application)),
+            SubmitInactivityRequestSummary.row(userAnswers)(messages(application))
+          ).flatten
         )
-        val emailList         = SummaryListViewModel(
-          Seq(
-            ConfirmationByEmailSummary.row(userAnswers)(messages(application)).get,
-            EnterYourEmailAddressSummary.row(userAnswers)(messages(application)).get
-          )
+
+        val emailList = SummaryListViewModel(
+          rows = Seq(
+            ConfirmationByEmailSummary.row(userAnswers)(messages(application)),
+            EnterYourEmailAddressSummary.row(userAnswers)(messages(application))
+          ).flatten
         )
 
         status(result) mustEqual OK

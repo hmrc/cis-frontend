@@ -246,7 +246,9 @@ monthlyreturns.submissionSuccessful.feedback.p1 = Your feedback helps us make ou
 monthlyreturns.submissionSuccessful.feedback.p2 = to share your feedback on this service.
 monthlyreturns.submissionSuccessful.feedback.p2.link = Take a short survey
 monthlyreturns.returnType.MonthlyNilReturn = Nil return
+monthlyreturns.returnType.MonthlyAmendedNilReturn = Nil return
 monthlyreturns.returnType.MonthlyStandardReturn = Monthly return
+monthlyreturns.returnType.MonthlyAmendedStandardReturn = Monthly return
 monthlyreturns.submissionSuccessful.whatHappensNext.h2 = What happens next
 monthlyreturns.submissionSuccessful.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
@@ -476,6 +478,7 @@ monthlyreturns.paymentDetailsConfirmation.no = No, I need to make changes
 monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = paymentDetailsConfirmation
 monthlyreturns.paymentDetailsConfirmation.error.required =  Select yes to confirm the information you provided is correct
 monthlyreturns.paymentDetailsConfirmation.change.hidden = PaymentDetailsConfirmation
+monthlyreturns.paymentDetailsConfirmation.cancelAmendment = Cancel amendment
 
 monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
 monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?

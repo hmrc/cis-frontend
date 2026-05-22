@@ -85,6 +85,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         instanceId = "123",
         taxYear = 2025,
         taxMonth = 10,
+        amendment = "N",
         emailRecipient = Some("test@test.com")
       )
 
@@ -1422,7 +1423,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       reqCaptor.getValue.email mustBe "standard@test.com"
     }
 
-    "throw IllegalStateException when ReturnTypePage missing" in {
+    "throw IllegalStateException when DateConfirmPaymentsPage missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   =
@@ -1451,7 +1452,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         service.sendSuccessEmail(ua, "en").futureValue
       }
 
-      ex.getMessage mustBe "Return type missing"
+      ex.getMessage mustBe "Month/Year not selected"
     }
 
     "throw IllegalStateException when DateConfirmPaymentsPage missing for monthly standard return" in {

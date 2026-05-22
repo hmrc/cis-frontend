@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -68,23 +68,35 @@ class ConfirmAmendmentController @Inject() (
             instanceId = handoff.instanceId,
             taxYear = handoff.taxYear,
             taxMonth = handoff.taxMonth,
+            contractorName = handoff.contractorName,
             originalReturnType = handoff.originalReturnType,
             acceptedTime = handoff.acceptedTime
           )
 
-          val updatedUserAnswers =
-            UserAnswers(request.userId)
-              .set(CisIdPage, handoff.instanceId)
-              .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
-              .flatMap(
-                _.set(DateConfirmPaymentsPage, LocalDate.of(amendmentDetails.taxYear, amendmentDetails.taxMonth, 5))
+          ReturnType.amendedFrom(handoff.originalReturnType) match {
+            case Some(amendedReturnType) =>
+              val updatedUserAnswers =
+                UserAnswers(request.userId)
+                  .set(CisIdPage, handoff.instanceId)
+                  .flatMap(_.set(ContractorNamePage, handoff.contractorName))
+                  .flatMap(_.set(ReturnTypePage, amendedReturnType))
+                  .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
+                  .flatMap(
+                    _.set(DateConfirmPaymentsPage, LocalDate.of(amendmentDetails.taxYear, amendmentDetails.taxMonth, 5))
+                  )
+                  .get
+
+              val showWarning = isInWarningPeriod(handoff.acceptedTime)
+
+              sessionRepository.set(updatedUserAnswers).map { _ =>
+                Ok(view(showWarning))
+              }
+
+            case None =>
+              logger.warn(
+                s"[ConfirmAmendmentController] Unexpected originalReturnType in handoff: ${handoff.originalReturnType}"
               )
-              .get
-
-          val showWarning = isInWarningPeriod(handoff.acceptedTime)
-
-          sessionRepository.set(updatedUserAnswers).map { _ =>
-            Ok(view(showWarning))
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
 
         case None =>
@@ -120,6 +132,9 @@ class ConfirmAmendmentController @Inject() (
                 Redirect(
                   controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
                 )
+              case unexpected                       =>
+                logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
             }
           ).recover { case ex =>
             logger.warn(

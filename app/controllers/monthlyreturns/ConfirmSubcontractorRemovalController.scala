@@ -21,7 +21,7 @@ import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
 import models.requests.DataRequest
 import models.{Mode, UserAnswers}
-import pages.monthlyreturns.{CisIdPage, ConfirmSubcontractorRemovalPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -124,11 +124,13 @@ class ConfirmSubcontractorRemovalController @Inject() (
       cisId         <- ua.get(CisIdPage)
       monthYear     <- ua.get(DateConfirmPaymentsPage)
       subcontractor <- ua.get(SelectedSubcontractorPage(index))
+      returnType    <- ua.get(ReturnTypePage)
     } yield DeleteMonthlyReturnItemRequest(
       instanceId = cisId,
       taxYear = monthYear.getYear,
       taxMonth = monthYear.getMonthValue,
-      subcontractorId = subcontractor.id
+      subcontractorId = subcontractor.id,
+      amendment = returnType.amendmentFlag
     )
 
   private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =

@@ -19,11 +19,12 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
 import models.NormalMode
+import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.PaymentDetailsConfirmationPage
+import pages.monthlyreturns.{PaymentDetailsConfirmationPage, ReturnTypePage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -45,8 +46,12 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
   "PaymentDetailsConfirmation Controller" - {
 
     "must return OK and the correct view for a GET" in {
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
@@ -56,13 +61,40 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, NormalMode, true)(request, messages(application)).toString
+      }
+    }
+
+    "must return OK and the amendment view for a GET when return type is amended" in {
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form, NormalMode, true)(request, messages(application)).toString
       }
     }
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = userAnswersWithCisId.set(PaymentDetailsConfirmationPage, true).success.value
+      val userAnswers = userAnswersWithCisId
+        .set(PaymentDetailsConfirmationPage, true)
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -74,7 +106,10 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form.fill(true), NormalMode, true)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -105,8 +140,12 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
     }
 
     "must return a Bad Request and errors when invalid data is submitted" in {
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request =
@@ -120,7 +159,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(boundForm, NormalMode, true)(request, messages(application)).toString
       }
     }
 
@@ -151,6 +190,60 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to confirm cancel amendment page when cancelling amendment" in {
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            routes.PaymentDetailsConfirmationController.onCancelAmendment().url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+      }
+    }
+
+    "must return OK and the non-amendment view for a GET when return type is not amended" in {
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form, NormalMode, false)(request, messages(application)).toString
+      }
+    }
+
+    "must throw when ReturnTypePage is missing on GET" in {
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
+
+        val result = route(application, request).value
+
+        whenReady(result.failed) { ex =>
+          ex mustBe a[RuntimeException]
+          ex.getMessage mustBe "ReturnTypePage not found in user answers"
+        }
       }
     }
   }

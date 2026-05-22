@@ -18,20 +18,24 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
-import models.UserAnswers
+import models.ReturnType.MonthlyAmendedStandardReturn
+import models.amend.DeleteUnsubmittedMonthlyReturnRequest
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.ConfirmCancelAmendmentYesNoPage
+import pages.monthlyreturns.*
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSugar {
@@ -45,11 +49,16 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
   private val monthYear: String = "April 2026"
 
+  private val userAnswersWithDate = emptyUserAnswers
+    .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+    .success
+    .value
+
   "ConfirmCancelAmendmentYesNo Controller" - {
 
     "must return OK and the correct view for a GET" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithDate)).build()
 
       running(application) {
         val request = FakeRequest(GET, confirmCancelAmendmentYesNoRoute)
@@ -65,7 +74,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = UserAnswers(userAnswersId).set(ConfirmCancelAmendmentYesNoPage, true).success.value
+      val userAnswers = userAnswersWithDate.set(ConfirmCancelAmendmentYesNoPage, true).success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -88,10 +97,54 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+        applicationBuilder(userAnswers = Some(userAnswersWithDate))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmCancelAmendmentYesNoRoute)
+            .withFormUrlEncodedBody(("value", "false"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must delete unsubmitted monthly return when Yes is submitted" in {
+      val mockSessionRepository   = mock[SessionRepository]
+      val mockAmendMonthlyService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyService.deleteUnsubmittedMonthlyReturn(any[DeleteUnsubmittedMonthlyReturnRequest]())(
+          any()
+        )
+      ) thenReturn Future.successful(())
+
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "1")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyService)
           )
           .build()
 
@@ -109,7 +162,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
     "must return a Bad Request and errors when invalid data is submitted" in {
 
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithDate)).build()
 
       running(application) {
         val request =
@@ -149,6 +202,34 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
         val request =
           FakeRequest(POST, confirmCancelAmendmentYesNoRoute)
             .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET when monthYear is missing" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, confirmCancelAmendmentYesNoRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST when monthYear is missing" in {
+      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmCancelAmendmentYesNoRoute)
+            .withFormUrlEncodedBody(("value", "false"))
 
         val result = route(application, request).value
 

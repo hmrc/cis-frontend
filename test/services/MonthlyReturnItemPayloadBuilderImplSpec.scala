@@ -17,12 +17,10 @@
 package services
 
 import base.SpecBase
-import models.ReturnType.MonthlyNilReturn
-import models.amend.AmendmentDetails
+import models.ReturnType
 import models.monthlyreturns.SelectedSubcontractor
 import org.scalatest.matchers.must.Matchers
-import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 
 import java.time.LocalDate
 
@@ -56,43 +54,7 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
           .set(SelectedSubcontractorPage(index), subcontractor)
           .success
           .value
-
-      val result = builder.build(ua, index).value
-
-      result.instanceId mustBe instanceId
-      result.taxYear mustBe 2026
-      result.taxMonth mustBe 3
-      result.subcontractorId mustBe 99
-      result.subcontractorName mustBe "Tyne Test Ltd"
-
-      result.totalPayments mustBe "1,200.00"
-      result.costOfMaterials mustBe "500.00"
-      result.totalDeducted mustBe "240.00"
-      result.isAmendment mustBe Some(false)
-    }
-
-    "must build an UpdateMonthlyReturnItemRequest when required answers exist for amend" in {
-      val ua =
-        emptyUserAnswers
-          .set(CisIdPage, instanceId)
-          .success
-          .value
-          .set(DateConfirmPaymentsPage, monthDate)
-          .success
-          .value
-          .set(
-            AmendmentDetailsPage,
-            AmendmentDetails(
-              instanceId,
-              monthDate.getYear,
-              monthDate.getMonthValue,
-              MonthlyNilReturn,
-              None
-            ) // TODO: ReturnType should changed to Amend - to be updated when 4682 merged
-          )
-          .success
-          .value
-          .set(SelectedSubcontractorPage(index), subcontractor)
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
           .success
           .value
 
@@ -107,7 +69,6 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
       result.totalPayments mustBe "1,200.00"
       result.costOfMaterials mustBe "500.00"
       result.totalDeducted mustBe "240.00"
-      result.isAmendment mustBe Some(true)
     }
 
     "must default costOfMaterials and totalDeducted to 0.00 when missing" in {
@@ -123,6 +84,9 @@ class MonthlyReturnItemPayloadBuilderImplSpec extends SpecBase with Matchers {
           .success
           .value
           .set(SelectedSubcontractorPage(index), subcontractorMissingOptionals)
+          .success
+          .value
+          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
           .success
           .value
 

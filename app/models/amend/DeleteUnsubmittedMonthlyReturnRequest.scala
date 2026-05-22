@@ -14,33 +14,32 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.amend
 
 import models.UserAnswers
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.libs.json.{Json, OFormat}
 
-case class SelectedSubcontractorsRequest(
+case class DeleteUnsubmittedMonthlyReturnRequest(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  selectedSubcontractorIds: Seq[Long],
   amendment: String
 )
 
-object SelectedSubcontractorsRequest {
-  given format: OFormat[SelectedSubcontractorsRequest] = Json.format[SelectedSubcontractorsRequest]
+object DeleteUnsubmittedMonthlyReturnRequest {
+  given format: OFormat[DeleteUnsubmittedMonthlyReturnRequest] = Json.format[DeleteUnsubmittedMonthlyReturnRequest]
 
-  def from(ua: UserAnswers, selectedSubcontractorIds: Seq[Long]): SelectedSubcontractorsRequest = {
-    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("Missing CisId"))
-    val monthYear  = ua.get(DateConfirmPaymentsPage).getOrElse(throw new RuntimeException("Missing DateConfirmPayments"))
-    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Missing ReturnType"))
+  def fromUserAnswers(ua: UserAnswers): DeleteUnsubmittedMonthlyReturnRequest = {
+    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("Missing instanceId"))
+    val monthYear  =
+      ua.get(DateConfirmPaymentsPage).getOrElse(throw new RuntimeException("Missing confirmed payment date"))
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Missing return type"))
 
-    SelectedSubcontractorsRequest(
+    DeleteUnsubmittedMonthlyReturnRequest(
       instanceId = instanceId,
       taxYear = monthYear.getYear,
       taxMonth = monthYear.getMonthValue,
-      selectedSubcontractorIds = selectedSubcontractorIds,
       amendment = returnType.amendmentFlag
     )
   }

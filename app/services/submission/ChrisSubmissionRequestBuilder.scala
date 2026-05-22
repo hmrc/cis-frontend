@@ -17,7 +17,7 @@
 package services.submission
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.*
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.CisTaxpayer
 import models.requests.GetMonthlyReturnForEditRequest
@@ -44,7 +44,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
     val inactivityBool     = ua.get(SubmitInactivityRequestPage).contains(true)
 
     returnType match {
-      case MonthlyNilReturn =>
+      case MonthlyNilReturn | MonthlyAmendedNilReturn =>
         Future.successful(
           ChrisSubmissionRequest.fromNil(
             common = common,
@@ -53,7 +53,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
           )
         )
 
-      case MonthlyStandardReturn =>
+      case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
         buildStandardMonthlyReturn(ua).map { standardReturn =>
           ChrisSubmissionRequest.fromStandard(
             common = common,

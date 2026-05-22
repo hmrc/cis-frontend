@@ -18,22 +18,30 @@ package controllers.amend
 
 import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
+import models.amend.DeleteUnsubmittedMonthlyReturnRequest
+import models.requests.DataRequest
 import navigation.Navigator
 import pages.amend.ConfirmCancelAmendmentYesNoPage
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.*
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConfirmCancelAmendmentYesNoController @Inject() (
   override val messagesApi: MessagesApi,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
@@ -50,7 +58,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   val form: Form[Boolean] = formProvider()
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    getMonthYear match {
+    getMonthYear(request.userAnswers) match {
       case Some(monthYear) =>
         val preparedForm = request.userAnswers.get(ConfirmCancelAmendmentYesNoPage) match {
           case None        => form
@@ -65,7 +73,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    getMonthYear match {
+    getMonthYear(request.userAnswers) match {
       case Some(monthYear) =>
         form
           .bindFromRequest()
@@ -75,7 +83,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
               for {
                 updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmCancelAmendmentYesNoPage, value))
                 _              <- sessionRepository.set(updatedAnswers)
-              } yield Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, updatedAnswers))
+                result         <- if (value) handleYes(updatedAnswers) else handleNo(updatedAnswers)
+              } yield result
           )
       case None            =>
         logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
@@ -83,6 +92,23 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     }
   }
 
-  private def getMonthYear: Option[String] =
-    Some("April 2026")
+  private def handleYes(ua: UserAnswers)(implicit request: DataRequest[AnyContent]): Future[Result] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(ua)
+
+    amendMonthlyReturnService
+      .deleteUnsubmittedMonthlyReturn(deleteRequest)
+      .map { _ =>
+        Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, ua))
+      }
+  }
+
+  private def handleNo(ua: UserAnswers): Future[Result] =
+    Future.successful(Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, ua)))
+
+  private val monthYearFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+
+  private def getMonthYear(ua: UserAnswers): Option[String] =
+    ua.get(DateConfirmPaymentsPage).map(_.format(monthYearFormatter))
 }

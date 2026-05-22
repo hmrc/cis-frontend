@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.amend
 
 import base.SpecBase
 import models.{ReturnType, UserAnswers}
@@ -23,35 +23,33 @@ import play.api.libs.json.Json
 
 import java.time.LocalDate
 
-class SelectedSubcontractorsRequestSpec extends SpecBase {
+class DeleteAllMonthlyReturnItemsRequestSpec extends SpecBase {
 
-  "SelectedSubcontractorsRequest" - {
+  "DeleteAllMonthlyReturnItemsRequest" - {
 
     "must serialize and deserialize JSON" in {
-      val model = SelectedSubcontractorsRequest(
-        instanceId = "1",
+      val model = DeleteAllMonthlyReturnItemsRequest(
+        instanceId = "abc-123",
         taxYear = 2025,
         taxMonth = 1,
-        selectedSubcontractorIds = Seq(1L, 2L),
         amendment = "N"
       )
 
       val json = Json.obj(
-        "instanceId"               -> "1",
-        "taxYear"                  -> 2025,
-        "taxMonth"                 -> 1,
-        "selectedSubcontractorIds" -> Json.arr(1L, 2L),
-        "amendment"                -> "N"
+        "instanceId" -> "abc-123",
+        "taxYear"    -> 2025,
+        "taxMonth"   -> 1,
+        "amendment"  -> "N"
       )
 
       Json.toJson(model) mustBe json
-      json.as[SelectedSubcontractorsRequest] mustBe model
+      json.as[DeleteAllMonthlyReturnItemsRequest] mustBe model
     }
 
     "must build from UserAnswers" in {
       val userAnswers =
         UserAnswers("id")
-          .set(CisIdPage, "1")
+          .set(CisIdPage, "abc-123")
           .success
           .value
           .set(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
@@ -61,14 +59,20 @@ class SelectedSubcontractorsRequestSpec extends SpecBase {
           .success
           .value
 
-      SelectedSubcontractorsRequest.from(userAnswers, Seq(1L, 2L)) mustBe
-        SelectedSubcontractorsRequest(
-          instanceId = "1",
-          taxYear = 2025,
-          taxMonth = 1,
-          selectedSubcontractorIds = Seq(1L, 2L),
-          amendment = "N"
+      DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(userAnswers) mustBe
+        Right(
+          DeleteAllMonthlyReturnItemsRequest(
+            instanceId = "abc-123",
+            taxYear = 2025,
+            taxMonth = 1,
+            amendment = "N"
+          )
         )
+    }
+
+    "must return Left when required answers are missing" in {
+      DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(UserAnswers("id")) mustBe
+        Left("Missing CisId")
     }
   }
 }
