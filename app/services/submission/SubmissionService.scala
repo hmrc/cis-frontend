@@ -35,7 +35,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
 import utils.TypeUtils.*
 
-import java.time.{Instant, LocalDateTime, YearMonth, ZoneId, ZonedDateTime}
+import java.time.{Clock, Instant, LocalDateTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,9 +46,12 @@ class SubmissionService @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector,
   appConfig: FrontendAppConfig,
   sessionRepository: SessionRepository,
-  chrisRequestBuilder: ChrisSubmissionRequestBuilder
+  chrisRequestBuilder: ChrisSubmissionRequestBuilder,
+  clock: Clock
 )(implicit ec: ExecutionContext)
     extends Logging {
+
+  private val ukZone: ZoneId = ZoneId.of("Europe/London")
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
@@ -108,24 +111,13 @@ class SubmissionService @Inject() (
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
-    val zone = s"(${ZoneId.systemDefault}, ${ZonedDateTime.now().getOffset})"
-    logger.info(
-      s"[SubmissionService.updateSubmission] acceptedTime string as received: $acceptedTime $zone"
-    )
+    val ukNow = ukLocalDateTimeNow
 
     val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
       acceptedTime
-        // TODO: decide whether to use the parsed and re-formatted string or the original string from CHRIS
-        .flatMap { t =>
-          Try(LocalDateTime.parse(t)).map { parsedTime =>
-            logger.info(s"[SubmissionService.updateSubmission] parsed acceptedTime: $parsedTime $zone")
-            parsedTime
-          }.toOption
-        }
-        .getOrElse {
-          logger.info(s"[SubmissionService.updateSubmission] falling back to local time: ${LocalDateTime.now} $zone");
-          LocalDateTime.now().toString
-        }
+        .flatMap(chrisAcceptedTimeToUkLocal)
+        .getOrElse(ukNow)
+        .toString
     }
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
@@ -141,13 +133,8 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
-      acceptedTime = acceptedTimestamp.map(_.toString),
-      submissionRequestDate = Some {
-        logger.info(
-          s"[SubmissionService.updateSubmission] setting submissionRequestDate to local time: ${LocalDateTime.now} $zone"
-        );
-        LocalDateTime.now()
-      },
+      acceptedTime = acceptedTimestamp,
+      submissionRequestDate = Some(ukNow),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
       govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
@@ -339,6 +326,17 @@ class SubmissionService @Inject() (
       .getOrElse(
         throw new RuntimeException("Date of return missing for monthly return")
       )
+
+  private def ukLocalDateTimeNow: LocalDateTime =
+    ZonedDateTime.now(clock).withZoneSameInstant(ukZone).toLocalDateTime
+
+  private def chrisAcceptedTimeToUkLocal(acceptedTime: String): Option[LocalDateTime] =
+    parseChrisUtcTimestamp(acceptedTime).map(_.atZone(ukZone).toLocalDateTime)
+
+  private def parseChrisUtcTimestamp(timestamp: String): Option[Instant] =
+    Try(Instant.parse(timestamp))
+      .orElse(Try(LocalDateTime.parse(timestamp).atZone(ZoneOffset.UTC).toInstant))
+      .toOption
 
   private def writeToFeMongo(
     ua: UserAnswers,
