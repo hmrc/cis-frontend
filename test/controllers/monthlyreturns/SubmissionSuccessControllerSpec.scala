@@ -45,13 +45,13 @@ import scala.concurrent.Future
 
 class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
-  val email: String              = "test@test.com"
-  val periodEnd: LocalDate       = LocalDate.of(2018, 3, 5)
-  val fixedInstant: Instant      = Instant.parse("2017-01-06T08:46:00Z")
-  val irMarkBase64: String       = "Pyy1LRJh053AE+nuyp0GJR7oESw="
-  val reference: String          = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
-  val contractorName: String     = "PAL 355 Scheme"
-  val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
+  val email: String          = "test@test.com"
+  val periodEnd: LocalDate   = LocalDate.of(2018, 3, 5)
+  val fixedInstant: Instant  = Instant.parse("2017-01-06T08:46:00Z")
+  val irMarkBase64: String   = "Pyy1LRJh053AE+nuyp0GJR7oESw="
+  val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
+  val contractorName: String = "PAL 355 Scheme"
+  val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
   private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
@@ -136,7 +136,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         running(app) {
           val result = route(app, request).value
           status(result) mustBe OK
-          val body = contentAsString(result)
+          val body   = contentAsString(result)
           body must include(periodEnd.format(monthYearFmt))
           body must include(submittedDate)
           body must include(contractorName)
@@ -172,7 +172,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must call getSchemeEmail and use returned email when EnterYourEmailAddressPage is missing" in {
-        val fallbackEmail = "fallback@test.com"
+        val fallbackEmail  = "fallback@test.com"
         val uaWithoutEmail = userAnswersWithCisId
           .set(ContractorNamePage, contractorName)
           .success
@@ -371,7 +371,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         running(app) {
           val result = route(app, request).value
           status(result) mustBe OK
-          val body = contentAsString(result)
+          val body   = contentAsString(result)
           body must include(contractorName)
           body must include(employerRef)
         }
@@ -456,8 +456,8 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       "must call getSchemeEmail when email is missing for agent" in {
         val fallbackEmail = "fallback@test.com"
         when(mockGuard.check(any())).thenReturn(true)
-        val agentData = AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some(contractorName))
-        val agentUa = ua
+        val agentData     = AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some(contractorName))
+        val agentUa       = ua
           .remove(EnterYourEmailAddressPage)
           .success
           .value
