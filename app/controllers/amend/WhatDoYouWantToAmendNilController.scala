@@ -25,7 +25,10 @@ import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import javax.inject.Inject
@@ -33,6 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class WhatDoYouWantToAmendNilController @Inject() (
   override val messagesApi: MessagesApi,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -57,6 +61,8 @@ class WhatDoYouWantToAmendNilController @Inject() (
   }
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
     form
       .bindFromRequest()
       .fold(
@@ -65,12 +71,21 @@ class WhatDoYouWantToAmendNilController @Inject() (
           for {
             updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
             _              <- sessionRepository.set(updatedAnswers)
-          } yield value match {
-            case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
-              Redirect(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode))
-            case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
-              Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
-          }
+            result         <-
+              value match {
+                case WhatDoYouWantToAmendNil.AmendNilReturn                   =>
+                  Future.successful(
+                    Redirect(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode))
+                  )
+                case WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails =>
+                  amendMonthlyReturnService.startStandardAmendment(updatedAnswers).map {
+                    case Left(_)  =>
+                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                    case Right(_) =>
+                      Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                  }
+              }
+          } yield result
       )
   }
 }

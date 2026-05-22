@@ -29,6 +29,7 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.AmendMonthlyReturnService
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import scala.concurrent.Future
@@ -110,14 +111,20 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to the WhichSubcontractorsToAddController page when valid data AddPaymentOrSubcontractorDetails is submitted" in {
 
-      val mockSessionRepository = mock[SessionRepository]
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers]())(any())
+      ) thenReturn Future.successful(Right(()))
 
       val application =
         applicationBuilder(userAnswers = Some(emptyUserAnswers))
           .overrides(
-            bind[SessionRepository].toInstance(mockSessionRepository)
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
           )
           .build()
 
