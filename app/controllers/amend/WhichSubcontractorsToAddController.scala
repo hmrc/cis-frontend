@@ -117,24 +117,21 @@ class WhichSubcontractorsToAddController @Inject() (
                             )
                           }
                         for {
-                          updatedAnswers <- Future.fromTry {
-                                              val cleared = request.userAnswers.remove(SelectedSubcontractorPage.all)
-                                              cleared.flatMap { clearedAnswers =>
-                                                selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
-                                                  case (answersTry, (subcontractor, index)) =>
-                                                    answersTry.flatMap(
-                                                      _.set(SelectedSubcontractorPage(index + 1), subcontractor)
-                                                    )
-                                                }
-                                              }
-                                            }
-                          _              <- sessionRepository.set(updatedAnswers)
-                          _              <- monthlyReturnService
-                                              .syncMonthlyReturnItems(
-                                                updatedAnswers,
-                                                value.toSeq.map(_.toLong)
-                                              )
-                        } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+                          ua  <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                          ua2 <- Future.fromTry {
+                                   val cleared = ua.remove(SelectedSubcontractorPage.all)
+                                   cleared.flatMap { clearedAnswers =>
+                                     selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
+                                       case (answersTry, (subcontractor, index)) =>
+                                         answersTry.flatMap(
+                                           _.set(SelectedSubcontractorPage(index + 1), subcontractor)
+                                         )
+                                     }
+                                   }
+                                 }
+                          _   <- sessionRepository.set(ua2)
+                          _   <- monthlyReturnService.syncMonthlyReturnItems(ua2, value.toSeq.map(_.toLong))
+                        } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, ua2))
                     )
                 case _                                   =>
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))

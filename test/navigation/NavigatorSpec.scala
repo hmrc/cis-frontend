@@ -21,8 +21,9 @@ import controllers.monthlyreturns
 import pages.*
 import pages.monthlyreturns.*
 import models.*
-import models.ReturnType.MonthlyNilReturn
+import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyNilReturn}
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
+import pages.amend.WhichSubcontractorsToAddPage
 
 class NavigatorSpec extends SpecBase {
 
@@ -275,6 +276,17 @@ class NavigatorSpec extends SpecBase {
           UserAnswers("id")
         ) mustBe monthlyreturns.routes.CheckYourAnswersController
           .onPageLoad()
+      }
+
+      "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController" in {
+        val ua = UserAnswers("id")
+          .setOrException(WhichSubcontractorsToAddPage, Set.empty)
+          .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
+        navigator.nextPage(
+          WhichSubcontractorsToAddPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
       }
     }
 
