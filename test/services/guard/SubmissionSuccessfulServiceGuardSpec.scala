@@ -24,7 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import pages.submission.SubmissionDetailsPage
 import play.api.test.FakeRequest
 
-import java.time.Instant
+import java.time.LocalDateTime
 
 class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
 
@@ -52,7 +52,7 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
       id = "sub-1",
       status = status,
       irMark = irMark,
-      submittedAt = Instant.now(),
+      submittedAt = LocalDateTime.now(),
       amendment = amendment,
       hmrcMarkGgis = hmrcMarkGgis
     )
