@@ -23,8 +23,6 @@ import models.amend.WhichSubcontractorsToAdd
 import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
-import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -132,10 +130,10 @@ class WhichSubcontractorsToAddController @Inject() (
                                             }
                           _              <- sessionRepository.set(updatedAnswers)
                           _              <- monthlyReturnService
-                            .syncMonthlyReturnItems(
-                              updatedAnswers,
-                              value.toSeq.map(_.toLong)
-                            )
+                                              .syncMonthlyReturnItems(
+                                                updatedAnswers,
+                                                value.toSeq.map(_.toLong)
+                                              )
                         } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
                     )
                 case _                                   =>
