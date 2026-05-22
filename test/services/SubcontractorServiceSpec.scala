@@ -18,8 +18,8 @@ package services
 
 import base.SpecBase
 import models.UserAnswers
-import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturnItem, SelectedSubcontractor, Subcontractor}
 import models.requests.GetMonthlyReturnForEditRequest
+import models.monthlyreturns.*
 import models.submission.SubcontractorType
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.libs.json.Json
@@ -488,6 +488,7 @@ class SubcontractorServiceSpec extends SpecBase {
         model.subcontractors.map(_.name) mustBe Seq("John Smith", "Acme Ltd")
         model.subcontractors.map(_.id) mustBe Seq("1", "2")
         model.preSelectedIds mustBe Set("1")
+        model.status mustBe Some("STARTED")
       }
     }
 
@@ -520,6 +521,7 @@ class SubcontractorServiceSpec extends SpecBase {
 
       whenReady(modelF) { model =>
         model.preSelectedIds mustBe Set("2")
+        model.status mustBe Some("STARTED")
       }
     }
 
@@ -546,6 +548,7 @@ class SubcontractorServiceSpec extends SpecBase {
 
       whenReady(modelF) { model =>
         model.preSelectedIds mustBe Set.empty
+        model.status mustBe Some("STARTED")
       }
     }
   }
@@ -569,7 +572,9 @@ class SubcontractorServiceSpec extends SpecBase {
   private def mkResponse(items: Seq[MonthlyReturnItem], subs: Seq[Subcontractor]) =
     GetAllMonthlyReturnDetailsResponse(
       scheme = Seq.empty,
-      monthlyReturn = Seq.empty,
+      monthlyReturn = Seq(
+        MonthlyReturn(monthlyReturnId = 101, taxYear = 2026, taxMonth = 1, status = Some("STARTED"))
+      ),
       subcontractors = subs,
       monthlyReturnItems = items,
       submission = Seq.empty

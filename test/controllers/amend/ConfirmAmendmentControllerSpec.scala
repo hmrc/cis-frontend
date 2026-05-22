@@ -17,7 +17,7 @@
 package controllers.amend
 
 import base.SpecBase
-import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.*
 import models.UserAnswers
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import org.mockito.ArgumentCaptor

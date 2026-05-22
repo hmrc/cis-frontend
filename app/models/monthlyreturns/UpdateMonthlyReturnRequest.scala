@@ -17,6 +17,7 @@
 package models.monthlyreturns
 
 import models.ReturnType.*
+import models.amend.AmendmentDetails
 import models.{ReturnType, UserAnswers}
 import pages.monthlyreturns.*
 import play.api.libs.json.{Json, OFormat}
@@ -41,6 +42,10 @@ case class UpdateMonthlyReturnRequest(
 object UpdateMonthlyReturnRequest {
 
   implicit val format: OFormat[UpdateMonthlyReturnRequest] = Json.format[UpdateMonthlyReturnRequest]
+
+  private val Yes     = "Y"
+  private val No      = "N"
+  private val Started = "STARTED"
 
   private def toYN(value: Boolean): String = if (value) "Y" else "N"
 
@@ -101,4 +106,14 @@ object UpdateMonthlyReturnRequest {
           )
       }
     }
+
+  def forStartedStandardAmendment(amendmentDetails: AmendmentDetails): UpdateMonthlyReturnRequest =
+    UpdateMonthlyReturnRequest(
+      instanceId = amendmentDetails.instanceId,
+      taxYear = amendmentDetails.taxYear,
+      taxMonth = amendmentDetails.taxMonth,
+      amendment = Yes,
+      nilReturnIndicator = No,
+      status = Started
+    )
 }

@@ -28,9 +28,9 @@ import pages.amend.WhatDoYouWantToAmendStandardPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
 import java.time.LocalDate
@@ -192,18 +192,28 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
     "must redirect to Subcontractor Details Added when 'Amend Payment or Subcontractor Details' is submitted" in {
 
       val mockSessionRepository    = mock[SessionRepository]
-      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn Future.successful(
         mockMonthlyReturn
       )
 
+      when(
+        mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())
+      ) thenReturn Future.successful(mockMonthlyReturn)
+
+      when(
+        mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers]())(any())
+      ) thenReturn Future.successful(Right(()))
+
       val application =
         applicationBuilder(userAnswers = Some(baseAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
           )
           .build()
 
@@ -215,9 +225,8 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(
-          result
-        ).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
           .onPageLoad(models.NormalMode)
           .url
 

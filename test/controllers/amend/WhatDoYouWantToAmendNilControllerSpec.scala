@@ -22,7 +22,7 @@ import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.ReturnType.MonthlyStandardReturn
 import models.amend.WhatDoYouWantToAmendNil
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendNil.AmendNilReturn
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -33,7 +33,8 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{MonthlyReturnService, AmendMonthlyReturnService}
+import services.AmendMonthlyReturnService
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import java.time.LocalDate
@@ -138,14 +139,20 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       val mockSessionRepository    = mock[SessionRepository]
       val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers]())(any())
+      ) thenReturn Future.successful(Right(()))
 
       val application =
         applicationBuilder(userAnswers = Some(completeUserAnswers))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
           )
           .build()
 

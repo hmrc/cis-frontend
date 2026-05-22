@@ -18,6 +18,7 @@ package models.monthlyreturns
 
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
+import models.amend.AmendmentDetails
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.TryValues
@@ -212,6 +213,31 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
       val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
 
       result.decInformationCorrect shouldBe Some("Y")
+    }
+  }
+
+  "UpdateMonthlyReturnRequest.forStartedStandardAmendment" should {
+
+    "build a started standard amendment request from amendment details" in {
+      val amendmentDetails = AmendmentDetails(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 4,
+        originalReturnType = MonthlyNilReturn,
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      val result =
+        UpdateMonthlyReturnRequest.forStartedStandardAmendment(amendmentDetails)
+
+      result shouldBe UpdateMonthlyReturnRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 4,
+        amendment = "Y",
+        nilReturnIndicator = "N",
+        status = "STARTED"
+      )
     }
   }
 }

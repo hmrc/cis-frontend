@@ -19,8 +19,8 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
-import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
-import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
+import models.amend.*
+import models.requests.*
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
@@ -1084,7 +1084,7 @@ class ConstructionIndustrySchemeConnectorSpec
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
   }
-  
+
   "createAmendedMonthlyReturn(payload)" should {
 
     "POST /cis/amend-monthly-return/create and return Unit on 201" in {

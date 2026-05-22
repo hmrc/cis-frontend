@@ -27,8 +27,10 @@ import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{MonthlyReturnService, AmendMonthlyReturnService}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import javax.inject.Inject
@@ -37,6 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class WhatDoYouWantToAmendNilController @Inject() (
   override val messagesApi: MessagesApi,
   monthlyReturnService: MonthlyReturnService,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -64,6 +67,8 @@ class WhatDoYouWantToAmendNilController @Inject() (
 
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
       form
         .bindFromRequest()
         .fold(

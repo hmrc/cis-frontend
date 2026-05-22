@@ -744,6 +744,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val instanceId = "CIS-123"
       val monthYear  = LocalDate.of(2026, 1, 5)
       val ids        = Seq(1001L, 1002L)
+      val amendment  = "N"
 
       val ua = UserAnswers("test")
         .set(CisIdPage, instanceId)
