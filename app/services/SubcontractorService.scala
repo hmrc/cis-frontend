@@ -196,7 +196,7 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
           subcontractors = subcontractors,
           preSelectedIds = preSelectedIds,
           status = submissionStatus
-          )
+        )
       }
 
 }

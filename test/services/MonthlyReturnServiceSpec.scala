@@ -745,11 +745,12 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val taxYear    = 2024
       val taxMonth   = 10
       val ids        = Seq(1001L, 1002L)
+      val amendment  = "N"
 
       when(connector.syncMonthlyReturnItems(any[SelectedSubcontractorsRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 
-      service.syncMonthlyReturnItems(instanceId, taxYear, taxMonth, ids).futureValue mustBe ()
+      service.syncMonthlyReturnItems(instanceId, taxYear, taxMonth, ids, amendment).futureValue mustBe ()
 
       val captor: ArgumentCaptor[SelectedSubcontractorsRequest] =
         ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])

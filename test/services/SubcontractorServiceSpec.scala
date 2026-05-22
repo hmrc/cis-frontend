@@ -23,7 +23,7 @@ import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.SubcontractorType
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.libs.json.Json
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.http.HeaderCarrier
 import org.mockito.Mockito.*
 

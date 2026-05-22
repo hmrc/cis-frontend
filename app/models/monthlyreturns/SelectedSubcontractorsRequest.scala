@@ -23,7 +23,7 @@ case class SelectedSubcontractorsRequest(
   taxYear: Int,
   taxMonth: Int,
   selectedSubcontractorIds: Seq[Long],
-  isAmendment: Option[Boolean] = None
+  amendment: String
 )
 
 object SelectedSubcontractorsRequest {
