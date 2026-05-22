@@ -23,7 +23,7 @@ import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn}
-import models.requests.{DataRequest, SendSuccessEmailRequest}
+import models.requests.{DataRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -376,7 +376,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           monthlyReturnItems = Seq.empty,
           submission = Seq.empty
         )
-        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(amendmentResponse))
 
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -413,7 +413,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           monthlyReturnItems = Seq.empty,
           submission = Seq.empty
         )
-        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(emptyResponse))
 
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -443,7 +443,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(mkChrisResp()))
 
-        when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("BE unavailable")))
 
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -1182,6 +1182,106 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       savedUa.get(LastMessageDatePage).value mustBe existingLastMessageDate
     }
 
+    "set hmrcMarkGgis to None when poll returns SUBMITTED without irMarkReceived" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "3600"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "oldUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, None, None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+      val saved                               = captor.getValue.get(SubmissionDetailsPage).value
+      saved.status mustBe "SUBMITTED"
+      saved.hmrcMarkGgis mustBe None
+    }
+
+    "set hmrcMarkGgis from irMarkReceived when poll returns SUBMITTED" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "3600"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "oldUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(
+          Future.successful(
+            ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, Some("IR-MARK-RECEIVED"), None, None)
+          )
+        )
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+      val saved                               = captor.getValue.get(SubmissionDetailsPage).value
+      saved.status mustBe "SUBMITTED"
+      saved.hmrcMarkGgis mustBe Some("IR-MARK-RECEIVED")
+    }
+
     "mark as timed out when timeout exceeded and status is still PENDING" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
@@ -1817,7 +1917,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   )
 
   private def stubRetrieveMonthlyReturnForEditDetails(connector: ConstructionIndustrySchemeConnector): Unit =
-    when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+    when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
       .thenReturn(Future.successful(emptyMonthlyReturnDetailsResponse))
 
   private def mkChrisResp(
