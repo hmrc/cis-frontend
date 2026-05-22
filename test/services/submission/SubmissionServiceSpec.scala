@@ -22,7 +22,7 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
+import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn}
 import models.requests.{DataRequest, SendSuccessEmailRequest}
 import models.submission.*
 import org.mockito.ArgumentCaptor
@@ -260,6 +260,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
 
+        stubRetrieveMonthlyReturnForEditDetails(connector)
+
         val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
         out mustBe beResp
 
@@ -308,6 +310,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val beRespWithEndpoint = ChrisSubmissionResponse(
           submissionId = "sub-123",
@@ -370,6 +374,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
 
+        stubRetrieveMonthlyReturnForEditDetails(connector)
+
         val ua    = uaWithInactivityYes
         val uaSpy = spy(ua)
 
@@ -413,6 +419,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val uaWithAgentClientData = uaWithInactivityYes.set(AgentClientDataPage, agentDate).success.value
         val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true).futureValue
@@ -1690,6 +1698,18 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   private lazy val agentDate: AgentClientData =
     AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
+
+  private val emptyMonthlyReturnDetailsResponse = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq.empty,
+    monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, amendment = Some("N"))),
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
+  private def stubRetrieveMonthlyReturnForEditDetails(connector: ConstructionIndustrySchemeConnector): Unit =
+    when(connector.retrieveMonthlyReturnForEditDetails(any[String], any[Int], any[Int])(any[HeaderCarrier]))
+      .thenReturn(Future.successful(emptyMonthlyReturnDetailsResponse))
 
   private def mkChrisResp(
     status: String = "SUBMITTED",

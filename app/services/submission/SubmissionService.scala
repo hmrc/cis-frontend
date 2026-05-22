@@ -20,10 +20,11 @@ import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.CisTaxpayer
-import models.requests.{DataRequest, SendSuccessEmailRequest}
+import models.requests.{DataRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import models.{ReturnType, UserAnswers}
 import pages.agent.AgentClientDataPage
+import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import pages.submission.*
 import play.api.Logging
@@ -82,10 +83,11 @@ class SubmissionService @Inject() (
         cisConnector.getCisTaxpayer()
 
     for {
-      taxpayer <- taxpayerFut
-      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
-      response <- cisConnector.submitToChris(submissionId, csr)
-      _        <- writeToFeMongo(ua, submissionId, response)
+      taxpayer  <- taxpayerFut
+      csr       <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
+      response  <- cisConnector.submitToChris(submissionId, csr)
+      amendment <- fetchAmendmentFlag(ua)
+      _         <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
   def updateSubmissionFromChrisResponse(
@@ -207,9 +209,7 @@ class SubmissionService @Inject() (
           } yield "TIMED_OUT"
         } else {
           for {
-            cisId             <- userAnswers.get(CisIdPage).toFuture
             pollUrl           <- userAnswers.get(PollUrlPage).toFuture
-            submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
             submissionId      <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
             result            <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
             _                 <- updateSubmission(
@@ -225,7 +225,10 @@ class SubmissionService @Inject() (
             timedOut           =
               LocalDateTime.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
             finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
-            newDetails         = submissionDetails.copy(status = newStatus)
+            newDetails         = submissionDetails.copy(
+                                   status = newStatus,
+                                   hmrcMarkGgis = result.irMarkReceived
+                                 )
             ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
             ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
             ua3               <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
@@ -338,10 +341,26 @@ class SubmissionService @Inject() (
       .orElse(Try(LocalDateTime.parse(timestamp).atZone(ZoneOffset.UTC).toInstant))
       .toOption
 
+  private def fetchAmendmentFlag(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    val instanceId  = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
+    val ym          = selectedYearMonth(ua)
+    val isAmendment = ua.get(AmendmentDetailsPage).isDefined
+    cisConnector
+      .retrieveMonthlyReturnForEditDetails(
+        GetMonthlyReturnForEditRequest(instanceId, ym.getMonthValue, ym.getYear, isAmendment)
+      )
+      .map(_.monthlyReturn.headOption.flatMap(_.amendment))
+      .recover { case ex =>
+        logger.warn("[fetchAmendmentFlag] Failed to retrieve amendment flag, defaulting to None", ex)
+        None
+      }
+  }
+
   private def writeToFeMongo(
     ua: UserAnswers,
     submissionId: String,
-    response: ChrisSubmissionResponse
+    response: ChrisSubmissionResponse,
+    amendment: Option[String]
   ): Future[Boolean] = {
     val updatedUa: Try[UserAnswers] = for {
       ua1 <- ua.set(
@@ -352,7 +371,9 @@ class SubmissionService @Inject() (
                  irMark = response.hmrcMarkGenerated,
                  submittedAt = response.gatewayTimestamp
                    .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
-                   .getOrElse(LocalDateTime.now)
+                   .getOrElse(LocalDateTime.now),
+                 amendment = amendment,
+                 hmrcMarkGgis = None
                )
              )
       ua2 <- response.responseEndPoint match {
