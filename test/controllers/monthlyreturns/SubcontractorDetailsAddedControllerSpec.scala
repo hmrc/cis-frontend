@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.ReturnType.MonthlyStandardReturn
-import models.UserAnswers
+import models.{NormalMode, UserAnswers}
 import models.amend.AmendmentDetails
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.CisIdPage
@@ -60,7 +60,6 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
   private def buildApp(ua: UserAnswers) =
     applicationBuilder(userAnswers = Some(ua))
       .configure(
-        "play.http.router"           -> "testOnly.TestRoutes",
         "features.welsh-translation" -> false,
         "timeout-dialog.timeout"     -> 900,
         "timeout-dialog.countdown"   -> 120,
@@ -69,8 +68,14 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       )
       .build()
 
-  private val getUrl  = "/monthly-return/subcontractor-details-added"
-  private val postUrl = "/monthly-return/subcontractor-details-added"
+  private val getUrl: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+
+  private val postUrl: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(NormalMode).url
+
+  private val cancelUrl: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url
 
   "SubcontractorDetailsAddedController" - {
 
@@ -218,7 +223,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect on POST No (answer == false)" in {
+    "must redirect on POST Yes when adding more subcontractors" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
       )
@@ -241,19 +246,19 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
     }
 
     "must redirect to confirm cancel amendment page when cancel amendment is selected" in {
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "TyneWear Ltd")
+      )
+
+      val application = buildApp(ua)
 
       running(application) {
-        val request =
-          FakeRequest(
-            GET,
-            routes.PaymentDetailsConfirmationController.onCancelAmendment().url
-          )
+        val request = FakeRequest(GET, cancelUrl)
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
           controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
       }
     }

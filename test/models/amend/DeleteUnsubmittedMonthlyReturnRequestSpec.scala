@@ -46,5 +46,53 @@ class DeleteUnsubmittedMonthlyReturnRequestSpec extends SpecBase {
           amendment = MonthlyAmendedStandardReturn.amendmentFlag
         )
     }
+
+    "throw when CisIdPage is missing" in {
+      val userAnswers = emptyUserAnswers
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val exception = intercept[RuntimeException] {
+        DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(userAnswers)
+      }
+
+      exception.getMessage mustBe "Missing instanceId"
+    }
+
+    "throw when DateConfirmPaymentsPage is missing" in {
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "1")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val exception = intercept[RuntimeException] {
+        DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(userAnswers)
+      }
+
+      exception.getMessage mustBe "Missing confirmed payment date"
+    }
+
+    "throw when ReturnTypePage is missing" in {
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, "1")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+        .success
+        .value
+
+      val exception = intercept[RuntimeException] {
+        DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(userAnswers)
+      }
+
+      exception.getMessage mustBe "Missing return type"
+    }
   }
 }

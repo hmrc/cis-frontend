@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
 import models.NormalMode
-import models.ReturnType.MonthlyAmendedStandardReturn
+import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -208,6 +208,42 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
           controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+      }
+    }
+
+    "must return OK and the non-amendment view for a GET when return type is not amended" in {
+      val userAnswers = userAnswersWithCisId
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form, NormalMode, false)(request, messages(application)).toString
+      }
+    }
+
+    "must throw when ReturnTypePage is missing on GET" in {
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
+
+        val result = route(application, request).value
+
+        whenReady(result.failed) { ex =>
+          ex mustBe a[RuntimeException]
+          ex.getMessage mustBe "ReturnTypePage not found in user answers"
+        }
       }
     }
   }
