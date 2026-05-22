@@ -29,6 +29,7 @@ import play.api.libs.json.*
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.QuestionPage
 import pages.agent.AgentClientDataPage
+import pages.amend.AmendmentDetailsPage
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.UserAnswerUtils.clearMonthlyReturnJourney
 import utils.Utils.toBigDecimal
@@ -133,10 +134,11 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     taxYear: Int,
     taxMonth: Int,
-    selectedSubcontractorIds: Seq[Long]
+    selectedSubcontractorIds: Seq[Long],
+    amendment: String
   )(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.syncMonthlyReturnItems(
-      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds)
+      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds, amendment)
     )
 
   def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
@@ -186,7 +188,10 @@ class MonthlyReturnService @Inject() (
                   instanceId = cisId,
                   taxYear = taxYear,
                   taxMonth = taxMonth,
-                  selectedSubcontractorIds = selectedIds
+                  selectedSubcontractorIds = selectedIds,
+                  amendment =
+                    if (updatedUa.get(AmendmentDetailsPage).isDefined) "Y"
+                    else "N" // Todo: to be updated once 4682 merged
                 )
               )
               .map(_ => updatedUa)

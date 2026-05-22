@@ -35,7 +35,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
 import utils.TypeUtils.*
 
-import java.time.{Instant, LocalDateTime, YearMonth}
+import java.time.{Instant, LocalDateTime, YearMonth, ZoneId, ZonedDateTime}
 import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -108,10 +108,24 @@ class SubmissionService @Inject() (
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+    val zone = s"(${ZoneId.systemDefault}, ${ZonedDateTime.now().getOffset})"
+    logger.info(
+      s"[SubmissionService.updateSubmission] acceptedTime string as received: $acceptedTime $zone"
+    )
+
     val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
       acceptedTime
-        .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
-        .getOrElse(LocalDateTime.now())
+        // TODO: decide whether to use the parsed and re-formatted string or the original string from CHRIS
+        .flatMap { t =>
+          Try(LocalDateTime.parse(t)).map { parsedTime =>
+            logger.info(s"[SubmissionService.updateSubmission] parsed acceptedTime: $parsedTime $zone")
+            parsedTime
+          }.toOption
+        }
+        .getOrElse {
+          logger.info(s"[SubmissionService.updateSubmission] falling back to local time: ${LocalDateTime.now} $zone");
+          LocalDateTime.now().toString
+        }
     }
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
@@ -128,7 +142,12 @@ class SubmissionService @Inject() (
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
       acceptedTime = acceptedTimestamp.map(_.toString),
-      submissionRequestDate = Some(LocalDateTime.now()),
+      submissionRequestDate = Some {
+        logger.info(
+          s"[SubmissionService.updateSubmission] setting submissionRequestDate to local time: ${LocalDateTime.now} $zone"
+        );
+        LocalDateTime.now()
+      },
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
       govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
