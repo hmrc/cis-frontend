@@ -21,9 +21,10 @@ import controllers.monthlyreturns
 import pages.*
 import pages.monthlyreturns.*
 import models.*
+import models.amend.*
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn}
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
-import pages.amend.WhichSubcontractorsToAddPage
+import pages.amend.{AreYouSureYouWantToAmendYesNoPage, WhichSubcontractorsToAddPage}
 
 class NavigatorSpec extends SpecBase {
 
@@ -276,6 +277,28 @@ class NavigatorSpec extends SpecBase {
           UserAnswers("id")
         ) mustBe monthlyreturns.routes.CheckYourAnswersController
           .onPageLoad()
+      }
+
+      "must go from AreYouSureYouWantToAmendYesNoPage to SubmitInactivityRequestController when user answered Yes for Amended NilReturn" in {
+        val ua = UserAnswers("id")
+          .setOrException(AreYouSureYouWantToAmendYesNoPage, AreYouSureYouWantToAmendYesNo.Yes)
+          .setOrException(ReturnTypePage, MonthlyAmendedNilReturn)
+        navigator.nextPage(
+          AreYouSureYouWantToAmendYesNoPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+      }
+
+      "must go from AreYouSureYouWantToAmendYesNoPage to WhatDoYouWantToAmendNilController when user answered No for Amended NilReturn" in {
+        val ua = UserAnswers("id")
+          .setOrException(AreYouSureYouWantToAmendYesNoPage, AreYouSureYouWantToAmendYesNo.No)
+          .setOrException(ReturnTypePage, MonthlyAmendedNilReturn)
+        navigator.nextPage(
+          AreYouSureYouWantToAmendYesNoPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.routes.IndexController.onPageLoad() // TODO: cis-manage-dashboard
       }
 
       "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended StandardReturn" in {
