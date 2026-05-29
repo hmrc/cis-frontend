@@ -44,25 +44,25 @@ class Navigator @Inject() () {
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
-    case (VerifySubcontractorsPage, _)                                =>
+    case (VerifySubcontractorsPage, _)                      =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-    case (DateConfirmPaymentsPage, MonthlyStandardReturn)             =>
+    case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-    case (SelectedSubcontractorPaymentsMadePage(index), _)            =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorMaterialCostsPage(index), _)           =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorTaxDeductedPage(index), _)             =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case (PaymentDetailsConfirmationPage, _)                          =>
+    case (PaymentDetailsConfirmationPage, _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
-    case (EmploymentStatusDeclarationPage, _)                         =>
+    case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
-    case (VerifiedStatusDeclarationPage, _)                           =>
+    case (VerifiedStatusDeclarationPage, _)                 =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(NormalMode)(userAnswers)
-    case (ConfirmationByEmailPage, _)                                 =>
+    case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
-    case (EnterYourEmailAddressPage, _)                               =>
+    case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
@@ -70,9 +70,9 @@ class Navigator @Inject() () {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
     // amend monthly return
-    case (WhichSubcontractorsToAddPage, MonthlyAmendedStandardReturn) =>
+    case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-    case (_, _)                                                       => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
