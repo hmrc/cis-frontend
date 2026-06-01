@@ -358,7 +358,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           Configuration("submission-poll-timeout-seconds" -> "60")
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -395,7 +395,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           Configuration("submission-poll-timeout-seconds" -> "60")
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -432,7 +432,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           Configuration("submission-poll-timeout-seconds" -> "60")
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -1191,7 +1191,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -1239,7 +1239,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
