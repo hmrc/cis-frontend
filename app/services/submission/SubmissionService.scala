@@ -19,7 +19,7 @@ package services.submission
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.monthlyreturns.CisTaxpayer
-import models.requests.{DataRequest, SendSuccessEmailRequest}
+import models.requests.{CisIdDataRequest, SendSuccessEmailRequest}
 import models.submission.*
 import models.UserAnswers
 import pages.agent.AgentClientDataPage
@@ -88,7 +88,7 @@ class SubmissionService @Inject() (
     submissionId: String,
     ua: UserAnswers,
     chrisResp: ChrisSubmissionResponse
-  )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = updateSubmission(
+  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = updateSubmission(
     submissionId,
     ua,
     chrisResp.hmrcMarkGenerated,
@@ -106,7 +106,7 @@ class SubmissionService @Inject() (
     acceptedTime: Option[String],
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
-  )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
     val zone = s"(${ZoneId.systemDefault}, ${ZonedDateTime.now().getOffset})"
     logger.info(
       s"[SubmissionService.updateSubmission] acceptedTime string as received: $acceptedTime $zone"
@@ -164,7 +164,7 @@ class SubmissionService @Inject() (
 
   def checkAndUpdateSubmissionStatusIfAllowed(
     userAnswers: UserAnswers
-  )(using HeaderCarrier, DataRequest[AnyContent]): Future[PollDecision] =
+  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[PollDecision] =
     userAnswers.get(LastMessageDatePage) match {
       case Some(receivedAt) =>
         val pollInterval      = getPollInterval(userAnswers)
@@ -183,7 +183,7 @@ class SubmissionService @Inject() (
 
   def checkAndUpdateSubmissionStatus(
     userAnswers: UserAnswers
-  )(using HeaderCarrier, DataRequest[AnyContent]): Future[String] = {
+  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[String] = {
     val timeout = appConfig.submissionPollTimeoutSeconds
 
     userAnswers.get(SubmissionDetailsPage) match {

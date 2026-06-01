@@ -23,7 +23,7 @@ import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
-import models.requests.{DataRequest, SendSuccessEmailRequest}
+import models.requests.{CisIdDataRequest, SendSuccessEmailRequest}
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -45,9 +45,9 @@ import scala.util.Failure
 
 class SubmissionServiceSpec extends SpecBase with TryValues {
 
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
-  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-  given DataRequest[AnyContent]     = DataRequest(FakeRequest(), userAnswersId, emptyUserAnswers)
+  implicit val hc: HeaderCarrier     = HeaderCarrier()
+  implicit val ec: ExecutionContext  = scala.concurrent.ExecutionContext.global
+  given CisIdDataRequest[AnyContent] = CisIdDataRequest(FakeRequest(), userAnswersId, emptyUserAnswers, "123")
 
   private val taxpayer =
     CisTaxpayer(
