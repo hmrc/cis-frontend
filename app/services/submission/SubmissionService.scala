@@ -122,7 +122,7 @@ class SubmissionService @Inject() (
           }.toOption
         }
         .getOrElse {
-          logger.info(s"[SubmissionService.updateSubmission] falling back to local time: ${LocalDateTime.now} $zone");
+          logger.info(s"[SubmissionService.updateSubmission] falling back to local time: ${LocalDateTime.now} $zone")
           LocalDateTime.now().toString
         }
     }
@@ -146,7 +146,7 @@ class SubmissionService @Inject() (
       submissionRequestDate = Some {
         logger.info(
           s"[SubmissionService.updateSubmission] setting submissionRequestDate to local time: ${LocalDateTime.now} $zone"
-        );
+        )
         LocalDateTime.now()
       },
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
