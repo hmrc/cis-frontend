@@ -18,12 +18,15 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
-import models.Mode
+import models.{Mode, NormalMode}
+import models.requests.{DataRequest, GetMonthlyReturnForEditRequest}
 import navigation.Navigator
-import pages.monthlyreturns.EnterYourEmailAddressPage
+import pages.amend.AmendmentDetailsPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
@@ -39,6 +42,7 @@ class EnterYourEmailAddressController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: EnterYourEmailAddressFormProvider,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: EnterYourEmailAddressView
 )(implicit ec: ExecutionContext)
@@ -47,15 +51,48 @@ class EnterYourEmailAddressController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
-
-      val preparedForm = request.userAnswers.get(EnterYourEmailAddressPage) match {
-        case None        => form
-        case Some(value) => form.fill(value)
+  def onPageLoad(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(EnterYourEmailAddressPage) match {
+        case Some(value)                =>
+          Future.successful(Ok(view(form.fill(value), mode)))
+        case None if mode == NormalMode =>
+          getPrepopulationEmailAddress().map {
+            case Some(email) => Ok(view(form.fill(email), mode))
+            case None        => Ok(view(form, mode))
+          }
+        case None                       =>
+          Future.successful(Ok(view(form, mode)))
       }
+    }
 
-      Ok(view(preparedForm, mode))
+  private def getPrepopulationEmailAddress()(implicit request: DataRequest[AnyContent]): Future[Option[String]] = {
+    val requiredAnswers = for {
+      cisId   <- request.userAnswers.get(CisIdPage)
+      taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+    } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+    requiredAnswers match {
+      case Some((cisId, month, year)) =>
+        val isAmendment = request.userAnswers.get(AmendmentDetailsPage).isDefined
+        monthlyReturnService
+          .retrieveMonthlyReturnForEditDetails(
+            GetMonthlyReturnForEditRequest(
+              cisId,
+              taxMonth = month,
+              taxYear = year,
+              isAmendment = isAmendment
+            )
+          )
+          .map { editDetails =>
+            editDetails.scheme.flatMap(_.emailAddress).headOption
+          }
+          .recover { case _ =>
+            None
+          }
+      case _                          =>
+        Future.successful(None)
+    }
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] =

@@ -20,18 +20,21 @@ import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.NormalMode
+import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.EnterYourEmailAddressPage
+import pages.monthlyreturns.{DateConfirmPaymentsPage, EnterYourEmailAddressPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
@@ -59,6 +62,46 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+      }
+    }
+
+    "must call retrieveMonthlyReturnForEditDetails and prepopulate the email address for a GET in NormalMode when not already answered" in {
+
+      val userAnswers = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 5, 5))
+        .success
+        .value
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      val scheme                   = ContractorScheme(
+        schemeId = 1,
+        instanceId = "1",
+        accountsOfficeReference = "ref",
+        taxOfficeNumber = "num",
+        taxOfficeReference = "ref",
+        emailAddress = Some("prepopulated@test.com")
+      )
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any()))
+        .thenReturn(Future.successful(GetAllMonthlyReturnDetailsResponse(Seq(scheme), Nil, Nil, Nil, Nil)))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form.fill("prepopulated@test.com"), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
