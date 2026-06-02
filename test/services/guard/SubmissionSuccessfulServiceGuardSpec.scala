@@ -17,7 +17,7 @@
 package services.guard
 
 import models.UserAnswers
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import models.submission.SubmissionDetails
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -34,12 +34,13 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
   private def emptyUserAnswers(userId: String = "uid"): UserAnswers =
     UserAnswers(userId)
 
-  private def dataRequest(ua: UserAnswers): DataRequest[_] =
-    DataRequest(
+  private def cisIdDataRequest(ua: UserAnswers): CisIdDataRequest[_] =
+    CisIdDataRequest(
       request = FakeRequest(),
       userId = ua.id,
       userAnswers = ua,
-      employerReference = None
+      employerReference = None,
+      cisId = "1"
     )
 
   private def submissionDetails(
@@ -60,62 +61,62 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
   "SubmissionSuccessfulServiceGuardImpl.check" should {
 
     "return false when SubmissionDetailsPage is absent" in {
-      implicit val request: DataRequest[_] = dataRequest(emptyUserAnswers())
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(emptyUserAnswers())
       guard.check mustBe false
     }
 
     "return true when status is SUBMITTED and IRMarks match" in {
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, submissionDetails()).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, submissionDetails()).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe true
     }
 
     "return true when amendment is Y and IRMarks match (even if status is not SUBMITTED)" in {
-      val details                          = submissionDetails(status = "PENDING", amendment = Some("Y"))
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(status = "PENDING", amendment = Some("Y"))
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe true
     }
 
     "return false when status is not SUBMITTED and amendment is not Y" in {
-      val details                          = submissionDetails(status = "PENDING", amendment = Some("N"))
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(status = "PENDING", amendment = Some("N"))
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe false
     }
 
     "return false when status is not SUBMITTED and amendment is None" in {
-      val details                          = submissionDetails(status = "ACCEPTED", amendment = None)
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(status = "ACCEPTED", amendment = None)
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe false
     }
 
     "return false when irMark is empty" in {
-      val details                          = submissionDetails(irMark = "", hmrcMarkGgis = Some(""))
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(irMark = "", hmrcMarkGgis = Some(""))
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe false
     }
 
     "return false when hmrcMarkGgis is None" in {
-      val details                          = submissionDetails(hmrcMarkGgis = None)
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(hmrcMarkGgis = None)
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe false
     }
 
     "return false when hmrcMarkGgis does not match irMark" in {
-      val details                          = submissionDetails(hmrcMarkGgis = Some("differentMark"))
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(hmrcMarkGgis = Some("differentMark"))
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe false
     }
 
     "return false when hmrcMarkGgis is empty string" in {
-      val details                          = submissionDetails(hmrcMarkGgis = Some(""))
-      val ua                               = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: DataRequest[_] = dataRequest(ua)
+      val details                               = submissionDetails(hmrcMarkGgis = Some(""))
+      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
       guard.check mustBe false
     }
   }
