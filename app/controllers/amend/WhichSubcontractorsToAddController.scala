@@ -20,9 +20,10 @@ import controllers.actions.*
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
+import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -33,6 +34,7 @@ import views.html.amend.WhichSubcontractorsToAddView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class WhichSubcontractorsToAddController @Inject() (
   override val messagesApi: MessagesApi,
@@ -103,15 +105,33 @@ class WhichSubcontractorsToAddController @Inject() (
                           )
                         ),
                       value =>
+                        val selectedSubcontractors = model.subcontractors
+                          .filter(subcontractor => value.contains(subcontractor.id))
+                          .map { subcontractor =>
+                            SelectedSubcontractor(
+                              subcontractor.id.toLong,
+                              subcontractor.name,
+                              None,
+                              None,
+                              None
+                            )
+                          }
                         for {
-                          updatedAnswers <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-                          _              <- sessionRepository.set(updatedAnswers)
-                          _              <- monthlyReturnService
-                                              .syncMonthlyReturnItems(
-                                                updatedAnswers,
-                                                value.toSeq.map(_.toLong)
-                                              )
-                        } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, updatedAnswers))
+                          ua  <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                          ua2 <- Future.fromTry {
+                                   val cleared = ua.remove(SelectedSubcontractorPage.all)
+                                   cleared.flatMap { clearedAnswers =>
+                                     selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
+                                       case (answersTry, (subcontractor, index)) =>
+                                         answersTry.flatMap(
+                                           _.set(SelectedSubcontractorPage(index + 1), subcontractor)
+                                         )
+                                     }
+                                   }
+                                 }
+                          _   <- sessionRepository.set(ua2)
+                          _   <- monthlyReturnService.syncMonthlyReturnItems(ua2, value.toSeq.map(_.toLong))
+                        } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, ua2))
                     )
                 case _                                   =>
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))

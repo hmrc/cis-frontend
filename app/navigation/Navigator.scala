@@ -19,6 +19,7 @@ package navigation
 import models.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import pages.*
+import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.*
 import play.api.mvc.Call
 
@@ -68,6 +69,9 @@ class Navigator @Inject() () {
         } else {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
+    // amend monthly return
+    case (WhichSubcontractorsToAddPage, _)                  =>
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
