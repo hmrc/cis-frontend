@@ -14,14 +14,52 @@
  * limitations under the License.
  *@
 
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.tasklist._
+@import views.html.components._
+@import controllers.monthlyreturns.routes.SelectSubcontractorsController
+
 @this(
-        layout: templates.Layout,
-        govukButton: GovukButton
+    layout: templates.Layout,
+    govukTaskList: GovukTaskList,
+    h1: H1,
+    p: Paragraph,
+    link: Link
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(subcontractors: Seq[String])(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("reviewSubcontractorDetails.title"))) {
+@defining(
+    TaskListItemStatus(
+        tag = Some(Tag(content = Text(messages("reviewSubcontractorDetails.taskList.status.incomplete"))))
+    )
+) { incompleteStatus =>
 
-    <h1 class="govuk-heading-xl">@messages("reviewSubcontractorDetails.heading")</h1>
+    @layout(pageTitle = titleNoForm(messages("reviewSubcontractorDetails.title"))) {
+
+        @h1("reviewSubcontractorDetails.heading")
+
+        @p("reviewSubcontractorDetails.intro")
+
+        @govukTaskList(TaskList(
+            idPrefix = "review-subcontractor-details",
+            items = subcontractors.map { name =>
+                TaskListItem(
+                    title = TaskListItemTitle(content = Text(name)),
+                    href = Some("#"),
+                    status = incompleteStatus
+                )
+            } :+ TaskListItem(
+                title = TaskListItemTitle(content = Text(messages("reviewSubcontractorDetails.taskList.fileAReturn"))),
+                status = TaskListItemStatus(
+                    content = Text(messages("reviewSubcontractorDetails.taskList.status.cannotContinueYet")),
+                    classes = "govuk-task-list__status--cannot-start-yet"
+                )
+            )
+        ))
+
+        @link(
+            linkTextKey = "reviewSubcontractorDetails.backLink",
+            linkUrl = SelectSubcontractorsController.onPageLoad(None).url
+        )
+    }
 }

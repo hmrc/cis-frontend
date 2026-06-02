@@ -7,6 +7,8 @@ import views.html.ReviewSubcontractorDetailsView
 
 class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
+  private val stubSubcontractors = Seq("Hooper And Associates", "Quint Transportation", "The Kintner Group")
+
   "ReviewSubcontractorDetails Controller" - {
 
     "must return OK and the correct view for a GET" in {
@@ -15,13 +17,11 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
       running(application) {
         val request = FakeRequest(GET, routes.ReviewSubcontractorDetailsController.onPageLoad().url)
-
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[ReviewSubcontractorDetailsView]
+        val result  = route(application, request).value
+        val view    = application.injector.instanceOf[ReviewSubcontractorDetailsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(stubSubcontractors)(request, messages(application)).toString
       }
     }
   }
