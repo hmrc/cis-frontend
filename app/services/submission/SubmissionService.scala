@@ -19,10 +19,11 @@ package services.submission
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.monthlyreturns.CisTaxpayer
-import models.requests.{CisIdDataRequest, SendSuccessEmailRequest}
+import models.requests.*
 import models.submission.*
 import models.UserAnswers
 import pages.agent.AgentClientDataPage
+import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import pages.submission.*
 import play.api.Logging
@@ -34,7 +35,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
 import utils.TypeUtils.*
 
-import java.time.{Instant, LocalDateTime, YearMonth, ZoneId, ZonedDateTime}
+import java.time.{Clock, Instant, LocalDateTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,9 +46,12 @@ class SubmissionService @Inject() (
   cisConnector: ConstructionIndustrySchemeConnector,
   appConfig: FrontendAppConfig,
   sessionRepository: SessionRepository,
-  chrisRequestBuilder: ChrisSubmissionRequestBuilder
+  chrisRequestBuilder: ChrisSubmissionRequestBuilder,
+  clock: Clock
 )(implicit ec: ExecutionContext)
     extends Logging {
+
+  private val ukZone: ZoneId = ZoneId.of("Europe/London")
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
@@ -78,10 +82,11 @@ class SubmissionService @Inject() (
         cisConnector.getCisTaxpayer()
 
     for {
-      taxpayer <- taxpayerFut
-      csr      <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
-      response <- cisConnector.submitToChris(submissionId, csr)
-      _        <- writeToFeMongo(ua, submissionId, response)
+      taxpayer  <- taxpayerFut
+      csr       <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
+      response  <- cisConnector.submitToChris(submissionId, csr)
+      amendment <- fetchAmendmentFlag(ua)
+      _         <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
   def updateSubmissionFromChrisResponse(
@@ -107,24 +112,13 @@ class SubmissionService @Inject() (
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None
   )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
-    val zone = s"(${ZoneId.systemDefault}, ${ZonedDateTime.now().getOffset})"
-    logger.info(
-      s"[SubmissionService.updateSubmission] acceptedTime string as received: $acceptedTime $zone"
-    )
+    val ukNow = ukLocalDateTimeNow
 
     val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
       acceptedTime
-        // TODO: decide whether to use the parsed and re-formatted string or the original string from CHRIS
-        .flatMap { t =>
-          Try(LocalDateTime.parse(t)).map { parsedTime =>
-            logger.info(s"[SubmissionService.updateSubmission] parsed acceptedTime: $parsedTime $zone")
-            parsedTime
-          }.toOption
-        }
-        .getOrElse {
-          logger.info(s"[SubmissionService.updateSubmission] falling back to local time: ${LocalDateTime.now} $zone")
-          LocalDateTime.now().toString
-        }
+        .flatMap(chrisAcceptedTimeToUkLocal)
+        .getOrElse(ukNow)
+        .toString
     }
 
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
@@ -141,14 +135,8 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
-      amendment = returnType.amendmentFlag,
-      acceptedTime = acceptedTimestamp.map(_.toString),
-      submissionRequestDate = Some {
-        logger.info(
-          s"[SubmissionService.updateSubmission] setting submissionRequestDate to local time: ${LocalDateTime.now} $zone"
-        )
-        LocalDateTime.now()
-      },
+      acceptedTime = acceptedTimestamp,
+      submissionRequestDate = Some(ukNow),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
       govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
@@ -204,34 +192,35 @@ class SubmissionService @Inject() (
           } yield "TIMED_OUT"
         } else {
           for {
-            cisId             <- userAnswers.get(CisIdPage).toFuture
-            pollUrl           <- userAnswers.get(PollUrlPage).toFuture
-            submissionDetails <- userAnswers.get(SubmissionDetailsPage).toFuture
-            submissionId      <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
-            result            <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
-            _                 <- updateSubmission(
-                                   submissionDetails.id,
-                                   userAnswers,
-                                   submissionDetails.irMark,
-                                   result.status,
-                                   result.acceptedTime,
-                                   result.irMarkReceived,
-                                   result.error
-                                 )
-            newStatus          = result.status
-            timedOut           =
+            pollUrl      <- userAnswers.get(PollUrlPage).toFuture
+            submissionId <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
+            result       <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
+            _            <- updateSubmission(
+                              submissionDetails.id,
+                              userAnswers,
+                              submissionDetails.irMark,
+                              result.status,
+                              result.acceptedTime,
+                              result.irMarkReceived,
+                              result.error
+                            )
+            newStatus     = result.status
+            timedOut      =
               LocalDateTime.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
-            finalStatus        = if (timedOut) "TIMED_OUT" else newStatus
-            newDetails         = submissionDetails.copy(status = newStatus)
-            ua1               <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
-            ua2               <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
-            ua3               <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
-            ua4               <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
-            ua5               <- result.lastMessageDate match {
-                                   case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
-                                   case None     => Future.successful(ua4)
-                                 }
-            _                 <- sessionRepository.set(ua5)
+            finalStatus   = if (timedOut) "TIMED_OUT" else newStatus
+            newDetails    = submissionDetails.copy(
+                              status = newStatus,
+                              hmrcMarkGgis = result.irMarkReceived
+                            )
+            ua1          <- Future.fromTry(userAnswers.set(SubmissionDetailsPage, newDetails))
+            ua2          <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
+            ua3          <- result.pollUrl.map(url => ua2.set(PollUrlPage, url)).getOrElse(Try(ua2)).toFuture
+            ua4          <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage, i)).getOrElse(Try(ua3)).toFuture
+            ua5          <- result.lastMessageDate match {
+                              case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage, Instant.parse(ts)))
+                              case None     => Future.successful(ua4)
+                            }
+            _            <- sessionRepository.set(ua5)
           } yield finalStatus
         }
     }
@@ -261,10 +250,11 @@ class SubmissionService @Inject() (
 
       emailOpt match {
         case None =>
-          val updated = userAnswers.set(SuccessEmailSentPage(submissionId), true)
-          Future
-            .fromTry(updated)
-            .flatMap(updatedUa => sessionRepository.set(updatedUa).map(_ => updatedUa))
+          for {
+            latestUa  <- sessionRepository.get(userAnswers.id).map(_.getOrElse(userAnswers))
+            updatedUa <- Future.fromTry(latestUa.set(SuccessEmailSentPage(submissionId), true))
+            _         <- sessionRepository.set(updatedUa)
+          } yield updatedUa
 
         case Some(email) =>
           val locale: Locale = Lang.get(langCode).map(_.locale).getOrElse(Locale.UK)
@@ -274,11 +264,10 @@ class SubmissionService @Inject() (
             year = yearMonth.getYear.toString
           )
 
-          val updatedUaFuture = Future.fromTry(userAnswers.set(SuccessEmailSentPage(submissionId), true))
-
           for {
             _         <- cisConnector.sendSuccessfulEmail(submissionId, request)
-            updatedUa <- updatedUaFuture
+            latestUa  <- sessionRepository.get(userAnswers.id).map(_.getOrElse(userAnswers))
+            updatedUa <- Future.fromTry(latestUa.set(SuccessEmailSentPage(submissionId), true))
             _         <- sessionRepository.set(updatedUa)
           } yield updatedUa
       }
@@ -319,10 +308,37 @@ class SubmissionService @Inject() (
         throw new RuntimeException("Date of return missing for monthly return")
       )
 
+  private def ukLocalDateTimeNow: LocalDateTime =
+    ZonedDateTime.now(clock).withZoneSameInstant(ukZone).toLocalDateTime
+
+  private def chrisAcceptedTimeToUkLocal(acceptedTime: String): Option[LocalDateTime] =
+    parseChrisUtcTimestamp(acceptedTime).map(_.atZone(ukZone).toLocalDateTime)
+
+  private def parseChrisUtcTimestamp(timestamp: String): Option[Instant] =
+    Try(Instant.parse(timestamp))
+      .orElse(Try(LocalDateTime.parse(timestamp).atZone(ZoneOffset.UTC).toInstant))
+      .toOption
+
+  private def fetchAmendmentFlag(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+    val instanceId  = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
+    val ym          = selectedYearMonth(ua)
+    val isAmendment = ua.get(AmendmentDetailsPage).isDefined
+    cisConnector
+      .retrieveMonthlyReturnForEditDetails(
+        GetMonthlyReturnForEditRequest(instanceId, ym.getMonthValue, ym.getYear, isAmendment)
+      )
+      .map(_.monthlyReturn.headOption.flatMap(_.amendment))
+      .recover { case ex =>
+        logger.warn("[fetchAmendmentFlag] Failed to retrieve amendment flag, defaulting to None", ex)
+        None
+      }
+  }
+
   private def writeToFeMongo(
     ua: UserAnswers,
     submissionId: String,
-    response: ChrisSubmissionResponse
+    response: ChrisSubmissionResponse,
+    amendment: Option[String]
   ): Future[Boolean] = {
     val updatedUa: Try[UserAnswers] = for {
       ua1 <- ua.set(
@@ -333,7 +349,9 @@ class SubmissionService @Inject() (
                  irMark = response.hmrcMarkGenerated,
                  submittedAt = response.gatewayTimestamp
                    .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
-                   .getOrElse(LocalDateTime.now)
+                   .getOrElse(LocalDateTime.now),
+                 amendment = amendment,
+                 hmrcMarkGgis = None
                )
              )
       ua2 <- response.responseEndPoint match {

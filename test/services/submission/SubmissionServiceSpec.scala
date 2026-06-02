@@ -22,8 +22,8 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
-import models.monthlyreturns.{CisTaxpayer, InactivityRequest}
-import models.requests.{CisIdDataRequest, SendSuccessEmailRequest}
+import models.monthlyreturns.*
+import models.requests.*
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -39,7 +39,7 @@ import play.api.test.FakeRequest
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Instant, LocalDate, LocalDateTime, YearMonth}
+import java.time.{Clock, Instant, LocalDate, LocalDateTime, YearMonth, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -48,6 +48,17 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   implicit val hc: HeaderCarrier     = HeaderCarrier()
   implicit val ec: ExecutionContext  = scala.concurrent.ExecutionContext.global
   given CisIdDataRequest[AnyContent] = CisIdDataRequest(FakeRequest(), userAnswersId, emptyUserAnswers, "123")
+
+  private val utcClock: Clock = Clock.systemUTC()
+
+  private def mkService(
+    connector: ConstructionIndustrySchemeConnector,
+    sessionRepository: SessionRepository,
+    appConfig: FrontendAppConfig,
+    chrisRequestBuilder: ChrisSubmissionRequestBuilder,
+    clock: Clock = utcClock
+  ): SubmissionService =
+    new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, clock)
 
   private val taxpayer =
     CisTaxpayer(
@@ -79,7 +90,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val expectedReq = CreateSubmissionRequest(
         instanceId = "123",
@@ -114,7 +125,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers.set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
 
@@ -134,7 +145,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -160,7 +171,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -201,7 +212,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -233,7 +244,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           )
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -249,6 +260,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
         out mustBe beResp
@@ -268,7 +281,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           )
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -294,10 +307,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           )
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val beRespWithEndpoint = ChrisSubmissionResponse(
           submissionId = "sub-123",
@@ -337,6 +352,110 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         saved.get(LastMessageDatePage) mustBe None
       }
 
+      "persist amendment flag as Some(Y) when monthly return has amendment Y" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        val amendmentResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, amendment = Some("Y"))),
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(amendmentResponse))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe Some("Y")
+      }
+
+      "persist amendment flag as None when monthly return list is empty" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        val emptyResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq.empty,
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(emptyResponse))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe None
+      }
+
+      "default amendment flag to None when retrieveMonthlyReturnForEditDetails fails" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration("submission-poll-timeout-seconds" -> "60")
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(builtCsr))
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(mkChrisResp()))
+
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("BE unavailable")))
+
+        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
+
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+
+        val saved = uaCaptor.getValue
+        saved.get(SubmissionDetailsPage).value.amendment mustBe None
+      }
+
       "fails fast and does not persist if updating UserAnswers fails" in {
         val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
         val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
@@ -346,7 +465,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           )
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -359,6 +478,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val ua    = uaWithInactivityYes
         val uaSpy = spy(ua)
@@ -387,7 +508,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           )
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getAgentClientTaxpayer(any(), any())(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -403,6 +524,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(beResp))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val uaWithAgentClientData = uaWithInactivityYes.set(AgentClientDataPage, agentDate).success.value
         val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true).futureValue
@@ -423,7 +546,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           )
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getAgentClientTaxpayer(any(), any())(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -457,7 +580,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
@@ -499,7 +622,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua        = emptyUserAnswers.set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
       val chrisResp = mkChrisResp()
@@ -520,7 +643,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua        = emptyUserAnswers
         .set(CisIdPage, "123")
@@ -537,6 +660,123 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       ex.getMessage must include("Date of return missing for monthly return")
       verifyNoInteractions(connector)
     }
+
+    "convert CHRIS acceptedTime from UTC to UK local time during BST" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val bstClock                                       = Clock.fixed(Instant.parse("2026-05-21T12:45:35Z"), ZoneOffset.UTC)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder, bstClock)
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val chrisResp = mkChrisResp(
+        status = "SUBMITTED",
+        accepted = Some("2026-05-21T12:45:35")
+      )
+
+      service.updateSubmissionFromChrisResponse("sub-123", uaBase, chrisResp).futureValue
+
+      val cap: ArgumentCaptor[UpdateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
+
+      val upd = cap.getValue
+      upd.acceptedTime.value mustBe "2026-05-21T13:45:35"
+      upd.submissionRequestDate.value mustBe LocalDateTime.parse("2026-05-21T13:45:35")
+    }
+
+    "convert CHRIS acceptedTime with Z suffix from UTC to UK local time during BST" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val bstClock                                       = Clock.fixed(Instant.parse("2026-05-21T12:45:35Z"), ZoneOffset.UTC)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder, bstClock)
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val chrisResp = mkChrisResp(
+        status = "SUBMITTED",
+        accepted = Some("2026-05-21T12:45:35Z")
+      )
+
+      service.updateSubmissionFromChrisResponse("sub-123", uaBase, chrisResp).futureValue
+
+      val cap: ArgumentCaptor[UpdateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
+
+      cap.getValue.acceptedTime.value mustBe "2026-05-21T13:45:35"
+    }
+
+    "not adjust CHRIS acceptedTime during GMT" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val gmtClock                                       = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder, gmtClock)
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val chrisResp = mkChrisResp(
+        status = "SUBMITTED",
+        accepted = Some("2026-01-15T12:00:00")
+      )
+
+      service.updateSubmissionFromChrisResponse("sub-123", uaBase, chrisResp).futureValue
+
+      val cap: ArgumentCaptor[UpdateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
+
+      val upd = cap.getValue
+      LocalDateTime.parse(upd.acceptedTime.value) mustBe LocalDateTime.parse("2026-01-15T12:00:00")
+      upd.submissionRequestDate.value mustBe LocalDateTime.parse("2026-01-15T12:00:00")
+    }
+
+    "fall back to UK local time when CHRIS acceptedTime is missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "60"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val bstClock                                       = Clock.fixed(Instant.parse("2026-05-21T12:45:35Z"), ZoneOffset.UTC)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder, bstClock)
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val chrisResp = mkChrisResp(status = "SUBMITTED")
+
+      service.updateSubmissionFromChrisResponse("sub-123", uaBase, chrisResp).futureValue
+
+      val cap: ArgumentCaptor[UpdateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
+
+      cap.getValue.acceptedTime.value mustBe "2026-05-21T13:45:35"
+    }
   }
 
   "getPollInterval" - {
@@ -550,7 +790,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = uaBase.set(PollIntervalPage, 25).success.value
 
@@ -569,7 +809,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = uaBase
 
@@ -591,7 +831,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -633,7 +873,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = uaBase
         .set(LastMessageDatePage, Instant.now().minusSeconds(5))
@@ -660,7 +900,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submittedAt       = LocalDateTime.now().minusSeconds(10)
       val submissionDetails = SubmissionDetails(
@@ -712,7 +952,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = uaBase
 
@@ -737,7 +977,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -773,7 +1013,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -841,7 +1081,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -899,7 +1139,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -943,6 +1183,106 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       savedUa.get(LastMessageDatePage).value mustBe existingLastMessageDate
     }
 
+    "set hmrcMarkGgis to None when poll returns SUBMITTED without irMarkReceived" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "3600"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "oldUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, None, None, None)))
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+      val saved                               = captor.getValue.get(SubmissionDetailsPage).value
+      saved.status mustBe "SUBMITTED"
+      saved.hmrcMarkGgis mustBe None
+    }
+
+    "set hmrcMarkGgis from irMarkReceived when poll returns SUBMITTED" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds" -> "3600"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+
+      val submittedAt       = LocalDateTime.now().minusSeconds(60)
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = submittedAt
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "oldUrl")
+        .success
+        .value
+
+      when(connector.getSubmissionStatus(any, any[String])(any[HeaderCarrier]))
+        .thenReturn(
+          Future.successful(
+            ChrisPollResponse("SUBMITTED", Some("newUrl"), Some(10), None, Some("IR-MARK-RECEIVED"), None, None)
+          )
+        )
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.checkAndUpdateSubmissionStatus(ua).futureValue
+
+      result mustBe "SUBMITTED"
+
+      val captor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+      val saved                               = captor.getValue.get(SubmissionDetailsPage).value
+      saved.status mustBe "SUBMITTED"
+      saved.hmrcMarkGgis mustBe Some("IR-MARK-RECEIVED")
+    }
+
     "mark as timed out when timeout exceeded and status is still PENDING" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
@@ -952,7 +1292,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -1005,7 +1345,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -1058,7 +1398,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       import models.submission.SubmissionDetails
       import pages.submission.{SubmissionDetailsPage, SubmissionStatusTimedOutPage}
@@ -1107,7 +1447,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         Configuration("submission-poll-timeout-seconds" -> "60")
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = uaBase
@@ -1138,7 +1478,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
 
@@ -1164,6 +1504,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       )
         .thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
+
       val savedCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       when(sessionRepository.set(savedCaptor.capture()))
         .thenReturn(Future.successful(true))
@@ -1183,7 +1525,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ex = intercept[IllegalStateException] {
         service.sendSuccessEmail(uaBase, "en").futureValue
@@ -1200,7 +1542,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val details      = SubmissionDetails(
@@ -1235,7 +1577,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val details      = SubmissionDetails(
@@ -1274,7 +1616,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = UserAnswers("id", Json.obj())
@@ -1309,6 +1651,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       ).thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1330,7 +1673,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = UserAnswers("id", Json.obj())
@@ -1358,6 +1701,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1374,7 +1718,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = UserAnswers("id", Json.obj())
@@ -1409,6 +1753,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       ).thenReturn(Future.unit)
 
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1429,7 +1774,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = UserAnswers("id", Json.obj())
@@ -1461,7 +1806,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val appConfig: FrontendAppConfig                   =
         new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val submissionId = "sub-123"
       val ua           = UserAnswers("id", Json.obj())
@@ -1504,7 +1849,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ym = YearMonth.of(2026, 3)
 
@@ -1530,7 +1875,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder)
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val userAnswers = emptyUserAnswers
         .set(DateConfirmPaymentsPage, LocalDate.of(2026, 3, 5))
@@ -1563,6 +1908,18 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   private lazy val agentDate: AgentClientData =
     AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
+
+  private val emptyMonthlyReturnDetailsResponse = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq.empty,
+    monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, amendment = Some("N"))),
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
+  private def stubRetrieveMonthlyReturnForEditDetails(connector: ConstructionIndustrySchemeConnector): Unit =
+    when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+      .thenReturn(Future.successful(emptyMonthlyReturnDetailsResponse))
 
   private def mkChrisResp(
     status: String = "SUBMITTED",
