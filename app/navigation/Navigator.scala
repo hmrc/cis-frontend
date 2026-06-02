@@ -17,7 +17,7 @@
 package navigation
 
 import models.*
-import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import pages.*
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.*
