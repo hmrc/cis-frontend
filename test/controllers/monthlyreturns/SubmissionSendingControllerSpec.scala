@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import models.submission.*
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -109,7 +109,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
     when(
       service.updateSubmissionFromChrisResponse(eqTo(createdId), any[UserAnswers], eqTo(submitted))(
-        any[DataRequest[AnyContent]],
+        any[CisIdDataRequest[AnyContent]],
         any[HeaderCarrier]
       )
     )
@@ -182,7 +182,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         any[HeaderCarrier]
       )
       verify(mockService, never()).updateSubmissionFromChrisResponse(any[String], any[UserAnswers], any())(
-        any[DataRequest[AnyContent]],
+        any[CisIdDataRequest[AnyContent]],
         any[HeaderCarrier]
       )
     }
@@ -265,7 +265,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService, never()).getPollInterval(any[UserAnswers])
       verify(mockService, never()).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -287,7 +287,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Skip))
@@ -302,7 +302,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -324,7 +324,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("PENDING")))
@@ -339,7 +339,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -361,7 +361,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("ACCEPTED")))
@@ -376,7 +376,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -398,7 +398,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("TIMED_OUT")))
@@ -413,7 +413,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -435,7 +435,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED")))
@@ -453,7 +453,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
@@ -476,7 +476,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED")))
@@ -495,7 +495,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
@@ -518,7 +518,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED_NO_RECEIPT")))
@@ -536,7 +536,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
@@ -559,7 +559,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED_NO_RECEIPT")))
@@ -577,7 +577,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
@@ -600,7 +600,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("FATAL_ERROR")))
@@ -615,7 +615,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -637,7 +637,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("DEPARTMENTAL_ERROR")))
@@ -655,7 +655,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -677,7 +677,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("DEPARTMENTAL_ERROR")))
@@ -695,7 +695,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -717,7 +717,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("UNKNOWN_STATUS")))
@@ -732,7 +732,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
 
@@ -754,7 +754,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       )
         .thenReturn(Future.successful(PollDecision.Polled("STARTED")))
@@ -812,7 +812,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       when(
         mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
           any[HeaderCarrier],
-          any[DataRequest[AnyContent]]
+          any[CisIdDataRequest[AnyContent]]
         )
       ).thenReturn(Future.failed(new RuntimeException("poll failed")))
 
@@ -827,7 +827,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verify(mockService).getPollInterval(any[UserAnswers])
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
-        any[DataRequest[AnyContent]]
+        any[CisIdDataRequest[AnyContent]]
       )
     }
   }

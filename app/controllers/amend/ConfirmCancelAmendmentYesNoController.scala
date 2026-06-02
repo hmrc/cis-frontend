@@ -16,20 +16,19 @@
 
 package controllers.amend
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
 import models.{NormalMode, UserAnswers}
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
-import models.requests.DataRequest
-import navigation.Navigator
 import pages.amend.ConfirmCancelAmendmentYesNoPage
-import pages.monthlyreturns.DateConfirmPaymentsPage
+import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.*
 import repositories.SessionRepository
-import services.AmendMonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -42,14 +41,16 @@ import scala.concurrent.{ExecutionContext, Future}
 class ConfirmCancelAmendmentYesNoController @Inject() (
   override val messagesApi: MessagesApi,
   amendMonthlyReturnService: AmendMonthlyReturnService,
+  monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
-  navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: ConfirmCancelAmendmentYesNoFormProvider,
   val controllerComponents: MessagesControllerComponents,
-  view: ConfirmCancelAmendmentYesNoView
+  view: ConfirmCancelAmendmentYesNoView,
+  appConfig: FrontendAppConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -57,42 +58,89 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   val form: Form[Boolean] = formProvider()
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    getMonthYear(request.userAnswers) match {
-      case Some(monthYear) =>
-        val preparedForm = request.userAnswers.get(ConfirmCancelAmendmentYesNoPage) match {
-          case None        => form
-          case Some(value) => form.fill(value)
+  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+    implicit request =>
+      getMonthYear(request.userAnswers) match {
+        case Some(monthYear) =>
+          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).map {
+            case true =>
+              val preparedForm = request.userAnswers.get(ConfirmCancelAmendmentYesNoPage) match {
+                case None        => form
+                case Some(value) => form.fill(value)
+              }
+
+              Ok(view(preparedForm, monthYear))
+
+            case false =>
+              logger.warn(s"[ConfirmCancelAmendmentYesNoController] monthly return status is not cancellable")
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+
+        case None =>
+          logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+  }
+
+  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+    implicit request =>
+      getMonthYear(request.userAnswers) match {
+        case Some(monthYear) =>
+          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
+            case true =>
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear))),
+                  value =>
+                    for {
+                      updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmCancelAmendmentYesNoPage, value))
+                      _              <- sessionRepository.set(updatedAnswers)
+                      result         <- if (value) handleYes(updatedAnswers, request.cisId) else handleNo
+                    } yield result
+                )
+
+            case false =>
+              logger.warn(s"[ConfirmCancelAmendmentYesNoController] monthly return status is not cancellable")
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
+
+        case None =>
+          logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+  }
+
+  private def hasCancellableMonthlyReturnStatus(
+    cisId: String,
+    ua: UserAnswers
+  )(implicit request: RequestHeader): Future[Boolean] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    monthlyReturnService
+      .retrieveAllMonthlyReturns(cisId)
+      .map { response =>
+        ua.get(DateConfirmPaymentsPage).exists { monthYear =>
+          response.monthlyReturnList.exists { monthlyReturn =>
+            monthlyReturn.taxYear == monthYear.getYear &&
+            monthlyReturn.taxMonth == monthYear.getMonthValue &&
+            monthlyReturn.amendment.contains("Y") &&
+            monthlyReturn.status.exists { status =>
+              status == "STARTED" || status == "VALIDATED"
+            }
+          }
         }
-
-        Ok(view(preparedForm, monthYear))
-      case None            =>
-        logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-    }
+      }
+      .recover { case e =>
+        logger.error(
+          s"[ConfirmCancelAmendmentYesNoController] error checking monthly return status for cisId=$cisId",
+          e
+        )
+        false
+      }
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    getMonthYear(request.userAnswers) match {
-      case Some(monthYear) =>
-        form
-          .bindFromRequest()
-          .fold(
-            formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear))),
-            value =>
-              for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmCancelAmendmentYesNoPage, value))
-                _              <- sessionRepository.set(updatedAnswers)
-                result         <- if (value) handleYes(updatedAnswers) else handleNo(updatedAnswers)
-              } yield result
-          )
-      case None            =>
-        logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
-        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-    }
-  }
-
-  private def handleYes(ua: UserAnswers)(implicit request: DataRequest[AnyContent]): Future[Result] = {
+  private def handleYes(ua: UserAnswers, instanceId: String)(implicit request: RequestHeader): Future[Result] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
     val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(ua)
@@ -100,12 +148,14 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     amendMonthlyReturnService
       .deleteUnsubmittedMonthlyReturn(deleteRequest)
       .map { _ =>
-        Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, ua))
+        Redirect(appConfig.returnsLandingPageUrl(instanceId, ua.get(ContractorNamePage)))
       }
   }
 
-  private def handleNo(ua: UserAnswers): Future[Result] =
-    Future.successful(Redirect(navigator.nextPage(ConfirmCancelAmendmentYesNoPage, NormalMode, ua)))
+  private def handleNo: Future[Result] =
+    Future.successful(
+      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+    )
 
   private val monthYearFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
 

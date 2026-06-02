@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
@@ -141,7 +141,7 @@ class CheckYourAnswersController @Inject() (
       }
   }
 
-  private def guardCompletedJourney(block: => Future[Result])(implicit request: DataRequest[_]): Future[Result] =
+  private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     if (request.userAnswers.get(SubmissionJourneyCompletedPage).contains(true)) {
       Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
     } else {

@@ -18,7 +18,7 @@ package controllers.actions
 
 import base.SpecBase
 import controllers.Execution.trampoline
-import models.requests.DataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import org.scalatest.EitherValues.convertLeftProjectionToValuable
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.SEE_OTHER
@@ -31,7 +31,7 @@ import scala.concurrent.Future
 class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
 
   object Harness extends CisIdRequiredActionImpl {
-    def callRefine[A](request: DataRequest[A]): Future[Either[Result, DataRequest[A]]] = refine(request)
+    def callRefine[A](request: DataRequest[A]): Future[Either[Result, CisIdDataRequest[A]]] = refine(request)
   }
 
   "CisId Required Action" - {
@@ -75,7 +75,7 @@ class CisIdRequiredActionSpec extends SpecBase with MockitoSugar {
     }
 
     "when there is a Cis Id in UserAnswers" - {
-      "must return Right and get valid DataRequest" in {
+      "must return Right and get valid CisIdDataRequest" in {
 
         val result = Harness.callRefine(DataRequest(FakeRequest(), "id", userAnswersWithCisId))
 

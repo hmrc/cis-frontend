@@ -16,7 +16,7 @@
 
 package controllers.helpers
 
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import models.{EmployerReference, UserAnswers}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
@@ -42,7 +42,7 @@ trait SubmissionViewDataSupport extends Logging {
   protected def periodEndFromUserAnswers(ua: UserAnswers): Option[LocalDate] =
     ua.get(DateConfirmPaymentsPage)
 
-  protected def contractorNameFrom(request: DataRequest[_]): String = {
+  protected def contractorNameFrom(request: CisIdDataRequest[_]): String = {
     val ua  = request.userAnswers
     val msg = s"[SubmissionViewDataSupport] contractorName missing for userId=${request.userId}"
     if (!request.isAgent) {
@@ -52,7 +52,7 @@ trait SubmissionViewDataSupport extends Logging {
     }
   }
 
-  protected def employerRefFrom(request: DataRequest[_]): String = {
+  protected def employerRefFrom(request: CisIdDataRequest[_]): String = {
     val msg = s"[SubmissionViewDataSupport] employerReference missing for userId=${request.userId}"
     if (!request.isAgent) {
       request.employerReference.map(formatEmployerRef).getOrElse(fail(msg))

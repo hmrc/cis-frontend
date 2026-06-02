@@ -28,6 +28,15 @@ case class OptionalDataRequest[A](
   isAgent: Boolean = false
 ) extends WrappedRequest[A](request)
 
+trait DataRequestFields[A] {
+  val request: Request[A]
+  val userId: String
+  val userAnswers: UserAnswers
+  val employerReference: Option[EmployerReference]
+  val agentReference: Option[String]
+  val isAgent: Boolean
+}
+
 case class DataRequest[A](
   request: Request[A],
   userId: String,
@@ -36,3 +45,15 @@ case class DataRequest[A](
   agentReference: Option[String] = None,
   isAgent: Boolean = false
 ) extends WrappedRequest[A](request)
+    with DataRequestFields[A]
+
+case class CisIdDataRequest[A](
+  request: Request[A],
+  userId: String,
+  userAnswers: UserAnswers,
+  cisId: String,
+  employerReference: Option[EmployerReference] = None,
+  agentReference: Option[String] = None,
+  isAgent: Boolean = false
+) extends WrappedRequest[A](request)
+    with DataRequestFields[A]
