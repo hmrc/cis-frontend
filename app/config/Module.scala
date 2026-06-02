@@ -21,7 +21,7 @@ import com.google.inject.name.Names
 import controllers.actions.*
 import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilderImpl}
 import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
-import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl}
+import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl, SubmissionSuccessfulServiceGuard, SubmissionSuccessfulServiceGuardImpl}
 
 import java.time.{Clock, ZoneOffset}
 
@@ -45,6 +45,7 @@ class Module extends AbstractModule {
       .to(classOf[AgentIdentifierAction])
       .asEagerSingleton()
     bind(classOf[DuplicateMRCreationGuard]).to(classOf[DuplicateMRCreationGuardImpl])
+    bind(classOf[SubmissionSuccessfulServiceGuard]).to(classOf[SubmissionSuccessfulServiceGuardImpl])
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
     bind(classOf[MonthlyReturnItemPayloadBuilder]).to(classOf[MonthlyReturnItemPayloadBuilderImpl])
   }

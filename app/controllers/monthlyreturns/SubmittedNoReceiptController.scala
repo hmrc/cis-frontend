@@ -20,7 +20,7 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -64,7 +64,9 @@ class SubmittedNoReceiptController @Inject() (
       } yield Ok(view(vm))
     }
 
-  private def buildViewModel(ua: UserAnswers)(implicit request: DataRequest[_]): Future[SubmittedNoReceiptViewModel] = {
+  private def buildViewModel(
+    ua: UserAnswers
+  )(implicit request: CisIdDataRequest[_]): Future[SubmittedNoReceiptViewModel] = {
     val cisId          = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
     val contractorName = contractorNameFrom(request)
     val employerRef    = employerRefFrom(request)

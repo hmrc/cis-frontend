@@ -18,7 +18,7 @@ package controllers.helpers
 
 import models.agent.AgentClientData
 import models.{EmployerReference, UserAnswers}
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
@@ -34,11 +34,11 @@ import play.api.test.FakeRequest
 class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with MockitoSugar {
 
   private object Harness extends SubmissionViewDataSupport {
-    def requiredPublic[A](opt: Option[A], err: String): A   = required(opt, err)
-    def emailPublic(ua: UserAnswers): Option[String]        = emailfromUserAnswers(ua)
-    def periodEndPublic(ua: UserAnswers): Option[LocalDate] = periodEndFromUserAnswers(ua)
-    def contractorNamePublic(r: DataRequest[_]): String     = contractorNameFrom(r)
-    def employerRefPublic(r: DataRequest[_]): String        = employerRefFrom(r)
+    def requiredPublic[A](opt: Option[A], err: String): A    = required(opt, err)
+    def emailPublic(ua: UserAnswers): Option[String]         = emailfromUserAnswers(ua)
+    def periodEndPublic(ua: UserAnswers): Option[LocalDate]  = periodEndFromUserAnswers(ua)
+    def contractorNamePublic(r: CisIdDataRequest[_]): String = contractorNameFrom(r)
+    def employerRefPublic(r: CisIdDataRequest[_]): String    = employerRefFrom(r)
   }
 
   private def uaEmpty: UserAnswers = UserAnswers("id", Json.obj())
@@ -48,8 +48,8 @@ class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with Mocki
     isAgent: Boolean,
     employerRef: Option[EmployerReference] = None,
     userId: String = "user-1"
-  ): DataRequest[AnyContent] = {
-    val dr = mock[DataRequest[AnyContent]]
+  ): CisIdDataRequest[AnyContent] = {
+    val dr = mock[CisIdDataRequest[AnyContent]]
     when(dr.userAnswers).thenReturn(ua)
     when(dr.isAgent).thenReturn(isAgent)
     when(dr.employerReference).thenReturn(employerRef)

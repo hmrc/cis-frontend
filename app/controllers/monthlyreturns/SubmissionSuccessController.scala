@@ -24,10 +24,11 @@ import models.submission.SubmissionDetails
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
 import models.ReturnType.reads
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
+import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -49,7 +50,8 @@ class SubmissionSuccessController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionSuccessView,
   clock: Clock,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  submissionSuccessGuard: SubmissionSuccessfulServiceGuard
 )(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport
@@ -60,16 +62,19 @@ class SubmissionSuccessController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      val ua = request.userAnswers
-
-      for {
-        vm <- buildViewModel(ua)
-        _  <- monthlyReturnService.completeSubmissionJourney(ua)
-      } yield Ok(view(vm))
+      if (!submissionSuccessGuard.check) {
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      } else {
+        val ua = request.userAnswers
+        for {
+          vm <- buildViewModel(ua)
+          _  <- monthlyReturnService.completeSubmissionJourney(ua)
+        } yield Ok(view(vm))
+      }
     }
 
   private def buildViewModel(ua: UserAnswers)(implicit
-    request: DataRequest[_],
+    request: CisIdDataRequest[_],
     hc: HeaderCarrier
   ): Future[SubmissionSuccessViewModel] = {
     val cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
