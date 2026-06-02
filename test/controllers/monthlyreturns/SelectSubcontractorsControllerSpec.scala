@@ -200,9 +200,6 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
-            cisId = eqTo(cisId),
-            taxYear = eqTo(taxYear),
-            taxMonth = eqTo(taxMonth),
             selected = any[Seq[SelectSubcontractorsViewModel]]
           )(using any[HeaderCarrier])
         ).thenReturn(Future.successful(answersWithIncompleteSub))
@@ -230,9 +227,6 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
-            cisId = eqTo(cisId),
-            taxYear = eqTo(taxYear),
-            taxMonth = eqTo(taxMonth),
             selected = any[Seq[SelectSubcontractorsViewModel]]
           )(using any[HeaderCarrier])
         ).thenReturn(
@@ -282,9 +276,6 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
-            cisId = eqTo(cisId),
-            taxYear = eqTo(taxYear),
-            taxMonth = eqTo(taxMonth),
             selected = any[Seq[SelectSubcontractorsViewModel]]
           )(using any[HeaderCarrier])
         ).thenReturn(Future.failed(new RuntimeException("boom")))

@@ -22,7 +22,8 @@ case class DeleteMonthlyReturnItemRequest(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  subcontractorId: Long
+  subcontractorId: Long,
+  amendment: String
 )
 
 object DeleteMonthlyReturnItemRequest {

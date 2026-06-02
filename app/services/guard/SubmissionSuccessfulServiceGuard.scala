@@ -16,20 +16,20 @@
 
 package services.guard
 
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
 
 import javax.inject.Singleton
 
 trait SubmissionSuccessfulServiceGuard {
-  def check(implicit request: DataRequest[_]): Boolean
+  def check(implicit request: CisIdDataRequest[_]): Boolean
 }
 
 @Singleton
 class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGuard with Logging {
 
-  def check(implicit request: DataRequest[_]): Boolean =
+  def check(implicit request: CisIdDataRequest[_]): Boolean =
     request.userAnswers.get(SubmissionDetailsPage).exists { details =>
       val submittedOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
       val irMarksValid         = details.irMark.nonEmpty &&

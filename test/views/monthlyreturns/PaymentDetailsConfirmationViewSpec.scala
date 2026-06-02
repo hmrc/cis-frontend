@@ -49,7 +49,7 @@ class PaymentDetailsConfirmationViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
       val filledForm    = form.fill(true)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(filledForm, NormalMode, false)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe true
@@ -58,7 +58,7 @@ class PaymentDetailsConfirmationViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'false'" in new Setup {
       val filledForm    = form.fill(false)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(filledForm, NormalMode, false)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe false
@@ -77,6 +77,6 @@ class PaymentDetailsConfirmationViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode)
+    val html = view(form, NormalMode, false)
   }
 }

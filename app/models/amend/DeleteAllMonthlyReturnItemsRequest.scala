@@ -14,34 +14,31 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.amend
 
 import models.UserAnswers
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.libs.json.{Json, OFormat}
 
-case class SelectedSubcontractorsRequest(
+case class DeleteAllMonthlyReturnItemsRequest(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  selectedSubcontractorIds: Seq[Long],
   amendment: String
 )
 
-object SelectedSubcontractorsRequest {
-  given format: OFormat[SelectedSubcontractorsRequest] = Json.format[SelectedSubcontractorsRequest]
+object DeleteAllMonthlyReturnItemsRequest {
+  given format: OFormat[DeleteAllMonthlyReturnItemsRequest] = Json.format[DeleteAllMonthlyReturnItemsRequest]
 
-  def from(ua: UserAnswers, selectedSubcontractorIds: Seq[Long]): SelectedSubcontractorsRequest = {
-    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("Missing CisId"))
-    val monthYear  = ua.get(DateConfirmPaymentsPage).getOrElse(throw new RuntimeException("Missing DateConfirmPayments"))
-    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Missing ReturnType"))
-
-    SelectedSubcontractorsRequest(
+  def fromUserAnswers(ua: UserAnswers): Either[String, DeleteAllMonthlyReturnItemsRequest] =
+    for {
+      instanceId <- ua.get(CisIdPage).toRight("Missing CisId")
+      monthYear  <- ua.get(DateConfirmPaymentsPage).toRight("Missing DateConfirmPayments")
+      returnType <- ua.get(ReturnTypePage).toRight("Missing ReturnType")
+    } yield DeleteAllMonthlyReturnItemsRequest(
       instanceId = instanceId,
       taxYear = monthYear.getYear,
       taxMonth = monthYear.getMonthValue,
-      selectedSubcontractorIds = selectedSubcontractorIds,
       amendment = returnType.amendmentFlag
     )
-  }
 }

@@ -16,15 +16,20 @@
 
 package controllers.amend
 
-import controllers.actions._
+import controllers.actions.*
 import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
+
 import javax.inject.Inject
 import models.Mode
+import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
+import models.amend.DeleteAllMonthlyReturnItemsRequest
+import models.monthlyreturns.UpdateMonthlyReturnRequest
 import navigation.Navigator
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.AreYouSureYouWantToAmendYesNoView
 
@@ -32,11 +37,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AreYouSureYouWantToAmendYesNoController @Inject() (
   override val messagesApi: MessagesApi,
+  amendMonthlyReturnService: AmendMonthlyReturnService,
+  monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
   formProvider: AreYouSureYouWantToAmendYesNoFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: AreYouSureYouWantToAmendYesNoView
@@ -46,27 +54,50 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+    implicit request =>
 
-    val preparedForm = request.userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
-    }
+      val preparedForm = request.userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
 
-    Ok(view(preparedForm))
+      Ok(view(preparedForm))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
         .bindFromRequest()
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
+          {
+            case Yes =>
+              for {
+                updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, Yes))
+                _              <- sessionRepository.set(updatedAnswers)
+                deleteRequest  <- DeleteAllMonthlyReturnItemsRequest
+                                    .fromUserAnswers(updatedAnswers)
+                                    .fold(
+                                      error => Future.failed(new RuntimeException(error)),
+                                      request => Future.successful(request)
+                                    )
+                _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
+                updateRequest  <- UpdateMonthlyReturnRequest
+                                    .fromUserAnswers(updatedAnswers)
+                                    .fold(
+                                      error => Future.failed(new RuntimeException(error)),
+                                      request => Future.successful(request)
+                                    )
+                _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
+              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
+
+            case No =>
+              for {
+                updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, No))
+                _              <- sessionRepository.set(updatedAnswers)
+              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
+          }
         )
-  }
+    }
 }

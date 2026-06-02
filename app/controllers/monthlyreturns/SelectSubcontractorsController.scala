@@ -105,9 +105,6 @@ class SelectSubcontractorsController @Inject() (
                     monthlyReturnService
                       .storeAndSyncSelectedSubcontractors(
                         ua = request.userAnswers,
-                        cisId = cisId,
-                        taxYear = taxYear,
-                        taxMonth = taxMonth,
                         selected = selectedSubcontractors
                       )
                       .map { updatedAnswers =>

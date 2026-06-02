@@ -160,11 +160,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       stubService(subcontractorService, pageModel)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
-          any[String],
-          any[Int],
-          any[Int],
-          any[Seq[Long]],
-          any[String]
+          any[UserAnswers],
+          any[Seq[Long]]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
@@ -200,11 +197,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       stubService(subcontractorService, pageModel.copy(status = Some("VALIDATED")))
       when(
         monthlyReturnService.syncMonthlyReturnItems(
-          any[String],
-          any[Int],
-          any[Int],
-          any[Seq[Long]],
-          any[String]
+          any[UserAnswers],
+          any[Seq[Long]]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
@@ -240,11 +234,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
       stubService(subcontractorService, pageModel)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
-          any[String],
-          any[Int],
-          any[Int],
-          any[Seq[Long]],
-          any[String]
+          any[UserAnswers],
+          any[Seq[Long]]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 

@@ -22,8 +22,8 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
-import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn}
-import models.requests.{DataRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
+import models.monthlyreturns.*
+import models.requests.*
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -45,9 +45,9 @@ import scala.util.Failure
 
 class SubmissionServiceSpec extends SpecBase with TryValues {
 
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
-  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-  given DataRequest[AnyContent]     = DataRequest(FakeRequest(), userAnswersId, emptyUserAnswers)
+  implicit val hc: HeaderCarrier     = HeaderCarrier()
+  implicit val ec: ExecutionContext  = scala.concurrent.ExecutionContext.global
+  given CisIdDataRequest[AnyContent] = CisIdDataRequest(FakeRequest(), userAnswersId, emptyUserAnswers, "123")
 
   private val utcClock: Clock = Clock.systemUTC()
 
@@ -96,6 +96,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         instanceId = "123",
         taxYear = 2025,
         taxMonth = 10,
+        amendment = "N",
         emailRecipient = Some("test@test.com")
       )
 
@@ -1767,7 +1768,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       reqCaptor.getValue.email mustBe "standard@test.com"
     }
 
-    "throw IllegalStateException when ReturnTypePage missing" in {
+    "throw IllegalStateException when DateConfirmPaymentsPage missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   =
@@ -1796,7 +1797,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         service.sendSuccessEmail(ua, "en").futureValue
       }
 
-      ex.getMessage mustBe "Return type missing"
+      ex.getMessage mustBe "Month/Year not selected"
     }
 
     "throw IllegalStateException when DateConfirmPaymentsPage missing for monthly standard return" in {

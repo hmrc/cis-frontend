@@ -21,6 +21,9 @@ import play.api.Configuration
 import play.api.i18n.Lang
 import play.api.mvc.RequestHeader
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 @Singleton
 class FrontendAppConfig @Inject() (configuration: Configuration) {
 
@@ -28,6 +31,8 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val appName: String = configuration.get[String]("appName")
 
   private lazy val contactHost                  = configuration.get[String]("contact-frontend.host")
+  private lazy val cisManageFrontendUrl         = configuration.get[String]("cis-manage-frontend.host")
+  private lazy val returnsLandingPagePath       = configuration.get[String]("urls.returnsLandingPagePath")
   private lazy val contactFormServiceIdentifier = configuration.get[String]("contact-frontend.serviceId")
 
   def feedbackUrl(implicit request: RequestHeader): String =
@@ -67,4 +72,17 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val payeCisForAgentsOnlineService: String = configuration.get[String]("urls.payeCisForAgentsOnlineService")
 
   lazy val stubSendingEnabled: Boolean = configuration.get[Boolean]("features.stub-sending-enabled")
+
+  def returnsLandingPageUrl(instanceId: String, contractorName: Option[String]): String =
+    val encodedInstanceId = urlEncode(instanceId)
+    val queryString       =
+      contractorName match {
+        case Some(name) => s"?contractorName=${urlEncode(name)}"
+        case None       => ""
+      }
+
+    s"$cisManageFrontendUrl$returnsLandingPagePath/$encodedInstanceId$queryString"
+
+  private def urlEncode(value: String): String =
+    URLEncoder.encode(value, StandardCharsets.UTF_8.toString)
 }

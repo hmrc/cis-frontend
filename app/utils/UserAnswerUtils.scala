@@ -16,7 +16,7 @@
 
 package utils
 
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.*
 import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
@@ -86,7 +86,7 @@ object UserAnswerUtils {
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
-        case Some(MonthlyNilReturn) =>
+        case Some(MonthlyNilReturn) | Some(MonthlyAmendedNilReturn) =>
           val checks = Seq(
             answered(DateConfirmPaymentsPage),
             answered(SubmitInactivityRequestPage),
@@ -97,7 +97,7 @@ object UserAnswerUtils {
 
           checks.forall(identity)
 
-        case Some(MonthlyStandardReturn) =>
+        case Some(MonthlyStandardReturn) | Some(MonthlyAmendedStandardReturn) =>
           Seq(
             answered(DateConfirmPaymentsPage),
             allSubcontractorsComplete,
