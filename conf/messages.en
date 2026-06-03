@@ -568,6 +568,6 @@ amend.areYouSureYouWantToAmendYesNo.yes = Yes
 amend.areYouSureYouWantToAmendYesNo.no = No, I want to make a different amendment
 amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option to amend
 
-finalvalidations.addEmailAddressYesNo.title = Do you want to enter the contractor's email address?
-finalvalidations.addEmailAddressYesNo.heading = Do you want to enter the contractor's email address?
-finalvalidations.addEmailAddressYesNo.error.required = Select yes to enter the contractor's email address
+finalvalidations.addEmailAddressYesNo.title = Do you want to enter the contractor’s email address?
+finalvalidations.addEmailAddressYesNo.heading = Do you want to enter the contractor’s email address?
+finalvalidations.addEmailAddressYesNo.error.required = Select yes to enter the contractor’s email address
