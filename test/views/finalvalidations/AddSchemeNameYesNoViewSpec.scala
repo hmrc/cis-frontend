@@ -27,7 +27,7 @@ import views.html.finalvalidations.AddSchemeNameYesNoView
 
 class AddSchemeNameYesNoViewSpec extends SpecBase {
 
-  "EmploymentStatusDeclarationView" - {
+  "AddSchemeNameYesNoView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
       doc.title             must include(messages("finalvalidations.addSchemeNameYesNo.title"))
