@@ -183,5 +183,3 @@ POST       /amend-monthly-return/are-you-sure-you-want-to-amend                 
 
 GET        /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = NormalMode)
-GET        /final-validations/change-contractor-scheme-name                  controllers.finalvalidations.AddSchemeNameYesNoController.onPageLoad(mode: Mode = CheckMode)
-POST       /final-validations/change-contractor-scheme-name                  controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = CheckMode)

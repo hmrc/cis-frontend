@@ -21,7 +21,7 @@ import pages.QuestionPage
 
 case object AddSchemeNameYesNoPage extends QuestionPage[Boolean] {
 
-  override def path: JsPath = JsPath \ toString
+  override def path: JsPath = JsPath \ "finalvalidations" \ toString
 
   override def toString: String = "addSchemeNameYesNo"
 }
