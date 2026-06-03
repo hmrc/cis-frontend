@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package controllers.management
+package controllers.finalvalidations
 
 import base.SpecBase
 import controllers.routes
-import forms.management.AddUtrYesNoFormProvider
+import forms.finalvalidations.AddUtrYesNoFormProvider
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.management.AddUtrYesNoPage
+import pages.finalvalidations.AddUtrYesNoPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import views.html.management.AddUtrYesNoView
+import views.html.finalvalidations.AddUtrYesNoView
 
 import scala.concurrent.Future
 
@@ -41,7 +41,7 @@ class AddUtrYesNoControllerSpec extends SpecBase with MockitoSugar {
   val formProvider = new AddUtrYesNoFormProvider()
   val form         = formProvider()
 
-  lazy val addUtrYesNoRoute = controllers.management.routes.AddUtrYesNoController.onPageLoad(NormalMode).url
+  lazy val addUtrYesNoRoute = controllers.finalvalidations.routes.AddUtrYesNoController.onPageLoad().url
 
   "AddUtrYesNo Controller" - {
 

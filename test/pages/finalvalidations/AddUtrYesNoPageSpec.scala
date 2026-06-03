@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package pages.management
+package pages.finalvalidations
 
-import pages.QuestionPage
+import base.SpecBase
 import play.api.libs.json.JsPath
 
-case object AddUtrYesNoPage extends QuestionPage[Boolean] {
+class AddUtrYesNoPageSpec extends SpecBase {
 
-  override def path: JsPath = JsPath \ toString
+  "AddUtrYesNoPage" - {
 
-  override def toString: String = "addUtrYesNo"
+    "have the correct path" in {
+      AddUtrYesNoPage.path mustBe (JsPath \ "finalvalidations" \ "addUtrYesNo")
+    }
+
+    "have the correct toString" in {
+      AddUtrYesNoPage.toString mustBe "addUtrYesNo"
+    }
+  }
 }

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package views.management
+package views.finalvalidations
 
 import base.SpecBase
-import forms.management.AddUtrYesNoFormProvider
+import forms.finalvalidations.AddUtrYesNoFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -26,7 +26,7 @@ import play.api.data.Form
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
-import views.html.management.AddUtrYesNoView
+import views.html.finalvalidations.AddUtrYesNoView
 
 class AddUtrYesNoViewSpec extends SpecBase {
 
@@ -34,8 +34,8 @@ class AddUtrYesNoViewSpec extends SpecBase {
     "must return all elements on the page" in new Setup {
       val doc: Document = Jsoup.parse(html.body)
 
-      doc.select("title").text                must include(messages("management.finalValidations.addUtrYesNo.title"))
-      doc.select("h1").text                   must include(messages("management.finalValidations.addUtrYesNo.heading"))
+      doc.select("title").text                must include(messages("finalValidations.addUtrYesNo.title"))
+      doc.select("h1").text                   must include(messages("finalValidations.addUtrYesNo.heading"))
       doc.select("input[type=radio]").size() mustBe 2
       doc.select("label[for=value_0]").text() must include(messages("site.yes"))
       doc.select("label[for=value_1]").text() must include(messages("site.no"))

@@ -181,7 +181,5 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-standard             
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
 
-GET        /management/final-validations/add-contractor-utr         controllers.management.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /management/final-validations/add-contractor-utr         controllers.management.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)
-GET        /management/final-validations/change-add-contractor-utr  controllers.management.AddUtrYesNoController.onPageLoad(mode: Mode = CheckMode)
-POST       /management/final-validations/change-add-contractor-utr  controllers.management.AddUtrYesNoController.onSubmit(mode: Mode = CheckMode)
+GET        /management/final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /management/final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)

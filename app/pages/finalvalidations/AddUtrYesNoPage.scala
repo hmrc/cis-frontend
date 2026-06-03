@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package forms.management
+package pages.finalvalidations
 
-import forms.mappings.Mappings
-import play.api.data.Form
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-import javax.inject.Inject
+case object AddUtrYesNoPage extends QuestionPage[Boolean] {
 
-class AddUtrYesNoFormProvider @Inject() extends Mappings {
+  override def path: JsPath = JsPath \ "finalvalidations" \ toString
 
-  def apply(): Form[Boolean] =
-    Form(
-      "value" -> boolean("management.finalValidations.addUtrYesNo.error.required")
-    )
+  override def toString: String = "addUtrYesNo"
 }

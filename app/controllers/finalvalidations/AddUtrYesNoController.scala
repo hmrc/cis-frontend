@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package controllers.management
+package controllers.finalvalidations
 
 import controllers.actions.*
-import forms.management.AddUtrYesNoFormProvider
+import forms.finalvalidations.AddUtrYesNoFormProvider
 import models.Mode
 import navigation.Navigator
-import pages.management.AddUtrYesNoPage
+import pages.finalvalidations.AddUtrYesNoPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.management.AddUtrYesNoView
+import views.html.finalvalidations.AddUtrYesNoView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

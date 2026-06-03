@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package forms.management
+package forms.finalvalidations
 
 import forms.behaviours.BooleanFieldBehaviours
 import play.api.data.FormError
 
 class AddUtrYesNoFormProviderSpec extends BooleanFieldBehaviours {
 
-  val requiredKey = "management.finalValidations.addUtrYesNo.error.required"
+  val requiredKey = "finalValidations.addUtrYesNo.error.required"
   val invalidKey  = "error.boolean"
 
   val form = new AddUtrYesNoFormProvider()()

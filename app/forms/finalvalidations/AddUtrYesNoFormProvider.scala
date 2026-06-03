@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package pages.management
+package forms.finalvalidations
 
-import base.SpecBase
-import play.api.libs.json.JsPath
+import forms.mappings.Mappings
+import play.api.data.Form
 
-class AddUtrYesNoPageSpec extends SpecBase {
+import javax.inject.Inject
 
-  "AddUtrYesNoPage" - {
+class AddUtrYesNoFormProvider @Inject() extends Mappings {
 
-    "have the correct path" in {
-      AddUtrYesNoPage.path mustBe (JsPath \ "addUtrYesNo")
-    }
-
-    "have the correct toString" in {
-      AddUtrYesNoPage.toString mustBe "addUtrYesNo"
-    }
-  }
+  def apply(): Form[Boolean] =
+    Form(
+      "value" -> boolean("finalValidations.addUtrYesNo.error.required")
+    )
 }

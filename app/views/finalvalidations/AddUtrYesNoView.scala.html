@@ -26,18 +26,18 @@
 
 @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = title(form, messages("management.finalValidations.addUtrYesNo.title"))) {
+@layout(pageTitle = title(form, messages("finalValidations.addUtrYesNo.title"))) {
 
-    @formHelper(action = controllers.management.routes.AddUtrYesNoController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.finalvalidations.routes.AddUtrYesNoController.onSubmit(), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
         }
 
         @govukRadios(
             RadiosViewModel.yesNo(
                 field = form("value"),
-                legend = LegendViewModel(messages("management.finalValidations.addUtrYesNo.heading")).asPageHeading(LegendSize.Large)
+                legend = LegendViewModel(messages("finalValidations.addUtrYesNo.heading")).asPageHeading(LegendSize.Large)
             )
         )
 
