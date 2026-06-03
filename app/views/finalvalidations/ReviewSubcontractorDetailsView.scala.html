@@ -30,15 +30,15 @@
 
 @defining(
     TaskListItemStatus(
-        tag = Some(Tag(content = Text(messages("reviewSubcontractorDetails.taskList.status.incomplete"))))
+        tag = Some(Tag(content = Text(messages("finalValidations.reviewSubcontractorDetails.taskList.status.incomplete"))))
     )
 ) { incompleteStatus =>
 
-    @layout(pageTitle = titleNoForm(messages("reviewSubcontractorDetails.title"))) {
+    @layout(pageTitle = titleNoForm(messages("finalValidations.reviewSubcontractorDetails.title"))) {
 
-        @h1("reviewSubcontractorDetails.heading")
+        @h1("finalValidations.reviewSubcontractorDetails.heading")
 
-        @p("reviewSubcontractorDetails.intro")
+        @p("finalValidations.reviewSubcontractorDetails.intro")
 
         @govukTaskList(TaskList(
             idPrefix = "review-subcontractor-details",
@@ -49,16 +49,16 @@
                     status = incompleteStatus
                 )
             } :+ TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("reviewSubcontractorDetails.taskList.fileAReturn"))),
+                title = TaskListItemTitle(content = Text(messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn"))),
                 status = TaskListItemStatus(
-                    content = Text(messages("reviewSubcontractorDetails.taskList.status.cannotContinueYet")),
+                    content = Text(messages("finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet")),
                     classes = "govuk-task-list__status--cannot-start-yet"
                 )
             )
         ))
 
         @link(
-            linkTextKey = "reviewSubcontractorDetails.backLink",
+            linkTextKey = "finalValidations.reviewSubcontractorDetails.backLink",
             linkUrl = SelectSubcontractorsController.onPageLoad(None).url
         )
     }

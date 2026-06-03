@@ -588,10 +588,10 @@ finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing th
 finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
 finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
 
-reviewSubcontractorDetails.title = Review subcontractor details
-reviewSubcontractorDetails.heading = Review subcontractor details
-reviewSubcontractorDetails.intro = You need to review the subcontractor details
-reviewSubcontractorDetails.taskList.fileAReturn = File a return
-reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
-reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
-reviewSubcontractorDetails.backLink = Back to select your subcontractors
+finalValidations.reviewSubcontractorDetails.title = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.heading = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.intro = You need to review the subcontractor details
+finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = File a return
+finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
+finalValidations.reviewSubcontractorDetails.backLink = Back to select your subcontractors
