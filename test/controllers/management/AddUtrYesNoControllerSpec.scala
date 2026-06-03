@@ -39,7 +39,7 @@ class AddUtrYesNoControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new AddUtrYesNoFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
   lazy val addUtrYesNoRoute = controllers.management.routes.AddUtrYesNoController.onPageLoad(NormalMode).url
 
