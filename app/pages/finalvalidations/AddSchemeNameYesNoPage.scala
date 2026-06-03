@@ -19,7 +19,6 @@ package pages.finalvalidations
 import play.api.libs.json.JsPath
 import pages.QuestionPage
 
-
 case object AddSchemeNameYesNoPage extends QuestionPage[Boolean] {
 
   override def path: JsPath = JsPath \ toString

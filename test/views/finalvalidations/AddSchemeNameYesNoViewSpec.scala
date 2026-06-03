@@ -30,8 +30,8 @@ class AddSchemeNameYesNoViewSpec extends SpecBase {
   "EmploymentStatusDeclarationView" - {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
-      doc.title                 must include(messages("finalvalidations.addSchemeNameYesNo.title"))
-      doc.select("h1").text     must include(messages("finalvalidations.addSchemeNameYesNo.heading"))
+      doc.title             must include(messages("finalvalidations.addSchemeNameYesNo.title"))
+      doc.select("h1").text must include(messages("finalvalidations.addSchemeNameYesNo.heading"))
 
       doc.getElementsByClass("govuk-button").text must include(
         messages("site.continue")
