@@ -180,3 +180,6 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-standard             
 
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
+
+GET        /final-validations/add-contractor-email-address                        controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /final-validations/add-contractor-email-address                        controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
