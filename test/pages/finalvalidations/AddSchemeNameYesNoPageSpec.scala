@@ -23,7 +23,7 @@ class AddSchemeNameYesNoPageSpec extends SpecBase {
 
   "AddSchemeNameYesNoPage" - {
     "have the correct path" in {
-      AddSchemeNameYesNoPage.path mustBe (JsPath \ "addSchemeNameYesNo")
+      AddSchemeNameYesNoPage.path mustBe (JsPath \ "finalvalidations" \ "addSchemeNameYesNo")
     }
 
     "have the correct toString" in {
