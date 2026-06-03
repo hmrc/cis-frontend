@@ -38,9 +38,10 @@ class AddEmailAddressYesNoControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new AddEmailAddressYesNoFormProvider()
-  val form = formProvider()
+  val form         = formProvider()
 
-  lazy val addEmailAddressYesNoRoute = controllers.finalvalidations.routes.AddEmailAddressYesNoController.onPageLoad().url
+  lazy val addEmailAddressYesNoRoute =
+    controllers.finalvalidations.routes.AddEmailAddressYesNoController.onPageLoad().url
 
   "AddEmailAddressYesNo Controller" - {
 
