@@ -567,3 +567,7 @@ amend.areYouSureYouWantToAmendYesNo.heading = Are you sure you want to amend thi
 amend.areYouSureYouWantToAmendYesNo.yes = Yes
 amend.areYouSureYouWantToAmendYesNo.no = No, I want to make a different amendment
 amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option to amend
+
+finalvalidations.addSchemeNameYesNo.title = Do you want to enter the contractor’s scheme name?
+finalvalidations.addSchemeNameYesNo.heading = Do you want to enter the contractor’s scheme name?
+finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the contractor’s scheme name
