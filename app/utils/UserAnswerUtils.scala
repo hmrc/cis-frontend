@@ -85,9 +85,9 @@ object UserAnswerUtils {
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
 
-    def clearMonthlyStandardReturnJourney: Try[UserAnswers] =
+    def clearAmendedMonthlyStandardReturnJourney: Try[UserAnswers] =
       userAnswers
-        // monthly standard return
+        // amended monthly standard return
         .remove(EmploymentStatusDeclarationPage)
         .flatMap(_.remove(SelectedSubcontractorPage.all))
         .flatMap(_.remove(VerifySubcontractorsPage))

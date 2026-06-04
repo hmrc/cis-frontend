@@ -34,6 +34,8 @@ import repositories.SessionRepository
 import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.AreYouSureYouWantToAmendYesNoView
+import utils.TypeUtils.toFuture
+import utils.UserAnswerUtils.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -77,7 +79,8 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
             case Yes =>
               for {
                 ua1            <- Future.fromTry(request.userAnswers.set(ReturnTypePage, MonthlyAmendedNilReturn))
-                updatedAnswers <- Future.fromTry(ua1.set(AreYouSureYouWantToAmendYesNoPage, Yes))
+                ua2            <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
+                updatedAnswers <- Future.fromTry(ua2.set(AreYouSureYouWantToAmendYesNoPage, Yes))
                 _              <- sessionRepository.set(updatedAnswers)
                 deleteRequest  <- DeleteAllMonthlyReturnItemsRequest
                                     .fromUserAnswers(updatedAnswers)
