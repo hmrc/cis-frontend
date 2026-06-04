@@ -20,6 +20,7 @@ import models.ReturnType.*
 import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
+import pages.amend.*
 import play.api.libs.json.Reads
 
 import scala.util.Try
@@ -83,6 +84,18 @@ object UserAnswerUtils {
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
+
+    def clearMonthlyStandardReturnJourney: Try[UserAnswers] =
+      userAnswers
+        // monthly standard return
+        .remove(EmploymentStatusDeclarationPage)
+        .flatMap(_.remove(SelectedSubcontractorPage.all))
+        .flatMap(_.remove(VerifySubcontractorsPage))
+        .flatMap(_.remove(AllSubcontractorDetailsAdded))
+        .flatMap(_.remove(PaymentDetailsConfirmationPage))
+        .flatMap(_.remove(VerifiedStatusDeclarationPage))
+        .flatMap(_.remove(SubmitInactivityRequestPage))
+        .flatMap(_.remove(WhichSubcontractorsToAddPage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {

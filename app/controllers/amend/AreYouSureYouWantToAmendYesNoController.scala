@@ -21,9 +21,11 @@ import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 
 import javax.inject.Inject
 import models.Mode
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
 import models.amend.DeleteAllMonthlyReturnItemsRequest
 import models.monthlyreturns.UpdateMonthlyReturnRequest
+import pages.monthlyreturns.ReturnTypePage
 import navigation.Navigator
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -74,7 +76,8 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
           {
             case Yes =>
               for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, Yes))
+                ua1            <- Future.fromTry(request.userAnswers.set(ReturnTypePage, MonthlyAmendedNilReturn))
+                updatedAnswers <- Future.fromTry(ua1.set(AreYouSureYouWantToAmendYesNoPage, Yes))
                 _              <- sessionRepository.set(updatedAnswers)
                 deleteRequest  <- DeleteAllMonthlyReturnItemsRequest
                                     .fromUserAnswers(updatedAnswers)
@@ -94,9 +97,10 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
 
             case No =>
               for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, No))
-                _              <- sessionRepository.set(updatedAnswers)
-              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
+                ua1 <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, No))
+                ua2 <- Future.fromTry(ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn))
+                _   <- sessionRepository.set(ua2)
+              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, ua2))
           }
         )
     }
