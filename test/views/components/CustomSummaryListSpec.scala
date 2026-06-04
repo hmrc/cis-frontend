@@ -71,6 +71,26 @@ class CustomSummaryListSpec extends SpecBase {
       list.attr("class").trim mustBe "govuk-summary-list hmrc-list-with-actions hmrc-list-with-actions--short"
     }
 
+    "must apply govuk-!-font-weight-regular to key elements by default" in new Setup {
+      val html = customSummaryListRows(rows = selectedRowsNoLinks)
+      val doc  = Jsoup.parse(html.body)
+
+      doc.select(".govuk-summary-list__key").forEach { key =>
+        key.classNames must contain("govuk-!-font-weight-regular")
+      }
+    }
+
+    "must apply custom keyClasses to key elements when provided" in new Setup {
+      val html = customSummaryListRows(rows = selectedRowsNoLinks, keyClasses = "govuk-body govuk-!-font-weight-bold")
+      val doc  = Jsoup.parse(html.body)
+
+      doc.select(".govuk-summary-list__key").forEach { key =>
+        key.classNames must contain("govuk-body")
+        key.classNames must contain("govuk-!-font-weight-bold")
+        key.classNames mustNot contain("govuk-!-font-weight-regular")
+      }
+    }
+
     "must render the correct number of subcontractor rows in the list" in new Setup {
       val html = customSummaryListRows(rows = selectedRowsNoLinks)
       val doc  = Jsoup.parse(html.body)
