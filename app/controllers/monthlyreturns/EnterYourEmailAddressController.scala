@@ -19,10 +19,9 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.{Mode, NormalMode}
-import models.requests.{DataRequest, GetMonthlyReturnForEditRequest}
+import models.requests.DataRequest
 import navigation.Navigator
-import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{CisIdPage, EnterYourEmailAddressPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -66,34 +65,15 @@ class EnterYourEmailAddressController @Inject() (
       }
     }
 
-  private def getPrepopulationEmailAddress()(implicit request: DataRequest[AnyContent]): Future[Option[String]] = {
-    val requiredAnswers = for {
-      cisId   <- request.userAnswers.get(CisIdPage)
-      taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-    } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
-
-    requiredAnswers match {
-      case Some((cisId, month, year)) =>
-        val isAmendment = request.userAnswers.get(AmendmentDetailsPage).isDefined
+  private def getPrepopulationEmailAddress()(implicit request: DataRequest[AnyContent]): Future[Option[String]] =
+    request.userAnswers.get(CisIdPage) match {
+      case Some(cisId) =>
         monthlyReturnService
-          .retrieveMonthlyReturnForEditDetails(
-            GetMonthlyReturnForEditRequest(
-              cisId,
-              taxMonth = month,
-              taxYear = year,
-              isAmendment = isAmendment
-            )
-          )
-          .map { editDetails =>
-            editDetails.scheme.flatMap(_.emailAddress).headOption
-          }
-          .recover { case _ =>
-            None
-          }
-      case _                          =>
+          .getSchemeEmail(cisId)
+          .recover { case _ => None }
+      case None        =>
         Future.successful(None)
     }
-  }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>

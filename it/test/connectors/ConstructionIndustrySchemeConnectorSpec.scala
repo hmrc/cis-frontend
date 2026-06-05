@@ -1096,4 +1096,58 @@ class ConstructionIndustrySchemeConnectorSpec
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
   }
+
+  "getSchemeEmail" should {
+
+    "return Some(email) when BE returns 200 with email JSON object" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/scheme/email/$cisId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "email": "test@example.com" }""")
+          )
+      )
+
+      val result = connector.getSchemeEmail(cisId).futureValue
+      result mustBe Some("test@example.com")
+    }
+
+    "return None when the email field is absent from the response body" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/scheme/email/$cisId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "someOtherField": "value" }""")
+          )
+      )
+
+      val result = connector.getSchemeEmail(cisId).futureValue
+      result mustBe None
+    }
+
+    "return None when BE returns 404" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/scheme/email/$cisId"))
+          .willReturn(aResponse().withStatus(NOT_FOUND))
+      )
+
+      val result = connector.getSchemeEmail(cisId).futureValue
+      result mustBe None
+    }
+
+    "fail the future with UpstreamErrorResponse when BE returns 500" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/scheme/email/$cisId"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.getSchemeEmail(cisId).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
 }

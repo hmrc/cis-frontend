@@ -20,12 +20,11 @@ import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.NormalMode
-import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{DateConfirmPaymentsPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.EnterYourEmailAddressPage
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -34,7 +33,6 @@ import repositories.SessionRepository
 import services.MonthlyReturnService
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
-import java.time.LocalDate
 import scala.concurrent.Future
 
 class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
@@ -65,24 +63,13 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must call retrieveMonthlyReturnForEditDetails and prepopulate the email address for a GET in NormalMode when not already answered" in {
+    "must call getSchemeEmail and prepopulate the email address for a GET in NormalMode when not already answered" in {
 
       val userAnswers = userAnswersWithCisId
-        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 5, 5))
-        .success
-        .value
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
-      val scheme                   = ContractorScheme(
-        schemeId = 1,
-        instanceId = "1",
-        accountsOfficeReference = "ref",
-        taxOfficeNumber = "num",
-        taxOfficeReference = "ref",
-        emailAddress = Some("prepopulated@test.com")
-      )
-      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any()))
-        .thenReturn(Future.successful(GetAllMonthlyReturnDetailsResponse(Seq(scheme), Nil, Nil, Nil, Nil)))
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.successful(Some("prepopulated@test.com")))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
         .overrides(
@@ -102,6 +89,55 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
           request,
           messages(application)
         ).toString
+      }
+    }
+
+    "must return OK and empty/unpopulated view for a GET in CheckMode when not already answered" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val checkModeRoute =
+          controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(models.CheckMode).url
+        val request        = FakeRequest(GET, checkModeRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, models.CheckMode)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must gracefully recover and render the page with an empty form if getSchemeEmail fails" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("backend error")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
       }
     }
 
