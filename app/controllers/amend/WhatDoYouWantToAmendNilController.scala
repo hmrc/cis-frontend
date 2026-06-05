@@ -20,11 +20,10 @@ import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.NormalMode
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
-import models.amend.AreYouSureYouWantToAmendYesNo.No
 import models.amend.WhatDoYouWantToAmendNil
 import models.amend.WhatDoYouWantToAmendNil.{AddPaymentOrSubcontractorDetails, AmendNilReturn}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import pages.amend.{AreYouSureYouWantToAmendYesNoPage, WhatDoYouWantToAmendNilPage}
+import pages.amend.WhatDoYouWantToAmendNilPage
 import pages.monthlyreturns.ReturnTypePage
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -34,9 +33,9 @@ import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import views.html.amend.WhatDoYouWantToAmendNilView
 import utils.TypeUtils.toFuture
 import utils.UserAnswerUtils.*
+import views.html.amend.WhatDoYouWantToAmendNilView
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
