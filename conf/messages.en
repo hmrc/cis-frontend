@@ -571,3 +571,7 @@ amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option 
 finalvalidations.addEmailAddressYesNo.title = Do you want to enter the contractor’s email address?
 finalvalidations.addEmailAddressYesNo.heading = Do you want to enter the contractor’s email address?
 finalvalidations.addEmailAddressYesNo.error.required = Select yes to enter the contractor’s email address
+
+finalvalidations.addSchemeNameYesNo.title = Do you want to enter the contractor’s scheme name?
+finalvalidations.addSchemeNameYesNo.heading = Do you want to enter the contractor’s scheme name?
+finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the contractor’s scheme name

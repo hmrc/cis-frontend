@@ -183,3 +183,6 @@ POST       /amend-monthly-return/are-you-sure-you-want-to-amend                 
 
 GET        /final-validations/add-contractor-email-address                        controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-email-address                        controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
+
+GET        /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = NormalMode)
