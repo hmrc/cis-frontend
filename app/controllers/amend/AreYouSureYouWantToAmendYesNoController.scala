@@ -82,19 +82,9 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
                 ua2            <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
                 updatedAnswers <- Future.fromTry(ua2.set(AreYouSureYouWantToAmendYesNoPage, Yes))
                 _              <- sessionRepository.set(updatedAnswers)
-                deleteRequest  <- DeleteAllMonthlyReturnItemsRequest
-                                    .fromUserAnswers(updatedAnswers)
-                                    .fold(
-                                      error => Future.failed(new RuntimeException(error)),
-                                      request => Future.successful(request)
-                                    )
+                deleteRequest  <- toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers))
                 _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
-                updateRequest  <- UpdateMonthlyReturnRequest
-                                    .fromUserAnswers(updatedAnswers)
-                                    .fold(
-                                      error => Future.failed(new RuntimeException(error)),
-                                      request => Future.successful(request)
-                                    )
+                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers))
                 _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
               } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
 
@@ -107,4 +97,7 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
           }
         )
     }
+
+  private def toFuture[A](either: Either[String, A]): Future[A] =
+    either.fold(error => Future.failed(new RuntimeException(error)), Future.successful)
 }

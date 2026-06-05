@@ -215,5 +215,39 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
+
+    "must fail when DeleteAllMonthlyReturnItemsRequest cannot be built" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val incompleteUserAnswers = emptyUserAnswers
+        .set(CisIdPage, "cis-123")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(incompleteUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, areYouSureYouWantToAmendYesNoRoute)
+            .withFormUrlEncodedBody("value" -> Yes.toString)
+
+        val result = route(application, request).value
+
+        whenReady(result.failed) { ex =>
+          ex mustBe a[RuntimeException]
+        }
+      }
+    }
   }
 }
