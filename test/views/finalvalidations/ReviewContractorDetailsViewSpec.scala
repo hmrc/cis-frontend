@@ -31,7 +31,7 @@ class ReviewContractorDetailsViewSpec extends SpecBase {
 
     "must render the correct page title, heading and paragraph" in new Setup {
       doc.title                       must include(messages("finalvalidations.reviewContractorDetails.title"))
-      doc.select("h1").text mustEqual messages("finalvalidations.reviewContractorDetails.title")
+      doc.select("h1").text mustEqual messages("finalvalidations.reviewContractorDetails.heading")
       doc.select("p.govuk-body").text must include(messages("finalvalidations.reviewContractorDetails.p"))
     }
 
@@ -55,18 +55,18 @@ class ReviewContractorDetailsViewSpec extends SpecBase {
       val lastStatus    = taskListItems.last().select(".govuk-task-list__status")
 
       lastItem.select(".govuk-task-list__name-and-hint").text mustEqual messages(
-        "finalValidations.reviewContractorDetails.taskList.fileAReturn"
+        "finalvalidations.reviewContractorDetails.tasklist.fileareturn"
       )
       lastItem.select("a").isEmpty mustBe true
       lastStatus.text mustEqual messages(
-        "finalValidations.reviewContractorDetails.taskList.status.cannotStartYet"
+        "finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet"
       )
       lastStatus.hasClass("govuk-task-list__status--cannot-start-yet") mustBe true
 
     }
     "must render the return to cis dashboard link" in new Setup {
       val backLink = doc.select("p.govuk-body > a.govuk-link").last()
-      backLink.text mustEqual messages("finalValidations.reviewSubcontractorDetails.cisReturnDashboardLink")
+      backLink.text mustEqual messages("finalvalidations.reviewContractorDetails.cisreturndashboardlink")
     }
   }
 
