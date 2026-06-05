@@ -571,3 +571,14 @@ amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option 
 finalvalidations.addSchemeNameYesNo.title = Do you want to enter the contractor’s scheme name?
 finalvalidations.addSchemeNameYesNo.heading = Do you want to enter the contractor’s scheme name?
 finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the contractor’s scheme name
+
+finalvalidations.reviewContractorDetails.title = Review contractor details
+finalvalidations.reviewContractorDetails.heading = Review contractor details
+finalvalidations.reviewContractorDetails.p = You cannot file a return at the moment. You need to review the contractor details.
+finalvalidations.reviewContractorDetails.tasklist.schemeName = Scheme name
+finalvalidations.reviewContractorDetails.tasklist.utr = Unique Taxpayer Reference
+finalvalidations.reviewContractorDetails.tasklist.emailAddress = Email address
+finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewContractorDetails.taskList.fileAReturn = File a return
+finalValidations.reviewContractorDetails.taskList.status.cannotStartYet = Cannot start yet
+finalValidations.reviewSubcontractorDetails.cisReturnDashboardLink = Back to CIS return dashboard
