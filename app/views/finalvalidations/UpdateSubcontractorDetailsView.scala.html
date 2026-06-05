@@ -37,7 +37,7 @@
     @paragraph("finalvalidations.updateSubcontractorDetails.intro")
 
     @customSummaryList(
-        Seq(
+        rows = Seq(
             (
                 messages("finalvalidations.updateSubcontractorDetails.utr"),
                 Seq(("#", "site.change", "finalvalidations.updateSubcontractorDetails.utr.change.hidden"))
@@ -47,7 +47,8 @@
                 Seq(("#", "site.change", "finalvalidations.updateSubcontractorDetails.nino.change.hidden"))
             )
         ),
-        "govuk-!-font-weight-bold"
+        keyClasses  = "govuk-!-font-weight-bold",
+        rowValues   = Seq("1234455", "123")
     )
 
     @h2("finalvalidations.updateSubcontractorDetails.confirmChanges.heading")
