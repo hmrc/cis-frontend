@@ -587,3 +587,11 @@ finalvalidations.updateSubcontractorDetails.confirmChanges.heading = Confirm cha
 finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing this subcontractor’s details you are confirming that, to the best of your knowledge, the details you are providing are correct.
 finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
 finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
+
+finalValidations.reviewSubcontractorDetails.title = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.heading = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.intro = You need to review the subcontractor details
+finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = File a return
+finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
+finalValidations.reviewSubcontractorDetails.backLink = Back to select your subcontractors
