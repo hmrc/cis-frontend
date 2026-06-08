@@ -19,13 +19,14 @@ package controllers.amend
 import base.SpecBase
 import config.FrontendAppConfig
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import models.ReturnType.MonthlyAmendedStandardReturn
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
 import models.monthlyreturns.{MonthlyReturnDetails, MonthlyReturnResponse}
 import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.ConfirmCancelAmendmentYesNoPage
 import pages.monthlyreturns.*
@@ -104,10 +105,14 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
     "must return OK and the correct view for a GET" in {
 
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
       val application =
         applicationBuilder(userAnswers = Some(userAnswersWithDate))
           .overrides(
-            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock())
+            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock()),
+            bind[SessionRepository].toInstance(mockSessionRepository)
           )
           .build()
 
@@ -123,17 +128,21 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
       }
     }
 
-    "must populate the view correctly on a GET when the question has previously been answered" in {
+    "must clear any previously answered Yes/No selection and show an empty form on a GET" in {
 
       val userAnswers = userAnswersWithDate
         .set(ConfirmCancelAmendmentYesNoPage, true)
         .success
         .value
 
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
       val application =
         applicationBuilder(userAnswers = Some(userAnswers))
           .overrides(
-            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock())
+            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock()),
+            bind[SessionRepository].toInstance(mockSessionRepository)
           )
           .build()
 
@@ -146,6 +155,10 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(form, monthYear)(request, messages(application)).toString
+
+        val answersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(answersCaptor.capture())
+        answersCaptor.getValue.get(ConfirmCancelAmendmentYesNoPage) mustBe None
       }
     }
 
