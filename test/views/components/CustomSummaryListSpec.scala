@@ -63,12 +63,42 @@ class CustomSummaryListSpec extends SpecBase {
       )
     }
 
-    "must render with the correct CSS classes" in new Setup {
+    "must render with hmrc-list-with-actions classes when no rowValues are provided" in new Setup {
+      val html    = customSummaryListRows(rows = selectedRowsNoLinks)
+      val doc     = Jsoup.parse(html.body)
+      val classes = doc.select("dl.govuk-summary-list").attr("class")
+
+      classes must include("hmrc-list-with-actions")
+      classes must include("hmrc-list-with-actions--short")
+    }
+
+    "must omit hmrc-list-with-actions classes when rowValues are provided" in new Setup {
+      val html    = customSummaryListRows(rows = selectedRowsNoLinks.take(2), rowValues = Seq("1234455", "123"))
+      val doc     = Jsoup.parse(html.body)
+      val classes = doc.select("dl.govuk-summary-list").attr("class")
+
+      classes mustNot include("hmrc-list-with-actions")
+      classes mustNot include("hmrc-list-with-actions--short")
+    }
+
+    "must apply govuk-!-font-weight-regular to key elements by default" in new Setup {
       val html = customSummaryListRows(rows = selectedRowsNoLinks)
       val doc  = Jsoup.parse(html.body)
 
-      val list = doc.select("dl.govuk-summary-list")
-      list.attr("class").trim mustBe "govuk-summary-list hmrc-list-with-actions hmrc-list-with-actions--short"
+      doc.select(".govuk-summary-list__key").forEach { key =>
+        key.classNames must contain("govuk-!-font-weight-regular")
+      }
+    }
+
+    "must apply custom keyClasses to key elements when provided" in new Setup {
+      val html = customSummaryListRows(rows = selectedRowsNoLinks, keyClasses = "govuk-body govuk-!-font-weight-bold")
+      val doc  = Jsoup.parse(html.body)
+
+      doc.select(".govuk-summary-list__key").forEach { key =>
+        key.classNames must contain("govuk-body")
+        key.classNames must contain("govuk-!-font-weight-bold")
+        key.classNames mustNot contain("govuk-!-font-weight-regular")
+      }
     }
 
     "must render the correct number of subcontractor rows in the list" in new Setup {
@@ -85,6 +115,26 @@ class CustomSummaryListSpec extends SpecBase {
       val renderedRows = doc.select(".govuk-summary-list__row")
       renderedRows.size mustBe 1
       renderedRows.get(0).select(".govuk-summary-list__key").text mustBe ""
+    }
+
+    "must render inline values when rowValues is provided" in new Setup {
+      val html         = customSummaryListRows(
+        rows = selectedRowsNoLinks.take(2),
+        rowValues = Seq("1234455", "123")
+      )
+      val doc          = Jsoup.parse(html.body)
+      val valueColumns = doc.select(".govuk-summary-list__value")
+
+      valueColumns.size mustBe 2
+      valueColumns.get(0).text mustBe "1234455"
+      valueColumns.get(1).text mustBe "123"
+    }
+
+    "must not render value columns when rowValues is omitted" in new Setup {
+      val html = customSummaryListRows(rows = selectedRowsNoLinks)
+      val doc  = Jsoup.parse(html.body)
+
+      doc.select(".govuk-summary-list__value").size mustBe 0
     }
 
     "must not render actions list markup when a row has no links" in new Setup {
@@ -109,7 +159,6 @@ class CustomSummaryListSpec extends SpecBase {
       app.injector.instanceOf[MessagesApi]
     )
 
-    // Rows with no links (per row)
     val selectedRowsNoLinks: Seq[(String, Seq[(String, String, String)])] =
       Seq(
         "BuildRight Construction" -> Seq.empty,
@@ -117,7 +166,6 @@ class CustomSummaryListSpec extends SpecBase {
         "TyneWear Ltd"            -> Seq.empty
       )
 
-    // Only TyneWear Ltd row has two links
     val rowsWithLinks: Seq[(String, Seq[(String, String, String)])] =
       Seq(
         "TyneWear Ltd"            -> Seq(

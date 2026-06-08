@@ -576,6 +576,18 @@ finalvalidations.addSchemeNameYesNo.title = Do you want to enter the contractor�
 finalvalidations.addSchemeNameYesNo.heading = Do you want to enter the contractor’s scheme name?
 finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the contractor’s scheme name
 
+finalvalidations.updateSubcontractorDetails.title = {0}
+finalvalidations.updateSubcontractorDetails.heading = {0}
+finalvalidations.updateSubcontractorDetails.intro = To file your return, you must review and update the subcontractor details.
+finalvalidations.updateSubcontractorDetails.utr = Unique Taxpayer Reference
+finalvalidations.updateSubcontractorDetails.nino = National Insurance number
+finalvalidations.updateSubcontractorDetails.utr.change.hidden = Unique Taxpayer Reference
+finalvalidations.updateSubcontractorDetails.nino.change.hidden = National Insurance number
+finalvalidations.updateSubcontractorDetails.confirmChanges.heading = Confirm changes
+finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing this subcontractor’s details you are confirming that, to the best of your knowledge, the details you are providing are correct.
+finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
+finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
+
 finalvalidations.reviewContractorDetails.title = Review contractor details
 finalvalidations.reviewContractorDetails.heading = Review contractor details
 finalvalidations.reviewContractorDetails.p = You cannot file a return at the moment. You need to review the contractor details.
