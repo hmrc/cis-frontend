@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package models.submission
+package pages.finalvalidations
 
-import play.api.libs.json.{JsValue, Json, OFormat}
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class ChrisPollResponse(
-  status: String,
-  pollUrl: Option[String],
-  intervalSeconds: Option[Int],
-  error: Option[JsValue],
-  irMarkReceived: Option[String],
-  lastMessageDate: Option[String],
-  acceptedTime: Option[String],
-  govTalkErrorStatus: Option[GovTalkErrorStatus] = None
-)
+case object AddUtrYesNoPage extends QuestionPage[Boolean] {
 
-object ChrisPollResponse {
-  implicit val format: OFormat[ChrisPollResponse] = Json.format[ChrisPollResponse]
+  override def path: JsPath = JsPath \ "finalvalidations" \ toString
+
+  override def toString: String = "addUtrYesNo"
 }

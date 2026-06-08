@@ -588,6 +588,18 @@ finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing th
 finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
 finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
 
+finalValidations.reviewSubcontractorDetails.title = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.heading = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.intro = You need to review the subcontractor details
+finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = File a return
+finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
+finalValidations.reviewSubcontractorDetails.backLink = Back to select your subcontractors
+
+finalValidations.addUtrYesNo.title = Do you want to enter the contractor’s Unique Taxpayer Reference (UTR)?
+finalValidations.addUtrYesNo.heading = Do you want to enter the contractor’s Unique Taxpayer Reference (UTR)?
+finalValidations.addUtrYesNo.error.required = Select yes to enter the contractor’s Unique Taxpayer Reference (UTR)
+
 finalvalidations.reviewContractorDetails.title = Review contractor details
 finalvalidations.reviewContractorDetails.heading = Review contractor details
 finalvalidations.reviewContractorDetails.p = You cannot file a return at the moment. You need to review the contractor details.
