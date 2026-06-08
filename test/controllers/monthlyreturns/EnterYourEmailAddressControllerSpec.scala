@@ -47,7 +47,7 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
   "EnterYourEmailAddress Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "must return OK and the blank view for a GET when EnterYourEmailAddressPage is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
@@ -89,6 +89,32 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
           request,
           messages(application)
         ).toString
+      }
+    }
+
+    "must call getSchemeEmail and render an empty form when the service returns None" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.successful(None))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
       }
     }
 

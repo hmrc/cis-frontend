@@ -247,6 +247,27 @@ class ConstructionIndustrySchemeConnectorSpec
     }
   }
 
+  "getSchemeEmail" should {
+
+    "return Some(email) when BE returns 200 with an email value" in {
+      val email = "test@example.com"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/scheme/email/$cisId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(Json.stringify(Json.toJson(Some(email))))
+          )
+      )
+
+      val result = connector.getSchemeEmail(cisId).futureValue
+
+      result mustBe Some(email)
+    }
+  }
+
   "retrieveMonthlyReturnForEditDetails" should {
 
     "return GetAllMonthlyReturnDetailsResponse when BE returns 200 with valid JSON" in {
