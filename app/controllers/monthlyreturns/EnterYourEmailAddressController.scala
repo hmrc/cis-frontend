@@ -19,14 +19,16 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.{Mode, NormalMode}
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, EnterYourEmailAddressPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
 import javax.inject.Inject
@@ -52,11 +54,13 @@ class EnterYourEmailAddressController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
       request.userAnswers.get(EnterYourEmailAddressPage) match {
         case Some(value)                =>
           Future.successful(Ok(view(form.fill(value), mode)))
         case None if mode == NormalMode =>
-          getPrepopulationEmailAddress().map {
+          getPrepopulationEmailAddress(request).map {
             case Some(email) => Ok(view(form.fill(email), mode))
             case None        => Ok(view(form, mode))
           }
@@ -65,7 +69,9 @@ class EnterYourEmailAddressController @Inject() (
       }
     }
 
-  private def getPrepopulationEmailAddress()(implicit request: DataRequest[AnyContent]): Future[Option[String]] =
+  private def getPrepopulationEmailAddress(
+    request: CisIdDataRequest[AnyContent]
+  )(implicit hc: HeaderCarrier): Future[Option[String]] =
     request.userAnswers.get(CisIdPage) match {
       case Some(cisId) =>
         monthlyReturnService
