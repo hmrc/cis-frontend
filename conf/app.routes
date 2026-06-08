@@ -184,5 +184,5 @@ POST       /amend-monthly-return/are-you-sure-you-want-to-amend                 
 GET        /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = NormalMode)
 
-GET        /management/final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /management/final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)
+GET        /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)

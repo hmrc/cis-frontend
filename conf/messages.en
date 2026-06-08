@@ -574,4 +574,4 @@ finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the con
 
 finalValidations.addUtrYesNo.title = Do you want to enter the contractor’s Unique Taxpayer Reference (UTR)?
 finalValidations.addUtrYesNo.heading = Do you want to enter the contractor’s Unique Taxpayer Reference (UTR)?
-finalValidations.addUtrYesNo.error.required = Select yes to enter the contractor's Unique Taxpayer Reference (UTR)
+finalValidations.addUtrYesNo.error.required = Select yes to enter the contractor’s Unique Taxpayer Reference (UTR)
