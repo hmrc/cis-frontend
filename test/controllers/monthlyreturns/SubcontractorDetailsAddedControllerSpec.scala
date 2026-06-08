@@ -17,11 +17,11 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.ReturnType.MonthlyStandardReturn
+import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import models.{NormalMode, UserAnswers}
 import models.amend.AmendmentDetails
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -223,10 +223,10 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect on POST Yes when adding more subcontractors" in {
+    "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyAmendedStandardReturn" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
-      )
+      ).set(ReturnTypePage, MonthlyAmendedStandardReturn).success.value
 
       val application = buildApp(ua)
 
@@ -239,9 +239,27 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.SelectSubcontractorsController
-            .onPageLoad(None)
-            .url
+          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+      }
+    }
+
+    "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyStandardReturn" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "Complete Ltd")
+      ).set(ReturnTypePage, MonthlyStandardReturn).success.value
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrl)
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
       }
     }
 
