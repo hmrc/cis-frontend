@@ -1,0 +1,44 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package models.amend
+
+import models.UserAnswers
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import play.api.libs.json.{Json, OFormat}
+
+case class DeleteAllMonthlyReturnItemsRequest(
+  instanceId: String,
+  taxYear: Int,
+  taxMonth: Int,
+  amendment: String
+)
+
+object DeleteAllMonthlyReturnItemsRequest {
+  given format: OFormat[DeleteAllMonthlyReturnItemsRequest] = Json.format[DeleteAllMonthlyReturnItemsRequest]
+
+  def fromUserAnswers(ua: UserAnswers): Either[String, DeleteAllMonthlyReturnItemsRequest] =
+    for {
+      instanceId <- ua.get(CisIdPage).toRight("Missing CisId")
+      monthYear  <- ua.get(DateConfirmPaymentsPage).toRight("Missing DateConfirmPayments")
+      returnType <- ua.get(ReturnTypePage).toRight("Missing ReturnType")
+    } yield DeleteAllMonthlyReturnItemsRequest(
+      instanceId = instanceId,
+      taxYear = monthYear.getYear,
+      taxMonth = monthYear.getMonthValue,
+      amendment = returnType.amendmentFlag
+    )
+}

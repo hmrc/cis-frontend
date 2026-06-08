@@ -19,8 +19,8 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
-import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
-import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
+import models.amend.*
+import models.requests.*
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
 import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
@@ -593,6 +593,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = "123",
         taxYear = 2024,
         taxMonth = 4,
+        amendment = "N",
         emailRecipient = Some("user@test.com")
       )
 
@@ -606,7 +607,7 @@ class ConstructionIndustrySchemeConnectorSpec
           .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("""{"message":"invalid"}"""))
       )
 
-      val req = CreateSubmissionRequest("123", 2024, 4)
+      val req = CreateSubmissionRequest("123", 2024, 4, "N")
       val ex  = intercept[Throwable] {
         connector.createSubmission(req).futureValue
       }
@@ -619,7 +620,7 @@ class ConstructionIndustrySchemeConnectorSpec
           .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
       )
 
-      val req = CreateSubmissionRequest("123", 2024, 4)
+      val req = CreateSubmissionRequest("123", 2024, 4, "N")
       val ex  = intercept[Throwable] {
         connector.createSubmission(req).futureValue
       }
@@ -711,6 +712,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = "123",
         taxYear = 2024,
         taxMonth = 4,
+        amendment = "N",
         hmrcMarkGenerated = Some("Dj5TVJDyRYCn9zta5EdySeY4fyA="),
         submittableStatus = "FATAL_ERROR"
       )
@@ -724,7 +726,7 @@ class ConstructionIndustrySchemeConnectorSpec
           .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
       )
 
-      val req = UpdateSubmissionRequest("123", 2024, 4, submittableStatus = "FATAL_ERROR")
+      val req = UpdateSubmissionRequest("123", 2024, 4, amendment = "N", submittableStatus = "FATAL_ERROR")
 
       val err = connector.updateSubmission("sub-123", req).failed.futureValue
       err mustBe a[UpstreamErrorResponse]
@@ -990,7 +992,8 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        subcontractorId = 1234567890L
+        subcontractorId = 1234567890L,
+        amendment = "N"
       )
 
       stubFor(
@@ -1008,7 +1011,8 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
-        subcontractorId = 1234567890L
+        subcontractorId = 1234567890L,
+        amendment = "N"
       )
 
       stubFor(
@@ -1017,6 +1021,86 @@ class ConstructionIndustrySchemeConnectorSpec
       )
 
       val ex = connector.deleteMonthlyReturnItem(req).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "deleteAllMonthlyReturnItems(payload)" should {
+
+    "POST /cis/monthly-return-item/delete-all and return Unit on 204" in {
+      val req = DeleteAllMonthlyReturnItemsRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-return-item/delete-all"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.deleteAllMonthlyReturnItems(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-204" in {
+      val req = DeleteAllMonthlyReturnItemsRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "N"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-return-item/delete-all"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.deleteAllMonthlyReturnItems(req).failed.futureValue
+
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "deleteUnsubmittedMonthlyReturn(payload)" should {
+
+    "POST /cis/monthly-returns/unsubmitted/delete and return Unit on 204" in {
+      val req = DeleteUnsubmittedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/unsubmitted/delete"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString(), true, true))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.deleteUnsubmittedMonthlyReturn(req).futureValue mustBe ((): Unit)
+    }
+
+    "fail the future when BE returns non-204" in {
+      val req = DeleteUnsubmittedMonthlyReturnRequest(
+        instanceId = cisId,
+        taxYear = 2025,
+        taxMonth = 1,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns/unsubmitted/delete"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = connector.deleteUnsubmittedMonthlyReturn(req).failed.futureValue
+
       ex mustBe a[UpstreamErrorResponse]
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
@@ -1071,6 +1155,7 @@ class ConstructionIndustrySchemeConnectorSpec
         instanceId = cisId,
         taxYear = 2025,
         taxMonth = 1,
+        contractorName = "Test Contractor Ltd",
         originalReturnType = MonthlyStandardReturn,
         acceptedTime = Some("2025-04-01T12:00:00Z")
       )

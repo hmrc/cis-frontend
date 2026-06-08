@@ -26,7 +26,7 @@ case class UpdateSubmissionRequest(
   taxMonth: Int,
   hmrcMarkGenerated: Option[String] = None,
   submittableStatus: String,
-  amendment: Option[String] = None,
+  amendment: String,
   hmrcMarkGgis: Option[String] = None,
   submissionRequestDate: Option[LocalDateTime] = None,
   acceptedTime: Option[String] = None,
@@ -34,7 +34,8 @@ case class UpdateSubmissionRequest(
   agentId: Option[String] = None,
   govtalkErrorCode: Option[String] = None,
   govtalkErrorType: Option[String] = None,
-  govtalkErrorMessage: Option[String] = None
+  govtalkErrorMessage: Option[String] = None,
+  govTalkResponse: Option[GovTalkErrorStatus] = None
 )
 
 object UpdateSubmissionRequest {

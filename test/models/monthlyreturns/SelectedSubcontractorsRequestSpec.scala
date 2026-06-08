@@ -16,24 +16,59 @@
 
 package models.monthlyreturns
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.*
+import base.SpecBase
+import models.{ReturnType, UserAnswers}
+import pages.monthlyreturns.*
+import play.api.libs.json.Json
 
-class SelectedSubcontractorsRequestSpec extends AnyWordSpec with Matchers {
+import java.time.LocalDate
 
-  "SelectedSubcontractorsRequest JSON format" should {
-    "serialize and deserialize" in {
+class SelectedSubcontractorsRequestSpec extends SpecBase {
+
+  "SelectedSubcontractorsRequest" - {
+
+    "must serialize and deserialize JSON" in {
       val model = SelectedSubcontractorsRequest(
-        instanceId = "instance-1",
-        taxYear = 2026,
-        taxMonth = 2,
-        selectedSubcontractorIds = Seq(1L, 2L, 3L),
-        amendment = "Y"
+        instanceId = "1",
+        taxYear = 2025,
+        taxMonth = 1,
+        selectedSubcontractorIds = Seq(1L, 2L),
+        amendment = "N"
       )
 
-      val json = Json.toJson(model)
-      json.validate[SelectedSubcontractorsRequest].asOpt shouldBe Some(model)
+      val json = Json.obj(
+        "instanceId"               -> "1",
+        "taxYear"                  -> 2025,
+        "taxMonth"                 -> 1,
+        "selectedSubcontractorIds" -> Json.arr(1L, 2L),
+        "amendment"                -> "N"
+      )
+
+      Json.toJson(model) mustBe json
+      json.as[SelectedSubcontractorsRequest] mustBe model
+    }
+
+    "must build from UserAnswers" in {
+      val userAnswers =
+        UserAnswers("id")
+          .set(CisIdPage, "1")
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
+          .success
+          .value
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+
+      SelectedSubcontractorsRequest.from(userAnswers, Seq(1L, 2L)) mustBe
+        SelectedSubcontractorsRequest(
+          instanceId = "1",
+          taxYear = 2025,
+          taxMonth = 1,
+          selectedSubcontractorIds = Seq(1L, 2L),
+          amendment = "N"
+        )
     }
   }
 }

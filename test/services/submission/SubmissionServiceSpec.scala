@@ -22,8 +22,8 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.agent.AgentClientData
-import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse, InactivityRequest, MonthlyReturn}
-import models.requests.{DataRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
+import models.monthlyreturns.*
+import models.requests.*
 import models.submission.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -45,9 +45,9 @@ import scala.util.Failure
 
 class SubmissionServiceSpec extends SpecBase with TryValues {
 
-  implicit val hc: HeaderCarrier    = HeaderCarrier()
-  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-  given DataRequest[AnyContent]     = DataRequest(FakeRequest(), userAnswersId, emptyUserAnswers)
+  implicit val hc: HeaderCarrier     = HeaderCarrier()
+  implicit val ec: ExecutionContext  = scala.concurrent.ExecutionContext.global
+  given CisIdDataRequest[AnyContent] = CisIdDataRequest(FakeRequest(), userAnswersId, emptyUserAnswers, "123")
 
   private val utcClock: Clock = Clock.systemUTC()
 
@@ -96,6 +96,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         instanceId = "123",
         taxYear = 2025,
         taxMonth = 10,
+        amendment = "N",
         emailRecipient = Some("test@test.com")
       )
 
@@ -610,6 +611,33 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.govtalkErrorCode mustBe Some("123")
       upd.govtalkErrorType mustBe Some("business")
       upd.govtalkErrorMessage mustBe Some("oops")
+      upd.govTalkResponse mustBe Some(GovTalkErrorStatus.DepartmentalError("oops"))
+    }
+
+    "prefer a BE-supplied govTalkErrorStatus over local classification" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val chrisResp = mkChrisResp(
+        status = "STARTED",
+        govTalkErrorStatus = Some(GovTalkErrorStatus.ServerError(503))
+      )
+
+      service.updateSubmissionFromChrisResponse("sub-123", uaBase, chrisResp).futureValue
+
+      val cap: ArgumentCaptor[UpdateSubmissionRequest] =
+        ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
+
+      cap.getValue.govTalkResponse mustBe Some(GovTalkErrorStatus.ServerError(503))
     }
 
     "fail when CIS ID missing" in {
@@ -1767,7 +1795,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       reqCaptor.getValue.email mustBe "standard@test.com"
     }
 
-    "throw IllegalStateException when ReturnTypePage missing" in {
+    "throw IllegalStateException when DateConfirmPaymentsPage missing" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
       val appConfig: FrontendAppConfig                   =
@@ -1796,7 +1824,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         service.sendSuccessEmail(ua, "en").futureValue
       }
 
-      ex.getMessage mustBe "Return type missing"
+      ex.getMessage mustBe "Month/Year not selected"
     }
 
     "throw IllegalStateException when DateConfirmPaymentsPage missing for monthly standard return" in {
@@ -1926,7 +1954,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     corr: String = "CID123",
     ts: String = "2025-01-01T00:00:00",
     err: Option[JsObject] = None,
-    accepted: Option[String] = None
+    accepted: Option[String] = None,
+    govTalkErrorStatus: Option[GovTalkErrorStatus] = None
   ): ChrisSubmissionResponse =
     ChrisSubmissionResponse(
       submissionId = "sub-123",
@@ -1936,7 +1965,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       responseEndPoint = None,
       gatewayTimestamp = Some(ts),
       acceptedTime = accepted,
-      error = err
+      error = err,
+      govTalkErrorStatus = govTalkErrorStatus
     )
 
 }

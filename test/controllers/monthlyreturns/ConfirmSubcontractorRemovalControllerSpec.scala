@@ -20,11 +20,11 @@ import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
-import models.{CheckMode, Mode, NormalMode, UserAnswers}
+import models.{CheckMode, Mode, NormalMode, ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{atLeastOnce, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -33,6 +33,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.ConfirmSubcontractorRemovalView
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSugar {
@@ -52,7 +53,10 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
   private def uaWithSubcontractor: UserAnswers =
     emptyUserAnswers
-      .set(
+      .setOrException(CisIdPage, "abc-123")
+      .setOrException(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+      .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
+      .setOrException(
         SelectedSubcontractorPage(index),
         SelectedSubcontractor(
           id = subcontractorId,
@@ -62,14 +66,6 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
           totalTaxDeducted = Some(BigDecimal(10))
         )
       )
-      .success
-      .value
-      .set(CisIdPage, "abc-123")
-      .success
-      .value
-      .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
-      .success
-      .value
 
   "ConfirmSubcontractorRemoval Controller" - {
 
@@ -151,7 +147,8 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
               instanceId = "abc-123",
               taxYear = 2025,
               taxMonth = 1,
-              subcontractorId = subcontractorId
+              subcontractorId = subcontractorId,
+              amendment = "N"
             )
           )
         )(any[HeaderCarrier])

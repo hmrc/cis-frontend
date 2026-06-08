@@ -29,7 +29,8 @@ class DeleteMonthlyReturnItemRequestSpec extends AnyWordSpec with Matchers {
         instanceId = "inst-123",
         taxYear = 2025,
         taxMonth = 1,
-        subcontractorId = 1001L
+        subcontractorId = 1001L,
+        amendment = "N"
       )
 
       Json.fromJson[DeleteMonthlyReturnItemRequest](Json.toJson(model)).get mustBe model

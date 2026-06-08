@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.UserAnswers
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import models.submission.PollDecision.{Polled, Skip}
 import models.submission.SubmissionStatus.*
 import models.submission.{PollDecision, SubmissionDetails, SubmissionStatus}
@@ -95,7 +95,7 @@ class SubmissionSendingController @Inject() (
       }
     }
 
-  private def guardCompletedJourney(block: => Future[Result])(implicit request: DataRequest[_]): Future[Result] =
+  private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     if (request.userAnswers.get(SubmissionJourneyCompletedPage).contains(true)) {
       Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
     } else {
@@ -103,7 +103,7 @@ class SubmissionSendingController @Inject() (
     }
 
   private def pollDecisionResult(decision: PollDecision, pollInterval: String)(implicit
-    request: DataRequest[_]
+    request: CisIdDataRequest[_]
   ): Future[Result] =
     decision match {
       case Skip           => sendingPage(pollInterval)
@@ -111,7 +111,7 @@ class SubmissionSendingController @Inject() (
     }
 
   private def polledStatusResult(status: String, pollInterval: String)(implicit
-    request: DataRequest[_]
+    request: CisIdDataRequest[_]
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
     SubmissionStatus.fromString(status) match {
@@ -141,7 +141,7 @@ class SubmissionSendingController @Inject() (
       case _                                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
-  private def sendingPage(pollInterval: String)(implicit request: DataRequest[_]): Future[Result] =
+  private def sendingPage(pollInterval: String)(implicit request: CisIdDataRequest[_]): Future[Result] =
     Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
 
   private def sendEmailAndRedirect(

@@ -22,6 +22,7 @@ case class CreateSubmissionRequest(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
+  amendment: String,
   emailRecipient: Option[String] = None
 )
 

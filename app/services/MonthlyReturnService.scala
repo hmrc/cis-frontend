@@ -29,7 +29,6 @@ import play.api.libs.json.*
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.QuestionPage
 import pages.agent.AgentClientDataPage
-import pages.amend.AmendmentDetailsPage
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.UserAnswerUtils.clearMonthlyReturnJourney
 import utils.Utils.toBigDecimal
@@ -131,27 +130,18 @@ class MonthlyReturnService @Inject() (
     cisConnector.updateMonthlyReturnItem(request)
 
   def syncMonthlyReturnItems(
-    instanceId: String,
-    taxYear: Int,
-    taxMonth: Int,
-    selectedSubcontractorIds: Seq[Long],
-    amendment: String
+    ua: UserAnswers,
+    selectedSubcontractorIds: Seq[Long]
   )(implicit hc: HeaderCarrier): Future[Unit] =
-    cisConnector.syncMonthlyReturnItems(
-      SelectedSubcontractorsRequest(instanceId, taxYear, taxMonth, selectedSubcontractorIds, amendment)
-    )
+    cisConnector.syncMonthlyReturnItems(SelectedSubcontractorsRequest.from(ua, selectedSubcontractorIds))
 
   def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.deleteMonthlyReturnItem(payload)
 
   def storeAndSyncSelectedSubcontractors(
     ua: UserAnswers,
-    cisId: String,
-    taxYear: Int,
-    taxMonth: Int,
     selected: Seq[SelectSubcontractorsViewModel]
   )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
-
     val selectedIds: Seq[Long]         = selected.map(_.id)
     val existingSelectedSubcontractors =
       ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
@@ -182,19 +172,7 @@ class MonthlyReturnService @Inject() (
           case false =>
             Future.failed(new RuntimeException("Failed to persist selected subcontractors in session"))
           case true  =>
-            cisConnector
-              .syncMonthlyReturnItems(
-                SelectedSubcontractorsRequest(
-                  instanceId = cisId,
-                  taxYear = taxYear,
-                  taxMonth = taxMonth,
-                  selectedSubcontractorIds = selectedIds,
-                  amendment =
-                    if (updatedUa.get(AmendmentDetailsPage).isDefined) "Y"
-                    else "N" // Todo: to be updated once 4682 merged
-                )
-              )
-              .map(_ => updatedUa)
+            syncMonthlyReturnItems(updatedUa, selectedIds).map(_ => updatedUa)
         }
       }
   }

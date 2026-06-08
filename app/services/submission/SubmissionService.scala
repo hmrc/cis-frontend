@@ -18,11 +18,10 @@ package services.submission
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.CisTaxpayer
-import models.requests.{DataRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
+import models.requests.*
 import models.submission.*
-import models.{ReturnType, UserAnswers}
+import models.UserAnswers
 import pages.agent.AgentClientDataPage
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
@@ -94,14 +93,15 @@ class SubmissionService @Inject() (
     submissionId: String,
     ua: UserAnswers,
     chrisResp: ChrisSubmissionResponse
-  )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = updateSubmission(
+  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = updateSubmission(
     submissionId,
     ua,
     chrisResp.hmrcMarkGenerated,
     chrisResp.status,
     chrisResp.acceptedTime,
     None,
-    chrisResp.error
+    chrisResp.error,
+    chrisResp.govTalkErrorStatus
   )
 
   def updateSubmission(
@@ -111,8 +111,9 @@ class SubmissionService @Inject() (
     status: String,
     acceptedTime: Option[String],
     irMarkReceived: Option[String] = None,
-    error: Option[JsValue] = None
-  )(implicit req: DataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+    error: Option[JsValue] = None,
+    govTalkErrorStatus: Option[GovTalkErrorStatus] = None
+  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
     val ukNow = ukLocalDateTimeNow
 
     val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
@@ -125,6 +126,9 @@ class SubmissionService @Inject() (
     val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
+
+    val resolvedGovTalkStatus = govTalkErrorStatus.getOrElse(GovTalkErrorClassifier.classify(status, error))
 
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
@@ -135,11 +139,13 @@ class SubmissionService @Inject() (
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
+      amendment = returnType.amendmentFlag,
       acceptedTime = acceptedTimestamp,
       submissionRequestDate = Some(ukNow),
       govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
       govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
-      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String])
+      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String]),
+      govTalkResponse = Some(resolvedGovTalkStatus)
     )
 
     cisConnector.updateSubmission(submissionId, update)
@@ -152,32 +158,15 @@ class SubmissionService @Inject() (
 
   def checkAndUpdateSubmissionStatusIfAllowed(
     userAnswers: UserAnswers
-  )(using HeaderCarrier, DataRequest[AnyContent]): Future[PollDecision] =
+  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[PollDecision] =
     userAnswers.get(LastMessageDatePage) match {
       case Some(receivedAt) =>
         val pollInterval      = getPollInterval(userAnswers)
         val nextPollAllowedAt = receivedAt.plusSeconds(pollInterval)
-        val now               = Instant.now() // TODO - val added to support logs for testing, to be deleted after verification
 
         if (Instant.now().isAfter(nextPollAllowedAt)) {
-          // TODO - logs used for testing, to be deleted after verification
-          logger.info(
-            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL ALLOWED " +
-              s"lastMessageRecieved=$receivedAt," +
-              s"pollIntervalSeconds=$pollInterval, " +
-              s"nextPollAllowed=$nextPollAllowedAt, " +
-              s"now=$now"
-          )
           checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
         } else {
-          // TODO - logs used for testing, to be deleted after verification
-          logger.info(
-            s"[checkAndUpdateSubmissionStatusIfAllowed] POLL SKIPPED " +
-              s"lastMessageRecieved=$receivedAt," +
-              s"pollIntervalSeconds=$pollInterval, " +
-              s"nextPollAllowed=$nextPollAllowedAt, " +
-              s"now=$now"
-          )
           Future.successful(PollDecision.Skip)
         }
 
@@ -188,7 +177,7 @@ class SubmissionService @Inject() (
 
   def checkAndUpdateSubmissionStatus(
     userAnswers: UserAnswers
-  )(using HeaderCarrier, DataRequest[AnyContent]): Future[String] = {
+  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[String] = {
     val timeout = appConfig.submissionPollTimeoutSeconds
 
     userAnswers.get(SubmissionDetailsPage) match {
@@ -219,7 +208,8 @@ class SubmissionService @Inject() (
                               result.status,
                               result.acceptedTime,
                               result.irMarkReceived,
-                              result.error
+                              result.error,
+                              result.govTalkErrorStatus
                             )
             newStatus     = result.status
             timedOut      =
@@ -255,10 +245,6 @@ class SubmissionService @Inject() (
       .get(SuccessEmailSentPage(submissionId))
       .getOrElse(false)
 
-    val returnType = userAnswers
-      .get(ReturnTypePage)
-      .getOrElse(throw new IllegalStateException("Return type missing"))
-
     if (alreadySent) {
       Future.successful(userAnswers)
     } else {
@@ -267,10 +253,7 @@ class SubmissionService @Inject() (
         .map(YearMonth.from)
         .getOrElse(throw new IllegalStateException("Month/Year not selected"))
 
-      val emailOpt = returnType match {
-        case MonthlyNilReturn | MonthlyStandardReturn =>
-          userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
-      }
+      val emailOpt = userAnswers.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
 
       emailOpt match {
         case None =>
@@ -312,12 +295,14 @@ class SubmissionService @Inject() (
     val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
 
     Future.successful(
       CreateSubmissionRequest(
         instanceId = instanceId,
         taxYear = ym.getYear,
         taxMonth = ym.getMonthValue,
+        amendment = returnType.amendmentFlag,
         emailRecipient = email
       )
     )

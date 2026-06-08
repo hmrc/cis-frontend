@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.DataRequest
+import models.requests.CisIdDataRequest
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
@@ -54,34 +54,41 @@ class CheckYourAnswersController @Inject() (
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       guardCompletedJourney {
-        val returnTypeRows = ReturnTypeSummary.returnType(request.userAnswers) match {
-          case ReturnType.MonthlyStandardReturn =>
-            Seq(
-              DateConfirmPaymentsSummary.row(request.userAnswers),
-              EmploymentStatusDeclarationSummary.row(request.userAnswers),
-              VerifiedStatusDeclarationSummary.row(request.userAnswers),
-              SubmitInactivityRequestSummary.row(request.userAnswers)
+        ReturnTypeSummary.returnType(request.userAnswers) match {
+          case Some(returnType) =>
+            val returnTypeRows = returnType match {
+              case ReturnType.MonthlyStandardReturn | ReturnType.MonthlyAmendedStandardReturn =>
+                Seq(
+                  DateConfirmPaymentsSummary.row(request.userAnswers),
+                  EmploymentStatusDeclarationSummary.row(request.userAnswers),
+                  VerifiedStatusDeclarationSummary.row(request.userAnswers),
+                  SubmitInactivityRequestSummary.row(request.userAnswers)
+                )
+              case ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn           =>
+                Seq(
+                  DateConfirmNilPaymentsSummary.row(request.userAnswers),
+                  PaymentsToSubcontractorsSummary.row,
+                  SubmitInactivityRequestSummary.row(request.userAnswers)
+                )
+            }
+
+            val returnDetailsList = SummaryListViewModel(
+              rows = (Seq(ReturnTypeSummary.row(request.userAnswers)) ++ returnTypeRows).flatten
             )
-          case ReturnType.MonthlyNilReturn      =>
-            Seq(
-              DateConfirmNilPaymentsSummary.row(request.userAnswers),
-              PaymentsToSubcontractorsSummary.row,
-              SubmitInactivityRequestSummary.row(request.userAnswers)
+
+            val emailRows = Seq(
+              ConfirmationByEmailSummary.row(request.userAnswers),
+              EnterYourEmailAddressSummary.row(request.userAnswers)
             )
+
+            val emailList = SummaryListViewModel(rows = emailRows.flatten)
+
+            Future.successful(Ok(view(returnDetailsList, emailList)))
+
+          case None =>
+            logger.warn("[CheckYourAnswersController] Missing ReturnTypePage")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
-
-        val returnDetailsList = SummaryListViewModel(
-          rows = (Seq(ReturnTypeSummary.row(request.userAnswers)) ++ returnTypeRows).flatten
-        )
-
-        val emailRows = Seq(
-          ConfirmationByEmailSummary.row(request.userAnswers),
-          EnterYourEmailAddressSummary.row(request.userAnswers)
-        )
-
-        val emailList = SummaryListViewModel(rows = emailRows.flatten)
-
-        Future.successful(Ok(view(returnDetailsList, emailList)))
       }
   }
 
@@ -134,7 +141,7 @@ class CheckYourAnswersController @Inject() (
       }
   }
 
-  private def guardCompletedJourney(block: => Future[Result])(implicit request: DataRequest[_]): Future[Result] =
+  private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     if (request.userAnswers.get(SubmissionJourneyCompletedPage).contains(true)) {
       Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
     } else {

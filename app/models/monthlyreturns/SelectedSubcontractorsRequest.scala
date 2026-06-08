@@ -16,6 +16,8 @@
 
 package models.monthlyreturns
 
+import models.UserAnswers
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.libs.json.{Json, OFormat}
 
 case class SelectedSubcontractorsRequest(
@@ -28,4 +30,18 @@ case class SelectedSubcontractorsRequest(
 
 object SelectedSubcontractorsRequest {
   given format: OFormat[SelectedSubcontractorsRequest] = Json.format[SelectedSubcontractorsRequest]
+
+  def from(ua: UserAnswers, selectedSubcontractorIds: Seq[Long]): SelectedSubcontractorsRequest = {
+    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("Missing CisId"))
+    val monthYear  = ua.get(DateConfirmPaymentsPage).getOrElse(throw new RuntimeException("Missing DateConfirmPayments"))
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Missing ReturnType"))
+
+    SelectedSubcontractorsRequest(
+      instanceId = instanceId,
+      taxYear = monthYear.getYear,
+      taxMonth = monthYear.getMonthValue,
+      selectedSubcontractorIds = selectedSubcontractorIds,
+      amendment = returnType.amendmentFlag
+    )
+  }
 }

@@ -246,7 +246,9 @@ monthlyreturns.submissionSuccessful.feedback.p1 = Your feedback helps us make ou
 monthlyreturns.submissionSuccessful.feedback.p2 = to share your feedback on this service.
 monthlyreturns.submissionSuccessful.feedback.p2.link = Take a short survey
 monthlyreturns.returnType.MonthlyNilReturn = Nil return
+monthlyreturns.returnType.MonthlyAmendedNilReturn = Nil return
 monthlyreturns.returnType.MonthlyStandardReturn = Monthly return
+monthlyreturns.returnType.MonthlyAmendedStandardReturn = Monthly return
 monthlyreturns.submissionSuccessful.whatHappensNext.h2 = What happens next
 monthlyreturns.submissionSuccessful.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
@@ -476,6 +478,7 @@ monthlyreturns.paymentDetailsConfirmation.no = No, I need to make changes
 monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = paymentDetailsConfirmation
 monthlyreturns.paymentDetailsConfirmation.error.required =  Select yes to confirm the information you provided is correct
 monthlyreturns.paymentDetailsConfirmation.change.hidden = PaymentDetailsConfirmation
+monthlyreturns.paymentDetailsConfirmation.cancelAmendment = Cancel amendment
 
 monthlyreturns.addSubcontractorDetails.title = Which subcontractor do you need to add payment details for?
 monthlyreturns.addSubcontractorDetails.heading = Which subcontractor do you need to add payment details for?
@@ -564,3 +567,31 @@ amend.areYouSureYouWantToAmendYesNo.heading = Are you sure you want to amend thi
 amend.areYouSureYouWantToAmendYesNo.yes = Yes
 amend.areYouSureYouWantToAmendYesNo.no = No, I want to make a different amendment
 amend.areYouSureYouWantToAmendYesNo.error.required = You must select one option to amend
+
+finalvalidations.addEmailAddressYesNo.title = Do you want to enter the contractor’s email address?
+finalvalidations.addEmailAddressYesNo.heading = Do you want to enter the contractor’s email address?
+finalvalidations.addEmailAddressYesNo.error.required = Select yes to enter the contractor’s email address
+
+finalvalidations.addSchemeNameYesNo.title = Do you want to enter the contractor’s scheme name?
+finalvalidations.addSchemeNameYesNo.heading = Do you want to enter the contractor’s scheme name?
+finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the contractor’s scheme name
+
+finalvalidations.updateSubcontractorDetails.title = {0}
+finalvalidations.updateSubcontractorDetails.heading = {0}
+finalvalidations.updateSubcontractorDetails.intro = To file your return, you must review and update the subcontractor details.
+finalvalidations.updateSubcontractorDetails.utr = Unique Taxpayer Reference
+finalvalidations.updateSubcontractorDetails.nino = National Insurance number
+finalvalidations.updateSubcontractorDetails.utr.change.hidden = Unique Taxpayer Reference
+finalvalidations.updateSubcontractorDetails.nino.change.hidden = National Insurance number
+finalvalidations.updateSubcontractorDetails.confirmChanges.heading = Confirm changes
+finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing this subcontractor’s details you are confirming that, to the best of your knowledge, the details you are providing are correct.
+finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
+finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
+
+finalValidations.reviewSubcontractorDetails.title = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.heading = Review subcontractor details
+finalValidations.reviewSubcontractorDetails.intro = You need to review the subcontractor details
+finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = File a return
+finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
+finalValidations.reviewSubcontractorDetails.backLink = Back to select your subcontractors
