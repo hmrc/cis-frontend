@@ -65,7 +65,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
           hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).map {
             case true =>
               val preparedForm = request.userAnswers.get(ConfirmCancelAmendmentYesNoPage) match {
-                case _        => form
+                case _ => form
               }
 
               Ok(view(preparedForm, monthYear))
