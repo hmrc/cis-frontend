@@ -145,7 +145,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), monthYear)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(form, monthYear)(request, messages(application)).toString
       }
     }
 
