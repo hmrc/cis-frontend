@@ -278,4 +278,17 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/journey-handoffs/amend-monthly-return/$handoffId")
       .execute[Option[AmendmentDetails]]
+
+  def resetGovTalkStatus(
+    submissionId: String,
+    request: ResetGovTalkStatusRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/reset-govtalk")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { resp =>
+        if (resp.status / 100 == 2) Future.unit
+        else Future.failed(UpstreamErrorResponse(resp.body, resp.status, resp.status))
+      }
 }

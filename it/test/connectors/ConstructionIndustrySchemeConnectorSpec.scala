@@ -1181,4 +1181,37 @@ class ConstructionIndustrySchemeConnectorSpec
       ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
     }
   }
+
+  "resetGovTalkStatus" should {
+
+    val submissionId = "sub-123"
+
+    val req = models.submission.ResetGovTalkStatusRequest(
+      userIdentifier = "123",
+      formResultID = submissionId,
+      oldProtocolStatus = "dataRequest",
+      gatewayURL = "http://localhost:6997/submission/ChRIS/CISR/Filing/sync/CIS300MR"
+    )
+
+    "complete successfully on 204 No Content" in {
+      stubFor(
+        post(urlPathEqualTo(s"/cis/submissions/$submissionId/reset-govtalk"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      connector.resetGovTalkStatus(submissionId, req).futureValue mustBe ()
+    }
+
+    "fail the future with UpstreamErrorResponse on non-2xx (e.g. 502)" in {
+      stubFor(
+        post(urlPathEqualTo(s"/cis/submissions/$submissionId/reset-govtalk"))
+          .willReturn(aResponse().withStatus(BAD_GATEWAY).withBody("bad gateway"))
+      )
+
+      val err = connector.resetGovTalkStatus(submissionId, req).failed.futureValue
+      err mustBe a[UpstreamErrorResponse]
+      err.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
 }
