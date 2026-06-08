@@ -16,14 +16,15 @@
 
 @this()
 
-@(rows: Seq[(String, Seq[(String, String, String)])])(implicit messages: Messages)
+@(rows: Seq[(String, Seq[(String, String, String)])], keyClasses: String = "govuk-!-font-weight-regular", rowValues: Seq[String] = Seq.empty)(implicit messages: Messages)
 
-<dl class="govuk-summary-list hmrc-list-with-actions hmrc-list-with-actions--short">
-    @for((item, links) <- rows) {
+<dl class="govuk-summary-list @if(rowValues.isEmpty){hmrc-list-with-actions hmrc-list-with-actions--short}">
+    @for(((item, links), index) <- rows.zipWithIndex) {
         <div class="govuk-summary-list__row">
-            <dt id="name-label" class="govuk-summary-list__key govuk-!-font-weight-regular hmrc-summary-list__key">
+            <dt id="name-label" class="govuk-summary-list__key @keyClasses hmrc-summary-list__key">
                 @item
             </dt>
+            @if(rowValues.isDefinedAt(index)) {<dd class="govuk-summary-list__value">@rowValues(index)</dd>}
             <dd class="govuk-summary-list__actions hmrc-summary-list__actions">
                 @if(links.nonEmpty) {
                     <ul class="govuk-summary-list__actions-list">
