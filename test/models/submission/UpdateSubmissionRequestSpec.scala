@@ -106,6 +106,7 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "instanceId": "1",
           |  "taxYear": 2024,
           |  "taxMonth": 4,
+          |  "amendment": "N",
           |  "submittableStatus": "DEPARTMENTAL_ERROR",
           |  "govTalkResponse": { "kind": "DepartmentalError", "errorText": "oops" }
           |}
