@@ -189,5 +189,7 @@ POST       /final-validations/add-contractor-scheme-name                        
 
 GET        /final-validations/update-subcontractor-details                       controllers.finalvalidations.UpdateSubcontractorDetailsController.onPageLoad()
 
+GET        /final-validations/review-subcontractor-details      controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoad()
+
 GET        /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)

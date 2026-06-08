@@ -25,7 +25,8 @@ case class ChrisPollResponse(
   error: Option[JsValue],
   irMarkReceived: Option[String],
   lastMessageDate: Option[String],
-  acceptedTime: Option[String]
+  acceptedTime: Option[String],
+  govTalkErrorStatus: Option[GovTalkErrorStatus] = None
 )
 
 object ChrisPollResponse {

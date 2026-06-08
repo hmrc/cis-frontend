@@ -96,6 +96,25 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
       out.govtalkErrorCode mustBe None
       out.govtalkErrorType mustBe None
       out.govtalkErrorMessage mustBe None
+      out.govTalkResponse mustBe None
+    }
+
+    "read with a govTalkResponse payload" in {
+      val js = Json.parse(
+        """
+          |{
+          |  "instanceId": "1",
+          |  "taxYear": 2024,
+          |  "taxMonth": 4,
+          |  "amendment": "N",
+          |  "submittableStatus": "DEPARTMENTAL_ERROR",
+          |  "govTalkResponse": { "kind": "DepartmentalError", "errorText": "oops" }
+          |}
+        """.stripMargin
+      )
+
+      val out = js.as[UpdateSubmissionRequest]
+      out.govTalkResponse.value mustBe GovTalkErrorStatus.DepartmentalError("oops")
     }
 
     "ignore unknown fields" in {
