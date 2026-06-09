@@ -62,18 +62,16 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     implicit request =>
       getMonthYear(request.userAnswers) match {
         case Some(monthYear) =>
-          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).map {
+          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
             case true =>
-              val preparedForm = request.userAnswers.get(ConfirmCancelAmendmentYesNoPage) match {
-                case None        => form
-                case Some(value) => form.fill(value)
-              }
-
-              Ok(view(preparedForm, monthYear))
+              for {
+                clearedAnswers <- Future.fromTry(request.userAnswers.remove(ConfirmCancelAmendmentYesNoPage))
+                _              <- sessionRepository.set(clearedAnswers)
+              } yield Ok(view(form, monthYear))
 
             case false =>
               logger.warn(s"[ConfirmCancelAmendmentYesNoController] monthly return status is not cancellable")
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
 
         case None =>
