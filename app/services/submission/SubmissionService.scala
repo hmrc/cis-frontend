@@ -92,7 +92,7 @@ class SubmissionService @Inject() (
       (cisId, taxMonth, taxYear, isAmendment) <-
         requiredAnswers.fold(
           Future.failed[(String, Int, Int, Boolean)](
-            new RuntimeException("Required user answers missing")
+            new RuntimeException("Month and year of return missing")
           )
         )(Future.successful)
       monthlyReturn                           <- cisConnector.retrieveMonthlyReturnForEditDetails(

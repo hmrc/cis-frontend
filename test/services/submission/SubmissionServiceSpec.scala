@@ -334,7 +334,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val ex = intercept[RuntimeException] {
           service.submitToChrisAndPersist("sub-123", emptyUserAnswers, false).futureValue
         }
-        ex.getMessage must include("Required user answers missing")
+        ex.getMessage must include("Month and year of return missing")
 
         verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
         verify(sessionRepository, never()).set(any[UserAnswers])
