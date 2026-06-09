@@ -405,28 +405,5 @@ class ChrisSubmissionRequestBuilderSpec
 
       ex.getMessage mustBe "Verification answer missing"
     }
-
-//    "fail when CIS ID is missing for standard return" in {
-//      val builder = new ChrisSubmissionRequestBuilder()
-//
-//      val ua =
-//        UserAnswers("id")
-//          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
-//          .success
-//          .value
-//          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
-//          .success
-//          .value
-//          .set(EmploymentStatusDeclarationPage, true)
-//          .success
-//          .value
-//          .set(VerifiedStatusDeclarationPage, true)
-//          .success
-//          .value
-//
-//      val result = builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
-//
-//      result.value mustBe a[Some[Failure[RuntimeException]]]
-//    }
   }
 }
