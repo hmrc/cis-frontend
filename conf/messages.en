@@ -599,3 +599,14 @@ finalValidations.reviewSubcontractorDetails.backLink = Back to select your subco
 finalValidations.addUtrYesNo.title = Do you want to enter the contractor’s Unique Taxpayer Reference (UTR)?
 finalValidations.addUtrYesNo.heading = Do you want to enter the contractor’s Unique Taxpayer Reference (UTR)?
 finalValidations.addUtrYesNo.error.required = Select yes to enter the contractor’s Unique Taxpayer Reference (UTR)
+
+finalvalidations.reviewContractorDetails.title = Review contractor details
+finalvalidations.reviewContractorDetails.heading = Review contractor details
+finalvalidations.reviewContractorDetails.p = You cannot file a return at the moment. You need to review the contractor details.
+finalvalidations.reviewContractorDetails.tasklist.schemeName = Scheme name
+finalvalidations.reviewContractorDetails.tasklist.utr = Unique Taxpayer Reference
+finalvalidations.reviewContractorDetails.tasklist.emailAddress = Email address
+finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
+finalvalidations.reviewContractorDetails.tasklist.fileareturn = File a return
+finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Cannot start yet
+finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to CIS return dashboard
