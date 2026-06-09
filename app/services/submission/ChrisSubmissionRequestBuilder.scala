@@ -16,65 +16,59 @@
 
 package services.submission
 
-import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.*
-import models.{ReturnType, UserAnswers}
-import models.monthlyreturns.CisTaxpayer
-import models.requests.GetMonthlyReturnForEditRequest
+import models.monthlyreturns.{CisTaxpayer, GetAllMonthlyReturnDetailsResponse}
 import models.submission.*
+import models.{ReturnType, UserAnswers}
 import pages.monthlyreturns.*
-import pages.amend.AmendmentDetailsPage
-import uk.gov.hmrc.http.HeaderCarrier
 import utils.Normalise.yesNo
 
 import java.time.YearMonth
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
 
-class ChrisSubmissionRequestBuilder @Inject() (
-  cisConnector: ConstructionIndustrySchemeConnector
-)(implicit ec: ExecutionContext) {
+class ChrisSubmissionRequestBuilder @Inject() {
 
-  def build(ua: UserAnswers, taxpayer: CisTaxpayer, isAgent: Boolean)(implicit
-    hc: HeaderCarrier
-  ): Future[ChrisSubmissionRequest] = {
+  def build(
+    ua: UserAnswers,
+    taxpayer: CisTaxpayer,
+    isAgent: Boolean,
+    monthlyReturn: GetAllMonthlyReturnDetailsResponse
+  ): ChrisSubmissionRequest = {
     val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
-    val common             = buildCommon(ua, taxpayer, isAgent)
+    val common             = buildCommon(ua, taxpayer, isAgent, monthlyReturn)
     val informationCorrect = true
     val inactivityBool     = ua.get(SubmitInactivityRequestPage).contains(true)
 
     returnType match {
       case MonthlyNilReturn | MonthlyAmendedNilReturn =>
-        Future.successful(
-          ChrisSubmissionRequest.fromNil(
-            common = common,
-            informationCorrect = informationCorrect,
-            inactivity = inactivityBool
-          )
+        ChrisSubmissionRequest.fromNil(
+          common = common,
+          informationCorrect = informationCorrect,
+          inactivity = inactivityBool
         )
 
       case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
-        buildStandardMonthlyReturn(ua).map { standardReturn =>
-          ChrisSubmissionRequest.fromStandard(
-            common = common,
-            informationCorrect = informationCorrect,
-            inactivity = inactivityBool,
-            standard = standardReturn
-          )
-        }
+        ChrisSubmissionRequest.fromStandard(
+          common = common,
+          informationCorrect = informationCorrect,
+          inactivity = inactivityBool,
+          standard = buildStandardMonthlyReturn(ua, monthlyReturn)
+        )
     }
   }
 
   private def buildCommon(
     ua: UserAnswers,
     taxpayer: CisTaxpayer,
-    isAgent: Boolean
+    isAgent: Boolean,
+    monthlyReturn: GetAllMonthlyReturnDetailsResponse
   ): ChrisSubmissionCommon = {
 
-    val utr = taxpayer.utr
+    val schemeUtr = monthlyReturn.scheme.headOption
+      .flatMap(_.utr)
       .map(_.trim)
       .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("CIS taxpayer UTR missing"))
+      .getOrElse(throw new RuntimeException("Scheme UTR missing"))
 
     val aoDistrict = taxpayer.aoDistrict
       .map(_.trim)
@@ -108,7 +102,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
     val emailOpt = ua.get(EnterYourEmailAddressPage)
 
     ChrisSubmissionCommon(
-      utr = utr,
+      utr = schemeUtr,
       aoReference = accountsOfficeRef,
       monthYear = ym,
       email = emailOpt,
@@ -119,8 +113,9 @@ class ChrisSubmissionRequestBuilder @Inject() (
   }
 
   private def buildStandardMonthlyReturn(
-    ua: UserAnswers
-  )(implicit hc: HeaderCarrier): Future[ChrisStandardMonthlyReturn] = {
+    ua: UserAnswers,
+    monthlyReturn: GetAllMonthlyReturnDetailsResponse
+  ): ChrisStandardMonthlyReturn = {
     val employmentStatus: String = ua
       .get(EmploymentStatusDeclarationPage)
       .map(yesNo)
@@ -136,21 +131,7 @@ class ChrisSubmissionRequestBuilder @Inject() (
       verification = verification
     )
 
-    val requiredAnswers = for {
-      cisId      <- ua.get(CisIdPage)
-      taxDate    <- ua.get(DateConfirmPaymentsPage)
-      isAmendment = ua.get(AmendmentDetailsPage).isDefined
-    } yield (cisId, taxDate.getMonthValue, taxDate.getYear, isAmendment)
-
-    requiredAnswers.fold(
-      Future.failed(RuntimeException("Could not build CHRIS request due to missing user answers"))
-    ) { (cisId, taxMonth, taxYear, isAmendment) =>
-      cisConnector
-        .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
-        .map { details =>
-          val subcontractors = StandardReturnSubcontractorsBuilder.build(ua, details.subcontractors)
-          ChrisStandardMonthlyReturn(subcontractors, declarations)
-        }
-    }
+    val subcontractors = StandardReturnSubcontractorsBuilder.build(ua, monthlyReturn.subcontractors)
+    ChrisStandardMonthlyReturn(subcontractors, declarations)
   }
 }

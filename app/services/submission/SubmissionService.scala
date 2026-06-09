@@ -81,12 +81,27 @@ class SubmissionService @Inject() (
       else
         cisConnector.getCisTaxpayer()
 
+    val requiredAnswers = for {
+      cisId      <- ua.get(CisIdPage)
+      taxDate    <- ua.get(DateConfirmPaymentsPage)
+      isAmendment = ua.get(AmendmentDetailsPage).isDefined
+    } yield (cisId, taxDate.getMonthValue, taxDate.getYear, isAmendment)
+
     for {
-      taxpayer  <- taxpayerFut
-      csr       <- chrisRequestBuilder.build(ua, taxpayer, isAgent)(hc)
-      response  <- cisConnector.submitToChris(submissionId, csr)
-      amendment <- fetchAmendmentFlag(ua)
-      _         <- writeToFeMongo(ua, submissionId, response, amendment)
+      taxpayer                                <- taxpayerFut
+      (cisId, taxMonth, taxYear, isAmendment) <-
+        requiredAnswers.fold(
+          Future.failed[(String, Int, Int, Boolean)](
+            new RuntimeException("Required user answers missing")
+          )
+        )(Future.successful)
+      monthlyReturn                           <- cisConnector.retrieveMonthlyReturnForEditDetails(
+                                                   GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment)
+                                                 )
+      csr                                      = chrisRequestBuilder.build(ua, taxpayer, isAgent, monthlyReturn)
+      response                                <- cisConnector.submitToChris(submissionId, csr)
+      amendment                                = monthlyReturn.monthlyReturn.headOption.flatMap(_.amendment)
+      _                                       <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
   def updateSubmissionFromChrisResponse(
@@ -325,21 +340,6 @@ class SubmissionService @Inject() (
     Try(Instant.parse(timestamp))
       .orElse(Try(LocalDateTime.parse(timestamp).atZone(ZoneOffset.UTC).toInstant))
       .toOption
-
-  private def fetchAmendmentFlag(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Option[String]] = {
-    val instanceId  = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
-    val ym          = selectedYearMonth(ua)
-    val isAmendment = ua.get(AmendmentDetailsPage).isDefined
-    cisConnector
-      .retrieveMonthlyReturnForEditDetails(
-        GetMonthlyReturnForEditRequest(instanceId, ym.getMonthValue, ym.getYear, isAmendment)
-      )
-      .map(_.monthlyReturn.headOption.flatMap(_.amendment))
-      .recover { case ex =>
-        logger.warn("[fetchAmendmentFlag] Failed to retrieve amendment flag, defaulting to None", ex)
-        None
-      }
-  }
 
   private def writeToFeMongo(
     ua: UserAnswers,
