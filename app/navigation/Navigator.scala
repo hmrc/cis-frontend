@@ -101,6 +101,9 @@ class Navigator @Inject() () {
       userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
     case (EnterYourEmailAddressPage, _)                     =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    // amend monthly return
+    case (WhichSubcontractorsToAddPage, _)                  =>
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 

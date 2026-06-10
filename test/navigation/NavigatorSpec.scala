@@ -496,6 +496,28 @@ class NavigatorSpec extends SpecBase {
         ) mustBe monthlyreturns.routes.CheckYourAnswersController
           .onPageLoad()
       }
+
+      "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended StandardReturn" in {
+        val ua = UserAnswers("id")
+          .setOrException(WhichSubcontractorsToAddPage, Set.empty)
+          .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
+        navigator.nextPage(
+          WhichSubcontractorsToAddPage,
+          CheckMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
+      }
+
+      "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended NilReturn" in {
+        val ua = UserAnswers("id")
+          .setOrException(WhichSubcontractorsToAddPage, Set.empty)
+          .setOrException(ReturnTypePage, MonthlyAmendedNilReturn)
+        navigator.nextPage(
+          WhichSubcontractorsToAddPage,
+          CheckMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
+      }
     }
   }
 
