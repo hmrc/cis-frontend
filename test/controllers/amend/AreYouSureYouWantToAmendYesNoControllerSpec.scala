@@ -23,8 +23,9 @@ import models.amend.AreYouSureYouWantToAmendYesNo.*
 import models.amend.{AreYouSureYouWantToAmendYesNo, DeleteAllMonthlyReturnItemsRequest}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
 import pages.monthlyreturns.*
@@ -130,7 +131,7 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
       }
     }
 
-    "must delete all monthly return items, update monthly return and redirect when Yes is submitted" in {
+    "must delete all monthly return items, update the monthly return with the nil return indicator set to Y and redirect when Yes is submitted" in {
 
       val mockSessionRepository     = mock[SessionRepository]
       val mockAmendMonthlyReturnSvc = mock[AmendMonthlyReturnService]
@@ -163,6 +164,10 @@ class AreYouSureYouWantToAmendYesNoControllerSpec extends SpecBase with MockitoS
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual onwardRoute.url
+
+        val updateCaptor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnRequest])
+        verify(mockMonthlyReturnService).updateMonthlyReturn(updateCaptor.capture())(any())
+        updateCaptor.getValue.nilReturnIndicator mustEqual "Y"
       }
     }
 
