@@ -16,25 +16,20 @@
 
 package services.submission
 
-import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.*
-import models.requests.GetMonthlyReturnForEditRequest
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.TryValues.*
-import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import models.{ReturnType, UserAnswers}
 import org.scalatest.TryValues
+import org.scalatest.TryValues.*
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{LocalDate, LocalDateTime}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.concurrent.ExecutionContext
 
 class ChrisSubmissionRequestBuilderSpec
     extends AnyWordSpec
@@ -106,11 +101,29 @@ class ChrisSubmissionRequestBuilderSpec
       displayName = Some("A B")
     )
 
+  private val subId: Long = 1L
+
+  private val monthlyReturn = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq(
+      ContractorScheme(
+        schemeId = 1,
+        instanceId = "CIS-123",
+        accountsOfficeReference = "123PA12345678",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        utr = Some("3111111125")
+      )
+    ),
+    monthlyReturn = Seq.empty,
+    subcontractors = Seq(mkSubcontractor(subId)),
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
   "ChrisSubmissionRequestBuilder.build" should {
 
     "build MonthlyNilReturn request (minimal)" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua =
         UserAnswers("id")
@@ -127,33 +140,25 @@ class ChrisSubmissionRequestBuilderSpec
           .success
           .value
 
-      val reqF = builder.build(ua, mkTaxpayer(), isAgent = false)
+      val req = builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
 
-      whenReady(reqF) { req =>
-        req.returnType mustBe MonthlyNilReturn
-        req.standard mustBe None
+      req.returnType mustBe MonthlyNilReturn
+      req.standard mustBe None
 
-        req.utr mustBe "1234567890"
-        req.aoReference mustBe "754PT000002240"
-        req.monthYear mustBe "2025-09"
-        req.email mustBe Some("test@test.com")
+      req.utr mustBe "3111111125"
+      req.aoReference mustBe "754PT000002240"
+      req.monthYear mustBe "2025-09"
+      req.email mustBe Some("test@test.com")
 
-        req.informationCorrect mustBe "yes"
-        req.inactivity mustBe "yes"
-        req.isAgent mustBe false
-        req.clientTaxOfficeNumber mustBe "123"
-        req.clientTaxOfficeRef mustBe "AB456"
-      }
-
-      verify(connector, times(0))
-        .retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier])
+      req.informationCorrect mustBe "yes"
+      req.inactivity mustBe "yes"
+      req.isAgent mustBe false
+      req.clientTaxOfficeNumber mustBe "123"
+      req.clientTaxOfficeRef mustBe "AB456"
     }
 
     "build MonthlyStandardReturn request" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
-
-      val subId: Long = 1L
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua =
         UserAnswers("id")
@@ -191,55 +196,33 @@ class ChrisSubmissionRequestBuilderSpec
           .success
           .value
 
-      val details = GetAllMonthlyReturnDetailsResponse(
-        scheme = Seq.empty,
-        monthlyReturn = Seq.empty,
-        subcontractors = Seq(mkSubcontractor(subId)),
-        monthlyReturnItems = Seq.empty,
-        submission = Seq.empty
-      )
+      val req = builder.build(ua, mkTaxpayer(), isAgent = true, monthlyReturn)
 
-      when(
-        connector.retrieveMonthlyReturnForEditDetails(
-          eqTo(GetMonthlyReturnForEditRequest("instance-1", 9, 2025, false))
-        )(any[HeaderCarrier])
-      )
-        .thenReturn(Future.successful(details))
-
-      val reqF = builder.build(ua, mkTaxpayer(), isAgent = true)
-
-      whenReady(reqF) { req =>
-        req.returnType mustBe MonthlyStandardReturn
-        req.standard.isDefined mustBe true
-        req.informationCorrect mustBe "yes"
-        req.inactivity mustBe "no"
-        req.isAgent mustBe true
-      }
-
-      verify(connector, times(1))
-        .retrieveMonthlyReturnForEditDetails(eqTo(GetMonthlyReturnForEditRequest("instance-1", 9, 2025, false)))(
-          any[HeaderCarrier]
-        )
+      req.returnType mustBe MonthlyStandardReturn
+      req.standard.isDefined mustBe true
+      req.informationCorrect mustBe "yes"
+      req.inactivity mustBe "no"
+      req.isAgent mustBe true
     }
 
     "fail when ReturnTypePage missing" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua = UserAnswers("id")
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "ReturnType missing"
     }
 
-    "fail when taxpayer UTR is missing" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+    "fail when Scheme UTR is missing" in {
+      val builder = new ChrisSubmissionRequestBuilder()
 
-      val taxpayer = mkTaxpayer().copy(utr = None)
+      val updatedMonthlyReturn = monthlyReturn.copy(
+        scheme = monthlyReturn.scheme.map(_.copy(utr = None))
+      )
 
       val ua =
         UserAnswers("id")
@@ -251,15 +234,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, updatedMonthlyReturn)
       }
 
-      ex.getMessage mustBe "CIS taxpayer UTR missing"
+      ex.getMessage mustBe "Scheme UTR missing"
     }
 
     "fail when taxpayer aoDistrict is missing" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val taxpayer = mkTaxpayer().copy(aoDistrict = None)
 
@@ -273,15 +255,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "CIS taxpayer aoDistrict missing"
     }
 
     "fail when taxpayer aoPayType is missing" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val taxpayer = mkTaxpayer().copy(aoPayType = None)
 
@@ -295,15 +276,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "CIS taxpayer aoPayType missing"
     }
 
     "fail when taxpayer aoCheckCode is missing" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val taxpayer = mkTaxpayer().copy(aoCheckCode = None)
 
@@ -317,15 +297,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "CIS taxpayer aoCheckCode missing"
     }
 
     "fail when taxpayer aoReference is missing" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val taxpayer = mkTaxpayer().copy(aoReference = None)
 
@@ -339,15 +318,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, taxpayer, isAgent = false)
+        builder.build(ua, taxpayer, isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "CIS taxpayer aoReference missing"
     }
 
     "fail when month and year of return are missing for nil return" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua =
         UserAnswers("id")
@@ -356,15 +334,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "Month and year of return missing"
     }
 
     "fail when month and year of return are missing for standard return" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua =
         UserAnswers("id")
@@ -373,15 +350,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "Month and year of return missing"
     }
 
     "fail when employment status declaration is missing for standard return" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua =
         UserAnswers("id")
@@ -399,15 +375,14 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "Employment status declaration missing"
     }
 
     "fail when verification answer is missing for standard return" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
+      val builder = new ChrisSubmissionRequestBuilder()
 
       val ua =
         UserAnswers("id")
@@ -425,34 +400,10 @@ class ChrisSubmissionRequestBuilderSpec
           .value
 
       val ex = intercept[RuntimeException] {
-        builder.build(ua, mkTaxpayer(), isAgent = false)
+        builder.build(ua, mkTaxpayer(), isAgent = false, monthlyReturn)
       }
 
       ex.getMessage mustBe "Verification answer missing"
-    }
-
-    "fail when CIS ID is missing for standard return" in {
-      val connector = mock[ConstructionIndustrySchemeConnector]
-      val builder   = new ChrisSubmissionRequestBuilder(connector)
-
-      val ua =
-        UserAnswers("id")
-          .set(ReturnTypePage, ReturnType.MonthlyStandardReturn)
-          .success
-          .value
-          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
-          .success
-          .value
-          .set(EmploymentStatusDeclarationPage, true)
-          .success
-          .value
-          .set(VerifiedStatusDeclarationPage, true)
-          .success
-          .value
-
-      val result = builder.build(ua, mkTaxpayer(), isAgent = false)
-
-      result.value mustBe a[Some[Failure[RuntimeException]]]
     }
   }
 }
