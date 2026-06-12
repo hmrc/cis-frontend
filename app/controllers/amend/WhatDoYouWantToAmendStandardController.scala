@@ -24,7 +24,7 @@ import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.SelectedSubcontractor
 import models.requests.GetMonthlyReturnForEditRequest
-import pages.amend.WhatDoYouWantToAmendStandardPage
+import pages.amend.{WhatDoYouWantToAmendStandardPage, WhichSubcontractorsToAddPage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -122,12 +122,18 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                     .successful(Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad()))
 
                 case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
-                  amendMonthlyReturnService.startStandardAmendment(ua2).map {
+                  amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
                     case Left(_) =>
-                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                      Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
                     case Right(_) =>
-                      Redirect(
+                      val subcontractorIds = ua2
+                        .get(SelectedSubcontractorPage.all)
+                        .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
+                      for {
+                        ua3 <- Future.fromTry(ua2.set(WhichSubcontractorsToAddPage, subcontractorIds))
+                        _   <- sessionRepository.set(ua3)
+                      } yield Redirect(
                         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
                       )
                   }

@@ -22,7 +22,7 @@ import models.UserAnswers
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendStandardPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
@@ -231,7 +231,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
-        verify(mockSessionRepository).set(any())
+        verify(mockSessionRepository, times(2)).set(any())
       }
     }
 
