@@ -23,7 +23,7 @@ import models.amend.*
 import models.requests.*
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
-import models.submission.{ChrisSubmissionRequest, CreateSubmissionRequest, UpdateSubmissionRequest}
+import models.submission.*
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -1186,7 +1186,7 @@ class ConstructionIndustrySchemeConnectorSpec
 
     val submissionId = "sub-123"
 
-    val req = models.submission.ResetGovTalkStatusRequest(
+    val req = ResetGovTalkStatusRequest(
       userIdentifier = "123",
       formResultID = submissionId,
       oldProtocolStatus = "dataRequest",
@@ -1197,6 +1197,7 @@ class ConstructionIndustrySchemeConnectorSpec
       stubFor(
         post(urlPathEqualTo(s"/cis/submissions/$submissionId/reset-govtalk"))
           .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(Json.toJson(req).toString))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
