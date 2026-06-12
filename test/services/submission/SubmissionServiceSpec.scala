@@ -250,8 +250,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
+        when(
+          chrisRequestBuilder.build(
+            any[UserAnswers],
+            any[CisTaxpayer],
+            eqTo(false),
+            any[GetAllMonthlyReturnDetailsResponse]
+          )
+        ).thenReturn(builtCsr)
 
         val beResp = mkChrisResp()
 
@@ -286,13 +292,49 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
 
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.failed(new RuntimeException("boom-builder")))
+        val monthlyReturnResponse = GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq.empty,
+          monthlyReturn = Seq.empty,
+          subcontractors = Seq.empty,
+          monthlyReturnItems = Seq.empty,
+          submission = Seq.empty
+        )
+
+        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(monthlyReturnResponse))
+
+        when(
+          chrisRequestBuilder
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+        ).thenThrow(new RuntimeException("boom-builder"))
 
         val ex = intercept[RuntimeException] {
           service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
         }
         ex.getMessage must include("boom-builder")
+
+        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
+        verify(sessionRepository, never()).set(any[UserAnswers])
+      }
+
+      "fail when user answers missing for monthlyReturnForEdit api call" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration(
+            "submission-poll-timeout-seconds" -> "60"
+          )
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        val ex = intercept[RuntimeException] {
+          service.submitToChrisAndPersist("sub-123", emptyUserAnswers, false).futureValue
+        }
+        ex.getMessage must include("Month and year of return missing")
 
         verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
         verify(sessionRepository, never()).set(any[UserAnswers])
@@ -339,8 +381,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(beRespWithEndpoint))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
+        when(
+          chrisRequestBuilder
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+        )
+          .thenReturn(builtCsr)
 
         val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
         out mustBe beRespWithEndpoint
@@ -365,8 +410,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
+        when(
+          chrisRequestBuilder
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+        )
+          .thenReturn(builtCsr)
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(mkChrisResp()))
 
@@ -402,8 +450,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
+        when(
+          chrisRequestBuilder
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+        )
+          .thenReturn(builtCsr)
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(mkChrisResp()))
 
@@ -416,36 +467,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
         when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
           .thenReturn(Future.successful(emptyResponse))
-
-        val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
-        when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
-
-        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
-
-        val saved = uaCaptor.getValue
-        saved.get(SubmissionDetailsPage).value.amendment mustBe None
-      }
-
-      "default amendment flag to None when retrieveMonthlyReturnForEditDetails fails" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration("submission-poll-timeout-seconds" -> "60")
-        )
-        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
-
-        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
-          .thenReturn(Future.successful(taxpayer))
-
-        val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
-        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
-          .thenReturn(Future.successful(mkChrisResp()))
-
-        when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
-          .thenReturn(Future.failed(new RuntimeException("BE unavailable")))
 
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
@@ -471,8 +492,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(false))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
+        when(
+          chrisRequestBuilder
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+        )
+          .thenReturn(builtCsr)
 
         val beResp = mkChrisResp()
 
@@ -514,8 +538,11 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
-        when(chrisRequestBuilder.build(any[UserAnswers], any[CisTaxpayer], eqTo(true))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(builtCsr))
+        when(
+          chrisRequestBuilder
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(true), any[GetAllMonthlyReturnDetailsResponse])
+        )
+          .thenReturn(builtCsr)
 
         val beResp = mkChrisResp()
 

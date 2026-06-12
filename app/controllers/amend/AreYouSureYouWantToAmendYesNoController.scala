@@ -21,11 +21,13 @@ import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 
 import javax.inject.Inject
 import models.Mode
+import models.ReturnType.MonthlyAmendedNilReturn
 import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
 import models.amend.DeleteAllMonthlyReturnItemsRequest
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import navigation.Navigator
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
+import pages.monthlyreturns.ReturnTypePage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -74,7 +76,11 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
           {
             case Yes =>
               for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, Yes))
+                updatedAnswers <- Future.fromTry(
+                                    request.userAnswers
+                                      .set(AreYouSureYouWantToAmendYesNoPage, Yes)
+                                      .flatMap(_.set(ReturnTypePage, MonthlyAmendedNilReturn))
+                                  )
                 _              <- sessionRepository.set(updatedAnswers)
                 deleteRequest  <- DeleteAllMonthlyReturnItemsRequest
                                     .fromUserAnswers(updatedAnswers)
