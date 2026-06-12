@@ -25,7 +25,7 @@ import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendNil.AmendNilReturn
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendNilPage
 import pages.monthlyreturns.*
@@ -203,7 +203,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "redirect to Journey Recovery for a POST if no existing data is found" in {
+    "must redirect to Journey Recovery for a POST if no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -217,6 +217,79 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST if service failed" in {
+
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(
+        mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers]())(any())
+      ) thenReturn Future.successful(Left("Missing amendment details"))
+
+      val application =
+        applicationBuilder(userAnswers = Some(completeUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendNilRoute)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must fail when UpdateMonthlyReturnRequest cannot be built" in {
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val incompleteUserAnswers = emptyUserAnswers
+        .set(CisIdPage, "cis-123")
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(incompleteUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendNilRoute)
+            .withFormUrlEncodedBody(
+              "value" -> WhatDoYouWantToAmendNil.AmendNilReturn.toString
+            )
+
+        val result = route(application, request).value
+
+        whenReady(result.failed) { exception =>
+          exception mustBe a[RuntimeException]
+        }
+
+        verify(mockMonthlyReturnService, never())
+          .updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any())
       }
     }
   }

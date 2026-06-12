@@ -22,6 +22,7 @@ import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontrac
 import models.requests.DataRequest
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.*
+import pages.amend.WhichSubcontractorsToAddPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -98,7 +99,9 @@ class ConfirmSubcontractorRemovalController @Inject() (
       case Some(payload) =>
         (for {
           _              <- monthlyReturnService.deleteMonthlyReturnItem(payload)
-          updatedAnswers <- Future.fromTry(ua.remove(SelectedSubcontractorPage(index)))
+          selectedIds     = ua.get(WhichSubcontractorsToAddPage).getOrElse(Set.empty) - payload.subcontractorId.toString
+          ua1            <- Future.fromTry(ua.set(WhichSubcontractorsToAddPage, selectedIds))
+          updatedAnswers <- Future.fromTry(ua1.remove(SelectedSubcontractorPage(index)))
           _              <- sessionRepository.set(updatedAnswers)
         } yield redirectAfterDelete(updatedAnswers, mode))
           .recover { case e =>

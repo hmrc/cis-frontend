@@ -19,10 +19,12 @@ package controllers.amend
 import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.NormalMode
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.WhatDoYouWantToAmendNil
 import models.amend.WhatDoYouWantToAmendNil.{AddPaymentOrSubcontractorDetails, AmendNilReturn}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import pages.amend.WhatDoYouWantToAmendNilPage
+import pages.monthlyreturns.ReturnTypePage
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -31,6 +33,8 @@ import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import utils.TypeUtils.toFuture
+import utils.UserAnswerUtils.*
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import javax.inject.Inject
@@ -75,24 +79,38 @@ class WhatDoYouWantToAmendNilController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
           value =>
             for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-              result         <-
+              ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
+              _      <- sessionRepository.set(ua1)
+              result <-
                 value match {
                   case AddPaymentOrSubcontractorDetails =>
                     amendMonthlyReturnService
-                      .startStandardAmendment(updatedAnswers)
-                      .map {
+                      .startStandardAmendment(ua1)
+                      .flatMap {
                         case Left(_)  =>
-                          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                          Future.successful(
+                            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                          )
                         case Right(_) =>
-                          Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                          for {
+                            ua2 <- Future.fromTry(
+                                     ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn)
+                                   )
+                            _   <- sessionRepository.set(ua2)
+                          } yield Redirect(
+                            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode)
+                          )
                       }
 
                   case AmendNilReturn =>
                     for {
+                      ua3           <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
+                      ua4           <- Future.fromTry(
+                                         ua3.set(ReturnTypePage, MonthlyAmendedNilReturn)
+                                       )
+                      _             <- sessionRepository.set(ua4)
                       updateRequest <- UpdateMonthlyReturnRequest
-                                         .fromUserAnswers(updatedAnswers)
+                                         .fromUserAnswers(ua4)
                                          .fold(
                                            error => Future.failed(new RuntimeException(error)),
                                            request => Future.successful(request)

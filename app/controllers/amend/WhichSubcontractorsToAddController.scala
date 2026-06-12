@@ -108,12 +108,19 @@ class WhichSubcontractorsToAddController @Inject() (
                         val selectedSubcontractors = model.subcontractors
                           .filter(subcontractor => value.contains(subcontractor.id))
                           .map { subcontractor =>
+                            val existingSelectedSubcontractor =
+                              request.userAnswers
+                                .get(SelectedSubcontractorPage.all)
+                                .flatMap { subcontractors =>
+                                  subcontractors.values.find(_.id == subcontractor.id.toLong)
+                                }
+
                             SelectedSubcontractor(
-                              subcontractor.id.toLong,
-                              subcontractor.name,
-                              None,
-                              None,
-                              None
+                              id = subcontractor.id.toLong,
+                              name = subcontractor.name,
+                              totalPaymentsMade = existingSelectedSubcontractor.flatMap(_.totalPaymentsMade),
+                              costOfMaterials = existingSelectedSubcontractor.flatMap(_.costOfMaterials),
+                              totalTaxDeducted = existingSelectedSubcontractor.flatMap(_.totalTaxDeducted)
                             )
                           }
                         for {
