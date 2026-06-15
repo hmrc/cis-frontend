@@ -19,6 +19,7 @@ package controllers.amend
 import base.SpecBase
 import models.ReturnType.*
 import models.UserAnswers
+import models.agent.AgentClientData
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -29,7 +30,7 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.AmendMonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.ConfirmAmendmentView
 
@@ -489,6 +490,97 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
           status(result) mustEqual OK
           contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
         }
+      }
+    }
+
+    "Agent: must return OK and the correct view for a GET when handoff exists" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(Some(AgentClientData("id", "163", "AB0063", Some("ABC Construction Ltd"))))
+        )
+      when(mockSessionRepository.set(any[UserAnswers]())) thenReturn Future.successful(true)
+
+      when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+        Some(amendmentDetailsStandard)
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onPageLoad(handoffId)
+              .url
+          )
+
+        val result = route(application, request).value
+        val view   = application.injector.instanceOf[ConfirmAmendmentView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+
+        verify(mockAmendMonthlyReturnService).getAmendmentHandoff(eqTo(handoffId))(
+          any[HeaderCarrier]()
+        )
+        verify(mockMonthlyReturnService).getAgentClient(any())(any(), any())
+        verify(mockSessionRepository).set(any[UserAnswers]())
+      }
+    }
+
+    "must redirect to Journey Recovery when agent is missing" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnService.getAgentClient(any())(any(), any())).thenReturn(Future.successful(None))
+      when(mockSessionRepository.set(any[UserAnswers]())) thenReturn Future.successful(true)
+
+      when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+        Some(amendmentDetailsStandard)
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.amend.routes.ConfirmAmendmentController
+              .onPageLoad(handoffId)
+              .url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockAmendMonthlyReturnService).getAmendmentHandoff(eqTo(handoffId))(
+          any[HeaderCarrier]()
+        )
+        verify(mockMonthlyReturnService).getAgentClient(any())(any(), any())
       }
     }
   }
