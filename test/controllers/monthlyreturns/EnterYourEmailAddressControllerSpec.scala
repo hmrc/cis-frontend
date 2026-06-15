@@ -30,6 +30,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
 import scala.concurrent.Future
@@ -46,9 +47,113 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
   "EnterYourEmailAddress Controller" - {
 
-    "must return OK and the correct view for a GET" in {
+    "must return OK and the blank view for a GET when EnterYourEmailAddressPage is missing" in {
 
       val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+      }
+    }
+
+    "must call getSchemeEmail and prepopulate the email address for a GET in NormalMode when not already answered" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.successful(Some("prepopulated@test.com")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form.fill("prepopulated@test.com"), NormalMode)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must call getSchemeEmail and render an empty form when the service returns None" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.successful(None))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+      }
+    }
+
+    "must return OK and empty/unpopulated view for a GET in CheckMode when not already answered" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+
+      running(application) {
+        val checkModeRoute =
+          controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(models.CheckMode).url
+        val request        = FakeRequest(GET, checkModeRoute)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[EnterYourEmailAddressView]
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(form, models.CheckMode)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must gracefully recover and render the page with an empty form if getSchemeEmail fails" in {
+
+      val userAnswers = userAnswersWithCisId
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("backend error")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
 
       running(application) {
         val request = FakeRequest(GET, enterYourEmailAddressRoute)
