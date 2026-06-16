@@ -411,6 +411,65 @@ class MonthlyReturnServiceSpec extends SpecBase {
     }
   }
 
+  "isEditable" - {
+
+    def responseWith(status: Option[String]) = GetAllMonthlyReturnDetailsResponse(
+      scheme = Seq.empty,
+      monthlyReturn = Seq(MonthlyReturn(monthlyReturnId = 1, taxYear = 2025, taxMonth = 10, status = status)),
+      subcontractors = Seq.empty,
+      monthlyReturnItems = Seq.empty,
+      submission = Seq.empty
+    )
+
+    def stubConnector(
+      connector: ConstructionIndustrySchemeConnector,
+      response: GetAllMonthlyReturnDetailsResponse
+    ): Unit =
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(response))
+
+    "returns true when status is STARTED" in {
+      val (service, connector, _) = newService()
+      stubConnector(connector, responseWith(Some("STARTED")))
+      service.isEditable("CIS-1", 10, 2025, isAmendment = false).futureValue mustBe true
+    }
+
+    "returns true when status is VALIDATED" in {
+      val (service, connector, _) = newService()
+      stubConnector(connector, responseWith(Some("VALIDATED")))
+      service.isEditable("CIS-1", 10, 2025, isAmendment = false).futureValue mustBe true
+    }
+
+    "returns false when status is anything else" in {
+      val (service, connector, _) = newService()
+      stubConnector(connector, responseWith(Some("ACCEPTED")))
+      service.isEditable("CIS-1", 10, 2025, isAmendment = false).futureValue mustBe false
+    }
+
+    "returns false when monthlyReturn is empty" in {
+      val (service, connector, _) = newService()
+      val emptyResponse           = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq.empty,
+        monthlyReturn = Seq.empty,
+        subcontractors = Seq.empty,
+        monthlyReturnItems = Seq.empty,
+        submission = Seq.empty
+      )
+      stubConnector(connector, emptyResponse)
+      service.isEditable("CIS-1", 10, 2025, isAmendment = false).futureValue mustBe false
+    }
+
+    "propagates connector failure" in {
+      val (service, connector, _) = newService()
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+      val ex                      = intercept[RuntimeException] {
+        service.isEditable("CIS-ERR", 1, 2025, isAmendment = false).futureValue
+      }
+      ex.getMessage must include("upstream failed")
+    }
+  }
+
   "getSchemeEmail" - {
 
     "delegate to connector and return the email when present" in {

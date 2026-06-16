@@ -20,15 +20,22 @@ import base.SpecBase
 import models.ReturnType.MonthlyStandardReturn
 import models.{NormalMode, UserAnswers}
 import models.amend.AmendmentDetails
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.CisIdPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import play.api.inject.bind
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import services.MonthlyReturnService
+import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
+import scala.concurrent.Future
 
-class SubcontractorDetailsAddedControllerSpec extends SpecBase {
+class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar {
 
   private val now: Instant = Instant.now
 
@@ -36,8 +43,9 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
     UserAnswers(
       id = userAnswersId,
       data = Json.obj(
-        "cisId"          -> "1",
-        "subcontractors" -> JsObject(subs.map { case (i, o) => i.toString -> o })
+        "cisId"               -> "1",
+        "dateConfirmPayments" -> "2025-10-01",
+        "subcontractors"      -> JsObject(subs.map { case (i, o) => i.toString -> o })
       ),
       lastUpdated = now
     )
@@ -57,8 +65,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       "name" -> name
     )
 
-  private def buildApp(ua: UserAnswers) =
-    applicationBuilder(userAnswers = Some(ua))
+  private def stubIsEditable(service: MonthlyReturnService, editable: Boolean = true): Unit =
+    when(service.isEditable(any[String], any[Int], any[Int], any[Boolean])(any[HeaderCarrier]))
+      .thenReturn(Future.successful(editable))
+
+  private def buildApp(ua: UserAnswers, monthlyReturnService: Option[MonthlyReturnService] = None) = {
+    val base = applicationBuilder(userAnswers = Some(ua))
       .configure(
         "features.welsh-translation" -> false,
         "timeout-dialog.timeout"     -> 900,
@@ -66,7 +78,10 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
         "contact-frontend.serviceId" -> "cis-frontend",
         "host"                       -> "http://localhost"
       )
+    monthlyReturnService
+      .fold(base)(svc => base.overrides(bind[MonthlyReturnService].toInstance(svc)))
       .build()
+  }
 
   private val getUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
@@ -80,11 +95,11 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
   "SubcontractorDetailsAddedController" - {
 
     "must return OK on GET when builder returns a view model" in {
-      val ua = uaWithSubcontractors(
-        1 -> completeSub(1001L, "TyneWear Ltd")
-      )
+      val ua  = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
 
-      val application = buildApp(ua)
+      val application = buildApp(ua, Some(svc))
 
       running(application) {
         val request = FakeRequest(GET, getUrl)
@@ -95,11 +110,13 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
     }
 
     "must display cancel amendment link on GET when builder returns a view model with isAmendment = true" in {
-      val ua = uaWithSubcontractors(
+      val ua  = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
       ).set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test Contractor", MonthlyStandardReturn, None)).get
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
 
-      val application = buildApp(ua)
+      val application = buildApp(ua, Some(svc))
 
       running(application) {
         val request = FakeRequest(GET, getUrl)
@@ -110,10 +127,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
       }
     }
 
-    "must redirect to SystemError on GET when builder returns None (no rows)" in {
-      val ua = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
+    "must redirect to SystemError on GET when builder returns None (no subcontractors)" in {
+      val ua  = uaWithSubcontractors()
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
 
-      val application = buildApp(ua)
+      val application = buildApp(ua, Some(svc))
 
       running(application) {
         val request = FakeRequest(GET, getUrl)
@@ -121,6 +140,35 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase {
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery on GET when resource is not editable" in {
+      val ua  = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc, editable = false)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery on GET when required answers are missing" in {
+      val ua          = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 

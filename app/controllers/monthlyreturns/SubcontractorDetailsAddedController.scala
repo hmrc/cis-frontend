@@ -19,7 +19,6 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.Mode
-import models.requests.GetMonthlyReturnForEditRequest
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
@@ -27,14 +26,13 @@ import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
+import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
-import services.MonthlyReturnService
 
-import scala.concurrent.Future
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class SubcontractorDetailsAddedController @Inject() (
   override val messagesApi: MessagesApi,
@@ -65,32 +63,15 @@ class SubcontractorDetailsAddedController @Inject() (
 
       requiredAnswers match {
         case Some((cisId, month, year)) =>
-          val isAmendment = ua.get(AmendmentDetailsPage).isDefined
-
-          monthlyReturnService
-            .retrieveMonthlyReturnForEditDetails(
-              GetMonthlyReturnForEditRequest(
-                instanceId = cisId,
-                taxMonth = month,
-                taxYear = year,
-                isAmendment = isAmendment
-              )
-            )
-            .map { returns =>
-              returns.monthlyReturn.headOption.flatMap(_.status) match {
-                case Some("STARTED" | "VALIDATED") =>
-                  SubcontractorDetailsAddedBuilder.build(ua) match {
-                    case Some(viewModel) =>
-                      Ok(view(form, mode, viewModel))
-
-                    case None =>
-                      Redirect(controllers.routes.SystemErrorController.onPageLoad())
-                  }
-
-                case _ =>
-                  Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          monthlyReturnService.isEditable(cisId, month, year, ua.get(AmendmentDetailsPage).isDefined).map {
+            case true  =>
+              SubcontractorDetailsAddedBuilder.build(ua) match {
+                case Some(viewModel) => Ok(view(form, mode, viewModel))
+                case None            => Redirect(controllers.routes.SystemErrorController.onPageLoad())
               }
-            }
+            case false =>
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
 
         case None =>
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))

@@ -91,10 +91,16 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     "must return OK and the correct view for a GET with pre-selected subcontractors" in {
 
       val subcontractorService = mock[SubcontractorService]
+      val monthlyReturnService = mock[MonthlyReturnService]
       stubService(subcontractorService, pageModel)
+      when(monthlyReturnService.isEditable(any[String], any[Int], any[Int], any[Boolean])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
 
       val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
-        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .overrides(
+          bind[SubcontractorService].toInstance(subcontractorService),
+          bind[MonthlyReturnService].toInstance(monthlyReturnService)
+        )
         .build()
 
       running(application) {
@@ -122,6 +128,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         .value
 
       val subcontractorService = mock[SubcontractorService]
+      val monthlyReturnService = mock[MonthlyReturnService]
       when(
         subcontractorService.buildAmendWhichSubcontractorsPage(
           eqTo(cisId),
@@ -130,9 +137,14 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           any[Option[UserAnswers]]
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(pageModel))
+      when(monthlyReturnService.isEditable(any[String], any[Int], any[Int], any[Boolean])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
 
       val application = applicationBuilder(userAnswers = Some(userAnswers))
-        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .overrides(
+          bind[SubcontractorService].toInstance(subcontractorService),
+          bind[MonthlyReturnService].toInstance(monthlyReturnService)
+        )
         .build()
 
       running(application) {
@@ -147,6 +159,25 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           request,
           messages(application)
         ).toString
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET when resource is not editable" in {
+
+      val monthlyReturnService = mock[MonthlyReturnService]
+      when(monthlyReturnService.isEditable(any[String], any[Int], any[Int], any[Boolean])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(false))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+        .overrides(bind[MonthlyReturnService].toInstance(monthlyReturnService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, whichSubcontractorsToAddRoute)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -351,6 +382,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
     "must redirect to SystemError when the service call fails on GET" in {
 
       val subcontractorService = mock[SubcontractorService]
+      val monthlyReturnService = mock[MonthlyReturnService]
       when(
         subcontractorService.buildAmendWhichSubcontractorsPage(
           eqTo(cisId),
@@ -359,9 +391,14 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
           any[Option[UserAnswers]]
         )(any[HeaderCarrier])
       ).thenReturn(Future.failed(new RuntimeException("boom")))
+      when(monthlyReturnService.isEditable(any[String], any[Int], any[Int], any[Boolean])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(true))
 
       val application = applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
-        .overrides(bind[SubcontractorService].toInstance(subcontractorService))
+        .overrides(
+          bind[SubcontractorService].toInstance(subcontractorService),
+          bind[MonthlyReturnService].toInstance(monthlyReturnService)
+        )
         .build()
 
       running(application) {
