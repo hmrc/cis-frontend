@@ -19,7 +19,9 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.Mode
-import pages.monthlyreturns.AllSubcontractorDetailsAdded
+import models.requests.GetMonthlyReturnForEditRequest
+import pages.amend.AmendmentDetailsPage
+import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -28,7 +30,9 @@ import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
+import services.MonthlyReturnService
 
+import scala.concurrent.Future
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,7 +45,8 @@ class SubcontractorDetailsAddedController @Inject() (
   formProvider: SubcontractorDetailsAddedFormProvider,
   sessionRepository: SessionRepository,
   val controllerComponents: MessagesControllerComponents,
-  view: SubcontractorDetailsAddedView
+  view: SubcontractorDetailsAddedView,
+  monthlyReturnService: MonthlyReturnService
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -49,17 +54,47 @@ class SubcontractorDetailsAddedController @Inject() (
 
   val form: Form[Boolean] = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       val ua = request.userAnswers
-      SubcontractorDetailsAddedBuilder.build(ua) match {
-        case Some(viewModel) =>
-          Ok(view(form, mode, viewModel))
 
-        case None =>
-          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+      val requiredAnswers = for {
+        cisId   <- request.userAnswers.get(CisIdPage)
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+      val cisId       = requiredAnswers.get._1
+      val month       = requiredAnswers.get._2
+      val year        = requiredAnswers.get._3
+      val isAmendment = ua.get(AmendmentDetailsPage).isDefined
+
+      monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+        GetMonthlyReturnForEditRequest(
+          instanceId = cisId,
+          taxMonth = month,
+          taxYear = year,
+          isAmendment = isAmendment
+        )
+      ) map { returns =>
+        returns.monthlyReturn.head.status match {
+          case Some(str) =>
+            str match {
+              case "STARTED" | "VALIDATED" =>
+                SubcontractorDetailsAddedBuilder.build(ua) match {
+                  case Some(viewModel) =>
+                    Ok(view(form, mode, viewModel))
+
+                  case None =>
+                    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                }
+              case _                       =>
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            }
+          case None      => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+
       }
-  }
+    }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
