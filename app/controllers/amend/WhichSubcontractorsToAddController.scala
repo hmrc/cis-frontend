@@ -96,7 +96,7 @@ class WhichSubcontractorsToAddController @Inject() (
                       )
                       Redirect(controllers.routes.SystemErrorController.onPageLoad())
                     }
-                case _ => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                case _                             => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
               }
 
             }
