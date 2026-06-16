@@ -34,7 +34,7 @@ import services.MonthlyReturnService
 
 import scala.concurrent.Future
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class SubcontractorDetailsAddedController @Inject() (
   override val messagesApi: MessagesApi,
@@ -59,40 +59,41 @@ class SubcontractorDetailsAddedController @Inject() (
       val ua = request.userAnswers
 
       val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+        cisId   <- ua.get(CisIdPage)
+        taxDate <- ua.get(DateConfirmPaymentsPage)
       } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
 
-      val cisId       = requiredAnswers.get._1
-      val month       = requiredAnswers.get._2
-      val year        = requiredAnswers.get._3
-      val isAmendment = ua.get(AmendmentDetailsPage).isDefined
+      requiredAnswers match {
+        case Some((cisId, month, year)) =>
+          val isAmendment = ua.get(AmendmentDetailsPage).isDefined
 
-      monthlyReturnService.retrieveMonthlyReturnForEditDetails(
-        GetMonthlyReturnForEditRequest(
-          instanceId = cisId,
-          taxMonth = month,
-          taxYear = year,
-          isAmendment = isAmendment
-        )
-      ) map { returns =>
-        returns.monthlyReturn.head.status match {
-          case Some(str) =>
-            str match {
-              case "STARTED" | "VALIDATED" =>
-                SubcontractorDetailsAddedBuilder.build(ua) match {
-                  case Some(viewModel) =>
-                    Ok(view(form, mode, viewModel))
+          monthlyReturnService
+            .retrieveMonthlyReturnForEditDetails(
+              GetMonthlyReturnForEditRequest(
+                instanceId = cisId,
+                taxMonth = month,
+                taxYear = year,
+                isAmendment = isAmendment
+              )
+            )
+            .map { returns =>
+              returns.monthlyReturn.headOption.flatMap(_.status) match {
+                case Some("STARTED" | "VALIDATED") =>
+                  SubcontractorDetailsAddedBuilder.build(ua) match {
+                    case Some(viewModel) =>
+                      Ok(view(form, mode, viewModel))
 
-                  case None =>
-                    Redirect(controllers.routes.SystemErrorController.onPageLoad())
-                }
-              case _                       =>
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                    case None =>
+                      Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                  }
+
+                case _ =>
+                  Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
             }
-          case None      => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        }
 
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 

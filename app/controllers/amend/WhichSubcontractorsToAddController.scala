@@ -21,8 +21,9 @@ import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
 import models.monthlyreturns.SelectedSubcontractor
+import models.requests.GetMonthlyReturnForEditRequest
 import navigation.Navigator
-import pages.amend.WhichSubcontractorsToAddPage
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -55,26 +56,49 @@ class WhichSubcontractorsToAddController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
+      val ua = request.userAnswers
+
       val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+        cisId   <- ua.get(CisIdPage)
+        taxDate <- ua.get(DateConfirmPaymentsPage)
       } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
 
       requiredAnswers
         .map { case (cisId, taxMonth, taxYear) =>
-          subcontractorService
-            .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
-            .map { model =>
-              val form          = formProvider(model.subcontractors)
-              val selectedIds   = request.userAnswers
-                .get(WhichSubcontractorsToAddPage)
-                .getOrElse(model.preSelectedIds)
-              val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(model.subcontractors, selectedIds)
-              Ok(view(form, mode, checkboxItems))
-            }
-            .recover { case ex =>
-              logger.error(s"[WhichSubcontractorsToAddController] Failed to load subcontractors: ${ex.getMessage}", ex)
-              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+          val isAmendment = ua.get(AmendmentDetailsPage).isDefined
+
+          monthlyReturnService
+            .retrieveMonthlyReturnForEditDetails(
+              GetMonthlyReturnForEditRequest(
+                instanceId = cisId,
+                taxMonth = taxMonth,
+                taxYear = taxYear,
+                isAmendment = isAmendment
+              )
+            )
+            .flatMap { returns =>
+              returns.monthlyReturn.headOption.flatMap(_.status) match {
+                case Some("STARTED" | "VALIDATED") =>
+                  subcontractorService
+                    .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
+                    .map { model =>
+                      val form          = formProvider(model.subcontractors)
+                      val selectedIds   = request.userAnswers
+                        .get(WhichSubcontractorsToAddPage)
+                        .getOrElse(model.preSelectedIds)
+                      val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(model.subcontractors, selectedIds)
+                      Ok(view(form, mode, checkboxItems))
+                    }
+                    .recover { case ex =>
+                      logger.error(
+                        s"[WhichSubcontractorsToAddController] Failed to load subcontractors: ${ex.getMessage}",
+                        ex
+                      )
+                      Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                    }
+                case _ => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
+
             }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
