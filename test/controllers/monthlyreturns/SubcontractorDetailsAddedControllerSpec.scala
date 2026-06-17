@@ -24,7 +24,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.CisIdPage
 import play.api.inject.bind
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
@@ -32,7 +32,7 @@ import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Instant, LocalDate}
+import java.time.Instant
 import scala.concurrent.Future
 
 class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar {
