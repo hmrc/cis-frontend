@@ -180,7 +180,14 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     http
       .get(url"$cisBaseUrl/scheme/email/$cisId")
-      .execute[Option[String]]
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case OK        => (response.json \ "email").asOpt[String]
+          case NOT_FOUND => None
+          case status    => throw UpstreamErrorResponse(response.body, status, status)
+        }
+      }
 
   def sendSuccessfulEmail(submissionId: String, request: SendSuccessEmailRequest)(implicit
     hc: HeaderCarrier,
@@ -278,4 +285,17 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/journey-handoffs/amend-monthly-return/$handoffId")
       .execute[Option[AmendmentDetails]]
+
+  def resetGovTalkStatus(
+    submissionId: String,
+    request: ResetGovTalkStatusRequest
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/submissions/$submissionId/reset-govtalk")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
+      .flatMap { resp =>
+        if (resp.status / 100 == 2) Future.unit
+        else Future.failed(UpstreamErrorResponse(resp.body, resp.status, resp.status))
+      }
 }

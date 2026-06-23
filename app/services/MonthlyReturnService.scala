@@ -83,6 +83,15 @@ class MonthlyReturnService @Inject() (
   ): Future[GetAllMonthlyReturnDetailsResponse] =
     cisConnector.retrieveMonthlyReturnForEditDetails(monthlyReturnRequest)
 
+  def isEditable(cisId: String, taxMonth: Int, taxYear: Int, isAmendment: Boolean)(implicit
+    hc: HeaderCarrier
+  ): Future[Boolean] =
+    retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
+      .map(_.monthlyReturn.headOption.flatMap(_.status) match {
+        case Some("STARTED" | "VALIDATED") => true
+        case _                             => false
+      })
+
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)
 
