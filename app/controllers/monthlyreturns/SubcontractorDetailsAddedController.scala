@@ -20,9 +20,8 @@ import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.Mode
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import models.ReturnType.MonthlyStandardReturn
-import pages.monthlyreturns.{AllSubcontractorDetailsAdded, ReturnTypePage}
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}

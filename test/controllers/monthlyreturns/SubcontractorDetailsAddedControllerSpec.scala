@@ -18,15 +18,14 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
-import models.{NormalMode, UserAnswers}
 import models.amend.AmendmentDetails
+import models.{NormalMode, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.CisIdPage
-import play.api.inject.bind
 import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import play.api.inject.bind
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
