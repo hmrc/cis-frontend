@@ -20,7 +20,8 @@ import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.Mode
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import models.ReturnType.MonthlyStandardReturn
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -107,9 +108,16 @@ class SubcontractorDetailsAddedController @Inject() (
                   } else if (allSubcontractorDetailsAdded) {
                     Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
                   } else {
-                    Redirect(
-                      controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-                    )
+                    request.userAnswers.get(ReturnTypePage) match {
+                      case Some(returnType) if returnType == MonthlyStandardReturn =>
+                        Redirect(
+                          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+                        )
+                      case _                                                       =>
+                        Redirect(
+                          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode)
+                        )
+                    }
                   }
                 }
             )

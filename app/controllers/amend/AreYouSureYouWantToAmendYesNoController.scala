@@ -21,19 +21,21 @@ import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 
 import javax.inject.Inject
 import models.Mode
-import models.ReturnType.MonthlyAmendedNilReturn
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
 import models.amend.DeleteAllMonthlyReturnItemsRequest
 import models.monthlyreturns.UpdateMonthlyReturnRequest
+import pages.monthlyreturns.ReturnTypePage
 import navigation.Navigator
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
-import pages.monthlyreturns.ReturnTypePage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.AreYouSureYouWantToAmendYesNoView
+import utils.TypeUtils.toFuture
+import utils.UserAnswerUtils.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -76,34 +78,26 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
           {
             case Yes =>
               for {
-                updatedAnswers <- Future.fromTry(
-                                    request.userAnswers
-                                      .set(AreYouSureYouWantToAmendYesNoPage, Yes)
-                                      .flatMap(_.set(ReturnTypePage, MonthlyAmendedNilReturn))
-                                  )
+                ua1            <- Future.fromTry(request.userAnswers.set(ReturnTypePage, MonthlyAmendedNilReturn))
+                ua2            <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
+                updatedAnswers <- Future.fromTry(ua2.set(AreYouSureYouWantToAmendYesNoPage, Yes))
                 _              <- sessionRepository.set(updatedAnswers)
-                deleteRequest  <- DeleteAllMonthlyReturnItemsRequest
-                                    .fromUserAnswers(updatedAnswers)
-                                    .fold(
-                                      error => Future.failed(new RuntimeException(error)),
-                                      request => Future.successful(request)
-                                    )
+                deleteRequest  <- toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers))
                 _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
-                updateRequest  <- UpdateMonthlyReturnRequest
-                                    .fromUserAnswers(updatedAnswers)
-                                    .fold(
-                                      error => Future.failed(new RuntimeException(error)),
-                                      request => Future.successful(request)
-                                    )
+                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers))
                 _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
               } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
 
             case No =>
               for {
-                updatedAnswers <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, No))
-                _              <- sessionRepository.set(updatedAnswers)
-              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
+                ua1 <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage, No))
+                ua2 <- Future.fromTry(ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn))
+                _   <- sessionRepository.set(ua2)
+              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, ua2))
           }
         )
     }
+
+  private def toFuture[A](either: Either[String, A]): Future[A] =
+    either.fold(error => Future.failed(new RuntimeException(error)), Future.successful)
 }

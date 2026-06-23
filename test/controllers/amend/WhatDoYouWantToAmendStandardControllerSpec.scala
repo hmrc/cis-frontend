@@ -22,7 +22,7 @@ import models.UserAnswers
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendStandardPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
@@ -231,7 +231,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
-        verify(mockSessionRepository).set(any())
+        verify(mockSessionRepository, times(2)).set(any())
       }
     }
 
@@ -269,7 +269,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
       }
     }
 
-    "redirect to Journey Recovery for a POST if no existing data is found" in {
+    "must redirect to Journey Recovery for a POST if no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -283,6 +283,49 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery for a POST if service failed" in {
+
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn Future.successful(
+        mockMonthlyReturn
+      )
+
+      when(
+        mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())
+      ) thenReturn Future.successful(mockMonthlyReturn)
+
+      when(
+        mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers]())(any())
+      ) thenReturn Future.successful(Left("Missing amendment details"))
+
+      val application =
+        applicationBuilder(userAnswers = Some(baseAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
       }
     }
   }

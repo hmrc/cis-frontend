@@ -20,6 +20,7 @@ import base.SpecBase
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.{Declaration, SelectedSubcontractor}
 import models.{ReturnType, UserAnswers}
+import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.*
 import utils.UserAnswerUtils.*
 
@@ -334,6 +335,70 @@ class UserAnswerUtilsSpec extends SpecBase {
 
     "succeeds on empty UserAnswers" in {
       val result = UserAnswers("id").clearMonthlyReturnJourney
+      result.isSuccess mustBe true
+    }
+  }
+
+  "UserAnswerUtils.clearAmendedMonthlyStandardReturnJourney" - {
+
+    "removes all monthly return journey pages from UserAnswers" in {
+      val ua = UserAnswers("id")
+        .set(EmploymentStatusDeclarationPage, true)
+        .get
+        .set(SelectedSubcontractorPage(1), completeSub(1))
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+        .set(AllSubcontractorDetailsAdded, true)
+        .get
+        .set(PaymentDetailsConfirmationPage, true)
+        .get
+        .set(VerifiedStatusDeclarationPage, true)
+        .get
+        .set(SubmitInactivityRequestPage, true)
+        .get
+        .set(WhichSubcontractorsToAddPage, Set("10"))
+        .get
+
+      val result = ua.clearAmendedMonthlyStandardReturnJourney
+
+      result.isSuccess mustBe true
+      val cleared = result.get
+
+      cleared.get(EmploymentStatusDeclarationPage) mustBe None
+      cleared.get(SelectedSubcontractorPage(1)) mustBe None
+      cleared.get(VerifySubcontractorsPage) mustBe None
+      cleared.get(AllSubcontractorDetailsAdded) mustBe None
+      cleared.get(PaymentDetailsConfirmationPage) mustBe None
+      cleared.get(VerifiedStatusDeclarationPage) mustBe None
+      cleared.get(SubmitInactivityRequestPage) mustBe None
+      cleared.get(WhichSubcontractorsToAddPage) mustBe None
+    }
+
+    "retains non-journey pages such as CisIdPage and ReturnTypePage" in {
+      val ua = UserAnswers("id")
+        .set(CisIdPage, "CIS-123")
+        .get
+        .set(ReturnTypePage, ReturnType.MonthlyAmendedNilReturn)
+        .get
+        .set(EmploymentStatusDeclarationPage, true)
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      val result = ua.clearAmendedMonthlyStandardReturnJourney
+
+      result.isSuccess mustBe true
+      val cleared = result.get
+
+      cleared.get(CisIdPage) mustBe Some("CIS-123")
+      cleared.get(ReturnTypePage) mustBe Some(ReturnType.MonthlyAmendedNilReturn)
+      cleared.get(EmploymentStatusDeclarationPage) mustBe None
+      cleared.get(VerifySubcontractorsPage) mustBe None
+    }
+
+    "succeeds on empty UserAnswers" in {
+      val result = UserAnswers("id").clearAmendedMonthlyStandardReturnJourney
       result.isSuccess mustBe true
     }
   }

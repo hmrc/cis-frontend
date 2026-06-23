@@ -19,13 +19,14 @@ package controllers.amend
 import controllers.actions.*
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import pages.agent.AgentClientDataPage
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
 import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.AmendMonthlyReturnService
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -42,6 +43,7 @@ class ConfirmAmendmentController @Inject() (
   getData: DataRetrievalAction,
   sessionRepository: SessionRepository,
   amendMonthlyReturnService: AmendMonthlyReturnService,
+  monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmAmendmentView
 )(implicit ec: ExecutionContext)
@@ -88,8 +90,26 @@ class ConfirmAmendmentController @Inject() (
 
               val showWarning = isInWarningPeriod(handoff.acceptedTime)
 
-              sessionRepository.set(updatedUserAnswers).map { _ =>
-                Ok(view(showWarning))
+              if (request.isAgent) {
+                monthlyReturnService.getAgentClient(request.userId).flatMap {
+                  case Some(agentData) =>
+                    for {
+                      uaWithAgentClientData <- Future.fromTry(
+                                                 updatedUserAnswers.set(AgentClientDataPage, agentData)
+                                               )
+                      _                     <- sessionRepository.set(uaWithAgentClientData)
+                    } yield Ok(view(showWarning))
+
+                  case None =>
+                    logger.warn("[ConfirmAmendmentController] Agent data not found")
+                    Future.successful(
+                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                    )
+                }
+              } else {
+                sessionRepository.set(updatedUserAnswers).map { _ =>
+                  Ok(view(showWarning))
+                }
               }
 
             case None =>

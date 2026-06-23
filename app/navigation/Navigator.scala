@@ -17,9 +17,10 @@
 package navigation
 
 import models.*
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.*
+import models.amend.*
 import pages.*
-import pages.amend.WhichSubcontractorsToAddPage
+import pages.amend.*
 import pages.monthlyreturns.*
 import play.api.mvc.Call
 
@@ -70,6 +71,14 @@ class Navigator @Inject() () {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
     // amend monthly return
+    case (AreYouSureYouWantToAmendYesNoPage, _)             =>
+      userAnswers =>
+        userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
+          case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+          case _                                                         =>
+            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+        }
     case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
@@ -92,6 +101,9 @@ class Navigator @Inject() () {
       userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
     case (EnterYourEmailAddressPage, _)                     =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    // amend monthly return
+    case (WhichSubcontractorsToAddPage, _)                  =>
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
     case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
