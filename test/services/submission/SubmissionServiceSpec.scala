@@ -31,7 +31,7 @@ import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.AnyContent
@@ -79,6 +79,59 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       schemeName = None,
       enrolledSig = None
     )
+
+  "getOrCreateSubmissionForChris" - {
+
+    "return existing resubmission id and not create a new submission when ResubmissionIdPage is present" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+      val ua = uaBase
+        .set(ResubmissionIdPage, 13180L)
+        .success
+        .value
+
+      val result = service.getOrCreateSubmissionForChris(ua).futureValue
+
+      result mustBe ("13180", ua, true)
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+      verifyNoInteractions(chrisRequestBuilder)
+    }
+
+    "create a new submission when ResubmissionIdPage is missing" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+      val beResp = CreateSubmissionResponse("sub-123")
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(beResp))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.getOrCreateSubmissionForChris(uaBase).futureValue
+
+      result._1 mustBe "sub-123"
+      result._3 mustBe false
+
+      verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      verify(sessionRepository).set(any[UserAnswers])
+      verifyNoInteractions(chrisRequestBuilder)
+    }
+  }
 
   "create" - {
     "build request from UserAnswers and return BE response" in {
@@ -255,7 +308,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
             any[UserAnswers],
             any[CisTaxpayer],
             eqTo(false),
-            any[GetAllMonthlyReturnDetailsResponse]
+            any[GetAllMonthlyReturnDetailsResponse],
+            eqTo(false)
           )
         ).thenReturn(builtCsr)
 
@@ -269,7 +323,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         stubRetrieveMonthlyReturnForEditDetails(connector)
 
-        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
         out mustBe beResp
 
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -305,11 +359,17 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         when(
           chrisRequestBuilder
-            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+            .build(
+              any[UserAnswers],
+              any[CisTaxpayer],
+              eqTo(false),
+              any[GetAllMonthlyReturnDetailsResponse],
+              eqTo(false)
+            )
         ).thenThrow(new RuntimeException("boom-builder"))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false).futureValue
+          service.submitToChrisAndPersist("sub-123", uaBase, false, false).futureValue
         }
         ex.getMessage must include("boom-builder")
 
@@ -332,7 +392,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", emptyUserAnswers, false).futureValue
+          service.submitToChrisAndPersist("sub-123", emptyUserAnswers, false, false).futureValue
         }
         ex.getMessage must include("Month and year of return missing")
 
@@ -383,11 +443,17 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
         when(
           chrisRequestBuilder
-            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+            .build(
+              any[UserAnswers],
+              any[CisTaxpayer],
+              eqTo(false),
+              any[GetAllMonthlyReturnDetailsResponse],
+              eqTo(false)
+            )
         )
           .thenReturn(builtCsr)
 
-        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
         out mustBe beRespWithEndpoint
 
         verify(sessionRepository).set(uaCaptor.capture())
@@ -412,7 +478,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
         when(
           chrisRequestBuilder
-            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+            .build(
+              any[UserAnswers],
+              any[CisTaxpayer],
+              eqTo(false),
+              any[GetAllMonthlyReturnDetailsResponse],
+              eqTo(false)
+            )
         )
           .thenReturn(builtCsr)
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
@@ -431,7 +503,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
 
-        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
 
         val saved = uaCaptor.getValue
         saved.get(SubmissionDetailsPage).value.amendment mustBe Some("Y")
@@ -452,7 +524,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
         when(
           chrisRequestBuilder
-            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+            .build(
+              any[UserAnswers],
+              any[CisTaxpayer],
+              eqTo(false),
+              any[GetAllMonthlyReturnDetailsResponse],
+              eqTo(false)
+            )
         )
           .thenReturn(builtCsr)
         when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
@@ -471,7 +549,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
 
-        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false).futureValue
+        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
 
         val saved = uaCaptor.getValue
         saved.get(SubmissionDetailsPage).value.amendment mustBe None
@@ -494,7 +572,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
         when(
           chrisRequestBuilder
-            .build(any[UserAnswers], any[CisTaxpayer], eqTo(false), any[GetAllMonthlyReturnDetailsResponse])
+            .build(
+              any[UserAnswers],
+              any[CisTaxpayer],
+              eqTo(false),
+              any[GetAllMonthlyReturnDetailsResponse],
+              eqTo(false)
+            )
         )
           .thenReturn(builtCsr)
 
@@ -513,7 +597,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .set(eqTo(SubmissionDetailsPage), any)(any())
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaSpy, false).futureValue
+          service.submitToChrisAndPersist("sub-123", uaSpy, false, false).futureValue
         }
         ex.getMessage must include("boom: cannot write submission id")
         verify(sessionRepository, never()).set(any[UserAnswers])
@@ -540,7 +624,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val builtCsr = mock(classOf[ChrisSubmissionRequest])
         when(
           chrisRequestBuilder
-            .build(any[UserAnswers], any[CisTaxpayer], eqTo(true), any[GetAllMonthlyReturnDetailsResponse])
+            .build(any[UserAnswers], any[CisTaxpayer], eqTo(true), any[GetAllMonthlyReturnDetailsResponse], eqTo(false))
         )
           .thenReturn(builtCsr)
 
@@ -555,7 +639,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val uaWithAgentClientData = uaWithInactivityYes.set(AgentClientDataPage, agentDate).success.value
-        val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true).futureValue
+        val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true, false).futureValue
         out mustBe beResp
 
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -587,7 +671,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(beResp))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, true).futureValue
+          service.submitToChrisAndPersist("sub-123", uaBase, true, false).futureValue
         }
         ex.getMessage must include("Agent client data missing")
         verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])

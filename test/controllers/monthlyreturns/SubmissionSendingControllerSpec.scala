@@ -80,10 +80,15 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     status: String,
     createdId: String = "sub-123",
     endpoint: Option[ResponseEndPointDto] = None,
-    irMark: String = "Dj5TVJDyRYCn9zta5EdySeY4fyA="
-  ): (CreateSubmissionResponse, ChrisSubmissionResponse) = {
+    irMark: String = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
+    isResubmission: Boolean = false
+  ): (String, UserAnswers, ChrisSubmissionResponse) = {
 
-    val created = CreateSubmissionResponse(submissionId = createdId)
+    val updatedAnswers =
+      completeAnswers
+        .set(SubmissionCreatedPage("submission-period"), true)
+        .success
+        .value
 
     val submitted = ChrisSubmissionResponse(
       submissionId = createdId,
@@ -95,27 +100,32 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       error = None
     )
 
-    when(service.create(any[UserAnswers])(using any[HeaderCarrier]))
+    when(service.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier]))
       .thenReturn(
-        Future
-          .successful(created, userAnswersWithCisId.set(SubmissionCreatedPage("submission-period"), true).success.value)
+        Future.successful((createdId, updatedAnswers, isResubmission))
       )
 
-    when(service.submitToChrisAndPersist(eqTo(createdId), any[UserAnswers], any[Boolean])(using any[HeaderCarrier]))
-      .thenReturn(Future.successful(submitted))
-
-    when(sessionDb.set(any[UserAnswers]))
-      .thenReturn(Future.successful(true))
+    when(
+      service.submitToChrisAndPersist(
+        eqTo(createdId),
+        eqTo(updatedAnswers),
+        any[Boolean],
+        eqTo(isResubmission)
+      )(using any[HeaderCarrier])
+    ).thenReturn(Future.successful(submitted))
 
     when(
-      service.updateSubmissionFromChrisResponse(eqTo(createdId), any[UserAnswers], eqTo(submitted))(
+      service.updateSubmissionFromChrisResponse(
+        eqTo(createdId),
+        eqTo(updatedAnswers),
+        eqTo(submitted)
+      )(
         any[CisIdDataRequest[AnyContent]],
         any[HeaderCarrier]
       )
-    )
-      .thenReturn(Future.successful(()))
+    ).thenReturn(Future.successful(()))
 
-    (created, submitted)
+    (createdId, updatedAnswers, submitted)
   }
 
   "SubmissionSendingController.onPageLoad" - {
@@ -162,11 +172,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe unsuccessfulRoute
     }
 
-    "falls back to system error page when any step fails (e.g. create fails)" in {
+    "falls back to system error page when any step fails (e.g. getOrCreateSubmissionForChris fails)" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
-      when(mockService.create(any[UserAnswers])(using any[HeaderCarrier]))
+      when(mockService.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
@@ -178,7 +188,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe systemErrorRoute
 
       verifyNoInteractions(mockMongoDb)
-      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean])(
+      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
         any[HeaderCarrier]
       )
       verify(mockService, never()).updateSubmissionFromChrisResponse(any[String], any[UserAnswers], any())(
