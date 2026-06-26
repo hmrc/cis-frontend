@@ -50,6 +50,16 @@ class MonthlyReturnServiceSpec extends SpecBase {
     (service, connector, sessionRepo)
   }
 
+  private def contractorScheme(name: Option[String] = Some("ABC Construction Ltd")): ContractorScheme =
+    ContractorScheme(
+      schemeId = 1,
+      instanceId = "CIS-123",
+      accountsOfficeReference = "123PA12345678",
+      taxOfficeNumber = "123",
+      taxOfficeReference = "AB456",
+      name = name
+    )
+
   private def createMonthlyReturn(year: Int, month: Int, id: Long): MonthlyReturnDetails =
     MonthlyReturnDetails(
       monthlyReturnId = id,
@@ -1200,7 +1210,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
-        scheme = Nil,
+        scheme = Seq(contractorScheme(Some("  ABC Construction Ltd  "))),
         monthlyReturn = Seq(
           MonthlyReturn(
             monthlyReturnId = 101,
@@ -1251,6 +1261,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(DeclarationPage) mustBe Some(Set(Declaration.Confirmed))
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
     }
 
     "populate standard return answers and subcontractor items from edit details response" in {
@@ -1264,7 +1275,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
-        scheme = Nil,
+        scheme = Seq(contractorScheme(Some("ABC Construction Ltd"))),
         monthlyReturn = Seq(
           MonthlyReturn(
             monthlyReturnId = 101,
@@ -1330,6 +1341,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifySubcontractorsPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
 
       ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
         id = 1001L,

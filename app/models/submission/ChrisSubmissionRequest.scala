@@ -31,6 +31,7 @@ case class ChrisSubmissionRequest(
   monthYear: String,
   email: Option[String],
   isAgent: Boolean,
+  isResubmission: Boolean,
   clientTaxOfficeNumber: String,
   clientTaxOfficeRef: String,
   returnType: ReturnType,
@@ -45,7 +46,8 @@ object ChrisSubmissionRequest {
   def fromNil(
     common: ChrisSubmissionCommon,
     informationCorrect: Boolean,
-    inactivity: Boolean
+    inactivity: Boolean,
+    isResubmission: Boolean
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
       utr = common.utr,
@@ -55,6 +57,7 @@ object ChrisSubmissionRequest {
       monthYear = toYearMonthString(common.monthYear),
       email = common.email.map(_.trim),
       isAgent = common.isAgent,
+      isResubmission = isResubmission,
       clientTaxOfficeNumber = common.clientTaxOfficeNumber,
       clientTaxOfficeRef = common.clientTaxOfficeRef,
       returnType = MonthlyNilReturn,
@@ -65,6 +68,7 @@ object ChrisSubmissionRequest {
     common: ChrisSubmissionCommon,
     informationCorrect: Boolean,
     inactivity: Boolean,
+    isResubmission: Boolean,
     standard: ChrisStandardMonthlyReturn
   ): ChrisSubmissionRequest =
     ChrisSubmissionRequest(
@@ -75,6 +79,7 @@ object ChrisSubmissionRequest {
       monthYear = toYearMonthString(common.monthYear),
       email = common.email.map(_.trim),
       isAgent = common.isAgent,
+      isResubmission = isResubmission,
       clientTaxOfficeNumber = common.clientTaxOfficeNumber,
       clientTaxOfficeRef = common.clientTaxOfficeRef,
       returnType = MonthlyStandardReturn,
