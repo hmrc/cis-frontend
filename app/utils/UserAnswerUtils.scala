@@ -21,6 +21,7 @@ import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
 import pages.amend.*
+import pages.submission.ResubmissionIdPage
 import play.api.libs.json.Reads
 
 import scala.util.Try
@@ -72,6 +73,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
+        .flatMap(_.remove(ResubmissionIdPage))
 
         // monthly nil return
         .flatMap(_.remove(ConfirmEmailAddressPage))

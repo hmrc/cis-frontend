@@ -36,6 +36,7 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         monthYear = "2025-09",
         email = Some("test@test.com"),
         isAgent = false,
+        isResubmission = false,
         clientTaxOfficeNumber = "",
         clientTaxOfficeRef = "",
         returnType = MonthlyNilReturn,
@@ -59,7 +60,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
       val req = ChrisSubmissionRequest.fromNil(
         common = common,
         informationCorrect = true,
-        inactivity = false
+        inactivity = false,
+        isResubmission = false
       )
 
       req.utr mustBe "1234567890"
@@ -92,7 +94,8 @@ class ChrisSubmissionRequestSpec extends AnyWordSpec with Matchers {
         common = common,
         informationCorrect = true,
         inactivity = true,
-        standard = standard
+        standard = standard,
+        isResubmission = false
       )
 
       req.returnType mustBe MonthlyStandardReturn
