@@ -28,7 +28,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.SubmissionJourneyCompletedPage
+import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -1262,6 +1262,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(DeclarationPage) mustBe Some(Set(Declaration.Confirmed))
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
     }
 
     "populate standard return answers and subcontractor items from edit details response" in {
@@ -1342,6 +1343,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(VerifySubcontractorsPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
 
       ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
         id = 1001L,
