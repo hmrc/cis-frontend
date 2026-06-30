@@ -300,25 +300,20 @@ class MonthlyReturnService @Inject() (
                DateConfirmPaymentsPage,
                LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
              )
-      ua4 <- setOrError(
-               ua3,
-               SubmitInactivityRequestPage,
-               monthlyReturn.decNilReturnNoPayments.contains("Y")
-             )
-      ua5 <- setOrError(ua4, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
-      ua6 <- emailRecipient.filter(_.nonEmpty) match {
-               case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
-               case None        => Right(ua5)
+      ua4 <- setOrError(ua3, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
+      ua5 <- emailRecipient.filter(_.nonEmpty) match {
+               case Some(email) => setOrError(ua4, EnterYourEmailAddressPage, email)
+               case None        => Right(ua4)
              }
-      ua7 <- resubmissionId match {
-               case Some(id) => setOrError(ua6, ResubmissionIdPage, id)
-               case None     => Right(ua6)
+      ua6 <- resubmissionId match {
+               case Some(id) => setOrError(ua5, ResubmissionIdPage, id)
+               case None     => Right(ua5)
              }
-      ua8 <- contractorName match {
-               case Some(name) => setOrError(ua7, ContractorNamePage, name)
-               case None       => Right(ua7)
+      ua7 <- contractorName match {
+               case Some(name) => setOrError(ua6, ContractorNamePage, name)
+               case None       => Right(ua6)
              }
-    } yield ua8
+    } yield ua7
 
   private def populateNilReturnAnswers(
     ua: UserAnswers,
@@ -342,7 +337,8 @@ class MonthlyReturnService @Inject() (
                contractorName = contractorName
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
-    } yield ua2
+      ua3 <- setOrError(ua2, SubmitInactivityRequestPage, monthlyReturn.decNilReturnNoPayments.contains("Y"))
+    } yield ua3
   }
 
   private def populateStandardReturnAnswers(
@@ -364,28 +360,11 @@ class MonthlyReturnService @Inject() (
                resubmissionId = resubmissionId,
                contractorName = contractorName
              )
-      ua2 <- setOrError(
-               ua1,
-               EmploymentStatusDeclarationPage,
-               monthlyReturn.decEmpStatusConsidered.contains("Y")
-             )
-      ua3 <- setOrError(
-               ua2,
-               VerifiedStatusDeclarationPage,
-               monthlyReturn.decAllSubsVerified.contains("Y")
-             )
-      ua4 <- setOrError(
-               ua3,
-               VerifySubcontractorsPage,
-               monthlyReturn.decAllSubsVerified.contains("Y")
-             )
-      ua5 <- setOrError(
-               ua4,
-               PaymentDetailsConfirmationPage,
-               true
-             )
-      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems)
-    } yield ua6
+      ua2 <- setOrError(ua1, EmploymentStatusDeclarationPage, monthlyReturn.decEmpStatusConsidered.contains("Y"))
+      ua3 <- setOrError(ua2, VerifiedStatusDeclarationPage, monthlyReturn.decAllSubsVerified.contains("Y"))
+      ua4 <- setOrError(ua3, PaymentDetailsConfirmationPage, true)
+      ua5 <- populateStandardReturnItems(ua4, monthlyReturnItems)
+    } yield ua5
 
   private def populateStandardReturnItems(
     ua: UserAnswers,

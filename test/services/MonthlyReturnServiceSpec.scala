@@ -1335,12 +1335,10 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val ua = result.toOption.value
 
       ua.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
-      ua.get(SubmitInactivityRequestPage) mustBe Some(false)
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(EmploymentStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
-      ua.get(VerifySubcontractorsPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage) mustBe Some(1L)
