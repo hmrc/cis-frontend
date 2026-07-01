@@ -80,7 +80,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
       }
     }
 
-    "must save user answers and redirect to WhatDoYouWantToAmendNil when isNilReturn and no subcontractors" in {
+    "must save user answers and redirect to WhatDoYouWantToAmendNil when original is nil and in-progress is nil" in {
       val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
 
@@ -106,7 +106,10 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         .build()
 
       running(application) {
-        val request = FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)
+        val request = FakeRequest(
+          GET,
+          "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=true"
+        ).withBody(AnyContentAsEmpty)
 
         val res = route(application, request).value
 
@@ -180,45 +183,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
       }
     }
 
-    "must redirect to WhatDoYouWantToAmendNil when original return is nil and in-progress return is nil" in {
-      val mockService     = mock[MonthlyReturnService]
-      val mockSessionRepo = mock[SessionRepository]
-
-      val result = ContinueAmendJourneyResult(
-        userAnswers = populatedAnswers,
-        hasSubcontractors = false,
-        isNilReturn = true
-      )
-
-      when(
-        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
-          any[HeaderCarrier]
-        )
-      ).thenReturn(Future.successful(Right(result)))
-
-      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
-
-      val application = applicationBuilder()
-        .overrides(
-          bind[MonthlyReturnService].toInstance(mockService),
-          bind[SessionRepository].toInstance(mockSessionRepo)
-        )
-        .build()
-
-      running(application) {
-        val request = FakeRequest(
-          GET,
-          "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=true"
-        ).withBody(AnyContentAsEmpty)
-
-        val res = route(application, request).value
-
-        status(res) mustBe SEE_OTHER
-        redirectLocation(res).value mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
-      }
-    }
-
-    "must redirect to WhatDoYouWantToAmendStandard when original return is nil but in-progress return is nil" in {
+    "must redirect to WhatDoYouWantToAmendStandard when original return is standard and in-progress return is nil" in {
       val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
 
