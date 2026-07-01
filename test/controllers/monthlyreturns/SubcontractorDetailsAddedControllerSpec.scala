@@ -211,6 +211,48 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
+    "must redirect to MRAR06 Standard on GET when in amendment mode and no subcontractors remain" in {
+      val ua  = uaWithSubcontractors()
+        .set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test", MonthlyAmendedStandardReturn, None))
+        .get
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.amend.routes.WhatDoYouWantToAmendStandardController
+          .onPageLoad()
+          .url
+      }
+    }
+
+    "must redirect to MRAR06 Standard on POST when in amendment mode and no subcontractors remain" in {
+      val ua = UserAnswers(userAnswersId)
+        .setOrException(CisIdPage, "1")
+        .set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test", MonthlyAmendedStandardReturn, None))
+        .get
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrl)
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.amend.routes.WhatDoYouWantToAmendStandardController
+          .onPageLoad()
+          .url
+      }
+    }
+
     "must return BadRequest on POST when form has errors (no value)" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")

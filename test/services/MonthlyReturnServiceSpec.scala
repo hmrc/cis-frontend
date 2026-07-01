@@ -28,7 +28,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.SubmissionJourneyCompletedPage
+import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,6 +49,16 @@ class MonthlyReturnServiceSpec extends SpecBase {
     val service     = new MonthlyReturnService(connector, sessionRepo)
     (service, connector, sessionRepo)
   }
+
+  private def contractorScheme(name: Option[String] = Some("ABC Construction Ltd")): ContractorScheme =
+    ContractorScheme(
+      schemeId = 1,
+      instanceId = "CIS-123",
+      accountsOfficeReference = "123PA12345678",
+      taxOfficeNumber = "123",
+      taxOfficeReference = "AB456",
+      name = name
+    )
 
   private def createMonthlyReturn(year: Int, month: Int, id: Long): MonthlyReturnDetails =
     MonthlyReturnDetails(
@@ -1200,7 +1210,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
-        scheme = Nil,
+        scheme = Seq(contractorScheme(Some("  ABC Construction Ltd  "))),
         monthlyReturn = Seq(
           MonthlyReturn(
             monthlyReturnId = 101,
@@ -1251,6 +1261,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(DeclarationPage) mustBe Some(Set(Declaration.Confirmed))
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
     }
 
     "populate standard return answers and subcontractor items from edit details response" in {
@@ -1264,7 +1276,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
-        scheme = Nil,
+        scheme = Seq(contractorScheme(Some("ABC Construction Ltd"))),
         monthlyReturn = Seq(
           MonthlyReturn(
             monthlyReturnId = 101,
@@ -1330,6 +1342,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifySubcontractorsPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
 
       ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
         id = 1001L,

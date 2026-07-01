@@ -121,6 +121,12 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                   Future
                     .successful(Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad()))
 
+                case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
+                    if preselectedSubcontractors.isEmpty =>
+                  Future.successful(
+                    Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                  )
+
                 case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
                   amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
                     case Left(_) =>
