@@ -18,7 +18,7 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
-import models.UserAnswers
+import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
 import org.mockito.ArgumentMatchers.any
@@ -228,6 +228,40 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
           .onPageLoad(models.NormalMode)
+          .url
+
+        verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
+        verify(mockSessionRepository, times(2)).set(any())
+      }
+    }
+
+    "must redirect to WhichSubcontractorsToAdd when 'Amend Payment or Subcontractor Details' is submitted with no subcontractors" in {
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn
+        Future.successful(mockMonthlyReturn.copy(subcontractors = Nil, monthlyReturnItems = Nil))
+
+      val application =
+        applicationBuilder(userAnswers = Some(baseAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.amend.routes.WhichSubcontractorsToAddController
+          .onPageLoad(NormalMode)
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())

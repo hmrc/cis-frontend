@@ -296,6 +296,97 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     }
   }
 
+  "SubmissionSendingController.onPageLoad (resubmission path via ResubmissionIdPage)" - {
+
+    val existingSubId   = 99L
+    val resubmitAnswers = completeAnswers
+      .setOrException(ResubmissionIdPage, existingSubId)
+
+    def stubResubmissionFlow(
+      service: SubmissionService,
+      sessionDb: SessionRepository,
+      status: String
+    ): ChrisSubmissionResponse = {
+
+      val submitted = ChrisSubmissionResponse(
+        submissionId = existingSubId.toString,
+        status = status,
+        hmrcMarkGenerated = "IR-MARK",
+        correlationId = Some("CID-RESUB"),
+        responseEndPoint = None,
+        gatewayTimestamp = Some("2025-01-01T00:00:00"),
+        error = None
+      )
+
+      when(
+        service.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      ).thenReturn(Future.successful((existingSubId.toString, resubmitAnswers, true)))
+
+      when(
+        service.submitToChrisAndPersist(eqTo(existingSubId.toString), any[UserAnswers], any[Boolean], eqTo(true))(using
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(submitted))
+
+      when(sessionDb.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      when(
+        service.updateSubmissionFromChrisResponse(eqTo(existingSubId.toString), any[UserAnswers], eqTo(submitted))(
+          any[CisIdDataRequest[AnyContent]],
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(()))
+
+      submitted
+    }
+
+    "uses ResubmissionIdPage to skip creation and passes isResubmission=true (PENDING)" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubResubmissionFlow(mockService, mockMongoDb, status = "PENDING")
+
+      val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+
+      verify(mockService).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never()).create(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to polling when resubmission status is ACCEPTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubResubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
+
+      val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+    }
+
+    "redirects to Unsuccessful Resubmit when resubmission status is STARTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubResubmissionFlow(mockService, mockMongoDb, status = "STARTED")
+
+      val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulResubmitRoute
+    }
+  }
+
   lazy val pollAndRedirectRoute: String =
     controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
   private def mkPollRequest             = FakeRequest(GET, pollAndRedirectRoute)

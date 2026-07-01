@@ -81,7 +81,8 @@ class SubmissionSendingController @Inject() (
               Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
             case Pending | SubmissionStatus.Accepted =>
               Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-            case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+            case _                                   =>
+              Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
           }).recover { case ex =>
             logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
             Redirect(controllers.routes.SystemErrorController.onPageLoad())
