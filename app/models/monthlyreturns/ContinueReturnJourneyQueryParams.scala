@@ -21,13 +21,15 @@ import play.api.mvc.QueryStringBindable
 case class ContinueReturnJourneyQueryParams(
   instanceId: String,
   taxYear: Int,
-  taxMonth: Int
+  taxMonth: Int,
+  isOriginalNilReturn: Boolean = false
 )
 
 object ContinueReturnJourneyQueryParams {
   implicit def queryStringBindable(implicit
     stringBinder: QueryStringBindable[String],
-    intBinder: QueryStringBindable[Int]
+    intBinder: QueryStringBindable[Int],
+    boolBinder: QueryStringBindable[Boolean]
   ): QueryStringBindable[ContinueReturnJourneyQueryParams] =
     new QueryStringBindable[ContinueReturnJourneyQueryParams] {
 
@@ -36,12 +38,13 @@ object ContinueReturnJourneyQueryParams {
         params: Map[String, Seq[String]]
       ): Option[Either[String, ContinueReturnJourneyQueryParams]] =
         for {
-          instanceId <- stringBinder.bind("instanceId", params)
-          taxYear    <- intBinder.bind("taxYear", params)
-          taxMonth   <- intBinder.bind("taxMonth", params)
-        } yield (instanceId, taxYear, taxMonth) match {
-          case (Right(instanceId), Right(taxYear), Right(taxMonth)) =>
-            Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth))
+          instanceId          <- stringBinder.bind("instanceId", params)
+          taxYear             <- intBinder.bind("taxYear", params)
+          taxMonth            <- intBinder.bind("taxMonth", params)
+          isOriginalNilReturn <- boolBinder.bind("isOriginalNilReturn", params)
+        } yield (instanceId, taxYear, taxMonth, isOriginalNilReturn) match {
+          case (Right(instanceId), Right(taxYear), Right(taxMonth), Right(isOriginalNilReturn)) =>
+            Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth, isOriginalNilReturn))
 
           case _ =>
             Left("Unable to bind ContinueReturnJourneyQueryParams")
@@ -50,6 +53,7 @@ object ContinueReturnJourneyQueryParams {
       override def unbind(key: String, value: ContinueReturnJourneyQueryParams): String =
         stringBinder.unbind("instanceId", value.instanceId) + "&" +
           intBinder.unbind("taxYear", value.taxYear) + "&" +
-          intBinder.unbind("taxMonth", value.taxMonth)
+          intBinder.unbind("taxMonth", value.taxMonth) + "&" +
+          boolBinder.unbind("isOriginalNilReturn", value.isOriginalNilReturn)
     }
 }

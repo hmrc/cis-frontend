@@ -65,14 +65,14 @@ class ContinueAmendReturnJourneyController @Inject() (
 
           case Right(result) =>
             sessionRepository.set(result.userAnswers).map { _ =>
-              (result.hasSubcontractors, result.isNilReturn) match {
-                case (true, _)      =>
+              (result.hasSubcontractors, queryParams.isOriginalNilReturn, result.isNilReturn) match {
+                case (true, _, _)        =>
                   Redirect(
                     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
                   )
-                case (false, true)  =>
+                case (false, true, true) =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad())
-                case (false, false) =>
+                case _                   =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
               }
             }

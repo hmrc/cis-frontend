@@ -36,7 +36,7 @@ import scala.concurrent.Future
 class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
 
   private val continueAmendReturnJourneyUrl =
-    "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1"
+    "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=false"
 
   private val populatedAnswers = UserAnswers("user-id")
 
@@ -177,6 +177,83 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verifyNoInteractions(mockSessionRepo)
+      }
+    }
+
+    "must redirect to WhatDoYouWantToAmendNil when original return is nil and in-progress return is nil" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+
+      val result = ContinueAmendJourneyResult(
+        userAnswers = populatedAnswers,
+        hasSubcontractors = false,
+        isNilReturn = true
+      )
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(result)))
+
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val application = applicationBuilder()
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=true"
+        ).withBody(AnyContentAsEmpty)
+
+        val res = route(application, request).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
+      }
+    }
+
+    "must redirect to WhatDoYouWantToAmendStandard when original return is nil but in-progress return is nil" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+
+      val result = ContinueAmendJourneyResult(
+        userAnswers = populatedAnswers,
+        hasSubcontractors = false,
+        isNilReturn = true
+      )
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(result)))
+
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val application = applicationBuilder()
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=false"
+        ).withBody(AnyContentAsEmpty)
+
+        val res = route(application, request).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
       }
     }
 
