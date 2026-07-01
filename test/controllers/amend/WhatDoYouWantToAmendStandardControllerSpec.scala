@@ -265,7 +265,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
-        verify(mockSessionRepository, times(2)).set(any())
+        verify(mockSessionRepository, times(1)).set(any())
       }
     }
 
