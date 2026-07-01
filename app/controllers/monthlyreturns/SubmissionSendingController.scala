@@ -60,17 +60,29 @@ class SubmissionSendingController @Inject() (
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         else
           (for {
-            (created, updatedAnswers) <- submissionService.create(request.userAnswers)
-            submitted                 <-
-              submissionService.submitToChrisAndPersist(created.submissionId, updatedAnswers, request.isAgent)
-            _                         <- submissionService.updateSubmissionFromChrisResponse(created.submissionId, updatedAnswers, submitted)
+            (submissionId, updatedAnswers, isResubmission) <-
+              submissionService.getOrCreateSubmissionForChris(request.userAnswers)
+            submitted                                      <-
+              submissionService.submitToChrisAndPersist(
+                submissionId,
+                updatedAnswers,
+                request.isAgent,
+                isResubmission
+              )
+            _                                              <-
+              submissionService.updateSubmissionFromChrisResponse(
+                submissionId,
+                updatedAnswers,
+                submitted
+              )
           } yield SubmissionStatus.fromString(submitted.status) match {
             case Started                             =>
               logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
               Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
             case Pending | SubmissionStatus.Accepted =>
               Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-            case _                                   => Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+            case _                                   =>
+              Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
           }).recover { case ex =>
             logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
             Redirect(controllers.routes.SystemErrorController.onPageLoad())

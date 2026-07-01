@@ -49,5 +49,6 @@ class AmendmentDetailsSpec extends SpecBase {
 
       Json.fromJson[AmendmentDetails](Json.toJson(model)).get mustBe model
     }
+
   }
 }

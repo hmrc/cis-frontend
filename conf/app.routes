@@ -160,6 +160,7 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+GET        /monthly-return/continue-amend-return-journey               controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)
