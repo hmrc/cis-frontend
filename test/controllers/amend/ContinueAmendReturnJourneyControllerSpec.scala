@@ -42,7 +42,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
   "ContinueAmendReturnJourneyController" - {
 
-    "must save user answers and redirect to SubcontractorDetailsAdded when subcontractors are present" in {
+    "must save user answers and redirect to SubcontractorDetailsAdded when in-progress return is standard" in {
       val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
 
@@ -118,7 +118,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
       }
     }
 
-    "must save user answers and redirect to WhatDoYouWantToAmendStandard when no subcontractors and not nil" in {
+    "must save user answers and redirect to SubcontractorDetailsAdded when in-progress return is standard regardless of original" in {
       val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
 
@@ -144,13 +144,16 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         .build()
 
       running(application) {
-        val request = FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)
+        val request = FakeRequest(
+          GET,
+          "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=true"
+        ).withBody(AnyContentAsEmpty)
 
         val res = route(application, request).value
 
         status(res) mustBe SEE_OTHER
         redirectLocation(res).value mustBe
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
       }
     }
 
