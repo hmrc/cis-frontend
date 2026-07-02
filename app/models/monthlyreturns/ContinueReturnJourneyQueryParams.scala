@@ -38,22 +38,26 @@ object ContinueReturnJourneyQueryParams {
         params: Map[String, Seq[String]]
       ): Option[Either[String, ContinueReturnJourneyQueryParams]] =
         for {
-          instanceId          <- stringBinder.bind("instanceId", params)
-          taxYear             <- intBinder.bind("taxYear", params)
-          taxMonth            <- intBinder.bind("taxMonth", params)
-          isOriginalNilReturn <- boolBinder.bind("isOriginalNilReturn", params)
-        } yield (instanceId, taxYear, taxMonth, isOriginalNilReturn) match {
-          case (Right(instanceId), Right(taxYear), Right(taxMonth), Right(isOriginalNilReturn)) =>
-            Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth, isOriginalNilReturn))
-
-          case _ =>
-            Left("Unable to bind ContinueReturnJourneyQueryParams")
+          instanceId <- stringBinder.bind("instanceId", params)
+          taxYear    <- intBinder.bind("taxYear", params)
+          taxMonth   <- intBinder.bind("taxMonth", params)
+        } yield {
+          val isOriginalNilReturn =
+            boolBinder.bind("isOriginalNilReturn", params).flatMap(_.toOption).getOrElse(false)
+          (instanceId, taxYear, taxMonth) match {
+            case (Right(instanceId), Right(taxYear), Right(taxMonth)) =>
+              Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth, isOriginalNilReturn))
+            case _                                                    =>
+              Left("Unable to bind ContinueReturnJourneyQueryParams")
+          }
         }
 
-      override def unbind(key: String, value: ContinueReturnJourneyQueryParams): String =
-        stringBinder.unbind("instanceId", value.instanceId) + "&" +
+      override def unbind(key: String, value: ContinueReturnJourneyQueryParams): String = {
+        val base = stringBinder.unbind("instanceId", value.instanceId) + "&" +
           intBinder.unbind("taxYear", value.taxYear) + "&" +
-          intBinder.unbind("taxMonth", value.taxMonth) + "&" +
-          boolBinder.unbind("isOriginalNilReturn", value.isOriginalNilReturn)
+          intBinder.unbind("taxMonth", value.taxMonth)
+        if (value.isOriginalNilReturn) base + "&" + boolBinder.unbind("isOriginalNilReturn", true)
+        else base
+      }
     }
 }
