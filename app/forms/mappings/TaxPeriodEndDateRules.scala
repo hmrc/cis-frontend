@@ -30,4 +30,20 @@ object TaxPeriodEndDateRules {
     val taxPeriodEndDate = LocalDate.of(year, month, TaxPeriodEndDay)
     !YearMonth.from(taxPeriodEndDate).isAfter(YearMonth.from(maxAllowedDate))
   }
+
+  def earliestSupportedYear(
+    currentDate: LocalDate,
+    taxStartDay: Int,
+    taxStartMonth: Int,
+    supportedYearsCount: Int
+  ): Int = {
+    val taxYearStartDate = LocalDate.of(currentDate.getYear, taxStartMonth, taxStartDay)
+
+    val startingTaxYear =
+      if currentDate.isBefore(taxYearStartDate) then currentDate.getYear
+      else currentDate.getYear + 1
+
+    startingTaxYear - supportedYearsCount + 1
+  }
+
 }

@@ -47,13 +47,13 @@ class MonthYearDateFormatter(
       FormError(s"$key.$field", s"monthlyreturns.dateConfirmNilPayments.error.required.$field")
     }.toList
 
-    lazy val regexErrors = dateFormats.flatMap(checkInput(key, fields, _))
-
+    lazy val regexErrors                 = dateFormats.flatMap(checkInput(key, fields, _))
+    lazy val earliestSupportedYearErrors = earliestSupportedYearCheck(key, fields)
     lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(key, fields)
-
-    lazy val maxMonthYearDateErrors = maxMonthYearDateCheck(key, fields)
+    lazy val maxMonthYearDateErrors      = maxMonthYearDateCheck(key, fields)
 
     if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then Left(missingFieldErrors ++ regexErrors)
+    else if earliestSupportedYearErrors.nonEmpty then Left(earliestSupportedYearErrors.toSeq)
     else if earliestMonthYearDateErrors.nonEmpty then Left(earliestMonthYearDateErrors.toSeq)
     else if maxMonthYearDateErrors.nonEmpty then Left(maxMonthYearDateErrors.toSeq)
     else formatDate(key, data).left.map(_.map(_.copy(key = key, args = args)))
@@ -93,6 +93,29 @@ class MonthYearDateFormatter(
 
     }
   }
+
+  private def earliestSupportedYearCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] =
+    fields.get("year").flatten match {
+      case Some(year) =>
+        val earliestYear = TaxPeriodEndDateRules.earliestSupportedYear(
+          currentDate = LocalDate.now(),
+          taxStartDay = config.monthlyReturnsTaxStartDay,
+          taxStartMonth = config.monthlyReturnsTaxStartMonth,
+          supportedYearsCount = config.monthlyReturnsSupportedYears
+        )
+
+        val earliestSupportedYearError =
+          FormError(
+            s"$key.year",
+            "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear",
+            Seq(earliestYear.toString)
+          )
+
+        if year.toInt < earliestYear then Some(earliestSupportedYearError)
+        else None
+
+      case None => None
+    }
 
   private def maxMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
 

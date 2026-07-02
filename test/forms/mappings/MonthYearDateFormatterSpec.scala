@@ -44,6 +44,9 @@ class MonthYearDateFormatterSpec
 
   private val mockAppConfig = mock[FrontendAppConfig]
   when(mockAppConfig.earliestTaxPeriodEndDate) thenReturn "2007-05-05"
+  when(mockAppConfig.monthlyReturnsTaxStartDay) thenReturn 20
+  when(mockAppConfig.monthlyReturnsTaxStartMonth) thenReturn 11
+  when(mockAppConfig.monthlyReturnsSupportedYears) thenReturn 10
 
   val invalidKey     = "invalidKey"
   val twoRequiredKey = "twoRequiredKey"
@@ -60,9 +63,19 @@ class MonthYearDateFormatterSpec
     config = mockAppConfig
   )
 
+  private val earliestSupportedYear =
+    TaxPeriodEndDateRules.earliestSupportedYear(
+      currentDate = LocalDate.now(),
+      taxStartDay = 20,
+      taxStartMonth = 11,
+      supportedYearsCount = 10
+    )
+
+  private val today = LocalDate.now()
+
   val validDates = datesBetween(
-    min = LocalDate.of(2010, 5, 5),
-    max = LocalDate.of(2020, 5, 5)
+    min = LocalDate.of(earliestSupportedYear, 5, 5),
+    max = today.withDayOfMonth(5)
   )
 
   "must bind valid dates with valid month and year" in {
@@ -201,7 +214,22 @@ class MonthYearDateFormatterSpec
 
   "must fail to bind dates with valid old month and year outside valid range before earliest tax period end date" in {
 
-    val result = monthYearDateFormatter.bind(
+    val config = mock[FrontendAppConfig]
+    when(config.earliestTaxPeriodEndDate) thenReturn "2007-05-05"
+    when(config.monthlyReturnsTaxStartDay) thenReturn 20
+    when(config.monthlyReturnsTaxStartMonth) thenReturn 11
+    when(config.monthlyReturnsSupportedYears) thenReturn 100
+
+    val formatter = new MonthYearDateFormatter(
+      invalidKey = invalidKey,
+      twoRequiredKey = twoRequiredKey,
+      requiredKey = requiredKey,
+      dateFormats = dateFormats,
+      fieldKeys = fieldKeys,
+      config = config
+    )
+
+    val result = formatter.bind(
       "value",
       Map(
         "value.month" -> "12",
@@ -242,6 +270,27 @@ class MonthYearDateFormatterSpec
       )
     )
 
+  }
+
+  "must fail to bind dates before the earliest supported year" in {
+
+    val result = monthYearDateFormatter.bind(
+      "value",
+      Map(
+        "value.month" -> "12",
+        "value.year"  -> (earliestSupportedYear - 1).toString
+      )
+    )
+
+    result mustEqual Left(
+      List(
+        FormError(
+          "value.year",
+          List("monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear"),
+          List(earliestSupportedYear.toString)
+        )
+      )
+    )
   }
 
 }
