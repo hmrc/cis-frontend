@@ -65,7 +65,7 @@ class ContinueAmendReturnJourneyController @Inject() (
 
           case Right(result) =>
             sessionRepository.set(result.userAnswers).map { _ =>
-              (queryParams.isOriginalNilReturn, result.isNilReturn) match {
+              (queryParams.isOriginalNilReturn.getOrElse(false), result.isNilReturn) match {
                 case (_, false)   =>
                   Redirect(
                     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)

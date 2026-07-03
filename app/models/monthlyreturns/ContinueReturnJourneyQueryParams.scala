@@ -22,7 +22,7 @@ case class ContinueReturnJourneyQueryParams(
   instanceId: String,
   taxYear: Int,
   taxMonth: Int,
-  isOriginalNilReturn: Boolean = false
+  isOriginalNilReturn: Option[Boolean] = None
 )
 
 object ContinueReturnJourneyQueryParams {
@@ -42,8 +42,7 @@ object ContinueReturnJourneyQueryParams {
           taxYear    <- intBinder.bind("taxYear", params)
           taxMonth   <- intBinder.bind("taxMonth", params)
         } yield {
-          val isOriginalNilReturn =
-            boolBinder.bind("isOriginalNilReturn", params).flatMap(_.toOption).getOrElse(false)
+          val isOriginalNilReturn = boolBinder.bind("isOriginalNilReturn", params).flatMap(_.toOption)
           (instanceId, taxYear, taxMonth) match {
             case (Right(instanceId), Right(taxYear), Right(taxMonth)) =>
               Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth, isOriginalNilReturn))
@@ -56,8 +55,10 @@ object ContinueReturnJourneyQueryParams {
         val base = stringBinder.unbind("instanceId", value.instanceId) + "&" +
           intBinder.unbind("taxYear", value.taxYear) + "&" +
           intBinder.unbind("taxMonth", value.taxMonth)
-        if (value.isOriginalNilReturn) base + "&" + boolBinder.unbind("isOriginalNilReturn", true)
-        else base
+        value.isOriginalNilReturn match {
+          case Some(v) => base + "&" + boolBinder.unbind("isOriginalNilReturn", v)
+          case None    => base
+        }
       }
     }
 }
