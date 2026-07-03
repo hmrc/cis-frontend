@@ -1284,6 +1284,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
             taxMonth = 3,
             nilReturnIndicator = Some("N"),
             decNilReturnNoPayments = Some("N"),
+            decNoMoreSubPayments = Some("Y"),
             decEmpStatusConsidered = Some("Y"),
             decAllSubsVerified = Some("Y")
           )
@@ -1340,6 +1341,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(EmploymentStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
+      ua.get(SubmitInactivityRequestPage) mustBe Some(true)
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage) mustBe Some(1L)
 

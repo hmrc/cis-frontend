@@ -363,8 +363,9 @@ class MonthlyReturnService @Inject() (
       ua2 <- setOrError(ua1, EmploymentStatusDeclarationPage, monthlyReturn.decEmpStatusConsidered.contains("Y"))
       ua3 <- setOrError(ua2, VerifiedStatusDeclarationPage, monthlyReturn.decAllSubsVerified.contains("Y"))
       ua4 <- setOrError(ua3, PaymentDetailsConfirmationPage, true)
-      ua5 <- populateStandardReturnItems(ua4, monthlyReturnItems)
-    } yield ua5
+      ua5 <- setOrError(ua4, SubmitInactivityRequestPage, monthlyReturn.decNoMoreSubPayments.contains("Y"))
+      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems)
+    } yield ua6
 
   private def populateStandardReturnItems(
     ua: UserAnswers,
