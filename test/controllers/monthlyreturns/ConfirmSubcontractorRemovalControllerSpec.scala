@@ -24,6 +24,8 @@ import models.{CheckMode, Mode, NormalMode, ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{atLeastOnce, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
+import models.amend.AmendmentDetails
+import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
@@ -154,6 +156,48 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         )(any[HeaderCarrier])
 
         verify(mockSessionRepository, atLeastOnce()).set(any())
+      }
+    }
+
+    "must redirect to WhatDoYouWantToAmendStandard when last subcontractor is removed during amendment" in {
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.deleteMonthlyReturnItem(any())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val uaAmendment = uaWithSubcontractor
+        .setOrException(
+          AmendmentDetailsPage,
+          AmendmentDetails(
+            instanceId = "abc-123",
+            taxYear = 2025,
+            taxMonth = 1,
+            contractorName = "Test Co",
+            originalReturnType = ReturnType.MonthlyAmendedStandardReturn,
+            acceptedTime = None
+          )
+        )
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaAmendment))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
       }
     }
 
