@@ -27,6 +27,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import models.amend.AmendmentDetails
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
+import pages.submission.ResubmissionIdPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -179,6 +180,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
             acceptedTime = None
           )
         )
+        .setOrException(ResubmissionIdPage, 1L)
 
       val application =
         applicationBuilder(userAnswers = Some(uaAmendment))
