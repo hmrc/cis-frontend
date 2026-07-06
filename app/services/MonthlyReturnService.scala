@@ -300,11 +300,10 @@ class MonthlyReturnService @Inject() (
                DateConfirmPaymentsPage,
                LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
              )
-      ua4 <- setOrError(
-               ua3,
-               SubmitInactivityRequestPage,
-               monthlyReturn.decNilReturnNoPayments.contains("Y")
-             )
+      ua4 <- deriveSubmitInactivityRequest(monthlyReturn) match {
+               case Some(value) => setOrError(ua3, SubmitInactivityRequestPage, value)
+               case None        => Right(ua3)
+             }
       ua5 <- setOrError(ua4, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
       ua6 <- emailRecipient.filter(_.nonEmpty) match {
                case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
@@ -415,6 +414,13 @@ class MonthlyReturnService @Inject() (
                      } yield next
                  }
     } yield updated
+
+  private def deriveSubmitInactivityRequest(monthlyReturn: MonthlyReturn): Option[Boolean] =
+    monthlyReturn.decNilReturnNoPayments match {
+      case Some("Y")                                                 => Some(true)
+      case None if monthlyReturn.decInformationCorrect.contains("Y") => Some(false)
+      case _                                                         => None
+    }
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
