@@ -292,6 +292,8 @@ class MonthlyReturnService @Inject() (
     resubmissionId: Option[Long],
     contractorName: Option[String]
   ): Either[String, UserAnswers] =
+    val nonEmptyEmailRecipient = emailRecipient.filter(_.nonEmpty)
+
     for {
       ua1 <- setOrError(ua, CisIdPage, instanceId)
       ua2 <- setOrError(ua1, ReturnTypePage, returnType)
@@ -304,8 +306,11 @@ class MonthlyReturnService @Inject() (
                case Some(value) => setOrError(ua3, SubmitInactivityRequestPage, value)
                case None        => Right(ua3)
              }
-      ua5 <- setOrError(ua4, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
-      ua6 <- emailRecipient.filter(_.nonEmpty) match {
+      ua5 <- nonEmptyEmailRecipient match {
+               case Some(_) => setOrError(ua4, ConfirmationByEmailPage, true)
+               case None    => Right(ua4)
+             }
+      ua6 <- nonEmptyEmailRecipient match {
                case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
                case None        => Right(ua5)
              }
