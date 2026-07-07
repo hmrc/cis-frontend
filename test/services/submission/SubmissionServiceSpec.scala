@@ -605,14 +605,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       "pass isResubmission=true to ChrisSubmissionRequestBuilder" in {
         val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig = new FrontendAppConfig(
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
           Configuration(
             "submission-poll-timeout-seconds" -> "60"
           )
         )
-        val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
