@@ -337,7 +337,10 @@ class MonthlyReturnService @Inject() (
                contractorName = contractorName
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
-      ua3 <- setOrError(ua2, SubmitInactivityRequestPage, monthlyReturn.decNilReturnNoPayments.contains("Y"))
+      ua3 <- deriveSubmitInactivityRequest(monthlyReturn) match {
+               case Some(value) => setOrError(ua2, SubmitInactivityRequestPage, value)
+               case None        => Right(ua2)
+             }
     } yield ua3
   }
 
@@ -363,7 +366,10 @@ class MonthlyReturnService @Inject() (
       ua2 <- setOrError(ua1, EmploymentStatusDeclarationPage, monthlyReturn.decEmpStatusConsidered.contains("Y"))
       ua3 <- setOrError(ua2, VerifiedStatusDeclarationPage, monthlyReturn.decAllSubsVerified.contains("Y"))
       ua4 <- setOrError(ua3, PaymentDetailsConfirmationPage, true)
-      ua5 <- setOrError(ua4, SubmitInactivityRequestPage, monthlyReturn.decNoMoreSubPayments.contains("Y"))
+      ua5 <- deriveSubmitInactivityRequest(monthlyReturn) match {
+               case Some(value) => setOrError(ua4, SubmitInactivityRequestPage, value)
+               case None        => Right(ua4)
+             }
       ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems)
     } yield ua6
 
@@ -395,6 +401,20 @@ class MonthlyReturnService @Inject() (
                      } yield next
                  }
     } yield updated
+
+  private def deriveSubmitInactivityRequest(monthlyReturn: MonthlyReturn): Option[Boolean] =
+    val inactivityRequestDeclared =
+      monthlyReturn.decNilReturnNoPayments.contains("Y") ||
+        monthlyReturn.decNoMoreSubPayments.contains("Y")
+
+      if (inactivityRequestDeclared) {
+        Some(true)
+      } else if (monthlyReturn.decInformationCorrect).contains("Y")){
+        Some(false)
+      } else {
+        None
+      }
+  }
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
