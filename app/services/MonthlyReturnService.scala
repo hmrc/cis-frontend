@@ -407,14 +407,13 @@ class MonthlyReturnService @Inject() (
       monthlyReturn.decNilReturnNoPayments.contains("Y") ||
         monthlyReturn.decNoMoreSubPayments.contains("Y")
 
-      if (inactivityRequestDeclared) {
-        Some(true)
-      } else if (monthlyReturn.decInformationCorrect).contains("Y")){
-        Some(false)
-      } else {
-        None
-      }
-  }
+    if (inactivityRequestDeclared) {
+      Some(true)
+    } else if (monthlyReturn.decInformationCorrect.contains("Y")) {
+      Some(false)
+    } else {
+      None
+    }
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
