@@ -405,5 +405,35 @@ class ChrisSubmissionRequestBuilderSpec
 
       ex.getMessage mustBe "Verification answer missing"
     }
+
+    "set isResubmission to true when building a CHRIS request for a resubmission" in {
+      val builder = new ChrisSubmissionRequestBuilder()
+
+      val ua =
+        UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
+          .success
+          .value
+          .set(SubmitInactivityRequestPage, true)
+          .success
+          .value
+          .set(EnterYourEmailAddressPage, "test@test.com")
+          .success
+          .value
+
+      val req =
+        builder.build(
+          ua = ua,
+          taxpayer = mkTaxpayer(),
+          isAgent = false,
+          monthlyReturn = monthlyReturn,
+          isResubmission = true
+        )
+
+      req.isResubmission mustBe true
+    }
   }
 }

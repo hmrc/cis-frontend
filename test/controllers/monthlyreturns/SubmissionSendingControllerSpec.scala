@@ -253,6 +253,47 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verifyNoInteractions(mockService)
       verifyNoInteractions(mockMongoDb)
     }
+
+    "passes isResubmission=true to submitToChrisAndPersist when an existing submission is reused" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val (createdId, updatedAnswers, submitted) =
+        stubSubmissionFlow(
+          service = mockService,
+          sessionDb = mockMongoDb,
+          status = "PENDING",
+          isResubmission = true
+        )
+
+      val app = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+
+      verify(mockService).getOrCreateSubmissionForChris(
+        any[UserAnswers]
+      )(using any[HeaderCarrier])
+
+      verify(mockService).submitToChrisAndPersist(
+        eqTo(createdId),
+        eqTo(updatedAnswers),
+        any[Boolean],
+        eqTo(true)
+      )(using any[HeaderCarrier])
+
+      verify(mockService).updateSubmissionFromChrisResponse(
+        eqTo(createdId),
+        eqTo(updatedAnswers),
+        eqTo(submitted)
+      )(
+        any[CisIdDataRequest[AnyContent]],
+        any[HeaderCarrier]
+      )
+    }
   }
 
   lazy val pollAndRedirectRoute: String =
