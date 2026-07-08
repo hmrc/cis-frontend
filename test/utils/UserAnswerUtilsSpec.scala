@@ -22,6 +22,7 @@ import models.monthlyreturns.{Declaration, SelectedSubcontractor}
 import models.{ReturnType, UserAnswers}
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.*
+import pages.submission.ResubmissionIdPage
 import utils.UserAnswerUtils.*
 
 class UserAnswerUtilsSpec extends SpecBase {
@@ -272,6 +273,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(EnterYourEmailAddressPage, "test@example.com")
         .get
+        .set(ResubmissionIdPage, 1L)
+        .get
         .set(DeclarationPage, Set(Declaration.Confirmed))
         .get
         .set(SelectedSubcontractorPage(1), completeSub(1))
@@ -300,6 +303,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(SubmitInactivityRequestPage) mustBe None
       cleared.get(ConfirmationByEmailPage) mustBe None
       cleared.get(EnterYourEmailAddressPage) mustBe None
+      cleared.get(ResubmissionIdPage) mustBe None
       cleared.get(DeclarationPage) mustBe None
       cleared.get(SelectedSubcontractorPage(1)) mustBe None
       cleared.get(VerifySubcontractorsPage) mustBe None

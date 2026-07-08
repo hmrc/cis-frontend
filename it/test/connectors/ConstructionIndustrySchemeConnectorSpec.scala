@@ -56,6 +56,7 @@ class ConstructionIndustrySchemeConnectorSpec
     monthYear = "2025-10",
     email = Some("test@test.com"),
     isAgent = false,
+    isResubmission = false,
     clientTaxOfficeNumber = "",
     clientTaxOfficeRef = "",
     returnType = MonthlyNilReturn,

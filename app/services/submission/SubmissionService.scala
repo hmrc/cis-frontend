@@ -53,6 +53,18 @@ class SubmissionService @Inject() (
 
   private val ukZone: ZoneId = ZoneId.of("Europe/London")
 
+  def getOrCreateSubmissionForChris(
+    ua: UserAnswers
+  )(implicit hc: HeaderCarrier): Future[(String, UserAnswers, Boolean)] =
+    ua.get(ResubmissionIdPage) match {
+      case Some(resubmissionId) =>
+        Future.successful((resubmissionId.toString, ua, true))
+      case None                 =>
+        create(ua).map { case (created, updatedUa) =>
+          (created.submissionId, updatedUa, false)
+        }
+    }
+
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
       req            <- buildCreateRequest(ua)
@@ -64,7 +76,8 @@ class SubmissionService @Inject() (
   def submitToChrisAndPersist(
     submissionId: String,
     ua: UserAnswers,
-    isAgent: Boolean
+    isAgent: Boolean,
+    isResubmission: Boolean
   )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
 
     val taxpayerFut: Future[CisTaxpayer] =
@@ -98,7 +111,7 @@ class SubmissionService @Inject() (
       monthlyReturn                           <- cisConnector.retrieveMonthlyReturnForEditDetails(
                                                    GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment)
                                                  )
-      csr                                      = chrisRequestBuilder.build(ua, taxpayer, isAgent, monthlyReturn)
+      csr                                      = chrisRequestBuilder.build(ua, taxpayer, isAgent, monthlyReturn, isResubmission)
       response                                <- cisConnector.submitToChris(submissionId, csr)
       amendment                                = monthlyReturn.monthlyReturn.headOption.flatMap(_.amendment)
       _                                       <- writeToFeMongo(ua, submissionId, response, amendment)

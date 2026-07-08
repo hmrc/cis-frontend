@@ -24,7 +24,7 @@ import models.monthlyreturns.*
 import pages.monthlyreturns.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import pages.submission.SubmissionJourneyCompletedPage
+import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.*
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.QuestionPage
@@ -203,9 +203,9 @@ class MonthlyReturnService @Inject() (
     ua: UserAnswers,
     editRequest: GetMonthlyReturnForEditRequest
   )(implicit hc: HeaderCarrier): Future[Either[String, UserAnswers]] =
-    retrieveMonthlyReturnForEditDetails(
-      editRequest
-    ).map { response =>
+    retrieveMonthlyReturnForEditDetails(editRequest).map { response =>
+      val contractorName = response.scheme.headOption.flatMap(_.name).map(_.trim).filter(_.nonEmpty)
+
       for {
         monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
         updatedUa     <- populateContinueJourneyAnswers(
@@ -213,7 +213,8 @@ class MonthlyReturnService @Inject() (
                            instanceId = editRequest.instanceId,
                            monthlyReturn = monthlyReturn,
                            monthlyReturnItems = response.monthlyReturnItems,
-                           submissions = response.submission
+                           submissions = response.submission,
+                           contractorName = contractorName
                          )
       } yield updatedUa
     }
@@ -246,9 +247,11 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     monthlyReturn: MonthlyReturn,
     monthlyReturnItems: Seq[MonthlyReturnItem],
-    submissions: Seq[Submission]
+    submissions: Seq[Submission],
+    contractorName: Option[String]
   ): Either[String, UserAnswers] = {
     val emailRecipient = submissions.headOption.flatMap(_.emailRecipient)
+    val resubmissionId = submissions.headOption.map(_.submissionId)
 
     monthlyReturn.nilReturnIndicator match {
       case Some("Y") =>
@@ -256,7 +259,9 @@ class MonthlyReturnService @Inject() (
           ua = ua,
           instanceId = instanceId,
           monthlyReturn = monthlyReturn,
-          emailRecipient = emailRecipient
+          emailRecipient = emailRecipient,
+          resubmissionId = resubmissionId,
+          contractorName = contractorName
         )
 
       case Some("N") =>
@@ -265,7 +270,9 @@ class MonthlyReturnService @Inject() (
           instanceId = instanceId,
           monthlyReturn = monthlyReturn,
           monthlyReturnItems = monthlyReturnItems,
-          emailRecipient = emailRecipient
+          emailRecipient = emailRecipient,
+          resubmissionId = resubmissionId,
+          contractorName = contractorName
         )
 
       case _ =>
@@ -281,8 +288,12 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     returnType: ReturnType,
     monthlyReturn: MonthlyReturn,
-    emailRecipient: Option[String]
+    emailRecipient: Option[String],
+    resubmissionId: Option[Long],
+    contractorName: Option[String]
   ): Either[String, UserAnswers] =
+    val nonEmptyEmailRecipient = emailRecipient.filter(_.nonEmpty)
+
     for {
       ua1 <- setOrError(ua, CisIdPage, instanceId)
       ua2 <- setOrError(ua1, ReturnTypePage, returnType)
@@ -291,23 +302,35 @@ class MonthlyReturnService @Inject() (
                DateConfirmPaymentsPage,
                LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
              )
-      ua4 <- setOrError(
-               ua3,
-               SubmitInactivityRequestPage,
-               monthlyReturn.decNilReturnNoPayments.contains("Y")
-             )
-      ua5 <- setOrError(ua4, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
-      ua6 <- emailRecipient.filter(_.nonEmpty) match {
+      ua4 <- deriveSubmitInactivityRequest(monthlyReturn) match {
+               case Some(value) => setOrError(ua3, SubmitInactivityRequestPage, value)
+               case None        => Right(ua3)
+             }
+      ua5 <- nonEmptyEmailRecipient match {
+               case Some(_) => setOrError(ua4, ConfirmationByEmailPage, true)
+               case None    => Right(ua4)
+             }
+      ua6 <- nonEmptyEmailRecipient match {
                case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
                case None        => Right(ua5)
              }
-    } yield ua6
+      ua7 <- resubmissionId match {
+               case Some(id) => setOrError(ua6, ResubmissionIdPage, id)
+               case None     => Right(ua6)
+             }
+      ua8 <- contractorName match {
+               case Some(name) => setOrError(ua7, ContractorNamePage, name)
+               case None       => Right(ua7)
+             }
+    } yield ua8
 
   private def populateNilReturnAnswers(
     ua: UserAnswers,
     instanceId: String,
     monthlyReturn: MonthlyReturn,
-    emailRecipient: Option[String]
+    emailRecipient: Option[String],
+    resubmissionId: Option[Long],
+    contractorName: Option[String]
   ): Either[String, UserAnswers] = {
     val declarationSet =
       if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
@@ -318,7 +341,9 @@ class MonthlyReturnService @Inject() (
                instanceId = instanceId,
                returnType = MonthlyNilReturn,
                monthlyReturn = monthlyReturn,
-               emailRecipient = emailRecipient
+               emailRecipient = emailRecipient,
+               resubmissionId = resubmissionId,
+               contractorName = contractorName
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
     } yield ua2
@@ -329,7 +354,9 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     monthlyReturn: MonthlyReturn,
     monthlyReturnItems: Seq[MonthlyReturnItem],
-    emailRecipient: Option[String]
+    emailRecipient: Option[String],
+    resubmissionId: Option[Long],
+    contractorName: Option[String]
   ): Either[String, UserAnswers] =
     for {
       ua1 <- populateCommonReturnAnswers(
@@ -337,7 +364,9 @@ class MonthlyReturnService @Inject() (
                instanceId = instanceId,
                returnType = MonthlyStandardReturn,
                monthlyReturn = monthlyReturn,
-               emailRecipient = emailRecipient
+               emailRecipient = emailRecipient,
+               resubmissionId = resubmissionId,
+               contractorName = contractorName
              )
       ua2 <- setOrError(
                ua1,
@@ -390,6 +419,13 @@ class MonthlyReturnService @Inject() (
                      } yield next
                  }
     } yield updated
+
+  private def deriveSubmitInactivityRequest(monthlyReturn: MonthlyReturn): Option[Boolean] =
+    monthlyReturn.decNilReturnNoPayments match {
+      case Some("Y")                                                 => Some(true)
+      case None if monthlyReturn.decInformationCorrect.contains("Y") => Some(false)
+      case _                                                         => None
+    }
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
