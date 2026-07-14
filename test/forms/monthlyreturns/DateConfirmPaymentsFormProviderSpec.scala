@@ -19,7 +19,6 @@ package forms.monthlyreturns
 import base.SpecBase
 import config.FrontendAppConfig
 import forms.behaviours.DateBehaviours
-import forms.mappings.TaxPeriodEndDateRules
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.when
 import play.api.i18n.Messages
@@ -41,19 +40,27 @@ class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase w
 
   ".value" - {
 
-    val earliestSupportedYear =
-      TaxPeriodEndDateRules.earliestSupportedYear(
-        currentDate = LocalDate.now(),
-        taxStartDay = 20,
-        taxStartMonth = 11,
-        supportedYearsCount = 10
+    val currentDate = LocalDate.now()
+
+    val taxYearStartDate =
+      LocalDate.of(
+        currentDate.getYear,
+        11,
+        20
       )
+
+    val startingTaxYear =
+      if currentDate.isBefore(taxYearStartDate) then currentDate.getYear
+      else currentDate.getYear + 1
+
+    val earliestSupportedYear =
+      startingTaxYear - 10 + 1
 
     val validData = oneOf(
       Seq(
         LocalDate.of(earliestSupportedYear, 4, 5),
         LocalDate.of(earliestSupportedYear + 1, 11, 5),
-        LocalDate.now().withDayOfMonth(5)
+        currentDate.withDayOfMonth(5)
       )
     )
 

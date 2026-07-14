@@ -94,28 +94,42 @@ class MonthYearDateFormatter(
     }
   }
 
-  private def earliestSupportedYearCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] =
-    fields.get("year").flatten match {
-      case Some(year) =>
-        val earliestYear = TaxPeriodEndDateRules.earliestSupportedYear(
-          currentDate = LocalDate.now(),
-          taxStartDay = config.monthlyReturnsTaxStartDay,
-          taxStartMonth = config.monthlyReturnsTaxStartMonth,
-          supportedYearsCount = config.monthlyReturnsSupportedYears
-        )
+  private def earliestSupportedYearCheck(
+    key: String,
+    fields: Map[String, Option[String]]
+  ): Option[FormError] = {
+    val earliestYear = earliestSupportedYear
+    val enteredYear  = fields.get("year").flatten.flatMap(_.toIntOption)
 
-        val earliestSupportedYearError =
+    enteredYear match {
+      case Some(year) if year < earliestYear =>
+        Some(
           FormError(
             s"$key.year",
             "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear",
             Seq(earliestYear.toString)
           )
+        )
 
-        if year.toInt < earliestYear then Some(earliestSupportedYearError)
-        else None
-
-      case None => None
+      case _ => None
     }
+  }
+
+  private def earliestSupportedYear: Int = {
+    val currentDate = LocalDate.now()
+
+    val taxYearStartDate = LocalDate.of(
+      currentDate.getYear,
+      config.monthlyReturnsTaxStartMonth,
+      config.monthlyReturnsTaxStartDay
+    )
+
+    val startingTaxYear =
+      if currentDate.isBefore(taxYearStartDate) then currentDate.getYear
+      else currentDate.getYear + 1
+
+    startingTaxYear - config.monthlyReturnsSupportedYears + 1
+  }
 
   private def maxMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
 

@@ -63,15 +63,21 @@ class MonthYearDateFormatterSpec
     config = mockAppConfig
   )
 
-  private val earliestSupportedYear =
-    TaxPeriodEndDateRules.earliestSupportedYear(
-      currentDate = LocalDate.now(),
-      taxStartDay = 20,
-      taxStartMonth = 11,
-      supportedYearsCount = 10
+  private val today = LocalDate.now()
+
+  private val earliestSupportedYear = {
+    val taxYearStartDate = LocalDate.of(
+      today.getYear,
+      11,
+      20
     )
 
-  private val today = LocalDate.now()
+    val startingTaxYear =
+      if today.isBefore(taxYearStartDate) then today.getYear
+      else today.getYear + 1
+
+    startingTaxYear - 10 + 1
+  }
 
   val validDates = datesBetween(
     min = LocalDate.of(earliestSupportedYear, 5, 5),
@@ -91,7 +97,9 @@ class MonthYearDateFormatterSpec
         "value.year"  -> year
       )
 
-      monthYearDateFormatter.bind("value", data) mustEqual Right(LocalDate.parse(s"$year-$parseMonth-05"))
+      monthYearDateFormatter.bind("value", data) mustEqual Right(
+        LocalDate.parse(s"$year-$parseMonth-05")
+      )
     }
   }
 
@@ -99,7 +107,9 @@ class MonthYearDateFormatterSpec
 
     val today = LocalDate.now()
 
-    val date = if today.getDayOfMonth <= 5 then today.plusMonths(3) else today.plusMonths(4)
+    val date =
+      if today.getDayOfMonth <= 5 then today.plusMonths(3)
+      else today.plusMonths(4)
 
     val month: String      = date.getMonthValue.toString
     val year: String       = date.getYear.toString
@@ -110,13 +120,15 @@ class MonthYearDateFormatterSpec
       "value.year"  -> year
     )
 
-    monthYearDateFormatter.bind("value", data) mustEqual Right(LocalDate.parse(s"$year-$parseMonth-05"))
-
+    monthYearDateFormatter.bind("value", data) mustEqual Right(
+      LocalDate.parse(s"$year-$parseMonth-05")
+    )
   }
 
   "must fail to bind an empty date" in {
 
-    val result = monthYearDateFormatter.bind("value", Map.empty[String, String])
+    val result =
+      monthYearDateFormatter.bind("value", Map.empty[String, String])
 
     result mustEqual Left(
       List(
@@ -246,7 +258,6 @@ class MonthYearDateFormatterSpec
         )
       )
     )
-
   }
 
   "must fail to bind dates with valid future month and year outside valid range" in {
@@ -269,7 +280,29 @@ class MonthYearDateFormatterSpec
         )
       )
     )
+  }
 
+  "must fail to bind a year beyond the maximum future return period" in {
+
+    val futureDate = LocalDate.now().plusYears(10)
+
+    val result = monthYearDateFormatter.bind(
+      "value",
+      Map(
+        "value.month" -> futureDate.getMonthValue.toString,
+        "value.year"  -> futureDate.getYear.toString
+      )
+    )
+
+    result mustEqual Left(
+      List(
+        FormError(
+          "value.month",
+          List("monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod"),
+          List()
+        )
+      )
+    )
   }
 
   "must fail to bind dates before the earliest supported year" in {
@@ -292,5 +325,4 @@ class MonthYearDateFormatterSpec
       )
     )
   }
-
 }

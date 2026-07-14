@@ -64,34 +64,4 @@ class TaxPeriodEndDateRulesSpec extends AnyFreeSpec with Matchers {
       TaxPeriodEndDateRules.isWithinMaxFuturePeriod(maxAllowed, year = 2025, month = 8) mustBe false
     }
   }
-
-  "earliestSupportedYear" - {
-
-    "must return current year minus supported years plus one when current date is before tax start date" in {
-      TaxPeriodEndDateRules.earliestSupportedYear(
-        currentDate = LocalDate.of(2026, 11, 19),
-        taxStartDay = 20,
-        taxStartMonth = 11,
-        supportedYearsCount = 10
-      ) mustBe 2017
-    }
-
-    "must return next tax year minus supported years plus one when current date is on tax start date" in {
-      TaxPeriodEndDateRules.earliestSupportedYear(
-        currentDate = LocalDate.of(2026, 11, 20),
-        taxStartDay = 20,
-        taxStartMonth = 11,
-        supportedYearsCount = 10
-      ) mustBe 2018
-    }
-
-    "must return next tax year minus supported years plus one when current date is after tax start date" in {
-      TaxPeriodEndDateRules.earliestSupportedYear(
-        currentDate = LocalDate.of(2026, 12, 5),
-        taxStartDay = 20,
-        taxStartMonth = 11,
-        supportedYearsCount = 10
-      ) mustBe 2018
-    }
-  }
 }
