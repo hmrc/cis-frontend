@@ -32,7 +32,8 @@ class ChrisSubmissionRequestBuilder @Inject() {
     ua: UserAnswers,
     taxpayer: CisTaxpayer,
     isAgent: Boolean,
-    monthlyReturn: GetAllMonthlyReturnDetailsResponse
+    monthlyReturn: GetAllMonthlyReturnDetailsResponse,
+    isResubmission: Boolean
   ): ChrisSubmissionRequest = {
     val returnType         = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("ReturnType missing"))
     val common             = buildCommon(ua, taxpayer, isAgent, monthlyReturn)
@@ -44,7 +45,8 @@ class ChrisSubmissionRequestBuilder @Inject() {
         ChrisSubmissionRequest.fromNil(
           common = common,
           informationCorrect = informationCorrect,
-          inactivity = inactivityBool
+          inactivity = inactivityBool,
+          isResubmission = isResubmission
         )
 
       case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
@@ -52,7 +54,8 @@ class ChrisSubmissionRequestBuilder @Inject() {
           common = common,
           informationCorrect = informationCorrect,
           inactivity = inactivityBool,
-          standard = buildStandardMonthlyReturn(ua, monthlyReturn)
+          standard = buildStandardMonthlyReturn(ua, monthlyReturn),
+          isResubmission = isResubmission
         )
     }
   }

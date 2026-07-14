@@ -28,7 +28,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.SubmissionJourneyCompletedPage
+import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,6 +49,16 @@ class MonthlyReturnServiceSpec extends SpecBase {
     val service     = new MonthlyReturnService(connector, sessionRepo)
     (service, connector, sessionRepo)
   }
+
+  private def contractorScheme(name: Option[String] = Some("ABC Construction Ltd")): ContractorScheme =
+    ContractorScheme(
+      schemeId = 1,
+      instanceId = "CIS-123",
+      accountsOfficeReference = "123PA12345678",
+      taxOfficeNumber = "123",
+      taxOfficeReference = "AB456",
+      name = name
+    )
 
   private def createMonthlyReturn(year: Int, month: Int, id: Long): MonthlyReturnDetails =
     MonthlyReturnDetails(
@@ -1200,7 +1210,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
-        scheme = Nil,
+        scheme = Seq(contractorScheme(Some("  ABC Construction Ltd  "))),
         monthlyReturn = Seq(
           MonthlyReturn(
             monthlyReturnId = 101,
@@ -1251,6 +1261,74 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(DeclarationPage) mustBe Some(Set(Declaration.Confirmed))
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
+    }
+
+    "populate nil return answers from edit details response and not set InactivityRequestPage if decInformationCorrect is None" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3,
+        false
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme(Some("  ABC Construction Ltd  "))),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("Y"),
+            decInformationCorrect = None,
+            decNilReturnNoPayments = None
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Seq(
+          Submission(
+            submissionId = 1,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = Some("test@example.com"),
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+
+      ua.get(CisIdPage) mustBe Some("CIS-123")
+      ua.get(ReturnTypePage) mustBe Some(MonthlyNilReturn)
+      ua.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 3, 5))
+      ua.get(SubmitInactivityRequestPage) mustBe None
+      ua.get(ConfirmationByEmailPage) mustBe Some(true)
+      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      ua.get(DeclarationPage).value mustBe empty
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
     }
 
     "populate standard return answers and subcontractor items from edit details response" in {
@@ -1264,7 +1342,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val payload = GetAllMonthlyReturnDetailsResponse(
-        scheme = Nil,
+        scheme = Seq(contractorScheme(Some("ABC Construction Ltd"))),
         monthlyReturn = Seq(
           MonthlyReturn(
             monthlyReturnId = 101,
@@ -1323,13 +1401,15 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val ua = result.toOption.value
 
       ua.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
-      ua.get(SubmitInactivityRequestPage) mustBe Some(false)
+      ua.get(SubmitInactivityRequestPage) mustBe None
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(EmploymentStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifySubcontractorsPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
 
       ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
         id = 1001L,
