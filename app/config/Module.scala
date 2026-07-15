@@ -23,7 +23,7 @@ import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilde
 import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl, SubmissionSuccessfulServiceGuard, SubmissionSuccessfulServiceGuardImpl}
 
-import java.time.{Clock, ZoneOffset}
+import java.time.{Clock, ZoneId, ZoneOffset}
 
 class Module extends AbstractModule {
 
@@ -46,7 +46,7 @@ class Module extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[DuplicateMRCreationGuard]).to(classOf[DuplicateMRCreationGuardImpl])
     bind(classOf[SubmissionSuccessfulServiceGuard]).to(classOf[SubmissionSuccessfulServiceGuardImpl])
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
+    bind(classOf[Clock]).toInstance(Clock.system(ZoneId.of("Europe/London")))
     bind(classOf[MonthlyReturnItemPayloadBuilder]).to(classOf[MonthlyReturnItemPayloadBuilderImpl])
   }
 }

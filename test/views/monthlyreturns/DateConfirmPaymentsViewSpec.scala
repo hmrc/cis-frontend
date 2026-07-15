@@ -28,7 +28,7 @@ import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
-import java.time.{Clock, Instant, ZoneOffset}
+import java.time.{Clock, Instant, ZoneId, ZoneOffset}
 
 class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
@@ -59,7 +59,7 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
     val view                                      = app.injector.instanceOf[DateConfirmPaymentsView]
     val mockFrontendAppConfig: FrontendAppConfig  = mock[FrontendAppConfig]
     when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
-    val clock: Clock                              = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneOffset.UTC)
+    val clock: Clock                              = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneId.of("Europe/London"))
     val formProvider                              = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig, clock)
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()

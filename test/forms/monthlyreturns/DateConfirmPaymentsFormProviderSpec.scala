@@ -36,7 +36,7 @@ class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase w
   when(mockFrontendAppConfig.monthlyReturnsTaxStartMonth) `thenReturn` 11
   when(mockFrontendAppConfig.monthlyReturnsSupportedYears) `thenReturn` 10
 
-  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneOffset.UTC)
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneId.of("Europe/London"))
   private val form         = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig, clock)()
 
   ".value" - {

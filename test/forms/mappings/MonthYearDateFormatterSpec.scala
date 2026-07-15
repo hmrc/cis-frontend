@@ -54,7 +54,15 @@ class MonthYearDateFormatterSpec
   val dateFormats    = DateFormats.monthYearFormats
   val fieldKeys      = List("month", "year")
 
-  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneOffset.UTC)
+  private val zone = ZoneId.of("Europe/London")
+  private val clock: Clock = 
+    Clock.fixed(
+      LocalDate.of(2026, 7, 15)
+        .atTime(12, 0)
+        .atZone(zone)
+        .toInstant,
+      zone
+    )
   private val today        = LocalDate.now(clock)
 
   val monthYearDateFormatter = new MonthYearDateFormatter(
@@ -85,6 +93,23 @@ class MonthYearDateFormatterSpec
     min = LocalDate.of(earliestSupportedYear, 5, 5),
     max = today.withDayOfMonth(5)
   )
+
+  private def clockAt(date: LocalDate): Clock =
+    Clock.fixed(
+      date.atTime(12, 0).atZone(zone).toInstant,
+      zone
+    )
+
+  private def formatterAt(date: LocalDate): MonthYearDateFormatter =
+    new MonthYearDateFormatter(
+      invalidKey = invalidKey,
+      twoRequiredKey = twoRequiredKey,
+      requiredKey = requiredKey,
+      dateFormats = dateFormats,
+      fieldKeys = fieldKeys,
+      config = mockAppConfig,
+      clock = clockAt(date)
+    )
 
   "must bind valid dates with valid month and year" in {
 
@@ -122,6 +147,49 @@ class MonthYearDateFormatterSpec
 
     monthYearDateFormatter.bind("value", data) mustEqual Right(
       LocalDate.parse(s"$year-$parseMonth-05")
+    )
+  }
+
+  "must bind a date in the earliest supported year" in {
+
+    val result = monthYearDateFormatter.bind(
+      "value",
+      Map(
+        "value.month" -> "12",
+        "value.year" -> earliestSupportedYear.toString
+      )
+    )
+
+    result mustEqual Right(
+      LocalDate.of(earliestSupportedYear, 12, 5)
+    )
+  }
+
+  "must change the earliest supported year on the configured tax start date" in {
+
+    val formatterBeforeStart =
+      formatterAt(LocalDate.of(2026, 11, 19))
+
+    val formatterOnStart =
+      formatterAt(LocalDate.of(2026, 11, 20))
+
+    val data = Map(
+      "value.month" -> "12",
+      "value.year" -> "2017"
+    )
+
+    formatterBeforeStart.bind("value", data) mustEqual Right(
+      LocalDate.of(2017, 12, 5)
+    )
+
+    formatterOnStart.bind("value", data) mustEqual Left(
+      List(
+        FormError(
+          "value.year",
+          List("monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear"),
+          List("2018")
+        )
+      )
     )
   }
 
