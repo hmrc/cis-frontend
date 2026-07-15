@@ -40,8 +40,6 @@ class MonthYearDateFormatter(
     extends LocalDateFormatter(invalidKey, "", twoRequiredKey, requiredKey, args) {
 
   override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], LocalDate] = {
-    lazy val currentDate: LocalDate = LocalDate.now(clock)
-
     val fields: Map[String, Option[String]] = fieldKeys.map { field =>
       field -> data.get(s"$key.$field").filter(_.nonEmpty)
     }.toMap
@@ -51,9 +49,9 @@ class MonthYearDateFormatter(
     }.toList
 
     lazy val regexErrors                 = dateFormats.flatMap(checkInput(key, fields, _))
-    lazy val earliestSupportedYearErrors = earliestSupportedYearCheck(key, fields, currentDate)
+    lazy val earliestSupportedYearErrors = earliestSupportedYearCheck(key, fields)
     lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(key, fields)
-    lazy val maxMonthYearDateErrors      = maxMonthYearDateCheck(key, fields, currentDate)
+    lazy val maxMonthYearDateErrors      = maxMonthYearDateCheck(key, fields)
 
     if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then Left(missingFieldErrors ++ regexErrors)
     else if earliestSupportedYearErrors.nonEmpty then Left(earliestSupportedYearErrors.toSeq)
@@ -99,10 +97,9 @@ class MonthYearDateFormatter(
 
   private def earliestSupportedYearCheck(
     key: String,
-    fields: Map[String, Option[String]],
-    currentDate: LocalDate
+    fields: Map[String, Option[String]]
   ): Option[FormError] = {
-    val earliestYear = earliestSupportedYear(currentDate)
+    val earliestYear = earliestSupportedYear
     val enteredYear  = fields.get("year").flatten.flatMap(_.toIntOption)
 
     enteredYear match {
@@ -119,7 +116,9 @@ class MonthYearDateFormatter(
     }
   }
 
-  private def earliestSupportedYear(currentDate: LocalDate): Int = {
+  private def earliestSupportedYear: Int = {
+    val currentDate: LocalDate = LocalDate.now(clock)
+    
     val taxYearStartDate = LocalDate.of(
       currentDate.getYear,
       config.monthlyReturnsTaxStartMonth,
@@ -135,9 +134,10 @@ class MonthYearDateFormatter(
 
   private def maxMonthYearDateCheck(
     key: String,
-    fields: Map[String, Option[String]],
-    currentDate: LocalDate
+    fields: Map[String, Option[String]]
   ): Option[FormError] = {
+
+    val currentDate: LocalDate = LocalDate.now(clock)
 
     val oMonth = fields.get("month").flatten
     val oYear  = fields.get("year").flatten
