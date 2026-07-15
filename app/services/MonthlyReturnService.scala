@@ -350,7 +350,7 @@ class MonthlyReturnService @Inject() (
                contractorName = contractorName
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
-      ua3 <- maybeSubmitInactivity match {
+      ua3 <- deriveSubmitInactivityRequest(monthlyReturn) match {
                case Some(value) => setOrError(ua2, SubmitInactivityRequestPage, value)
                case None        => Right(ua2)
              }
@@ -392,10 +392,12 @@ class MonthlyReturnService @Inject() (
                PaymentDetailsConfirmationPage,
                true
              )
-      ua5 <- setOrError(ua4, SubmitInactivityRequestPage, monthlyReturn.decNoMoreSubPayments.contains("Y"))
-
-      ua7 <- populateStandardReturnItems(ua5, monthlyReturnItems, subcontractors)
-    } yield ua7
+      ua5 <- deriveSubmitInactivityRequest(monthlyReturn) match {
+               case Some(value) => setOrError(ua4, SubmitInactivityRequestPage, value)
+               case None        => Right(ua4)
+             }
+      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems, subcontractors)
+    } yield ua6
 
   private def populateStandardReturnItems(
     ua: UserAnswers,
@@ -421,7 +423,7 @@ class MonthlyReturnService @Inject() (
                                        SelectedSubcontractorPage(index + 1),
                                        SelectedSubcontractor(
                                          id = item.subcontractorId.getOrElse(0L),
-                                         name = resolvedName,
+                                         name = item.subcontractorName.getOrElse(""),
                                          totalPaymentsMade = toBigDecimal(item.totalPayments),
                                          costOfMaterials = toBigDecimal(item.costOfMaterials),
                                          totalTaxDeducted = toBigDecimal(item.totalDeducted)
@@ -435,10 +437,16 @@ class MonthlyReturnService @Inject() (
     } yield updated
 
   private def deriveSubmitInactivityRequest(monthlyReturn: MonthlyReturn): Option[Boolean] =
-    monthlyReturn.decNilReturnNoPayments match {
-      case Some("Y")                                                 => Some(true)
-      case None if monthlyReturn.decInformationCorrect.contains("Y") => Some(false)
-      case _                                                         => None
+    val inactivityRequestDeclared =
+      monthlyReturn.decNilReturnNoPayments.contains("Y") ||
+        monthlyReturn.decNoMoreSubPayments.contains("Y")
+
+    if (inactivityRequestDeclared) {
+      Some(true)
+    } else if (monthlyReturn.decInformationCorrect.contains("Y")) {
+      Some(false)
+    } else {
+      None
     }
 
   private def getCisId(ua: UserAnswers): Future[String] =
