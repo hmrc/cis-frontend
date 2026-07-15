@@ -36,7 +36,7 @@ import repositories.SessionRepository
 import services.MonthlyReturnService
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
-import java.time.{LocalDate, ZoneOffset}
+import java.time.{Clock, Instant, LocalDate, ZoneOffset}
 import scala.concurrent.Future
 
 class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
@@ -45,9 +45,11 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
 
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneOffset.UTC)
+
   when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
 
-  private val formProvider = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)
+  private val formProvider = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig, clock)
   private def form         = formProvider()
 
   def onwardRoute: Call = Call("GET", "/foo")

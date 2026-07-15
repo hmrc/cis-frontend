@@ -24,7 +24,7 @@ import org.mockito.Mockito.when
 import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
 
-import java.time.LocalDate
+import java.time.*
 
 class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase with MockitoSugar {
 
@@ -36,7 +36,8 @@ class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase w
   when(mockFrontendAppConfig.monthlyReturnsTaxStartMonth) `thenReturn` 11
   when(mockFrontendAppConfig.monthlyReturnsSupportedYears) `thenReturn` 10
 
-  private val form = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)()
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneOffset.UTC)
+  private val form         = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig, clock)()
 
   ".value" - {
 

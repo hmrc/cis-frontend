@@ -18,7 +18,7 @@ package forms.mappings
 
 import config.FrontendAppConfig
 
-import java.time.LocalDate
+import java.time.*
 import generators.Generators
 import org.mockito.Mockito.when
 import org.scalatest.OptionValues
@@ -54,16 +54,18 @@ class MonthYearDateFormatterSpec
   val dateFormats    = DateFormats.monthYearFormats
   val fieldKeys      = List("month", "year")
 
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneOffset.UTC)
+  private val today        = LocalDate.now(clock)
+
   val monthYearDateFormatter = new MonthYearDateFormatter(
     invalidKey = invalidKey,
     twoRequiredKey = twoRequiredKey,
     requiredKey = requiredKey,
     dateFormats = dateFormats,
     fieldKeys = fieldKeys,
-    config = mockAppConfig
+    config = mockAppConfig,
+    clock = clock
   )
-
-  private val today = LocalDate.now()
 
   private val earliestSupportedYear = {
     val taxYearStartDate = LocalDate.of(
@@ -104,8 +106,6 @@ class MonthYearDateFormatterSpec
   }
 
   "must bind dates with valid future month and year within valid range" in {
-
-    val today = LocalDate.now()
 
     val date =
       if today.getDayOfMonth <= 5 then today.plusMonths(3)
@@ -238,7 +238,8 @@ class MonthYearDateFormatterSpec
       requiredKey = requiredKey,
       dateFormats = dateFormats,
       fieldKeys = fieldKeys,
-      config = config
+      config = config,
+      clock = clock
     )
 
     val result = formatter.bind(
@@ -262,11 +263,11 @@ class MonthYearDateFormatterSpec
 
   "must fail to bind dates with valid future month and year outside valid range" in {
 
-    val today = LocalDate.now().plusMonths(5)
+    val futureDate = today.plusMonths(5)
 
     val data = Map(
-      "value.month" -> today.getMonthValue.toString,
-      "value.year"  -> today.getYear.toString
+      "value.month" -> futureDate.getMonthValue.toString,
+      "value.year"  -> futureDate.getYear.toString
     )
 
     val result = monthYearDateFormatter.bind("value", data)
@@ -284,7 +285,7 @@ class MonthYearDateFormatterSpec
 
   "must fail to bind a year beyond the maximum future return period" in {
 
-    val futureDate = LocalDate.now().plusYears(10)
+    val futureDate = today.plusYears(10)
 
     val result = monthYearDateFormatter.bind(
       "value",

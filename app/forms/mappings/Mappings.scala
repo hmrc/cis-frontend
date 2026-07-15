@@ -22,7 +22,7 @@ import play.api.data.FieldMapping
 import play.api.data.Forms.of
 import play.api.i18n.Messages
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 
 trait Mappings extends Formatters with Constraints {
 
@@ -94,7 +94,8 @@ trait Mappings extends Formatters with Constraints {
     args: Seq[String] = Seq.empty,
     dateFormats: Seq[DateFormat],
     fieldKeys: Seq[String],
-    config: FrontendAppConfig
+    config: FrontendAppConfig,
+    clock: Clock
   )(implicit messages: Messages): FieldMapping[LocalDate] =
     of(
       new MonthYearDateFormatter(
@@ -104,7 +105,8 @@ trait Mappings extends Formatters with Constraints {
         args,
         dateFormats,
         fieldKeys,
-        config
+        config,
+        clock
       )
     )
 }
