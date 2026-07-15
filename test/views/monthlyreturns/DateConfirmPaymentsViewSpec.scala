@@ -35,12 +35,17 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title                                    must include(messages("monthlyreturns.dateConfirmPayments.title"))
-      doc.select("h1").text                        must include(messages("monthlyreturns.dateConfirmPayments.heading"))
+      doc.title             must include(messages("monthlyreturns.dateConfirmPayments.title"))
+      doc.select("h1").text must include(messages("monthlyreturns.dateConfirmPayments.heading"))
+      doc.select("p").text  must include(messages("monthlyreturns.dateConfirmPayments.paragraph"))
+
       doc.select(".govuk-warning-text__text").text must include(
         messages("monthlyreturns.dateConfirmPayments.warning")
       )
-      doc.getElementsByClass("govuk-button").text  must include(messages("site.continue"))
+      val linkText = doc.getElementsByClass("govuk-link").eachText()
+      linkText must contain(messages("monthlyreturns.dateConfirmPayments.p1.link"))
+
+      doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
 
     "must display error summary when form has errors" in new Setup {

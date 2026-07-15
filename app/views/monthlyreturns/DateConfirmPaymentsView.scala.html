@@ -24,6 +24,7 @@
     h1: H1,
     h2: H2,
     paragraph: Paragraph,
+    link: Link,
     formHelper: FormWithCSRF,
     govukErrorSummary: GovukErrorSummary,
     govukDateInput: GovukDateInput,
@@ -44,7 +45,7 @@
         }
 
         @h1(s"$messagePrefix.heading")
-        @paragraph(s"$messagePrefix.paragraph")
+        @paragraph(s"monthlyreturns.dateConfirmPayments.paragraph")
 
 
         @govukDateInput(
@@ -57,6 +58,11 @@
                                 content = Text(messages("monthlyreturns.dateConfirmPayments.warning"))
                             )
                         ).toString +
+                    link(
+                    linkTextKey = "monthlyreturns.dateConfirmPayments.p1.link",
+                    linkUrl = "#",
+                    prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix",
+                    suffixTextKey = "monthlyreturns.dateConfirmPayments.p1.suffix") +
                         h2("monthlyreturns.dateConfirmPayments.legendText").toString +
                         paragraph("monthlyreturns.dateConfirmPayments.helpText", baseClass = "govuk-hint").toString
                     )
