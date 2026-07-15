@@ -213,6 +213,7 @@ class MonthlyReturnService @Inject() (
                            instanceId = editRequest.instanceId,
                            monthlyReturn = monthlyReturn,
                            monthlyReturnItems = response.monthlyReturnItems,
+                           subcontractors = response.subcontractors,
                            submissions = response.submission,
                            contractorName = contractorName
                          )
@@ -247,6 +248,7 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     monthlyReturn: MonthlyReturn,
     monthlyReturnItems: Seq[MonthlyReturnItem],
+    subcontractors: Seq[Subcontractor],
     submissions: Seq[Submission],
     contractorName: Option[String]
   ): Either[String, UserAnswers] = {
@@ -270,6 +272,7 @@ class MonthlyReturnService @Inject() (
           instanceId = instanceId,
           monthlyReturn = monthlyReturn,
           monthlyReturnItems = monthlyReturnItems,
+          subcontractors = subcontractors,
           emailRecipient = emailRecipient,
           resubmissionId = resubmissionId,
           contractorName = contractorName
@@ -292,6 +295,8 @@ class MonthlyReturnService @Inject() (
     resubmissionId: Option[Long],
     contractorName: Option[String]
   ): Either[String, UserAnswers] =
+    val nonEmptyEmailRecipient = emailRecipient.filter(_.nonEmpty)
+
     for {
       ua1 <- setOrError(ua, CisIdPage, instanceId)
       ua2 <- setOrError(ua1, ReturnTypePage, returnType)
@@ -300,20 +305,27 @@ class MonthlyReturnService @Inject() (
                DateConfirmPaymentsPage,
                LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
              )
-      ua4 <- setOrError(ua3, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
-      ua5 <- emailRecipient.filter(_.nonEmpty) match {
-               case Some(email) => setOrError(ua4, EnterYourEmailAddressPage, email)
-               case None        => Right(ua4)
+      ua4 <- deriveSubmitInactivityRequest(monthlyReturn) match {
+               case Some(value) => setOrError(ua3, SubmitInactivityRequestPage, value)
+               case None        => Right(ua3)
              }
-      ua6 <- resubmissionId match {
-               case Some(id) => setOrError(ua5, ResubmissionIdPage, id)
-               case None     => Right(ua5)
+      ua5 <- nonEmptyEmailRecipient match {
+               case Some(_) => setOrError(ua4, ConfirmationByEmailPage, true)
+               case None    => Right(ua4)
              }
-      ua7 <- contractorName match {
-               case Some(name) => setOrError(ua6, ContractorNamePage, name)
-               case None       => Right(ua6)
+      ua6 <- nonEmptyEmailRecipient match {
+               case Some(email) => setOrError(ua5, EnterYourEmailAddressPage, email)
+               case None        => Right(ua5)
              }
-    } yield ua7
+      ua7 <- resubmissionId match {
+               case Some(id) => setOrError(ua6, ResubmissionIdPage, id)
+               case None     => Right(ua6)
+             }
+      ua8 <- contractorName match {
+               case Some(name) => setOrError(ua7, ContractorNamePage, name)
+               case None       => Right(ua7)
+             }
+    } yield ua8
 
   private def populateNilReturnAnswers(
     ua: UserAnswers,
@@ -323,8 +335,9 @@ class MonthlyReturnService @Inject() (
     resubmissionId: Option[Long],
     contractorName: Option[String]
   ): Either[String, UserAnswers] = {
-    val declarationSet =
+    val declarationSet        =
       if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
+    val maybeSubmitInactivity = monthlyReturn.decNilReturnNoPayments.map(_.equals("Y"))
 
     for {
       ua1 <- populateCommonReturnAnswers(
@@ -337,7 +350,10 @@ class MonthlyReturnService @Inject() (
                contractorName = contractorName
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
-      ua3 <- setOrError(ua2, SubmitInactivityRequestPage, monthlyReturn.decNilReturnNoPayments.contains("Y"))
+      ua3 <- maybeSubmitInactivity match {
+               case Some(value) => setOrError(ua2, SubmitInactivityRequestPage, value)
+               case None        => Right(ua2)
+             }
     } yield ua3
   }
 
@@ -346,6 +362,7 @@ class MonthlyReturnService @Inject() (
     instanceId: String,
     monthlyReturn: MonthlyReturn,
     monthlyReturnItems: Seq[MonthlyReturnItem],
+    subcontractors: Seq[Subcontractor],
     emailRecipient: Option[String],
     resubmissionId: Option[Long],
     contractorName: Option[String]
@@ -360,21 +377,42 @@ class MonthlyReturnService @Inject() (
                resubmissionId = resubmissionId,
                contractorName = contractorName
              )
-      ua2 <- setOrError(ua1, EmploymentStatusDeclarationPage, monthlyReturn.decEmpStatusConsidered.contains("Y"))
-      ua3 <- setOrError(ua2, VerifiedStatusDeclarationPage, monthlyReturn.decAllSubsVerified.contains("Y"))
-      ua4 <- setOrError(ua3, PaymentDetailsConfirmationPage, true)
+      ua2 <- setOrError(
+               ua1,
+               EmploymentStatusDeclarationPage,
+               monthlyReturn.decEmpStatusConsidered.contains("Y")
+             )
+      ua3 <- setOrError(
+               ua2,
+               VerifiedStatusDeclarationPage,
+               monthlyReturn.decAllSubsVerified.contains("Y")
+             )
+      ua4 <- setOrError(
+               ua3,
+               PaymentDetailsConfirmationPage,
+               true
+             )
       ua5 <- setOrError(ua4, SubmitInactivityRequestPage, monthlyReturn.decNoMoreSubPayments.contains("Y"))
-      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems)
-    } yield ua6
+
+      ua7 <- populateStandardReturnItems(ua5, monthlyReturnItems, subcontractors)
+    } yield ua7
 
   private def populateStandardReturnItems(
     ua: UserAnswers,
-    items: Seq[MonthlyReturnItem]
+    items: Seq[MonthlyReturnItem],
+    subcontractors: Seq[Subcontractor]
   ): Either[String, UserAnswers] =
     for {
       cleared <- ua.remove(SelectedSubcontractorPage.all).toEither.left.map(_.getMessage)
       updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
                    case (accEither, (item, index)) =>
+                     val resolvedName = (for {
+                       subId <- item.subcontractorId
+                       sub   <- subcontractors.find(_.subcontractorId == subId)
+                     } yield SubcontractorService.resolveSubcontractorName(sub))
+                       .orElse(item.subcontractorName)
+                       .getOrElse("")
+
                      for {
                        acc      <- accEither
                        pageIndex = index + 1
@@ -383,7 +421,7 @@ class MonthlyReturnService @Inject() (
                                        SelectedSubcontractorPage(index + 1),
                                        SelectedSubcontractor(
                                          id = item.subcontractorId.getOrElse(0L),
-                                         name = item.subcontractorName.getOrElse(""),
+                                         name = resolvedName,
                                          totalPaymentsMade = toBigDecimal(item.totalPayments),
                                          costOfMaterials = toBigDecimal(item.costOfMaterials),
                                          totalTaxDeducted = toBigDecimal(item.totalDeducted)
@@ -395,6 +433,13 @@ class MonthlyReturnService @Inject() (
                      } yield next
                  }
     } yield updated
+
+  private def deriveSubmitInactivityRequest(monthlyReturn: MonthlyReturn): Option[Boolean] =
+    monthlyReturn.decNilReturnNoPayments match {
+      case Some("Y")                                                 => Some(true)
+      case None if monthlyReturn.decInformationCorrect.contains("Y") => Some(false)
+      case _                                                         => None
+    }
 
   private def getCisId(ua: UserAnswers): Future[String] =
     ua.get(CisIdPage) match {
