@@ -118,7 +118,7 @@ class MonthYearDateFormatter(
 
   private def earliestSupportedYear: Int = {
     val currentDate: LocalDate = LocalDate.now(clock)
-    
+
     val taxYearStartDate = LocalDate.of(
       currentDate.getYear,
       config.monthlyReturnsTaxStartMonth,
