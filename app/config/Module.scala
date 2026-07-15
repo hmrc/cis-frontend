@@ -23,7 +23,7 @@ import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilde
 import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl, SubmissionSuccessfulServiceGuard, SubmissionSuccessfulServiceGuardImpl}
 
-import java.time.{Clock, ZoneId, ZoneOffset}
+import java.time.{Clock, ZoneId}
 
 class Module extends AbstractModule {
 

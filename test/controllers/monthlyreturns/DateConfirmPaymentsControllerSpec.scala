@@ -36,7 +36,7 @@ import repositories.SessionRepository
 import services.MonthlyReturnService
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
-import java.time.{Clock, Instant, LocalDate, ZoneId, ZoneOffset}
+import java.time.{Clock, Instant, LocalDate, ZoneId}
 import scala.concurrent.Future
 
 class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {

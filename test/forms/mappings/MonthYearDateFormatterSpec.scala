@@ -54,10 +54,11 @@ class MonthYearDateFormatterSpec
   val dateFormats    = DateFormats.monthYearFormats
   val fieldKeys      = List("month", "year")
 
-  private val zone = ZoneId.of("Europe/London")
-  private val clock: Clock = 
+  private val zone         = ZoneId.of("Europe/London")
+  private val clock: Clock =
     Clock.fixed(
-      LocalDate.of(2026, 7, 15)
+      LocalDate
+        .of(2026, 7, 15)
         .atTime(12, 0)
         .atZone(zone)
         .toInstant,
@@ -156,7 +157,7 @@ class MonthYearDateFormatterSpec
       "value",
       Map(
         "value.month" -> "12",
-        "value.year" -> earliestSupportedYear.toString
+        "value.year"  -> earliestSupportedYear.toString
       )
     )
 
@@ -175,7 +176,7 @@ class MonthYearDateFormatterSpec
 
     val data = Map(
       "value.month" -> "12",
-      "value.year" -> "2017"
+      "value.year"  -> "2017"
     )
 
     formatterBeforeStart.bind("value", data) mustEqual Right(

@@ -28,7 +28,7 @@ import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
-import java.time.{Clock, Instant, ZoneId, ZoneOffset}
+import java.time.{Clock, Instant, ZoneId}
 
 class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
