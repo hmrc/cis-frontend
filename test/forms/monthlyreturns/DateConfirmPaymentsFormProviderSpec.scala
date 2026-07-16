@@ -24,7 +24,7 @@ import org.mockito.Mockito.when
 import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
 
-import java.time.LocalDate
+import java.time.*
 
 class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase with MockitoSugar {
 
@@ -32,16 +32,36 @@ class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase w
   val mockFrontendAppConfig: FrontendAppConfig = mock[FrontendAppConfig]
 
   when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
+  when(mockFrontendAppConfig.monthlyReturnsTaxStartDay) `thenReturn` 20
+  when(mockFrontendAppConfig.monthlyReturnsTaxStartMonth) `thenReturn` 11
+  when(mockFrontendAppConfig.monthlyReturnsSupportedYears) `thenReturn` 10
 
-  private val form = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)()
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneId.of("Europe/London"))
+  private val form         = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig, clock)()
 
   ".value" - {
 
+    val currentDate = LocalDate.now()
+
+    val taxYearStartDate =
+      LocalDate.of(
+        currentDate.getYear,
+        11,
+        20
+      )
+
+    val startingTaxYear =
+      if currentDate.isBefore(taxYearStartDate) then currentDate.getYear
+      else currentDate.getYear + 1
+
+    val earliestSupportedYear =
+      startingTaxYear - 10 + 1
+
     val validData = oneOf(
       Seq(
-        LocalDate.of(2010, 4, 5),
-        LocalDate.of(2016, 11, 5),
-        LocalDate.of(2018, 12, 5)
+        LocalDate.of(earliestSupportedYear, 4, 5),
+        LocalDate.of(earliestSupportedYear + 1, 11, 5),
+        currentDate.withDayOfMonth(5)
       )
     )
 

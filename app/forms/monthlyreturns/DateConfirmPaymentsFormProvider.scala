@@ -22,10 +22,10 @@ import play.api.data.Form
 import play.api.i18n.Messages
 import utils.DateFormats
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 
-class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) extends Mappings {
+class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig, clock: Clock) extends Mappings {
 
   def apply()(implicit messages: Messages): Form[LocalDate] =
     Form(
@@ -35,7 +35,8 @@ class DateConfirmPaymentsFormProvider @Inject() (appConfig: FrontendAppConfig) e
         requiredKey = "monthlyreturns.dateConfirmPayments.error.required",
         dateFormats = DateFormats.monthYearFormats,
         fieldKeys = List("month", "year"),
-        config = appConfig
+        config = appConfig,
+        clock = clock
       )
     )
 }

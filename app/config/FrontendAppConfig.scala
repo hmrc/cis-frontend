@@ -63,7 +63,11 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val cacheTtl: Long = configuration.get[Int]("mongodb.timeToLiveInSeconds")
 
-  lazy val earliestTaxPeriodEndDate: String          = configuration.get[String]("earliest-tax-period-end-date")
+  lazy val earliestTaxPeriodEndDate: String  = configuration.get[String]("earliest-tax-period-end-date")
+  lazy val monthlyReturnsTaxStartDay: Int    = configuration.get[Int]("monthlyReturns.date-validation.tax-start-day")
+  lazy val monthlyReturnsTaxStartMonth: Int  = configuration.get[Int]("monthlyReturns.date-validation.tax-start-month")
+  lazy val monthlyReturnsSupportedYears: Int = configuration.get[Int]("monthlyReturns.date-validation.supported-years")
+
   lazy val submissionPollTimeoutSeconds: Int         = configuration.get[Int]("submission-poll-timeout-seconds")
   lazy val submissionPollDefaultIntervalSeconds: Int =
     configuration.get[Int]("submission-poll-default-interval-seconds")

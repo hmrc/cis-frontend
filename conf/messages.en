@@ -161,6 +161,7 @@ monthlyreturns.dateConfirmNilPayments.error.invalid.month = You must enter a tax
 monthlyreturns.dateConfirmNilPayments.error.invalid.year = You must enter a tax year
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = You must enter a tax month, the date cannot be before {0} {1} {2}
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = You must enter a tax year, the date cannot be more than 3 return periods ahead of the current date
+monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear = The return period cannot be before {0} 
 
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
