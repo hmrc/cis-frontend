@@ -335,9 +335,8 @@ class MonthlyReturnService @Inject() (
     resubmissionId: Option[Long],
     contractorName: Option[String]
   ): Either[String, UserAnswers] = {
-    val declarationSet        =
+    val declarationSet =
       if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
-    val maybeSubmitInactivity = monthlyReturn.decNilReturnNoPayments.map(_.equals("Y"))
 
     for {
       ua1 <- populateCommonReturnAnswers(
@@ -408,12 +407,14 @@ class MonthlyReturnService @Inject() (
       cleared <- ua.remove(SelectedSubcontractorPage.all).toEither.left.map(_.getMessage)
       updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
                    case (accEither, (item, index)) =>
-                     val resolvedName = (for {
-                       subId <- item.subcontractorId
-                       sub   <- subcontractors.find(_.subcontractorId == subId)
-                     } yield SubcontractorService.resolveSubcontractorName(sub))
-                       .orElse(item.subcontractorName)
-                       .getOrElse("")
+                     val matchedSubcontractor =
+                       item.subcontractorId.flatMap { id =>
+                         subcontractors.find(_.subcontractorId == id)
+                       }
+                     val resolvedName         =
+                       matchedSubcontractor
+                         .flatMap(_.displayName)
+                         .getOrElse("No name provided")
 
                      for {
                        acc      <- accEither
@@ -423,7 +424,7 @@ class MonthlyReturnService @Inject() (
                                        SelectedSubcontractorPage(index + 1),
                                        SelectedSubcontractor(
                                          id = item.subcontractorId.getOrElse(0L),
-                                         name = item.subcontractorName.getOrElse(""),
+                                         name = resolvedName,
                                          totalPaymentsMade = toBigDecimal(item.totalPayments),
                                          costOfMaterials = toBigDecimal(item.costOfMaterials),
                                          totalTaxDeducted = toBigDecimal(item.totalDeducted)

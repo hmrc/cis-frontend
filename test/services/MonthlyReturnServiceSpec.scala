@@ -1355,7 +1355,46 @@ class MonthlyReturnServiceSpec extends SpecBase {
             decAllSubsVerified = Some("Y")
           )
         ),
-        subcontractors = Nil,
+        subcontractors = Seq(
+          Subcontractor(
+            subcontractorId = 1001,
+            utr = None,
+            pageVisited = None,
+            partnerUtr = None,
+            crn = None,
+            firstName = None,
+            nino = None,
+            secondName = None,
+            surname = None,
+            partnershipTradingName = None,
+            tradingName = None,
+            subcontractorType = None,
+            addressLine1 = None,
+            addressLine2 = None,
+            addressLine3 = None,
+            addressLine4 = None,
+            country = None,
+            postCode = None,
+            emailAddress = None,
+            phoneNumber = None,
+            mobilePhoneNumber = None,
+            worksReferenceNumber = None,
+            createDate = None,
+            lastUpdate = None,
+            subbieResourceRef = None,
+            matched = None,
+            autoVerified = None,
+            verified = None,
+            verificationNumber = None,
+            taxTreatment = None,
+            verificationDate = None,
+            version = None,
+            updatedTaxTreatment = None,
+            lastMonthlyReturnDate = None,
+            pendingVerifications = None,
+            displayName = Some("A Ltd")
+          )
+        ),
         monthlyReturnItems = Seq(
           MonthlyReturnItem(
             monthlyReturnId = 101,
