@@ -104,6 +104,19 @@ class ContinueReturnJourneyQueryParamsSpec extends AnyWordSpec with Matchers {
       )
     }
 
+    "return Left when isOriginalNilReturn cannot be parsed as a boolean" in {
+      val params = Map(
+        "instanceId"          -> Seq("CIS-123"),
+        "taxYear"             -> Seq("2025"),
+        "taxMonth"            -> Seq("7"),
+        "isOriginalNilReturn" -> Seq("abc")
+      )
+
+      binder.bind("", params) mustBe Some(
+        Left("Cannot parse parameter isOriginalNilReturn as Boolean: should be true, false, 0 or 1")
+      )
+    }
+
     "unbind query params without isOriginalNilReturn" in {
       val queryParams = ContinueReturnJourneyQueryParams(
         instanceId = "CIS-123",

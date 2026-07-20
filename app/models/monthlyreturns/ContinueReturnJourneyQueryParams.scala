@@ -42,11 +42,18 @@ object ContinueReturnJourneyQueryParams {
           taxYear    <- intBinder.bind("taxYear", params)
           taxMonth   <- intBinder.bind("taxMonth", params)
         } yield {
-          val isOriginalNilReturn = boolBinder.bind("isOriginalNilReturn", params).flatMap(_.toOption)
-          (instanceId, taxYear, taxMonth) match {
-            case (Right(instanceId), Right(taxYear), Right(taxMonth)) =>
+          val isOriginalNilReturn = boolBinder.bind("isOriginalNilReturn", params) match {
+            case None            => Right(None)
+            case Some(Right(v))  => Right(Some(v))
+            case Some(Left(err)) => Left(err)
+          }
+
+          (instanceId, taxYear, taxMonth, isOriginalNilReturn) match {
+            case (Right(instanceId), Right(taxYear), Right(taxMonth), Right(isOriginalNilReturn)) =>
               Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth, isOriginalNilReturn))
-            case _                                                    =>
+            case (_, _, _, Left(err))                                                             =>
+              Left(err)
+            case _                                                                                =>
               Left("Unable to bind ContinueReturnJourneyQueryParams")
           }
         }

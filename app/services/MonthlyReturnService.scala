@@ -249,9 +249,35 @@ class MonthlyReturnService @Inject() (
     editRequest: GetMonthlyReturnForEditRequest,
     response: GetAllMonthlyReturnDetailsResponse,
     monthlyReturn: MonthlyReturn
+  ): Either[String, ContinueAmendJourneyResult] =
+    monthlyReturn.nilReturnIndicator match {
+      case Some("Y") =>
+        buildContinueAmendJourneyAnswers(
+          ua = ua,
+          editRequest = editRequest,
+          response = response,
+          isNilReturn = true,
+          returnType = MonthlyAmendedNilReturn
+        )
+      case Some("N") =>
+        buildContinueAmendJourneyAnswers(
+          ua = ua,
+          editRequest = editRequest,
+          response = response,
+          isNilReturn = false,
+          returnType = MonthlyAmendedStandardReturn
+        )
+      case _         =>
+        Left("Missing nil return indicator")
+    }
+
+  private def buildContinueAmendJourneyAnswers(
+    ua: UserAnswers,
+    editRequest: GetMonthlyReturnForEditRequest,
+    response: GetAllMonthlyReturnDetailsResponse,
+    isNilReturn: Boolean,
+    returnType: ReturnType
   ): Either[String, ContinueAmendJourneyResult] = {
-    val isNilReturn      = monthlyReturn.nilReturnIndicator.contains("Y")
-    val returnType       = if (isNilReturn) MonthlyAmendedNilReturn else MonthlyAmendedStandardReturn
     val emailRecipient   = response.submission.headOption.flatMap(_.emailRecipient)
     val existingSubId    = response.submission.headOption.map(_.submissionId)
     val contractorName   = response.scheme.headOption.flatMap(_.name).getOrElse("")
