@@ -23,8 +23,9 @@ import models.{ReturnType, UserAnswers}
 import models.submission.SubmissionDetails
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
+import models.monthlyreturns.GetAllMonthlyReturnDetailsResponse
 import models.ReturnType.reads
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -66,14 +67,25 @@ class SubmissionSuccessController @Inject() (
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       } else {
         val ua = request.userAnswers
-        for {
-          vm <- buildViewModel(ua)
-          _  <- monthlyReturnService.completeSubmissionJourney(ua)
-        } yield Ok(view(vm))
+
+        val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+
+        monthlyReturnForEditRequest match {
+          case Left(error) =>
+            logger.error(s"[SubmissionSuccessController] Failed to build GetMonthlyReturnForEditRequest: $error")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Right(req) =>
+            for {
+              monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
+              vm            <- buildViewModel(ua, monthlyReturn)
+              _             <- monthlyReturnService.completeSubmissionJourney(ua)
+            } yield Ok(view(vm))
+        }
       }
     }
 
-  private def buildViewModel(ua: UserAnswers)(implicit
+  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
     request: CisIdDataRequest[_],
     hc: HeaderCarrier
   ): Future[SubmissionSuccessViewModel] = {
@@ -91,8 +103,13 @@ class SubmissionSuccessController @Inject() (
       required(ua.get(SubmissionDetailsPage), "[SubmissionSuccess] submissionDetails missing from userAnswers").irMark
     )
 
-    val contractorName = contractorNameFrom(request)
-    val empRef         = employerRefFrom(request)
+    val contractorName = monthlyReturn.scheme.headOption
+      .flatMap(_.name)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .getOrElse(throw new RuntimeException("[SubmissionSuccess] Scheme name is missing"))
+
+    val empRef = employerRefFrom(request)
 
     resolveEmail(ua, cisId).map { email =>
       val monthYearFmt = DateTimeFormatter.ofPattern("MMMM uuuu")
