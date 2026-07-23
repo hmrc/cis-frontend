@@ -19,6 +19,8 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.monthlyreturns
 import models.agent.AgentClientData
+import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse}
+import models.requests.GetMonthlyReturnForEditRequest
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
@@ -79,6 +81,40 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
   lazy val request =
     FakeRequest(GET, routes.SubmittedNoReceiptController.onPageLoad.url)
 
+  val monthlyReturnResponse = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq(
+      ContractorScheme(
+        schemeId = 1,
+        instanceId = "CIS-123",
+        accountsOfficeReference = "123PA12345678",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        name = Some(contractorName)
+      )
+    ),
+    monthlyReturn = Seq.empty,
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
+  val monthlyReturnResponseWithoutContractorName = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq(
+      ContractorScheme(
+        schemeId = 1,
+        instanceId = "CIS-123",
+        accountsOfficeReference = "123PA12345678",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        name = None
+      )
+    ),
+    monthlyReturn = Seq.empty,
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
   "SubmittedNoReceiptController" - {
 
     "contractor" - {
@@ -87,9 +123,22 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
         "must return OK and render the expected view" in {
 
+          val mockService = mock[MonthlyReturnService]
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          )
+            .thenReturn(Future.successful(monthlyReturnResponse))
+          when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+            .thenReturn(Future.unit)
+
           val app =
             applicationBuilder(userAnswers = Some(baseUa))
-              .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockService)
+              )
               .build()
 
           val view = app.injector.instanceOf[SubmittedNoReceiptView]
@@ -128,6 +177,13 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
         }
 
         "must throw if contractorName missing" in {
+          val mockService = mock[MonthlyReturnService]
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          )
+            .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
 
           val incompleteUa =
             userAnswersWithCisId
@@ -138,17 +194,30 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa))
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(mockService)
+            )
+            .build()
 
           running(app) {
-            val thrown = intercept[IllegalStateException] {
+            val thrown = intercept[RuntimeException] {
               await(route(app, request).get)
             }
-            thrown.getMessage must include("contractorName missing")
+            thrown.getMessage must include("[SubmittedNoReceipt] Scheme name is missing")
           }
         }
 
         "must throw if taxPeriodEnd is missing" in {
+
+          val mockService = mock[MonthlyReturnService]
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          )
+            .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
 
           val incompleteUa =
             userAnswersWithCisId
@@ -162,19 +231,37 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa))
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(mockService)
+            )
+            .build()
 
           running(app) {
-            val thrown = intercept[IllegalStateException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("taxPeriodEnd missing")
+            val result = route(app, request).value
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
           }
         }
 
         "must throw if employerReference is missing" in {
 
-          val app = applicationBuilder(userAnswers = Some(baseUa), hasEmployeeRef = false).build()
+          val mockService = mock[MonthlyReturnService]
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          )
+            .thenReturn(Future.successful(monthlyReturnResponse))
+
+          val app = applicationBuilder(userAnswers = Some(baseUa), hasEmployeeRef = false)
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(mockService)
+            )
+            .build()
+
           running(app) {
             val thrown = intercept[IllegalStateException] {
               await(route(app, request).get)
@@ -205,6 +292,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           when(mockService.getSchemeEmail(any())(any()))
             .thenReturn(Future.successful(Some(fallbackEmail)))
 
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          )
+            .thenReturn(Future.successful(monthlyReturnResponse))
           when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
             .thenReturn(Future.unit)
 
@@ -241,9 +334,20 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           verify(mockService).getSchemeEmail(any())(any())
           verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+          verify(mockService).retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
         }
 
         "must throw if returnTypePage is missing" in {
+
+          val mockService = mock[MonthlyReturnService]
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          )
+            .thenReturn(Future.successful(monthlyReturnResponse))
 
           val incompleteUa =
             userAnswersWithCisId
@@ -257,7 +361,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa)).build()
+          val app = applicationBuilder(userAnswers = Some(incompleteUa))
+            .overrides(
+              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+              bind[MonthlyReturnService].toInstance(mockService)
+            )
+            .build()
 
           running(app) {
             val thrown = intercept[IllegalStateException] {
@@ -275,9 +384,22 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           "must return OK and render the expected view" in {
 
+            val mockService = mock[MonthlyReturnService]
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponse))
+            when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+              .thenReturn(Future.unit)
+
             val app =
               applicationBuilder(userAnswers = Some(baseUa))
-                .overrides(bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)))
+                .overrides(
+                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                  bind[MonthlyReturnService].toInstance(mockService)
+                )
                 .build()
 
             val view = app.injector.instanceOf[SubmittedNoReceiptView]
@@ -317,6 +439,14 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           "must throw if contractorName missing" in {
 
+            val mockService = mock[MonthlyReturnService]
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
+
             val incompleteUa =
               userAnswersWithCisId
                 .set(DateConfirmPaymentsPage, periodEnd)
@@ -326,17 +456,30 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .success
                 .value
 
-            val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true).build()
+            val app = applicationBuilder(userAnswers = Some(incompleteUa))
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockService)
+              )
+              .build()
 
             running(app) {
-              val thrown = intercept[IllegalStateException] {
+              val thrown = intercept[RuntimeException] {
                 await(route(app, request).get)
               }
-              thrown.getMessage must include("contractorName missing")
+              thrown.getMessage must include("[SubmittedNoReceipt] Scheme name is missing")
             }
           }
 
           "must throw if employerReference is missing" in {
+
+            val mockService = mock[MonthlyReturnService]
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponse))
 
             lazy val agentDateWithoutTaxRefTaxNumber: AgentClientData =
               AgentClientData("CLIENT-123", "", "taxOfficeReference", Some("PAL 355 Scheme"))
@@ -350,7 +493,13 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .value
 
             val app =
-              applicationBuilder(userAnswers = Some(incompleteUa), hasEmployeeRef = false, isAgent = true).build()
+              applicationBuilder(userAnswers = Some(incompleteUa), hasEmployeeRef = false, isAgent = true)
+                .overrides(
+                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                  bind[MonthlyReturnService].toInstance(mockService)
+                )
+                .build()
+
             running(app) {
               val thrown = intercept[IllegalStateException] {
                 await(route(app, request).get)
@@ -386,7 +535,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             when(mockService.getSchemeEmail(any())(any()))
               .thenReturn(Future.successful(Some(fallbackEmail)))
-
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponse))
             when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
               .thenReturn(Future.unit)
 
@@ -423,9 +577,20 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             verify(mockService).getSchemeEmail(any())(any())
             verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+            verify(mockService).retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
           }
 
           "must throw if returnTypePage is missing" in {
+
+            val mockService = mock[MonthlyReturnService]
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponse))
 
             lazy val agentDateWithoutTaxRefTaxNumber: AgentClientData =
               AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
@@ -442,7 +607,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .success
                 .value
 
-            val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true).build()
+            val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true)
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockService)
+              )
+              .build()
 
             running(app) {
               val thrown = intercept[IllegalStateException] {
@@ -470,7 +640,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             when(mockService.getSchemeEmail(any())(any()))
               .thenReturn(Future.failed(new RuntimeException("scheme email failed")))
-
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponse))
             when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
               .thenReturn(Future.unit)
 
@@ -507,6 +682,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             verify(mockService).getSchemeEmail(any())(any())
             verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+            verify(mockService).retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
           }
 
         }
