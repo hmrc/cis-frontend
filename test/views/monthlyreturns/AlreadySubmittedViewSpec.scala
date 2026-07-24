@@ -17,6 +17,7 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import models.AccountType
 import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
@@ -27,34 +28,42 @@ class AlreadySubmittedViewSpec extends SpecBase with Matchers {
 
   "AlreadySubmittedView" - {
 
-    "must render the page with the correct heading and paragraph with link for nil return" in new Setup {
-      val html = view("monthlyreturns.alreadySubmitted.nilreturn")
-      val doc  = Jsoup.parse(html.body)
+    Seq(
+      ("AGENT", AccountType.Agent, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", AccountType.Organisation, applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, accountType, cisAccountURL) =>
+      s"when accountType is '$accountTypeSTR'" - {
 
-      doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.nilreturn.title"))
-      doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.nilreturn.heading"))
-      doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
-      doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+        "must render the page with the correct heading and paragraph with link for nil return" in new Setup {
+          val html = view("monthlyreturns.alreadySubmitted.nilreturn", accountType, cisAccountURL)
+          val doc  = Jsoup.parse(html.body)
+
+          doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.nilreturn.title"))
+          doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.nilreturn.heading"))
+          doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
+          doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+        }
+
+        "must render the page with the correct heading and paragraph with link for standard return" in new Setup {
+          val html = view("monthlyreturns.alreadySubmitted", accountType, cisAccountURL)
+          val doc  = Jsoup.parse(html.body)
+
+          doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.title"))
+          doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.heading"))
+          doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
+          doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+        }
+      }
+
+      trait Setup {
+        val app                                       = applicationBuilder().build()
+        val view                                      = app.injector.instanceOf[AlreadySubmittedView]
+        implicit val request: play.api.mvc.Request[_] = FakeRequest()
+        implicit val messages: Messages               = play.api.i18n.MessagesImpl(
+          play.api.i18n.Lang.defaultLang,
+          app.injector.instanceOf[play.api.i18n.MessagesApi]
+        )
+      }
     }
-
-    "must render the page with the correct heading and paragraph with link for standard return" in new Setup {
-      val html = view("monthlyreturns.alreadySubmitted")
-      val doc  = Jsoup.parse(html.body)
-
-      doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.title"))
-      doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.heading"))
-      doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
-      doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
-    }
-  }
-
-  trait Setup {
-    val app                                       = applicationBuilder().build()
-    val view                                      = app.injector.instanceOf[AlreadySubmittedView]
-    implicit val request: play.api.mvc.Request[_] = FakeRequest()
-    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
-      play.api.i18n.Lang.defaultLang,
-      app.injector.instanceOf[play.api.i18n.MessagesApi]
-    )
   }
 }
