@@ -48,7 +48,12 @@ class Navigator @Inject() () {
     case (VerifySubcontractorsPage, _)                      =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
     case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
-      _ => controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+      userAnswers =>
+        if (userAnswers.get(SelectedSubcontractorPage.all).exists(_.nonEmpty)) {
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        } else {
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+        }
     case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
     case (SelectedSubcontractorMaterialCostsPage(index), _) =>
