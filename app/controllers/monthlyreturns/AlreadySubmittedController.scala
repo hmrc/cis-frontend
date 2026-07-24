@@ -20,7 +20,7 @@ import config.FrontendAppConfig
 import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
 import models.{AccountType, ReturnType}
 import models.ReturnType.MonthlyStandardReturn
-import pages.monthlyreturns.ReturnTypePage
+import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -46,8 +46,7 @@ class AlreadySubmittedController @Inject() (
 
       val (accountType, uniqueId) =
         if (request.isAgent) {
-//          (AccountType.Agent, request.agentReference.get) TODO: find out how to pass uniqueId from manage frontend
-          (AccountType.Agent, "1") // TODO: Remove when above is done, hardcoded value to UHD Contractor Group dash
+          (AccountType.Agent, request.cisId)
         } else {
           (AccountType.Organisation, "")
         }
