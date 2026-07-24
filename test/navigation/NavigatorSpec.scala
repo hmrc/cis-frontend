@@ -96,12 +96,21 @@ class NavigatorSpec extends SpecBase {
         ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
       }
 
-      "must go from DateConfirmPaymentsPage to SelectSubcontractorsController" in {
+      "must go from DateConfirmPaymentsPage to SelectSubcontractorsController when no subcontractors are present" in {
         navigator.nextPage(
           DateConfirmPaymentsPage,
           NormalMode,
           UserAnswers("id")
         ) mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+      }
+
+      "must go from DateConfirmPaymentsPage to SubcontractorDetailsAddedController when subcontractors are present" in {
+        val ua = UserAnswers("id").setOrException(SelectedSubcontractorPage(0), completeSub)
+        navigator.nextPage(
+          DateConfirmPaymentsPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
       }
 
       "must go from SelectedSubcontractorPaymentsMadePage to CostOfMaterialsController" in {
