@@ -25,6 +25,18 @@ class FrontendAppConfigSpec extends SpecBase {
       appConfig.manageYourCisReturn mustBe
         "http://localhost:6996/construction-industry-scheme/management/manage-cis-return/"
     }
+
+    "must contain the monthly returns tax start day" in new Setup {
+      appConfig.monthlyReturnsTaxStartDay mustBe 20
+    }
+
+    "must contain the monthly returns tax start month" in new Setup {
+      appConfig.monthlyReturnsTaxStartMonth mustBe 11
+    }
+
+    "must contain the monthly returns supported years count" in new Setup {
+      appConfig.monthlyReturnsSupportedYears mustBe 10
+    }
   }
 
   trait Setup {

@@ -21,7 +21,7 @@ import play.api.data.FormError
 import play.api.i18n.Messages
 
 import java.time.format.DateTimeFormatter
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import java.util.Locale
 import scala.util.{Failure, Success, Try}
 
@@ -34,7 +34,8 @@ class MonthYearDateFormatter(
   args: Seq[String] = Seq.empty,
   dateFormats: Seq[DateFormat],
   fieldKeys: Seq[String],
-  config: FrontendAppConfig
+  config: FrontendAppConfig,
+  clock: Clock
 )(implicit messages: Messages)
     extends LocalDateFormatter(invalidKey, "", twoRequiredKey, requiredKey, args) {
 
@@ -47,13 +48,13 @@ class MonthYearDateFormatter(
       FormError(s"$key.$field", s"monthlyreturns.dateConfirmNilPayments.error.required.$field")
     }.toList
 
-    lazy val regexErrors = dateFormats.flatMap(checkInput(key, fields, _))
-
+    lazy val regexErrors                 = dateFormats.flatMap(checkInput(key, fields, _))
+    lazy val earliestSupportedYearErrors = earliestSupportedYearCheck(key, fields)
     lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(key, fields)
-
-    lazy val maxMonthYearDateErrors = maxMonthYearDateCheck(key, fields)
+    lazy val maxMonthYearDateErrors      = maxMonthYearDateCheck(key, fields)
 
     if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then Left(missingFieldErrors ++ regexErrors)
+    else if earliestSupportedYearErrors.nonEmpty then Left(earliestSupportedYearErrors.toSeq)
     else if earliestMonthYearDateErrors.nonEmpty then Left(earliestMonthYearDateErrors.toSeq)
     else if maxMonthYearDateErrors.nonEmpty then Left(maxMonthYearDateErrors.toSeq)
     else formatDate(key, data).left.map(_.map(_.copy(key = key, args = args)))
@@ -94,14 +95,56 @@ class MonthYearDateFormatter(
     }
   }
 
-  private def maxMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
+  private def earliestSupportedYearCheck(
+    key: String,
+    fields: Map[String, Option[String]]
+  ): Option[FormError] = {
+    val earliestYear = earliestSupportedYear
+    val enteredYear  = fields.get("year").flatten.flatMap(_.toIntOption)
+
+    enteredYear match {
+      case Some(year) if year < earliestYear =>
+        Some(
+          FormError(
+            s"$key.year",
+            "monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear",
+            Seq(earliestYear.toString)
+          )
+        )
+
+      case _ => None
+    }
+  }
+
+  private def earliestSupportedYear: Int = {
+    val currentDate: LocalDate = LocalDate.now(clock)
+
+    val taxYearStartDate = LocalDate.of(
+      currentDate.getYear,
+      config.monthlyReturnsTaxStartMonth,
+      config.monthlyReturnsTaxStartDay
+    )
+
+    val startingTaxYear =
+      if currentDate.isBefore(taxYearStartDate) then currentDate.getYear
+      else currentDate.getYear + 1
+
+    startingTaxYear - config.monthlyReturnsSupportedYears + 1
+  }
+
+  private def maxMonthYearDateCheck(
+    key: String,
+    fields: Map[String, Option[String]]
+  ): Option[FormError] = {
+
+    val currentDate: LocalDate = LocalDate.now(clock)
 
     val oMonth = fields.get("month").flatten
     val oYear  = fields.get("year").flatten
 
-    val today                        = LocalDate.now()
     val maxAllowedEndDate: LocalDate =
-      if (today.getDayOfMonth <= TaxPeriodEndDateRules.TaxPeriodEndDay) today.plusMonths(3) else today.plusMonths(4)
+      if (currentDate.getDayOfMonth <= TaxPeriodEndDateRules.TaxPeriodEndDay) currentDate.plusMonths(3)
+      else currentDate.plusMonths(4)
 
     (oMonth, oYear) match {
       case (Some(month), Some(year))

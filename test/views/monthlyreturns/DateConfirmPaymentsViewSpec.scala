@@ -28,6 +28,8 @@ import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
+import java.time.{Clock, Instant, ZoneId}
+
 class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
   "DateConfirmPaymentsView" - {
@@ -35,12 +37,17 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
-      doc.title                                    must include(messages("monthlyreturns.dateConfirmPayments.title"))
-      doc.select("h1").text                        must include(messages("monthlyreturns.dateConfirmPayments.heading"))
+      doc.title             must include(messages("monthlyreturns.dateConfirmPayments.title"))
+      doc.select("h1").text must include(messages("monthlyreturns.dateConfirmPayments.heading"))
+      doc.select("p").text  must include(messages("monthlyreturns.dateConfirmPayments.paragraph"))
+
       doc.select(".govuk-warning-text__text").text must include(
         messages("monthlyreturns.dateConfirmPayments.warning")
       )
-      doc.getElementsByClass("govuk-button").text  must include(messages("site.continue"))
+      val linkText = doc.getElementsByClass("govuk-link").eachText()
+      linkText must contain(messages("monthlyreturns.dateConfirmPayments.p1.link"))
+
+      doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
 
     "must display error summary when form has errors" in new Setup {
@@ -57,7 +64,8 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
     val view                                      = app.injector.instanceOf[DateConfirmPaymentsView]
     val mockFrontendAppConfig: FrontendAppConfig  = mock[FrontendAppConfig]
     when(mockFrontendAppConfig.earliestTaxPeriodEndDate) `thenReturn` "2007-05-05"
-    val formProvider                              = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig)
+    val clock: Clock                              = Clock.fixed(Instant.parse("2026-07-15T12:00:00Z"), ZoneId.of("Europe/London"))
+    val formProvider                              = new DateConfirmPaymentsFormProvider(mockFrontendAppConfig, clock)
     val form                                      = formProvider()
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = play.api.i18n.MessagesImpl(
