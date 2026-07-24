@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import config.FrontendAppConfig
 import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
-import models.ReturnType
+import models.{AccountType, ReturnType}
 import models.ReturnType.MonthlyStandardReturn
 import pages.monthlyreturns.ReturnTypePage
 import play.api.Logging
@@ -43,6 +43,23 @@ class AlreadySubmittedController @Inject() (
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
+
+      val (accountType, uniqueId) =
+        if (request.isAgent) {
+//          (AccountType.Agent, request.agentReference.get) TODO: find out how to pass uniqueId from manage frontend
+          (AccountType.Agent, "1") // TODO: Remove when above is done, hardcoded value to UHD Contractor Group dash
+        } else {
+          (AccountType.Organisation, "")
+        }
+
+      val cisAccountUrl =
+        accountType match {
+          case AccountType.Agent        =>
+            s"${appConfig.constructionIndustryAgentAccountUrl}$uniqueId"
+          case AccountType.Organisation =>
+            appConfig.constructionIndustryOrgAccountUrl
+        }
+
       val returnType    = request.userAnswers.get(ReturnTypePage).getOrElse {
         logger.error("[AlreadySubmittedController] ReturnTypePage missing from userAnswers")
         throw new IllegalStateException("ReturnTypePage missing from userAnswers")
@@ -52,6 +69,6 @@ class AlreadySubmittedController @Inject() (
       } else {
         "monthlyreturns.alreadySubmitted.nilreturn"
       }
-      Ok(view(messagePrefix))
+      Ok(view(messagePrefix, accountType, cisAccountUrl))
   }
 }
