@@ -20,7 +20,7 @@ import config.FrontendAppConfig
 import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
 import models.{AccountType, ReturnType}
 import models.ReturnType.MonthlyStandardReturn
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import pages.monthlyreturns.ReturnTypePage
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
