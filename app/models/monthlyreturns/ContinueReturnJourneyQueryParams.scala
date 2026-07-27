@@ -21,13 +21,15 @@ import play.api.mvc.QueryStringBindable
 case class ContinueReturnJourneyQueryParams(
   instanceId: String,
   taxYear: Int,
-  taxMonth: Int
+  taxMonth: Int,
+  isOriginalNilReturn: Option[Boolean] = None
 )
 
 object ContinueReturnJourneyQueryParams {
   implicit def queryStringBindable(implicit
     stringBinder: QueryStringBindable[String],
-    intBinder: QueryStringBindable[Int]
+    intBinder: QueryStringBindable[Int],
+    boolBinder: QueryStringBindable[Boolean]
   ): QueryStringBindable[ContinueReturnJourneyQueryParams] =
     new QueryStringBindable[ContinueReturnJourneyQueryParams] {
 
@@ -39,17 +41,31 @@ object ContinueReturnJourneyQueryParams {
           instanceId <- stringBinder.bind("instanceId", params)
           taxYear    <- intBinder.bind("taxYear", params)
           taxMonth   <- intBinder.bind("taxMonth", params)
-        } yield (instanceId, taxYear, taxMonth) match {
-          case (Right(instanceId), Right(taxYear), Right(taxMonth)) =>
-            Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth))
+        } yield {
+          val isOriginalNilReturn = boolBinder.bind("isOriginalNilReturn", params) match {
+            case None            => Right(None)
+            case Some(Right(v))  => Right(Some(v))
+            case Some(Left(err)) => Left(err)
+          }
 
-          case _ =>
-            Left("Unable to bind ContinueReturnJourneyQueryParams")
+          (instanceId, taxYear, taxMonth, isOriginalNilReturn) match {
+            case (Right(instanceId), Right(taxYear), Right(taxMonth), Right(isOriginalNilReturn)) =>
+              Right(ContinueReturnJourneyQueryParams(instanceId, taxYear, taxMonth, isOriginalNilReturn))
+            case (_, _, _, Left(err))                                                             =>
+              Left(err)
+            case _                                                                                =>
+              Left("Unable to bind ContinueReturnJourneyQueryParams")
+          }
         }
 
-      override def unbind(key: String, value: ContinueReturnJourneyQueryParams): String =
-        stringBinder.unbind("instanceId", value.instanceId) + "&" +
+      override def unbind(key: String, value: ContinueReturnJourneyQueryParams): String = {
+        val base = stringBinder.unbind("instanceId", value.instanceId) + "&" +
           intBinder.unbind("taxYear", value.taxYear) + "&" +
           intBinder.unbind("taxMonth", value.taxMonth)
+        value.isOriginalNilReturn match {
+          case Some(v) => base + "&" + boolBinder.unbind("isOriginalNilReturn", v)
+          case None    => base
+        }
+      }
     }
 }

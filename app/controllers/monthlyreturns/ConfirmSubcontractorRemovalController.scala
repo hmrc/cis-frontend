@@ -22,7 +22,8 @@ import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontrac
 import models.requests.DataRequest
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.*
-import pages.amend.WhichSubcontractorsToAddPage
+import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import pages.submission.ResubmissionIdPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -110,15 +111,15 @@ class ConfirmSubcontractorRemovalController @Inject() (
     }
 
   private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
-    val subs = selectedSubcontractors(ua)
-    if (subs.isEmpty) {
-      Redirect(
-        controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-      )
+    val subs           = selectedSubcontractors(ua)
+    val isAmendment    = ua.get(AmendmentDetailsPage).isDefined
+    val isResubmission = ua.get(ResubmissionIdPage).isDefined
+    if (subs.isEmpty && isAmendment && isResubmission) {
+      Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+    } else if (subs.isEmpty) {
+      Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))
     } else {
-      Redirect(
-        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode)
-      )
+      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
     }
   }
 
