@@ -17,7 +17,6 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.AccountType
 import pages.monthlyreturns.ReturnTypePage
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import play.api.test.FakeRequest
