@@ -30,7 +30,7 @@
     @formHelper(action = controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onSubmit(mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form))
+            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
         }
 
         @fieldSet(
