@@ -29,9 +29,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
   "AlreadySubmitted Controller" - {
 
     Seq(
-      ("AGENT", true, AccountType.Agent, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
-      ("ORGANISATION", false, AccountType.Organisation, applicationConfig.constructionIndustryOrgAccountUrl)
-    ).foreach { case (accountTypeSTR, isAgent, accountType, cisAccountUrl) =>
+      ("AGENT", true, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", false, applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, isAgent, cisAccountUrl) =>
       s"when accountType is '$accountTypeSTR'" - {
 
         "must return OK and the correct view for a GET for nil return" in {
@@ -49,11 +49,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
             status(result) mustEqual OK
             contentAsString(result) mustEqual view(
               "monthlyreturns.alreadySubmitted.nilreturn",
-              accountType,
               cisAccountUrl
             )(
               request,
-              applicationConfig,
               messages(application)
             ).toString
           }
@@ -72,9 +70,11 @@ class AlreadySubmittedControllerSpec extends SpecBase {
             val view = application.injector.instanceOf[AlreadySubmittedView]
 
             status(result) mustEqual OK
-            contentAsString(result) mustEqual view("monthlyreturns.alreadySubmitted", accountType, cisAccountUrl)(
+            contentAsString(result) mustEqual view(
+              "monthlyreturns.alreadySubmitted",
+              cisAccountUrl
+            )(
               request,
-              applicationConfig,
               messages(application)
             ).toString
           }

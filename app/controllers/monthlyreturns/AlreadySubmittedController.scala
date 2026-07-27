@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import config.FrontendAppConfig
 import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
-import models.{AccountType, ReturnType}
+import models.ReturnType
 import models.ReturnType.MonthlyStandardReturn
 import pages.monthlyreturns.ReturnTypePage
 import play.api.Logging
@@ -44,30 +44,24 @@ class AlreadySubmittedController @Inject() (
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
 
-      val (accountType, uniqueId) =
-        if (request.isAgent) {
-          (AccountType.Agent, request.cisId)
-        } else {
-          (AccountType.Organisation, "")
-        }
-
       val cisAccountUrl =
-        accountType match {
-          case AccountType.Agent        =>
-            s"${appConfig.constructionIndustryAgentAccountUrl}$uniqueId"
-          case AccountType.Organisation =>
-            appConfig.constructionIndustryOrgAccountUrl
+        if (request.isAgent) {
+          s"${appConfig.constructionIndustryAgentAccountUrl}${request.cisId}"
+        } else {
+          appConfig.constructionIndustryOrgAccountUrl
         }
 
-      val returnType    = request.userAnswers.get(ReturnTypePage).getOrElse {
+      val returnType = request.userAnswers.get(ReturnTypePage).getOrElse {
         logger.error("[AlreadySubmittedController] ReturnTypePage missing from userAnswers")
         throw new IllegalStateException("ReturnTypePage missing from userAnswers")
       }
-      val messagePrefix = if (returnType == MonthlyStandardReturn) {
-        "monthlyreturns.alreadySubmitted"
-      } else {
-        "monthlyreturns.alreadySubmitted.nilreturn"
-      }
-      Ok(view(messagePrefix, accountType, cisAccountUrl))
+
+      val messagePrefix =
+        if (returnType == MonthlyStandardReturn) {
+          "monthlyreturns.alreadySubmitted"
+        } else {
+          "monthlyreturns.alreadySubmitted.nilreturn"
+        }
+      Ok(view(messagePrefix, cisAccountUrl))
   }
 }

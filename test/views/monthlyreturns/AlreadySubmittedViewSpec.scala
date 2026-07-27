@@ -17,7 +17,6 @@
 package views.monthlyreturns
 
 import base.SpecBase
-import models.AccountType
 import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
@@ -29,13 +28,13 @@ class AlreadySubmittedViewSpec extends SpecBase with Matchers {
   "AlreadySubmittedView" - {
 
     Seq(
-      ("AGENT", AccountType.Agent, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
-      ("ORGANISATION", AccountType.Organisation, applicationConfig.constructionIndustryOrgAccountUrl)
-    ).foreach { case (accountTypeSTR, accountType, cisAccountURL) =>
+      ("AGENT", applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, cisAccountURL) =>
       s"when accountType is '$accountTypeSTR'" - {
 
         "must render the page with the correct heading and paragraph with link for nil return" in new Setup {
-          val html = view("monthlyreturns.alreadySubmitted.nilreturn", accountType, cisAccountURL)
+          val html = view("monthlyreturns.alreadySubmitted.nilreturn", cisAccountURL)
           val doc  = Jsoup.parse(html.body)
 
           doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.nilreturn.title"))
@@ -45,7 +44,7 @@ class AlreadySubmittedViewSpec extends SpecBase with Matchers {
         }
 
         "must render the page with the correct heading and paragraph with link for standard return" in new Setup {
-          val html = view("monthlyreturns.alreadySubmitted", accountType, cisAccountURL)
+          val html = view("monthlyreturns.alreadySubmitted", cisAccountURL)
           val doc  = Jsoup.parse(html.body)
 
           doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.title"))

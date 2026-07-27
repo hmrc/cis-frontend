@@ -14,8 +14,6 @@
  * limitations under the License.
  *@
 
-@import config.FrontendAppConfig
-@import models.AccountType.{Agent, Organisation}
 @import views.html.components._
 
 @this(
@@ -25,7 +23,7 @@
     link: Link
 )
 
-@(messagePrefix: String, accountType: AccountType, cisAccountUrl: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(messagePrefix: String, cisAccountUrl: String)(implicit request: Request[_], messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages(s"$messagePrefix.title")),
