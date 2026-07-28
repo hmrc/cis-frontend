@@ -35,7 +35,15 @@ class JourneyRecoveryStartAgainViewSpec extends SpecBase with Matchers {
       doc.select("h1").text                     must include(messages("journeyRecovery.startAgain.heading"))
       doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.p1"))
       doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.p2"))
-      doc.getElementsByClass("govuk-link").text must include(messages("journeyRecovery.startAgain.guidance.link"))
+      doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.contactHMRC.suffix"))
+      doc.getElementsByClass("govuk-link").text must include(
+        messages("journeyRecovery.startAgain.guidance.contactHMRC.link")
+      )
+      doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.cisAccount.prefix"))
+      doc.getElementsByClass("govuk-link").text must include(
+        messages("journeyRecovery.startAgain.guidance.cisAccount.link")
+      )
+
     }
   }
 
