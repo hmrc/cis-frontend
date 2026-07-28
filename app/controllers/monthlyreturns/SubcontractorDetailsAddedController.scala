@@ -64,11 +64,15 @@ class SubcontractorDetailsAddedController @Inject() (
 
       requiredAnswers match {
         case Some((cisId, month, year)) =>
-          monthlyReturnService.isEditable(cisId, month, year, ua.get(AmendmentDetailsPage).isDefined).map {
+          val isAmendment = ua.get(AmendmentDetailsPage).isDefined
+
+          monthlyReturnService.isEditable(cisId, month, year, isAmendment).map {
             case true  =>
               SubcontractorDetailsAddedBuilder.build(ua) match {
-                case Some(viewModel) => Ok(view(form, mode, viewModel))
-                case None            => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                case Some(viewModel)     => Ok(view(form, mode, viewModel))
+                case None if isAmendment =>
+                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+                case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
               }
             case false =>
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -81,8 +85,14 @@ class SubcontractorDetailsAddedController @Inject() (
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      val isAmendmentOnSubmit = request.userAnswers.get(AmendmentDetailsPage).isDefined
+
       SubcontractorDetailsAddedBuilder.build(request.userAnswers) match {
-        case None =>
+        case None if isAmendmentOnSubmit =>
+          Future.successful(
+            Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+          )
+        case None                        =>
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
         case Some(viewModel) =>
