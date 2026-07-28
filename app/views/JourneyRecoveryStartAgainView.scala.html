@@ -20,7 +20,8 @@
 @this(
     layout: templates.Layout,
     heading: H1,
-    link: Link
+    link: Link,
+    paragraph: Paragraph
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
@@ -32,10 +33,16 @@
 ) {
 
     @heading(messages("journeyRecovery.startAgain.heading"), classes = "govuk-heading-xl")
+    @paragraph(messages("journeyRecovery.startAgain.guidance.p1"))
+    @paragraph(messages("journeyRecovery.startAgain.guidance.p2"))
     @link(
-        "journeyRecovery.startAgain.guidance.link",
-        appConfig.signIntoCISUrl,
-        prefixTextKey = "journeyRecovery.startAgain.guidance.p1",
-        suffixTextKey = "journeyRecovery.startAgain.guidance.p2"
+        "journeyRecovery.startAgain.guidance.contactHMRC.link",
+        appConfig.contactHMRCUrl,
+        suffixTextKey = "journeyRecovery.startAgain.guidance.contactHMRC.suffix"
+    )
+    @link(
+        "journeyRecovery.startAgain.guidance.cisAccount.link",
+        appConfig.constructionIndustryOrgAccountUrl,
+        prefixTextKey = "journeyRecovery.startAgain.guidance.cisAccount.prefix"
     )
 }
