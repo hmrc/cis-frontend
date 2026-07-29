@@ -24,6 +24,18 @@ class FrontendAppConfigSpec extends SpecBase {
     "must contain correct values for the provided configuration" in new Setup {
       appConfig.manageYourCisReturn mustBe
         "http://localhost:6996/construction-industry-scheme/management/manage-cis-return/"
+
+      appConfig.incompleteReturnsUrl mustBe
+        "http://localhost:6996/construction-industry-scheme/management/manage-your-cis-return/incomplete-returns"
+
+      appConfig.submissionHistoryUrl mustBe
+        "http://localhost:6996/construction-industry-scheme/management/history/view-tax-year-submission-history"
+
+      appConfig.yourSubcontractorsUrl("1") mustBe
+        "http://localhost:6996/construction-industry-scheme/management/subcontractors/1/your-subcontractors"
+
+      appConfig.manageSubcontractorsUrl("1") mustBe
+        "http://localhost:6996/construction-industry-scheme/management/manage-subcontractors/1"
     }
 
     "must contain the monthly returns tax start day" in new Setup {

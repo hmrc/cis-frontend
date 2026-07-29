@@ -123,7 +123,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to journey recovery when 'true' is submitted" in {
+    "must redirect to manage subcontractors when 'true' is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
 
@@ -142,10 +142,11 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           FakeRequest(POST, verifySubcontractorsRoute)
             .withFormUrlEncodedBody(("value", "true"))
 
-        val result = route(application, request).value
+        val result    = route(application, request).value
+        val appConfig = application.injector.instanceOf[config.FrontendAppConfig]
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        redirectLocation(result).value mustEqual appConfig.manageSubcontractorsUrl("1")
       }
     }
 
