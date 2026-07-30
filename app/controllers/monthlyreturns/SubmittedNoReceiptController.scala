@@ -21,7 +21,7 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
 import models.requests.CisIdDataRequest
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, ReturnTypePage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -96,16 +96,20 @@ class SubmittedNoReceiptController @Inject() (
   }
 
   private def resolveEmail(ua: UserAnswers, cisId: String)(implicit hc: HeaderCarrier): Future[String] =
-    emailfromUserAnswers(ua) match {
-      case Some(email) =>
-        Future.successful(email)
-      case None        =>
-        monthlyReturnService
-          .getSchemeEmail(cisId)
-          .map(_.getOrElse(""))
-          .recover { case ex =>
-            logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
-            ""
-          }
+    if (ua.get(ConfirmationByEmailPage).contains(false)) {
+      Future.successful("")
+    } else {
+      emailfromUserAnswers(ua) match {
+        case Some(email) =>
+          Future.successful(email)
+        case None        =>
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              ""
+            }
+      }
     }
 }

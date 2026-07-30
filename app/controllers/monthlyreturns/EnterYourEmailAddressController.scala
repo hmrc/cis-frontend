@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
-import models.{Mode, NormalMode}
+import models.Mode
 import models.requests.CisIdDataRequest
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, EnterYourEmailAddressPage}
@@ -57,15 +57,13 @@ class EnterYourEmailAddressController @Inject() (
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       request.userAnswers.get(EnterYourEmailAddressPage) match {
-        case Some(value)                =>
+        case Some(value) =>
           Future.successful(Ok(view(form.fill(value), mode)))
-        case None if mode == NormalMode =>
+        case None        =>
           getPrepopulationEmailAddress(request).map {
             case Some(email) => Ok(view(form.fill(email), mode))
             case None        => Ok(view(form, mode))
           }
-        case None                       =>
-          Future.successful(Ok(view(form, mode)))
       }
     }
 
