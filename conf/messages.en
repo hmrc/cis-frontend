@@ -612,4 +612,4 @@ finalvalidations.reviewContractorDetails.tasklist.emailAddress = Email address
 finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = File a return
 finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Cannot start yet
-finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to CIS return dashboard
+finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to manage your CIS account
