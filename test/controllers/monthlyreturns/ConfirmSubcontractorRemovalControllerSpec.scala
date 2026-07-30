@@ -160,7 +160,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
-    "must redirect to WhatDoYouWantToAmendStandard when last subcontractor is removed during amendment" in {
+    "must redirect to WhatDoYouWantToAmendStandard when last subcontractor is removed during a resubmission amendment" in {
       val mockSessionRepository    = mock[SessionRepository]
       val mockMonthlyReturnService = mock[MonthlyReturnService]
 
@@ -184,6 +184,48 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
       val application =
         applicationBuilder(userAnswers = Some(uaAmendment))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+      }
+    }
+
+    "must redirect to WhatDoYouWantToAmendStandard when last subcontractor is removed during any amendment (without prior submission)" in {
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.deleteMonthlyReturnItem(any())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val uaAmendmentNoResubmission = uaWithSubcontractor
+        .setOrException(
+          AmendmentDetailsPage,
+          AmendmentDetails(
+            instanceId = "abc-123",
+            taxYear = 2025,
+            taxMonth = 1,
+            contractorName = "Test Co",
+            originalReturnType = ReturnType.MonthlyAmendedStandardReturn,
+            acceptedTime = None
+          )
+        )
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaAmendmentNoResubmission))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)

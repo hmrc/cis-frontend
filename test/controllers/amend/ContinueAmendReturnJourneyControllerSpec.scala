@@ -118,13 +118,52 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
       }
     }
 
-    "must save user answers and redirect to SubcontractorDetailsAdded when in-progress return is standard regardless of original" in {
+    "must save user answers and redirect to WhatDoYouWantToAmendStandard when in-progress return is standard with no subcontractors" in {
       val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
 
       val result = ContinueAmendJourneyResult(
         userAnswers = populatedAnswers,
         hasSubcontractors = false,
+        isNilReturn = false
+      )
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(result)))
+
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val application = applicationBuilder()
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=true"
+        ).withBody(AnyContentAsEmpty)
+
+        val res = route(application, request).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+      }
+    }
+
+    "must save user answers and redirect to SubcontractorDetailsAdded when in-progress return is standard with subcontractors" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+
+      val result = ContinueAmendJourneyResult(
+        userAnswers = populatedAnswers,
+        hasSubcontractors = true,
         isNilReturn = false
       )
 
