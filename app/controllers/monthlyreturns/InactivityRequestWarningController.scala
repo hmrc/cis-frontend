@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode}
+import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -38,10 +39,15 @@ class InactivityRequestWarningController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
-      val nextUrl = mode match {
-        case CheckMode  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
-        case NormalMode => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+      val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage).contains(true)
+      if (!inactivityRequested) {
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      } else {
+        val nextUrl = mode match {
+          case CheckMode  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
+          case NormalMode => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+        }
+        Ok(view(nextUrl))
       }
-      Ok(view(nextUrl))
   }
 }
