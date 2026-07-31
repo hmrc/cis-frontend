@@ -18,17 +18,21 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.{CheckMode, NormalMode}
+import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.InactivityRequestWarningView
 
 class InactivityRequestWarningControllerSpec extends SpecBase {
 
+  private def userAnswersWithInactivityRequest(value: Boolean) =
+    userAnswersWithCisId.set(SubmitInactivityRequestPage, value).success.value
+
   "InactivityRequestWarning Controller" - {
 
     "must return OK and render the view with ConfirmationByEmail as next URL in NormalMode" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithInactivityRequest(true))).build()
 
       running(application) {
         val request =
@@ -49,7 +53,7 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
 
     "must return OK and render the view with CheckYourAnswers as next URL in CheckMode" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithInactivityRequest(true))).build()
 
       running(application) {
         val request =
@@ -65,6 +69,42 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(nextUrl)(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to Journey Recovery when the inactivity request answer is No" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithInactivityRequest(false))).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode).url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to Journey Recovery when the inactivity request answer is not present" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode).url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }
