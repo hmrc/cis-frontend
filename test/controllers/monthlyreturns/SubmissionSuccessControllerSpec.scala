@@ -505,6 +505,29 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
         }
       }
+
+      "must not display email or call getSchemeEmail when ConfirmationByEmailPage is false" in {
+        val uaNoEmail = userAnswersWithReturnType
+          .set(ConfirmationByEmailPage, false)
+          .success
+          .value
+          .remove(EnterYourEmailAddressPage)
+          .success
+          .value
+
+        when(mockGuard.check(any())).thenReturn(true)
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.unit)
+
+        val app = buildApp(uaNoEmail, isAgent = true)
+
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          contentAsString(result) must not include email
+          verify(mockMonthlyReturnService, never()).getSchemeEmail(any())(any())
+        }
+      }
     }
   }
 }

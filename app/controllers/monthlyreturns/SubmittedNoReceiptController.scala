@@ -66,7 +66,7 @@ class SubmittedNoReceiptController @Inject() (
 
   private def buildViewModel(
     ua: UserAnswers
-  )(implicit request: CisIdDataRequest[_]): Future[SubmittedNoReceiptViewModel] = {
+  )(implicit request: CisIdDataRequest[_], hc: HeaderCarrier): Future[SubmittedNoReceiptViewModel] = {
     val cisId          = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
     val contractorName = contractorNameFrom(request)
     val employerRef    = employerRefFrom(request)
