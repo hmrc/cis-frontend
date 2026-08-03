@@ -279,6 +279,48 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
+    "must redirect to WhatDoYouWantToAmendStandard when AmendmentDetails originalReturnType is standard even if ReturnType is not amended" in {
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.deleteMonthlyReturnItem(any())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val uaAmendmentDetailsOnly = uaWithSubcontractor
+        .setOrException(
+          AmendmentDetailsPage,
+          AmendmentDetails(
+            instanceId = "abc-123",
+            taxYear = 2025,
+            taxMonth = 1,
+            contractorName = "Test Co",
+            originalReturnType = ReturnType.MonthlyAmendedStandardReturn,
+            acceptedTime = None
+          )
+        )
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaAmendmentDetailsOnly))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+      }
+    }
+
     "must call delete service and redirect to SubcontractorDetailsAdded when 'Yes' is submitted and subcontractors remain" in {
       val mockSessionRepository    = mock[SessionRepository]
       val mockMonthlyReturnService = mock[MonthlyReturnService]

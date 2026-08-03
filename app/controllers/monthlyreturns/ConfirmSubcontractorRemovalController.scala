@@ -114,7 +114,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
     val subs                = selectedSubcontractors(ua)
     val isStandardAmendment =
       ua.get(ReturnTypePage).contains(MonthlyAmendedStandardReturn) ||
-        ua.get(AmendmentDetailsPage).isDefined
+        ua.get(AmendmentDetailsPage).exists(_.originalReturnType == MonthlyAmendedStandardReturn)
     if (subs.isEmpty && isStandardAmendment) {
       Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
     } else if (subs.isEmpty) {
