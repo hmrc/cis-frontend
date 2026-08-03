@@ -279,6 +279,49 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
+    "must redirect to SelectSubcontractors (not WhatDoYouWantToAmendStandard) when last subcontractor is removed for an amended nil return" in {
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.deleteMonthlyReturnItem(any())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val uaAmendedNilReturn = uaWithSubcontractor
+        .setOrException(ReturnTypePage, ReturnType.MonthlyAmendedNilReturn)
+        .setOrException(
+          AmendmentDetailsPage,
+          AmendmentDetails(
+            instanceId = "abc-123",
+            taxYear = 2025,
+            taxMonth = 1,
+            contractorName = "Test Co",
+            originalReturnType = ReturnType.MonthlyAmendedNilReturn,
+            acceptedTime = None
+          )
+        )
+
+      val application =
+        applicationBuilder(userAnswers = Some(uaAmendedNilReturn))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+      }
+    }
+
     "must redirect to WhatDoYouWantToAmendStandard when AmendmentDetails originalReturnType is standard even if ReturnType is not amended" in {
       val mockSessionRepository    = mock[SessionRepository]
       val mockMonthlyReturnService = mock[MonthlyReturnService]
