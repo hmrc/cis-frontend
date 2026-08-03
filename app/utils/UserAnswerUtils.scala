@@ -21,10 +21,11 @@ import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
 import pages.amend.*
-import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.*
 import play.api.libs.json.Reads
 
 import scala.util.Try
+import java.time.YearMonth
 
 object UserAnswerUtils {
 
@@ -68,6 +69,7 @@ object UserAnswerUtils {
 
     def clearMonthlyReturnJourney: Try[UserAnswers] = {
       val submissionId = userAnswers.get(SubmissionDetailsPage).map(_.id)
+      val period       = userAnswers.get(DateConfirmPaymentsPage).map(d => YearMonth.from(d).toString)
 
       val clearedAnswers = userAnswers
         // common
@@ -96,13 +98,26 @@ object UserAnswerUtils {
         .flatMap(_.remove(PollIntervalPage))
         .flatMap(_.remove(CorrelationIdPage))
         .flatMap(_.remove(LastMessageDatePage))
+        .flatMap(_.remove(SubmissionJourneyCompletedPage))
 
-      submissionId.fold(clearedAnswers) { id =>
+      val withSubmissionIdPages = submissionId.fold(clearedAnswers) { id =>
         clearedAnswers
           .flatMap(_.remove(SubmissionStatusTimedOutPage(id)))
           .flatMap(_.remove(SuccessEmailSentPage(id)))
       }
+
+      period.fold(withSubmissionIdPages) { p =>
+        withSubmissionIdPages.flatMap(_.remove(SubmissionCreatedPage(p)))
+      }
     }
+
+//    def clearSubmissionGuards: Try[UserAnswers] = {
+//      val period = userAnswers.get(DateConfirmPaymentsPage).map(d => YearMonth.from(d).toString)
+//
+//      val cleared = userAnswers.remove(SubmissionJourneyCompletedPage)
+//
+//      period.fold(cleared)(p => cleared.flatMap(_.remove(SubmissionCreatedPage(p))))
+//    }
 
     def clearAmendedMonthlyStandardReturnJourney: Try[UserAnswers] =
       userAnswers

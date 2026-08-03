@@ -319,6 +319,10 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(SuccessEmailSentPage(submissionId), true)
         .get
+        .set(SubmissionJourneyCompletedPage, true)
+        .get
+        .set(SubmissionCreatedPage("2025-01"), true)
+        .get
 
       val result = ua.clearMonthlyReturnJourney
 
@@ -347,6 +351,8 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(LastMessageDatePage) mustBe None
       cleared.get(SubmissionStatusTimedOutPage(submissionId)) mustBe None
       cleared.get(SuccessEmailSentPage(submissionId)) mustBe None
+      cleared.get(SubmissionJourneyCompletedPage) mustBe None
+      cleared.get(SubmissionCreatedPage("2025-01")) mustBe None
     }
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {

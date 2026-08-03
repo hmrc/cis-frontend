@@ -197,9 +197,9 @@ class MonthlyReturnService @Inject() (
   def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
     val updatedTry =
       for {
-        withCompleted <- userAnswers.set(SubmissionJourneyCompletedPage, true)
-        cleared       <- withCompleted.clearMonthlyReturnJourney
-      } yield cleared
+        cleared       <- userAnswers.clearMonthlyReturnJourney
+        withCompleted <- cleared.set(SubmissionJourneyCompletedPage, true)
+      } yield withCompleted
 
     updatedTry match {
       case scala.util.Success(updatedAnswers) => sessionRepository.set(updatedAnswers).map(_ => ())

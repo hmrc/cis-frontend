@@ -29,6 +29,7 @@ import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
+import pages.QuestionPage
 import pages.submission.{ResubmissionIdPage, SubmissionDetailsPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
@@ -38,7 +39,7 @@ import viewmodels.SelectSubcontractorsViewModel
 import java.time.LocalDate
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Failure
+import scala.util.{Failure, Success}
 
 class MonthlyReturnServiceSpec extends SpecBase {
 
@@ -1169,13 +1170,26 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val (service, _, sessionRepo) = newService()
 
       val originalUa = mock(classOf[UserAnswers])
+      val clearedUa  = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
-        .thenReturn(scala.util.Failure(new RuntimeException("set failed")))
+      when(originalUa.get(SubmissionDetailsPage))
+        .thenReturn(None)
+
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(None)
+
+      when(originalUa.remove(any[QuestionPage[Any]]))
+        .thenReturn(Success(clearedUa))
+
+      when(clearedUa.remove(any[QuestionPage[Any]]))
+        .thenReturn(Success(clearedUa))
+
+      when(clearedUa.set(SubmissionJourneyCompletedPage, true))
+        .thenReturn(Failure(new RuntimeException("set failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(clearedUa).set(SubmissionJourneyCompletedPage, true)
       verifyNoInteractions(sessionRepo)
     }
 
@@ -1183,21 +1197,19 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val (service, _, sessionRepo) = newService()
 
       val originalUa = mock(classOf[UserAnswers])
-      val updatedUa  = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
-        .thenReturn(scala.util.Success(updatedUa))
-
-      when(updatedUa.get(SubmissionDetailsPage))
+      when(originalUa.get(SubmissionDetailsPage))
         .thenReturn(None)
 
-      when(updatedUa.remove(DateConfirmPaymentsPage))
-        .thenReturn(scala.util.Failure(new RuntimeException("clear failed")))
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(None)
+
+      when(originalUa.remove(DateConfirmPaymentsPage))
+        .thenReturn(Failure(new RuntimeException("clear failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
-      verify(updatedUa).remove(DateConfirmPaymentsPage)
+      verify(originalUa).remove(DateConfirmPaymentsPage)
       verifyNoInteractions(sessionRepo)
     }
   }
