@@ -19,11 +19,14 @@ package utils
 import base.SpecBase
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.{Declaration, SelectedSubcontractor}
+import models.submission.SubmissionDetails
 import models.{ReturnType, UserAnswers}
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.*
-import pages.submission.ResubmissionIdPage
+import pages.submission.*
 import utils.UserAnswerUtils.*
+
+import java.time.{Instant, LocalDateTime}
 
 class UserAnswerUtilsSpec extends SpecBase {
 
@@ -264,7 +267,8 @@ class UserAnswerUtilsSpec extends SpecBase {
   "UserAnswerUtils.clearMonthlyReturnJourney" - {
 
     "removes all monthly return journey pages from UserAnswers" in {
-      val ua = UserAnswers("id")
+      val submissionId = "submission-123"
+      val ua           = UserAnswers("id")
         .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
         .get
         .set(SubmitInactivityRequestPage, true)
@@ -289,9 +293,31 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(VerifiedStatusDeclarationPage, true)
         .get
-        .set(SubmitInactivityRequestPage, true)
-        .get
         .set(ConfirmEmailAddressPage, "test@example.com")
+        .get
+        .set(NilReturnStatusPage, "DRAFT")
+        .get
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = submissionId,
+            status = "SUBMITTED",
+            irMark = "ir-mark",
+            submittedAt = LocalDateTime.of(2025, 1, 1, 12, 0)
+          )
+        )
+        .get
+        .set(PollUrlPage, "https://poll.example.com")
+        .get
+        .set(PollIntervalPage, 10)
+        .get
+        .set(CorrelationIdPage, "correlation-id")
+        .get
+        .set(LastMessageDatePage, Instant.parse("2025-01-01T12:00:00Z"))
+        .get
+        .set(SubmissionStatusTimedOutPage(submissionId), true)
+        .get
+        .set(SuccessEmailSentPage(submissionId), true)
         .get
 
       val result = ua.clearMonthlyReturnJourney
@@ -311,8 +337,16 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(PaymentDetailsConfirmationPage) mustBe None
       cleared.get(EmploymentStatusDeclarationPage) mustBe None
       cleared.get(VerifiedStatusDeclarationPage) mustBe None
-      cleared.get(SubmitInactivityRequestPage) mustBe None
       cleared.get(ConfirmEmailAddressPage) mustBe None
+      cleared.get(NilReturnStatusPage) mustBe None
+
+      cleared.get(SubmissionDetailsPage) mustBe None
+      cleared.get(PollUrlPage) mustBe None
+      cleared.get(PollIntervalPage) mustBe None
+      cleared.get(CorrelationIdPage) mustBe None
+      cleared.get(LastMessageDatePage) mustBe None
+      cleared.get(SubmissionStatusTimedOutPage(submissionId)) mustBe None
+      cleared.get(SuccessEmailSentPage(submissionId)) mustBe None
     }
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {

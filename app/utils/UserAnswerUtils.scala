@@ -21,7 +21,7 @@ import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
 import pages.amend.*
-import pages.submission.ResubmissionIdPage
+import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.libs.json.Reads
 
 import scala.util.Try
@@ -66,14 +66,17 @@ object UserAnswerUtils {
         .map(_.id)
         .toSeq
 
-    def clearMonthlyReturnJourney: Try[UserAnswers] =
-      userAnswers
+    def clearMonthlyReturnJourney: Try[UserAnswers] = {
+      val submissionId = userAnswers.get(SubmissionDetailsPage).map(_.id)
+
+      val clearedAnswers = userAnswers
         // common
         .remove(DateConfirmPaymentsPage)
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
         .flatMap(_.remove(ResubmissionIdPage))
+        .flatMap(_.remove(NilReturnStatusPage))
 
         // monthly nil return
         .flatMap(_.remove(ConfirmEmailAddressPage))
@@ -86,6 +89,20 @@ object UserAnswerUtils {
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
+
+        // ChRIS submission
+        .flatMap(_.remove(SubmissionDetailsPage))
+        .flatMap(_.remove(PollUrlPage))
+        .flatMap(_.remove(PollIntervalPage))
+        .flatMap(_.remove(CorrelationIdPage))
+        .flatMap(_.remove(LastMessageDatePage))
+
+      submissionId.fold(clearedAnswers) { id =>
+        clearedAnswers
+          .flatMap(_.remove(SubmissionStatusTimedOutPage(id)))
+          .flatMap(_.remove(SuccessEmailSentPage(id)))
+      }
+    }
 
     def clearAmendedMonthlyStandardReturnJourney: Try[UserAnswers] =
       userAnswers
