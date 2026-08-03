@@ -29,7 +29,7 @@ import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
-import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
+import pages.submission.{ResubmissionIdPage, SubmissionDetailsPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -1187,6 +1187,10 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       when(originalUa.set(SubmissionJourneyCompletedPage, true))
         .thenReturn(scala.util.Success(updatedUa))
+
+      when(updatedUa.get(SubmissionDetailsPage))
+        .thenReturn(None)
+
       when(updatedUa.remove(DateConfirmPaymentsPage))
         .thenReturn(scala.util.Failure(new RuntimeException("clear failed")))
 
