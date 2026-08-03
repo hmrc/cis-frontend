@@ -24,7 +24,7 @@
     paragraph: Paragraph
 )
 
-@()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(cisAccountUrl: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages("journeyRecovery.startAgain.title")),
@@ -42,7 +42,7 @@
     )
     @link(
         "journeyRecovery.startAgain.guidance.cisAccount.link",
-        appConfig.constructionIndustryOrgAccountUrl,
+        cisAccountUrl,
         prefixTextKey = "journeyRecovery.startAgain.guidance.cisAccount.prefix"
     )
 }

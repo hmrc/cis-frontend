@@ -17,8 +17,9 @@
 package controllers
 
 import base.SpecBase
+import pages.monthlyreturns.CisIdPage
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.play.bootstrap.binders.RedirectUrl
 import views.html.{JourneyRecoveryContinueView, JourneyRecoveryStartAgainView}
 
@@ -26,65 +27,84 @@ class JourneyRecoveryControllerSpec extends SpecBase {
 
   "JourneyRecovery Controller" - {
 
-    "when a relative continue Url is supplied" - {
+    Seq(
+      ("AGENT", true, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", false, applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, isAgent, cisAccountUrl) =>
+      s"when accountType is '$accountTypeSTR'" - {
 
-      "must return OK and the continue view" in {
+        "when a relative continue Url is supplied" - {
 
-        val application = applicationBuilder(userAnswers = None).build()
+          "must return OK and the continue view" in {
 
-        running(application) {
-          val continueUrl = RedirectUrl("/foo")
-          val request     = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad(Some(continueUrl)).url)
+            val userAnswer  = userAnswersWithCisId.set(CisIdPage, "1").success.value
+            val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
 
-          val result = route(application, request).value
+            running(application) {
+              val continueUrl = RedirectUrl("/foo")
+              val request     = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad(Some(continueUrl)).url)
 
-          val continueView = application.injector.instanceOf[JourneyRecoveryContinueView]
+              val result = route(application, request).value
 
-          status(result) mustEqual OK
-          contentAsString(result) mustEqual continueView(continueUrl.unsafeValue)(
-            request,
-            applicationConfig,
-            messages(application)
-          ).toString
+              val continueView = application.injector.instanceOf[JourneyRecoveryContinueView]
+
+              status(result) mustEqual OK
+              contentAsString(result) mustEqual continueView(continueUrl.unsafeValue)(
+                request,
+                applicationConfig,
+                messages(application)
+              ).toString
+            }
+          }
         }
-      }
-    }
 
-    "when an absolute continue Url is supplied" - {
+        "when an absolute continue Url is supplied" - {
 
-      "must return OK and the start again view" in {
+          "must return OK and the start again view" in {
 
-        val application = applicationBuilder(userAnswers = None).build()
+            val userAnswer  = userAnswersWithCisId.set(CisIdPage, "1").success.value
+            val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
 
-        running(application) {
-          val continueUrl = RedirectUrl("https://foo.com")
-          val request     = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad(Some(continueUrl)).url)
+            running(application) {
+              val continueUrl = RedirectUrl("https://foo.com")
+              val request     = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad(Some(continueUrl)).url)
 
-          val result = route(application, request).value
+              val result = route(application, request).value
 
-          val startAgainView = application.injector.instanceOf[JourneyRecoveryStartAgainView]
+              val startAgainView = application.injector.instanceOf[JourneyRecoveryStartAgainView]
 
-          status(result) mustEqual OK
-          contentAsString(result) mustEqual startAgainView()(request, applicationConfig, messages(application)).toString
+              status(result) mustEqual OK
+              contentAsString(result) mustEqual startAgainView(cisAccountUrl)(
+                request,
+                applicationConfig,
+                messages(application)
+              ).toString
+            }
+          }
         }
-      }
-    }
 
-    "when no continue Url is supplied" - {
+        "when no continue Url is supplied" - {
 
-      "must return OK and the start again view" in {
+          "must return OK and the start again view" in {
 
-        val application = applicationBuilder(userAnswers = None).build()
+            val userAnswer  = userAnswersWithCisId.set(CisIdPage, "1").success.value
+            val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
 
-        running(application) {
-          val request = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad().url)
+            running(application) {
+              val request = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad().url)
 
-          val result = route(application, request).value
+              val result = route(application, request).value
 
-          val startAgainView = application.injector.instanceOf[JourneyRecoveryStartAgainView]
+              val startAgainView = application.injector.instanceOf[JourneyRecoveryStartAgainView]
 
-          status(result) mustEqual OK
-          contentAsString(result) mustEqual startAgainView()(request, applicationConfig, messages(application)).toString
+              status(result) mustEqual OK
+              contentAsString(result) mustEqual startAgainView(cisAccountUrl)(
+                request,
+                applicationConfig,
+                messages(application)
+              ).toString
+            }
+          }
         }
       }
     }
