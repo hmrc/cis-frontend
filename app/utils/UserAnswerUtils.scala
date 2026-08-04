@@ -111,14 +111,6 @@ object UserAnswerUtils {
       }
     }
 
-//    def clearSubmissionGuards: Try[UserAnswers] = {
-//      val period = userAnswers.get(DateConfirmPaymentsPage).map(d => YearMonth.from(d).toString)
-//
-//      val cleared = userAnswers.remove(SubmissionJourneyCompletedPage)
-//
-//      period.fold(cleared)(p => cleared.flatMap(_.remove(SubmissionCreatedPage(p))))
-//    }
-
     def clearAmendedMonthlyStandardReturnJourney: Try[UserAnswers] =
       userAnswers
         // amended monthly standard return
