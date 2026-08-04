@@ -120,7 +120,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           contentAsString(result) mustBe view(
             form.fill(SelectSubcontractorsFormData(subcontractorsToInclude = Seq(1))),
             subcontractors,
-            app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl(cisId)
+            app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl
           )(request, messages(app)).toString
         }
       }
@@ -143,7 +143,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           contentAsString(result) mustBe view(
             form,
             subcontractors,
-            app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl(cisId)
+            app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl
           )(request, messages(app)).toString
         }
       }

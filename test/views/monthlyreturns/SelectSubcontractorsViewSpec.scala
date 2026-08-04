@@ -117,7 +117,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     val formProvider: SelectSubcontractorsFormProvider = app.injector.instanceOf[SelectSubcontractorsFormProvider]
     val form: Form[SelectSubcontractorsFormData]       = formProvider()
     val updateYourListUrl: String                      =
-      "http://localhost:6996/construction-industry-scheme/management/subcontractors/1/your-subcontractors"
+      "http://localhost:6996/construction-industry-scheme/management/subcontractors/retrieve"
     implicit val request: play.api.mvc.Request[_]      = FakeRequest()
     implicit val messages: Messages                    = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
@@ -142,7 +142,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     val formProvider: SelectSubcontractorsFormProvider = app.injector.instanceOf[SelectSubcontractorsFormProvider]
     val form: Form[SelectSubcontractorsFormData]       = formProvider()
     val updateYourListUrl: String                      =
-      "http://localhost:6996/construction-industry-scheme/management/subcontractors/1/your-subcontractors"
+      "http://localhost:6996/construction-industry-scheme/management/subcontractors/retrieve"
     implicit val request: play.api.mvc.Request[_]      = FakeRequest()
     implicit val messages: Messages                    = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,

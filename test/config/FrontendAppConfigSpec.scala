@@ -31,8 +31,8 @@ class FrontendAppConfigSpec extends SpecBase {
       appConfig.submissionHistoryUrl mustBe
         "http://localhost:6996/construction-industry-scheme/management/history/view-tax-year-submission-history"
 
-      appConfig.yourSubcontractorsUrl("1") mustBe
-        "http://localhost:6996/construction-industry-scheme/management/subcontractors/1/your-subcontractors"
+      appConfig.yourSubcontractorsUrl mustBe
+        "http://localhost:6996/construction-industry-scheme/management/subcontractors/retrieve"
 
       appConfig.manageSubcontractorsUrl("1") mustBe
         "http://localhost:6996/construction-industry-scheme/management/manage-subcontractors/1"

@@ -77,7 +77,7 @@ class SelectSubcontractorsController @Inject() (
                   form
                 }
 
-              Ok(view(filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl(cisId)))
+              Ok(view(filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl))
             }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
@@ -101,7 +101,7 @@ class SelectSubcontractorsController @Inject() (
                 .fold(
                   formWithErrors =>
                     Future.successful(
-                      BadRequest(view(formWithErrors, model.subcontractors, appConfig.yourSubcontractorsUrl(cisId)))
+                      BadRequest(view(formWithErrors, model.subcontractors, appConfig.yourSubcontractorsUrl))
                     ),
                   formData => {
                     val selectedSubcontractors =
