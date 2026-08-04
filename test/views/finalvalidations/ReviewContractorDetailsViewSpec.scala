@@ -64,7 +64,7 @@ class ReviewContractorDetailsViewSpec extends SpecBase {
       lastStatus.hasClass("govuk-task-list__status--cannot-start-yet") mustBe true
 
     }
-    "must render the return to cis dashboard link" in new Setup {
+    "must render the back to manage your cis account link" in new Setup {
       val backLink = doc.select("p.govuk-body > a.govuk-link").last()
       backLink.text mustEqual messages("finalvalidations.reviewContractorDetails.cisreturndashboardlink")
     }

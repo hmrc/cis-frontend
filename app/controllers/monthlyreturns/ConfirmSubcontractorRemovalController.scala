@@ -20,10 +20,10 @@ import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
 import models.requests.DataRequest
+import models.ReturnType.MonthlyAmendedStandardReturn
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.*
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
-import pages.submission.ResubmissionIdPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -111,10 +111,11 @@ class ConfirmSubcontractorRemovalController @Inject() (
     }
 
   private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
-    val subs           = selectedSubcontractors(ua)
-    val isAmendment    = ua.get(AmendmentDetailsPage).isDefined
-    val isResubmission = ua.get(ResubmissionIdPage).isDefined
-    if (subs.isEmpty && isAmendment && isResubmission) {
+    val subs                = selectedSubcontractors(ua)
+    val isStandardAmendment =
+      ua.get(ReturnTypePage).contains(MonthlyAmendedStandardReturn) ||
+        ua.get(AmendmentDetailsPage).exists(_.originalReturnType == MonthlyAmendedStandardReturn)
+    if (subs.isEmpty && isStandardAmendment) {
       Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
     } else if (subs.isEmpty) {
       Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))

@@ -117,15 +117,19 @@ class SubmissionSuccessController @Inject() (
   private def resolveEmail(ua: UserAnswers, cisId: String)(implicit
     hc: HeaderCarrier
   ): Future[String] =
-    emailfromUserAnswers(ua)
-      .map(Future.successful)
-      .getOrElse(
-        monthlyReturnService
-          .getSchemeEmail(cisId)
-          .map(_.getOrElse(""))
-          .recover { case ex =>
-            logger.warn(s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
-            ""
-          }
-      )
+    if (ua.get(ConfirmationByEmailPage).contains(false)) {
+      Future.successful("")
+    } else {
+      emailfromUserAnswers(ua)
+        .map(Future.successful)
+        .getOrElse(
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              ""
+            }
+        )
+    }
 }

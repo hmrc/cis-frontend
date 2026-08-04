@@ -47,22 +47,6 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
   "EnterYourEmailAddress Controller" - {
 
-    "must return OK and the blank view for a GET when EnterYourEmailAddressPage is missing" in {
-
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, enterYourEmailAddressRoute)
-
-        val result = route(application, request).value
-
-        val view = application.injector.instanceOf[EnterYourEmailAddressView]
-
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
-      }
-    }
-
     "must call getSchemeEmail and prepopulate the email address for a GET in NormalMode when not already answered" in {
 
       val userAnswers = userAnswersWithCisId
@@ -118,11 +102,19 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must return OK and empty/unpopulated view for a GET in CheckMode when not already answered" in {
+    "must call getSchemeEmail and prepopulate the email address for a GET in CheckMode when not already answered" in {
 
       val userAnswers = userAnswersWithCisId
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+      when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
+        .thenReturn(Future.successful(Some("prepopulated@test.com")))
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+        )
+        .build()
 
       running(application) {
         val checkModeRoute =
@@ -134,7 +126,7 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[EnterYourEmailAddressView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, models.CheckMode)(
+        contentAsString(result) mustEqual view(form.fill("prepopulated@test.com"), models.CheckMode)(
           request,
           messages(application)
         ).toString
