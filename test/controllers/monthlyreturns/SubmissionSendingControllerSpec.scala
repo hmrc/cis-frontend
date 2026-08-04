@@ -216,7 +216,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val completedAnswers = userAnswersWithCisId
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage("2025-08"), true)
         .success
         .value
 
@@ -238,7 +241,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val incompleteAnswers = completeAnswers
-        .remove(DateConfirmPaymentsPage)
+        .remove(DeclarationPage)
         .success
         .value
 
@@ -397,7 +400,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val userAnswers = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+
+      val app = buildAppWith(Some(userAnswers), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
       val result = ctl.onPollAndRedirect()(mkPollRequest)
@@ -421,7 +429,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -458,7 +472,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -495,7 +515,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -532,7 +558,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -569,7 +601,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -610,7 +648,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -652,7 +696,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -693,7 +743,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -734,7 +790,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -771,7 +833,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -811,7 +879,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -851,7 +925,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -888,7 +968,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -915,7 +1001,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val completedAnswers = userAnswersWithCisId
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage("2025-08"), true)
         .success
         .value
 
@@ -944,6 +1033,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
 
       val uaWithSubmission = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
         .set(SubmissionDetailsPage, submissionDetails)
         .success
         .value

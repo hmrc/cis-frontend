@@ -24,11 +24,13 @@ class SubmissionJourneyCompletedPageSpec extends SpecBase {
   "SubmissionJourneyCompletedPage" - {
 
     "must have the correct path" in {
-      SubmissionJourneyCompletedPage.path mustBe JsPath \ "submissionJourneyCompleted"
+      val page = SubmissionJourneyCompletedPage("2026-08")
+
+      page.path mustBe (JsPath \ "submissionJourneyCompleted" \ "2026-08" \ "completed")
     }
 
     "must have the correct toString value" in {
-      SubmissionJourneyCompletedPage.toString mustBe "submissionJourneyCompleted"
+      SubmissionJourneyCompletedPage("2026-08").toString mustBe "submissionJourneyCompleted"
     }
   }
 }
