@@ -76,7 +76,6 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   private def stubSubmissionFlow(
     service: SubmissionService,
-    sessionDb: SessionRepository,
     status: String,
     createdId: String = "sub-123",
     endpoint: Option[ResponseEndPointDto] = None,
@@ -133,7 +132,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to polling page when status is PENDING" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
+      stubSubmissionFlow(mockService, status = "PENDING")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -147,7 +146,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to polling page when status is ACCEPTED" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
+      stubSubmissionFlow(mockService, status = "ACCEPTED")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -161,7 +160,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to Unsuccessful when status is FATAL_ERROR" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "FATAL_ERROR")
+      stubSubmissionFlow(mockService, status = "FATAL_ERROR")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -200,7 +199,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to Submission Unsuccessful Resubmit page when status is STARTED" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "STARTED")
+      stubSubmissionFlow(mockService, status = "STARTED")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -278,12 +277,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val (createdId, updatedAnswers, submitted) =
-        stubSubmissionFlow(
-          service = mockService,
-          sessionDb = mockMongoDb,
-          status = "PENDING",
-          isResubmission = true
-        )
+        stubSubmissionFlow(service = mockService, status = "PENDING", isResubmission = true)
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
