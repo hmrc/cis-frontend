@@ -257,6 +257,22 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verifyNoInteractions(mockMongoDb)
     }
 
+    "redirects to JourneyRecovery when DateConfirmPaymentsPage is missing" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verifyNoInteractions(mockService)
+      verifyNoInteractions(mockMongoDb)
+    }
+
     "passes isResubmission=true to submitToChrisAndPersist when an existing submission is reused" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]

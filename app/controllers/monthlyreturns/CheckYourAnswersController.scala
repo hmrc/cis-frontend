@@ -145,14 +145,15 @@ class CheckYourAnswersController @Inject() (
   }
 
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
-    val periodEnd       = required(
-      periodEndFromUserAnswers(request.userAnswers),
-      "[SubmissionSuccess] taxPeriodEnd missing from userAnswers"
-    )
-    val yearMonthPeriod = YearMonth.from(periodEnd).toString
-    if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
-      Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
-    } else {
-      block
+    periodEndFromUserAnswers(request.userAnswers) match {
+      case None            =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      case Some(periodEnd) =>
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
+          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+        } else {
+          block
+        }
     }
 }
