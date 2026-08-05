@@ -1195,14 +1195,25 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
         .thenReturn(scala.util.Success(updatedUa))
-      when(updatedUa.remove(DateConfirmPaymentsPage))
-        .thenReturn(scala.util.Failure(new RuntimeException("clear failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
       verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verify(updatedUa).remove(DateConfirmPaymentsPage)
       verifyNoInteractions(sessionRepo)
+    }
+
+    "return unit and not persist when DateConfirmPaymentsPage is missing" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = UserAnswers("test-user")
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+
+      verify(sessionRepo, never()).set(any[UserAnswers])
+      verifyNoMoreInteractions(sessionRepo)
     }
   }
 
