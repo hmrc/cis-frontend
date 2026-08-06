@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,16 +53,16 @@ class AlreadySubmittedViewSpec extends SpecBase with Matchers {
           doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
         }
       }
-
-      trait Setup {
-        val app                                       = applicationBuilder().build()
-        val view                                      = app.injector.instanceOf[AlreadySubmittedView]
-        implicit val request: play.api.mvc.Request[_] = FakeRequest()
-        implicit val messages: Messages               = play.api.i18n.MessagesImpl(
-          play.api.i18n.Lang.defaultLang,
-          app.injector.instanceOf[play.api.i18n.MessagesApi]
-        )
-      }
     }
+  }
+
+  trait Setup {
+    val app                                       = applicationBuilder().build()
+    val view                                      = app.injector.instanceOf[AlreadySubmittedView]
+    implicit val request: play.api.mvc.Request[_] = FakeRequest()
+    implicit val messages: Messages               = play.api.i18n.MessagesImpl(
+      play.api.i18n.Lang.defaultLang,
+      app.injector.instanceOf[play.api.i18n.MessagesApi]
+    )
   }
 }
