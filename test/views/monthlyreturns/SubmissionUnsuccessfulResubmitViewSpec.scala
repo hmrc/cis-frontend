@@ -71,6 +71,11 @@ class SubmissionUnsuccessfulResubmitViewSpec extends SpecBase {
       doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text")
       )
+
+      val manageCisReturnUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
+      doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 2
     }
   }
 

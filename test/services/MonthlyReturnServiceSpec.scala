@@ -29,8 +29,7 @@ import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
-import pages.QuestionPage
-import pages.submission.{ResubmissionIdPage, SubmissionDetailsPage, SubmissionJourneyCompletedPage}
+import pages.submission.{ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,7 +38,7 @@ import viewmodels.SelectSubcontractorsViewModel
 import java.time.LocalDate
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.Failure
 
 class MonthlyReturnServiceSpec extends SpecBase {
 
@@ -1134,17 +1133,19 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
   "completeSubmissionJourney" - {
 
-    "mark the journey as completed, clear monthly return journey data, and persist updated answers" in {
+    "mark the journey as completed without clearing monthly return data, and persist updated answers" in {
       val (service, _, sessionRepo) = newService()
+
+      val returnDate = LocalDate.of(2025, 1, 1)
 
       val originalUa = UserAnswers("test-user")
         .set(SubmissionJourneyCompletedPage, false)
         .get
+        .set(DateConfirmPaymentsPage, returnDate)
+        .get
+        .set(SubmissionCreatedPage("2025-01"), true)
+        .get
         .set(VerifySubcontractorsPage, true)
-        .get
-        .set(DeclarationPage, Set(Declaration.Confirmed))
-        .get
-        .set(InactivityRequestPage, InactivityRequest.Option1)
         .get
 
       when(sessionRepo.set(any[UserAnswers]))
@@ -1158,10 +1159,13 @@ class MonthlyReturnServiceSpec extends SpecBase {
       verify(sessionRepo).set(uaCaptor.capture())
 
       val savedUa = uaCaptor.getValue
+
       savedUa.get(SubmissionJourneyCompletedPage) mustBe Some(true)
-      savedUa.get(VerifySubcontractorsPage) mustBe None
-      savedUa.get(DeclarationPage) mustBe None
-      savedUa.get(SubmitInactivityRequestPage) mustBe None
+
+      // These values must remain while the receipt is displayed
+      savedUa.get(DateConfirmPaymentsPage) mustBe Some(returnDate)
+      savedUa.get(SubmissionCreatedPage("2025-01")) mustBe Some(true)
+      savedUa.get(VerifySubcontractorsPage) mustBe Some(true)
 
       verifyNoMoreInteractions(sessionRepo)
     }
@@ -1170,30 +1174,53 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val (service, _, sessionRepo) = newService()
 
       val originalUa = mock(classOf[UserAnswers])
-      val clearedUa  = mock(classOf[UserAnswers])
 
-      when(originalUa.get(SubmissionDetailsPage))
-        .thenReturn(None)
-
-      when(originalUa.get(DateConfirmPaymentsPage))
-        .thenReturn(None)
-
-      when(originalUa.remove(any[QuestionPage[Any]]))
-        .thenReturn(Success(clearedUa))
-
-      when(clearedUa.remove(any[QuestionPage[Any]]))
-        .thenReturn(Success(clearedUa))
-
-      when(clearedUa.set(SubmissionJourneyCompletedPage, true))
+      when(originalUa.set(SubmissionJourneyCompletedPage, true))
         .thenReturn(Failure(new RuntimeException("set failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(clearedUa).set(SubmissionJourneyCompletedPage, true)
+      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
       verifyNoInteractions(sessionRepo)
     }
+  }
 
-    "return unit and not persist when clearing monthly return journey fails" in {
+  "clearSubmissionJourney" - {
+
+    "clear monthly return journey data and persist updated answers" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = UserAnswers("test-user")
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
+        .get
+        .set(SubmissionCreatedPage("2025-01"), true)
+        .get
+        .set(SubmissionJourneyCompletedPage, true)
+        .get
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.clearSubmissionJourney(originalUa).futureValue mustBe ()
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedUa = uaCaptor.getValue
+
+      savedUa.get(DateConfirmPaymentsPage) mustBe None
+      savedUa.get(SubmissionCreatedPage("2025-01")) mustBe None
+      savedUa.get(SubmissionJourneyCompletedPage) mustBe None
+      savedUa.get(VerifySubcontractorsPage) mustBe None
+
+      verifyNoMoreInteractions(sessionRepo)
+    }
+
+    "fail and not persist when clearing monthly return journey fails" in {
       val (service, _, sessionRepo) = newService()
 
       val originalUa = mock(classOf[UserAnswers])
@@ -1207,10 +1234,28 @@ class MonthlyReturnServiceSpec extends SpecBase {
       when(originalUa.remove(DateConfirmPaymentsPage))
         .thenReturn(Failure(new RuntimeException("clear failed")))
 
-      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+      val exception =
+        service.clearSubmissionJourney(originalUa).failed.futureValue
+
+      exception.getMessage mustBe "clear failed"
 
       verify(originalUa).remove(DateConfirmPaymentsPage)
       verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when cleared answers cannot be persisted" in {
+      val (service, _, sessionRepo) = newService()
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(false))
+
+      val exception =
+        service.clearSubmissionJourney(UserAnswers("test-user")).failed.futureValue
+
+      exception.getMessage mustBe
+        "Failed to persist cleared monthly return journey"
+
+      verify(sessionRepo).set(any[UserAnswers])
     }
   }
 

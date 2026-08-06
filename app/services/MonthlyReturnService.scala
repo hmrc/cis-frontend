@@ -194,18 +194,29 @@ class MonthlyReturnService @Inject() (
       }
   }
 
-  def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
-    val updatedTry =
-      for {
-        cleared       <- userAnswers.clearMonthlyReturnJourney
-        withCompleted <- cleared.set(SubmissionJourneyCompletedPage, true)
-      } yield withCompleted
+  def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] =
+    userAnswers.set(SubmissionJourneyCompletedPage, true) match {
+      case scala.util.Success(updatedAnswers) =>
+        sessionRepository.set(updatedAnswers).map(_ => ())
 
-    updatedTry match {
-      case scala.util.Success(updatedAnswers) => sessionRepository.set(updatedAnswers).map(_ => ())
-      case scala.util.Failure(_)              => Future.unit
+      case scala.util.Failure(_) =>
+        Future.unit
     }
-  }
+
+  def clearSubmissionJourney(userAnswers: UserAnswers): Future[Unit] =
+    Future
+      .fromTry(userAnswers.clearMonthlyReturnJourney)
+      .flatMap { clearedAnswers =>
+        sessionRepository.set(clearedAnswers).flatMap {
+          case true =>
+            Future.unit
+
+          case false =>
+            Future.failed(
+              new RuntimeException("Failed to persist cleared monthly return journey")
+            )
+        }
+      }
 
   def populateUserAnswersForContinueJourney(
     ua: UserAnswers,
