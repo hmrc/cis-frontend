@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package controllers
 
 import config.FrontendAppConfig
-import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.{DataRetrievalAction, IdentifierAction}
+import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -32,8 +33,6 @@ class JourneyRecoveryController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
   continueView: JourneyRecoveryContinueView,
   startAgainView: JourneyRecoveryStartAgainView
 )(implicit appConfig: FrontendAppConfig)
@@ -41,28 +40,28 @@ class JourneyRecoveryController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(continueUrl: Option[RedirectUrl] = None): Action[AnyContent] = (identify andThen getData andThen
-    requireData andThen requireCisId) { implicit request =>
+  def onPageLoad(continueUrl: Option[RedirectUrl] = None): Action[AnyContent] = (identify andThen getData) {
+    implicit request =>
 
-    val cisAccountUrl =
-      if (request.isAgent) {
-        s"${appConfig.constructionIndustryAgentAccountUrl}${request.cisId}"
-      } else {
-        appConfig.constructionIndustryOrgAccountUrl
+      val cisAccountUrl = (for {
+        answers <- request.userAnswers
+        cisId   <- answers.get(CisIdPage)
+        if request.isAgent
+      } yield s"${appConfig.constructionIndustryAgentAccountUrl}$cisId")
+        .getOrElse(appConfig.constructionIndustryOrgAccountUrl)
+
+      val safeUrl: Option[String] = continueUrl.flatMap { unsafeUrl =>
+        unsafeUrl.getEither(OnlyRelative) match {
+          case Right(safeUrl) =>
+            Some(safeUrl.url)
+          case Left(message)  =>
+            logger.info(message)
+            None
+        }
       }
 
-    val safeUrl: Option[String] = continueUrl.flatMap { unsafeUrl =>
-      unsafeUrl.getEither(OnlyRelative) match {
-        case Right(safeUrl) =>
-          Some(safeUrl.url)
-        case Left(message)  =>
-          logger.info(message)
-          None
-      }
-    }
-
-    safeUrl
-      .map(url => Ok(continueView(url)))
-      .getOrElse(Ok(startAgainView(cisAccountUrl)))
+      safeUrl
+        .map(url => Ok(continueView(url)))
+        .getOrElse(Ok(startAgainView(cisAccountUrl)))
   }
 }
