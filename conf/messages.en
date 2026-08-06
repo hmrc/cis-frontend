@@ -47,7 +47,7 @@ monthlyreturns.checkYourAnswers.submitSection.button = Confirm and continue
 
 journeyRecovery.continue.title = Sorry, there is a problem with this service
 journeyRecovery.continue.heading = Sorry, there is a problem with this service
-journeyRecovery.continue.guidance.p1 = There is problem with this service. You can return to
+journeyRecovery.continue.guidance.p1 = There is a problem with this service. You can return to
 journeyRecovery.continue.guidance.link = Construction Industry Scheme
 journeyRecovery.continue.guidance.p2 = or try again later.
 
