@@ -103,6 +103,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       doc.select("h2").text must not include
         messages("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
+
+      doc.select("a.govuk-link").text must include(
+        messages("monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link")
+      )
     }
 
     "must render the page when email is empty" in new Setup {
