@@ -20,6 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
 import models.requests.DataRequest
+import models.ReturnType.MonthlyAmendedStandardReturn
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.*
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
@@ -110,9 +111,11 @@ class ConfirmSubcontractorRemovalController @Inject() (
     }
 
   private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
-    val subs        = selectedSubcontractors(ua)
-    val isAmendment = ua.get(AmendmentDetailsPage).isDefined
-    if (subs.isEmpty && isAmendment) {
+    val subs                = selectedSubcontractors(ua)
+    val isStandardAmendment =
+      ua.get(ReturnTypePage).contains(MonthlyAmendedStandardReturn) ||
+        ua.get(AmendmentDetailsPage).exists(_.originalReturnType == MonthlyAmendedStandardReturn)
+    if (subs.isEmpty && isStandardAmendment) {
       Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
     } else if (subs.isEmpty) {
       Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))

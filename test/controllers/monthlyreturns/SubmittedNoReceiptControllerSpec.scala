@@ -21,10 +21,10 @@ import controllers.monthlyreturns
 import models.agent.AgentClientData
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -243,6 +243,57 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
 
+        "must not display email or call getSchemeEmail when ConfirmationByEmailPage is false" in {
+
+          val uaNoEmail =
+            baseUa
+              .set(ConfirmationByEmailPage, false)
+              .success
+              .value
+              .remove(EnterYourEmailAddressPage)
+              .success
+              .value
+
+          val mockService = mock[MonthlyReturnService]
+
+          when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+            .thenReturn(Future.unit)
+
+          val app =
+            applicationBuilder(userAnswers = Some(uaNoEmail))
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockService)
+              )
+              .build()
+
+          val view = app.injector.instanceOf[SubmittedNoReceiptView]
+
+          val expectedHtml =
+            view(
+              SubmittedNoReceiptViewModel(
+                periodEnd = periodEnd.format(dmyFmt),
+                submittedTime = submittedTime,
+                submittedDate = submittedDate,
+                contractorName = contractorName,
+                empRef = employerRef,
+                email = "",
+                submissionType = submissionType,
+                cisId = cisId
+              )
+            )(request, applicationConfig, messages(app)).toString
+
+          running(app) {
+            val result = route(app, request).value
+
+            status(result) mustBe OK
+            contentAsString(result) mustBe expectedHtml
+          }
+
+          verify(mockService, never()).getSchemeEmail(any())(any())
+          verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+        }
+
         "must throw if returnTypePage is missing" in {
 
           val incompleteUa =
@@ -422,6 +473,66 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             }
 
             verify(mockService).getSchemeEmail(any())(any())
+            verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+          }
+
+          "must not display email or call getSchemeEmail when ConfirmationByEmailPage is false" in {
+
+            lazy val agentData: AgentClientData =
+              AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
+
+            val uaNoEmail =
+              userAnswersWithCisId
+                .set(AgentClientDataPage, agentData)
+                .success
+                .value
+                .set(DateConfirmPaymentsPage, periodEnd)
+                .success
+                .value
+                .set(ReturnTypePage, submissionType)
+                .success
+                .value
+                .set(ConfirmationByEmailPage, false)
+                .success
+                .value
+
+            val mockService = mock[MonthlyReturnService]
+
+            when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+              .thenReturn(Future.unit)
+
+            val app =
+              applicationBuilder(userAnswers = Some(uaNoEmail), isAgent = true)
+                .overrides(
+                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                  bind[MonthlyReturnService].toInstance(mockService)
+                )
+                .build()
+
+            val view = app.injector.instanceOf[SubmittedNoReceiptView]
+
+            val expectedHtml =
+              view(
+                SubmittedNoReceiptViewModel(
+                  periodEnd = periodEnd.format(dmyFmt),
+                  submittedTime = submittedTime,
+                  submittedDate = submittedDate,
+                  contractorName = agentData.schemeName.value,
+                  empRef = employerRef,
+                  email = "",
+                  submissionType = submissionType,
+                  cisId = cisId
+                )
+              )(request, applicationConfig, messages(app)).toString
+
+            running(app) {
+              val result = route(app, request).value
+
+              status(result) mustBe OK
+              contentAsString(result) mustBe expectedHtml
+            }
+
+            verify(mockService, never()).getSchemeEmail(any())(any())
             verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
           }
 

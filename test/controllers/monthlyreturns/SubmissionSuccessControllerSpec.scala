@@ -26,7 +26,7 @@ import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.scalatest.BeforeAndAfterEach
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -203,6 +203,29 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           status(result) mustBe OK
           contentAsString(result) must include(fallbackEmail)
           verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+        }
+      }
+
+      "must not display email or call getSchemeEmail when ConfirmationByEmailPage is false" in {
+        val uaNoEmail = userAnswersWithReturnType
+          .set(ConfirmationByEmailPage, false)
+          .success
+          .value
+          .remove(EnterYourEmailAddressPage)
+          .success
+          .value
+
+        when(mockGuard.check(any())).thenReturn(true)
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.unit)
+
+        val app = buildApp(uaNoEmail)
+
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          contentAsString(result) must not include email
+          verify(mockMonthlyReturnService, never()).getSchemeEmail(any())(any())
         }
       }
 
@@ -480,6 +503,29 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           status(result) mustBe OK
           contentAsString(result) must include(fallbackEmail)
           verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+        }
+      }
+
+      "must not display email or call getSchemeEmail when ConfirmationByEmailPage is false" in {
+        val uaNoEmail = userAnswersWithReturnType
+          .set(ConfirmationByEmailPage, false)
+          .success
+          .value
+          .remove(EnterYourEmailAddressPage)
+          .success
+          .value
+
+        when(mockGuard.check(any())).thenReturn(true)
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.unit)
+
+        val app = buildApp(uaNoEmail, isAgent = true)
+
+        running(app) {
+          val result = route(app, request).value
+          status(result) mustBe OK
+          contentAsString(result) must not include email
+          verify(mockMonthlyReturnService, never()).getSchemeEmail(any())(any())
         }
       }
     }
