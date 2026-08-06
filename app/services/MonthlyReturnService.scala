@@ -36,7 +36,7 @@ import utils.UserAnswerUtils.clearMonthlyReturnJourney
 import utils.Utils.toBigDecimal
 import viewmodels.SelectSubcontractorsViewModel
 
-import java.time.LocalDate
+import java.time.{LocalDate, YearMonth}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -196,10 +196,19 @@ class MonthlyReturnService @Inject() (
 
   def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
     val updatedTry =
-      for {
-        withCompleted <- userAnswers.set(SubmissionJourneyCompletedPage, true)
-        cleared       <- withCompleted.clearMonthlyReturnJourney
-      } yield cleared
+      userAnswers.get(DateConfirmPaymentsPage) match {
+        case Some(periodEnd) =>
+          for {
+            withCompleted <- userAnswers.set(
+                               SubmissionJourneyCompletedPage(YearMonth.from(periodEnd).toString),
+                               true
+                             )
+            cleared       <- withCompleted.clearMonthlyReturnJourney
+          } yield cleared
+
+        case None =>
+          scala.util.Failure(new RuntimeException("dateConfirmPayments missing"))
+      }
 
     updatedTry match {
       case scala.util.Success(updatedAnswers) => sessionRepository.set(updatedAnswers).map(_ => ())

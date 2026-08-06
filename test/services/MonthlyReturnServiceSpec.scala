@@ -1137,7 +1137,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val (service, _, sessionRepo) = newService()
 
       val originalUa = UserAnswers("test-user")
-        .set(SubmissionJourneyCompletedPage, false)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .get
+        .set(SubmissionJourneyCompletedPage("2025-08"), false)
         .get
         .set(VerifySubcontractorsPage, true)
         .get
@@ -1157,7 +1159,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       verify(sessionRepo).set(uaCaptor.capture())
 
       val savedUa = uaCaptor.getValue
-      savedUa.get(SubmissionJourneyCompletedPage) mustBe Some(true)
+      savedUa.get(SubmissionJourneyCompletedPage("2025-08")) mustBe Some(true)
       savedUa.get(VerifySubcontractorsPage) mustBe None
       savedUa.get(DeclarationPage) mustBe None
       savedUa.get(SubmitInactivityRequestPage) mustBe None
@@ -1170,12 +1172,15 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val originalUa = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
+
+      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
         .thenReturn(scala.util.Failure(new RuntimeException("set failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verifyNoInteractions(sessionRepo)
     }
 
@@ -1185,16 +1190,30 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val originalUa = mock(classOf[UserAnswers])
       val updatedUa  = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
+
+      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
         .thenReturn(scala.util.Success(updatedUa))
-      when(updatedUa.remove(DateConfirmPaymentsPage))
-        .thenReturn(scala.util.Failure(new RuntimeException("clear failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verify(updatedUa).remove(DateConfirmPaymentsPage)
       verifyNoInteractions(sessionRepo)
+    }
+
+    "return unit and not persist when DateConfirmPaymentsPage is missing" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = UserAnswers("test-user")
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+
+      verify(sessionRepo, never()).set(any[UserAnswers])
+      verifyNoMoreInteractions(sessionRepo)
     }
   }
 
