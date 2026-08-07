@@ -352,6 +352,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val mockService = mock[MonthlyReturnService]
 
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          ).thenReturn(Future.successful(monthlyReturnResponse))
+
           when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
             .thenReturn(Future.unit)
 
@@ -387,6 +393,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           }
 
           verify(mockService, never()).getSchemeEmail(any())(any())
+          verify(mockService).retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
           verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
         }
 
@@ -655,6 +664,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val mockService = mock[MonthlyReturnService]
 
+            when(
+              mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+                any[HeaderCarrier]
+              )
+            )
+              .thenReturn(Future.successful(monthlyReturnResponse))
             when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
               .thenReturn(Future.unit)
 
@@ -691,6 +706,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             verify(mockService, never()).getSchemeEmail(any())(any())
             verify(mockService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+            verify(mockService).retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
           }
 
           "must throw if returnTypePage is missing" in {
