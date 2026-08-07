@@ -269,6 +269,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .success
           .value
 
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
@@ -622,6 +628,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .success
           .value
 
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
