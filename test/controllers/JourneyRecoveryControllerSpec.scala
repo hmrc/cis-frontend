@@ -106,6 +106,29 @@ class JourneyRecoveryControllerSpec extends SpecBase {
             }
           }
         }
+
+        "when accountType is AGENT and CisIdPage is missing" - {
+
+          "must return the agent account URL without a cisId appended" in {
+
+            val application = applicationBuilder(userAnswers = None, isAgent = true).build()
+
+            running(application) {
+              val request = FakeRequest(GET, routes.JourneyRecoveryController.onPageLoad().url)
+
+              val result = route(application, request).value
+
+              val startAgainView = application.injector.instanceOf[JourneyRecoveryStartAgainView]
+
+              status(result) mustEqual OK
+              contentAsString(result) mustEqual startAgainView(applicationConfig.constructionIndustryAgentAccountUrl)(
+                request,
+                applicationConfig,
+                messages(application)
+              ).toString
+            }
+          }
+        }
       }
     }
   }

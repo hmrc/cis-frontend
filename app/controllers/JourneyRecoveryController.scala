@@ -43,12 +43,16 @@ class JourneyRecoveryController @Inject() (
   def onPageLoad(continueUrl: Option[RedirectUrl] = None): Action[AnyContent] = (identify andThen getData) {
     implicit request =>
 
-      val cisAccountUrl = (for {
-        answers <- request.userAnswers
-        cisId   <- answers.get(CisIdPage)
-        if request.isAgent
-      } yield s"${appConfig.constructionIndustryAgentAccountUrl}$cisId")
-        .getOrElse(appConfig.constructionIndustryOrgAccountUrl)
+      val cisAccountUrl =
+        if (!request.isAgent) {
+          appConfig.constructionIndustryOrgAccountUrl
+        } else {
+          request.userAnswers
+            .flatMap(_.get(CisIdPage))
+            .fold(appConfig.constructionIndustryAgentAccountUrl)(cisId =>
+              s"${appConfig.constructionIndustryAgentAccountUrl}$cisId"
+            )
+        }
 
       val safeUrl: Option[String] = continueUrl.flatMap { unsafeUrl =>
         unsafeUrl.getEither(OnlyRelative) match {
