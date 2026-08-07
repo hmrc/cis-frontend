@@ -73,6 +73,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
         messages("monthlyreturns.submissionSuccessful.submissionHistory.link")
       )
 
+      doc
+        .select(s"a:contains(${messages("monthlyreturns.submissionSuccessful.submissionHistory.link")})")
+        .attr("href") mustBe app.injector.instanceOf[config.FrontendAppConfig].submissionHistoryUrl
+
       doc.select(".govuk-inset-text").text must include(
         messages("monthlyreturns.submissionSuccessful.inset")
       )
