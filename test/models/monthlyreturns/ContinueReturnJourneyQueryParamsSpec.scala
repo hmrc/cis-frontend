@@ -65,7 +65,59 @@ class ContinueReturnJourneyQueryParamsSpec extends AnyWordSpec with Matchers {
       )
     }
 
-    "unbind query params" in {
+    "bind valid query params including isOriginalNilReturn" in {
+      val params = Map(
+        "instanceId"          -> Seq("CIS-123"),
+        "taxYear"             -> Seq("2025"),
+        "taxMonth"            -> Seq("7"),
+        "isOriginalNilReturn" -> Seq("true")
+      )
+
+      binder.bind("", params) mustBe Some(
+        Right(
+          ContinueReturnJourneyQueryParams(
+            instanceId = "CIS-123",
+            taxYear = 2025,
+            taxMonth = 7,
+            isOriginalNilReturn = Some(true)
+          )
+        )
+      )
+    }
+
+    "bind valid query params without isOriginalNilReturn as None" in {
+      val params = Map(
+        "instanceId" -> Seq("CIS-123"),
+        "taxYear"    -> Seq("2025"),
+        "taxMonth"   -> Seq("7")
+      )
+
+      binder.bind("", params) mustBe Some(
+        Right(
+          ContinueReturnJourneyQueryParams(
+            instanceId = "CIS-123",
+            taxYear = 2025,
+            taxMonth = 7,
+            isOriginalNilReturn = None
+          )
+        )
+      )
+    }
+
+    "return Left when isOriginalNilReturn cannot be parsed as a boolean" in {
+      val params = Map(
+        "instanceId"          -> Seq("CIS-123"),
+        "taxYear"             -> Seq("2025"),
+        "taxMonth"            -> Seq("7"),
+        "isOriginalNilReturn" -> Seq("abc")
+      )
+
+      binder.bind("", params) mustBe Some(
+        Left("Cannot parse parameter isOriginalNilReturn as Boolean: should be true, false, 0 or 1")
+      )
+    }
+
+    "unbind query params without isOriginalNilReturn" in {
       val queryParams = ContinueReturnJourneyQueryParams(
         instanceId = "CIS-123",
         taxYear = 2025,
@@ -74,6 +126,18 @@ class ContinueReturnJourneyQueryParamsSpec extends AnyWordSpec with Matchers {
 
       binder.unbind("", queryParams) mustBe
         "instanceId=CIS-123&taxYear=2025&taxMonth=7"
+    }
+
+    "unbind query params with isOriginalNilReturn" in {
+      val queryParams = ContinueReturnJourneyQueryParams(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 7,
+        isOriginalNilReturn = Some(true)
+      )
+
+      binder.unbind("", queryParams) mustBe
+        "instanceId=CIS-123&taxYear=2025&taxMonth=7&isOriginalNilReturn=true"
     }
   }
 }

@@ -275,6 +275,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(ResubmissionIdPage, 1L)
         .get
+        .set(NilReturnStatusPage, "STARTED")
+        .get
         .set(DeclarationPage, Set(Declaration.Confirmed))
         .get
         .set(SelectedSubcontractorPage(1), completeSub(1))
@@ -304,6 +306,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(ConfirmationByEmailPage) mustBe None
       cleared.get(EnterYourEmailAddressPage) mustBe None
       cleared.get(ResubmissionIdPage) mustBe None
+      cleared.get(NilReturnStatusPage) mustBe None
       cleared.get(DeclarationPage) mustBe None
       cleared.get(SelectedSubcontractorPage(1)) mustBe None
       cleared.get(VerifySubcontractorsPage) mustBe None

@@ -18,7 +18,7 @@ package services
 
 import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.*
 import models.UserAnswers
 import models.agent.AgentClientData
@@ -27,6 +27,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
+import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
@@ -1136,7 +1137,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val (service, _, sessionRepo) = newService()
 
       val originalUa = UserAnswers("test-user")
-        .set(SubmissionJourneyCompletedPage, false)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .get
+        .set(SubmissionJourneyCompletedPage("2025-08"), false)
         .get
         .set(VerifySubcontractorsPage, true)
         .get
@@ -1156,7 +1159,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       verify(sessionRepo).set(uaCaptor.capture())
 
       val savedUa = uaCaptor.getValue
-      savedUa.get(SubmissionJourneyCompletedPage) mustBe Some(true)
+      savedUa.get(SubmissionJourneyCompletedPage("2025-08")) mustBe Some(true)
       savedUa.get(VerifySubcontractorsPage) mustBe None
       savedUa.get(DeclarationPage) mustBe None
       savedUa.get(SubmitInactivityRequestPage) mustBe None
@@ -1169,12 +1172,15 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val originalUa = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
+
+      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
         .thenReturn(scala.util.Failure(new RuntimeException("set failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verifyNoInteractions(sessionRepo)
     }
 
@@ -1184,16 +1190,30 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val originalUa = mock(classOf[UserAnswers])
       val updatedUa  = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
+
+      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
         .thenReturn(scala.util.Success(updatedUa))
-      when(updatedUa.remove(DateConfirmPaymentsPage))
-        .thenReturn(scala.util.Failure(new RuntimeException("clear failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verify(updatedUa).remove(DateConfirmPaymentsPage)
       verifyNoInteractions(sessionRepo)
+    }
+
+    "return unit and not persist when DateConfirmPaymentsPage is missing" in {
+      val (service, _, sessionRepo) = newService()
+
+      val originalUa = UserAnswers("test-user")
+        .set(VerifySubcontractorsPage, true)
+        .get
+
+      service.completeSubmissionJourney(originalUa).futureValue mustBe ()
+
+      verify(sessionRepo, never()).set(any[UserAnswers])
+      verifyNoMoreInteractions(sessionRepo)
     }
   }
 
@@ -1350,11 +1370,51 @@ class MonthlyReturnServiceSpec extends SpecBase {
             taxMonth = 3,
             nilReturnIndicator = Some("N"),
             decNilReturnNoPayments = Some("N"),
+            decNoMoreSubPayments = Some("Y"),
             decEmpStatusConsidered = Some("Y"),
             decAllSubsVerified = Some("Y")
           )
         ),
-        subcontractors = Nil,
+        subcontractors = Seq(
+          Subcontractor(
+            subcontractorId = 1001,
+            utr = None,
+            pageVisited = None,
+            partnerUtr = None,
+            crn = None,
+            firstName = None,
+            nino = None,
+            secondName = None,
+            surname = None,
+            partnershipTradingName = None,
+            tradingName = None,
+            subcontractorType = None,
+            addressLine1 = None,
+            addressLine2 = None,
+            addressLine3 = None,
+            addressLine4 = None,
+            country = None,
+            postCode = None,
+            emailAddress = None,
+            phoneNumber = None,
+            mobilePhoneNumber = None,
+            worksReferenceNumber = None,
+            createDate = None,
+            lastUpdate = None,
+            subbieResourceRef = None,
+            matched = None,
+            autoVerified = None,
+            verified = None,
+            verificationNumber = None,
+            taxTreatment = None,
+            verificationDate = None,
+            version = None,
+            updatedTaxTreatment = None,
+            lastMonthlyReturnDate = None,
+            pendingVerifications = None,
+            displayName = Some("A Ltd")
+          )
+        ),
         monthlyReturnItems = Seq(
           MonthlyReturnItem(
             monthlyReturnId = 101,
@@ -1401,12 +1461,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val ua = result.toOption.value
 
       ua.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
-      ua.get(SubmitInactivityRequestPage) mustBe None
+      ua.get(SubmitInactivityRequestPage) mustBe Some(true)
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
       ua.get(EmploymentStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
-      ua.get(VerifySubcontractorsPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage) mustBe Some(1L)
@@ -1450,6 +1509,295 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue mustBe
         Left("Missing nil return indicator")
+    }
+  }
+
+  "populateUserAnswersForContinueAmendJourney" - {
+
+    val editRequest = GetMonthlyReturnForEditRequest(
+      instanceId = "CIS-123",
+      taxYear = 2025,
+      taxMonth = 3,
+      isAmendment = true
+    )
+
+    def submission(submissionId: Long = 1L, email: Option[String] = Some("test@example.com")): Submission =
+      Submission(
+        submissionId = submissionId,
+        submissionType = "MONTHLY_RETURN",
+        activeObjectId = None,
+        status = None,
+        hmrcMarkGenerated = None,
+        hmrcMarkGgis = None,
+        emailRecipient = email,
+        acceptedTime = None,
+        createDate = None,
+        lastUpdate = None,
+        schemeId = 1,
+        agentId = None,
+        l_Migrated = None,
+        submissionRequestDate = None,
+        govTalkErrorCode = None,
+        govTalkErrorType = None,
+        govTalkErrorMessage = None
+      )
+
+    def amendSubcontractor(
+      id: Long,
+      resourceRef: Long,
+      displayName: Option[String] = Some("A Ltd")
+    ): Subcontractor =
+      Subcontractor(
+        subcontractorId = id,
+        utr = None,
+        pageVisited = None,
+        partnerUtr = None,
+        crn = None,
+        firstName = None,
+        nino = None,
+        secondName = None,
+        surname = None,
+        partnershipTradingName = None,
+        tradingName = displayName,
+        subcontractorType = None,
+        addressLine1 = None,
+        addressLine2 = None,
+        addressLine3 = None,
+        addressLine4 = None,
+        country = None,
+        postCode = None,
+        emailAddress = None,
+        phoneNumber = None,
+        mobilePhoneNumber = None,
+        worksReferenceNumber = None,
+        createDate = None,
+        lastUpdate = None,
+        subbieResourceRef = Some(resourceRef),
+        matched = None,
+        autoVerified = None,
+        verified = None,
+        verificationNumber = None,
+        taxTreatment = None,
+        verificationDate = None,
+        version = None,
+        updatedTaxTreatment = None,
+        lastMonthlyReturnDate = None,
+        pendingVerifications = None,
+        displayName = displayName
+      )
+
+    "create a nil-return amendment journey when the monthly return is a nil return" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme(Some("ABC Construction Ltd"))),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("Y")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Seq(submission())
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val amendResult = result.toOption.value
+
+      amendResult.isNilReturn mustBe true
+      amendResult.hasSubcontractors mustBe false
+
+      val ua = amendResult.userAnswers
+      ua.get(ReturnTypePage) mustBe Some(MonthlyAmendedNilReturn)
+      ua.get(CisIdPage) mustBe Some("CIS-123")
+      ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
+      ua.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 3, 5))
+      ua.get(AmendmentDetailsPage).value.originalReturnType mustBe MonthlyAmendedNilReturn
+      ua.get(ResubmissionIdPage) mustBe Some(1L)
+      ua.get(ConfirmationByEmailPage) mustBe Some(true)
+      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+    }
+
+    "copy subcontractors and payment details for a standard return" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme(Some("ABC Construction Ltd"))),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N")
+          )
+        ),
+        subcontractors = Seq(amendSubcontractor(id = 1001, resourceRef = 5001)),
+        monthlyReturnItems = Seq(
+          MonthlyReturnItem(
+            monthlyReturnId = 101,
+            monthlyReturnItemId = 2001,
+            totalPayments = Some("1,000.00"),
+            costOfMaterials = Some("100.00"),
+            totalDeducted = Some("50.00"),
+            unmatchedTaxRateIndicator = None,
+            subcontractorId = Some(1001),
+            subcontractorName = Some("A Ltd"),
+            verificationNumber = None,
+            itemResourceReference = Some(5001)
+          )
+        ),
+        submission = Seq(submission())
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val amendResult = result.toOption.value
+
+      amendResult.isNilReturn mustBe false
+      amendResult.hasSubcontractors mustBe true
+
+      val ua = amendResult.userAnswers
+      ua.get(ReturnTypePage) mustBe Some(MonthlyAmendedStandardReturn)
+      ua.get(AmendmentDetailsPage).value.originalReturnType mustBe MonthlyAmendedStandardReturn
+      ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
+        id = 1001L,
+        name = "A Ltd",
+        totalPaymentsMade = Some(BigDecimal("1000.00")),
+        costOfMaterials = Some(BigDecimal("100.00")),
+        totalTaxDeducted = Some(BigDecimal("50.00"))
+      )
+    }
+
+    "return Left when no monthly return is found" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Nil,
+        monthlyReturn = Nil,
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue mustBe
+        Left("Missing monthly return")
+    }
+
+    "return Left when nil return indicator is missing" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Nil,
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = None
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue mustBe
+        Left("Missing nil return indicator")
+    }
+
+    "return Left when nil return indicator has an unexpected value" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Nil,
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("X")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue mustBe
+        Left("Missing nil return indicator")
+    }
+
+    "save an existing submission ID as the resubmission ID" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Seq(submission(submissionId = 99L))
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.toOption.value.userAnswers.get(ResubmissionIdPage) mustBe Some(99L)
+    }
+
+    "leave resubmission details empty when no previous submission exists" in {
+      val (service, connector, _) = newService()
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueAmendJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.toOption.value.userAnswers.get(ResubmissionIdPage) mustBe None
     }
   }
 

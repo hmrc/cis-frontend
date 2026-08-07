@@ -47,6 +47,11 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
       val linkText = doc.getElementsByClass("govuk-link").eachText()
       linkText must contain(messages("monthlyreturns.dateConfirmPayments.p1.link"))
 
+      val deleteReturnLink =
+        doc.select(s"a:contains(${messages("monthlyreturns.dateConfirmPayments.p1.link")})")
+      deleteReturnLink.attr("href") mustBe
+        app.injector.instanceOf[FrontendAppConfig].incompleteReturnsUrl
+
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
     }
 

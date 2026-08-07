@@ -76,7 +76,6 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   private def stubSubmissionFlow(
     service: SubmissionService,
-    sessionDb: SessionRepository,
     status: String,
     createdId: String = "sub-123",
     endpoint: Option[ResponseEndPointDto] = None,
@@ -133,7 +132,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to polling page when status is PENDING" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "PENDING")
+      stubSubmissionFlow(mockService, status = "PENDING")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -147,7 +146,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to polling page when status is ACCEPTED" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
+      stubSubmissionFlow(mockService, status = "ACCEPTED")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -161,7 +160,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to Unsuccessful when status is FATAL_ERROR" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "FATAL_ERROR")
+      stubSubmissionFlow(mockService, status = "FATAL_ERROR")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -200,7 +199,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to Submission Unsuccessful Resubmit page when status is STARTED" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
-      stubSubmissionFlow(mockService, mockMongoDb, status = "STARTED")
+      stubSubmissionFlow(mockService, status = "STARTED")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
@@ -216,7 +215,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val completedAnswers = userAnswersWithCisId
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage("2025-08"), true)
         .success
         .value
 
@@ -238,7 +240,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val incompleteAnswers = completeAnswers
-        .remove(DateConfirmPaymentsPage)
+        .remove(DeclarationPage)
         .success
         .value
 
@@ -253,6 +255,149 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       verifyNoInteractions(mockService)
       verifyNoInteractions(mockMongoDb)
     }
+
+    "redirects to JourneyRecovery when DateConfirmPaymentsPage is missing" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verifyNoInteractions(mockService)
+      verifyNoInteractions(mockMongoDb)
+    }
+
+    "passes isResubmission=true to submitToChrisAndPersist when an existing submission is reused" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val (createdId, updatedAnswers, submitted) =
+        stubSubmissionFlow(service = mockService, status = "PENDING", isResubmission = true)
+
+      val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+
+      verify(mockService).getOrCreateSubmissionForChris(
+        any[UserAnswers]
+      )(using any[HeaderCarrier])
+
+      verify(mockService).submitToChrisAndPersist(
+        eqTo(createdId),
+        eqTo(updatedAnswers),
+        any[Boolean],
+        eqTo(true)
+      )(using any[HeaderCarrier])
+
+      verify(mockService).updateSubmissionFromChrisResponse(
+        eqTo(createdId),
+        eqTo(updatedAnswers),
+        eqTo(submitted)
+      )(
+        any[CisIdDataRequest[AnyContent]],
+        any[HeaderCarrier]
+      )
+    }
+  }
+
+  "SubmissionSendingController.onPageLoad (resubmission path via ResubmissionIdPage)" - {
+
+    val existingSubId   = 99L
+    val resubmitAnswers = completeAnswers
+      .setOrException(ResubmissionIdPage, existingSubId)
+
+    def stubResubmissionFlow(
+      service: SubmissionService,
+      sessionDb: SessionRepository,
+      status: String
+    ): ChrisSubmissionResponse = {
+
+      val submitted = ChrisSubmissionResponse(
+        submissionId = existingSubId.toString,
+        status = status,
+        hmrcMarkGenerated = "IR-MARK",
+        correlationId = Some("CID-RESUB"),
+        responseEndPoint = None,
+        gatewayTimestamp = Some("2025-01-01T00:00:00"),
+        error = None
+      )
+
+      when(
+        service.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      ).thenReturn(Future.successful((existingSubId.toString, resubmitAnswers, true)))
+
+      when(
+        service.submitToChrisAndPersist(eqTo(existingSubId.toString), any[UserAnswers], any[Boolean], eqTo(true))(using
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(submitted))
+
+      when(sessionDb.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      when(
+        service.updateSubmissionFromChrisResponse(eqTo(existingSubId.toString), any[UserAnswers], eqTo(submitted))(
+          any[CisIdDataRequest[AnyContent]],
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(()))
+
+      submitted
+    }
+
+    "uses ResubmissionIdPage to skip creation and passes isResubmission=true (PENDING)" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubResubmissionFlow(mockService, mockMongoDb, status = "PENDING")
+
+      val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+
+      verify(mockService).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never()).create(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
+    "redirects to polling when resubmission status is ACCEPTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubResubmissionFlow(mockService, mockMongoDb, status = "ACCEPTED")
+
+      val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+    }
+
+    "redirects to Unsuccessful Resubmit when resubmission status is STARTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubResubmissionFlow(mockService, mockMongoDb, status = "STARTED")
+
+      val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulResubmitRoute
+    }
   }
 
   lazy val pollAndRedirectRoute: String =
@@ -265,7 +410,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
-      val app = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
+      val userAnswers = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+
+      val app = buildAppWith(Some(userAnswers), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
       val result = ctl.onPollAndRedirect()(mkPollRequest)
@@ -289,7 +439,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -326,7 +482,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -363,7 +525,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -400,7 +568,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -437,7 +611,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -478,7 +658,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -520,7 +706,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -561,7 +753,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -602,7 +800,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -639,7 +843,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -679,7 +889,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -719,7 +935,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -756,7 +978,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         irMark = "IR-MARK-123",
         submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
       )
-      val uaWithSubmission  = userAnswersWithCisId.set(SubmissionDetailsPage, submissionDetails).success.value
+      val uaWithSubmission  = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
 
       when(mockService.getPollInterval(any[UserAnswers]))
         .thenReturn(10)
@@ -783,7 +1011,10 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockMongoDb = mock[SessionRepository]
 
       val completedAnswers = userAnswersWithCisId
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage("2025-08"), true)
         .success
         .value
 
@@ -812,6 +1043,9 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
 
       val uaWithSubmission = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
         .set(SubmissionDetailsPage, submissionDetails)
         .success
         .value

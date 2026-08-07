@@ -603,6 +603,65 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         verify(sessionRepository, never()).set(any[UserAnswers])
       }
 
+      "pass isResubmission=true to ChrisSubmissionRequestBuilder" in {
+        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+          Configuration(
+            "submission-poll-timeout-seconds" -> "60"
+          )
+        )
+        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+        when(connector.getCisTaxpayer()(any[HeaderCarrier]))
+          .thenReturn(Future.successful(taxpayer))
+
+        stubRetrieveMonthlyReturnForEditDetails(connector)
+
+        val builtCsr = mock(classOf[ChrisSubmissionRequest])
+
+        when(
+          chrisRequestBuilder.build(
+            any[UserAnswers],
+            any[CisTaxpayer],
+            eqTo(false),
+            any[GetAllMonthlyReturnDetailsResponse],
+            eqTo(true)
+          )
+        ).thenReturn(builtCsr)
+
+        val beResp = mkChrisResp()
+
+        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(beResp))
+
+        when(sessionRepository.set(any[UserAnswers]))
+          .thenReturn(Future.successful(true))
+
+        val result =
+          service
+            .submitToChrisAndPersist(
+              submissionId = "sub-123",
+              ua = uaWithInactivityYes,
+              isAgent = false,
+              isResubmission = true
+            )
+            .futureValue
+
+        result mustBe beResp
+
+        verify(chrisRequestBuilder).build(
+          any[UserAnswers],
+          any[CisTaxpayer],
+          eqTo(false),
+          any[GetAllMonthlyReturnDetailsResponse],
+          eqTo(true)
+        )
+
+        verify(connector).submitToChris(eqTo("sub-123"), eqTo(builtCsr))(any[HeaderCarrier])
+      }
+
     }
 
     "agent" - {

@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
 import models.Mode
@@ -42,7 +43,7 @@ class VerifySubcontractorsController @Inject() (
   formProvider: VerifySubcontractorsFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: VerifySubcontractorsView
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport {
 
@@ -69,7 +70,7 @@ class VerifySubcontractorsController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield value match {
-              case true  => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              case true  => Redirect(appConfig.manageSubcontractorsUrl(request.cisId))
               case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
             }
         )

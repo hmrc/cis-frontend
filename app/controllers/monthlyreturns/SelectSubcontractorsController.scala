@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
@@ -42,7 +43,8 @@ class SelectSubcontractorsController @Inject() (
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
   subcontractorService: SubcontractorService,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  appConfig: FrontendAppConfig
 )(using ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -75,7 +77,7 @@ class SelectSubcontractorsController @Inject() (
                   form
                 }
 
-              Ok(view(filledForm, model.subcontractors))
+              Ok(view(filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl))
             }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
@@ -97,7 +99,10 @@ class SelectSubcontractorsController @Inject() (
               form
                 .bindFromRequest()
                 .fold(
-                  formWithErrors => Future.successful(BadRequest(view(formWithErrors, model.subcontractors))),
+                  formWithErrors =>
+                    Future.successful(
+                      BadRequest(view(formWithErrors, model.subcontractors, appConfig.yourSubcontractorsUrl))
+                    ),
                   formData => {
                     val selectedSubcontractors =
                       model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))

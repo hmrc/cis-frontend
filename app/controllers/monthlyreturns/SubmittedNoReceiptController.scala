@@ -23,6 +23,8 @@ import models.UserAnswers
 import models.monthlyreturns.GetAllMonthlyReturnDetailsResponse
 import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
 import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import models.requests.CisIdDataRequest
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, ReturnTypePage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -76,7 +78,7 @@ class SubmittedNoReceiptController @Inject() (
     }
 
   private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
-    request: CisIdDataRequest[_]
+    request: CisIdDataRequest[_], hc: HeaderCarrier
   ): Future[SubmittedNoReceiptViewModel] = {
     val cisId          = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
     val contractorName = monthlyReturn.scheme.headOption
@@ -111,16 +113,20 @@ class SubmittedNoReceiptController @Inject() (
   }
 
   private def resolveEmail(ua: UserAnswers, cisId: String)(implicit hc: HeaderCarrier): Future[String] =
-    emailfromUserAnswers(ua) match {
-      case Some(email) =>
-        Future.successful(email)
-      case None        =>
-        monthlyReturnService
-          .getSchemeEmail(cisId)
-          .map(_.getOrElse(""))
-          .recover { case ex =>
-            logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
-            ""
-          }
+    if (ua.get(ConfirmationByEmailPage).contains(false)) {
+      Future.successful("")
+    } else {
+      emailfromUserAnswers(ua) match {
+        case Some(email) =>
+          Future.successful(email)
+        case None        =>
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              ""
+            }
+      }
     }
 }
