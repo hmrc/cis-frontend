@@ -21,6 +21,8 @@ import models.ReturnType.MonthlyNilReturn
 import models.ReturnType.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
+import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse}
+import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -92,6 +94,40 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       .success
       .value
 
+  val monthlyReturnResponse = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq(
+      ContractorScheme(
+        schemeId = 1,
+        instanceId = "CIS-123",
+        accountsOfficeReference = "123PA12345678",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        name = Some(contractorName)
+      )
+    ),
+    monthlyReturn = Seq.empty,
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
+  val monthlyReturnResponseWithoutContractorName = GetAllMonthlyReturnDetailsResponse(
+    scheme = Seq(
+      ContractorScheme(
+        schemeId = 1,
+        instanceId = "CIS-123",
+        accountsOfficeReference = "123PA12345678",
+        taxOfficeNumber = "123",
+        taxOfficeReference = "AB456",
+        name = None
+      )
+    ),
+    monthlyReturn = Seq.empty,
+    subcontractors = Seq.empty,
+    monthlyReturnItems = Seq.empty,
+    submission = Seq.empty
+  )
+
   lazy val agentDate: AgentClientData =
     AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
 
@@ -128,6 +164,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must return OK and render key fields" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
 
@@ -147,6 +189,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must not call getSchemeEmail when email is present in user answers" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
 
@@ -193,6 +241,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(fallbackEmail)))
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
 
@@ -215,6 +269,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .success
           .value
 
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
@@ -250,6 +310,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
           .thenReturn(Future.failed(new RuntimeException("boom")))
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
 
@@ -264,6 +330,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must throw if ReturnTypePage is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         val app = buildApp(ua)
 
         running(app) {
@@ -276,6 +348,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must throw if contractorName is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
         val incompleteUa = userAnswersWithCisId
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
@@ -296,15 +374,21 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         val app = buildApp(incompleteUa)
 
         running(app) {
-          val thrown = intercept[IllegalStateException] {
+          val thrown = intercept[RuntimeException] {
             await(route(app, request).get)
           }
-          thrown.getMessage must include("contractorName missing for userId=")
+          thrown.getMessage must include("[SubmissionSuccess] Scheme name is missing")
         }
       }
 
       "must throw if employerReference is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         val app = buildApp(userAnswersWithReturnType, hasEmployeeRef = false)
 
         running(app) {
@@ -317,6 +401,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must throw if taxPeriodEnd is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         val incompleteUa = userAnswersWithCisId
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
@@ -337,10 +427,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         val app = buildApp(incompleteUa)
 
         running(app) {
-          val thrown = intercept[IllegalStateException] {
-            await(route(app, request).get)
-          }
-          thrown.getMessage must include("[SubmissionSuccess] taxPeriodEnd missing from userAnswers")
+          val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
         }
       }
 
@@ -386,6 +475,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must return OK and render key fields using AgentClientData" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
 
@@ -414,6 +509,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must throw if contractorName is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
         val incompleteUa = userAnswersWithCisId
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
@@ -434,15 +535,21 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         val app = buildApp(incompleteUa, isAgent = true)
 
         running(app) {
-          val thrown = intercept[IllegalStateException] {
+          val thrown = intercept[RuntimeException] {
             await(route(app, request).get)
           }
-          thrown.getMessage must include("contractorName missing for userId=")
+          thrown.getMessage must include("[SubmissionSuccess] Scheme name is missing")
         }
       }
 
       "must throw if agent employerReference is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         lazy val agentDateWithoutTaxRefTaxNumber: AgentClientData =
           AgentClientData("CLIENT-123", "", "taxOfficeReference", Some("PAL 355 Scheme"))
 
@@ -493,6 +600,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
         when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(fallbackEmail)))
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
 
@@ -515,6 +628,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .success
           .value
 
+        when(
+          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+            any[HeaderCarrier]
+          )
+        )
+          .thenReturn(Future.successful(monthlyReturnResponse))
         when(mockGuard.check(any())).thenReturn(true)
         when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
           .thenReturn(Future.unit)
