@@ -185,7 +185,7 @@ monthlyreturns.returnType.value = Monthly nil return
 monthlyreturns.returnType.monthlyReturnValue = Monthly return
 
 monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 132 characters or less
-monthlyreturns.enterYourEmailAddress.change.hidden = Enter your email address
+monthlyreturns.enterYourEmailAddress.change.hidden = Nodwch eich cyfeiriad e-bost
 monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Cyfeiriad e-bost
 
 
@@ -308,6 +308,7 @@ monthlyreturns.verifiedStatusDeclaration.error.required = Dewiswch ‘Iawn’ os
 monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Datganiad o’r statws dilysu
 monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = Datganiad o’r statws cyflogaeth
 
+verifySubcontractors.warningIcon = Warning
 
 monthlyreturns.verifiedStatusDeclaration.change.hidden = Verified Status Declaration
 monthlyreturns.verifiedStatusDeclaration.legend = Has every subcontractor included on this return either been verified with HM Revenue & Customs, or been included in previous CIS returns in this, or the previous two tax years?
@@ -317,4 +318,7 @@ monthlyreturns.summarySubcontractorPayments.intro = You have added the payment d
 verifySubcontractors.error.required = Select yes if you want to verify your subcontractors now
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
+monthlyreturns.subcontractorDetailsAdded.add.hidden = Add payment details for {0}s
+monthlyreturns.subcontractorDetailsAdded.amend.hidden = Amend payment details for {0}
+
 

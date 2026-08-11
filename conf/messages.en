@@ -374,7 +374,7 @@ monthlyreturns.totalTaxDeducted.error.required = Enter the total tax deducted
 
 verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
-verifySubcontractors.WarningIcon = Warning
+verifySubcontractors.warningIcon = Warning
 verifySubcontractors.warningText = One or more subcontractors have not been verified. Not verifying subcontractors will result in them receiving a higher rate of tax.
 verifySubcontractors.P1 = Do you want to verify your subcontractors now?
 verifySubcontractors.yes = Yes
