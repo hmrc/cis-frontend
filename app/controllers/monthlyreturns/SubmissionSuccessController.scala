@@ -20,12 +20,11 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.{ReturnType, UserAnswers}
-import models.submission.SubmissionDetails
-import pages.monthlyreturns.*
-import pages.submission.SubmissionDetailsPage
-import models.monthlyreturns.GetAllMonthlyReturnDetailsResponse
+import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.ReturnType.reads
 import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import pages.monthlyreturns.*
+import pages.submission.SubmissionDetailsPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -68,22 +67,62 @@ class SubmissionSuccessController @Inject() (
       } else {
         val ua = request.userAnswers
 
-        val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+        ua.get(SubmissionConfirmationCachePage) match {
+          case Some(cache) =>
+            Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
 
-        monthlyReturnForEditRequest match {
-          case Left(error) =>
-            logger.error(s"[SubmissionSuccessController] Failed to build GetMonthlyReturnForEditRequest: $error")
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          case None =>
+            val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
 
-          case Right(req) =>
-            for {
-              monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
-              vm            <- buildViewModel(ua, monthlyReturn)
-              _             <- monthlyReturnService.completeSubmissionJourney(ua)
-            } yield Ok(view(vm))
+            monthlyReturnForEditRequest match {
+              case Left(error) =>
+                logger.error(s"[SubmissionSuccessController] Failed to build GetMonthlyReturnForEditRequest: $error")
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+              case Right(req) =>
+                for {
+                  monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
+                  vm            <- buildViewModel(ua, monthlyReturn)
+                  uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
+                  _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
+                } yield Ok(view(vm))
+            }
         }
       }
     }
+
+  private def cacheFrom(vm: SubmissionSuccessViewModel): SubmissionConfirmationCache =
+    SubmissionConfirmationCache(
+      periodEnd = vm.periodEnd,
+      contractorName = vm.contractorName,
+      email = vm.email,
+      submittedTime = vm.submittedTime,
+      submittedDate = vm.submittedDate
+    )
+
+  private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers)(implicit
+    request: CisIdDataRequest[_]
+  ): SubmissionSuccessViewModel = {
+    val reference      = IrMarkReferenceGenerator.fromBase64(
+      required(ua.get(SubmissionDetailsPage), "[SubmissionSuccess] submissionDetails missing from userAnswers").irMark
+    )
+    val submissionType =
+      required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+    val cisId          = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
+    val empRef         = employerRefFrom(request)
+
+    SubmissionSuccessViewModel(
+      reference = reference,
+      periodEnd = cache.periodEnd,
+      submittedTime = cache.submittedTime,
+      submittedDate = cache.submittedDate,
+      contractorName = cache.contractorName,
+      empRef = empRef,
+      email = cache.email,
+      submissionType = submissionType,
+      cisId = cisId
+    )
+  }
 
   private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
     request: CisIdDataRequest[_],
