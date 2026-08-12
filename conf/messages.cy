@@ -318,7 +318,4 @@ monthlyreturns.summarySubcontractorPayments.intro = You have added the payment d
 verifySubcontractors.error.required = Select yes if you want to verify your subcontractors now
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
-monthlyreturns.subcontractorDetailsAdded.add.hidden = Add payment details for {0}s
-monthlyreturns.subcontractorDetailsAdded.amend.hidden = Amend payment details for {0}
-
 
