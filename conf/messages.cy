@@ -14,10 +14,6 @@ site.confirm = Cadarnhau
 currency.pounds=£{0}
 
 
-error.title.prefix = Error:
-error.prefix = Error
-error.summary.title = There is a problem
-
 
 
 fileYourNilReturn.title = Cyflwyno’ch datganiad ‘dim’
@@ -93,7 +89,6 @@ monthlyreturns.paymentsToSubcontractors.value = None
 monthlyreturns.submissionSuccess.title = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submissionSuccess.heading = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submissionSuccessful.panel.ref = Eich cyfeirnod
-monthlyreturns.submissionSuccessful.submitted.line = Cyflwynwyd am {0} on {1}
 monthlyreturns.submissionSuccessful.submissionDetails.heading = Manylion y cyflwyniad
 monthlyreturns.submissionSuccessful.contractorName = Enw’r contractwr
 monthlyreturns.submissionSuccessful.payeReference = Cyfeirnod TWE
@@ -111,16 +106,11 @@ monthlyreturns.submissionSuccessful.feedback.heading = Cyn i chi fynd
 monthlyreturns.submissionSuccessful.feedback.p1 = Mae’ch adborth yn ein helpu i wella ein gwasanaeth.
 monthlyreturns.submissionSuccessful.feedback.p2 = i rannu’ch adborth ar y gwasanaeth hwn.
 monthlyreturns.submissionSuccessful.feedback.p2.link = Llenwch arolwg byr
-monthlyreturns.returnType.MonthlyNilReturn = Nil return
-monthlyreturns.returnType.MonthlyAmendedNilReturn = Nil return
-monthlyreturns.returnType.MonthlyStandardReturn = Monthly return
-monthlyreturns.returnType.MonthlyAmendedStandardReturn = Monthly return
 monthlyreturns.submissionSuccessful.whatHappensNext.h2 = Yr hyn sy’n digwydd nesaf
 monthlyreturns.submissionSuccessful.whatHappensNext.p = Ni wnaethoch nodi e-bost wrth i chi gyflwyno’r datganiad hwn. Os ydych am nodi e-bost, bydd angen i chi newid eich manylion cyswllt yn yr adran ynglŷn â’ch sefydliad/ffỳrm. Bydd hyn i’w weld yn eich gwasanaethau CThEF.
 
 monthlyreturns.submittedNoReceipt.title = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submittedNoReceipt.heading = Wedi llwyddo i gyflwyno {0}
-monthlyreturns.submittedNoReceipt.p1 = Cyflwynwyd am {0} on {1}
 monthlyreturns.submittedNoReceipt.details.h2 = Manylion y cyflwyniad
 monthlyreturns.submittedNoReceipt.details.contractorName = Enw’r contractwr
 monthlyreturns.submittedNoReceipt.details.payeReference = Cyfeirnod TWE
@@ -181,10 +171,6 @@ monthlyreturns.submissionAwaiting.links.prefix = Ar gyfer problemau technegol, c
 monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk = Llinell Gymorth Gwasanaethau ar-lein CThEF (yn agor tab newydd)
 monthlyreturns.submissionAwaiting.links.submit = Yn ôl i ‘Rheoli’ch Datganiad CIS’
 
-monthlyreturns.returnType.value = Monthly nil return
-monthlyreturns.returnType.monthlyReturnValue = Monthly return
-
-monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 132 characters or less
 monthlyreturns.enterYourEmailAddress.change.hidden = Nodwch eich cyfeiriad e-bost
 monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Cyfeiriad e-bost
 
@@ -194,7 +180,6 @@ monthlyreturns.confirmationByEmail.change.hidden = A ydych am gael cadarnhad o�
 
 
 monthlyreturns.submitInactivityRequest.checkYourAnswersLabel = Cais anactifedd
-monthlyreturns.submitInactivityRequest.change.hidden = inactivity request
 
 
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Cyfnod dod i ben y datganiad
@@ -235,13 +220,9 @@ monthlyreturns.subcontractorDetailsAdded.heading.single = Rydych wedi ychwanegu 
 monthlyreturns.subcontractorDetailsAdded.heading.multiple = Rydych wedi ychwanegu {0} o is-gontractwyr
 monthlyreturns.subcontractorDetailsAdded.question = A oes angen i chi ychwanegu rhagor o is-gontractwyr?
 monthlyreturns.subcontractorDetailsAdded.amend = Diwygio manylion talu
-monthlyreturns.subcontractorDetailsAdded.amend.hidden = Amend payment details for {0}
 monthlyreturns.subcontractorDetailsAdded.add = Ychwanegu manylion talu
-monthlyreturns.subcontractorDetailsAdded.add.hidden = Add payment details for {0}s
-monthlyreturns.subcontractorDetailsAdded.remove.hidden = Remove {0} from the list
 monthlyreturns.subcontractorDetailsAdded.cancelAmendment = Canslo’r diwygiad
 
-paymentDetails.title = How much did you pay to this subcontractor in total?
 paymentDetails.heading = Beth oedd y cyfanswm y gwnaethoch ei dalu i {0}?
 paymentDetails.hint = Nodwch y swm gros, heb gynnwys TAW nac unrhyw ddidyniadau. Talgrynnwch i lawr i’r bunt agosaf.
 paymentDetails.error.required = Nodwch gyfanswm y taliadau a wnaed
@@ -249,7 +230,6 @@ paymentDetails.error.invalid = Nodwch gyfanswm y taliadau a wnaed mewn punnoedd,
 paymentDetails.error.maxLength = Mae’n rhaid i gyfanswm y taliadau fod yn llai na £99,999,999
 paymentDetails.error.maxValue = Mae’n rhaid i gyfanswm y taliadau fod yn llai na £99,999,999
 
-monthlyreturns.costOfMaterials.title = How much did this subcontractor pay in material costs?
 monthlyreturns.costOfMaterials.heading = Faint y gwnaeth {0} ei dalu am gost y deunyddiau?
 monthlyreturns.costOfMaterials.hint = Nodwch gyfanswm cost y deunyddiau a dalwyd gan yr is-gontractwr. Talgrynnwch i lawr i’r bunt agosaf.
 monthlyreturns.costOfMaterials.error.required = Nodwch gyfanswm cost y deunyddiau mewn punnoedd, wedi’i dalgrynnu i lawr i’r bunt agosaf
@@ -257,7 +237,6 @@ monthlyreturns.costOfMaterials.error.invalid = Nodwch gyfanswm cost y deunyddiau
 monthlyreturns.costOfMaterials.error.maxLength = Mae’n rhaid i gyfanswm cost y deunyddiau fod yn llai na £99,999,999
 monthlyreturns.costOfMaterials.error.maxValue = Mae’n rhaid i gyfanswm cost y deunyddiau fod yn llai na £99,999,999
 
-monthlyreturns.totalTaxDeducted.title = How much tax in total did you deduct from this subcontractor?
 monthlyreturns.totalTaxDeducted.heading = Beth oedd cyfanswm y dreth y gwnaethoch ei didynnu o {0}?
 monthlyreturns.totalTaxDeducted.hintText = Nodwch gyfanswm y dreth y gwnaethoch ei didynnu o’r is-gontractwr mewn punnoedd a cheiniogau, fel £300.00 neu £450.33
 monthlyreturns.totalTaxDeducted.error.maxValue = Mae’n rhaid i gyfanswm y dreth a ddidynnwyd fod yn llai na £99,999,999
@@ -266,7 +245,7 @@ monthlyreturns.totalTaxDeducted.error.invalid = Nodwch gyfanswm y dreth a ddidyn
 monthlyreturns.totalTaxDeducted.error.required = Nodwch gyfanswm y dreth a ddidynnwyd yn y fformat cywir, gan ddefnyddio punnoedd a cheiniogau
 
 
-monthlyreturns.confirmSubcontractorRemoval.title = A ydych chi’n siŵr eich bod am dynnu’r is-gontractw?
+monthlyreturns.confirmSubcontractorRemoval.title = A ydych chi’n siŵr eich bod am dynnu’r is-gontractwr?
 monthlyreturns.confirmSubcontractorRemoval.heading = A ydych chi’n siŵr eich bod am dynnu {0}?
 monthlyreturns.confirmSubcontractorRemoval.error.required = Dewiswch ‘Iawn’ os ydych am dynnu’r is-gontractwr hwn
 
@@ -308,14 +287,5 @@ monthlyreturns.verifiedStatusDeclaration.error.required = Dewiswch ‘Iawn’ os
 monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel = Datganiad o’r statws dilysu
 monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel = Datganiad o’r statws cyflogaeth
 
-verifySubcontractors.warningIcon = Warning
 
-monthlyreturns.verifiedStatusDeclaration.change.hidden = Verified Status Declaration
-monthlyreturns.verifiedStatusDeclaration.legend = Has every subcontractor included on this return either been verified with HM Revenue & Customs, or been included in previous CIS returns in this, or the previous two tax years?
-monthlyreturns.employmentStatusDeclaration.legend = Has the employment status of each individual included on this return been considered and have payments not been made under contracts of employment?
-monthlyreturns.employmentStatusDeclaration.change.hidden = EmploymentStatusDeclaration
-monthlyreturns.summarySubcontractorPayments.intro = You have added the payment details of {0} subcontractors.
-verifySubcontractors.error.required = Select yes if you want to verify your subcontractors now
-monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
-monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
 
