@@ -194,31 +194,27 @@ class MonthlyReturnService @Inject() (
       }
   }
 
-def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
-  val updatedTry =
-    userAnswers.get(DateConfirmPaymentsPage) match {
-      case Some(periodEnd) =>
-        userAnswers.set(
-          SubmissionJourneyCompletedPage(YearMonth.from(periodEnd).toString),
-          true
-        )
+  def completeSubmissionJourney(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val updatedTry =
+      userAnswers.get(DateConfirmPaymentsPage) match {
+        case Some(periodEnd) =>
+          userAnswers.set(
+            SubmissionJourneyCompletedPage(YearMonth.from(periodEnd).toString),
+            true
+          )
 
-      case None =>
-        scala.util.Failure(new RuntimeException("dateConfirmPayments missing"))
-    }
+        case None =>
+          scala.util.Failure(new RuntimeException("dateConfirmPayments missing"))
+      }
 
-  updatedTry match {
-    case scala.util.Success(updatedAnswers) =>
-      sessionRepository.set(updatedAnswers).map(_ => ())
-
-    case scala.util.Failure(_) =>
-      Future.unit
-  }
-}
+    updatedTry match {
+      case scala.util.Success(updatedAnswers) =>
+        sessionRepository.set(updatedAnswers).map(_ => ())
 
       case scala.util.Failure(_) =>
         Future.unit
     }
+  }
 
   def clearSubmissionJourney(userAnswers: UserAnswers): Future[Unit] =
     Future

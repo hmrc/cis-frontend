@@ -1139,7 +1139,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val returnDate = LocalDate.of(2025, 1, 1)
 
       val originalUa = UserAnswers("test-user")
-        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .set(DateConfirmPaymentsPage, returnDate)
         .get
         .set(SubmissionJourneyCompletedPage("2025-08"), false)
         .get
@@ -1162,14 +1162,12 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val savedUa = uaCaptor.getValue
 
-      savedUa.get(SubmissionJourneyCompletedPage) mustBe Some(true)
+      savedUa.get(SubmissionJourneyCompletedPage("2025-01")) mustBe Some(true)
 
       // These values must remain while the receipt is displayed
       savedUa.get(DateConfirmPaymentsPage) mustBe Some(returnDate)
       savedUa.get(SubmissionCreatedPage("2025-01")) mustBe Some(true)
       savedUa.get(VerifySubcontractorsPage) mustBe Some(true)
-     
-
 
       verifyNoMoreInteractions(sessionRepo)
     }
@@ -1202,7 +1200,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .get
         .set(SubmissionCreatedPage("2025-01"), true)
         .get
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(SubmissionJourneyCompletedPage("2025-01"), true)
         .get
         .set(VerifySubcontractorsPage, true)
         .get
@@ -1221,7 +1219,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       savedUa.get(DateConfirmPaymentsPage) mustBe None
       savedUa.get(SubmissionCreatedPage("2025-01")) mustBe None
-      savedUa.get(SubmissionJourneyCompletedPage) mustBe None
+      savedUa.get(SubmissionJourneyCompletedPage("2025-01")) mustBe None
       savedUa.get(VerifySubcontractorsPage) mustBe None
 
       verifyNoMoreInteractions(sessionRepo)
@@ -1232,11 +1230,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val originalUa = mock(classOf[UserAnswers])
 
-      when(originalUa.get(DateConfirmPaymentsPage))
-        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
-
-      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
-        .thenReturn(scala.util.Success(updatedUa))
+      when(originalUa.get(SubmissionDetailsPage))
+        .thenReturn(None)
 
       when(originalUa.get(DateConfirmPaymentsPage))
         .thenReturn(None)

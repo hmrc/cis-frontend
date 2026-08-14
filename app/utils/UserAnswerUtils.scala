@@ -78,7 +78,6 @@ object UserAnswerUtils {
         .flatMap(_.remove(ConfirmationByEmailPage))
         .flatMap(_.remove(EnterYourEmailAddressPage))
         .flatMap(_.remove(ResubmissionIdPage))
-        .flatMap(_.remove(NilReturnStatusPage))
 
         // monthly nil return
         .flatMap(_.remove(NilReturnStatusPage))
@@ -99,7 +98,6 @@ object UserAnswerUtils {
         .flatMap(_.remove(PollIntervalPage))
         .flatMap(_.remove(CorrelationIdPage))
         .flatMap(_.remove(LastMessageDatePage))
-        .flatMap(_.remove(SubmissionJourneyCompletedPage))
 
       val withSubmissionIdPages = submissionId.fold(clearedAnswers) { id =>
         clearedAnswers
@@ -108,7 +106,9 @@ object UserAnswerUtils {
       }
 
       period.fold(withSubmissionIdPages) { p =>
-        withSubmissionIdPages.flatMap(_.remove(SubmissionCreatedPage(p)))
+        withSubmissionIdPages
+          .flatMap(_.remove(SubmissionCreatedPage(p)))
+          .flatMap(_.remove(SubmissionJourneyCompletedPage(p)))
       }
     }
 

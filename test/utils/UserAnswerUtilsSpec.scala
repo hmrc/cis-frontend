@@ -321,7 +321,7 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(SuccessEmailSentPage(submissionId), true)
         .get
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(SubmissionJourneyCompletedPage("2025-01"), true)
         .get
         .set(SubmissionCreatedPage("2025-01"), true)
         .get
@@ -354,7 +354,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(LastMessageDatePage) mustBe None
       cleared.get(SubmissionStatusTimedOutPage(submissionId)) mustBe None
       cleared.get(SuccessEmailSentPage(submissionId)) mustBe None
-      cleared.get(SubmissionJourneyCompletedPage) mustBe None
+      cleared.get(SubmissionJourneyCompletedPage("2025-01")) mustBe None
       cleared.get(SubmissionCreatedPage("2025-01")) mustBe None
     }
 
