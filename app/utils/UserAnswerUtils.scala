@@ -81,6 +81,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(NilReturnStatusPage))
 
         // monthly nil return
+        .flatMap(_.remove(NilReturnStatusPage))
         .flatMap(_.remove(ConfirmEmailAddressPage))
         .flatMap(_.remove(DeclarationPage))
 

@@ -1139,7 +1139,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val returnDate = LocalDate.of(2025, 1, 1)
 
       val originalUa = UserAnswers("test-user")
-        .set(SubmissionJourneyCompletedPage, false)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .get
+        .set(SubmissionJourneyCompletedPage("2025-08"), false)
         .get
         .set(DateConfirmPaymentsPage, returnDate)
         .get
@@ -1166,6 +1168,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       savedUa.get(DateConfirmPaymentsPage) mustBe Some(returnDate)
       savedUa.get(SubmissionCreatedPage("2025-01")) mustBe Some(true)
       savedUa.get(VerifySubcontractorsPage) mustBe Some(true)
+     
+
 
       verifyNoMoreInteractions(sessionRepo)
     }
@@ -1175,12 +1179,15 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val originalUa = mock(classOf[UserAnswers])
 
-      when(originalUa.set(SubmissionJourneyCompletedPage, true))
-        .thenReturn(Failure(new RuntimeException("set failed")))
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
+
+      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
+        .thenReturn(scala.util.Failure(new RuntimeException("set failed")))
 
       service.completeSubmissionJourney(originalUa).futureValue mustBe ()
 
-      verify(originalUa).set(SubmissionJourneyCompletedPage, true)
+      verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verifyNoInteractions(sessionRepo)
     }
   }
@@ -1225,8 +1232,11 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       val originalUa = mock(classOf[UserAnswers])
 
-      when(originalUa.get(SubmissionDetailsPage))
-        .thenReturn(None)
+      when(originalUa.get(DateConfirmPaymentsPage))
+        .thenReturn(Some(LocalDate.of(2025, 8, 31)))
+
+      when(originalUa.set(SubmissionJourneyCompletedPage("2025-08"), true))
+        .thenReturn(scala.util.Success(updatedUa))
 
       when(originalUa.get(DateConfirmPaymentsPage))
         .thenReturn(None)

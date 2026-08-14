@@ -248,6 +248,19 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       }
     }
 
+    "must redirect to journey recovery on GET when DateConfirmPaymentsPage is missing" in {
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
     "must redirect to journey recovery on POST when Journey is incomplete" in {
       val userAnswers = completeAnswers.remove(SubmitInactivityRequestPage).get
 
@@ -301,7 +314,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must redirect to journey recovery on POST when ReturnTypePage is missing" in {
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+      val userAnswers = userAnswersWithCisId
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
         val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
@@ -398,7 +416,10 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
     "must redirect to already submitted page for a GET when submission journey is already completed" in {
       val userAnswers = userAnswersWithCisId
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage("2025-08"), true)
         .success
         .value
 
@@ -420,7 +441,10 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
         .success
         .value
-        .set(SubmissionJourneyCompletedPage, true)
+        .set(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 5))
+        .success
+        .value
+        .set(SubmissionJourneyCompletedPage("2025-08"), true)
         .success
         .value
 

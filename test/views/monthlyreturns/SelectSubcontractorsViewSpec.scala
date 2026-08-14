@@ -31,7 +31,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
 
   "SelectSubcontractorsView" - {
     "must render the correct page title and heading" in new Setup {
-      val html = view(form, subcontractors)
+      val html = view(form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       doc.title must include(messages("monthlyreturns.selectSubcontractors.title"))
@@ -39,7 +39,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render the correct links for add subcontractor, select all and deselect all" in new Setup {
-      val html     = view(form, subcontractors)
+      val html     = view(form, subcontractors, updateYourListUrl)
       val doc      = Jsoup.parse(html.body)
       val linkText = doc.getElementsByClass("govuk-link").eachText()
 
@@ -48,8 +48,17 @@ class SelectSubcontractorsViewSpec extends SpecBase {
       linkText must contain(messages("monthlyreturns.selectSubcontractors.deselectAll.link"))
     }
 
+    "must render update your list link with correct URL" in new Setup {
+      val html = view(form, subcontractors, updateYourListUrl)
+      val doc  = Jsoup.parse(html.body)
+
+      val updateListLink =
+        doc.select(s"a:contains(${messages("monthlyreturns.selectSubcontractors.p2.link")})")
+      updateListLink.attr("href") mustBe updateYourListUrl
+    }
+
     "must render select all link with correct URL" in new Setup {
-      val html = view(form, subcontractors)
+      val html = view(form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val selectAllLink = doc.select(s"a:contains(${messages("monthlyreturns.selectSubcontractors.selectAll.link")})")
@@ -58,7 +67,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render deselect all link with correct URL" in new Setup {
-      val html = view(form, subcontractors)
+      val html = view(form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val deselectAllLink =
@@ -69,7 +78,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render the table headers in the correct order" in new Setup {
-      val html    = view(form, subcontractors)
+      val html    = view(form, subcontractors, updateYourListUrl)
       val doc     = Jsoup.parse(html.body)
       val headers = doc.select("table thead th").eachText()
 
@@ -83,7 +92,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render the correct number of subcontractor rows in the table" in new Setup {
-      val html = view(form, subcontractors)
+      val html = view(form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val rows = doc.select("table tbody tr")
@@ -91,7 +100,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render empty subcontractor list with message" in new Setup {
-      val html = view(form, Nil)
+      val html = view(form, Nil, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val rows = doc.select("table tbody tr")
@@ -107,6 +116,8 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     val view: SelectSubcontractorsView                 = app.injector.instanceOf[SelectSubcontractorsView]
     val formProvider: SelectSubcontractorsFormProvider = app.injector.instanceOf[SelectSubcontractorsFormProvider]
     val form: Form[SelectSubcontractorsFormData]       = formProvider()
+    val updateYourListUrl: String                      =
+      "http://localhost:6996/construction-industry-scheme/management/subcontractors/retrieve"
     implicit val request: play.api.mvc.Request[_]      = FakeRequest()
     implicit val messages: Messages                    = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,
@@ -130,6 +141,8 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     val view: SelectSubcontractorsView                 = app.injector.instanceOf[SelectSubcontractorsView]
     val formProvider: SelectSubcontractorsFormProvider = app.injector.instanceOf[SelectSubcontractorsFormProvider]
     val form: Form[SelectSubcontractorsFormData]       = formProvider()
+    val updateYourListUrl: String                      =
+      "http://localhost:6996/construction-industry-scheme/management/subcontractors/retrieve"
     implicit val request: play.api.mvc.Request[_]      = FakeRequest()
     implicit val messages: Messages                    = play.api.i18n.MessagesImpl(
       play.api.i18n.Lang.defaultLang,

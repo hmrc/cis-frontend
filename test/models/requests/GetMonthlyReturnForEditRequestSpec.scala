@@ -16,11 +16,20 @@
 
 package models.requests
 
+import models.ReturnType.MonthlyStandardReturn
+import models.UserAnswers
+import models.amend.AmendmentDetails
+import org.scalatest.TryValues
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json._
+import pages.amend.AmendmentDetailsPage
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import play.api.libs.json.*
 
-class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers {
+import java.time.LocalDate
+
+class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with TryValues {
 
   "GetMonthlyReturnForEditRequest JSON format" should {
 
@@ -58,6 +67,82 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers {
         taxYear = 2024,
         isAmendment = true
       )
+    }
+  }
+
+  "UpdateMonthlyReturnRequest.fromUserAnswers" should {
+
+    "build a request without AmendmentDetailsPage" in {
+      val ua = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+        .success
+        .value
+
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+
+      result shouldBe Right(
+        GetMonthlyReturnForEditRequest(
+          instanceId = "CIS-123",
+          taxYear = 2024,
+          taxMonth = 3,
+          isAmendment = false
+        )
+      )
+    }
+
+    "build a request with AmendmentDetailsPage" in {
+      val amendmentDetails = AmendmentDetails(
+        instanceId = "CIS-123",
+        taxYear = 2024,
+        taxMonth = 3,
+        contractorName = "Test Contractor Ltd",
+        originalReturnType = MonthlyStandardReturn,
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      val ua = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+        .success
+        .value
+        .set(AmendmentDetailsPage, amendmentDetails)
+        .success
+        .value
+
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+
+      result shouldBe Right(
+        GetMonthlyReturnForEditRequest(
+          instanceId = "CIS-123",
+          taxYear = 2024,
+          taxMonth = 3,
+          isAmendment = true
+        )
+      )
+    }
+
+    "when CisIdPage is missing" in {
+      val ua = UserAnswers("test-user")
+
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+
+      result shouldBe Left("Missing CisIdPage")
+    }
+
+    "when DateConfirmPaymentsPage is missing" in {
+      val ua = UserAnswers("test-user")
+        .set(CisIdPage, "CIS-123")
+        .success
+        .value
+
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+
+      result shouldBe Left("Missing DateConfirmPayments")
     }
   }
 }

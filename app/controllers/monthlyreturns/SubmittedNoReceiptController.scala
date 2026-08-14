@@ -20,8 +20,9 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
-import models.requests.CisIdDataRequest
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import models.monthlyreturns.GetAllMonthlyReturnDetailsResponse
+import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, ReturnTypePage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -58,17 +59,32 @@ class SubmittedNoReceiptController @Inject() (
 
       val ua = request.userAnswers
 
-      for {
-        vm <- buildViewModel(ua)
-        _  <- monthlyReturnService.completeSubmissionJourney(ua)
-      } yield Ok(view(vm))
+      val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+
+      monthlyReturnForEditRequest match {
+        case Left(error) =>
+          logger.error(s"[SubmittedNoReceiptController] Failed to build GetMonthlyReturnForEditRequest: $error")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case Right(req) =>
+          for {
+            monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
+            vm            <- buildViewModel(ua, monthlyReturn)
+            _             <- monthlyReturnService.completeSubmissionJourney(ua)
+          } yield Ok(view(vm))
+      }
     }
 
-  private def buildViewModel(
-    ua: UserAnswers
-  )(implicit request: CisIdDataRequest[_]): Future[SubmittedNoReceiptViewModel] = {
+  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
+    request: CisIdDataRequest[_],
+    hc: HeaderCarrier
+  ): Future[SubmittedNoReceiptViewModel] = {
     val cisId          = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
-    val contractorName = contractorNameFrom(request)
+    val contractorName = monthlyReturn.scheme.headOption
+      .flatMap(_.name)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .getOrElse(throw new RuntimeException("[SubmittedNoReceipt] Scheme name is missing"))
     val employerRef    = employerRefFrom(request)
     val submissionType =
       required(ua.get(ReturnTypePage), "[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
@@ -96,16 +112,20 @@ class SubmittedNoReceiptController @Inject() (
   }
 
   private def resolveEmail(ua: UserAnswers, cisId: String)(implicit hc: HeaderCarrier): Future[String] =
-    emailfromUserAnswers(ua) match {
-      case Some(email) =>
-        Future.successful(email)
-      case None        =>
-        monthlyReturnService
-          .getSchemeEmail(cisId)
-          .map(_.getOrElse(""))
-          .recover { case ex =>
-            logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
-            ""
-          }
+    if (ua.get(ConfirmationByEmailPage).contains(false)) {
+      Future.successful("")
+    } else {
+      emailfromUserAnswers(ua) match {
+        case Some(email) =>
+          Future.successful(email)
+        case None        =>
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(s"[SubmittedNoReceipt] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              ""
+            }
+      }
     }
 }
