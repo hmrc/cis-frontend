@@ -53,7 +53,7 @@ journeyRecovery.continue.guidance.p2 = or try again later.
 
 journeyRecovery.startAgain.title = There is a problem with this service
 journeyRecovery.startAgain.heading = Sorry, there is a problem with this service
-journeyRecovery.startAgain.guidance.p1 = Try again later
+journeyRecovery.startAgain.guidance.p1 = Try again later.
 journeyRecovery.startAgain.guidance.p2 = Any information you have provided has not been saved. When the service is available, you will have to start again.
 journeyRecovery.startAgain.guidance.contactHMRC.link = Contact HMRC
 journeyRecovery.startAgain.guidance.contactHMRC.suffix = for more help.
