@@ -42,16 +42,6 @@ trait SubmissionViewDataSupport extends Logging {
   protected def periodEndFromUserAnswers(ua: UserAnswers): Option[LocalDate] =
     ua.get(DateConfirmPaymentsPage)
 
-  protected def contractorNameFrom(request: CisIdDataRequest[_]): String = {
-    val ua  = request.userAnswers
-    val msg = s"[SubmissionViewDataSupport] contractorName missing for userId=${request.userId}"
-    if (!request.isAgent) {
-      required(ua.get(ContractorNamePage), msg)
-    } else {
-      ua.get(AgentClientDataPage).flatMap(_.schemeName).getOrElse(fail(msg))
-    }
-  }
-
   protected def employerRefFrom(request: CisIdDataRequest[_]): String = {
     val msg = s"[SubmissionViewDataSupport] employerReference missing for userId=${request.userId}"
     if (!request.isAgent) {

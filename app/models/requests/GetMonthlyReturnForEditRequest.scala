@@ -16,6 +16,9 @@
 
 package models.requests
 
+import models.UserAnswers
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.amend.AmendmentDetailsPage
 import play.api.libs.json.{Json, OFormat}
 
 case class GetMonthlyReturnForEditRequest(
@@ -25,5 +28,19 @@ case class GetMonthlyReturnForEditRequest(
   isAmendment: Boolean
 )
 
-object GetMonthlyReturnForEditRequest:
+object GetMonthlyReturnForEditRequest {
+
   given format: OFormat[GetMonthlyReturnForEditRequest] = Json.format[GetMonthlyReturnForEditRequest]
+
+  def fromUserAnswers(ua: UserAnswers): Either[String, GetMonthlyReturnForEditRequest] =
+    for {
+      instanceId <- ua.get(CisIdPage).toRight("Missing CisIdPage")
+      taxDate    <- ua.get(DateConfirmPaymentsPage).toRight("Missing DateConfirmPayments")
+      isAmendment = ua.get(AmendmentDetailsPage).isDefined
+    } yield GetMonthlyReturnForEditRequest(
+      instanceId = instanceId,
+      taxYear = taxDate.getYear,
+      taxMonth = taxDate.getMonthValue,
+      isAmendment = isAmendment
+    )
+}
