@@ -14,21 +14,9 @@
  * limitations under the License.
  */
 
-package forms.monthlyreturns
+package forms.mappings
 
-import forms.mappings.Mappings
-import play.api.data.Form
-import forms.Validation.*
-import forms.mappings.Constants.MaxLength254
+object Constants {
+  final val MaxLength254: Int = 254
 
-import javax.inject.Inject
-
-class EnterYourEmailAddressFormProvider @Inject() extends Mappings {
-
-  def apply(): Form[String] =
-    Form(
-      "value" -> text("monthlyreturns.enterYourEmailAddress.error.required")
-        .verifying(maxLength(MaxLength254, "monthlyreturns.enterYourEmailAddress.error.length"))
-        .verifying(regexp(emailRegex, "monthlyreturns.enterYourEmailAddress.error.invalid"))
-    )
 }
