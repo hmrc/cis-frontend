@@ -24,7 +24,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.when
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, EnterYourEmailAddressPage}
 
 import java.time.LocalDate
 import play.api.libs.json.Json
