@@ -34,7 +34,7 @@
 
     @link(
         linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.text",
-        linkUrl       = appConfig.manageYourCisReturn + cisId,
+        linkUrl       = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url,
         prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.prefix",
         suffixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.suffix",
     )
@@ -59,6 +59,6 @@
 
     @link(
         linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text",
-        linkUrl       = appConfig.manageYourCisReturn + cisId
+        linkUrl       = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
     )
 }
