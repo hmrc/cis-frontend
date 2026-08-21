@@ -449,7 +449,7 @@ monthlyreturns.enterYourEmailAddress.hint = Enter an email for HMRC to send conf
 monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Email address
 monthlyreturns.enterYourEmailAddress.error.required = Enter an email address in the correct format, like name@example.com
 monthlyreturns.enterYourEmailAddress.error.invalid = Enter an email address in the correct format, like name@example.com
-monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 132 characters or less
+monthlyreturns.enterYourEmailAddress.error.length = Your email address must be 254 characters or less
 monthlyreturns.enterYourEmailAddress.change.hidden = Enter your email address
 
 monthlyreturns.confirmationByEmail.title = Do you want confirmation by email that this return has been successfully submitted?

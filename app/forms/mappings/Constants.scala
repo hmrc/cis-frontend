@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package forms
+package forms.mappings
 
-object Validation {
+object Constants {
+  final val MaxLength254: Int = 254
 
-  val emailRegex: String = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
 }
