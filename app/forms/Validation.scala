@@ -18,5 +18,18 @@ package forms
 
 object Validation {
 
+  final val companyRegNumberRegex = "[A-Za-z]{2}[0-9]{1,6}|[0-9]{1,8}"
+  final val nameRegex             =
+    "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\+\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\^\\\\\\£\\€]*"
+  final val worksRefRegex         =
+    "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\+\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\\\\\£\\€]+"
+
+  final val firstCharLetterRegex =
+    """^[A-Za-z].*"""
+
+  final val firstMiddleNameRegex = "[A-Za-z\\'\\-]+"
+
+  final val surnameFormat = "[A-Za-z0-9\\s,\\.\\(\\)/\\&\\'\\-]+"
+
   val emailRegex: String = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
 }
