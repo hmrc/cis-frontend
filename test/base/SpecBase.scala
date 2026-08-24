@@ -19,10 +19,13 @@ package base
 import config.FrontendAppConfig
 import controllers.actions.*
 import models.UserAnswers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{OptionValues, TryValues}
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Messages, MessagesApi}
@@ -32,6 +35,9 @@ import play.api.test.FakeRequest
 import play.api.libs.json.Json
 import play.api.mvc.PlayBodyParsers
 import play.api.test.Helpers.stubControllerComponents
+import repositories.SessionRepository
+
+import scala.concurrent.Future
 
 trait SpecBase
     extends AnyFreeSpec
@@ -56,6 +62,12 @@ trait SpecBase
   def userAnswersWithCisId: UserAnswers = UserAnswers(userAnswersId, cisIdData)
 
   def messages(app: Application): Messages = app.injector.instanceOf[MessagesApi].preferred(FakeRequest())
+
+  protected def mockSessionRepository(userAnswers: Option[UserAnswers]): SessionRepository = {
+    val repository = mock[SessionRepository]
+    when(repository.get(any[String])).thenReturn(Future.successful(userAnswers))
+    repository
+  }
 
   protected def applicationBuilder(
     userAnswers: Option[UserAnswers] = None,
