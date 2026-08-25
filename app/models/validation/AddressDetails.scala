@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package forms.mappings
+package models.validation
 
-object Constants {
-  final val MaxLength8: Int   = 8
-  final val MaxLength35: Int  = 35
-  final val MaxLength254: Int = 254
-
-}
+final case class AddressDetails(
+  addressLine1: Option[String],
+  addressLine2: Option[String],
+  addressLine3: Option[String],
+  addressLine4: Option[String],
+  postcode: Option[String],
+  country: Option[String]
+)

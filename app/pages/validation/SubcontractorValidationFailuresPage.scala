@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package forms.mappings
+package pages.validation
 
-object Constants {
-  final val MaxLength8: Int   = 8
-  final val MaxLength35: Int  = 35
-  final val MaxLength254: Int = 254
+import models.validation.SubcontractorValidationFailure
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
+case object SubcontractorValidationFailuresPage extends QuestionPage[List[SubcontractorValidationFailure]] {
+
+  override def path: JsPath =
+    JsPath \ "validation" \ toString
+
+  override def toString: String =
+    "subcontractorValidationFailures"
 }

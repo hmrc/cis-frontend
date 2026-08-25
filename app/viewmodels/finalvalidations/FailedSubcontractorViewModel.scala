@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package forms.mappings
+package viewmodels.finalvalidations
 
-object Constants {
-  final val MaxLength8: Int   = 8
-  final val MaxLength35: Int  = 35
-  final val MaxLength254: Int = 254
-
-}
+final case class FailedSubcontractorViewModel(
+  subcontractorId: Long,
+  displayName: String
+)

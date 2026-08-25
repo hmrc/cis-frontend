@@ -22,6 +22,7 @@ import pages.QuestionPage
 import pages.monthlyreturns.*
 import pages.amend.*
 import pages.submission.*
+import pages.validation.SubcontractorValidationFailuresPage
 import play.api.libs.json.Reads
 
 import scala.util.Try
@@ -91,6 +92,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage))
 
         // ChRIS submission
         .flatMap(_.remove(SubmissionDetailsPage))
@@ -123,6 +125,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(WhichSubcontractorsToAddPage))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {

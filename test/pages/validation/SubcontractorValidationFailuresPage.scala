@@ -13,12 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package forms.mappings
-
-object Constants {
-  final val MaxLength8: Int   = 8
-  final val MaxLength35: Int  = 35
-  final val MaxLength254: Int = 254
-
-}

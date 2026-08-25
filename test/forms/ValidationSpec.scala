@@ -95,8 +95,88 @@ class ValidationSpec extends AnyFreeSpec with Matchers {
     "non-ASCII characters" - {
 
       "must not match a non-ASCII character" in {
-        matches("test@ëxample.com") mustBe false
+        matches("test@Ã«xample.com") mustBe false
       }
+    }
+  }
+
+  "phoneRegex" - {
+
+    def matches(phoneNumber: String): Boolean =
+      phoneNumber.matches(Validation.phoneRegex)
+
+    "match values allowed by the supplied regex" in {
+      Seq(
+        "07777777777",
+        "  07777 77777 ",
+        "(44)77777777777",
+        "44-777-777",
+        "12345",
+        "()",
+        "-",
+        "0191\t1234567"
+      ).foreach { phoneNumber =>
+        matches(phoneNumber) mustBe true
+      }
+    }
+
+    "reject values containing unsupported characters" in {
+      Seq(
+        "+44 7700 900 999",
+        "0191/1234567",
+        "0191 PHONE"
+      ).foreach { phoneNumber =>
+        matches(phoneNumber) mustBe false
+      }
+    }
+  }
+
+  "mobileRegex" - {
+
+    "use the same supplied validation rule as phone numbers" in {
+      Validation.mobileRegex mustBe Validation.phoneRegex
+    }
+  }
+
+  "addressRegex" - {
+
+    def matches(addressLine: String): Boolean =
+      addressLine.matches(Validation.addressRegex)
+
+    "match supported address characters" in {
+      matches("1 High Street, Newcastle") mustBe true
+      matches("Flat 2/A & B") mustBe true
+    }
+
+    "reject unsupported address characters" in {
+      matches("Tyne | Wear") mustBe false
+    }
+  }
+
+  "firstCharLetterOrDigitRegex" - {
+
+    "match a value beginning with a letter or digit" in {
+      "High Street".matches(Validation.firstCharLetterOrDigitRegex) mustBe true
+      "1 High Street".matches(Validation.firstCharLetterOrDigitRegex) mustBe true
+    }
+
+    "reject a value that does not begin with a letter or digit" in {
+      "-High Street".matches(Validation.firstCharLetterOrDigitRegex) mustBe false
+    }
+  }
+
+  "ukPostcodeRegex" - {
+
+    def matches(postcode: String): Boolean =
+      postcode.matches(Validation.ukPostcodeRegex)
+
+    "match supported postcode characters" in {
+      matches("NE1 1AA") mustBe true
+      matches("NE1~1AA") mustBe true
+    }
+
+    "reject unsupported postcode characters" in {
+      matches("NE1`1AA") mustBe false
     }
   }
 }
