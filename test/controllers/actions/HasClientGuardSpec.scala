@@ -19,21 +19,26 @@ package controllers.actions
 import models.agent.AgentClientData
 import models.requests.IdentifierRequest
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, verify, when}
+import org.mockito.Mockito.when
+
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.mvc.AnyContent
+import play.api.mvc.{AnyContent, Request}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import services.MonthlyReturnService
+import services.{AuditService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import base.SpecBase
+import models.audit.AuthFailureAuditEventModel
 import org.scalatestplus.mockito.MockitoSugar.mock
+import play.api.libs.json.Writes
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 class HasClientGuardSpec extends SpecBase {
 
   private given ExecutionContext                             = ExecutionContext.global
   private val mockMonthlyReturnService: MonthlyReturnService = mock[MonthlyReturnService]
-  private val guard                                          = new HasClientGuard(mockMonthlyReturnService)
+  private val mockAuditService: AuditService                 = mock[AuditService]
+  private val guard                                          = new HasClientGuard(mockMonthlyReturnService, mockAuditService)
 
   private def request(isAgent: Boolean): IdentifierRequest[AnyContent] =
     IdentifierRequest(
@@ -52,17 +57,15 @@ class HasClientGuardSpec extends SpecBase {
       schemeName = Some("Test Scheme")
     )
 
+  when(
+    mockAuditService.sendEvent(any[AuthFailureAuditEventModel])(using
+      any[HeaderCarrier],
+      any[Writes[AuthFailureAuditEventModel]],
+      any[Request[?]]
+    )
+  ).thenReturn(Future.successful(AuditResult.Success))
+
   "HasClientGuard" - {
-
-    "must bypass the check for a non-agent" in {
-      val result =
-        guard.check(request(isAgent = false)).futureValue
-
-      result mustBe None
-
-      verify(mockMonthlyReturnService, never())
-        .getAgentClient(any[String])(using any[HeaderCarrier], any[ExecutionContext])
-    }
 
     "must redirect to system error when agent client data is missing" in {
       when(

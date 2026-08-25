@@ -46,29 +46,25 @@ class ClientListCheckPolicyResolver @Inject() extends Logging {
       "controllers.UnauthorisedIndividualAffinityController",
       "controllers.UnauthorisedOrganisationAffinityController",
       "controllers.UnauthorisedWrongRoleController"
+      // AgentLostAccessController when implemented
     )
 
   def resolve(request: RequestHeader): ClientListCheckPolicy = {
 
-    val route =
-      request.attrs
-        .get(Router.Attrs.HandlerDef)
-        .map { handler =>
-          handler.controller -> handler.method
-        }
+    val handlerDef = request.attrs.get(Router.Attrs.HandlerDef)
 
     val policy =
       if request.method != "GET" then Exempt
       else
-        route match {
+        handlerDef match {
 
-          case Some(route) if groupARoutes.contains(route) =>
+          case Some(handler) if groupARoutes.contains(handler.controller -> handler.method) =>
             GroupA
 
-          case Some((controller, _)) if exemptControllers.contains(controller) =>
+          case Some(handler) if exemptControllers.contains(handler.controller) =>
             Exempt
 
-          case Some((_, "onPageLoad")) =>
+          case Some(handler) if handler.method == "onPageLoad" =>
             GroupA
 
           case _ =>

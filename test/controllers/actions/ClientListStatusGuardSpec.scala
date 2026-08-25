@@ -19,7 +19,7 @@ package controllers.actions
 import models.agent.ClientListStatus
 import models.requests.IdentifierRequest
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, verify, when}
+import org.mockito.Mockito.when
 import play.api.mvc.AnyContent
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -46,16 +46,6 @@ class ClientListStatusGuardSpec extends SpecBase {
     )
 
   "ClientListStatusGuard" - {
-
-    "must bypass the check for a non-agent" in {
-      val result =
-        guard.checkGroupA(request(isAgent = false)).futureValue
-
-      result mustBe None
-
-      verify(mockMonthlyReturnService, never())
-        .startClientListRetrieval(using any[HeaderCarrier])
-    }
 
     "must continue when client list retrieval succeeds" in {
       when(

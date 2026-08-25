@@ -16,11 +16,12 @@
 
 package controllers.actions
 
+import controllers.actions.ClientListCheckRedirects.systemError
+import models.audit.AuthFailureAuditEventModel
 import models.requests.IdentifierRequest
 import play.api.Logging
-import play.api.mvc.Results.Redirect
-import play.api.mvc.Result
-import services.MonthlyReturnService
+import play.api.mvc.{Request, Result}
+import services.{AuditService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -30,46 +31,54 @@ import scala.util.control.NonFatal
 
 @Singleton
 class HasClientGuard @Inject() (
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  auditService: AuditService
 )(using ec: ExecutionContext)
     extends Logging {
 
   private[actions] def check[A](request: IdentifierRequest[A]): Future[Option[Result]] =
-    if !request.isAgent then Future.successful(None)
-    else
-      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    given Request[?]    = request
 
-      monthlyReturnService
-        .getAgentClient(request.userId)
-        .flatMap {
-          case None =>
-            logger.warn(s"[HasClientGuard] No client found for agent ${request.userId}")
+    monthlyReturnService
+      .getAgentClient(request.userId)
+      .flatMap {
+        case None =>
+          logger.warn(s"[HasClientGuard] No client found for agent ${request.userId}")
+          Future.successful(Some(systemError))
+
+        case Some(client) =>
+          val taxOfficeNumber    = client.taxOfficeNumber
+          val taxOfficeReference = client.taxOfficeReference
+
+          if (taxOfficeNumber.isEmpty || taxOfficeReference.isEmpty) {
+            logger.warn("[HasClientGuard] Missing tax office number/reference in agent client data")
             Future.successful(Some(systemError))
+          } else {
+            monthlyReturnService
+              .hasClient(taxOfficeNumber, taxOfficeReference)
+              .flatMap {
+                case true =>
+                  Future.successful(None)
 
-          case Some(client) =>
-            val taxOfficeNumber    = client.taxOfficeNumber
-            val taxOfficeReference = client.taxOfficeReference
-
-            if (taxOfficeNumber.isEmpty || taxOfficeReference.isEmpty) {
-              logger.warn(s"[HasClientGuard] Missing tax office number/reference in agent client data")
-              Future.successful(Some(systemError))
-            } else {
-              monthlyReturnService
-                .hasClient(taxOfficeNumber, taxOfficeReference)
-                .map {
-                  case true  =>
-                    None
-                  case false =>
-                    logger.warn(s"[HasClientGuard] hasClient=false for instanceId: ${client.uniqueId}")
-                    Some(systemError)
-                }
-                .recover { case NonFatal(ex) =>
-                  logger.error(s"[HasClientGuard] hasClient check failed", ex)
-                  Some(systemError)
-                }
-            }
-        }
-
-  private def systemError: Result =
-    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                case false =>
+                  logger.warn(s"[HasClientGuard] hasClient=false for instanceId: ${client.uniqueId}")
+                  auditService
+                    .sendEvent(AuthFailureAuditEventModel())
+                    .map(_ => Some(systemError))
+                    .recover { case NonFatal(ex) =>
+                      logger.error(s"[HasClientGuard] failed to send authoriseServiceGuardFailure audit", ex)
+                      Some(systemError)
+                    }
+              }
+              .recover { case NonFatal(ex) =>
+                logger.error(s"[HasClientGuard] hasClient check failed", ex)
+                Some(systemError)
+              }
+          }
+      }
+      .recover { case NonFatal(ex) =>
+        logger.error(s"[HasClientGuard] getAgentClient failed", ex)
+        Some(systemError)
+      }
 }

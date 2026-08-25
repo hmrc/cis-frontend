@@ -16,10 +16,10 @@
 
 package controllers.actions
 
+import controllers.actions.ClientListCheckRedirects.systemError
 import models.agent.ClientListStatus
 import models.requests.IdentifierRequest
 import play.api.Logging
-import play.api.mvc.Results.Redirect
 import play.api.mvc.Result
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -36,23 +36,17 @@ class ClientListStatusGuard @Inject() (
     extends Logging {
 
   def checkGroupA[A](request: IdentifierRequest[A]): Future[Option[Result]] =
-    if !request.isAgent then Future.successful(None)
-    else {
-      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      monthlyReturnService.startClientListRetrieval
-        .map {
-          case ClientListStatus.Succeeded                                                                =>
-            None
-          case ClientListStatus.InProgress | ClientListStatus.Failed | ClientListStatus.InitiateDownload =>
-            Some(systemError) // TODO: Redirect(controllers.agent.routes.AgentLostAccessController.onPageLoad())
-        }
-        .recover { case NonFatal(e) =>
-          logger.error("[ClientListStatusGuard] client list check failed", e)
-          Some(systemError)
-        }
-    }
-
-  private def systemError: Result =
-    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+    monthlyReturnService.startClientListRetrieval
+      .map {
+        case ClientListStatus.Succeeded                                                                =>
+          None
+        case ClientListStatus.InProgress | ClientListStatus.Failed | ClientListStatus.InitiateDownload =>
+          Some(systemError) // TODO: Redirect(controllers.agent.routes.AgentLostAccessController.onPageLoad())
+      }
+      .recover { case NonFatal(e) =>
+        logger.error("[ClientListStatusGuard] client list check failed", e)
+        Some(systemError)
+      }
 }
