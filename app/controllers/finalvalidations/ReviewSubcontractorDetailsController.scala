@@ -22,7 +22,8 @@ import pages.validation.SubcontractorValidationFailuresPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import services.MonthlyReturnService
+import repositories.SessionRepository
+import services.{MonthlyReturnService, SubcontractorDetailsValidator}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -38,7 +39,9 @@ class ReviewSubcontractorDetailsController @Inject() (
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: ReviewSubcontractorDetailsView,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  subcontractorDetailsValidator: SubcontractorDetailsValidator,
+  sessionRepository: SessionRepository
 )(using ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -49,27 +52,10 @@ class ReviewSubcontractorDetailsController @Inject() (
       given HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      val validationFailures =
-        request.userAnswers
-          .get(SubcontractorValidationFailuresPage)
-          .filter(_.nonEmpty)
+      GetMonthlyReturnForEditRequest
+        .fromUserAnswers(request.userAnswers) match {
 
-      (
-        validationFailures,
-        GetMonthlyReturnForEditRequest.fromUserAnswers(request.userAnswers)
-      ) match {
-        case (None, _) =>
-          logger.warn(
-            "[ReviewSubcontractorDetailsController.onPageLoad] Missing subcontractor validation failures"
-          )
-
-          Future.successful(
-            Redirect(
-              controllers.routes.JourneyRecoveryController.onPageLoad()
-            )
-          )
-
-        case (_, Left(error)) =>
+        case Left(error) =>
           logger.warn(
             s"[ReviewSubcontractorDetailsController.onPageLoad] Failed to build monthly-return request: $error"
           )
@@ -80,31 +66,57 @@ class ReviewSubcontractorDetailsController @Inject() (
             )
           )
 
-        case (Some(failures), Right(monthlyReturnRequest)) =>
+        case Right(monthlyReturnRequest) =>
           monthlyReturnService
             .retrieveMonthlyReturnForEditDetails(monthlyReturnRequest)
-            .map { response =>
-              val namesBySubcontractorId =
-                response.subcontractors.map { subcontractor =>
-                  subcontractor.subcontractorId ->
-                    subcontractor.displayName
-                      .map(_.trim)
-                      .filter(_.nonEmpty)
-                }.toMap
+            .flatMap { response =>
+              val validationFailures =
+                subcontractorDetailsValidator.validate(
+                  response.subcontractors
+                )
 
-              val failedSubcontractorNames =
-                failures.map { failure =>
-                  namesBySubcontractorId
-                    .get(failure.subcontractorId)
-                    .flatten
-                    .getOrElse("No name provided")
+              Future
+                .fromTry(
+                  request.userAnswers.set(
+                    SubcontractorValidationFailuresPage,
+                    validationFailures
+                  )
+                )
+                .flatMap { updatedAnswers =>
+                  sessionRepository.set(updatedAnswers).map {
+                    case true =>
+                      val namesBySubcontractorId =
+                        response.subcontractors.map { subcontractor =>
+                          subcontractor.subcontractorId ->
+                            subcontractor.displayName
+                              .map(_.trim)
+                              .filter(_.nonEmpty)
+                        }.toMap
+
+                      val failedSubcontractorNames =
+                        validationFailures.map { failure =>
+                          namesBySubcontractorId
+                            .get(failure.subcontractorId)
+                            .flatten
+                            .getOrElse("No name provided")
+                        }
+
+                      Ok(view(failedSubcontractorNames))
+
+                    case false =>
+                      logger.error(
+                        "[ReviewSubcontractorDetailsController.onPageLoad] Failed to save validation failures"
+                      )
+
+                      Redirect(
+                        controllers.routes.SystemErrorController.onPageLoad()
+                      )
+                  }
                 }
-
-              Ok(view(failedSubcontractorNames))
             }
             .recover { case error =>
               logger.error(
-                "[ReviewSubcontractorDetailsController.onPageLoad] Failed to retrieve subcontractor details",
+                "[ReviewSubcontractorDetailsController.onPageLoad] Failed to retrieve or validate subcontractor details",
                 error
               )
 

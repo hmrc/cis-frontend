@@ -22,6 +22,7 @@ import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, Subcontractor}
 import models.requests.GetMonthlyReturnForEditRequest
 import models.validation.SubcontractorValidationField.EmailAddress
 import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -30,7 +31,8 @@ import pages.validation.SubcontractorValidationFailuresPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import services.MonthlyReturnService
+import repositories.SessionRepository
+import services.{MonthlyReturnService, SubcontractorDetailsValidator}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
 
@@ -59,10 +61,6 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
         DateConfirmPaymentsPage,
         LocalDate.of(2026, 8, 5)
       )
-      .setOrException(
-        SubcontractorValidationFailuresPage,
-        failures
-      )
 
   private val response =
     GetAllMonthlyReturnDetailsResponse(
@@ -78,9 +76,15 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
   "ReviewSubcontractorDetailsController.onPageLoad" - {
 
-    "read stored failures and render subcontractor names in failure order" in {
+    "validate subcontractors, save failures and render failed subcontractor names" in {
       val monthlyReturnService =
         mock[MonthlyReturnService]
+
+      val subcontractorDetailsValidator =
+        mock[SubcontractorDetailsValidator]
+
+      val sessionRepository =
+        mock[SessionRepository]
 
       when(
         monthlyReturnService.retrieveMonthlyReturnForEditDetails(
@@ -88,20 +92,34 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(response))
 
+      when(
+        subcontractorDetailsValidator.validate(
+          response.subcontractors
+        )
+      ).thenReturn(failures)
+
+      when(
+        sessionRepository.set(any())
+      ).thenReturn(Future.successful(true))
+
       val application =
         applicationWith(
           userAnswers = userAnswers,
-          monthlyReturnService = monthlyReturnService
+          monthlyReturnService = monthlyReturnService,
+          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          sessionRepository = sessionRepository
         )
 
       running(application) {
-        val result = route(application, request).value
+        val result =
+          route(application, request).value
 
         val view =
           application.injector
             .instanceOf[ReviewSubcontractorDetailsView]
 
         status(result) mustBe OK
+
         contentAsString(result) mustBe
           view(
             Seq(
@@ -118,76 +136,89 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
           .retrieveMonthlyReturnForEditDetails(
             any[GetMonthlyReturnForEditRequest]
           )(any[HeaderCarrier])
+
+        verify(subcontractorDetailsValidator)
+          .validate(response.subcontractors)
+
+        val userAnswersCaptor =
+          ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(sessionRepository)
+          .set(userAnswersCaptor.capture())
+
+        userAnswersCaptor.getValue
+          .get(SubcontractorValidationFailuresPage) mustBe
+          Some(failures)
       }
     }
 
-    "redirect to JourneyRecovery when stored failures are missing" in {
+    "save an empty failure list to clear previous failures" in {
       val monthlyReturnService =
         mock[MonthlyReturnService]
 
-      val answersWithoutFailures =
-        userAnswers
-          .remove(SubcontractorValidationFailuresPage)
-          .get
+      val subcontractorDetailsValidator =
+        mock[SubcontractorDetailsValidator]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      val answersWithPreviousFailures =
+        userAnswers.setOrException(
+          SubcontractorValidationFailuresPage,
+          failures
+        )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      when(
+        subcontractorDetailsValidator.validate(
+          response.subcontractors
+        )
+      ).thenReturn(Nil)
+
+      when(
+        sessionRepository.set(any())
+      ).thenReturn(Future.successful(true))
 
       val application =
         applicationWith(
-          userAnswers = answersWithoutFailures,
-          monthlyReturnService = monthlyReturnService
+          userAnswers = answersWithPreviousFailures,
+          monthlyReturnService = monthlyReturnService,
+          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          sessionRepository = sessionRepository
         )
 
       running(application) {
-        val result = route(application, request).value
+        val result =
+          route(application, request).value
 
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe
-          controllers.routes.JourneyRecoveryController
-            .onPageLoad()
-            .url
+        status(result) mustBe OK
 
-        verify(monthlyReturnService, never)
-          .retrieveMonthlyReturnForEditDetails(
-            any[GetMonthlyReturnForEditRequest]
-          )(any[HeaderCarrier])
-      }
-    }
+        val userAnswersCaptor =
+          ArgumentCaptor.forClass(classOf[UserAnswers])
 
-    "redirect to JourneyRecovery when stored failures are empty" in {
-      val monthlyReturnService =
-        mock[MonthlyReturnService]
+        verify(sessionRepository)
+          .set(userAnswersCaptor.capture())
 
-      val answersWithEmptyFailures =
-        userAnswers
-          .setOrException(
-            SubcontractorValidationFailuresPage,
-            Nil
-          )
-
-      val application =
-        applicationWith(
-          userAnswers = answersWithEmptyFailures,
-          monthlyReturnService = monthlyReturnService
-        )
-
-      running(application) {
-        val result = route(application, request).value
-
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe
-          controllers.routes.JourneyRecoveryController
-            .onPageLoad()
-            .url
-
-        verify(monthlyReturnService, never)
-          .retrieveMonthlyReturnForEditDetails(
-            any[GetMonthlyReturnForEditRequest]
-          )(any[HeaderCarrier])
+        userAnswersCaptor.getValue
+          .get(SubcontractorValidationFailuresPage) mustBe
+          Some(Nil)
       }
     }
 
     "redirect to JourneyRecovery when the monthly-return request cannot be built" in {
       val monthlyReturnService =
         mock[MonthlyReturnService]
+
+      val subcontractorDetailsValidator =
+        mock[SubcontractorDetailsValidator]
+
+      val sessionRepository =
+        mock[SessionRepository]
 
       val answersWithoutDate =
         userAnswers
@@ -197,13 +228,17 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
       val application =
         applicationWith(
           userAnswers = answersWithoutDate,
-          monthlyReturnService = monthlyReturnService
+          monthlyReturnService = monthlyReturnService,
+          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          sessionRepository = sessionRepository
         )
 
       running(application) {
-        val result = route(application, request).value
+        val result =
+          route(application, request).value
 
         status(result) mustBe SEE_OTHER
+
         redirectLocation(result).value mustBe
           controllers.routes.JourneyRecoveryController
             .onPageLoad()
@@ -213,12 +248,24 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
           .retrieveMonthlyReturnForEditDetails(
             any[GetMonthlyReturnForEditRequest]
           )(any[HeaderCarrier])
+
+        verify(subcontractorDetailsValidator, never)
+          .validate(any[Seq[Subcontractor]])
+
+        verify(sessionRepository, never)
+          .set(any())
       }
     }
 
     "redirect to SystemError when subcontractor details cannot be retrieved" in {
       val monthlyReturnService =
         mock[MonthlyReturnService]
+
+      val subcontractorDetailsValidator =
+        mock[SubcontractorDetailsValidator]
+
+      val sessionRepository =
+        mock[SessionRepository]
 
       when(
         monthlyReturnService.retrieveMonthlyReturnForEditDetails(
@@ -233,30 +280,99 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
       val application =
         applicationWith(
           userAnswers = userAnswers,
-          monthlyReturnService = monthlyReturnService
+          monthlyReturnService = monthlyReturnService,
+          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          sessionRepository = sessionRepository
         )
 
       running(application) {
-        val result = route(application, request).value
+        val result =
+          route(application, request).value
 
         status(result) mustBe SEE_OTHER
+
         redirectLocation(result).value mustBe
           controllers.routes.SystemErrorController
             .onPageLoad()
             .url
+
+        verify(subcontractorDetailsValidator, never)
+          .validate(any[Seq[Subcontractor]])
+
+        verify(sessionRepository, never)
+          .set(any())
+      }
+    }
+
+    "redirect to SystemError when validation failures cannot be saved" in {
+      val monthlyReturnService =
+        mock[MonthlyReturnService]
+
+      val subcontractorDetailsValidator =
+        mock[SubcontractorDetailsValidator]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      when(
+        subcontractorDetailsValidator.validate(
+          response.subcontractors
+        )
+      ).thenReturn(failures)
+
+      when(
+        sessionRepository.set(any())
+      ).thenReturn(Future.successful(false))
+
+      val application =
+        applicationWith(
+          userAnswers = userAnswers,
+          monthlyReturnService = monthlyReturnService,
+          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.routes.SystemErrorController
+            .onPageLoad()
+            .url
+
+        verify(subcontractorDetailsValidator)
+          .validate(response.subcontractors)
+
+        verify(sessionRepository)
+          .set(any())
       }
     }
   }
 
   private def applicationWith(
     userAnswers: UserAnswers,
-    monthlyReturnService: MonthlyReturnService
+    monthlyReturnService: MonthlyReturnService,
+    subcontractorDetailsValidator: SubcontractorDetailsValidator,
+    sessionRepository: SessionRepository
   ) =
     applicationBuilder(
       userAnswers = Some(userAnswers),
       additionalBindings = Seq(
         bind[MonthlyReturnService]
-          .toInstance(monthlyReturnService)
+          .toInstance(monthlyReturnService),
+        bind[SubcontractorDetailsValidator]
+          .toInstance(subcontractorDetailsValidator),
+        bind[SessionRepository]
+          .toInstance(sessionRepository)
       )
     ).build()
 
