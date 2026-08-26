@@ -16,6 +16,9 @@
 
 package forms
 
+import play.api.data.validation.{Constraint, Invalid, Valid}
+import uk.gov.hmrc.domain.Nino
+
 object Validation {
 
   final val companyRegNumberRegex = "[A-Za-z]{2}[0-9]{1,6}|[0-9]{1,8}"
@@ -32,4 +35,12 @@ object Validation {
   final val surnameFormat = "[A-Za-z0-9\\s,\\.\\(\\)/\\&\\'\\-]+"
 
   val emailRegex: String = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
+
+  def isNinoValid(value: String, errorKey: String): Constraint[String] =
+    Constraint {
+      case str if Nino.isValid(str.replaceAll("\\s", "").toUpperCase) =>
+        Valid
+      case _                                                          =>
+        Invalid(errorKey, value)
+    }
 }
