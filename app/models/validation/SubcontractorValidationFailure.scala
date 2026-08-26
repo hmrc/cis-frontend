@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package forms.mappings
+package models.validation
 
-object Constants {
-  final val MaxLength8: Int   = 8
-  final val MaxLength35: Int  = 35
-  final val MaxLength254: Int = 254
+import play.api.libs.json.{Json, OFormat}
 
+final case class SubcontractorValidationFailure(
+  subcontractorId: Long,
+  failedFields: List[FieldValidationFailure]
+)
+
+object SubcontractorValidationFailure {
+  given format: OFormat[SubcontractorValidationFailure] = Json.format[SubcontractorValidationFailure]
 }
