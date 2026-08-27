@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package utils
+package utils.validation
 
-import forms.Validation.worksRefRegex
+import models.validation.{FieldValidationFailure, SubcontractorValidationField}
+import utils.CRN
 
-object WorkReferenceNumber {
-
-  private val length = 20
-
-  def isValid(wrn: String): Boolean = wrn != null && wrn.matches(worksRefRegex)
-
-  def isLengthInRange(wrn: String): Boolean = wrn != null && (wrn.length <= length)
-
+object CrnValidator {
+  def validate(
+    value: Option[String]
+  ): Option[FieldValidationFailure] =
+    value
+      .filter(_.trim.nonEmpty)
+      .flatMap { crn =>
+        Option.when(
+          !CRN.isLengthInRange(crn) ||
+            !CRN.isValid(crn)
+        ) {
+          FieldValidationFailure(
+            field = SubcontractorValidationField.Crn,
+            value = Some(crn)
+          )
+        }
+      }
 }
