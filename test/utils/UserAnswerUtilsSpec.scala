@@ -20,15 +20,31 @@ import base.SpecBase
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.{Declaration, SelectedSubcontractor}
 import models.submission.SubmissionDetails
+import models.validation.SubcontractorValidationField.EmailAddress
+import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
 import models.{ReturnType, UserAnswers}
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.*
 import pages.submission.*
+import pages.validation.SubcontractorValidationFailuresPage
 import utils.UserAnswerUtils.*
 
 import java.time.{Instant, LocalDateTime}
 
 class UserAnswerUtilsSpec extends SpecBase {
+
+  private val validationFailures =
+    List(
+      SubcontractorValidationFailure(
+        subcontractorId = 1L,
+        failedFields = List(
+          FieldValidationFailure(
+            field = EmailAddress,
+            value = Some("invalid-email")
+          )
+        )
+      )
+    )
 
   "UserAnswerUtils.isJourneyComplete" - {
 
@@ -295,6 +311,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(VerifiedStatusDeclarationPage, true)
         .get
+        .set(SubcontractorValidationFailuresPage, validationFailures)
+        .get
         .set(ConfirmEmailAddressPage, "test@example.com")
         .get
         .set(NilReturnStatusPage, "DRAFT")
@@ -344,6 +362,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(PaymentDetailsConfirmationPage) mustBe None
       cleared.get(EmploymentStatusDeclarationPage) mustBe None
       cleared.get(VerifiedStatusDeclarationPage) mustBe None
+      cleared.get(SubcontractorValidationFailuresPage) mustBe None
       cleared.get(ConfirmEmailAddressPage) mustBe None
       cleared.get(NilReturnStatusPage) mustBe None
 
@@ -406,6 +425,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(WhichSubcontractorsToAddPage, Set("10"))
         .get
+        .set(SubcontractorValidationFailuresPage, validationFailures)
+        .get
 
       val result = ua.clearAmendedMonthlyStandardReturnJourney
 
@@ -420,6 +441,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(VerifiedStatusDeclarationPage) mustBe None
       cleared.get(SubmitInactivityRequestPage) mustBe None
       cleared.get(WhichSubcontractorsToAddPage) mustBe None
+      cleared.get(SubcontractorValidationFailuresPage) mustBe None
     }
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {
