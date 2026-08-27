@@ -25,10 +25,10 @@ import java.time.LocalDateTime
 
 class CompanyValidatorSpec extends AnyWordSpec with Matchers {
 
-  "TrustValidator.validate" must {
+  "CompanyValidator.validate" must {
 
     "return a trading name failure when all common details are missing" in {
-      TrustValidator.validate(
+      CompanyValidator.validate(
         subcontractor = subcontractorEmpty,
         subcontractors = Seq(subcontractorInvalid, subcontractorEmpty, subcontractorValid)
       ) mustBe
@@ -41,14 +41,14 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
     }
 
     "return no failures when all fields are valid" in {
-      TrustValidator.validate(
+      CompanyValidator.validate(
         subcontractor = subcontractorValid,
         subcontractors = Seq(subcontractorInvalid, subcontractorEmpty, subcontractorValid)
       ) mustBe Nil
     }
 
     "return every failure" in {
-      TrustValidator.validate(
+      CompanyValidator.validate(
         subcontractor = subcontractorInvalid,
         subcontractors = Seq(subcontractorInvalid, subcontractorEmpty)
       ) mustBe
@@ -69,7 +69,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
     }
 
     "retain valid fields while returning only invalid fields" in {
-      TrustValidator.validate(
+      CompanyValidator.validate(
         subcontractor = subcontractorSomeValid,
         subcontractors = Seq(subcontractorSomeValid, subcontractorInvalid, subcontractorEmpty)
       ) mustBe
@@ -93,7 +93,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
           subcontractorValid.copy(utr = Some(utr))
         )
 
-      TrustValidator.validate(
+      CompanyValidator.validate(
         subcontractor = subcontractorToValidate,
         subcontractors = subcontractors
       ) mustBe
@@ -144,7 +144,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
       utr = utr,
       pageVisited = Some(1),
       partnerUtr = Some("1234567890"),
-      crn = Some("CRN123456"),
+      crn = Some("AB5860"),
       firstName = Some("John"),
       nino = Some("AB123456C"),
       secondName = Some("Michael"),

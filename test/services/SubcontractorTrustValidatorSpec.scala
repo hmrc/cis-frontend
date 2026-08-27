@@ -118,6 +118,38 @@ class SubcontractorTrustValidatorSpec extends SpecBase {
         )
     }
 
+    "return subcontractors containing a duplicated Utr" in {
+      val result =
+        subcontractorTrustValidator.validate(
+          Seq(
+            subcontractor(1L),
+            subcontractor(2L)
+          )
+        )
+
+      result mustBe
+        List(
+          SubcontractorValidationFailure(
+            subcontractorId = 1L,
+            failedFields = List(
+              FieldValidationFailure(
+                field = Utr,
+                value = Some("5860920998")
+              )
+            )
+          ),
+          SubcontractorValidationFailure(
+            subcontractorId = 2L,
+            failedFields = List(
+              FieldValidationFailure(
+                field = Utr,
+                value = Some("5860920998")
+              )
+            )
+          )
+        )
+    }
+
   }
 
   private def subcontractor(
