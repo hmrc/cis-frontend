@@ -93,7 +93,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.link",
-        linkUrl = "#",
+        linkUrl = appConfig.submissionHistoryUrl,
         hasFullStop = true,
         prefixTextKey = "monthlyreturns.submittedNoReceipt.submissionHistory.p"
     )
@@ -105,7 +105,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",
-        linkUrl = appConfig.manageYourCisReturn + vm.cisId
+        linkUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
     )
 
     @sectionBreak()

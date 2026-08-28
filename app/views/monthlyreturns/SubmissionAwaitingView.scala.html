@@ -51,13 +51,13 @@
         linkTextKey   = "monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk",
         linkUrl       = appConfig.hmrcOnlineServicesHelpdeskUrl,
         isNewTab      = true,
-        hasFullStop  = true,
+        hasFullStop   = true,
         prefixTextKey = "monthlyreturns.submissionAwaiting.links.prefix"
     )
 
     @link(
         linkTextKey = "monthlyreturns.submissionAwaiting.links.submit",
-        linkUrl   = appConfig.manageYourCisReturn + cisId,
+        linkUrl     = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url,
 
     )
 

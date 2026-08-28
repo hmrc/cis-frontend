@@ -45,7 +45,7 @@ class DuplicateMRCreationGuardSpec extends AnyWordSpec with Matchers with ScalaF
 
   "DuplicateMRCreationGuardImpl.check" should {
 
-    "return NoDuplicate when NilReturnStatusPage is present" in {
+    "return NoDuplicate when NilReturnStatusPage is absent" in {
       val ua                               = emptyUserAnswers()
       implicit val request: DataRequest[_] = dataRequest(ua)
 

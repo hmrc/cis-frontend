@@ -68,9 +68,18 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
         messages("monthlyreturns.submittedNoReceipt.submissionHistory.link")
       )
 
+      doc
+        .select(s"a:contains(${messages("monthlyreturns.submittedNoReceipt.submissionHistory.link")})")
+        .attr("href") mustBe app.injector.instanceOf[config.FrontendAppConfig].submissionHistoryUrl
+
       doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link")
       )
+
+      val manageCisReturnUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
+      doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 1
 
       doc.select("p.govuk-body").text must include(
         messages("monthlyreturns.submittedNoReceipt.questionsAboutReturnSubmission.p")

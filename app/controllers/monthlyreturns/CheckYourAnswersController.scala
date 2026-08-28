@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import controllers.helpers.SubmissionViewDataSupport
 import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.requests.CisIdDataRequest
@@ -33,6 +34,7 @@ import viewmodels.govuk.summarylist.*
 import views.html.monthlyreturns.CheckYourAnswersView
 import utils.UserAnswerUtils.isJourneyComplete
 
+import java.time.YearMonth
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -49,7 +51,8 @@ class CheckYourAnswersController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
-    with Logging {
+    with Logging
+    with SubmissionViewDataSupport {
 
   def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
@@ -142,9 +145,15 @@ class CheckYourAnswersController @Inject() (
   }
 
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
-    if (request.userAnswers.get(SubmissionJourneyCompletedPage).contains(true)) {
-      Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
-    } else {
-      block
+    periodEndFromUserAnswers(request.userAnswers) match {
+      case None            =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      case Some(periodEnd) =>
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
+          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+        } else {
+          block
+        }
     }
 }

@@ -14,7 +14,6 @@
  * limitations under the License.
  *@
 
-@import config.FrontendAppConfig
 @import views.html.components._
 
 @this(
@@ -24,19 +23,18 @@
     link: Link
 )
 
-@(messagePrefix: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(messagePrefix: String, cisAccountUrl: String)(implicit request: Request[_], messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(messages(s"$messagePrefix.title")),
-    showSignOut = false,
     showBackLink = false
-) {
+){
 
     @heading((messages(s"$messagePrefix.heading")), classes = "govuk-heading-xl")
 
     @link(
         linkTextKey = "monthlyreturns.alreadySubmitted.link",
-        linkUrl = appConfig.constructionIndustryAccountUrl,
+        linkUrl = cisAccountUrl,
         isNewTab = false,
         prefixTextKey = "monthlyreturns.alreadySubmitted.paragraph"
     )

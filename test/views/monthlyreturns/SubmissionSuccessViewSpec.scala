@@ -73,6 +73,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
         messages("monthlyreturns.submissionSuccessful.submissionHistory.link")
       )
 
+      doc
+        .select(s"a:contains(${messages("monthlyreturns.submissionSuccessful.submissionHistory.link")})")
+        .attr("href") mustBe app.injector.instanceOf[config.FrontendAppConfig].submissionHistoryUrl
+
       doc.select(".govuk-inset-text").text must include(
         messages("monthlyreturns.submissionSuccessful.inset")
       )
@@ -103,6 +107,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       doc.select("h2").text must not include
         messages("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
+
+      doc.select("a.govuk-link").text must include(
+        messages("monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link")
+      )
     }
 
     "must render the page when email is empty" in new Setup {

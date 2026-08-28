@@ -19,9 +19,9 @@ package pages.submission
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object SubmissionJourneyCompletedPage extends QuestionPage[Boolean] {
+case class SubmissionJourneyCompletedPage(period: String) extends QuestionPage[Boolean] {
 
-  override def path: JsPath = JsPath \ "submissionJourneyCompleted"
+  override def path: JsPath = JsPath \ "submissionJourneyCompleted" \ period \ "completed"
 
   override def toString: String = "submissionJourneyCompleted"
 }

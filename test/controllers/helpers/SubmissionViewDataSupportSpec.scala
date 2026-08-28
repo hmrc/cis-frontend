@@ -24,7 +24,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.when
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, EnterYourEmailAddressPage}
 
 import java.time.LocalDate
 import play.api.libs.json.Json
@@ -34,11 +34,10 @@ import play.api.test.FakeRequest
 class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with MockitoSugar {
 
   private object Harness extends SubmissionViewDataSupport {
-    def requiredPublic[A](opt: Option[A], err: String): A    = required(opt, err)
-    def emailPublic(ua: UserAnswers): Option[String]         = emailfromUserAnswers(ua)
-    def periodEndPublic(ua: UserAnswers): Option[LocalDate]  = periodEndFromUserAnswers(ua)
-    def contractorNamePublic(r: CisIdDataRequest[_]): String = contractorNameFrom(r)
-    def employerRefPublic(r: CisIdDataRequest[_]): String    = employerRefFrom(r)
+    def requiredPublic[A](opt: Option[A], err: String): A   = required(opt, err)
+    def emailPublic(ua: UserAnswers): Option[String]        = emailfromUserAnswers(ua)
+    def periodEndPublic(ua: UserAnswers): Option[LocalDate] = periodEndFromUserAnswers(ua)
+    def employerRefPublic(r: CisIdDataRequest[_]): String   = employerRefFrom(r)
   }
 
   private def uaEmpty: UserAnswers = UserAnswers("id", Json.obj())
@@ -87,26 +86,6 @@ class SubmissionViewDataSupportSpec extends AnyWordSpec with Matchers with Mocki
         .get
 
       Harness.periodEndPublic(ua) mustBe Some(date)
-    }
-
-    "contractorNameFrom uses ContractorNamePage for contractor" in {
-      val ua  = uaEmpty.set(ContractorNamePage, "ACME LTD").get
-      val req = dataRequest(ua, isAgent = false)
-
-      Harness.contractorNamePublic(req) mustBe "ACME LTD"
-    }
-
-    "contractorNameFrom uses AgentClientData.schemeName for agent (else throws)" in {
-      val agentData = AgentClientData("CLIENT-1", "123", "AB456", Some("PAL 355 Scheme"))
-      val uaOk      = uaEmpty.set(AgentClientDataPage, agentData).get
-
-      Harness.contractorNamePublic(dataRequest(uaOk, isAgent = true)) mustBe "PAL 355 Scheme"
-
-      val uaBad = uaEmpty.set(AgentClientDataPage, agentData.copy(schemeName = None)).get
-      val ex    = intercept[IllegalStateException] {
-        Harness.contractorNamePublic(dataRequest(uaBad, isAgent = true))
-      }
-      ex.getMessage must include("contractorName missing")
     }
 
     "employerRefFrom uses employerReference for contractor and agent client data for agent" in {

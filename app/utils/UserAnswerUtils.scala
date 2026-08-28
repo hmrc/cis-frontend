@@ -21,10 +21,12 @@ import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
 import pages.amend.*
-import pages.submission.ResubmissionIdPage
+import pages.submission.*
+import pages.validation.SubcontractorValidationFailuresPage
 import play.api.libs.json.Reads
 
 import scala.util.Try
+import java.time.YearMonth
 
 object UserAnswerUtils {
 
@@ -66,8 +68,11 @@ object UserAnswerUtils {
         .map(_.id)
         .toSeq
 
-    def clearMonthlyReturnJourney: Try[UserAnswers] =
-      userAnswers
+    def clearMonthlyReturnJourney: Try[UserAnswers] = {
+      val submissionId = userAnswers.get(SubmissionDetailsPage).map(_.id)
+      val period       = userAnswers.get(DateConfirmPaymentsPage).map(d => YearMonth.from(d).toString)
+
+      val clearedAnswers = userAnswers
         // common
         .remove(DateConfirmPaymentsPage)
         .flatMap(_.remove(SubmitInactivityRequestPage))
@@ -76,6 +81,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(ResubmissionIdPage))
 
         // monthly nil return
+        .flatMap(_.remove(NilReturnStatusPage))
         .flatMap(_.remove(ConfirmEmailAddressPage))
         .flatMap(_.remove(DeclarationPage))
 
@@ -86,6 +92,27 @@ object UserAnswerUtils {
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage))
+
+        // ChRIS submission
+        .flatMap(_.remove(SubmissionDetailsPage))
+        .flatMap(_.remove(PollUrlPage))
+        .flatMap(_.remove(PollIntervalPage))
+        .flatMap(_.remove(CorrelationIdPage))
+        .flatMap(_.remove(LastMessageDatePage))
+
+      val withSubmissionIdPages = submissionId.fold(clearedAnswers) { id =>
+        clearedAnswers
+          .flatMap(_.remove(SubmissionStatusTimedOutPage(id)))
+          .flatMap(_.remove(SuccessEmailSentPage(id)))
+      }
+
+      period.fold(withSubmissionIdPages) { p =>
+        withSubmissionIdPages
+          .flatMap(_.remove(SubmissionCreatedPage(p)))
+          .flatMap(_.remove(SubmissionJourneyCompletedPage(p)))
+      }
+    }
 
     def clearAmendedMonthlyStandardReturnJourney: Try[UserAnswers] =
       userAnswers
@@ -98,6 +125,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(WhichSubcontractorsToAddPage))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
