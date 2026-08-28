@@ -17,18 +17,19 @@
 package controllers.monthlyreturns
 
 import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
-import models.{NormalMode, ReturnType, UserAnswers}
+import models.{EmployerReference, NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.requests.OptionalDataRequest
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, ReturnTypePage}
 import play.api.Logging
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import play.twirl.api.Html
 import repositories.SessionRepository
-import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
+import services.{FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.FileYourMonthlyCisReturnView
@@ -48,7 +49,8 @@ class FileYourMonthlyCisReturnController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   sessionRepository: SessionRepository,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  formpRdsReconcileService: FormpRdsReconcileService
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -99,11 +101,16 @@ class FileYourMonthlyCisReturnController @Inject() (
           s"hasContractorName=${userAnswers.get(ContractorNamePage).isDefined}"
       )
       instanceIdOpt match {
-        case Some(instanceId) => storeInstanceId(instanceId, userAnswers).map(_ => Ok(render))
+        case Some(instanceId) =>
+          storeInstanceId(instanceId, userAnswers).flatMap(_ =>
+            reconcileFormpRds(instanceId, request.employerReference, render)
+          )
         case None             =>
           monthlyReturnService
             .resolveAndStoreCisId(userAnswers, false)
-            .map(_ => Ok(render))
+            .flatMap { case (cisId, _) =>
+              reconcileFormpRds(cisId, request.employerReference, render)
+            }
             .recover { case NonFatal(ex) =>
               logger.error(
                 s"[FileYourMonthlyCisReturnController] Failed to resolve CIS ID: ${ex.getMessage}",
@@ -141,7 +148,12 @@ class FileYourMonthlyCisReturnController @Inject() (
           for {
             uaWithAgent <- storeAgentClientData(agentData, userAnswers)
             _           <- storeInstanceId(instanceId, uaWithAgent)
-          } yield Ok(render)
+            result      <- reconcileFormpRds(
+                             instanceId,
+                             Some(EmployerReference(agentData.taxOfficeNumber, agentData.taxOfficeReference)),
+                             render
+                           )
+          } yield result
         case false =>
           logger.warn(
             s"[FileYourMonthlyCisReturnController] hasClient = false for " +
@@ -163,6 +175,34 @@ class FileYourMonthlyCisReturnController @Inject() (
       monthlyReturnService.getAgentClient(request.userId)
     } else {
       Future.successful(None)
+    }
+
+  private def reconcileFormpRds(
+    instanceId: String,
+    employerReference: Option[EmployerReference],
+    render: => Html
+  )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
+    employerReference match {
+      case Some(ref) =>
+        formpRdsReconcileService
+          .reconcile(instanceId, ref.taxOfficeNumber, ref.taxOfficeReference)
+          .map(_ => Ok(render))
+          .recover {
+            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+              logger.warn(
+                s"[FileYourMonthlyCisReturnController] Contractor known facts missing in RDS (status ${e.statusCode})"
+              )
+              Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+            case NonFatal(e)                                                                                  =>
+              logger.error(
+                s"[FileYourMonthlyCisReturnController] FormP/RDS reconciliation failed: ${e.getMessage}",
+                e
+              )
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      case None      =>
+        logger.warn("[FileYourMonthlyCisReturnController] Missing tax office reference for FormP/RDS reconciliation")
+        Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
     }
 
   private def storeInstanceId(instanceId: String, userAnswers: UserAnswers): Future[Unit] =

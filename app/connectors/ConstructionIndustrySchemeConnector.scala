@@ -45,6 +45,22 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/taxpayer")
       .execute[CisTaxpayer]
 
+  def prepopulateContractorKnownFacts(
+    instanceId: String,
+    taxOfficeNumber: String,
+    taxOfficeReference: String
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/contractor-known-facts/prepopulate/$taxOfficeNumber/$taxOfficeReference/$instanceId")
+      .execute[HttpResponse]
+      .flatMap { response =>
+        if (response.status >= 200 && response.status < 300) {
+          Future.unit
+        } else {
+          Future.failed(UpstreamErrorResponse(response.body, response.status, response.status))
+        }
+      }
+
   def getAgentClient(userId: String)(implicit
     hc: HeaderCarrier
   ): Future[Option[JsValue]] =
