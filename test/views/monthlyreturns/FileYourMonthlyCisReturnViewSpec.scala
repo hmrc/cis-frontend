@@ -41,8 +41,9 @@ class FileYourMonthlyCisReturnViewSpec extends SpecBase {
 
       val button: Element = doc.getElementsByClass("govuk-button").first()
 
-      button.text must include(messages("site.continue"))
+      button.text                                            must include(messages("site.continue"))
       doc.select("form").attr("action") mustBe expectedUrl
+      doc.getElementsByClass("hmrc-sign-out-nav__link").text must include(messages("timeout.signOut"))
     }
   }
 

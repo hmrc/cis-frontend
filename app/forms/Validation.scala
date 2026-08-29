@@ -31,5 +31,16 @@ object Validation {
 
   final val surnameFormat = "[A-Za-z0-9\\s,\\.\\(\\)/\\&\\'\\-]+"
 
-  val emailRegex: String = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
+  final val emailRegex = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
+
+  final val mobileRegex = """^[0-9\(\)\-\s]*$"""
+
+  final val phoneRegex = """^[0-9\(\)\-\s]*$"""
+
+  final val addressRegex = """[A-Za-z0-9"\~\!\@\#\$\%\*\+\:\;\=\?\s,\.\[\]\_\{\}\(\)/\&\'\-\^\\\£\€]*"""
+
+  final val firstCharLetterOrDigitRegex = """^[A-Za-z0-9].*"""
+
+  final val ukPostcodeRegex = """[A-Za-z0-9 ~!\"@#$%\&\'\(\)\*\+,\-\./:;\<=\>\?\[\\\]^_\{\}\£\€]*"""
+
 }
