@@ -16,7 +16,11 @@
 
 package controllers.finalvalidations
 
-import controllers.actions._
+import controllers.actions.*
+import models.finalvalidation.{ReviewSubcontractorDetailsPageModel, ReviewSubcontractorDetailsRow}
+import pages.finalvalidations.FinalValidationErrorPage
+import pages.monthlyreturns.SelectedSubcontractorPage
+
 import javax.inject.Inject
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -33,13 +37,33 @@ class ReviewSubcontractorDetailsController @Inject() (
 ) extends FrontendBaseController
     with I18nSupport {
 
-  private val stubSubcontractors: Seq[String] = Seq(
-    "Hooper And Associates",
-    "Quint Transportation",
-    "The Kintner Group"
-  )
-
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view(stubSubcontractors))
+    request.userAnswers.get(SelectedSubcontractorPage.all) match {
+
+      case Some(selectedSubcontractors) =>
+        val failures = request.userAnswers.get(FinalValidationErrorPage).getOrElse(Set.empty)
+
+        val erroneousSubcontractorIds = failures.map(_.subcontractorId).toSet
+
+        val rows = selectedSubcontractors.values.toSeq.map { subcontractor =>
+          ReviewSubcontractorDetailsRow(
+            subcontractorId = subcontractor.id,
+            name = subcontractor.name,
+            hasErrors = erroneousSubcontractorIds.contains(subcontractor.id)
+          )
+        }
+
+        Ok(
+          view(
+            ReviewSubcontractorDetailsPageModel(
+              subcontractors = rows,
+              canContinue = failures.isEmpty
+            )
+          )
+        )
+
+      case None =>
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+    }
   }
 }

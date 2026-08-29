@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.finalvalidation
 
-import viewmodels.SelectSubcontractorsViewModel
+case class ReviewSubcontractorDetailsRow(
+  subcontractorId: Long,
+  name: String,
+  hasErrors: Boolean
+)
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
+case class ReviewSubcontractorDetailsPageModel(
+  subcontractors: Seq[ReviewSubcontractorDetailsRow],
+  canContinue: Boolean
 )

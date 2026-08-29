@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.finalvalidation
 
-import viewmodels.SelectSubcontractorsViewModel
+final case class FinalValidationResult(
+  failures: Seq[SubcontractorFinalValidationFailure]
+) {
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
-)
+  def hasErrors: Boolean = failures.nonEmpty
+
+  def erroneousSubcontractorIds: Seq[Long] = failures.map(_.subcontractorId)
+
+  def failureFor(subcontractorId: Long): Option[SubcontractorFinalValidationFailure] =
+    failures.find(_.subcontractorId == subcontractorId)
+
+}

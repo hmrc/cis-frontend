@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package services.finalvalidation
 
-import viewmodels.SelectSubcontractorsViewModel
+import models.finalvalidation.FinalValidationField
+import models.monthlyreturns.Subcontractor
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
-)
+import javax.inject.{Inject, Singleton}
+
+@Singleton
+class PartnershipSubcontractorFinalValidation @Inject() {
+
+  def validate(
+    subcontractor: Subcontractor,
+    allSubcontractors: Seq[Subcontractor]
+  ): Seq[FinalValidationField] = {
+
+    // TODO F5 - Partnership subcontractor final validation
+
+    val _ = (subcontractor, allSubcontractors)
+    Seq.empty
+  }
+}

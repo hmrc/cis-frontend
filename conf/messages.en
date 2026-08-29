@@ -585,20 +585,62 @@ finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the con
 finalvalidations.updateSubcontractorDetails.title = {0}
 finalvalidations.updateSubcontractorDetails.heading = {0}
 finalvalidations.updateSubcontractorDetails.intro = To file your return, you must review and update the subcontractor details.
-finalvalidations.updateSubcontractorDetails.utr = Unique Taxpayer Reference
-finalvalidations.updateSubcontractorDetails.nino = National Insurance number
-finalvalidations.updateSubcontractorDetails.utr.change.hidden = Unique Taxpayer Reference
-finalvalidations.updateSubcontractorDetails.nino.change.hidden = National Insurance number
 finalvalidations.updateSubcontractorDetails.confirmChanges.heading = Confirm changes
 finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing this subcontractor’s details you are confirming that, to the best of your knowledge, the details you are providing are correct.
 finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
 finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
+
+# Shared
+finalvalidations.updateSubcontractorDetails.address = Address
+finalvalidations.updateSubcontractorDetails.addContactDetails = Add contact details?
+finalvalidations.updateSubcontractorDetails.emailAddress = Email address
+finalvalidations.updateSubcontractorDetails.phoneNumber = Phone number
+finalvalidations.updateSubcontractorDetails.mobilePhoneNumber = Mobile number
+finalvalidations.updateSubcontractorDetails.addWorksReferenceNumber = Add works reference number?
+finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Works reference number
+
+# Sole trader
+finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Subcontractor name
+finalvalidations.updateSubcontractorDetails.soleTrader.tradingName = Trading name
+finalvalidations.updateSubcontractorDetails.soleTrader.addAddress = Add subcontractor address?
+finalvalidations.updateSubcontractorDetails.soleTrader.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.soleTrader.utr = UTR
+finalvalidations.updateSubcontractorDetails.soleTrader.addNino = Add National Insurance number?
+finalvalidations.updateSubcontractorDetails.soleTrader.nino = National Insurance number
+
+# Company
+finalvalidations.updateSubcontractorDetails.company.name = Company name
+finalvalidations.updateSubcontractorDetails.company.addAddress = Add company address?
+finalvalidations.updateSubcontractorDetails.company.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.company.utr = Corporation Tax UTR
+finalvalidations.updateSubcontractorDetails.company.addCrn = Add company registration number?
+finalvalidations.updateSubcontractorDetails.company.crn = Company registration number
+
+# Trust
+finalvalidations.updateSubcontractorDetails.trust.name = Trust name
+finalvalidations.updateSubcontractorDetails.trust.addAddress = Add trust address?
+finalvalidations.updateSubcontractorDetails.trust.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.trust.utr = Trust UTR
+
+# Partnership
+finalvalidations.updateSubcontractorDetails.partnership.name = Partnership name
+finalvalidations.updateSubcontractorDetails.partnership.nominatedPartner = Nominated partner
+finalvalidations.updateSubcontractorDetails.partnership.addAddress = Add partnership address?
+finalvalidations.updateSubcontractorDetails.partnership.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.partnership.utr = Partnership UTR
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerUtr = Add UTR for nominated partner?
+finalvalidations.updateSubcontractorDetails.partnership.partnerUtr = UTR for nominated partner
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerNino = Add National Insurance number for nominated partner?
+finalvalidations.updateSubcontractorDetails.partnership.partnerNino = National Insurance number for nominated partner
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerCrn = Add company registration number for nominated partner?
+finalvalidations.updateSubcontractorDetails.partnership.partnerCrn = Company registration number for nominated partner
 
 finalValidations.reviewSubcontractorDetails.title = Review subcontractor details
 finalValidations.reviewSubcontractorDetails.heading = Review subcontractor details
 finalValidations.reviewSubcontractorDetails.intro = You need to review the subcontractor details
 finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = File a return
 finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewSubcontractorDetails.taskList.status.completed = Completed
 finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
 finalValidations.reviewSubcontractorDetails.backLink = Back to select your subcontractors
 

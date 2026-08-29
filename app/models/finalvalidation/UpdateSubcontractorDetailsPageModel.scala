@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.finalvalidation
 
-import viewmodels.SelectSubcontractorsViewModel
+final case class UpdateSubcontractorDetailsRow(
+  field: FinalValidationField,
+  labelKey: String,
+  value: Option[String],
+  changeUrl: String
+)
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
+final case class UpdateSubcontractorDetailsPageModel(
+  subcontractorId: Long,
+  subcontractorName: String,
+  rows: Seq[UpdateSubcontractorDetailsRow]
 )

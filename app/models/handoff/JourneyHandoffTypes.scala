@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.handoff
 
-import viewmodels.SelectSubcontractorsViewModel
-
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
-)
+object JourneyHandoffTypes {
+  val FinalValidation: String = "final-validation"
+}

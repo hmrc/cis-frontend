@@ -25,6 +25,7 @@ import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import services.finalvalidation.FinalValidationService
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.UserAnswerUtils.*
@@ -44,6 +45,7 @@ class SelectSubcontractorsController @Inject() (
   formProvider: SelectSubcontractorsFormProvider,
   subcontractorService: SubcontractorService,
   monthlyReturnService: MonthlyReturnService,
+  finalValidationService: FinalValidationService,
   appConfig: FrontendAppConfig
 )(using ExecutionContext)
     extends FrontendBaseController
@@ -107,21 +109,35 @@ class SelectSubcontractorsController @Inject() (
                     val selectedSubcontractors =
                       model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))
 
+                    val selectedSubcontractorIds: Set[Long] =
+                      formData.subcontractorsToInclude.map(_.toLong).toSet
+
+                    val selectedFullSubcontractors =
+                      model.fullSubcontractors.filter(sub => selectedSubcontractorIds.contains(sub.subcontractorId))
+
                     monthlyReturnService
                       .storeAndSyncSelectedSubcontractors(
                         ua = request.userAnswers,
                         selected = selectedSubcontractors
                       )
-                      .map { updatedAnswers =>
-                        if (
-                          selectedSubcontractors
-                            .filter(x => updatedAnswers.incompleteSubcontractorIds.contains(x.id))
-                            .exists(_.verificationRequired == "Yes")
-                        ) {
-                          Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
-                        } else {
-                          Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
-                        }
+                      .flatMap { updatedAnswers =>
+                        finalValidationService
+                          .validateAndStore(updatedAnswers, selectedFullSubcontractors, model.fullSubcontractors)
+                          .map { finalValidationResult =>
+                            if (finalValidationResult.hasErrors) {
+                              Redirect(
+                                controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
+                              )
+                            } else if (
+                              selectedSubcontractors
+                                .filter(x => updatedAnswers.incompleteSubcontractorIds.contains(x.id))
+                                .exists(_.verificationRequired == "Yes")
+                            ) {
+                              Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
+                            } else {
+                              Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+                            }
+                          }
                       }
                       .recover { error =>
                         logger.error(
@@ -136,5 +152,4 @@ class SelectSubcontractorsController @Inject() (
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
     }
-
 }

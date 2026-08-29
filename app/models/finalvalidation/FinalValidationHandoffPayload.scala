@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.finalvalidation
 
-import viewmodels.SelectSubcontractorsViewModel
+import play.api.libs.json.*
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
+final case class FinalValidationHandoffPayload(
+  instanceId: String,
+  subcontractorId: Long,
+  subbieResourceRef: Long,
+  field: FinalValidationField,
+  changeTarget: FinalValidationChangeTarget
 )
+
+object FinalValidationHandoffPayload {
+  given OFormat[FinalValidationHandoffPayload] = Json.format[FinalValidationHandoffPayload]
+}

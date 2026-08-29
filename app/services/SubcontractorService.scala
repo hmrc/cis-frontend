@@ -154,7 +154,8 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
 
         SelectSubcontractorsPageModel(
           subcontractors = subcontractorViewModels,
-          initiallySelectedIds = initiallySelectedIds
+          initiallySelectedIds = initiallySelectedIds,
+          fullSubcontractors = data.subcontractors
         )
       }
   }
@@ -195,7 +196,8 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
         WhichSubcontractorsToAddPageModel(
           subcontractors = subcontractors,
           preSelectedIds = preSelectedIds,
-          status = submissionStatus
+          status = submissionStatus,
+          fullSubcontractors = data.subcontractors
         )
       }
 

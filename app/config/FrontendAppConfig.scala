@@ -30,10 +30,11 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val host: String    = configuration.get[String]("host")
   lazy val appName: String = configuration.get[String]("appName")
 
-  private lazy val contactHost                  = configuration.get[String]("contact-frontend.host")
-  private lazy val cisManageFrontendUrl         = configuration.get[String]("cis-manage-frontend.host")
-  private lazy val returnsLandingPagePath       = configuration.get[String]("urls.returnsLandingPagePath")
-  private lazy val contactFormServiceIdentifier = configuration.get[String]("contact-frontend.serviceId")
+  private lazy val contactHost                     = configuration.get[String]("contact-frontend.host")
+  private lazy val cisManageFrontendUrl            = configuration.get[String]("cis-manage-frontend.host")
+  private lazy val returnsLandingPagePath          = configuration.get[String]("urls.returnsLandingPagePath")
+  private lazy val cisContractorFinalValidationUrl = configuration.get[String]("urls.cisContractorFinalValidation")
+  private lazy val contactFormServiceIdentifier    = configuration.get[String]("contact-frontend.serviceId")
 
   def feedbackUrl(implicit request: RequestHeader): String =
     s"$contactHost/contact/beta-feedback?service=$contactFormServiceIdentifier&backUrl=${host + request.uri}"
@@ -100,6 +101,9 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
       }
 
     s"$cisManageFrontendUrl$returnsLandingPagePath/$encodedInstanceId$queryString"
+
+  def cisContractorFinalValidationHandoffUrl(handoffId: String): String =
+    s"$cisContractorFinalValidationUrl/${urlEncode(handoffId)}"
 
   private def urlEncode(value: String): String =
     URLEncoder.encode(value, StandardCharsets.UTF_8.toString)

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package pages.finalvalidations
 
-import viewmodels.SelectSubcontractorsViewModel
+import models.finalvalidation.SubcontractorFinalValidationFailure
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
-)
+case object FinalValidationErrorPage extends QuestionPage[Seq[SubcontractorFinalValidationFailure]] {
+
+  override def path: JsPath = JsPath \ "finalvalidations" \ toString
+
+  override def toString: String = "finalValidationError"
+}

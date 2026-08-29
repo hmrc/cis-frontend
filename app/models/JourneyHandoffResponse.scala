@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models
 
-import viewmodels.SelectSubcontractorsViewModel
+import play.api.libs.json.*
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
+final case class JourneyHandoffResponse(
+  id: String
 )
+
+object JourneyHandoffResponse {
+  given OFormat[JourneyHandoffResponse] = Json.format[JourneyHandoffResponse]
+}

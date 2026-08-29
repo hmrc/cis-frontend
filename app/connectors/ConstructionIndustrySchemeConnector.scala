@@ -16,13 +16,14 @@
 
 package connectors
 
+import models.JourneyHandoffResponse
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import play.api.Logging
 import play.api.http.Status.*
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -31,6 +32,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
+import scala.reflect.ClassTag
 
 @Singleton
 class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, http: HttpClientV2)(implicit
@@ -298,4 +300,32 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         if (resp.status / 100 == 2) Future.unit
         else Future.failed(UpstreamErrorResponse(resp.body, resp.status, resp.status))
       }
+
+  def createJourneyHandoff(
+    journeyType: String,
+    data: JsObject
+  )(implicit hc: HeaderCarrier): Future[String] =
+    http
+      .post(url"$cisBaseUrl/journey-handoffs/$journeyType")
+      .withBody(data)
+      .execute[JourneyHandoffResponse]
+      .map(_.id)
+
+  def getJourneyHandoff[A: Reads: ClassTag](
+    journeyType: String,
+    handoffId: String
+  )(implicit hc: HeaderCarrier): Future[Option[A]] =
+    http
+      .get(url"$cisBaseUrl/journey-handoffs/$journeyType/$handoffId")
+      .execute[Option[A]]
+
+  def deleteJourneyHandoff(
+    journeyType: String,
+    handoffId: String
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .delete(url"$cisBaseUrl/journey-handoffs/$journeyType/$handoffId")
+      .execute[HttpResponse]
+      .map(_ => ())
+
 }

@@ -16,6 +16,7 @@
 
 @import viewmodels.govuk.all._
 @import views.html.components._
+@import models.finalvalidation.UpdateSubcontractorDetailsPageModel
 
 @this(
     layout: templates.Layout,
@@ -28,27 +29,28 @@
     customSummaryList: CustomSummaryList
 )
 
-@(subcontractorName: String)(implicit request: Request[_], messages: Messages)
+@(model: UpdateSubcontractorDetailsPageModel)(implicit request: Request[_], messages: Messages)
 
-@layout(pageTitle = titleNoForm(messages("finalvalidations.updateSubcontractorDetails.title", subcontractorName))) {
+@layout(pageTitle = titleNoForm(messages("finalvalidations.updateSubcontractorDetails.title", model.subcontractorName))) {
 
-    @h1(messages("finalvalidations.updateSubcontractorDetails.heading", subcontractorName))
+    @h1(messages("finalvalidations.updateSubcontractorDetails.heading", model.subcontractorName))
 
     @paragraph("finalvalidations.updateSubcontractorDetails.intro")
 
     @customSummaryList(
-        rows = Seq(
+        rows = model.rows.map { row =>
             (
-                messages("finalvalidations.updateSubcontractorDetails.utr"),
-                Seq(("#", "site.change", "finalvalidations.updateSubcontractorDetails.utr.change.hidden"))
-            ),
-            (
-                messages("finalvalidations.updateSubcontractorDetails.nino"),
-                Seq(("#", "site.change", "finalvalidations.updateSubcontractorDetails.nino.change.hidden"))
+                messages(row.labelKey),
+                Seq(
+                    (   row.changeUrl,
+                        "site.change",
+                        row.labelKey
+                    )
+                )
             )
-        ),
+        },
         keyClasses  = "govuk-!-font-weight-bold",
-        rowValues   = Seq("1234455", "123")
+        rowValues   = model.rows.map(_.value.getOrElse(""))
     )
 
     @h2("finalvalidations.updateSubcontractorDetails.confirmChanges.heading")

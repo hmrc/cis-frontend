@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package models.monthlyreturns
+package models.finalvalidation
 
-import viewmodels.SelectSubcontractorsViewModel
+import play.api.libs.json.{Json, OFormat}
 
-case class SelectSubcontractorsPageModel(
-  subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int],
-  fullSubcontractors: Seq[Subcontractor]
+final case class SubcontractorFinalValidationFailure(
+  subcontractorId: Long,
+  issues: Seq[FinalValidationIssue],
+  subbieResourceRef: Option[Long]
 )
+
+object SubcontractorFinalValidationFailure {
+  given OFormat[SubcontractorFinalValidationFailure] = Json.format[SubcontractorFinalValidationFailure]
+}
