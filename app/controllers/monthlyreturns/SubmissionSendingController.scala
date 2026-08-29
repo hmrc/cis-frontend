@@ -23,12 +23,15 @@ import models.requests.CisIdDataRequest
 import models.submission.PollDecision.{Polled, Skip}
 import models.submission.SubmissionStatus.*
 import models.submission.{PollDecision, SubmissionDetails, SubmissionStatus}
+import pages.agent.AgentClientDataPage
 import pages.submission.*
 import play.api.Logging
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, Call, MessagesControllerComponents, Result}
+import services.FormpRdsReconcileService
 import services.submission.SubmissionService
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.UserAnswerUtils.isJourneyComplete
@@ -37,6 +40,7 @@ import views.html.monthlyreturns.SubmissionSendingView
 import java.time.YearMonth
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class SubmissionSendingController @Inject() (
   override val messagesApi: MessagesApi,
@@ -45,6 +49,7 @@ class SubmissionSendingController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   submissionService: SubmissionService,
+  formpRdsReconcileService: FormpRdsReconcileService,
   view: SubmissionSendingView,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
@@ -62,36 +67,73 @@ class SubmissionSendingController @Inject() (
         if (!request.userAnswers.isJourneyComplete)
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         else
-          (for {
-            (submissionId, updatedAnswers, isResubmission) <-
-              submissionService.getOrCreateSubmissionForChris(request.userAnswers)
-            submitted                                      <-
-              submissionService.submitToChrisAndPersist(
-                submissionId,
-                updatedAnswers,
-                request.isAgent,
-                isResubmission
-              )
-            _                                              <-
-              submissionService.updateSubmissionFromChrisResponse(
-                submissionId,
-                updatedAnswers,
-                submitted
-              )
-          } yield SubmissionStatus.fromString(submitted.status) match {
-            case Started                             =>
-              logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
-              Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
-            case Pending | SubmissionStatus.Accepted =>
-              Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-            case _                                   =>
-              Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-          }).recover { case ex =>
-            logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
-            Redirect(controllers.routes.SystemErrorController.onPageLoad())
+          reconcileFormpRdsBeforeChris.flatMap {
+            case Some(redirect) => Future.successful(redirect)
+            case None           =>
+              (for {
+                (submissionId, updatedAnswers, isResubmission) <-
+                  submissionService.getOrCreateSubmissionForChris(request.userAnswers)
+                submitted                                      <-
+                  submissionService.submitToChrisAndPersist(
+                    submissionId,
+                    updatedAnswers,
+                    request.isAgent,
+                    isResubmission
+                  )
+                _                                              <-
+                  submissionService.updateSubmissionFromChrisResponse(
+                    submissionId,
+                    updatedAnswers,
+                    submitted
+                  )
+              } yield SubmissionStatus.fromString(submitted.status) match {
+                case Started                             =>
+                  logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
+                  Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
+                case Pending | SubmissionStatus.Accepted =>
+                  Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
+                case _                                   =>
+                  Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
+              }).recover { case ex =>
+                logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+              }
           }
       }
     }
+
+  private def reconcileFormpRdsBeforeChris(implicit
+    request: CisIdDataRequest[_],
+    hc: HeaderCarrier
+  ): Future[Option[Result]] =
+    resolveTaxOffice(request) match {
+      case Some((taxOfficeNumber, taxOfficeReference)) =>
+        formpRdsReconcileService
+          .reconcile(request.cisId, taxOfficeNumber, taxOfficeReference)
+          .map(_ => None)
+          .recover {
+            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+              logger.warn(
+                s"[SubmissionSendingController] Contractor known facts missing in RDS (status ${e.statusCode})"
+              )
+              Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+            case NonFatal(e)                                                                                  =>
+              logger.error(
+                s"[SubmissionSendingController] FormP/RDS reconciliation failed: ${e.getMessage}",
+                e
+              )
+              Some(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
+          }
+      case None                                        =>
+        logger.warn("[SubmissionSendingController] Missing tax office reference for FormP/RDS reconciliation")
+        Future.successful(Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
+    }
+
+  private def resolveTaxOffice(request: CisIdDataRequest[_]): Option[(String, String)] =
+    if (request.isAgent)
+      request.userAnswers.get(AgentClientDataPage).map(a => (a.taxOfficeNumber, a.taxOfficeReference))
+    else
+      request.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
 
   def onPollAndRedirect: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
