@@ -43,30 +43,47 @@
     ) {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))
+            @govukErrorSummary(
+                ErrorSummaryViewModel(
+                    form,
+                    errorLinkOverrides = Map(
+                        "value" -> "value_0",
+                        "summaryList" -> "summaryList-error"
+                    )
+                )
+            )
         }
 
         @h1(viewModel.headingKey, viewModel.headingArgs)
 
-        @customSummaryList(
-            rows = viewModel.rows.map { row =>
-                (
-                    row.name,
-                    Seq(
-                      (row.changeCall.url, row.changeLabel, s"${row.changeLabel}.hidden"),
-                      (row.removeCall.url, "site.remove", "monthlyreturns.subcontractorDetailsAdded.remove.hidden")
-                    )
-                )
+        <div id="subcontractor-details-summary">
+
+            @if(form.errors.exists(_.key == "summaryList")) {
+            <p id="summaryList-error" class="govuk-error-message">
+                <span class="govuk-visually-hidden">Error:</span>
+                @messages("monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+            </p>
             }
-        )
+
+            @customSummaryList(
+                rows = viewModel.rows.map { row =>
+                    (row.name,
+                    Seq(
+                        (row.changeCall.url, row.changeLabel, s"${row.changeLabel}.hidden"),
+                        (row.removeCall.url, "site.remove", "monthlyreturns.subcontractorDetailsAdded.remove.hidden")
+                    ))
+                }
+            )
+        </div>
 
         @govukRadios(
             RadiosViewModel
                 .yesNo(
                     field = form("value"),
-                    legend = LegendViewModel(messages("monthlyreturns.subcontractorDetailsAdded.question"))
-                        .withCssClass("govuk-fieldset__legend--m")
-                )
+                    legend = LegendViewModel(
+                    messages("monthlyreturns.subcontractorDetailsAdded.question")
+                ).withCssClass("govuk-fieldset__legend--m")
+            )
         )
 
         @buttonGroup {
