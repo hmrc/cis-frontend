@@ -193,7 +193,7 @@ monthlyreturns.declaration.listItem2 = the information provided in this return i
 monthlyreturns.declaration.warning = If you give any false information, you may face financial penalties and prosecution.
 monthlyreturns.declaration.submit = Confirm and continue
 
-monthlyreturns.submissionSending.title = Submission - Sending
+monthlyreturns.submissionSending.title = Your submission is being sent to HMRC
 monthlyreturns.submissionSending.h1 = Your submission is being sent to HMRC
 monthlyreturns.submissionSending.paragraph = Do not refresh this page or press the back button while your submission is being processed.
 
@@ -377,7 +377,7 @@ monthlyreturns.totalTaxDeducted.error.required = Enter the total tax deducted
 
 verifySubcontractors.title = You have unverified subcontractors
 verifySubcontractors.heading = You have unverified subcontractors
-verifySubcontractors.WarningIcon = Warning
+verifySubcontractors.warningIcon = Warning
 verifySubcontractors.warningText = One or more subcontractors have not been verified. Not verifying subcontractors will result in them receiving a higher rate of tax.
 verifySubcontractors.P1 = Do you want to verify your subcontractors now?
 verifySubcontractors.yes = Yes
