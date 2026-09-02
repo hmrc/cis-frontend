@@ -113,7 +113,10 @@ class SubcontractorDetailsAddedController @Inject() (
                     val withError =
                       form
                         .fill(isAddingMoreSubcontractors)
-                        .withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+                        .withError(
+                          "summaryList",
+                          "monthlyreturns.subcontractorDetailsAdded.error.incomplete"
+                        )
                     BadRequest(view(withError, mode, viewModel))
                   } else if (allSubcontractorDetailsAdded) {
                     Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
