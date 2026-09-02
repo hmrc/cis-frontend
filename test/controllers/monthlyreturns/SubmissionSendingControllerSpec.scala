@@ -26,14 +26,16 @@ import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
 import pages.submission.*
+import play.api.http.Status.PRECONDITION_FAILED
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContent
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.FormpRdsReconcileService
 import services.submission.SubmissionService
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.Future
@@ -72,6 +74,8 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url
   private def recoveryRoute             = controllers.routes.JourneyRecoveryController.onPageLoad().url
   private def systemErrorRoute          = controllers.routes.SystemErrorController.onPageLoad().url
+  private def unauthorisedRoute         =
+    controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
   given hc: HeaderCarrier               = HeaderCarrier()
 
   private def stubSubmissionFlow(
@@ -192,6 +196,70 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
       verify(mockService, never()).updateSubmissionFromChrisResponse(any[String], any[UserAnswers], any())(
         any[CisIdDataRequest[AnyContent]],
+        any[HeaderCarrier]
+      )
+    }
+
+    "redirects to Unauthorised (CRR3) and does not submit to ChRIS when FormP/RDS reconciliation reports missing known facts" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val failingReconcile = new FormpRdsReconcileService {
+        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+          hc: HeaderCarrier
+        ): Future[Unit] =
+          Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED))
+      }
+
+      val app =
+        applicationBuilder(userAnswers = Some(completeAnswers), formpRdsReconcileService = failingReconcile)
+          .overrides(
+            bind[SubmissionService].toInstance(mockService),
+            bind[SessionRepository].toInstance(mockMongoDb)
+          )
+          .build()
+
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unauthorisedRoute
+
+      verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
+        any[HeaderCarrier]
+      )
+    }
+
+    "redirects to Journey Recovery and does not submit to ChRIS when FormP/RDS reconciliation fails unexpectedly" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val failingReconcile = new FormpRdsReconcileService {
+        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+          hc: HeaderCarrier
+        ): Future[Unit] =
+          Future.failed(new RuntimeException("boom"))
+      }
+
+      val app =
+        applicationBuilder(userAnswers = Some(completeAnswers), formpRdsReconcileService = failingReconcile)
+          .overrides(
+            bind[SubmissionService].toInstance(mockService),
+            bind[SessionRepository].toInstance(mockMongoDb)
+          )
+          .build()
+
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe recoveryRoute
+
+      verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
         any[HeaderCarrier]
       )
     }
