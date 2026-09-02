@@ -1325,8 +1325,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ReturnTypePage) mustBe Some(MonthlyNilReturn)
       ua.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 3, 5))
       ua.get(SubmitInactivityRequestPage) mustBe Some(true)
-      ua.get(ConfirmationByEmailPage) mustBe Some(true)
-      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      ua.get(ConfirmationByEmailPage) mustBe None
+      ua.get(EnterYourEmailAddressPage) mustBe None
       ua.get(DeclarationPage) mustBe Some(Set(Declaration.Confirmed))
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage) mustBe Some(1L)
@@ -1391,8 +1391,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ReturnTypePage) mustBe Some(MonthlyNilReturn)
       ua.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 3, 5))
       ua.get(SubmitInactivityRequestPage) mustBe None
-      ua.get(ConfirmationByEmailPage) mustBe Some(true)
-      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      ua.get(ConfirmationByEmailPage) mustBe None
+      ua.get(EnterYourEmailAddressPage) mustBe None
       ua.get(DeclarationPage).value mustBe empty
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage) mustBe Some(1L)
@@ -1509,8 +1509,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       ua.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
       ua.get(SubmitInactivityRequestPage) mustBe Some(true)
-      ua.get(ConfirmationByEmailPage) mustBe Some(true)
-      ua.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+      ua.get(ConfirmationByEmailPage) mustBe None
+      ua.get(EnterYourEmailAddressPage) mustBe None
       ua.get(EmploymentStatusDeclarationPage) mustBe Some(true)
       ua.get(VerifiedStatusDeclarationPage) mustBe Some(true)
       ua.get(PaymentDetailsConfirmationPage) mustBe Some(true)
@@ -1524,6 +1524,140 @@ class MonthlyReturnServiceSpec extends SpecBase {
         costOfMaterials = Some(BigDecimal("100.00")),
         totalTaxDeducted = Some(BigDecimal("100.00"))
       )
+    }
+
+    "must not set SubmitInactivityRequestPage when only decInformationCorrect is Y" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3,
+        false
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("Y"),
+            decInformationCorrect = Some("Y"),
+            decNilReturnNoPayments = None
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+      ua.get(SubmitInactivityRequestPage) mustBe None
+    }
+
+    "must not set employment or verified status declarations when FormP values are missing" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3,
+        false
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Seq(
+          Submission(
+            submissionId = 1,
+            submissionType = "MONTHLY_RETURN",
+            activeObjectId = None,
+            status = None,
+            hmrcMarkGenerated = None,
+            hmrcMarkGgis = None,
+            emailRecipient = Some("test@example.com"),
+            acceptedTime = None,
+            createDate = None,
+            lastUpdate = None,
+            schemeId = 1,
+            agentId = None,
+            l_Migrated = None,
+            submissionRequestDate = None,
+            govTalkErrorCode = None,
+            govTalkErrorType = None,
+            govTalkErrorMessage = None
+          )
+        )
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+      ua.get(EmploymentStatusDeclarationPage) mustBe None
+      ua.get(VerifiedStatusDeclarationPage) mustBe None
+      ua.get(SubmitInactivityRequestPage) mustBe None
+      ua.get(ConfirmationByEmailPage) mustBe None
+      ua.get(EnterYourEmailAddressPage) mustBe None
+    }
+
+    "must set employment and verified status declarations from explicit N values" in {
+      val (service, connector, _) = newService()
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3,
+        false
+      )
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N"),
+            decEmpStatusConsidered = Some("N"),
+            decAllSubsVerified = Some("N")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(UserAnswers("id"), editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+      ua.get(EmploymentStatusDeclarationPage) mustBe Some(false)
+      ua.get(VerifiedStatusDeclarationPage) mustBe Some(false)
     }
 
     "return Left when nil return indicator is missing" in {
