@@ -122,7 +122,7 @@ class SubmissionSendingController @Inject() (
                 s"[SubmissionSendingController] FormP/RDS reconciliation failed: ${e.getMessage}",
                 e
               )
-              Some(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
+              Some(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
       case None                                        =>
         logger.warn("[SubmissionSendingController] Missing tax office reference for FormP/RDS reconciliation")

@@ -21,15 +21,18 @@ import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
 import models.{NormalMode, UserAnswers}
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
+import models.requests.CisIdDataRequest
+import pages.agent.AgentClientDataPage
 import pages.amend.ConfirmCancelAmendmentYesNoPage
 import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.data.Form
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.*
 import repositories.SessionRepository
-import services.{AmendMonthlyReturnService, MonthlyReturnService}
-import uk.gov.hmrc.http.HeaderCarrier
+import services.{AmendMonthlyReturnService, FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmCancelAmendmentYesNoView
@@ -37,11 +40,13 @@ import views.html.amend.ConfirmCancelAmendmentYesNoView
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class ConfirmCancelAmendmentYesNoController @Inject() (
   override val messagesApi: MessagesApi,
   amendMonthlyReturnService: AmendMonthlyReturnService,
   monthlyReturnService: MonthlyReturnService,
+  formpRdsReconcileService: FormpRdsReconcileService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -138,17 +143,54 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
-  private def handleYes(ua: UserAnswers, instanceId: String)(implicit request: RequestHeader): Future[Result] = {
+  private def handleYes(ua: UserAnswers, instanceId: String)(implicit request: CisIdDataRequest[_]): Future[Result] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(ua)
+    reconcileFormpRds(instanceId, ua).flatMap {
+      case Some(redirect) => Future.successful(redirect)
+      case None           =>
+        val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(ua)
 
-    amendMonthlyReturnService
-      .deleteUnsubmittedMonthlyReturn(deleteRequest)
-      .map { _ =>
-        Redirect(appConfig.returnsLandingPageUrl(instanceId, ua.get(ContractorNamePage)))
-      }
+        amendMonthlyReturnService
+          .deleteUnsubmittedMonthlyReturn(deleteRequest)
+          .map { _ =>
+            Redirect(appConfig.returnsLandingPageUrl(instanceId, ua.get(ContractorNamePage)))
+          }
+    }
   }
+
+  private def reconcileFormpRds(instanceId: String, ua: UserAnswers)(implicit
+    request: CisIdDataRequest[_],
+    hc: HeaderCarrier
+  ): Future[Option[Result]] =
+    resolveTaxOffice(request, ua) match {
+      case Some((taxOfficeNumber, taxOfficeReference)) =>
+        formpRdsReconcileService
+          .reconcile(instanceId, taxOfficeNumber, taxOfficeReference)
+          .map(_ => None)
+          .recover {
+            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+              logger.warn(
+                s"[ConfirmCancelAmendmentYesNoController] Contractor known facts missing in RDS (status ${e.statusCode})"
+              )
+              Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+            case NonFatal(e)                                                                                  =>
+              logger.error(
+                s"[ConfirmCancelAmendmentYesNoController] FormP/RDS reconciliation failed: ${e.getMessage}",
+                e
+              )
+              Some(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
+      case None                                        =>
+        logger.warn("[ConfirmCancelAmendmentYesNoController] Missing tax office reference for FormP/RDS reconciliation")
+        Future.successful(Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
+    }
+
+  private def resolveTaxOffice(request: CisIdDataRequest[_], ua: UserAnswers): Option[(String, String)] =
+    if (request.isAgent)
+      ua.get(AgentClientDataPage).map(a => (a.taxOfficeNumber, a.taxOfficeReference))
+    else
+      request.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
 
   private def handleNo: Future[Result] =
     Future.successful(

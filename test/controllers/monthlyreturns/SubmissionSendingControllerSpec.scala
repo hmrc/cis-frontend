@@ -232,7 +232,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
     }
 
-    "redirects to system error and does not submit to ChRIS when FormP/RDS reconciliation fails unexpectedly" in {
+    "redirects to Journey Recovery and does not submit to ChRIS when FormP/RDS reconciliation fails unexpectedly" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
@@ -256,7 +256,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val result = controller.onPageLoad()(mkRequest)
 
       status(result) mustBe SEE_OTHER
-      redirectLocation(result).value mustBe systemErrorRoute
+      redirectLocation(result).value mustBe recoveryRoute
 
       verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
       verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
