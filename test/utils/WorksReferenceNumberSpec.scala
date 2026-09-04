@@ -18,10 +18,10 @@ package utils
 
 import base.SpecBase
 
-class WorkReferenceNumberSpec extends SpecBase {
+class WorksReferenceNumberSpec extends SpecBase {
 
-  import WorkReferenceNumber.isValid
-  import WorkReferenceNumber.isLengthInRange
+  import WorksReferenceNumber.isValid
+  import WorksReferenceNumber.isLengthInRange
 
   "The WorkReferenceNumber utility object" - {
 

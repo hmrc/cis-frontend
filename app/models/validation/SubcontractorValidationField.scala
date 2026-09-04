@@ -28,6 +28,10 @@ enum SubcontractorValidationField(val value: String) {
   case AddressLine4 extends SubcontractorValidationField("addressLine4")
   case Postcode extends SubcontractorValidationField("postcode")
   case Country extends SubcontractorValidationField("country")
+  case WorksReferenceNumber extends SubcontractorValidationField("worksReferenceNumber")
+  case Crn extends SubcontractorValidationField("crn")
+  case Utr extends SubcontractorValidationField("utr")
+  case TradingName extends SubcontractorValidationField("tradingName")
 }
 
 object SubcontractorValidationField {
