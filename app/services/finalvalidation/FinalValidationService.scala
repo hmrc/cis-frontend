@@ -35,10 +35,6 @@ class FinalValidationService @Inject() (
   addressDetailsFinalValidation: AddressDetailsFinalValidation
 ) extends Logging {
 
-  /** F1 - initial Final Validation.
-    *
-    * This runs before a Mongo FinalValidationDraft exists, so it uses the monthly-return Subcontractor model.
-    */
   def validate(
     selectedSubcontractors: Seq[Subcontractor],
     allSubcontractors: Seq[Subcontractor]
@@ -65,16 +61,6 @@ class FinalValidationService @Inject() (
     FinalValidationResult(failures = failures)
   }
 
-  /** F1b - readiness validation.
-    *
-    * Runs only from EH03 "Accept and submit".
-    *
-    * Once the Mongo draft exists it is the authoritative Final Validation working state, so this method validates
-    * draft.proposed directly and does not convert back to models.monthlyreturns.Subcontractor.
-    *
-    * With the failures-only draft design, draft.subcontractors contains only subcontractors which failed the original
-    * F1.
-    */
   def validateDraftSubcontractor(
     draft: FinalValidationDraft,
     subcontractorId: Long
@@ -105,10 +91,6 @@ class FinalValidationService @Inject() (
           )
         )
     }
-
-  // ---------------------------------------------------------------------------
-  // F1
-  // ---------------------------------------------------------------------------
 
   private def initialValidationIssues(
     subcontractor: Subcontractor,
@@ -151,10 +133,6 @@ class FinalValidationService @Inject() (
           addressDetailsFinalValidation.validate(subcontractor)
     }
 
-  // ---------------------------------------------------------------------------
-  // F1b
-  // ---------------------------------------------------------------------------
-
   private def draftValidationFields(
     subcontractor: FinalValidationDraftSubcontractor,
     allSubcontractors: Seq[FinalValidationDraftSubcontractor]
@@ -177,10 +155,6 @@ class FinalValidationService @Inject() (
         partnershipSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
           addressDetailsFinalValidation.validateDraft(subcontractor)
     }
-
-  // ---------------------------------------------------------------------------
-  // Shared helpers
-  // ---------------------------------------------------------------------------
 
   private def parseSubcontractorType(
     subcontractorType: Option[String],

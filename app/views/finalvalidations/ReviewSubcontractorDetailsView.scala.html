@@ -21,13 +21,35 @@
 @this(
     layout: templates.Layout,
     govukTaskList: GovukTaskList,
-    govukButton: GovukButton,
     h1: H1,
     p: Paragraph,
     link: Link
 )
 
 @(model: ReviewSubcontractorDetailsPageModel)(implicit request: Request[_], messages: Messages)
+
+@fileAReturnSubmitLink() = {
+<span class="app-task-list-row-submit">
+        <span class="govuk-link govuk-link--no-visited-state">
+            @messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn")
+        </span>
+
+        @helper.form(
+            action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+        ) {
+            @helper.CSRF.formField
+
+            <button
+                    type="submit"
+                    class="app-task-list-row-submit__button"
+            >
+                <span class="govuk-visually-hidden">
+                    @messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn")
+                </span>
+            </button>
+        }
+    </span>
+}
 
 @defining(
     TaskListItemStatus(
@@ -68,14 +90,11 @@
                 if (model.canContinue) {
                     TaskListItem(
                         title = TaskListItemTitle(
-                            content = Text(
-                                messages(
-                                    "finalValidations.reviewSubcontractorDetails.taskList.fileAReturn"
-                                )
-                            )
+                            content = HtmlContent(fileAReturnSubmitLink())
                         ),
                         href = None,
-                        status = incompleteStatus
+                        status = incompleteStatus,
+                        classes = "govuk-task-list__item--with-link"
                     )
                 } else {
                     TaskListItem(
@@ -99,21 +118,6 @@
                 }
             )
         ))
-
-        @if(model.canContinue) {
-            @helper.form(
-                action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
-            ) {
-
-                @helper.CSRF.formField
-
-                @govukButton(
-                    ButtonViewModel(
-                        messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn")
-                    )
-                )
-            }
-        }
 
         @link(
             linkTextKey = "finalValidations.reviewSubcontractorDetails.backLink",
