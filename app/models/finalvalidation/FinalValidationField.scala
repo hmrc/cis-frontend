@@ -162,12 +162,14 @@ object FinalValidationField {
     MobilePhoneNumber
   )
 
+  def fromKey(key: String): Option[FinalValidationField] = values.find(_.key == key)
+
   given Format[FinalValidationField] = new Format[FinalValidationField] {
     override def writes(o: FinalValidationField): JsValue = JsString(o.key)
 
     override def reads(json: JsValue): JsResult[FinalValidationField] = json match {
       case JsString(key) =>
-        values.find(_.key == key) match {
+        fromKey(key) match {
           case Some(field) => JsSuccess(field)
           case None        => JsError(s"Unknown FinalValidationField key: $key")
         }

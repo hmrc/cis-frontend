@@ -17,53 +17,148 @@
 package controllers.finalvalidations
 
 import controllers.actions.*
-import models.finalvalidation.{ReviewSubcontractorDetailsPageModel, ReviewSubcontractorDetailsRow}
-import pages.finalvalidations.FinalValidationErrorPage
-import pages.monthlyreturns.SelectedSubcontractorPage
+import models.{CheckMode, Mode, NormalMode, UserAnswers}
+import models.finalvalidation.{FinalValidationReadiness, MonthlyFinalValidationSource, ReviewSubcontractorDetailsPageModel, ReviewSubcontractorDetailsRow}
+import navigation.Navigator
+import pages.amend.WhichSubcontractorsToAddPage
+import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
 
 import javax.inject.Inject
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
+import repositories.SessionRepository
+import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class ReviewSubcontractorDetailsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
+  sessionRepository: SessionRepository,
+  navigator: Navigator,
+  finalValidationDraftService: FinalValidationDraftService,
   val controllerComponents: MessagesControllerComponents,
   view: ReviewSubcontractorDetailsView
-) extends FrontendBaseController
+)(using ec: ExecutionContext)
+    extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    request.userAnswers.get(SelectedSubcontractorPage.all) match {
+  def onPageLoad: Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(FinalValidationDraftIdPage) match {
 
-      case Some(selectedSubcontractors) =>
-        val failures = request.userAnswers.get(FinalValidationErrorPage).getOrElse(Set.empty)
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(request.cisId, draftId)
+            .map { draft =>
+              val rows =
+                draft.subcontractors.map { subcontractor =>
+                  ReviewSubcontractorDetailsRow(
+                    subcontractor.subcontractorId,
+                    subcontractor.displayName,
+                    subcontractor.readiness == FinalValidationReadiness.Incomplete
+                  )
+                }
 
-        val erroneousSubcontractorIds = failures.map(_.subcontractorId).toSet
+              val backUrl =
+                request.userAnswers
+                  .get(MonthlyFinalValidationSourcePage)
+                  .map {
+                    case MonthlyFinalValidationSource.SelectSubcontractors                =>
+                      controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+                    case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
+                      modeFromString(modeValue)
+                        .map(mode => controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode).url)
+                        .getOrElse(controllers.routes.JourneyRecoveryController.onPageLoad().url)
+                  }
+                  .getOrElse(controllers.routes.JourneyRecoveryController.onPageLoad().url)
 
-        val rows = selectedSubcontractors.values.toSeq.map { subcontractor =>
-          ReviewSubcontractorDetailsRow(
-            subcontractorId = subcontractor.id,
-            name = subcontractor.name,
-            hasErrors = erroneousSubcontractorIds.contains(subcontractor.id)
-          )
+              Ok(
+                view(
+                  ReviewSubcontractorDetailsPageModel(rows, draft.allComplete, backUrl)
+                )
+              )
+            }
+
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
+  def onSubmit: Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+
+      val draftIdOpt = request.userAnswers.get(FinalValidationDraftIdPage)
+      val sourceOpt  = request.userAnswers.get(MonthlyFinalValidationSourcePage)
+
+      (draftIdOpt, sourceOpt) match {
+        case (Some(draftId), Some(source)) =>
+          finalValidationDraftService
+            .get(request.cisId, draftId)
+            .flatMap { draft =>
+              if (!draft.allComplete) {
+                Future.successful(Redirect(routes.ReviewSubcontractorDetailsController.onPageLoad()))
+              } else {
+                val verificationRequired = request.userAnswers.get(FinalValidationVerificationRequiredPage)
+
+                for {
+                  _              <- finalValidationDraftService.commit(request.cisId, draftId)
+                  cleanedAnswers <- Future.fromTry(clearFinalValidationState(request.userAnswers))
+                  _              <- sessionRepository.set(cleanedAnswers)
+                } yield continueJourney(source, verificationRequired, cleanedAnswers)
+              }
+            }
+
+        case _ =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
+  private def clearFinalValidationState(userAnswers: UserAnswers): Try[UserAnswers] =
+    for {
+      withoutDraftId              <- userAnswers.remove(FinalValidationDraftIdPage)
+      withoutSource               <- withoutDraftId.remove(MonthlyFinalValidationSourcePage)
+      withoutVerificationRequired <- withoutSource.remove(FinalValidationVerificationRequiredPage)
+    } yield withoutVerificationRequired
+
+  private def continueJourney(
+    source: MonthlyFinalValidationSource,
+    verificationRequired: Option[Boolean],
+    userAnswers: UserAnswers
+  ): Result =
+    source match {
+      case MonthlyFinalValidationSource.SelectSubcontractors =>
+        verificationRequired match {
+
+          case Some(true) =>
+            Redirect(controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(NormalMode))
+
+          case Some(false) =>
+            Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+
+          case None =>
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         }
 
-        Ok(
-          view(
-            ReviewSubcontractorDetailsPageModel(
-              subcontractors = rows,
-              canContinue = failures.isEmpty
-            )
-          )
-        )
-
-      case None =>
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
+        modeFromString(modeValue)
+          .map { mode =>
+            Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, userAnswers))
+          }
+          .getOrElse(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
-  }
+
+  private def modeFromString(value: String): Option[Mode] =
+    value match {
+      case "NormalMode" => Some(NormalMode)
+      case "CheckMode"  => Some(CheckMode)
+      case _            => None
+    }
+
 }

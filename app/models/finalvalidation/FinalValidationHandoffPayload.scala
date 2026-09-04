@@ -19,6 +19,7 @@ package models.finalvalidation
 import play.api.libs.json.*
 
 final case class FinalValidationHandoffPayload(
+  draftId: String,
   instanceId: String,
   subcontractorId: Long,
   subbieResourceRef: Long,

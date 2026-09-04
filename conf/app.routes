@@ -190,8 +190,10 @@ GET        /final-validations/add-contractor-scheme-name                        
 POST       /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = NormalMode)
 
 GET        /final-validations/update-subcontractor-details/:subcontractorId     controllers.finalvalidations.UpdateSubcontractorDetailsController.onPageLoad(subcontractorId: Long)
+POST       /final-validations/update-subcontractor-details/:subcontractorId     controllers.finalvalidations.UpdateSubcontractorDetailsController.onSubmit(subcontractorId: Long)
 
 GET        /final-validations/review-subcontractor-details      controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoad()
+POST       /final-validations/review-subcontractor-details      controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmit()
 
 GET        /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)

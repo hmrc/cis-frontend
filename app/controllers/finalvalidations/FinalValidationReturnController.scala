@@ -25,7 +25,9 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import pages.finalvalidations.FinalValidationDraftIdPage
+
 import scala.util.control.NonFatal
 
 @Singleton
@@ -34,20 +36,38 @@ class FinalValidationReturnController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requiredCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents
 )(using ec: ExecutionContext)
     extends FrontendBaseController
     with Logging {
 
-  def onPageLoad(handoffId: String): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onPageLoad(handoffId: String): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requiredCisId).async { implicit request =>
       connector
         .getJourneyHandoff[FinalValidationHandoffPayload](JourneyHandoffTypes.FinalValidation, handoffId)
         .flatMap {
 
           case Some(payload) =>
-            connector.deleteJourneyHandoff(JourneyHandoffTypes.FinalValidation, handoffId).map { _ =>
-              Redirect(routes.UpdateSubcontractorDetailsController.onPageLoad(payload.subcontractorId))
+            val draftIdOpt = request.userAnswers.get(FinalValidationDraftIdPage)
+
+            val validHandoff =
+              payload.instanceId ==
+                request.cisId && draftIdOpt.contains(payload.draftId)
+
+            if (validHandoff) {
+              connector
+                .deleteJourneyHandoff(JourneyHandoffTypes.FinalValidation, handoffId)
+                .map { _ =>
+                  Redirect(routes.UpdateSubcontractorDetailsController.onPageLoad(payload.subcontractorId))
+                }
+
+            } else {
+              logger.warn(
+                s"[FinalValidationReturnController] Invalid Final Validation handoff correlation " +
+                  s"for handoffId: $handoffId"
+              )
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
             }
 
           case None =>
@@ -58,5 +78,5 @@ class FinalValidationReturnController @Inject() (
           logger.error(s"[FinalValidationReturnController] Error processing handoff data for handoffId: $handoffId", ex)
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         }
-  }
+    }
 }

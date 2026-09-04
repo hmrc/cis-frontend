@@ -16,12 +16,12 @@
 
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.tasklist._
 @import views.html.components._
-@import controllers.monthlyreturns.routes.SelectSubcontractorsController
 @import models.finalvalidation.ReviewSubcontractorDetailsPageModel
 
 @this(
     layout: templates.Layout,
     govukTaskList: GovukTaskList,
+    govukButton: GovukButton,
     h1: H1,
     p: Paragraph,
     link: Link
@@ -67,27 +67,57 @@
             (
                 if (model.canContinue) {
                     TaskListItem(
-                        title = TaskListItemTitle(content = Text(messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn"))),
-                        href = Some("#"), // TODO: Wire File a return continuation
+                        title = TaskListItemTitle(
+                            content = Text(
+                                messages(
+                                    "finalValidations.reviewSubcontractorDetails.taskList.fileAReturn"
+                                )
+                            )
+                        ),
+                        href = None,
                         status = incompleteStatus
                     )
                 } else {
                     TaskListItem(
-                        title = TaskListItemTitle(content = Text(messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn"))),
+                        title = TaskListItemTitle(
+                            content = Text(
+                                messages(
+                                    "finalValidations.reviewSubcontractorDetails.taskList.fileAReturn"
+                                )
+                            )
+                        ),
                         href = None,
                         status = TaskListItemStatus(
-                            content = Text(messages("finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet")),
+                            content = Text(
+                                messages(
+                                    "finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet"
+                                )
+                            ),
                             classes = "govuk-task-list__status--cannot-start-yet"
                         )
                     )
                 }
             )
-        )
-        )
-        @* TODO: move this URL into model because amendment needs a different back route *@
+        ))
+
+        @if(model.canContinue) {
+            @helper.form(
+                action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+            ) {
+
+                @helper.CSRF.formField
+
+                @govukButton(
+                    ButtonViewModel(
+                        messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn")
+                    )
+                )
+            }
+        }
+
         @link(
             linkTextKey = "finalValidations.reviewSubcontractorDetails.backLink",
-            linkUrl = SelectSubcontractorsController.onPageLoad(None).url
+            linkUrl = model.backUrl
         )
     }
 }

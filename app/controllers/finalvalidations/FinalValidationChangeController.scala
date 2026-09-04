@@ -19,13 +19,14 @@ package controllers.finalvalidations
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
-import models.finalvalidation.{FinalValidationChangeTarget, FinalValidationHandoffPayload}
+import models.finalvalidation.{FinalValidationChangeTarget, FinalValidationField, FinalValidationHandoffPayload, FinalValidationReadiness}
 import models.handoff.JourneyHandoffTypes.FinalValidation
 import models.finalvalidation.FinalValidationHandoffPayload.given
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import pages.finalvalidations.FinalValidationErrorPage
+import pages.finalvalidations.FinalValidationDraftIdPage
 import play.api.Logging
+import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import javax.inject.{Inject, Singleton}
@@ -34,6 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class FinalValidationChangeController @Inject() (
   connector: ConstructionIndustrySchemeConnector,
+  finalValidationDraftService: FinalValidationDraftService,
   appConfig: FrontendAppConfig,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -46,33 +48,51 @@ class FinalValidationChangeController @Inject() (
 
   def onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(FinalValidationDraftIdPage) match {
 
-      val payloadOpt =
-        for {
-          failure           <- request.userAnswers
-                                 .get(FinalValidationErrorPage)
-                                 .flatMap(_.find(_.subcontractorId == subcontractorId))
-          issue             <- failure.issues.find(_.field.key == fieldKey)
-          target            <- FinalValidationChangeTarget.fromKey(targetKey)
-          subbieResourceRef <- failure.subbieResourceRef
-        } yield FinalValidationHandoffPayload(
-          instanceId = request.cisId,
-          subcontractorId = subcontractorId,
-          subbieResourceRef = subbieResourceRef,
-          field = issue.field,
-          changeTarget = target
-        )
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(request.cisId, draftId)
+            .flatMap { draft =>
+              val payloadOpt =
+                for {
+                  subcontractor <- draft
+                                     .subcontractor(subcontractorId)
+                                     .filter(
+                                       _.readiness == FinalValidationReadiness.Incomplete
+                                     )
+                  issue         <- subcontractor.issues.find(_.fieldKey == fieldKey)
+                  field         <- FinalValidationField.fromKey(issue.fieldKey)
+                  target        <- FinalValidationChangeTarget.fromKey(targetKey)
 
-      payloadOpt match {
-        case Some(payload) =>
-          connector
-            .createJourneyHandoff(FinalValidation, Json.toJsObject[FinalValidationHandoffPayload](payload))
-            .map { handoffId =>
-              Redirect(appConfig.cisContractorFinalValidationHandoffUrl(handoffId))
+                } yield FinalValidationHandoffPayload(
+                  draftId = draftId,
+                  instanceId = request.cisId,
+                  subcontractorId = subcontractor.subcontractorId,
+                  subbieResourceRef = subcontractor.subbieResourceRef,
+                  field = field,
+                  changeTarget = target
+                )
+
+              payloadOpt match {
+
+                case Some(payload) =>
+                  connector
+                    .createJourneyHandoff(
+                      FinalValidation,
+                      Json.toJsObject[FinalValidationHandoffPayload](payload)
+                    )
+                    .map { handoffId =>
+                      Redirect(appConfig.cisContractorFinalValidationHandoffUrl(handoffId))
+                    }
+
+                case None =>
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
             }
-        case None          =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 }

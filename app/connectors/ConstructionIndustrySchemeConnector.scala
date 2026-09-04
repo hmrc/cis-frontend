@@ -18,6 +18,7 @@ package connectors
 
 import models.JourneyHandoffResponse
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
+import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalValidationDraftResponse, FinalValidationDraft, UpdateFinalValidationReadinessRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
@@ -327,5 +328,47 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .delete(url"$cisBaseUrl/journey-handoffs/$journeyType/$handoffId")
       .execute[HttpResponse]
       .map(_ => ())
+
+  def createFinalValidationDraft(
+    request: CreateFinalValidationDraftRequest
+  )(implicit hc: HeaderCarrier): Future[CreateFinalValidationDraftResponse] =
+    http
+      .post(url"$cisBaseUrl/final-validation/drafts")
+      .withBody(Json.toJson(request))
+      .execute[CreateFinalValidationDraftResponse]
+
+  def getFinalValidationDraft(
+    instanceId: String,
+    draftId: String
+  )(implicit hc: HeaderCarrier): Future[FinalValidationDraft] =
+    http
+      .get(url"$cisBaseUrl/final-validation/drafts/$instanceId/$draftId")
+      .execute[FinalValidationDraft]
+
+  def updateFinalValidationReadiness(
+    instanceId: String,
+    draftId: String,
+    request: UpdateFinalValidationReadinessRequest
+  )(implicit hc: HeaderCarrier): Future[FinalValidationDraft] =
+    http
+      .put(url"$cisBaseUrl/final-validation/drafts/$instanceId/$draftId/readiness")
+      .withBody(Json.toJson(request))
+      .execute[FinalValidationDraft]
+
+  def commitFinalValidationDraft(
+    instanceId: String,
+    draftId: String
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/final-validation/drafts/$instanceId/$draftId/commit")
+      .execute[HttpResponse]
+      .flatMap { response =>
+        response.status match {
+          case NO_CONTENT | OK =>
+            Future.successful(())
+          case _               =>
+            Future.failed(UpstreamErrorResponse(response.body, response.status, response.status))
+        }
+      }
 
 }

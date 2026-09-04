@@ -16,18 +16,15 @@
 
 package services.finalvalidation
 
-import models.UserAnswers
-import models.finalvalidation.{FinalValidationField, FinalValidationIssue, FinalValidationResult, SubcontractorFinalValidationFailure}
+import models.finalvalidation.FinalValidationField.*
+import models.finalvalidation.*
 import models.monthlyreturns.Subcontractor
 import models.submission.SubcontractorType
 import models.submission.SubcontractorType.{Company, Partnership, SoleTrader, Trust}
-import pages.finalvalidations.FinalValidationErrorPage
 import play.api.Logging
-import repositories.SessionRepository
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 @Singleton
 class FinalValidationService @Inject() (
@@ -35,69 +32,92 @@ class FinalValidationService @Inject() (
   individualSubcontractorFinalValidation: IndividualSubcontractorFinalValidation,
   trustSubcontractorFinalValidation: TrustSubcontractorFinalValidation,
   partnershipSubcontractorFinalValidation: PartnershipSubcontractorFinalValidation,
-  addressDetailsFinalValidation: AddressDetailsFinalValidation,
-  sessionRepository: SessionRepository
-)(using ec: ExecutionContext)
-    extends Logging {
+  addressDetailsFinalValidation: AddressDetailsFinalValidation
+) extends Logging {
 
-  def validateAndStore(
-    userAnswers: UserAnswers,
+  /** F1 - initial Final Validation.
+    *
+    * This runs before a Mongo FinalValidationDraft exists, so it uses the monthly-return Subcontractor model.
+    */
+  def validate(
     selectedSubcontractors: Seq[Subcontractor],
     allSubcontractors: Seq[Subcontractor]
-  ): Future[FinalValidationResult] = {
-
-    logger.info(
-      s"[FinalValidationService] Starting FinalValidation for selected subcontractors: " +
-        s"${selectedSubcontractors.map(_.subcontractorId).mkString(",")}"
-    )
+  ): FinalValidationResult = {
 
     val failures =
       selectedSubcontractors.flatMap { subcontractor =>
 
-        val issues = finalValidationIssues(subcontractor, allSubcontractors)
-
-        if (issues.nonEmpty) {
-          Some(
-            SubcontractorFinalValidationFailure(
-              subcontractorId = subcontractor.subcontractorId,
-              issues = issues,
-              subbieResourceRef = subcontractor.subbieResourceRef
-            )
+        val issues =
+          initialValidationIssues(
+            subcontractor = subcontractor,
+            allSubcontractors = allSubcontractors
           )
-        } else {
-          None
+
+        Option.when(issues.nonEmpty) {
+          SubcontractorFinalValidationFailure(
+            subcontractorId = subcontractor.subcontractorId,
+            issues = issues,
+            subbieResourceRef = subcontractor.subbieResourceRef
+          )
         }
       }
 
-    logger.info(
-      s"[FinalValidationService] FinalValidation completed. " +
-        s"Failures: ${failures.map(_.subcontractorId).mkString(",")}"
-    )
-
-    val result = FinalValidationResult(failures = failures)
-
-    for {
-      updatedAnswers <- Future.fromTry {
-                          if (result.hasErrors) {
-                            userAnswers.set(FinalValidationErrorPage, result.failures)
-                          } else {
-                            userAnswers.remove(FinalValidationErrorPage)
-                          }
-                        }
-      stored         <- sessionRepository.set(updatedAnswers)
-      _              <- if (stored) {
-                          Future.unit
-                        } else {
-                          Future.failed(new RuntimeException("Failed to persist FinalValidation state"))
-                        }
-    } yield result
+    FinalValidationResult(failures = failures)
   }
 
-  private def finalValidationIssues(
+  /** F1b - readiness validation.
+    *
+    * Runs only from EH03 "Accept and submit".
+    *
+    * Once the Mongo draft exists it is the authoritative Final Validation working state, so this method validates
+    * draft.proposed directly and does not convert back to models.monthlyreturns.Subcontractor.
+    *
+    * With the failures-only draft design, draft.subcontractors contains only subcontractors which failed the original
+    * F1.
+    */
+  def validateDraftSubcontractor(
+    draft: FinalValidationDraft,
+    subcontractorId: Long
+  ): Try[Seq[FinalValidationDraftIssue]] =
+    draft.subcontractor(subcontractorId) match {
+
+      case Some(subcontractor) =>
+        Try {
+          draftValidationFields(
+            subcontractor = subcontractor,
+            allSubcontractors = draft.subcontractors
+          ).distinct
+            .map { field =>
+              FinalValidationDraftIssue(
+                fieldKey = field.key,
+                value = valueFor(
+                  field = field,
+                  details = subcontractor.proposed
+                )
+              )
+            }
+        }
+
+      case None =>
+        Failure(
+          new IllegalStateException(
+            s"Subcontractor $subcontractorId not found in Final Validation draft"
+          )
+        )
+    }
+
+  // ---------------------------------------------------------------------------
+  // F1
+  // ---------------------------------------------------------------------------
+
+  private def initialValidationIssues(
     subcontractor: Subcontractor,
     allSubcontractors: Seq[Subcontractor]
   ): Seq[FinalValidationIssue] =
-    finalValidationFields(subcontractor, allSubcontractors).distinct
+    initialValidationFields(
+      subcontractor = subcontractor,
+      allSubcontractors = allSubcontractors
+    ).distinct
       .map { field =>
         FinalValidationIssue(
           field = field,
@@ -105,63 +125,105 @@ class FinalValidationService @Inject() (
         )
       }
 
-  private def finalValidationFields(
+  private def initialValidationFields(
     subcontractor: Subcontractor,
     allSubcontractors: Seq[Subcontractor]
-  ): Seq[FinalValidationField] = {
+  ): Seq[FinalValidationField] =
+    parseSubcontractorType(
+      subcontractor.subcontractorType,
+      subcontractor.subcontractorId
+    ) match {
 
-    val subcontractorType =
-      subcontractor.subcontractorType
-        .flatMap { value =>
-          Try(SubcontractorType.fromString(value)).toOption
-        }
+      case SoleTrader =>
+        individualSubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validate(subcontractor)
 
-    subcontractorType match {
+      case Company =>
+        companySubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validate(subcontractor)
 
-      case Some(SoleTrader) =>
-        logger.info(
-          s"[FinalValidationService] Running Individual + Address FinalValidation " +
-            s"for subcontractorId=${subcontractor.subcontractorId}"
-        )
-        val subcontractorFields =
-          individualSubcontractorFinalValidation.validate(subcontractor, allSubcontractors)
-        val addressFields       = addressDetailsFinalValidation.validate(subcontractor)
-        subcontractorFields ++ addressFields
+      case Trust =>
+        trustSubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validate(subcontractor)
 
-      case Some(Company) =>
-        logger.info(
-          s"[FinalValidationService] Running Company + Address FinalValidation " +
-            s"for subcontractorId=${subcontractor.subcontractorId}"
-        )
-        val subcontractorFields =
-          companySubcontractorFinalValidation.validate(subcontractor, allSubcontractors)
-        val addressFields       = addressDetailsFinalValidation.validate(subcontractor)
-        subcontractorFields ++ addressFields
-
-      case Some(Trust) =>
-        logger.info(
-          s"[FinalValidationService] Running Trust + Address FinalValidation " +
-            s"for subcontractorId=${subcontractor.subcontractorId}"
-        )
-        val subcontractorFields =
-          trustSubcontractorFinalValidation.validate(subcontractor, allSubcontractors)
-        val addressFields       = addressDetailsFinalValidation.validate(subcontractor)
-        subcontractorFields ++ addressFields
-
-      case Some(Partnership) =>
-        logger.info(
-          s"[FinalValidationService] Running Partnership + Address FinalValidation " +
-            s"for subcontractorId=${subcontractor.subcontractorId}"
-        )
-        val subcontractorFields =
-          partnershipSubcontractorFinalValidation.validate(subcontractor, allSubcontractors)
-        val addressFields       = addressDetailsFinalValidation.validate(subcontractor)
-        subcontractorFields ++ addressFields
-
-      case None =>
-        throw new IllegalArgumentException(
-          s"Unknown subcontractor type for subcontractor ID: ${subcontractor.subcontractorId}"
-        )
+      case Partnership =>
+        partnershipSubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validate(subcontractor)
     }
-  }
+
+  // ---------------------------------------------------------------------------
+  // F1b
+  // ---------------------------------------------------------------------------
+
+  private def draftValidationFields(
+    subcontractor: FinalValidationDraftSubcontractor,
+    allSubcontractors: Seq[FinalValidationDraftSubcontractor]
+  ): Seq[FinalValidationField] =
+    parseSubcontractorType(subcontractor.subcontractorType, subcontractor.subcontractorId) match {
+
+      case SoleTrader =>
+        individualSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validateDraft(subcontractor)
+
+      case Company =>
+        companySubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validateDraft(subcontractor)
+
+      case Trust =>
+        trustSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validateDraft(subcontractor)
+
+      case Partnership =>
+        partnershipSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
+          addressDetailsFinalValidation.validateDraft(subcontractor)
+    }
+
+  // ---------------------------------------------------------------------------
+  // Shared helpers
+  // ---------------------------------------------------------------------------
+
+  private def parseSubcontractorType(
+    subcontractorType: Option[String],
+    subcontractorId: Long
+  ): SubcontractorType =
+    subcontractorType
+      .flatMap { value =>
+        Try(
+          SubcontractorType.fromString(value)
+        ).toOption
+      }
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Unknown subcontractor type for subcontractor ID: $subcontractorId"
+        )
+      )
+
+  /** Equivalent of FinalValidationField.valueFrom(Subcontractor), but for the authoritative draft proposed-value model.
+    */
+  private def valueFor(
+    field: FinalValidationField,
+    details: FinalValidationSubcontractorDetails
+  ): Option[String] =
+    field match {
+      case FirstName              => details.firstName
+      case SecondName             => details.secondName
+      case Surname                => details.surname
+      case TradingName            => details.tradingName
+      case PartnershipTradingName => details.partnershipTradingName
+      case Utr                    => details.utr
+      case PartnerUtr             => details.partnerUtr
+      case Nino                   => details.nino
+      case Crn                    => details.crn
+      case AddressLine1           => details.addressLine1
+      case AddressLine2           => details.addressLine2
+      case AddressLine3           => details.addressLine3
+      case AddressLine4           => details.addressLine4
+      case Country                => details.country
+      case PostCode               => details.postcode
+      case EmailAddress           => details.emailAddress
+      case PhoneNumber            => details.phoneNumber
+      case MobilePhoneNumber      => details.mobilePhoneNumber
+      case WorkReferenceNumber    => details.worksReferenceNumber
+      case _                      => None
+    }
 }

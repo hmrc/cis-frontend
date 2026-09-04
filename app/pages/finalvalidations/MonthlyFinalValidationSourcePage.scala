@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package models.finalvalidation
+package pages.finalvalidations
 
-case class ReviewSubcontractorDetailsRow(
-  subcontractorId: Long,
-  name: String,
-  hasErrors: Boolean
-)
+import models.finalvalidation.MonthlyFinalValidationSource
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-case class ReviewSubcontractorDetailsPageModel(
-  subcontractors: Seq[ReviewSubcontractorDetailsRow],
-  canContinue: Boolean,
-  backUrl: String
-)
+case object MonthlyFinalValidationSourcePage extends QuestionPage[MonthlyFinalValidationSource] {
+
+  override def path: JsPath = JsPath \ "finalvalidation" \ toString
+
+  override def toString = "monthlyFinalValidationSource"
+}
