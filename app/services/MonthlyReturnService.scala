@@ -450,14 +450,8 @@ class MonthlyReturnService @Inject() (
                LocalDate.of(monthlyReturn.taxYear, monthlyReturn.taxMonth, 5)
              )
       ua4 <- setIfPresent(ua3, SubmitInactivityRequestPage, deriveSubmitInactivityRequest(monthlyReturn))
-      ua5 <- resubmissionId match {
-               case Some(id) => setOrError(ua4, ResubmissionIdPage, id)
-               case None     => Right(ua4)
-             }
-      ua6 <- contractorName match {
-               case Some(name) => setOrError(ua5, ContractorNamePage, name)
-               case None       => Right(ua5)
-             }
+      ua5 <- setIfPresent(ua4, ResubmissionIdPage, resubmissionId)
+      ua6 <- setIfPresent(ua5, ContractorNamePage, contractorName)
     } yield ua6
 
   private def populateNilReturnAnswers(
@@ -480,8 +474,7 @@ class MonthlyReturnService @Inject() (
                contractorName = contractorName
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
-      ua3 <- setIfPresent(ua2, SubmitInactivityRequestPage, deriveSubmitInactivityRequest(monthlyReturn))
-    } yield ua3
+    } yield ua2
   }
 
   private def populateStandardReturnAnswers(
@@ -517,9 +510,8 @@ class MonthlyReturnService @Inject() (
                PaymentDetailsConfirmationPage,
                true
              )
-      ua5 <- setIfPresent(ua4, SubmitInactivityRequestPage, deriveSubmitInactivityRequest(monthlyReturn))
-      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems, subcontractors)
-    } yield ua6
+      ua5 <- populateStandardReturnItems(ua4, monthlyReturnItems, subcontractors)
+    } yield ua5
 
   private def populateStandardReturnItems(
     ua: UserAnswers,
