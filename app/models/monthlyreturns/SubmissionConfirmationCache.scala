@@ -23,7 +23,8 @@ case class SubmissionConfirmationCache(
   contractorName: String,
   email: String,
   submittedTime: String,
-  submittedDate: String
+  submittedDate: String,
+  submittedDateTimeIso: Option[String] = None
 )
 
 object SubmissionConfirmationCache {

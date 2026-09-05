@@ -23,12 +23,13 @@ import models.UserAnswers
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
 import pages.monthlyreturns.*
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import utils.DateTimeFormats
 import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
@@ -88,21 +89,40 @@ class SubmittedNoReceiptController @Inject() (
       contractorName = vm.contractorName,
       email = vm.email,
       submittedTime = vm.submittedTime,
-      submittedDate = vm.submittedDate
+      submittedDate = vm.submittedDate,
+      submittedDateTimeIso = vm.submittedDateTimeIso
     )
 
   private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers)(implicit
     request: CisIdDataRequest[_]
   ): SubmittedNoReceiptViewModel = {
-    val submissionType =
+    val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
-    val cisId          = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
-    val empRef         = employerRefFrom(request)
+    val cisId               = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
+    val empRef              = employerRefFrom(request)
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+
+    val periodEnd = ua
+      .get(DateConfirmPaymentsPage)
+      .map(_.format(DateTimeFormats.dateTimeFormat()))
+      .getOrElse(cache.periodEnd)
+
+    val legacyDateFmt = DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.UK)
+    val submittedDate = cache.submittedDateTimeIso
+      .flatMap(iso => scala.util.Try(ZonedDateTime.parse(iso)).toOption)
+      .map(_.withZoneSameInstant(ZoneId.of("Europe/London")).format(DateTimeFormats.fullDateFormat()))
+      .orElse(
+        scala.util
+          .Try(java.time.LocalDate.parse(cache.submittedDate, legacyDateFmt))
+          .toOption
+          .map(_.format(DateTimeFormats.fullDateFormat()))
+      )
+      .getOrElse(cache.submittedDate)
 
     SubmittedNoReceiptViewModel(
-      periodEnd = cache.periodEnd,
+      periodEnd = periodEnd,
       submittedTime = cache.submittedTime,
-      submittedDate = cache.submittedDate,
+      submittedDate = submittedDate,
       contractorName = cache.contractorName,
       empRef = empRef,
       email = cache.email,
@@ -115,24 +135,26 @@ class SubmittedNoReceiptController @Inject() (
     request: CisIdDataRequest[_],
     hc: HeaderCarrier
   ): Future[SubmittedNoReceiptViewModel] = {
-    val cisId          = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
-    val contractorName = monthlyReturn.scheme.headOption
+    val cisId               = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
+    val contractorName      = monthlyReturn.scheme.headOption
       .flatMap(_.name)
       .map(_.trim)
       .filter(_.nonEmpty)
       .getOrElse(throw new RuntimeException("[SubmittedNoReceipt] Scheme name is missing"))
-    val employerRef    = employerRefFrom(request)
-    val submissionType =
+    val employerRef         = employerRefFrom(request)
+    val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
-    val periodEnd      = required(
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+    val periodEnd           = required(
       periodEndFromUserAnswers(ua),
       "[SubmittedNoReceipt] taxPeriodEnd missing from userAnswers"
-    ).format(DateTimeFormatter.ofPattern("MMMM uuuu"))
+    ).format(DateTimeFormats.dateTimeFormat())
+
+    val ukNow = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
 
     resolveEmail(ua, cisId).map { email =>
-      val ukNow         = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
       val submittedTime = ukNow.format(DateTimeFormatter.ofPattern("h:mma")).toLowerCase
-      val submittedDate = ukNow.format(DateTimeFormatter.ofPattern("d MMMM uuuu"))
+      val submittedDate = ukNow.format(DateTimeFormats.fullDateFormat())
 
       SubmittedNoReceiptViewModel(
         periodEnd = periodEnd,
@@ -142,7 +164,8 @@ class SubmittedNoReceiptController @Inject() (
         empRef = employerRef,
         email = email,
         submissionType = submissionType,
-        cisId = cisId
+        cisId = cisId,
+        submittedDateTimeIso = Some(ukNow.toString)
       )
     }
   }
