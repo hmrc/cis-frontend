@@ -159,10 +159,7 @@ class WhichSubcontractorsToAddController @Inject() (
                                        }
                           _         <- sessionRepository.set(ua2)
                           _         <- monthlyReturnService.syncMonthlyReturnItems(ua2, selectedSubcontractorIds.toSeq)
-                          validation = finalValidationService.validate(
-                                         selectedSubcontractors = selectedFullSubcontractors,
-                                         allSubcontractors = model.fullSubcontractors
-                                       )
+                          validation = finalValidationService.validate(subcontractors = selectedFullSubcontractors)
                           result    <- if (validation.hasErrors) {
                                          for {
                                            createRequest <-

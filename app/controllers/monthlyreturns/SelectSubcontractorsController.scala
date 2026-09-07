@@ -128,10 +128,7 @@ class SelectSubcontractorsController @Inject() (
                       )
                       .flatMap { updatedAnswers =>
                         val validation =
-                          finalValidationService.validate(
-                            selectedSubcontractors = selectedFullSubcontractors,
-                            allSubcontractors = model.fullSubcontractors
-                          )
+                          finalValidationService.validate(subcontractors = selectedFullSubcontractors)
 
                         val verificationRequired =
                           selectedSubcontractors

@@ -16,31 +16,23 @@
 
 package utils.validation
 
-import models.monthlyreturns.Subcontractor
 import models.validation.{FieldValidationFailure, SubcontractorValidationField}
-import utils.UTR
+import utils.FirstMiddleName
 
-object UtrValidator {
+object SecondNameValidator {
+
   def validate(
-    value: Option[String],
-    subcontractors: Seq[Subcontractor],
-    field: SubcontractorValidationField = SubcontractorValidationField.Utr,
-    checkDuplicate: Boolean = true
+    value: Option[String]
   ): Option[FieldValidationFailure] =
-    value
-      .filter(_.trim.nonEmpty)
-      .flatMap { utr =>
-        Option.when(
-          !UTR.isValidUTR(utr) ||
-            (checkDuplicate && isDuplicateUTR(subcontractors, utr))
-        ) {
-          FieldValidationFailure(
-            field = field,
-            value = Some(utr)
-          )
-        }
+    value.flatMap { secondName =>
+      Option.when(
+        !FirstMiddleName.isLengthInRange(secondName) ||
+          !FirstMiddleName.isValid(secondName)
+      ) {
+        FieldValidationFailure(
+          field = SubcontractorValidationField.SecondName,
+          value = Some(secondName)
+        )
       }
-
-  private def isDuplicateUTR(subcontractors: Seq[Subcontractor], utr: String): Boolean =
-    subcontractors.count(_.utr.contains(utr)) > 1
+    }
 }

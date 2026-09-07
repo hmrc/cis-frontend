@@ -17,26 +17,25 @@
 package services
 
 import models.monthlyreturns.Subcontractor
-import models.validation.SubcontractorValidationFailure
 import models.submission.SubcontractorType
-import utils.TrustValidator
+import models.validation.SubcontractorValidationFailure
+import utils.PartnershipValidator
 
 import javax.inject.{Inject, Singleton}
 import scala.util.Try
 
 @Singleton
-class SubcontractorTrustValidator @Inject() {
-
+class SubcontractorPartnershipValidator @Inject() {
   def validate(
     subcontractors: Seq[Subcontractor]
   ): List[SubcontractorValidationFailure] =
     subcontractors.toList
-      .filter(isTrust)
+      .filter(isPartnership)
       .flatMap { subcontractor =>
         val failedFields =
-          TrustValidator.validate(
-            subcontractor = subcontractor,
-            subcontractors = subcontractors
+          PartnershipValidator.validate(
+            subcontractorToValidate = subcontractor,
+            allSubcontractors = subcontractors
           )
 
         Option.when(failedFields.nonEmpty) {
@@ -47,12 +46,12 @@ class SubcontractorTrustValidator @Inject() {
         }
       }
 
-  private def isTrust(
+  private def isPartnership(
     subcontractor: Subcontractor
   ): Boolean =
     subcontractor.subcontractorType
       .flatMap { value =>
         Try(SubcontractorType.fromString(value)).toOption
       }
-      .contains(SubcontractorType.Trust)
+      .contains(SubcontractorType.Partnership)
 }

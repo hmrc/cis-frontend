@@ -19,8 +19,7 @@ package services.finalvalidation
 import models.finalvalidation.FinalValidationField.*
 import models.finalvalidation.*
 import models.monthlyreturns.Subcontractor
-import models.submission.SubcontractorType
-import models.submission.SubcontractorType.{Company, Partnership, SoleTrader, Trust}
+import services.SubcontractorValidator
 import play.api.Logging
 
 import javax.inject.{Inject, Singleton}
@@ -28,37 +27,49 @@ import scala.util.{Failure, Try}
 
 @Singleton
 class FinalValidationService @Inject() (
-  companySubcontractorFinalValidation: CompanySubcontractorFinalValidation,
-  individualSubcontractorFinalValidation: IndividualSubcontractorFinalValidation,
-  trustSubcontractorFinalValidation: TrustSubcontractorFinalValidation,
-  partnershipSubcontractorFinalValidation: PartnershipSubcontractorFinalValidation,
-  addressDetailsFinalValidation: AddressDetailsFinalValidation
+  subcontractorValidator: SubcontractorValidator
 ) extends Logging {
 
   def validate(
-    selectedSubcontractors: Seq[Subcontractor],
-    allSubcontractors: Seq[Subcontractor]
+    subcontractors: Seq[Subcontractor]
   ): FinalValidationResult = {
 
+    val failedFieldsBySubcontractor =
+      subcontractorValidator.validateFields(
+        subcontractors
+      )
+
     val failures =
-      selectedSubcontractors.flatMap { subcontractor =>
+      subcontractors.flatMap { subcontractor =>
 
-        val issues =
-          initialValidationIssues(
-            subcontractor = subcontractor,
-            allSubcontractors = allSubcontractors
-          )
+        val fields =
+          failedFieldsBySubcontractor
+            .getOrElse(
+              subcontractor.subcontractorId,
+              Seq.empty
+            )
+            .map(
+              FinalValidationFieldMapper.fromValidationField
+            )
+            .distinct
 
-        Option.when(issues.nonEmpty) {
+        Option.when(fields.nonEmpty) {
           SubcontractorFinalValidationFailure(
             subcontractorId = subcontractor.subcontractorId,
-            issues = issues,
+            issues = fields.map { field =>
+              FinalValidationIssue(
+                field = field,
+                value = field.valueFrom(subcontractor)
+              )
+            },
             subbieResourceRef = subcontractor.subbieResourceRef
           )
         }
       }
 
-    FinalValidationResult(failures = failures)
+    FinalValidationResult(
+      failures = failures
+    )
   }
 
   def validateDraftSubcontractor(
@@ -69,19 +80,31 @@ class FinalValidationService @Inject() (
 
       case Some(subcontractor) =>
         Try {
-          draftValidationFields(
-            subcontractor = subcontractor,
-            allSubcontractors = draft.subcontractors
-          ).distinct
-            .map { field =>
-              FinalValidationDraftIssue(
-                fieldKey = field.key,
-                value = valueFor(
-                  field = field,
-                  details = subcontractor.proposed
-                )
+          val proposedSubcontractors =
+            draft.subcontractors.map(
+              toSubcontractor
+            )
+
+          val fields =
+            subcontractorValidator
+              .validateFieldsFor(
+                subcontractorId = subcontractorId,
+                subcontractors = proposedSubcontractors
               )
-            }
+              .map(
+                FinalValidationFieldMapper.fromValidationField
+              )
+              .distinct
+
+          fields.map { field =>
+            FinalValidationDraftIssue(
+              fieldKey = field.key,
+              value = valueFor(
+                field = field,
+                details = subcontractor.proposed
+              )
+            )
+          }
         }
 
       case None =>
@@ -92,88 +115,53 @@ class FinalValidationService @Inject() (
         )
     }
 
-  private def initialValidationIssues(
-    subcontractor: Subcontractor,
-    allSubcontractors: Seq[Subcontractor]
-  ): Seq[FinalValidationIssue] =
-    initialValidationFields(
-      subcontractor = subcontractor,
-      allSubcontractors = allSubcontractors
-    ).distinct
-      .map { field =>
-        FinalValidationIssue(
-          field = field,
-          value = field.valueFrom(subcontractor)
-        )
-      }
+  private def toSubcontractor(
+    subcontractor: FinalValidationDraftSubcontractor
+  ): Subcontractor = {
 
-  private def initialValidationFields(
-    subcontractor: Subcontractor,
-    allSubcontractors: Seq[Subcontractor]
-  ): Seq[FinalValidationField] =
-    parseSubcontractorType(
-      subcontractor.subcontractorType,
-      subcontractor.subcontractorId
-    ) match {
+    val proposed =
+      subcontractor.proposed
 
-      case SoleTrader =>
-        individualSubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validate(subcontractor)
+    Subcontractor(
+      subcontractorId = subcontractor.subcontractorId,
+      utr = proposed.utr,
+      pageVisited = None,
+      partnerUtr = proposed.partnerUtr,
+      crn = proposed.crn,
+      firstName = proposed.firstName,
+      nino = proposed.nino,
+      secondName = proposed.secondName,
+      surname = proposed.surname,
+      partnershipTradingName = proposed.partnershipTradingName,
+      tradingName = proposed.tradingName,
+      subcontractorType = subcontractor.subcontractorType,
+      addressLine1 = proposed.addressLine1,
+      addressLine2 = proposed.addressLine2,
+      addressLine3 = proposed.addressLine3,
+      addressLine4 = proposed.addressLine4,
+      country = proposed.country,
+      postCode = proposed.postcode,
+      emailAddress = proposed.emailAddress,
+      phoneNumber = proposed.phoneNumber,
+      mobilePhoneNumber = proposed.mobilePhoneNumber,
+      worksReferenceNumber = proposed.worksReferenceNumber,
+      createDate = None,
+      lastUpdate = None,
+      subbieResourceRef = None,
+      matched = None,
+      autoVerified = None,
+      verified = None,
+      verificationNumber = None,
+      taxTreatment = None,
+      verificationDate = None,
+      version = None,
+      updatedTaxTreatment = None,
+      lastMonthlyReturnDate = None,
+      pendingVerifications = None,
+      displayName = None
+    )
+  }
 
-      case Company =>
-        companySubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validate(subcontractor)
-
-      case Trust =>
-        trustSubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validate(subcontractor)
-
-      case Partnership =>
-        partnershipSubcontractorFinalValidation.validate(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validate(subcontractor)
-    }
-
-  private def draftValidationFields(
-    subcontractor: FinalValidationDraftSubcontractor,
-    allSubcontractors: Seq[FinalValidationDraftSubcontractor]
-  ): Seq[FinalValidationField] =
-    parseSubcontractorType(subcontractor.subcontractorType, subcontractor.subcontractorId) match {
-
-      case SoleTrader =>
-        individualSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validateDraft(subcontractor)
-
-      case Company =>
-        companySubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validateDraft(subcontractor)
-
-      case Trust =>
-        trustSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validateDraft(subcontractor)
-
-      case Partnership =>
-        partnershipSubcontractorFinalValidation.validateDraft(subcontractor, allSubcontractors) ++
-          addressDetailsFinalValidation.validateDraft(subcontractor)
-    }
-
-  private def parseSubcontractorType(
-    subcontractorType: Option[String],
-    subcontractorId: Long
-  ): SubcontractorType =
-    subcontractorType
-      .flatMap { value =>
-        Try(
-          SubcontractorType.fromString(value)
-        ).toOption
-      }
-      .getOrElse(
-        throw new IllegalArgumentException(
-          s"Unknown subcontractor type for subcontractor ID: $subcontractorId"
-        )
-      )
-
-  /** Equivalent of FinalValidationField.valueFrom(Subcontractor), but for the authoritative draft proposed-value model.
-    */
   private def valueFor(
     field: FinalValidationField,
     details: FinalValidationSubcontractorDetails
