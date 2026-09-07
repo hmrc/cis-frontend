@@ -52,17 +52,8 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val incompleteReturnsUrl: String                = configuration.get[String]("urls.incompleteReturns")
   lazy val submissionHistoryUrl: String                = configuration.get[String]("urls.submissionHistory")
 
-  lazy val yourSubcontractorsUrl: String                = configuration.get[String]("urls.yourSubcontractors")
-  private lazy val cisContractorFrontendBaseUrl: String =
-    configuration
-      .get[Service]("microservice.services.cis-contractor-frontend")
-      .baseUrl
-
-  private lazy val verifySubcontractorsPath: String =
-    configuration.get[String]("urls.verifySubcontractors")
-
-  lazy val verifySubcontractorsUrl: String =
-    s"$cisContractorFrontendBaseUrl$verifySubcontractorsPath"
+  lazy val yourSubcontractorsUrl: String               = configuration.get[String]("urls.yourSubcontractors")
+  lazy val verifySubcontractorsUrl: String             = configuration.get[String]("urls.verifySubcontractors")
 
   private lazy val manageSubcontractorsBaseUrl: String =
     configuration.get[String]("urls.manageSubcontractors")
