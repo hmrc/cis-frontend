@@ -27,5 +27,6 @@ case class SubmissionSuccessViewModel(
   empRef: String,
   email: String,
   submissionType: ReturnType,
-  cisId: String
+  cisId: String,
+  submittedDateTimeIso: Option[String] = None
 )

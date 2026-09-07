@@ -25,7 +25,7 @@ import models.ReturnType.reads
 import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import services.guard.SubmissionSuccessfulServiceGuard
@@ -33,7 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionSuccessView
-import utils.IrMarkReferenceGenerator
+import utils.{DateTimeFormats, IrMarkReferenceGenerator}
 import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 
 import java.time.{Clock, ZoneId, ZonedDateTime}
@@ -97,25 +97,44 @@ class SubmissionSuccessController @Inject() (
       contractorName = vm.contractorName,
       email = vm.email,
       submittedTime = vm.submittedTime,
-      submittedDate = vm.submittedDate
+      submittedDate = vm.submittedDate,
+      submittedDateTimeIso = vm.submittedDateTimeIso
     )
 
   private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers)(implicit
     request: CisIdDataRequest[_]
   ): SubmissionSuccessViewModel = {
-    val reference      = IrMarkReferenceGenerator.fromBase64(
+    val reference           = IrMarkReferenceGenerator.fromBase64(
       required(ua.get(SubmissionDetailsPage), "[SubmissionSuccess] submissionDetails missing from userAnswers").irMark
     )
-    val submissionType =
+    val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
-    val cisId          = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
-    val empRef         = employerRefFrom(request)
+    val cisId               = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
+    val empRef              = employerRefFrom(request)
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+
+    val periodEnd = ua
+      .get(DateConfirmPaymentsPage)
+      .map(_.format(DateTimeFormats.dateTimeFormat()))
+      .getOrElse(cache.periodEnd)
+
+    val legacyDateFmt = DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.UK)
+    val submittedDate = cache.submittedDateTimeIso
+      .flatMap(iso => scala.util.Try(ZonedDateTime.parse(iso)).toOption)
+      .map(_.withZoneSameInstant(ZoneId.of("Europe/London")).format(DateTimeFormats.fullDateFormat()))
+      .orElse(
+        scala.util
+          .Try(java.time.LocalDate.parse(cache.submittedDate, legacyDateFmt))
+          .toOption
+          .map(_.format(DateTimeFormats.fullDateFormat()))
+      )
+      .getOrElse(cache.submittedDate)
 
     SubmissionSuccessViewModel(
       reference = reference,
-      periodEnd = cache.periodEnd,
+      periodEnd = periodEnd,
       submittedTime = cache.submittedTime,
-      submittedDate = cache.submittedDate,
+      submittedDate = submittedDate,
       contractorName = cache.contractorName,
       empRef = empRef,
       email = cache.email,
@@ -150,22 +169,22 @@ class SubmissionSuccessController @Inject() (
 
     val empRef = employerRefFrom(request)
 
-    resolveEmail(ua, cisId).map { email =>
-      val monthYearFmt = DateTimeFormatter.ofPattern("MMMM uuuu")
-      val dateFmt      = DateTimeFormatter.ofPattern("d MMMM uuuu")
-      val timeFmt      = DateTimeFormatter.ofPattern("h:mma")
-      val nowUk        = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+    val timeFmt             = DateTimeFormatter.ofPattern("h:mma")
+    val nowUk               = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
 
+    resolveEmail(ua, cisId).map { email =>
       SubmissionSuccessViewModel(
         reference = reference,
-        periodEnd = periodEnd.format(monthYearFmt),
+        periodEnd = periodEnd.format(DateTimeFormats.dateTimeFormat()),
         submittedTime = nowUk.format(timeFmt).toLowerCase,
-        submittedDate = nowUk.format(dateFmt),
+        submittedDate = nowUk.format(DateTimeFormats.fullDateFormat()),
         contractorName = contractorName,
         empRef = empRef,
         email = email,
         submissionType = submissionType,
-        cisId = cisId
+        cisId = cisId,
+        submittedDateTimeIso = Some(nowUk.toString)
       )
     }
   }
