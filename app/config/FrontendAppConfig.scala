@@ -52,7 +52,7 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val incompleteReturnsUrl: String                = configuration.get[String]("urls.incompleteReturns")
   lazy val submissionHistoryUrl: String                = configuration.get[String]("urls.submissionHistory")
 
-  lazy val yourSubcontractorsUrl: String   = configuration.get[String]("urls.yourSubcontractors")
+  lazy val yourSubcontractorsUrl: String                = configuration.get[String]("urls.yourSubcontractors")
   private lazy val cisContractorFrontendBaseUrl: String =
     configuration
       .get[Service]("microservice.services.cis-contractor-frontend")
