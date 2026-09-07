@@ -26,7 +26,7 @@ import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
 import pages.submission.*
-import play.api.http.Status.PRECONDITION_FAILED
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContent
@@ -209,6 +209,38 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
           hc: HeaderCarrier
         ): Future[Unit] =
           Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED))
+      }
+
+      val app =
+        applicationBuilder(userAnswers = Some(completeAnswers), formpRdsReconcileService = failingReconcile)
+          .overrides(
+            bind[SubmissionService].toInstance(mockService),
+            bind[SessionRepository].toInstance(mockMongoDb)
+          )
+          .build()
+
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unauthorisedRoute
+
+      verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
+        any[HeaderCarrier]
+      )
+    }
+
+    "redirects to Unauthorised (CRR3) and does not submit to ChRIS when FormP/RDS reconciliation reports known facts not found" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val failingReconcile = new FormpRdsReconcileService {
+        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+          hc: HeaderCarrier
+        ): Future[Unit] =
+          Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND))
       }
 
       val app =
