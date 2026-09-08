@@ -22,11 +22,13 @@ import models.UserAnswers
 import models.monthlyreturns.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
+import org.mockito.Answers
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import services.finalvalidation.FinalValidationService
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -88,13 +90,21 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
     subcontractorService: SubcontractorService,
     monthlyReturnService: MonthlyReturnService,
     ua: Option[UserAnswers] = Some(userAnswersWithRequiredPages)
-  ) =
+  ) = {
+    val finalValidationService =
+      org.mockito.Mockito.mock(
+        classOf[FinalValidationService],
+        Answers.RETURNS_DEEP_STUBS
+      )
+
     applicationBuilder(userAnswers = ua)
       .overrides(
         bind[SubcontractorService].toInstance(subcontractorService),
-        bind[MonthlyReturnService].toInstance(monthlyReturnService)
+        bind[MonthlyReturnService].toInstance(monthlyReturnService),
+        bind[FinalValidationService].toInstance(finalValidationService)
       )
       .build()
+  }
 
   private val incompleteSub = SelectedSubcontractor(2L, "B", None, None, None)
 
