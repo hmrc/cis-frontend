@@ -24,7 +24,7 @@ class EnterYourEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
   val requiredKey = "monthlyreturns.enterYourEmailAddress.error.required"
   val lengthKey   = "monthlyreturns.enterYourEmailAddress.error.length"
-  val maxLength   = 132
+  val maxLength   = 254
   val invalidKey  = "monthlyreturns.enterYourEmailAddress.error.invalid"
 
   val form = new EnterYourEmailAddressFormProvider()()
@@ -40,20 +40,22 @@ class EnterYourEmailAddressFormProviderSpec extends StringFieldBehaviours {
         "user+tag@domain.com",
         "user@domain.co.uk",
         "user123@domain123.com",
-        "user!#$%&'*+/=?^_`{|}~@domain.com",
-        "\"quoted.local\"@example.com"
+        "user!#$%&*+-/=?^_`{|}~@domain.com"
       )
 
       validEmails.foreach { validEmail =>
         val result = form.bind(Map(fieldName -> validEmail))
-        result.errors must be(empty)
+        result.errors mustBe empty
       }
     }
 
-    "must not bind strings longer than 132 characters" in {
-      val longEmail = "a" * 130 + "@domain.com"
+    "must not bind strings longer than 254 characters" in {
+      val longEmail = "a" * 250 + "@domain.com"
       val result    = form.bind(Map(fieldName -> longEmail))
-      result.errors must contain(FormError(fieldName, lengthKey, Seq(maxLength)))
+
+      result.errors must contain(
+        FormError(fieldName, lengthKey, Seq(maxLength))
+      )
     }
 
     behave like mandatoryField(
@@ -72,27 +74,11 @@ class EnterYourEmailAddressFormProviderSpec extends StringFieldBehaviours {
       )
 
       invalidEmails.foreach { invalidEmail =>
-        val result = form.bind(Map("value" -> invalidEmail))
+        val result = form.bind(Map(fieldName -> invalidEmail))
+
         result.errors must contain(
-          FormError("value", invalidKey, Seq(emailRegex))
+          FormError(fieldName, invalidKey, Seq(emailRegex))
         )
-      }
-    }
-
-    "must accept valid email formats" in {
-      val validEmails = Seq(
-        "user@domain.com",
-        "user.name@domain.com",
-        "user+tag@domain.com",
-        "user@domain.co.uk",
-        "user123@domain123.com",
-        "user!#$%&*+-/=?^_`{|}~@domain.com",
-        "user@domain!#$%&*+-/=?^_`{|}~.com"
-      )
-
-      validEmails.foreach { validEmail =>
-        val result = form.bind(Map(fieldName -> validEmail))
-        result.errors must not contain FormError(fieldName, invalidKey)
       }
     }
   }

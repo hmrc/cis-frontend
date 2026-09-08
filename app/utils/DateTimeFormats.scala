@@ -27,11 +27,21 @@ object DateTimeFormats {
 
   private val localisedDateTimeFormatters = Map(
     "en" -> dateTimeFormatter,
-    "cy" -> dateTimeFormatter.withLocale(new Locale("cy"))
+    "cy" -> dateTimeFormatter.withLocale(Locale.forLanguageTag("cy"))
   )
 
   def dateTimeFormat()(implicit lang: Lang): DateTimeFormatter =
     localisedDateTimeFormatters.getOrElse(lang.code, dateTimeFormatter)
+
+  private val fullDateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy")
+
+  private val localisedFullDateFormatters = Map(
+    "en" -> fullDateFormatter,
+    "cy" -> fullDateFormatter.withLocale(Locale.forLanguageTag("cy"))
+  )
+
+  def fullDateFormat()(implicit lang: Lang): DateTimeFormatter =
+    localisedFullDateFormatters.getOrElse(lang.code, fullDateFormatter)
 
   val dateTimeHintFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d M yyyy")

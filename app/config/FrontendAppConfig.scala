@@ -38,15 +38,19 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   def feedbackUrl(implicit request: RequestHeader): String =
     s"$contactHost/contact/beta-feedback?service=$contactFormServiceIdentifier&backUrl=${host + request.uri}"
 
-  lazy val loginUrl: String                       = configuration.get[String]("urls.login")
-  lazy val loginContinueUrl: String               = configuration.get[String]("urls.loginContinue")
-  lazy val signOutUrl: String                     = configuration.get[String]("urls.signOut")
-  lazy val govUkCISGuidanceUrl: String            = configuration.get[String]("urls.govUkCISGuidance")
-  lazy val constructionIndustryAccountUrl: String = configuration.get[String]("urls.constructionIndustryAccount")
-  lazy val hmrcOnlineServiceDeskUrl: String       = configuration.get[String]("urls.hmrcOnlineServiceDesk")
-  lazy val manageYourCisReturn: String            = configuration.get[String]("urls.manageYourCisReturn")
-  lazy val incompleteReturnsUrl: String           = configuration.get[String]("urls.incompleteReturns")
-  lazy val submissionHistoryUrl: String           = configuration.get[String]("urls.submissionHistory")
+  lazy val loginUrl: String                            = configuration.get[String]("urls.login")
+  lazy val loginContinueUrl: String                    = configuration.get[String]("urls.loginContinue")
+  lazy val signOutUrl: String                          = configuration.get[String]("urls.signOut")
+  lazy val govUkCISGuidanceUrl: String                 = configuration.get[String]("urls.govUkCISGuidance")
+  lazy val constructionIndustryAgentAccountUrl: String =
+    configuration.get[String]("urls.constructionIndustryAgentAccount")
+  lazy val constructionIndustryOrgAccountUrl: String   = configuration.get[String]("urls.constructionIndustryOrgAccount")
+  lazy val hmrcOnlineServiceDeskUrl: String            = configuration.get[String]("urls.hmrcOnlineServiceDesk")
+  lazy val manageYourCisReturn: String                 = configuration.get[String]("urls.manageYourCisReturn")
+  lazy val signIntoCISUrl: String                      = configuration.get[String]("urls.signIntoCIS")
+  lazy val contactHMRCUrl: String                      = configuration.get[String]("urls.contactHMRC")
+  lazy val incompleteReturnsUrl: String                = configuration.get[String]("urls.incompleteReturns")
+  lazy val submissionHistoryUrl: String                = configuration.get[String]("urls.submissionHistory")
 
   lazy val yourSubcontractorsUrl: String = configuration.get[String]("urls.yourSubcontractors")
 

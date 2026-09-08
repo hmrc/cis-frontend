@@ -21,14 +21,14 @@ import models.ReturnType.MonthlyNilReturn
 import models.ReturnType.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse}
+import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.scalatest.BeforeAndAfterEach
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage}
+import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage, SubmissionConfirmationCachePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -457,6 +457,81 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "when SubmissionConfirmationCachePage is present" - {
+
+        val cache = SubmissionConfirmationCache(
+          periodEnd = "March 2018",
+          contractorName = contractorName,
+          email = email,
+          submittedTime = "8:46am",
+          submittedDate = "6 January 2017"
+        )
+
+        "must use cached values and not call the monthly return service" in {
+          val uaWithCache = ua
+            .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+            .success
+            .value
+            .set(SubmissionConfirmationCachePage, cache)
+            .success
+            .value
+
+          when(mockGuard.check(any())).thenReturn(true)
+
+          val app = buildApp(uaWithCache)
+
+          running(app) {
+            val result = route(app, request).value
+            status(result) mustBe OK
+            val body   = contentAsString(result)
+            body must include(cache.periodEnd)
+            body must include(cache.contractorName)
+            body must include(cache.email)
+            verify(mockMonthlyReturnService, never()).retrieveMonthlyReturnForEditDetails(any())(any())
+            verify(mockMonthlyReturnService, never()).completeSubmissionJourney(any())(any())
+          }
+        }
+
+        "must throw if SubmissionDetailsPage is missing when using cache" in {
+          val uaWithCache = userAnswersWithCisId
+            .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+            .success
+            .value
+            .set(SubmissionConfirmationCachePage, cache)
+            .success
+            .value
+
+          when(mockGuard.check(any())).thenReturn(true)
+
+          val app = buildApp(uaWithCache)
+
+          running(app) {
+            val thrown = intercept[IllegalStateException] {
+              await(route(app, request).get)
+            }
+            thrown.getMessage must include("[SubmissionSuccess] submissionDetails missing from userAnswers")
+          }
+        }
+
+        "must throw if ReturnTypePage is missing when using cache" in {
+          val uaWithCache = ua
+            .set(SubmissionConfirmationCachePage, cache)
+            .success
+            .value
+
+          when(mockGuard.check(any())).thenReturn(true)
+
+          val app = buildApp(uaWithCache)
+
+          running(app) {
+            val thrown = intercept[IllegalStateException] {
+              await(route(app, request).get)
+            }
+            thrown.getMessage must include("[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+          }
         }
       }
     }

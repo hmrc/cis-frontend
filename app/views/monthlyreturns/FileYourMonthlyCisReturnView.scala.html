@@ -29,8 +29,7 @@
 @()(implicit request: Request[_], messages: Messages)
 
 @layout(
-   pageTitle = titleNoForm(messages("fileYourMonthlyCisReturn.title")),
-   showSignOut = false
+   pageTitle = titleNoForm(messages("fileYourMonthlyCisReturn.title"))
 ){
 @formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyStandardReturn)) {
 

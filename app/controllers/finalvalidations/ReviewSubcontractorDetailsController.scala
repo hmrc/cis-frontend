@@ -16,12 +16,21 @@
 
 package controllers.finalvalidations
 
-import controllers.actions._
-import javax.inject.Inject
+import controllers.actions.*
+import models.requests.GetMonthlyReturnForEditRequest
+import pages.validation.SubcontractorValidationFailuresPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import repositories.SessionRepository
+import services.{MonthlyReturnService, SubcontractorDetailsValidator}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
+
+import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReviewSubcontractorDetailsController @Inject() (
   override val messagesApi: MessagesApi,
@@ -29,17 +38,92 @@ class ReviewSubcontractorDetailsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   val controllerComponents: MessagesControllerComponents,
-  view: ReviewSubcontractorDetailsView
-) extends FrontendBaseController
-    with I18nSupport {
+  view: ReviewSubcontractorDetailsView,
+  monthlyReturnService: MonthlyReturnService,
+  subcontractorDetailsValidator: SubcontractorDetailsValidator,
+  sessionRepository: SessionRepository
+)(using ExecutionContext)
+    extends FrontendBaseController
+    with I18nSupport
+    with Logging {
 
-  private val stubSubcontractors: Seq[String] = Seq(
-    "Hooper And Associates",
-    "Quint Transportation",
-    "The Kintner Group"
-  )
+  def onPageLoad: Action[AnyContent] =
+    (identify andThen getData andThen requireData).async { implicit request =>
+      given HeaderCarrier =
+        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view(stubSubcontractors))
-  }
+      GetMonthlyReturnForEditRequest
+        .fromUserAnswers(request.userAnswers) match {
+
+        case Left(error) =>
+          logger.warn(
+            s"[ReviewSubcontractorDetailsController.onPageLoad] Failed to build monthly-return request: $error"
+          )
+
+          Future.successful(
+            Redirect(
+              controllers.routes.JourneyRecoveryController.onPageLoad()
+            )
+          )
+
+        case Right(monthlyReturnRequest) =>
+          monthlyReturnService
+            .retrieveMonthlyReturnForEditDetails(monthlyReturnRequest)
+            .flatMap { response =>
+              val validationFailures =
+                subcontractorDetailsValidator.validate(
+                  response.subcontractors
+                )
+
+              Future
+                .fromTry(
+                  request.userAnswers.set(
+                    SubcontractorValidationFailuresPage,
+                    validationFailures
+                  )
+                )
+                .flatMap { updatedAnswers =>
+                  sessionRepository.set(updatedAnswers).map {
+                    case true =>
+                      val namesBySubcontractorId =
+                        response.subcontractors.map { subcontractor =>
+                          subcontractor.subcontractorId ->
+                            subcontractor.displayName
+                              .map(_.trim)
+                              .filter(_.nonEmpty)
+                        }.toMap
+
+                      val failedSubcontractorNames =
+                        validationFailures.map { failure =>
+                          namesBySubcontractorId
+                            .get(failure.subcontractorId)
+                            .flatten
+                            .getOrElse("No name provided")
+                        }
+
+                      Ok(view(failedSubcontractorNames))
+
+                    case false =>
+                      logger.error(
+                        "[ReviewSubcontractorDetailsController.onPageLoad] Failed to save validation failures"
+                      )
+
+                      Redirect(
+                        controllers.routes.SystemErrorController.onPageLoad()
+                      )
+                  }
+                }
+            }
+            .recover { case error =>
+              logger.error(
+                "[ReviewSubcontractorDetailsController.onPageLoad] Failed to retrieve or validate subcontractor details",
+                error
+              )
+
+              Redirect(
+                controllers.routes.SystemErrorController.onPageLoad()
+              )
+            }
+      }
+    }
 }

@@ -16,20 +16,22 @@
 
 package forms.monthlyreturns
 
+import forms.Validation
+import forms.mappings.Constants.MaxLength254
 import javax.inject.Inject
-
 import forms.mappings.Mappings
 import play.api.data.Form
 
 class ConfirmEmailAddressFormProvider @Inject() extends Mappings {
 
-  private val EmailRegex     = "^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"
-  private val MaxEmailLength = 254
-
   def apply(): Form[String] =
     Form(
       "value" -> text("monthlyreturns.confirmEmailAddress.error.required")
-        .verifying(maxLength(MaxEmailLength, "monthlyreturns.confirmEmailAddress.error.length"))
-        .verifying(regexp(EmailRegex, "monthlyreturns.confirmEmailAddress.error.invalid"))
+        .verifying(
+          firstError(
+            maxLength(MaxLength254, "monthlyreturns.confirmEmailAddress.error.length"),
+            regexp(Validation.emailRegex, "monthlyreturns.confirmEmailAddress.error.invalid")
+          )
+        )
     )
 }

@@ -18,17 +18,21 @@ package forms.monthlyreturns
 
 import forms.mappings.Mappings
 import play.api.data.Form
-import forms.Validation._
+import forms.Validation.*
+import forms.mappings.Constants.MaxLength254
 
 import javax.inject.Inject
 
 class EnterYourEmailAddressFormProvider @Inject() extends Mappings {
-  private val maxLengthEmailAddress = 132
 
   def apply(): Form[String] =
     Form(
       "value" -> text("monthlyreturns.enterYourEmailAddress.error.required")
-        .verifying(maxLength(maxLengthEmailAddress, "monthlyreturns.enterYourEmailAddress.error.length"))
-        .verifying(regexp(emailRegex, "monthlyreturns.enterYourEmailAddress.error.invalid"))
+        .verifying(
+          firstError(
+            maxLength(MaxLength254, "monthlyreturns.enterYourEmailAddress.error.length"),
+            regexp(emailRegex, "monthlyreturns.enterYourEmailAddress.error.invalid")
+          )
+        )
     )
 }

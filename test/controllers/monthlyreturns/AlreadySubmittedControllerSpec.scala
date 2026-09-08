@@ -27,60 +27,75 @@ class AlreadySubmittedControllerSpec extends SpecBase {
 
   "AlreadySubmitted Controller" - {
 
-    "must return OK and the correct view for a GET for nil return" in {
-      val userAnswer  = userAnswersWithCisId.set(ReturnTypePage, MonthlyNilReturn).success.value
-      val application = applicationBuilder(userAnswers = Some(userAnswer)).build()
+    Seq(
+      ("AGENT", true, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", false, applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, isAgent, cisAccountUrl) =>
+      s"when accountType is '$accountTypeSTR'" - {
 
-      running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
+        "must return OK and the correct view for a GET for nil return" in {
+          val userAnswer  = userAnswersWithCisId.set(ReturnTypePage, MonthlyNilReturn).success.value
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
 
-        val result = route(application, request).value
+          running(application) {
+            val request =
+              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
 
-        val view = application.injector.instanceOf[AlreadySubmittedView]
+            val result = route(application, request).value
 
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view("monthlyreturns.alreadySubmitted.nilreturn")(
-          request,
-          applicationConfig,
-          messages(application)
-        ).toString
-      }
-    }
+            val view = application.injector.instanceOf[AlreadySubmittedView]
 
-    "must return OK and the correct view for a GET for standard return" in {
-      val userAnswer  = userAnswersWithCisId.set(ReturnTypePage, MonthlyStandardReturn).success.value
-      val application = applicationBuilder(userAnswers = Some(userAnswer)).build()
+            status(result) mustEqual OK
+            contentAsString(result) mustEqual view(
+              "monthlyreturns.alreadySubmitted.nilreturn",
+              cisAccountUrl
+            )(
+              request,
+              messages(application)
+            ).toString
+          }
+        }
 
-      running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
+        "must return OK and the correct view for a GET for standard return" in {
+          val userAnswer  = userAnswersWithCisId.set(ReturnTypePage, MonthlyStandardReturn).success.value
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
 
-        val result = route(application, request).value
+          running(application) {
+            val request =
+              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
 
-        val view = application.injector.instanceOf[AlreadySubmittedView]
+            val result = route(application, request).value
 
-        status(result) mustEqual OK
-        contentAsString(result) mustEqual view("monthlyreturns.alreadySubmitted")(
-          request,
-          applicationConfig,
-          messages(application)
-        ).toString
-      }
-    }
+            val view = application.injector.instanceOf[AlreadySubmittedView]
 
-    "throw IllegalStateException when ReturnType is missing" in {
+            status(result) mustEqual OK
+            contentAsString(result) mustEqual view(
+              "monthlyreturns.alreadySubmitted",
+              cisAccountUrl
+            )(
+              request,
+              messages(application)
+            ).toString
+          }
+        }
 
-      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+        "throw IllegalStateException when ReturnType is missing" in {
 
-      running(application) {
+          val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
+          running(application) {
 
-        val controller = application.injector.instanceOf[AlreadySubmittedController]
+            val request =
+              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
 
-        val exception = controller.onPageLoad()(request).failed.futureValue
+            val controller = application.injector.instanceOf[AlreadySubmittedController]
 
-        exception mustBe a[IllegalStateException]
-        exception.getMessage mustBe "ReturnTypePage missing from userAnswers"
+            val exception = controller.onPageLoad()(request).failed.futureValue
+
+            exception mustBe a[IllegalStateException]
+            exception.getMessage mustBe "ReturnTypePage missing from userAnswers"
+          }
+        }
       }
     }
   }

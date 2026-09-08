@@ -16,12 +16,41 @@
 
 package forms
 
+import play.api.data.validation.{Constraint, Invalid, Valid}
+import uk.gov.hmrc.domain.Nino
+
 object Validation {
 
-  val emailRegex: String =
-    """^(?!\.)""" +
-      """("([^"\r\\]|\\["\r\\])+"""" +
-      """|([-a-zA-Z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)+)""" +
-      """(?<!\.)""" +
-      """@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$"""
+  final val companyRegNumberRegex = "[A-Za-z]{2}[0-9]{1,6}|[0-9]{1,8}"
+  final val nameRegex             =
+    "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\+\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\^\\\\\\£\\€]*"
+  final val worksRefRegex         =
+    "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\+\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\\\\\£\\€]+"
+
+  final val firstCharLetterRegex =
+    """^[A-Za-z].*"""
+
+  final val firstMiddleNameRegex = "[A-Za-z\\'\\-]+"
+
+  final val surnameFormat = "[A-Za-z0-9\\s,\\.\\(\\)/\\&\\'\\-]+"
+
+  final val emailRegex = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
+
+  final val mobileRegex = """^[0-9\(\)\-\s]*$"""
+
+  final val phoneRegex = """^[0-9\(\)\-\s]*$"""
+
+  final val addressRegex = """[A-Za-z0-9"\~\!\@\#\$\%\*\+\:\;\=\?\s,\.\[\]\_\{\}\(\)/\&\'\-\^\\\£\€]*"""
+
+  final val firstCharLetterOrDigitRegex = """^[A-Za-z0-9].*"""
+
+  final val ukPostcodeRegex = """[A-Za-z0-9 ~!\"@#$%\&\'\(\)\*\+,\-\./:;\<=\>\?\[\\\]^_\{\}\£\€]*"""
+
+  def isNinoValid(value: String, errorKey: String): Constraint[String] =
+    Constraint {
+      case str if Nino.isValid(str.replaceAll("\\s", "").toUpperCase) =>
+        Valid
+      case _                                                          =>
+        Invalid(errorKey, value)
+    }
 }
