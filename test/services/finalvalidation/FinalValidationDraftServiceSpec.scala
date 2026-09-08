@@ -21,7 +21,6 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.finalvalidation.*
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
-import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}

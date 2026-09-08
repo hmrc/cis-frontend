@@ -20,7 +20,6 @@ import base.SpecBase
 import models.monthlyreturns.Subcontractor
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
-import services.SubcontractorPartnershipValidator
 
 class SubcontractorPartnershipValidatorSpec extends SpecBase {
 

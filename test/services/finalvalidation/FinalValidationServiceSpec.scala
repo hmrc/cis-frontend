@@ -23,7 +23,6 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
 import services.SubcontractorValidator
-import services.finalvalidation.FinalValidationService
 
 class FinalValidationServiceSpec extends SpecBase {
 

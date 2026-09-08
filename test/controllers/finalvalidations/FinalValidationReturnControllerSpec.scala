@@ -19,6 +19,7 @@ package controllers.finalvalidations
 import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
 import models.finalvalidation.*
+import models.UserAnswers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{doReturn, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -59,8 +60,16 @@ class FinalValidationReturnControllerSpec extends SpecBase {
       .success
       .value
 
-  private val finalValidationReturnRoute =
+  private def finalValidationReturnRoute =
     routes.FinalValidationReturnController.onPageLoad(handoffId).url
+
+  private def testApplicationBuilder(
+    userAnswers: Option[UserAnswers]
+  ) =
+    applicationBuilder(userAnswers = userAnswers)
+      .configure(
+        "play.http.context" -> "/"
+      )
 
   "FinalValidationReturnController.onPageLoad" - {
 
@@ -83,7 +92,7 @@ class FinalValidationReturnControllerSpec extends SpecBase {
         .deleteJourneyHandoff(any(), any[String])(using any[HeaderCarrier])
 
       val application =
-        applicationBuilder(userAnswers = Some(userAnswers))
+        testApplicationBuilder(Some(userAnswers))
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector)
           )
@@ -118,7 +127,7 @@ class FinalValidationReturnControllerSpec extends SpecBase {
       )
 
       val application =
-        applicationBuilder(userAnswers = Some(userAnswers))
+        testApplicationBuilder(Some(userAnswers))
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector)
           )
@@ -149,7 +158,7 @@ class FinalValidationReturnControllerSpec extends SpecBase {
       ).thenReturn(Future.successful(None))
 
       val application =
-        applicationBuilder(userAnswers = Some(userAnswers))
+        testApplicationBuilder(Some(userAnswers))
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector)
           )
