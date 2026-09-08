@@ -452,7 +452,7 @@ monthlyreturns.enterYourEmailAddress.hint = Nodwch gyfeiriad e-bost i gael cadar
 monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel = Cyfeiriad e-bost
 monthlyreturns.enterYourEmailAddress.error.required = Nodwch gyfeiriad e-bost yn y fformat cywir, fel enw@enghraifft.com
 monthlyreturns.enterYourEmailAddress.error.invalid = Nodwch gyfeiriad e-bost yn y fformat cywir, fel enw@enghraifft.com
-monthlyreturns.enterYourEmailAddress.error.length = xxxxxxxxxxxxxxxxxxxx
+monthlyreturns.enterYourEmailAddress.error.length = Mae’n rhaid i’ch cyfeiriad e-bost fod yn 254 o gymeriadau neu lai
 monthlyreturns.enterYourEmailAddress.change.hidden = Nodwch eich cyfeiriad e-bost
 
 monthlyreturns.confirmationByEmail.title = A ydych am gael e-bost i gadarnhau bod y datganiad hwn wedi’i gyflwyno’n llwyddiannus?
