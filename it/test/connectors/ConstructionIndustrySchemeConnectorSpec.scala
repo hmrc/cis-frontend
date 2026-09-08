@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
 import models.ReturnType.MonthlyNilReturn
 import models.amend.*
+import models.finalvalidation.*
 import models.requests.*
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
@@ -29,7 +30,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues.convertOptionToValuable
 import play.api.http.Status.*
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpException, UpstreamErrorResponse}
 
 import scala.concurrent.ExecutionContext
@@ -1268,6 +1269,518 @@ class ConstructionIndustrySchemeConnectorSpec
       val err = connector.resetGovTalkStatus(submissionId, req).failed.futureValue
       err mustBe a[UpstreamErrorResponse]
       err.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+
+  "createJourneyHandoff" should {
+
+    "return the handoff id on success" in {
+      val journeyType = "final-validation"
+      val handoffId = "handoff-123"
+
+      val data =
+        Json.obj(
+          "draftId" -> "draft-123",
+          "instanceId" -> "CIS-123"
+        )
+
+      stubFor(
+        post(urlPathEqualTo(s"/cis/journey-handoffs/$journeyType"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(equalToJson(data.toString))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                Json.obj(
+                  "id" -> handoffId
+                ).toString
+              )
+          )
+      )
+
+      connector
+        .createJourneyHandoff(
+          journeyType,
+          data
+        )
+        .futureValue mustBe handoffId
+    }
+
+    "fail the future on a non-2xx response" in {
+      val journeyType = "final-validation"
+
+      val data =
+        Json.obj(
+          "draftId" -> "draft-123",
+          "instanceId" -> "CIS-123"
+        )
+
+      stubFor(
+        post(urlPathEqualTo(s"/cis/journey-handoffs/$journeyType"))
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_GATEWAY)
+              .withBody("bad gateway")
+          )
+      )
+
+      val error =
+        connector
+          .createJourneyHandoff(
+            journeyType,
+            data
+          )
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+      error.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+
+  "getJourneyHandoff" should {
+
+    "return the handoff when it exists" in {
+      val journeyType = "final-validation"
+      val handoffId = "handoff-123"
+
+      val data =
+        Json.obj(
+          "draftId" -> "draft-123",
+          "instanceId" -> "CIS-123"
+        )
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/journey-handoffs/$journeyType/$handoffId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(data.toString)
+          )
+      )
+
+      connector
+        .getJourneyHandoff[JsObject](
+          journeyType,
+          handoffId
+        )
+        .futureValue mustBe Some(data)
+    }
+
+    "return None when the handoff does not exist" in {
+      val journeyType = "final-validation"
+      val handoffId = "handoff-123"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/journey-handoffs/$journeyType/$handoffId"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+          )
+      )
+
+      connector
+        .getJourneyHandoff[JsObject](
+          journeyType,
+          handoffId
+        )
+        .futureValue mustBe None
+    }
+
+    "fail the future on another non-2xx response" in {
+      val journeyType = "final-validation"
+      val handoffId = "handoff-123"
+
+      stubFor(
+        get(urlPathEqualTo(s"/cis/journey-handoffs/$journeyType/$handoffId"))
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_GATEWAY)
+              .withBody("bad gateway")
+          )
+      )
+
+      val error =
+        connector
+          .getJourneyHandoff[JsObject](
+            journeyType,
+            handoffId
+          )
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+      error.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+
+  "deleteJourneyHandoff" should {
+
+    "complete successfully on 204 No Content" in {
+      val journeyType = "final-validation"
+      val handoffId = "handoff-123"
+
+      stubFor(
+        delete(urlPathEqualTo(s"/cis/journey-handoffs/$journeyType/$handoffId"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
+      connector
+        .deleteJourneyHandoff(
+          journeyType,
+          handoffId
+        )
+        .futureValue mustBe()
+    }
+  }
+
+  "createFinalValidationDraft" should {
+
+    "send the draft request and return the draft id" in {
+      val request =
+        CreateFinalValidationDraftRequest(
+          instanceId = "CIS-123",
+          context = "monthly-return",
+          subcontractors = Seq(
+            CreateFinalValidationDraftSubcontractor(
+              subcontractorId = 1L,
+              subbieResourceRef = 10L,
+              baseVersion = Some(1),
+              subcontractorType = Some("soletrader"),
+              displayName = "First Subcontractor",
+              details = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor"),
+                utr = Some("1234567890")
+              ),
+              issues = Seq(
+                FinalValidationDraftIssue(
+                  fieldKey = "utr",
+                  value = Some("1234567890")
+                )
+              )
+            )
+          )
+        )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/final-validation/drafts"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(
+            equalToJson(
+              Json.toJson(request).toString
+            )
+          )
+          .willReturn(
+            aResponse()
+              .withStatus(CREATED)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                Json.toJson(
+                  CreateFinalValidationDraftResponse(
+                    draftId = "draft-123"
+                  )
+                ).toString
+              )
+          )
+      )
+
+      connector
+        .createFinalValidationDraft(request)
+        .futureValue mustBe
+        CreateFinalValidationDraftResponse(
+          draftId = "draft-123"
+        )
+    }
+
+    "fail the future on a non-2xx response" in {
+      val request =
+        CreateFinalValidationDraftRequest(
+          instanceId = "CIS-123",
+          context = "monthly-return",
+          subcontractors = Seq.empty
+        )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/final-validation/drafts"))
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_GATEWAY)
+              .withBody("bad gateway")
+          )
+      )
+
+      val error =
+        connector
+          .createFinalValidationDraft(request)
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+      error.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+
+  "getFinalValidationDraft" should {
+
+    "return the Final Validation draft" in {
+      val draft =
+        FinalValidationDraft(
+          subcontractors = Seq(
+            FinalValidationDraftSubcontractor(
+              subcontractorId = 1L,
+              subbieResourceRef = 10L,
+              baseVersion = Some(1),
+              subcontractorType = Some("soletrader"),
+              displayName = "First Subcontractor",
+              base = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor"),
+                utr = Some("1234567890")
+              ),
+              proposed = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor"),
+                utr = Some("1234567890")
+              ),
+              changedTargets = Set.empty,
+              issues = Seq.empty,
+              readiness = FinalValidationReadiness.Incomplete
+            )
+          )
+        )
+
+      stubFor(
+        get(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                Json.toJson(draft).toString
+              )
+          )
+      )
+
+      connector
+        .getFinalValidationDraft(
+          "CIS-123",
+          "draft-123"
+        )
+        .futureValue mustBe draft
+    }
+
+    "fail the future on a non-2xx response" in {
+      stubFor(
+        get(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_GATEWAY)
+              .withBody("bad gateway")
+          )
+      )
+
+      val error =
+        connector
+          .getFinalValidationDraft(
+            "CIS-123",
+            "draft-123"
+          )
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+      error.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+
+  "updateFinalValidationReadiness" should {
+
+    "send the readiness request and return the updated draft" in {
+      val request =
+        UpdateFinalValidationReadinessRequest(
+          subcontractorId = 1L,
+          issues = Seq.empty
+        )
+
+      val updatedDraft =
+        FinalValidationDraft(
+          subcontractors = Seq(
+            FinalValidationDraftSubcontractor(
+              subcontractorId = 1L,
+              subbieResourceRef = 10L,
+              baseVersion = Some(1),
+              subcontractorType = Some("soletrader"),
+              displayName = "First Subcontractor",
+              base = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor")
+              ),
+              proposed = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor")
+              ),
+              changedTargets = Set.empty,
+              issues = Seq.empty,
+              readiness = FinalValidationReadiness.Complete
+            )
+          )
+        )
+
+      stubFor(
+        put(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/readiness"
+          )
+        )
+          .withHeader("Content-Type", equalTo("application/json"))
+          .withRequestBody(
+            equalToJson(
+              Json.toJson(request).toString
+            )
+          )
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                Json.toJson(updatedDraft).toString
+              )
+          )
+      )
+
+      connector
+        .updateFinalValidationReadiness(
+          "CIS-123",
+          "draft-123",
+          request
+        )
+        .futureValue mustBe updatedDraft
+    }
+
+    "fail the future on a non-2xx response" in {
+      val request =
+        UpdateFinalValidationReadinessRequest(
+          subcontractorId = 1L,
+          issues = Seq.empty
+        )
+
+      stubFor(
+        put(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/readiness"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_GATEWAY)
+              .withBody("bad gateway")
+          )
+      )
+
+      val error =
+        connector
+          .updateFinalValidationReadiness(
+            "CIS-123",
+            "draft-123",
+            request
+          )
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+      error.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
+
+  "commitFinalValidationDraft" should {
+
+    "complete successfully on 204 No Content" in {
+      stubFor(
+        post(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/commit"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
+      connector
+        .commitFinalValidationDraft(
+          "CIS-123",
+          "draft-123"
+        )
+        .futureValue mustBe()
+    }
+
+    "complete successfully on 200 OK" in {
+      stubFor(
+        post(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/commit"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+          )
+      )
+
+      connector
+        .commitFinalValidationDraft(
+          "CIS-123",
+          "draft-123"
+        )
+        .futureValue mustBe()
+    }
+
+    "fail with UpstreamErrorResponse on another response status" in {
+      stubFor(
+        post(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/commit"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(CONFLICT)
+              .withBody("draft not ready")
+          )
+      )
+
+      val error =
+        connector
+          .commitFinalValidationDraft(
+            "CIS-123",
+            "draft-123"
+          )
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+
+      val upstreamError =
+        error.asInstanceOf[UpstreamErrorResponse]
+
+      upstreamError.statusCode mustBe CONFLICT
+      upstreamError.message mustBe "draft not ready"
     }
   }
 }

@@ -25,6 +25,7 @@ import play.api.i18n.{Lang, Messages, MessagesApi, MessagesImpl}
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
+import models.finalvalidation.{ReviewSubcontractorDetailsPageModel, ReviewSubcontractorDetailsRow}
 
 class ReviewSubcontractorDetailsViewSpec extends SpecBase {
 
@@ -45,14 +46,19 @@ class ReviewSubcontractorDetailsViewSpec extends SpecBase {
     "must render each subcontractor as a task list item link" in new Setup {
       val taskListLinks = doc.select(".govuk-task-list__link").eachText()
 
-      subcontractors.foreach { name =>
-        taskListLinks must contain(name)
+      subcontractors.foreach { subcontractor =>
+        taskListLinks must contain(subcontractor.name)
       }
     }
 
-    "must render each subcontractor link pointing to a dead link" in new Setup {
-      doc.select(".govuk-task-list__link").forEach { link =>
-        link.attr("href") mustEqual "#"
+    "must render each subcontractor link pointing to the update subcontractor details page" in new Setup {
+      val taskListLinks = doc.select(".govuk-task-list__link")
+
+      subcontractors.zipWithIndex.foreach { case (subcontractor, index) =>
+        taskListLinks.get(index).attr("href") mustEqual
+          controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
+            .onPageLoad(subcontractor.subcontractorId)
+            .url
       }
     }
 
@@ -91,8 +97,8 @@ class ReviewSubcontractorDetailsViewSpec extends SpecBase {
     }
 
     "must render only File a return when subcontractors list is empty" in new Setup {
-      override val subcontractors: Seq[String] = Seq.empty
-      val taskListItems                        = doc.select(".govuk-task-list__item")
+      override val subcontractors: Seq[ReviewSubcontractorDetailsRow] = Seq.empty
+      val taskListItems                                               = doc.select(".govuk-task-list__item")
 
       taskListItems.size mustEqual 1
       taskListItems.first().select(".govuk-task-list__name-and-hint").text mustEqual messages(
@@ -107,9 +113,32 @@ class ReviewSubcontractorDetailsViewSpec extends SpecBase {
     implicit val request: play.api.mvc.Request[_] = FakeRequest()
     implicit val messages: Messages               = MessagesImpl(Lang.defaultLang, app.injector.instanceOf[MessagesApi])
 
-    val subcontractors: Seq[String] = Seq("Hooper And Associates", "Quint Transportation", "The Kintner Group")
+    val subcontractors: Seq[ReviewSubcontractorDetailsRow] = Seq(
+      ReviewSubcontractorDetailsRow(
+        subcontractorId = 1L,
+        name = "Hooper And Associates",
+        hasErrors = true
+      ),
+      ReviewSubcontractorDetailsRow(
+        subcontractorId = 2L,
+        name = "Quint Transportation",
+        hasErrors = true
+      ),
+      ReviewSubcontractorDetailsRow(
+        subcontractorId = 3L,
+        name = "The Kintner Group",
+        hasErrors = true
+      )
+    )
 
-    def html: HtmlFormat.Appendable = view(subcontractors)
+    def model: ReviewSubcontractorDetailsPageModel =
+      ReviewSubcontractorDetailsPageModel(
+        subcontractors = subcontractors,
+        canContinue = false,
+        backUrl = SelectSubcontractorsController.onPageLoad(None).url
+      )
+
+    def html: HtmlFormat.Appendable = view(model)
     def doc: Document               = Jsoup.parse(html.body)
   }
 }

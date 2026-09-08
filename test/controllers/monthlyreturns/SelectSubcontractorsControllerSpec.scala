@@ -43,10 +43,18 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   private val formProvider = new SelectSubcontractorsFormProvider()
   private val form         = formProvider()
 
-  private val cisId    = "CIS-123"
-  private val taxDate  = LocalDate.of(2025, 10, 15)
-  private val taxMonth = taxDate.getMonthValue
-  private val taxYear  = taxDate.getYear
+  private val cisId              = "CIS-123"
+  private val taxDate            = LocalDate.of(2025, 10, 15)
+  private val taxMonth           = taxDate.getMonthValue
+  private val taxYear            = taxDate.getYear
+  private val fullSubcontractor1 = mock[Subcontractor]
+  private val fullSubcontractor2 = mock[Subcontractor]
+
+  when(fullSubcontractor1.subcontractorId).thenReturn(1L)
+  when(fullSubcontractor2.subcontractorId).thenReturn(2L)
+
+  private val fullSubcontractors =
+    Seq(fullSubcontractor1, fullSubcontractor2)
 
   private val userAnswersWithRequiredPages =
     emptyUserAnswers
@@ -63,10 +71,18 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   )
 
   private val pageModelSelected =
-    SelectSubcontractorsPageModel(subcontractors = subcontractors, initiallySelectedIds = Seq(1))
+    SelectSubcontractorsPageModel(
+      subcontractors = subcontractors,
+      initiallySelectedIds = Seq(1),
+      fullSubcontractors = fullSubcontractors
+    )
 
   private val pageModelNoneSelected =
-    SelectSubcontractorsPageModel(subcontractors = subcontractors, initiallySelectedIds = Seq.empty)
+    SelectSubcontractorsPageModel(
+      subcontractors = subcontractors,
+      initiallySelectedIds = Seq.empty,
+      fullSubcontractors = fullSubcontractors
+    )
 
   private def applicationWith(
     subcontractorService: SubcontractorService,
