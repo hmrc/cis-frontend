@@ -22,6 +22,7 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn,
 import repositories.SessionRepository
 import models.amend.AmendmentDetails
 import models.monthlyreturns.*
+import models.agent.ClientListStatus
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import models.{ReturnType, UserAnswers}
@@ -80,6 +81,10 @@ class MonthlyReturnService @Inject() (
           }
         }
     }
+
+  def startClientListRetrieval(using HeaderCarrier): Future[ClientListStatus] =
+    cisConnector.startClientList
+      .map(_.result)
 
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
