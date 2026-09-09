@@ -276,9 +276,10 @@ pageNotFound.p3                          =  Os yw’r cyfeiriad gwe yn gywir, ne
 pageNotFound.link                        =  Desg Gymorth gwasanaethau ar-lein CThEF
 pageNotFound.p4                          =  os oes angen i chi siarad â rhywun.
 
-accessDenied.title = xxxxxxxxxxxxxxxxxxxx
-accessDenied.heading = xxxxxxxxxxxxxxxxxxxx
-accessDenied.link = xxxxxxxxxxxxxxxxxxxx
+accessDenied.title                       =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+accessDenied.heading                     =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+accessDenied.paragraph                   =  Dim ond defnyddwyr sydd â chyfrif sefydliad neu asiant sy’n cael defnyddio’r gwasanaeth hwn.
+accessDenied.link                        =  Rhagor o wybodaeth am Gynllun y Diwydiant Adeiladu (CIS)
 
 systemError.title                        =  Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth hwn
 systemError.heading                      =  Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth hwn
