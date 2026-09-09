@@ -62,7 +62,9 @@ class AgentIdentifierActionSpec extends SpecBase {
         block(request)
     }
 
-  type RetrievalsType = Option[String] ~ Enrolments ~ Option[AffinityGroup] ~ Option[CredentialRole]
+  private val agentCode: String = "123456789"
+
+  type RetrievalsType = Option[String] ~ Enrolments ~ Option[AffinityGroup] ~ Option[CredentialRole] ~ Option[String]
 
   class Harness(authAction: IdentifierAction) {
     def onPageLoad(): Action[AnyContent] = authAction(_ => Results.Ok)
@@ -214,7 +216,7 @@ class AgentIdentifierActionSpec extends SpecBase {
             )
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(
-                Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None)
+                Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None ~ Some(agentCode))
               )
             running(application) {
               val authAction =
@@ -231,7 +233,7 @@ class AgentIdentifierActionSpec extends SpecBase {
         "when there is no IR-PAYE-AGENT enrolment" - {
           "must redirect the user to unauthorised agent affinity screen" in {
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-              .thenReturn(Future.successful(Some(id) ~ emptyEnrolments ~ Some(Agent) ~ None))
+              .thenReturn(Future.successful(Some(id) ~ emptyEnrolments ~ Some(Agent) ~ None ~ Some(agentCode)))
             running(application) {
               val authAction =
                 new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers, clientListCheckEnforcer)
@@ -261,7 +263,7 @@ class AgentIdentifierActionSpec extends SpecBase {
             )
             when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
               .thenReturn(
-                Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None)
+                Future.successful(Some(id) ~ enrolments ~ Some(Agent) ~ None ~ Some(agentCode))
               )
             running(application) {
               val authAction =
@@ -284,7 +286,7 @@ class AgentIdentifierActionSpec extends SpecBase {
       "fail and redirect to unauthorised individual affinity screen" in {
         when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
           .thenReturn(
-            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Individual) ~ Some(Assistant))
+            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Individual) ~ Some(Assistant) ~ None)
           )
         running(application) {
           val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers, clientListCheckEnforcer)
@@ -303,7 +305,7 @@ class AgentIdentifierActionSpec extends SpecBase {
       "fail and redirect to unauthorised wrong role screen" in {
         when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
           .thenReturn(
-            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(Assistant))
+            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(Assistant) ~ None)
           )
         running(application) {
           val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers, clientListCheckEnforcer)
@@ -322,7 +324,7 @@ class AgentIdentifierActionSpec extends SpecBase {
       "must redirect to unauthorised screen" in {
         when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
           .thenReturn(
-            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(User))
+            Future.successful(Some(id) ~ emptyEnrolments ~ Some(Organisation) ~ Some(User) ~ None)
           )
         running(application) {
           val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers, clientListCheckEnforcer)
@@ -341,7 +343,7 @@ class AgentIdentifierActionSpec extends SpecBase {
     "Unable to retrieve internal id or affinity group" - {
       "fail and redirect to Unauthorised screen" in {
         when(mockAuthConnector.authorise[RetrievalsType](any(), any())(any(), any()))
-          .thenReturn(Future.successful(None ~ emptyEnrolments ~ None ~ None))
+          .thenReturn(Future.successful(None ~ emptyEnrolments ~ None ~ None ~ None))
         running(application) {
           val authAction = new AgentIdentifierAction(mockAuthConnector, appConfig, bodyParsers, clientListCheckEnforcer)
           val controller = new Harness(authAction)

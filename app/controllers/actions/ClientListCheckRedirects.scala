@@ -23,5 +23,6 @@ private[actions] object ClientListCheckRedirects {
   def systemError: Result =
     Redirect(controllers.routes.SystemErrorController.onPageLoad())
 
-  // Add when AgentLostAccessController is implemented
+  def agentLostAccess: Result =
+    Redirect(controllers.routes.AgentLostAccessController.onPageLoad())
 }

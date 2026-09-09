@@ -616,3 +616,16 @@ finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = File a return
 finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Cannot start yet
 finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to manage your CIS account
+
+agent.agentLostAccess.title                            =  Sorry, you are unable to use this service
+agent.agentLostAccess.heading                          =  Sorry, you are unable to use this service
+agent.agentLostAccess.p1                               =  You are no longer authorised.
+agent.agentLostAccess.h2                               =  What you need to do
+agent.agentLostAccess.bullet.title                     =  Ask your client to authorise you. They can do this by either:
+agent.agentLostAccess.bullet.item.1.prefix             =  authorising you through their
+agent.agentLostAccess.bullet.item.1.link               =  HMRC online account
+agent.agentLostAccess.bullet.item.2.prefix             =  downloading and completing
+agent.agentLostAccess.bullet.item.2.link               =  form 64—8
+agent.agentLostAccess.bullet.item.2.suffix             =  to authorise you by post
+agent.agentLostAccess.p2                               =  It can take up to 5 working days for new authorisations to appear in your account.
+agent.agentLostAccess.return.link                      =  Return to client list
