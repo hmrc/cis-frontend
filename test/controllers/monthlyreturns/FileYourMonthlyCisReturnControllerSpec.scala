@@ -29,8 +29,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import play.api.inject.bind
 import repositories.SessionRepository
-import services.MonthlyReturnService
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import services.{FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar {
 
@@ -797,6 +797,157 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         verify(mockService, times(1)).getAgentClient(eqTo(emptyUserAnswers.id))(any(), any())
         verify(mockService).hasClient(eqTo("163"), eqTo("AB0063"))(any())
         verify(mockRepo).set(any())
+      }
+    }
+  }
+
+  "FileYourMonthlyCisReturnController FormP/RDS reconciliation" - {
+
+    "Org: reconcile fails with PRECONDITION_FAILED => redirect to register (UnauthorisedOrganisationAffinity)" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockService   = mock[MonthlyReturnService]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED)))
+
+      val app =
+        applicationBuilder(
+          userAnswers = Some(emptyUserAnswers),
+          formpRdsReconcileService = mockReconcile
+        )
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startMonthlyReturn().url +
+            "?instanceId=CIS-123"
+        )
+
+        val result = route(app, request).value
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    "Org: reconcile fails with a general error => redirect JourneyRecovery" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockService   = mock[MonthlyReturnService]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val app =
+        applicationBuilder(
+          userAnswers = Some(emptyUserAnswers),
+          formpRdsReconcileService = mockReconcile
+        )
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startMonthlyReturn().url +
+            "?instanceId=CIS-123"
+        )
+
+        val result = route(app, request).value
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    "Org: reconcile succeeds => uses employer tax office reference and returns OK" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockService   = mock[MonthlyReturnService]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val app =
+        applicationBuilder(
+          userAnswers = Some(emptyUserAnswers),
+          formpRdsReconcileService = mockReconcile
+        )
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startMonthlyReturn().url +
+            "?instanceId=CIS-123"
+        )
+
+        val result = route(app, request).value
+        status(result) mustBe OK
+
+        verify(mockReconcile)
+          .reconcile(eqTo("CIS-123"), eqTo("taxOfficeNumber"), eqTo("taxOfficeReference"))(any[HeaderCarrier])
+      }
+    }
+
+    "Agent: reconcile uses agent client tax office reference and returns OK" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockService   = mock[MonthlyReturnService]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockService.getAgentClient(any())(any(), any()))
+        .thenReturn(
+          Future.successful(Some(AgentClientData("CLIENT-123", "163", "AB0063", Some("ABC Construction Ltd"))))
+        )
+      when(mockService.hasClient(eqTo("163"), eqTo("AB0063"))(any()))
+        .thenReturn(Future.successful(true))
+      when(mockRepo.set(any())).thenReturn(Future.successful(true))
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val app =
+        applicationBuilder(
+          userAnswers = Some(emptyUserAnswers),
+          isAgent = true,
+          formpRdsReconcileService = mockReconcile
+        )
+          .overrides(
+            bind[SessionRepository].toInstance(mockRepo),
+            bind[MonthlyReturnService].toInstance(mockService)
+          )
+          .build()
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.startMonthlyReturn().url +
+            "?instanceId=CIS-123"
+        )
+
+        val result = route(app, request).value
+        status(result) mustBe OK
+
+        verify(mockReconcile)
+          .reconcile(eqTo("CIS-123"), eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier])
       }
     }
   }
