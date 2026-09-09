@@ -65,13 +65,6 @@ signedOut.title = For your security, we signed you out
 signedOut.heading = For your security, we signed you out
 signedOut.guidance = We did not save your answers.
 
-unauthorised.guidance.org.p1.prefix = If you are a contractor or subcontractor, you will need to register with
-unauthorised.guidance.org.p1.link = Construction Industry Scheme
-unauthorised.guidance.org.p1.suffix = to access this service.
-unauthorised.guidance.agent.p2.prefix = If you are an agent, you will need to request access to
-unauthorised.guidance.agent.p2.link = PAYE for Agents
-unauthorised.guidance.agent.p2.suffix = to use this service.
-
 unauthorised.title                       =  Sorry, you are unable to use this service
 unauthorised.heading                     =  Sorry, you are unable to use this service
 unauthorised.guidance.p1                 =  To use this service, you will need to:
