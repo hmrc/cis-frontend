@@ -31,14 +31,15 @@
     timeout   = false
 ) {
 
-    @heading(messages("unauthorised.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("unauthorised.guidance.p1"), extraClasses = "govuk-!-margin-bottom-5")
+    @heading("unauthorised.heading", classes = "govuk-heading-xl")
+    @paragraph("unauthorised.guidance.p1", extraClasses = "govuk-!-margin-bottom-5")
     <ul class="govuk-list govuk-list--bullet">
         <li>
             @link(
                 linkTextKey = "unauthorised.guidance.org.p1.link",
                 linkUrl = appConfig.govUkCISGuidanceUrl,
                 isNewTab = false,
+                paragraphWrapped = false,
                 prefixTextKey = "unauthorised.guidance.org.p1.prefix",
                 suffixTextKey = "unauthorised.guidance.org.p1.suffix"
             )
@@ -48,6 +49,7 @@
             @link(
                 linkTextKey = "unauthorised.guidance.agent.p2.link",
                 linkUrl = appConfig.payeCisForAgentsOnlineService,
+                isNewTab = false,
                 paragraphWrapped = false,
                 prefixTextKey = "unauthorised.guidance.agent.p2.prefix",
                 suffixTextKey = "unauthorised.guidance.agent.p2.suffix"

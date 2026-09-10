@@ -35,6 +35,7 @@ class AccessDeniedViewSpec extends SpecBase {
 
       doc.title                                 must include(messages("accessDenied.title"))
       doc.select("h1").text                     must include(messages("accessDenied.heading"))
+      doc.select("p").text                      must include(messages("accessDenied.paragraph"))
       doc.getElementsByClass("govuk-link").text must include(messages("accessDenied.link"))
     }
   }
