@@ -21,6 +21,7 @@
     layout: templates.Layout,
     heading: H1,
     link: Link,
+    paragraph: Paragraph
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
@@ -30,7 +31,10 @@
     showSignOut = false,
     showBackLink = false
 ) {
-    @heading(messages("unauthorised.org.standard.heading"), classes = "govuk-heading-xl")
-    @link("unauthorised.org.standard.guidance.link", appConfig.signIntoCISUrl, prefixTextKey = "unauthorised.org.standard.paragraph")
-
+    @heading("unauthorised.org.standard.heading", classes = "govuk-heading-xl")
+    @paragraph("unauthorised.org.standard.p1", extraClasses = "govuk-!-margin-bottom-5")
+    @link(
+        "unauthorised.org.standard.guidance.link",
+        appConfig.govUkCISGuidanceUrl
+    )
 }

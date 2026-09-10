@@ -20,7 +20,8 @@
 @this(
     layout: templates.Layout,
     header: H1,
-    link: Link
+    link: Link,
+    paragraph: Paragraph
 )
 
 @()(implicit request: RequestHeader, appConfig: FrontendAppConfig, messages: Messages)
@@ -31,7 +32,8 @@
     showSignOut = false
 ) {
 
-    @header(messages("accessDenied.heading"), classes = "govuk-heading-xl")
+    @header("accessDenied.heading", classes = "govuk-heading-xl")
+    @paragraph("accessDenied.paragraph", extraClasses = "govuk-!-margin-bottom-5")
     @link(
         "accessDenied.link",
         appConfig.govUkCISGuidanceUrl
