@@ -162,7 +162,8 @@ class MonthlyReturnService @Inject() (
 
   def storeAndSyncSelectedSubcontractors(
     ua: UserAnswers,
-    selected: Seq[SelectSubcontractorsViewModel]
+    selected: Seq[SelectSubcontractorsViewModel],
+    originalSubcontractorCount: Int
   )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val selectedIds: Seq[Long]         = selected.map(_.id)
     val existingSelectedSubcontractors =
@@ -186,6 +187,7 @@ class MonthlyReturnService @Inject() (
           }
         }
         .flatMap(_.remove(VerifySubcontractorsPage))
+        .flatMap(_.set(OriginalSubcontractorCountPage, originalSubcontractorCount))
 
     Future
       .fromTry(updatedTry)
