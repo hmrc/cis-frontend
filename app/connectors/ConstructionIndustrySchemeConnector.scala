@@ -22,6 +22,7 @@ import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalVal
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
+import models.agent.GetClientListStatusResponse
 import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
@@ -68,6 +69,11 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeReference")
       .execute[CisTaxpayer]
+
+  def startClientList(using HeaderCarrier): Future[GetClientListStatusResponse] =
+    http
+      .post(url"$cisBaseUrl/agent/client-list/retrieval/start")
+      .execute[GetClientListStatusResponse]
 
   def retrieveMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     http

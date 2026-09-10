@@ -21,7 +21,7 @@ import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.*
 import models.UserAnswers
-import models.agent.AgentClientData
+import models.agent.{AgentClientData, ClientListStatus, GetClientListStatusResponse}
 import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -194,6 +194,28 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ex.getMessage must include("Missing cisId for agent journey")
 
       verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "startClientListRetrieval" - {
+
+    "delegate to connector and return the client list status" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val response =
+        GetClientListStatusResponse(
+          ClientListStatus.Succeeded
+        )
+
+      when(
+        connector.startClientList(using any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      service.startClientListRetrieval.futureValue mustBe
+        ClientListStatus.Succeeded
+
+      verify(connector).startClientList(using any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
     }
   }
