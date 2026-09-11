@@ -946,13 +946,15 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.successful(()))
 
       val resultUa =
-        service.storeAndSyncSelectedSubcontractors(ua, selected).futureValue
+        service.storeAndSyncSelectedSubcontractors(ua, selected, originalSubcontractorCount = 2).futureValue
 
       val uaCaptor: ArgumentCaptor[UserAnswers] =
         ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepo).set(uaCaptor.capture())
 
       val savedUa = uaCaptor.getValue
+
+      savedUa.get(OriginalSubcontractorCountPage) mustBe Some(2)
 
       savedUa.get(SelectedSubcontractorPage(1)).map(_.id) mustBe Some(1001L)
       savedUa.get(SelectedSubcontractorPage(1)).map(_.name) mustBe Some("A Ltd")
@@ -961,6 +963,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       resultUa.get(SelectedSubcontractorPage(1)).map(_.id) mustBe Some(1001L)
       resultUa.get(SelectedSubcontractorPage(2)).map(_.id) mustBe Some(1002L)
+      resultUa.get(OriginalSubcontractorCountPage) mustBe Some(2)
 
       val reqCaptor: ArgumentCaptor[SelectedSubcontractorsRequest] =
         ArgumentCaptor.forClass(classOf[SelectedSubcontractorsRequest])
@@ -1011,13 +1014,14 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.successful(()))
 
       val resultUa =
-        service.storeAndSyncSelectedSubcontractors(ua, selected).futureValue
+        service.storeAndSyncSelectedSubcontractors(ua, selected, originalSubcontractorCount = 1).futureValue
 
       val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepo).set(uaCaptor.capture())
 
       uaCaptor.getValue.get(VerifySubcontractorsPage) mustBe None
       resultUa.get(VerifySubcontractorsPage) mustBe None
+      resultUa.get(OriginalSubcontractorCountPage) mustBe Some(1)
     }
 
     "remove VerifySubcontractorsPage from UserAnswers when previously set to false" in {
@@ -1056,7 +1060,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.successful(()))
 
       val resultUa =
-        service.storeAndSyncSelectedSubcontractors(ua, selected).futureValue
+        service.storeAndSyncSelectedSubcontractors(ua, selected, originalSubcontractorCount = 1).futureValue
 
       val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
       verify(sessionRepo).set(uaCaptor.capture())
@@ -1093,7 +1097,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.successful(false))
 
       val ex = service
-        .storeAndSyncSelectedSubcontractors(ua, selected)
+        .storeAndSyncSelectedSubcontractors(ua, selected, originalSubcontractorCount = 1)
         .failed
         .futureValue
 
