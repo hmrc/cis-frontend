@@ -18,28 +18,28 @@ package controllers.finalvalidations
 
 import base.SpecBase
 import models.UserAnswers
-import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, Subcontractor}
-import models.requests.GetMonthlyReturnForEditRequest
-import models.validation.SubcontractorValidationField.EmailAddress
-import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
+import models.finalvalidation.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, verify, when}
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
-import pages.validation.SubcontractorValidationFailuresPage
+import pages.monthlyreturns.CisIdPage
+import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import play.api.libs.json.Json
 import repositories.SessionRepository
-import services.{MonthlyReturnService, SubcontractorDetailsValidator}
+import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
+import models.NormalMode
 
-import java.time.LocalDate
 import scala.concurrent.Future
 
 class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
+
+  private val draftId = "draft-123"
 
   private val request =
     FakeRequest(
@@ -47,66 +47,100 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
       routes.ReviewSubcontractorDetailsController.onPageLoad().url
     )
 
-  private val failures =
-    List(
-      validationFailure(2L),
-      validationFailure(1L),
-      validationFailure(99L)
+  private val submitRequest =
+    FakeRequest(
+      POST,
+      routes.ReviewSubcontractorDetailsController.onSubmit().url
     )
 
   private val userAnswers =
     emptyUserAnswers
       .setOrException(CisIdPage, "CIS-123")
       .setOrException(
-        DateConfirmPaymentsPage,
-        LocalDate.of(2026, 8, 5)
+        FinalValidationDraftIdPage,
+        draftId
+      )
+      .setOrException(
+        MonthlyFinalValidationSourcePage,
+        MonthlyFinalValidationSource.SelectSubcontractors
       )
 
-  private val response =
-    GetAllMonthlyReturnDetailsResponse(
-      scheme = Seq.empty,
-      monthlyReturn = Seq.empty,
-      subcontractors = Seq(
-        subcontractor(1L, Some("First Subcontractor")),
-        subcontractor(2L, Some("Second Subcontractor"))
-      ),
-      monthlyReturnItems = Seq.empty,
-      submission = Seq.empty
-    )
+  private def draft(
+    firstReadiness: String,
+    secondReadiness: String
+  ): FinalValidationDraft =
+    Json
+      .obj(
+        "subcontractors" -> Json.arr(
+          Json.obj(
+            "subcontractorId"   -> 1L,
+            "subbieResourceRef" -> 10L,
+            "baseVersion"       -> 1,
+            "subcontractorType" -> "soletrader",
+            "displayName"       -> "First Subcontractor",
+            "base"              -> Json.obj(
+              "firstName" -> "First",
+              "surname"   -> "Subcontractor"
+            ),
+            "proposed"          -> Json.obj(
+              "firstName" -> "First",
+              "surname"   -> "Subcontractor"
+            ),
+            "changedTargets"    -> Json.arr(),
+            "issues"            -> Json.arr(),
+            "readiness"         -> firstReadiness,
+            "commitStatus"      -> "Pending"
+          ),
+          Json.obj(
+            "subcontractorId"   -> 2L,
+            "subbieResourceRef" -> 20L,
+            "baseVersion"       -> 1,
+            "subcontractorType" -> "soletrader",
+            "displayName"       -> "Second Subcontractor",
+            "base"              -> Json.obj(
+              "firstName" -> "Second",
+              "surname"   -> "Subcontractor"
+            ),
+            "proposed"          -> Json.obj(
+              "firstName" -> "Second",
+              "surname"   -> "Subcontractor"
+            ),
+            "changedTargets"    -> Json.arr(),
+            "issues"            -> Json.arr(),
+            "readiness"         -> secondReadiness,
+            "commitStatus"      -> "Pending"
+          )
+        )
+      )
+      .as[FinalValidationDraft]
 
   "ReviewSubcontractorDetailsController.onPageLoad" - {
 
-    "validate subcontractors, save failures and render failed subcontractor names" in {
-      val monthlyReturnService =
-        mock[MonthlyReturnService]
-
-      val subcontractorDetailsValidator =
-        mock[SubcontractorDetailsValidator]
+    "render subcontractors from the Final Validation draft" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
 
       val sessionRepository =
         mock[SessionRepository]
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
-          any[GetMonthlyReturnForEditRequest]
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
         )(any[HeaderCarrier])
-      ).thenReturn(Future.successful(response))
-
-      when(
-        subcontractorDetailsValidator.validate(
-          response.subcontractors
+      ).thenReturn(
+        Future.successful(
+          draft(
+            firstReadiness = "Incomplete",
+            secondReadiness = "Complete"
+          )
         )
-      ).thenReturn(failures)
-
-      when(
-        sessionRepository.set(any())
-      ).thenReturn(Future.successful(true))
+      )
 
       val application =
         applicationWith(
           userAnswers = userAnswers,
-          monthlyReturnService = monthlyReturnService,
-          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          finalValidationDraftService = finalValidationDraftService,
           sessionRepository = sessionRepository
         )
 
@@ -122,114 +156,53 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
         contentAsString(result) mustBe
           view(
-            Seq(
-              "Second Subcontractor",
-              "First Subcontractor",
-              "No name provided"
+            ReviewSubcontractorDetailsPageModel(
+              Seq(
+                ReviewSubcontractorDetailsRow(
+                  1L,
+                  "First Subcontractor",
+                  true
+                ),
+                ReviewSubcontractorDetailsRow(
+                  2L,
+                  "Second Subcontractor",
+                  false
+                )
+              ),
+              false,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController
+                .onPageLoad(None)
+                .url
             )
           )(
             request,
             messages(application)
           ).toString
 
-        verify(monthlyReturnService)
-          .retrieveMonthlyReturnForEditDetails(
-            any[GetMonthlyReturnForEditRequest]
+        verify(finalValidationDraftService)
+          .get(
+            any[String],
+            any[String]
           )(any[HeaderCarrier])
-
-        verify(subcontractorDetailsValidator)
-          .validate(response.subcontractors)
-
-        val userAnswersCaptor =
-          ArgumentCaptor.forClass(classOf[UserAnswers])
-
-        verify(sessionRepository)
-          .set(userAnswersCaptor.capture())
-
-        userAnswersCaptor.getValue
-          .get(SubcontractorValidationFailuresPage) mustBe
-          Some(failures)
       }
     }
 
-    "save an empty failure list to clear previous failures" in {
-      val monthlyReturnService =
-        mock[MonthlyReturnService]
-
-      val subcontractorDetailsValidator =
-        mock[SubcontractorDetailsValidator]
+    "redirect to JourneyRecovery when there is no Final Validation draft id" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
 
       val sessionRepository =
         mock[SessionRepository]
 
-      val answersWithPreviousFailures =
-        userAnswers.setOrException(
-          SubcontractorValidationFailuresPage,
-          failures
-        )
-
-      when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
-          any[GetMonthlyReturnForEditRequest]
-        )(any[HeaderCarrier])
-      ).thenReturn(Future.successful(response))
-
-      when(
-        subcontractorDetailsValidator.validate(
-          response.subcontractors
-        )
-      ).thenReturn(Nil)
-
-      when(
-        sessionRepository.set(any())
-      ).thenReturn(Future.successful(true))
-
-      val application =
-        applicationWith(
-          userAnswers = answersWithPreviousFailures,
-          monthlyReturnService = monthlyReturnService,
-          subcontractorDetailsValidator = subcontractorDetailsValidator,
-          sessionRepository = sessionRepository
-        )
-
-      running(application) {
-        val result =
-          route(application, request).value
-
-        status(result) mustBe OK
-
-        val userAnswersCaptor =
-          ArgumentCaptor.forClass(classOf[UserAnswers])
-
-        verify(sessionRepository)
-          .set(userAnswersCaptor.capture())
-
-        userAnswersCaptor.getValue
-          .get(SubcontractorValidationFailuresPage) mustBe
-          Some(Nil)
-      }
-    }
-
-    "redirect to JourneyRecovery when the monthly-return request cannot be built" in {
-      val monthlyReturnService =
-        mock[MonthlyReturnService]
-
-      val subcontractorDetailsValidator =
-        mock[SubcontractorDetailsValidator]
-
-      val sessionRepository =
-        mock[SessionRepository]
-
-      val answersWithoutDate =
+      val answersWithoutDraftId =
         userAnswers
-          .remove(DateConfirmPaymentsPage)
+          .remove(FinalValidationDraftIdPage)
           .get
 
       val application =
         applicationWith(
-          userAnswers = answersWithoutDate,
-          monthlyReturnService = monthlyReturnService,
-          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          userAnswers = answersWithoutDraftId,
+          finalValidationDraftService = finalValidationDraftService,
           sessionRepository = sessionRepository
         )
 
@@ -243,192 +216,244 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
           controllers.routes.JourneyRecoveryController
             .onPageLoad()
             .url
-
-        verify(monthlyReturnService, never)
-          .retrieveMonthlyReturnForEditDetails(
-            any[GetMonthlyReturnForEditRequest]
-          )(any[HeaderCarrier])
-
-        verify(subcontractorDetailsValidator, never)
-          .validate(any[Seq[Subcontractor]])
-
-        verify(sessionRepository, never)
-          .set(any())
       }
     }
+  }
 
-    "redirect to SystemError when subcontractor details cannot be retrieved" in {
-      val monthlyReturnService =
-        mock[MonthlyReturnService]
+  "ReviewSubcontractorDetailsController.onSubmit" - {
 
-      val subcontractorDetailsValidator =
-        mock[SubcontractorDetailsValidator]
+    "redirect back to review when the draft is incomplete" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
 
       val sessionRepository =
         mock[SessionRepository]
 
       when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
-          any[GetMonthlyReturnForEditRequest]
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
         )(any[HeaderCarrier])
       ).thenReturn(
-        Future.failed(
-          new RuntimeException("retrieve failed")
+        Future.successful(
+          draft(
+            firstReadiness = "Complete",
+            secondReadiness = "Incomplete"
+          )
         )
       )
 
       val application =
         applicationWith(
           userAnswers = userAnswers,
-          monthlyReturnService = monthlyReturnService,
-          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          finalValidationDraftService = finalValidationDraftService,
           sessionRepository = sessionRepository
         )
 
       running(application) {
         val result =
-          route(application, request).value
+          route(application, submitRequest).value
 
         status(result) mustBe SEE_OTHER
 
         redirectLocation(result).value mustBe
-          controllers.routes.SystemErrorController
+          routes.ReviewSubcontractorDetailsController
             .onPageLoad()
             .url
-
-        verify(subcontractorDetailsValidator, never)
-          .validate(any[Seq[Subcontractor]])
-
-        verify(sessionRepository, never)
-          .set(any())
       }
     }
 
-    "redirect to SystemError when validation failures cannot be saved" in {
-      val monthlyReturnService =
-        mock[MonthlyReturnService]
-
-      val subcontractorDetailsValidator =
-        mock[SubcontractorDetailsValidator]
+    "commit and continue to VerifySubcontractors when verification is required" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
 
       val sessionRepository =
         mock[SessionRepository]
 
-      when(
-        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
-          any[GetMonthlyReturnForEditRequest]
-        )(any[HeaderCarrier])
-      ).thenReturn(Future.successful(response))
+      val answers =
+        userAnswers.setOrException(
+          FinalValidationVerificationRequiredPage,
+          true
+        )
 
       when(
-        subcontractorDetailsValidator.validate(
-          response.subcontractors
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(
+        Future.successful(
+          draft(
+            firstReadiness = "Complete",
+            secondReadiness = "Complete"
+          )
         )
-      ).thenReturn(failures)
+      )
+
+      when(
+        finalValidationDraftService.commit(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.unit)
 
       when(
         sessionRepository.set(any())
-      ).thenReturn(Future.successful(false))
+      ).thenReturn(Future.successful(true))
 
       val application =
         applicationWith(
-          userAnswers = userAnswers,
-          monthlyReturnService = monthlyReturnService,
-          subcontractorDetailsValidator = subcontractorDetailsValidator,
+          userAnswers = answers,
+          finalValidationDraftService = finalValidationDraftService,
           sessionRepository = sessionRepository
         )
 
       running(application) {
         val result =
-          route(application, request).value
+          route(application, submitRequest).value
 
         status(result) mustBe SEE_OTHER
 
         redirectLocation(result).value mustBe
-          controllers.routes.SystemErrorController
-            .onPageLoad()
+          controllers.monthlyreturns.routes.VerifySubcontractorsController
+            .onPageLoad(NormalMode)
             .url
 
-        verify(subcontractorDetailsValidator)
-          .validate(response.subcontractors)
+        verify(finalValidationDraftService)
+          .commit(
+            any[String],
+            any[String]
+          )(any[HeaderCarrier])
+
+        val userAnswersCaptor =
+          ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(sessionRepository)
+          .set(userAnswersCaptor.capture())
+
+        userAnswersCaptor.getValue
+          .get(FinalValidationDraftIdPage) mustBe None
+
+        userAnswersCaptor.getValue
+          .get(MonthlyFinalValidationSourcePage) mustBe None
+
+        userAnswersCaptor.getValue
+          .get(FinalValidationVerificationRequiredPage) mustBe None
+      }
+    }
+
+    "commit and continue to SubcontractorDetailsAdded when verification is not required" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      val answers =
+        userAnswers.setOrException(
+          FinalValidationVerificationRequiredPage,
+          false
+        )
+
+      when(
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(
+        Future.successful(
+          draft(
+            firstReadiness = "Complete",
+            secondReadiness = "Complete"
+          )
+        )
+      )
+
+      when(
+        finalValidationDraftService.commit(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.unit)
+
+      when(
+        sessionRepository.set(any())
+      ).thenReturn(Future.successful(true))
+
+      val application =
+        applicationWith(
+          userAnswers = answers,
+          finalValidationDraftService = finalValidationDraftService,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, submitRequest).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoad(NormalMode)
+            .url
+
+        verify(finalValidationDraftService)
+          .commit(
+            any[String],
+            any[String]
+          )(any[HeaderCarrier])
 
         verify(sessionRepository)
           .set(any())
+      }
+    }
+
+    "redirect to JourneyRecovery when the source is missing" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      val answersWithoutSource =
+        userAnswers
+          .remove(MonthlyFinalValidationSourcePage)
+          .get
+
+      val application =
+        applicationWith(
+          userAnswers = answersWithoutSource,
+          finalValidationDraftService = finalValidationDraftService,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, submitRequest).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController
+            .onPageLoad()
+            .url
       }
     }
   }
 
   private def applicationWith(
     userAnswers: UserAnswers,
-    monthlyReturnService: MonthlyReturnService,
-    subcontractorDetailsValidator: SubcontractorDetailsValidator,
+    finalValidationDraftService: FinalValidationDraftService,
     sessionRepository: SessionRepository
   ) =
     applicationBuilder(
       userAnswers = Some(userAnswers),
       additionalBindings = Seq(
-        bind[MonthlyReturnService]
-          .toInstance(monthlyReturnService),
-        bind[SubcontractorDetailsValidator]
-          .toInstance(subcontractorDetailsValidator),
+        bind[FinalValidationDraftService]
+          .toInstance(finalValidationDraftService),
         bind[SessionRepository]
           .toInstance(sessionRepository)
       )
     ).build()
-
-  private def validationFailure(
-    subcontractorId: Long
-  ): SubcontractorValidationFailure =
-    SubcontractorValidationFailure(
-      subcontractorId = subcontractorId,
-      failedFields = List(
-        FieldValidationFailure(
-          field = EmailAddress,
-          value = Some("invalid-email")
-        )
-      )
-    )
-
-  private def subcontractor(
-    subcontractorId: Long,
-    displayName: Option[String]
-  ): Subcontractor =
-    Subcontractor(
-      subcontractorId = subcontractorId,
-      utr = Some("1234567890"),
-      pageVisited = None,
-      partnerUtr = None,
-      crn = None,
-      firstName = Some("John"),
-      nino = Some("AA123456A"),
-      secondName = None,
-      surname = Some("Smith"),
-      partnershipTradingName = None,
-      tradingName = None,
-      subcontractorType = Some("soletrader"),
-      addressLine1 = Some("1 High Street"),
-      addressLine2 = Some("Newcastle"),
-      addressLine3 = None,
-      addressLine4 = None,
-      country = Some("United Kingdom"),
-      postCode = Some("NE1 1AA"),
-      emailAddress = Some("subcontractor@example.com"),
-      phoneNumber = Some("0191 123 4567"),
-      mobilePhoneNumber = Some("07700 900123"),
-      worksReferenceNumber = None,
-      createDate = None,
-      lastUpdate = None,
-      subbieResourceRef = Some(subcontractorId * 10),
-      matched = None,
-      autoVerified = None,
-      verified = None,
-      verificationNumber = None,
-      taxTreatment = None,
-      verificationDate = None,
-      version = None,
-      updatedTaxTreatment = None,
-      lastMonthlyReturnDate = None,
-      pendingVerifications = None,
-      displayName = displayName
-    )
 }

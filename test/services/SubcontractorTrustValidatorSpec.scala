@@ -22,6 +22,7 @@ import models.validation.SubcontractorValidationField.{TradingName, Utr, WorksRe
 import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
 
 class SubcontractorTrustValidatorSpec extends SpecBase {
+
   private val subcontractorTrustValidator =
     new SubcontractorTrustValidator()
 
@@ -31,10 +32,52 @@ class SubcontractorTrustValidatorSpec extends SpecBase {
       subcontractorTrustValidator.validate(Seq.empty) mustBe Nil
     }
 
-    "exclude a subcontractor when all common details are valid" in {
+    "exclude a trust subcontractor when all fields are valid" in {
       subcontractorTrustValidator.validate(
         Seq(subcontractor(1L))
       ) mustBe Nil
+    }
+
+    "ignore a subcontractor that is not a trust" in {
+      val result =
+        subcontractorTrustValidator.validate(
+          Seq(
+            subcontractor(1L).copy(
+              subcontractorType = Some("company"),
+              tradingName = Some("2345678901234567890123456789012345678901234567890<>")
+            )
+          )
+        )
+
+      result mustBe Nil
+    }
+
+    "ignore a subcontractor with an invalid subcontractor type" in {
+      val result =
+        subcontractorTrustValidator.validate(
+          Seq(
+            subcontractor(1L).copy(
+              subcontractorType = Some("invalid"),
+              tradingName = Some("2345678901234567890123456789012345678901234567890<>")
+            )
+          )
+        )
+
+      result mustBe Nil
+    }
+
+    "ignore a subcontractor with no subcontractor type" in {
+      val result =
+        subcontractorTrustValidator.validate(
+          Seq(
+            subcontractor(1L).copy(
+              subcontractorType = None,
+              tradingName = Some("2345678901234567890123456789012345678901234567890<>")
+            )
+          )
+        )
+
+      result mustBe Nil
     }
 
     "return a subcontractor containing an invalid works reference number" in {
@@ -149,7 +192,6 @@ class SubcontractorTrustValidatorSpec extends SpecBase {
           )
         )
     }
-
   }
 
   private def subcontractor(
