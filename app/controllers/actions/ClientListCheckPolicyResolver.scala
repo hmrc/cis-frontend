@@ -45,8 +45,8 @@ class ClientListCheckPolicyResolver @Inject() extends Logging {
       "controllers.UnauthorisedController",
       "controllers.UnauthorisedIndividualAffinityController",
       "controllers.UnauthorisedOrganisationAffinityController",
-      "controllers.UnauthorisedWrongRoleController"
-      // AgentLostAccessController when implemented
+      "controllers.UnauthorisedWrongRoleController",
+      "controllers.AgentLostAccessController"
     )
 
   def resolve(request: RequestHeader): ClientListCheckPolicy = {

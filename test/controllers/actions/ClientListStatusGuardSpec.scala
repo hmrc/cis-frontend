@@ -73,7 +73,7 @@ class ClientListStatusGuardSpec extends SpecBase {
 
         result.value.header.status mustBe SEE_OTHER
         result.value.header.headers.get(LOCATION) mustBe
-          Some(controllers.routes.SystemErrorController.onPageLoad().url)
+          Some(controllers.routes.AgentLostAccessController.onPageLoad().url)
       }
     }
 

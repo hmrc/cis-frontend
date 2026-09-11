@@ -30,7 +30,8 @@ class FakeDataRetrievalAction(dataToReturn: Option[UserAnswers]) extends DataRet
         userAnswers = dataToReturn,
         employerReference = request.employerReference,
         agentReference = request.agentReference,
-        isAgent = request.isAgent
+        isAgent = request.isAgent,
+        agentCode = request.agentCode
       )
     )
 
