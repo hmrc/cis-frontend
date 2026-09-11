@@ -616,3 +616,16 @@ finalValidations.reviewContractorDetails.taskList.status.incomplete = xxxxxxxxxx
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = xxxxxxxxxxxxxxxxxxxx
 finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = xxxxxxxxxxxxxxxxxxxx
 finalvalidations.reviewContractorDetails.cisreturndashboardlink = xxxxxxxxxxxxxxxxxxxx
+
+agent.agentLostAccess.title = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.heading = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.p1 = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.h2 = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.bullet.title = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.bullet.item.1.prefix = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.bullet.item.1.link = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.bullet.item.2.prefix = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.bullet.item.2.link = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.bullet.item.2.suffix = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.p2 = xxxxxxxxxxxxxxxxxxxx
+agent.agentLostAccess.return.link = xxxxxxxxxxxxxxxxxxxx
