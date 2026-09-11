@@ -43,12 +43,30 @@ class ReviewSubcontractorDetailsViewSpec extends SpecBase {
       doc.select("p.govuk-body").text must include(messages("finalValidations.reviewSubcontractorDetails.intro"))
     }
 
-    "must render each subcontractor as a task list item link" in new Setup {
-      val taskListLinks = doc.select(".govuk-task-list__link").eachText()
+    "must render each subcontractor name as a task list item link" in new Setup {
+      val subcontractorNames =
+        doc
+          .select(".govuk-task-list__link > span:not(.govuk-visually-hidden)")
+          .eachText()
 
       subcontractors.foreach { subcontractor =>
-        taskListLinks must contain(subcontractor.name)
+        subcontractorNames must contain(subcontractor.name)
       }
+    }
+
+    "must render Review as visually hidden text for each subcontractor link" in new Setup {
+      val hiddenText =
+        doc
+          .select(".govuk-task-list__link .govuk-visually-hidden")
+          .eachText()
+
+      hiddenText.size mustEqual subcontractors.size
+
+      hiddenText.forEach(
+        _ mustEqual messages(
+          "finalValidations.reviewSubcontractorDetails.taskList.review"
+        )
+      )
     }
 
     "must render each subcontractor link pointing to the update subcontractor details page" in new Setup {

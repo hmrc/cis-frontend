@@ -28,6 +28,13 @@
 
 @(model: ReviewSubcontractorDetailsPageModel)(implicit request: Request[_], messages: Messages)
 
+@reviewSubcontractorTitle(name: String) = {
+    <span class="govuk-visually-hidden">
+            @messages("finalValidations.reviewSubcontractorDetails.taskList.review")
+        </span>
+    <span>@name</span>
+}
+
 @fileAReturnSubmitLink() = {
 <span class="app-task-list-row-submit">
         <span class="govuk-link govuk-link--no-visited-state">
@@ -74,13 +81,13 @@
             items = model.subcontractors.map { row =>
                 if (row.hasErrors) {
                     TaskListItem(
-                        title = TaskListItemTitle(content = Text(row.name)),
+                        title = TaskListItemTitle(content = HtmlContent(reviewSubcontractorTitle(row.name))),
                         href = Some(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId).url),
                         status = incompleteStatus
                     )
                 } else {
                     TaskListItem(
-                        title = TaskListItemTitle(content = Text(row.name)),
+                        title = TaskListItemTitle(content = HtmlContent(reviewSubcontractorTitle(row.name))),
                         href = None,
                         status = completedStatus
                     )

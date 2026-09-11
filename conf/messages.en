@@ -658,3 +658,4 @@ finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = File a return
 finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Cannot start yet
 finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to manage your CIS account
+finalvalidations.reviewContractorDetails.tasklist.review = Review
