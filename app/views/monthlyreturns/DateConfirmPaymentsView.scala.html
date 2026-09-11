@@ -36,11 +36,11 @@
     appConfig: FrontendAppConfig
 )
 
-@(form: Form[_], mode: Mode, messagePrefix: String)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, messagePrefix: String, returnType: ReturnType)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages(s"$messagePrefix.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))

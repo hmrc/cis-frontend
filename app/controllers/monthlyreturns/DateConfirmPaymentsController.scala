@@ -69,22 +69,22 @@ class DateConfirmPaymentsController @Inject() (
         uaWithReturnType <-
           returnType.fold(Future.successful(userAnswers))(r => userAnswers.set(ReturnTypePage, r).toFuture)
         _                <- sessionRepository.set(uaWithReturnType)
-        returnType       <- uaWithReturnType.get(ReturnTypePage).toFuture
-        messagePrefix     = if (returnType == MonthlyStandardReturn) {
+        storedReturnType <- uaWithReturnType.get(ReturnTypePage).toFuture
+        messagePrefix     = if (storedReturnType == MonthlyStandardReturn) {
                               "monthlyreturns.dateConfirmPayments"
                             } else { "monthlyreturns.dateConfirmPayments.nilreturn" }
         preparedForm      = uaWithReturnType.get(DateConfirmPaymentsPage) match {
                               case None        => form
                               case Some(value) => form.fill(value)
                             }
-      } yield Ok(view(preparedForm, mode, messagePrefix))
+      } yield Ok(view(preparedForm, mode, messagePrefix, storedReturnType))
     }
 
-  def onSubmit(mode: Mode): Action[AnyContent] =
+  def onSubmit(mode: Mode, returnType: ReturnType): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       val userAnswers   = request.userAnswers
       val form          = formProvider()
-      val isStandard    = userAnswers.get(ReturnTypePage).contains(MonthlyStandardReturn)
+      val isStandard    = returnType == MonthlyStandardReturn
       val messagePrefix =
         if (isStandard) {
           "monthlyreturns.dateConfirmPayments"
@@ -94,34 +94,35 @@ class DateConfirmPaymentsController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix, returnType))),
           value => {
             val year  = value.getYear
             val month = value.getMonthValue
 
             (for {
-              cisId          <- userAnswers.get(CisIdPage).toFuture
-              isDup          <- monthlyReturnService.isDuplicate(cisId, year, month)
-              updatedAnswers <- Future.fromTry(userAnswers.set(DateConfirmPaymentsPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-              result         <- if (isDup) {
-                                  val dupForm =
-                                    form
-                                      .fill(value)
-                                      .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-                                  Future.successful(BadRequest(view(dupForm, mode, messagePrefix)))
-                                } else if (isStandard) {
-                                  val createRequest = MonthlyReturnRequest(cisId, year, month)
-                                  monthlyReturnService
-                                    .createMonthlyReturn(createRequest)
-                                    .map { _ =>
-                                      Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
-                                    }
-                                } else {
-                                  for {
-                                    uaWithStatus <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
-                                  } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
-                                }
+              uaWithReturnType <- userAnswers.set(ReturnTypePage, returnType).toFuture
+              cisId            <- uaWithReturnType.get(CisIdPage).toFuture
+              isDup            <- monthlyReturnService.isDuplicate(cisId, year, month)
+              updatedAnswers   <- Future.fromTry(uaWithReturnType.set(DateConfirmPaymentsPage, value))
+              _                <- sessionRepository.set(updatedAnswers)
+              result           <- if (isDup) {
+                                    val dupForm =
+                                      form
+                                        .fill(value)
+                                        .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
+                                    Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType)))
+                                  } else if (isStandard) {
+                                    val createRequest = MonthlyReturnRequest(cisId, year, month)
+                                    monthlyReturnService
+                                      .createMonthlyReturn(createRequest)
+                                      .map { _ =>
+                                        Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, updatedAnswers))
+                                      }
+                                  } else {
+                                    for {
+                                      uaWithStatus <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
+                                    } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
+                                  }
             } yield result).recover { case NonFatal(ex) =>
               logger.error(s"[DateConfirmPaymentsController] Failed to process submission: ${ex.getMessage}", ex)
               Redirect(controllers.routes.SystemErrorController.onPageLoad())

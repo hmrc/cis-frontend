@@ -20,6 +20,7 @@ import base.SpecBase
 import config.FrontendAppConfig
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.NormalMode
+import models.ReturnType.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.scalatestplus.mockito.MockitoSugar
@@ -57,7 +58,12 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
     "must display error summary when form has errors" in new Setup {
       val formWithError = form.withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-      val htmlWithError = view(formWithError, NormalMode, "monthlyreturns.dateConfirmPayments")
+      val htmlWithError = view(
+        formWithError,
+        NormalMode,
+        "monthlyreturns.dateConfirmPayments",
+        MonthlyStandardReturn
+      )
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
       doc.select(".govuk-error-summary").size mustBe 1
@@ -78,6 +84,11 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode, "monthlyreturns.dateConfirmPayments")
+    val html = view(
+      form,
+      NormalMode,
+      "monthlyreturns.dateConfirmPayments",
+      MonthlyStandardReturn
+    )
   }
 }

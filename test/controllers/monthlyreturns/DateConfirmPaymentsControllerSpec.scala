@@ -61,6 +61,16 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       .onPageLoad(NormalMode, Some(MonthlyStandardReturn))
       .url
 
+  lazy val dateConfirmPaymentsPostRoute: String =
+    controllers.monthlyreturns.routes.DateConfirmPaymentsController
+      .onSubmit(NormalMode, MonthlyStandardReturn)
+      .url
+
+  lazy val dateConfirmNilPaymentsPostRoute: String =
+    controllers.monthlyreturns.routes.DateConfirmPaymentsController
+      .onSubmit(NormalMode, MonthlyNilReturn)
+      .url
+
   override val emptyUserAnswers: UserAnswers = UserAnswers(userAnswersId)
   val standardReturnUserAnswers: UserAnswers =
     userAnswersWithCisId.setOrException(ReturnTypePage, MonthlyStandardReturn)
@@ -69,7 +79,15 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
     FakeRequest(GET, dateConfirmPaymentsRoute)
 
   def postRequest(): FakeRequest[AnyContentAsFormUrlEncoded] =
-    FakeRequest(POST, dateConfirmPaymentsRoute)
+    FakeRequest(POST, dateConfirmPaymentsPostRoute)
+      .withFormUrlEncodedBody(
+        "value.day"   -> validAnswer.getDayOfMonth.toString,
+        "value.month" -> validAnswer.getMonthValue.toString,
+        "value.year"  -> validAnswer.getYear.toString
+      )
+
+  def nilPostRequest(): FakeRequest[AnyContentAsFormUrlEncoded] =
+    FakeRequest(POST, dateConfirmNilPaymentsPostRoute)
       .withFormUrlEncodedBody(
         "value.day"   -> validAnswer.getDayOfMonth.toString,
         "value.month" -> validAnswer.getMonthValue.toString,
@@ -86,7 +104,12 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val view   = application.injector.instanceOf[DateConfirmPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, "monthlyreturns.dateConfirmPayments")(
+        contentAsString(result) mustEqual view(
+          form,
+          NormalMode,
+          "monthlyreturns.dateConfirmPayments",
+          MonthlyStandardReturn
+        )(
           getRequest,
           messages(application)
         ).toString
@@ -106,7 +129,8 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         contentAsString(result) mustEqual view(
           form.fill(validAnswer),
           NormalMode,
-          "monthlyreturns.dateConfirmPayments"
+          "monthlyreturns.dateConfirmPayments",
+          MonthlyStandardReturn
         )(
           getRequest,
           messages(application)
@@ -149,7 +173,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       ).build()
 
       val request =
-        FakeRequest(POST, dateConfirmPaymentsRoute)
+        FakeRequest(POST, dateConfirmPaymentsPostRoute)
           .withFormUrlEncodedBody("value" -> "invalid value")
 
       running(application) {
@@ -158,7 +182,12 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val result    = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, "monthlyreturns.dateConfirmPayments")(
+        contentAsString(result) mustEqual view(
+          boundForm,
+          NormalMode,
+          "monthlyreturns.dateConfirmPayments",
+          MonthlyStandardReturn
+        )(
           request,
           messages(application)
         ).toString
@@ -247,7 +276,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           .build()
 
       val request =
-        FakeRequest(POST, dateConfirmPaymentsRoute)
+        FakeRequest(POST, dateConfirmPaymentsPostRoute)
           .withFormUrlEncodedBody("value" -> "invalid-value")
 
       running(application) {
@@ -302,7 +331,12 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val view    = application.injector.instanceOf[DateConfirmPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, "monthlyreturns.dateConfirmPayments")(
+        contentAsString(result) mustEqual view(
+          form,
+          NormalMode,
+          "monthlyreturns.dateConfirmPayments",
+          MonthlyStandardReturn
+        )(
           request,
           messages(application)
         ).toString
@@ -327,7 +361,12 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val view    = application.injector.instanceOf[DateConfirmPaymentsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, "monthlyreturns.dateConfirmPayments.nilreturn")(
+        contentAsString(result) mustEqual view(
+          form,
+          NormalMode,
+          "monthlyreturns.dateConfirmPayments.nilreturn",
+          MonthlyNilReturn
+        )(
           request,
           messages(application)
         ).toString
@@ -354,7 +393,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           .build()
 
       running(application) {
-        val result = route(application, postRequest()).value
+        val result = route(application, nilPostRequest()).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual onwardRoute.url
