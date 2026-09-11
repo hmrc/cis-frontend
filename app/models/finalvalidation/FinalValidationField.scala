@@ -80,8 +80,8 @@ object FinalValidationField {
     override def valueFrom(subcontractor: Subcontractor): Option[String] = subcontractor.nino
   }
 
-  case object WorkReferenceNumber extends FinalValidationField {
-    override def key: String = "workReferenceNumber"
+  case object WorksReferenceNumber extends FinalValidationField {
+    override def key: String = "worksReferenceNumber"
 
     override def valueFrom(subcontractor: Subcontractor): Option[String] = subcontractor.worksReferenceNumber
   }
@@ -150,7 +150,7 @@ object FinalValidationField {
     SecondName,
     Surname,
     Nino,
-    WorkReferenceNumber,
+    WorksReferenceNumber,
     AddressLine1,
     AddressLine2,
     AddressLine3,

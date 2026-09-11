@@ -35,7 +35,7 @@ class FinalValidationFieldSpec extends SpecBase {
         "secondName"             -> SecondName,
         "surname"                -> Surname,
         "nino"                   -> Nino,
-        "workReferenceNumber"    -> WorkReferenceNumber,
+        "worksReferenceNumber"   -> WorksReferenceNumber,
         "addressLine1"           -> AddressLine1,
         "addressLine2"           -> AddressLine2,
         "addressLine3"           -> AddressLine3,
