@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package models.requests
+package models.agent
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import base.SpecBase
 
-case class IdentifierRequest[A](
-  request: Request[A],
-  userId: String,
-  employerReference: Option[EmployerReference],
-  agentReference: Option[String],
-  isAgent: Boolean = false,
-  agentCode: Option[String] = None
-) extends WrappedRequest[A](request)
+class ClientListCheckPolicySpec extends SpecBase {
+
+  "ClientListCheckPolicy" - {
+
+    "must expose GroupA and Exempt policies" in {
+      ClientListCheckPolicy.GroupA mustBe a[ClientListCheckPolicy]
+      ClientListCheckPolicy.Exempt mustBe a[ClientListCheckPolicy]
+    }
+  }
+}

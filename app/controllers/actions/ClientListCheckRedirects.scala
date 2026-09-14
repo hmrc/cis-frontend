@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package models.requests
+package controllers.actions
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import play.api.mvc.Result
+import play.api.mvc.Results.Redirect
 
-case class IdentifierRequest[A](
-  request: Request[A],
-  userId: String,
-  employerReference: Option[EmployerReference],
-  agentReference: Option[String],
-  isAgent: Boolean = false,
-  agentCode: Option[String] = None
-) extends WrappedRequest[A](request)
+private[actions] object ClientListCheckRedirects {
+  def systemError: Result =
+    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+
+  def agentLostAccess: Result =
+    Redirect(controllers.routes.AgentLostAccessController.onPageLoad())
+}

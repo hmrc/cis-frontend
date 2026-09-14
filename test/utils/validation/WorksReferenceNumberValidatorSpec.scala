@@ -83,5 +83,20 @@ class WorksReferenceNumberValidatorSpec extends AnyWordSpec with Matchers {
         )
     }
 
+    "return a failure when the WRN contains incorrect format + sign" in {
+      val wrn = "WRN No +"
+
+      WorksReferenceNumberValidator
+        .validate(
+          Some(wrn)
+        ) mustBe
+        Some(
+          FieldValidationFailure(
+            field = SubcontractorValidationField.WorksReferenceNumber,
+            value = Some(wrn)
+          )
+        )
+    }
+
   }
 }
