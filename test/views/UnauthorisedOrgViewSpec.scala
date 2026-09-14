@@ -30,7 +30,7 @@ class UnauthorisedOrgViewSpec extends SpecBase with Matchers {
 
   "UnauthorisedOrgViewSpec" - {
 
-    "must render the page with correct heading, paragraphs, and link" in new Setup {
+    "must render the page with correct heading and link" in new Setup {
       val html: HtmlFormat.Appendable = view()
       val doc: Document               = Jsoup.parse(html.body)
 
