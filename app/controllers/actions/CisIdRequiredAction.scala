@@ -38,7 +38,8 @@ class CisIdRequiredActionImpl @Inject() (implicit val executionContext: Executio
               cisId,
               request.employerReference,
               request.agentReference,
-              request.isAgent
+              request.isAgent,
+              request.agentCode
             )
           )
         )
