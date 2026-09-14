@@ -69,15 +69,25 @@ class DateConfirmPaymentsController @Inject() (
         uaWithReturnType <-
           returnType.fold(Future.successful(userAnswers))(r => userAnswers.set(ReturnTypePage, r).toFuture)
         _                <- sessionRepository.set(uaWithReturnType)
-        storedReturnType <- uaWithReturnType.get(ReturnTypePage).toFuture
-        messagePrefix     = if (storedReturnType == MonthlyStandardReturn) {
-                              "monthlyreturns.dateConfirmPayments"
-                            } else { "monthlyreturns.dateConfirmPayments.nilreturn" }
-        preparedForm      = uaWithReturnType.get(DateConfirmPaymentsPage) match {
-                              case None        => form
-                              case Some(value) => form.fill(value)
-                            }
-      } yield Ok(view(preparedForm, mode, messagePrefix, storedReturnType))
+      } yield uaWithReturnType
+        .get(ReturnTypePage)
+        .fold {
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        } { storedReturnType =>
+          val messagePrefix =
+            if (storedReturnType == MonthlyStandardReturn) {
+              "monthlyreturns.dateConfirmPayments"
+            } else {
+              "monthlyreturns.dateConfirmPayments.nilreturn"
+            }
+
+          val preparedForm = uaWithReturnType.get(DateConfirmPaymentsPage) match {
+            case None        => form
+            case Some(value) => form.fill(value)
+          }
+
+          Ok(view(preparedForm, mode, messagePrefix, storedReturnType))
+        }
     }
 
   def onSubmit(mode: Mode, returnType: ReturnType): Action[AnyContent] =

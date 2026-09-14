@@ -343,6 +343,21 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
+    "must redirect to Journey Recovery when returnType parameter is None and ReturnTypePage is missing" in {
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      val noReturnTypeRoute =
+        controllers.monthlyreturns.routes.DateConfirmPaymentsController.onPageLoad(NormalMode, None).url
+
+      running(application) {
+        val request = FakeRequest(GET, noReturnTypeRoute)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
     "must return OK with nil return message prefix when returnType is MonthlyNilReturn" in {
       val mockMonthlyReturnService = mock[MonthlyReturnService]
 
