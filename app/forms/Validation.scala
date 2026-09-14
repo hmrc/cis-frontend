@@ -34,6 +34,9 @@ object Validation {
 
   final val surnameFormat = "[A-Za-z0-9\\s,\\.\\(\\)/\\&\\'\\-]+"
 
+  final val ninoRegex =
+    """^[ABCEGHJKLMNOPRSTWXYZabceghjklmnoprstwxyz][ABCEGHJKLMNPRSTWXYZabceghjklmnprstwxyz][0-9]{6}[ABCDabcd ]*$"""
+
   final val emailRegex = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
 
   final val mobileRegex = """^[0-9\(\)\-\s]*$"""

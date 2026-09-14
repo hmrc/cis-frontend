@@ -16,24 +16,105 @@
 
 package controllers.finalvalidations
 
-import controllers.actions._
-import javax.inject.Inject
+import controllers.actions.*
+import models.finalvalidation.{FinalValidationReadiness, UpdateSubcontractorDetailsPageModel, UpdateSubcontractorDetailsPageModelBuilder}
+import pages.finalvalidations.FinalValidationDraftIdPage
+import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
+
+import javax.inject.{Inject, Singleton}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.finalvalidations.UpdateSubcontractorDetailsView
 
+import scala.concurrent.{ExecutionContext, Future}
+
+@Singleton
 class UpdateSubcontractorDetailsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  requireCisId: CisIdRequiredAction,
+  finalValidationService: FinalValidationService,
+  finalValidationDraftService: FinalValidationDraftService,
+  pageModelBuilder: UpdateSubcontractorDetailsPageModelBuilder,
   val controllerComponents: MessagesControllerComponents,
   view: UpdateSubcontractorDetailsView
-) extends FrontendBaseController
+)(using ec: ExecutionContext)
+    extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    Ok(view("Hooper And Associates"))
-  }
+  def onPageLoad(subcontractorId: Long): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(FinalValidationDraftIdPage) match {
+
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(request.cisId, draftId)
+            .map { draft =>
+              draft.subcontractor(subcontractorId) match {
+                case Some(subcontractor)
+                    if subcontractor.readiness ==
+                      FinalValidationReadiness.Complete =>
+                  Redirect(routes.ReviewSubcontractorDetailsController.onPageLoad())
+
+                case Some(subcontractor) =>
+                  val rows =
+                    pageModelBuilder.build(
+                      subcontractor,
+                      (field, target) =>
+                        routes.FinalValidationChangeController
+                          .onPageLoad(subcontractorId, field.key, target.key)
+                          .url
+                    )
+
+                  val model =
+                    UpdateSubcontractorDetailsPageModel(
+                      subcontractor.subcontractorId,
+                      subcontractor.displayName,
+                      rows
+                    )
+
+                  Ok(view(model))
+
+                case None =>
+                  Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
+            }
+
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
+  def onSubmit(subcontractorId: Long): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+      request.userAnswers.get(FinalValidationDraftIdPage) match {
+
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(request.cisId, draftId)
+            .flatMap { draft =>
+              draft.subcontractor(subcontractorId) match {
+                case Some(subcontractor)
+                    if subcontractor.readiness ==
+                      FinalValidationReadiness.Complete =>
+                  Future.successful(Redirect(routes.ReviewSubcontractorDetailsController.onPageLoad()))
+
+                case Some(_) =>
+                  for {
+                    issues <- Future.fromTry(finalValidationService.validateDraftSubcontractor(draft, subcontractorId))
+                    _      <- finalValidationDraftService.updateReadiness(request.cisId, draftId, subcontractorId, issues)
+                  } yield Redirect(routes.ReviewSubcontractorDetailsController.onPageLoad())
+
+                case None =>
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
+            }
+
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
 }

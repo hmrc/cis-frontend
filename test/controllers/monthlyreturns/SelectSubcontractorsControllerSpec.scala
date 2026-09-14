@@ -22,11 +22,13 @@ import models.UserAnswers
 import models.monthlyreturns.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
+import org.mockito.Answers
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import services.finalvalidation.FinalValidationService
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -43,10 +45,18 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   private val formProvider = new SelectSubcontractorsFormProvider()
   private val form         = formProvider()
 
-  private val cisId    = "CIS-123"
-  private val taxDate  = LocalDate.of(2025, 10, 15)
-  private val taxMonth = taxDate.getMonthValue
-  private val taxYear  = taxDate.getYear
+  private val cisId              = "CIS-123"
+  private val taxDate            = LocalDate.of(2025, 10, 15)
+  private val taxMonth           = taxDate.getMonthValue
+  private val taxYear            = taxDate.getYear
+  private val fullSubcontractor1 = mock[Subcontractor]
+  private val fullSubcontractor2 = mock[Subcontractor]
+
+  when(fullSubcontractor1.subcontractorId).thenReturn(1L)
+  when(fullSubcontractor2.subcontractorId).thenReturn(2L)
+
+  private val fullSubcontractors =
+    Seq(fullSubcontractor1, fullSubcontractor2)
 
   private val userAnswersWithRequiredPages =
     emptyUserAnswers
@@ -63,22 +73,38 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   )
 
   private val pageModelSelected =
-    SelectSubcontractorsPageModel(subcontractors = subcontractors, initiallySelectedIds = Seq(1))
+    SelectSubcontractorsPageModel(
+      subcontractors = subcontractors,
+      initiallySelectedIds = Seq(1),
+      fullSubcontractors = fullSubcontractors
+    )
 
   private val pageModelNoneSelected =
-    SelectSubcontractorsPageModel(subcontractors = subcontractors, initiallySelectedIds = Seq.empty)
+    SelectSubcontractorsPageModel(
+      subcontractors = subcontractors,
+      initiallySelectedIds = Seq.empty,
+      fullSubcontractors = fullSubcontractors
+    )
 
   private def applicationWith(
     subcontractorService: SubcontractorService,
     monthlyReturnService: MonthlyReturnService,
     ua: Option[UserAnswers] = Some(userAnswersWithRequiredPages)
-  ) =
+  ) = {
+    val finalValidationService =
+      org.mockito.Mockito.mock(
+        classOf[FinalValidationService],
+        Answers.RETURNS_DEEP_STUBS
+      )
+
     applicationBuilder(userAnswers = ua)
       .overrides(
         bind[SubcontractorService].toInstance(subcontractorService),
-        bind[MonthlyReturnService].toInstance(monthlyReturnService)
+        bind[MonthlyReturnService].toInstance(monthlyReturnService),
+        bind[FinalValidationService].toInstance(finalValidationService)
       )
       .build()
+  }
 
   private val incompleteSub = SelectedSubcontractor(2L, "B", None, None, None)
 
