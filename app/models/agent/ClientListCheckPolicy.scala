@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package models.agent
 
-import models.ReturnType
+sealed trait ClientListCheckPolicy
 
-case class SubmittedNoReceiptViewModel(
-  periodEnd: String,
-  submittedTime: String,
-  submittedDate: String,
-  contractorName: String,
-  empRef: String,
-  email: String,
-  submissionType: ReturnType,
-  cisId: String,
-  submittedDateTimeIso: Option[String] = None
-)
+object ClientListCheckPolicy {
+  case object GroupA extends ClientListCheckPolicy
+  case object Exempt extends ClientListCheckPolicy
+}

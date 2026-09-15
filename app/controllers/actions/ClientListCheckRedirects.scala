@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package controllers.actions
 
-import models.ReturnType
+import play.api.mvc.Result
+import play.api.mvc.Results.Redirect
 
-case class SubmittedNoReceiptViewModel(
-  periodEnd: String,
-  submittedTime: String,
-  submittedDate: String,
-  contractorName: String,
-  empRef: String,
-  email: String,
-  submissionType: ReturnType,
-  cisId: String,
-  submittedDateTimeIso: Option[String] = None
-)
+private[actions] object ClientListCheckRedirects {
+  def systemError: Result =
+    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+
+  def agentLostAccess: Result =
+    Redirect(controllers.routes.AgentLostAccessController.onPageLoad())
+}

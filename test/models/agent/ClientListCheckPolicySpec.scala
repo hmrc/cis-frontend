@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package models.agent
 
-import models.ReturnType
+import base.SpecBase
 
-case class SubmittedNoReceiptViewModel(
-  periodEnd: String,
-  submittedTime: String,
-  submittedDate: String,
-  contractorName: String,
-  empRef: String,
-  email: String,
-  submissionType: ReturnType,
-  cisId: String,
-  submittedDateTimeIso: Option[String] = None
-)
+class ClientListCheckPolicySpec extends SpecBase {
+
+  "ClientListCheckPolicy" - {
+
+    "must expose GroupA and Exempt policies" in {
+      ClientListCheckPolicy.GroupA mustBe a[ClientListCheckPolicy]
+      ClientListCheckPolicy.Exempt mustBe a[ClientListCheckPolicy]
+    }
+  }
+}

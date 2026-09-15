@@ -59,7 +59,7 @@ class DateTimeFormatsSpec extends AnyFreeSpec with Matchers {
     }
 
     "format month correctly in Welsh locale" in {
-      val welshLocale = new Locale("cy", "GB")
+      val welshLocale = Locale.forLanguageTag("cy-GB")
       val formatter   = DateTimeFormats.monthFormatter(welshLocale)
       val date        = LocalDate.of(2026, 3, 15)
 

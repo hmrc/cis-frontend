@@ -14,18 +14,26 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package models.agent
 
-import models.ReturnType
+import play.api.libs.json.{JsSuccess, Json}
+import base.SpecBase
 
-case class SubmittedNoReceiptViewModel(
-  periodEnd: String,
-  submittedTime: String,
-  submittedDate: String,
-  contractorName: String,
-  empRef: String,
-  email: String,
-  submissionType: ReturnType,
-  cisId: String,
-  submittedDateTimeIso: Option[String] = None
-)
+class GetClientListStatusResponseSpec extends SpecBase {
+
+  "GetClientListStatusResponse" - {
+
+    "must read from JSON" in {
+      val json = Json.obj(
+        "result" -> "succeeded"
+      )
+
+      json.validate[GetClientListStatusResponse] mustBe
+        JsSuccess(
+          GetClientListStatusResponse(
+            ClientListStatus.Succeeded
+          )
+        )
+    }
+  }
+}

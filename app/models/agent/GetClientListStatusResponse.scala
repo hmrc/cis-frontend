@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package viewmodels.checkAnswers.monthlyreturns
+package models.agent
 
-import models.ReturnType
+import play.api.libs.json.{Json, Reads}
 
-case class SubmittedNoReceiptViewModel(
-  periodEnd: String,
-  submittedTime: String,
-  submittedDate: String,
-  contractorName: String,
-  empRef: String,
-  email: String,
-  submissionType: ReturnType,
-  cisId: String,
-  submittedDateTimeIso: Option[String] = None
-)
+case class GetClientListStatusResponse(result: ClientListStatus)
+
+object GetClientListStatusResponse {
+  implicit val reads: Reads[GetClientListStatusResponse] = Json.reads[GetClientListStatusResponse]
+}
