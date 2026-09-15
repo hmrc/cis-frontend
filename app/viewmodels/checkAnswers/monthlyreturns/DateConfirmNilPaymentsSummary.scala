@@ -20,17 +20,16 @@ import models.UserAnswers
 import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
+import utils.DateTimeFormats
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
-
-import java.time.format.DateTimeFormatter
 
 object DateConfirmNilPaymentsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(DateConfirmPaymentsPage).map { answer =>
 
-      val returnPeriodText = answer.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+      val returnPeriodText = answer.format(DateTimeFormats.dateTimeFormat()(messages.lang))
 
       SummaryListRowViewModel(
         key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),

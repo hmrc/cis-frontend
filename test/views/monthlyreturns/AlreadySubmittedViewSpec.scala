@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,24 +27,32 @@ class AlreadySubmittedViewSpec extends SpecBase with Matchers {
 
   "AlreadySubmittedView" - {
 
-    "must render the page with the correct heading and paragraph with link for nil return" in new Setup {
-      val html = view("monthlyreturns.alreadySubmitted.nilreturn")
-      val doc  = Jsoup.parse(html.body)
+    Seq(
+      ("AGENT", applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, cisAccountURL) =>
+      s"when accountType is '$accountTypeSTR'" - {
 
-      doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.nilreturn.title"))
-      doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.nilreturn.heading"))
-      doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
-      doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
-    }
+        "must render the page with the correct heading and paragraph with link for nil return" in new Setup {
+          val html = view("monthlyreturns.alreadySubmitted.nilreturn", cisAccountURL)
+          val doc  = Jsoup.parse(html.body)
 
-    "must render the page with the correct heading and paragraph with link for standard return" in new Setup {
-      val html = view("monthlyreturns.alreadySubmitted")
-      val doc  = Jsoup.parse(html.body)
+          doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.nilreturn.title"))
+          doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.nilreturn.heading"))
+          doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
+          doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+        }
 
-      doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.title"))
-      doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.heading"))
-      doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
-      doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+        "must render the page with the correct heading and paragraph with link for standard return" in new Setup {
+          val html = view("monthlyreturns.alreadySubmitted", cisAccountURL)
+          val doc  = Jsoup.parse(html.body)
+
+          doc.title                                 must include(messages("monthlyreturns.alreadySubmitted.title"))
+          doc.select("h1").text                     must include(messages("monthlyreturns.alreadySubmitted.heading"))
+          doc.select("p").text                      must include(messages("monthlyreturns.alreadySubmitted.paragraph"))
+          doc.getElementsByClass("govuk-link").text must include(messages("monthlyreturns.alreadySubmitted.link"))
+        }
+      }
     }
   }
 

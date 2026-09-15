@@ -43,15 +43,25 @@ class AlreadySubmittedController @Inject() (
 
   def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
-      val returnType    = request.userAnswers.get(ReturnTypePage).getOrElse {
+
+      val cisAccountUrl =
+        if (request.isAgent) {
+          s"${appConfig.constructionIndustryAgentAccountUrl}${request.cisId}"
+        } else {
+          appConfig.constructionIndustryOrgAccountUrl
+        }
+
+      val returnType = request.userAnswers.get(ReturnTypePage).getOrElse {
         logger.error("[AlreadySubmittedController] ReturnTypePage missing from userAnswers")
         throw new IllegalStateException("ReturnTypePage missing from userAnswers")
       }
-      val messagePrefix = if (returnType == MonthlyStandardReturn) {
-        "monthlyreturns.alreadySubmitted"
-      } else {
-        "monthlyreturns.alreadySubmitted.nilreturn"
-      }
-      Ok(view(messagePrefix))
+
+      val messagePrefix =
+        if (returnType == MonthlyStandardReturn) {
+          "monthlyreturns.alreadySubmitted"
+        } else {
+          "monthlyreturns.alreadySubmitted.nilreturn"
+        }
+      Ok(view(messagePrefix, cisAccountUrl))
   }
 }

@@ -22,6 +22,7 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn,
 import repositories.SessionRepository
 import models.amend.AmendmentDetails
 import models.monthlyreturns.*
+import models.agent.ClientListStatus
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import models.{ReturnType, UserAnswers}
@@ -80,6 +81,10 @@ class MonthlyReturnService @Inject() (
           }
         }
     }
+
+  def startClientListRetrieval(using HeaderCarrier): Future[ClientListStatus] =
+    cisConnector.startClientList
+      .map(_.result)
 
   def retrieveAllMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     cisConnector.retrieveMonthlyReturns(cisId)
@@ -198,23 +203,38 @@ class MonthlyReturnService @Inject() (
     val updatedTry =
       userAnswers.get(DateConfirmPaymentsPage) match {
         case Some(periodEnd) =>
-          for {
-            withCompleted <- userAnswers.set(
-                               SubmissionJourneyCompletedPage(YearMonth.from(periodEnd).toString),
-                               true
-                             )
-            cleared       <- withCompleted.clearMonthlyReturnJourney
-          } yield cleared
+          userAnswers.set(
+            SubmissionJourneyCompletedPage(YearMonth.from(periodEnd).toString),
+            true
+          )
 
         case None =>
           scala.util.Failure(new RuntimeException("dateConfirmPayments missing"))
       }
 
     updatedTry match {
-      case scala.util.Success(updatedAnswers) => sessionRepository.set(updatedAnswers).map(_ => ())
-      case scala.util.Failure(_)              => Future.unit
+      case scala.util.Success(updatedAnswers) =>
+        sessionRepository.set(updatedAnswers).map(_ => ())
+
+      case scala.util.Failure(_) =>
+        Future.unit
     }
   }
+
+  def clearSubmissionJourney(userAnswers: UserAnswers): Future[Unit] =
+    Future
+      .fromTry(userAnswers.clearMonthlyReturnJourney)
+      .flatMap { clearedAnswers =>
+        sessionRepository.set(clearedAnswers).flatMap {
+          case true =>
+            Future.unit
+
+          case false =>
+            Future.failed(
+              new RuntimeException("Failed to persist cleared monthly return journey")
+            )
+        }
+      }
 
   def populateUserAnswersForContinueJourney(
     ua: UserAnswers,

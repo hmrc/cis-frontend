@@ -28,13 +28,14 @@ import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.data.Form
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.*
 import repositories.SessionRepository
 import services.{AmendMonthlyReturnService, FormpRdsReconcileService, MonthlyReturnService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import utils.DateTimeFormats
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
 import java.time.format.DateTimeFormatter
@@ -197,8 +198,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
     )
 
-  private val monthYearFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
-
-  private def getMonthYear(ua: UserAnswers): Option[String] =
-    ua.get(DateConfirmPaymentsPage).map(_.format(monthYearFormatter))
+  private def getMonthYear(ua: UserAnswers)(implicit request: RequestHeader): Option[String] = {
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+    ua.get(DateConfirmPaymentsPage).map(_.format(DateTimeFormats.dateTimeFormat()))
+  }
 }
