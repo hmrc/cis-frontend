@@ -68,8 +68,13 @@ class SubcontractorDetailsAddedController @Inject() (
 
           monthlyReturnService.isEditable(cisId, month, year, isAmendment).map {
             case true  =>
+              val preparedForm =
+                ua
+                  .get(AllSubcontractorDetailsAdded)
+                  .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
+
               SubcontractorDetailsAddedBuilder.build(ua) match {
-                case Some(viewModel)     => Ok(view(form, mode, viewModel))
+                case Some(viewModel)     => Ok(view(preparedForm, mode, viewModel))
                 case None if isAmendment =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
                 case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
