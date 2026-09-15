@@ -19,7 +19,7 @@ package viewmodels.checkAnswers.monthlyreturns
 import models.monthlyreturns.SelectedSubcontractor
 import models.{CheckMode, NormalMode, UserAnswers}
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 
 object SubcontractorDetailsAddedBuilder {
 
@@ -37,9 +37,10 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
-    val isAmendment          = ua.get(AmendmentDetailsPage).isDefined
-    val subcontractorByIndex = selectedSubcontractors(ua)
-    val indexes              = subcontractorByIndex.keys.toSeq.sorted
+    val isAmendment                = ua.get(AmendmentDetailsPage).isDefined
+    val subcontractorByIndex       = selectedSubcontractors(ua)
+    val originalSubcontractorCount = ua.get(OriginalSubcontractorCountPage)
+    val indexes                    = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {
       None
@@ -72,8 +73,9 @@ object SubcontractorDetailsAddedBuilder {
           }
         }
 
-      val hasIncomplete = rows.exists(!_.detailsAdded)
-      val addedCount    = rows.size
+      val hasIncomplete  = rows.exists(!_.detailsAdded)
+      val addedCount     = rows.size
+      val notAllSelected = originalSubcontractorCount.exists(_ != addedCount)
 
       val (key, args) = headingKeyAndArgs(addedCount)
       Some(
@@ -82,7 +84,8 @@ object SubcontractorDetailsAddedBuilder {
           headingArgs = args,
           rows = rows,
           hasIncomplete = hasIncomplete,
-          isAmendment = isAmendment
+          isAmendment = isAmendment,
+          showYesNo = notAllSelected
         )
       )
     }
