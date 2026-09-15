@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,40 +18,60 @@ package controllers
 
 import config.FrontendAppConfig
 import controllers.actions.IdentifierAction
+import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
-import uk.gov.hmrc.play.bootstrap.binders.RedirectUrl._
-import uk.gov.hmrc.play.bootstrap.binders._
+import repositories.SessionRepository
+import uk.gov.hmrc.play.bootstrap.binders.RedirectUrl.*
+import uk.gov.hmrc.play.bootstrap.binders.*
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.{JourneyRecoveryContinueView, JourneyRecoveryStartAgainView}
 
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 
 class JourneyRecoveryController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   identify: IdentifierAction,
+  sessionRepository: SessionRepository,
   continueView: JourneyRecoveryContinueView,
   startAgainView: JourneyRecoveryStartAgainView
-)(implicit appConfig: FrontendAppConfig)
+)(implicit appConfig: FrontendAppConfig, ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
 
-  def onPageLoad(continueUrl: Option[RedirectUrl] = None): Action[AnyContent] = identify { implicit request =>
+  def onPageLoad(continueUrl: Option[RedirectUrl] = None): Action[AnyContent] = identify.async { implicit request =>
+    sessionRepository
+      .get(request.userId)
+      .recover { case _ => None }
+      .map { maybeAnswers =>
 
-    val safeUrl: Option[String] = continueUrl.flatMap { unsafeUrl =>
-      unsafeUrl.getEither(OnlyRelative) match {
-        case Right(safeUrl) =>
-          Some(safeUrl.url)
-        case Left(message)  =>
-          logger.info(message)
-          None
+        val cisAccountUrl =
+          if (!request.isAgent) {
+            appConfig.constructionIndustryOrgAccountUrl
+          } else {
+            maybeAnswers
+              .flatMap(_.get(CisIdPage))
+              .fold(appConfig.constructionIndustryAgentAccountUrl)(cisId =>
+                s"${appConfig.constructionIndustryAgentAccountUrl}$cisId"
+              )
+          }
+
+        val safeUrl: Option[String] = continueUrl.flatMap { unsafeUrl =>
+          unsafeUrl.getEither(OnlyRelative) match {
+            case Right(safeUrl) =>
+              Some(safeUrl.url)
+            case Left(message)  =>
+              logger.info(message)
+              None
+          }
+        }
+
+        safeUrl
+          .map(url => Ok(continueView(url)))
+          .getOrElse(Ok(startAgainView(cisAccountUrl)))
       }
-    }
-
-    safeUrl
-      .map(url => Ok(continueView(url)))
-      .getOrElse(Ok(startAgainView()))
   }
 }

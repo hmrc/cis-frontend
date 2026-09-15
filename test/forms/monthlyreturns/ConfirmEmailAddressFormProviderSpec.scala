@@ -16,17 +16,16 @@
 
 package forms.monthlyreturns
 
+import forms.Validation.emailRegex
 import forms.behaviours.StringFieldBehaviours
 import play.api.data.FormError
 
 class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
-  private val MaxEmailLength = 254
-
-  val requiredKey    = "monthlyreturns.confirmEmailAddress.error.required"
-  val lengthKey      = "monthlyreturns.confirmEmailAddress.error.length"
-  val maxLength: Int = MaxEmailLength
-  val invalidKey     = "monthlyreturns.confirmEmailAddress.error.invalid"
+  val requiredKey = "monthlyreturns.confirmEmailAddress.error.required"
+  val lengthKey   = "monthlyreturns.confirmEmailAddress.error.length"
+  val invalidKey  = "monthlyreturns.confirmEmailAddress.error.invalid"
+  val maxLength   = 254
 
   val form = new ConfirmEmailAddressFormProvider()()
 
@@ -36,25 +35,37 @@ class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
 
     "must bind valid email data" in {
       val validEmails = Seq(
-        "user@domain.com",
-        "user.name@domain.com",
-        "user+tag@domain.com",
-        "user@domain.co.uk",
-        "user123@domain123.com",
-        "user!#$%&*+-/=?^_`{|}~@domain.com",
-        "user@domain!#$%&*+-/=?^_`{|}~.com"
+        "test@test.com",
+        "user123@example.co.uk",
+        "firstname.lastname@test-domain.com",
+        "x+tag@mail.org",
+        "a@b.cd"
       )
 
-      validEmails.foreach { validEmail =>
-        val result = form.bind(Map(fieldName -> validEmail))
-        result.errors must be(empty)
+      validEmails.foreach { email =>
+        val result = form.bind(Map(fieldName -> email))
+        result.errors mustBe empty
       }
     }
 
-    "must not bind strings longer than 254 characters" in {
-      val longEmail = "a" * 244 + "@domain.com"
-      val result    = form.bind(Map(fieldName -> longEmail))
-      result.errors must contain(FormError(fieldName, lengthKey, Seq(maxLength)))
+    "must not bind emails longer than 254 characters" in {
+      val localPartLength = 242
+      val longEmail       = ("a" * localPartLength) + "@example.com"
+
+      longEmail.length mustBe 254
+
+      val result = form.bind(Map(fieldName -> longEmail))
+      result.errors mustBe empty
+
+      val tooLongEmail = ("a" * (localPartLength + 1)) + "@example.com"
+
+      tooLongEmail.length mustBe 255
+
+      val tooLongResult = form.bind(Map(fieldName -> tooLongEmail))
+
+      tooLongResult.errors must contain(
+        FormError(fieldName, lengthKey, Seq(maxLength))
+      )
     }
 
     behave like mandatoryField(
@@ -72,28 +83,12 @@ class ConfirmEmailAddressFormProviderSpec extends StringFieldBehaviours {
         "user@domain com"
       )
 
-      invalidEmails.foreach { invalidEmail =>
-        val result = form.bind(Map("value" -> invalidEmail))
+      invalidEmails.foreach { email =>
+        val result = form.bind(Map(fieldName -> email))
+
         result.errors must contain(
-          FormError("value", invalidKey, Seq("^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"))
+          FormError(fieldName, invalidKey, Seq(emailRegex))
         )
-      }
-    }
-
-    "must accept valid email formats" in {
-      val validEmails = Seq(
-        "user@domain.com",
-        "user.name@domain.com",
-        "user+tag@domain.com",
-        "user@domain.co.uk",
-        "user123@domain123.com",
-        "user!#$%&*+-/=?^_`{|}~@domain.com",
-        "user@domain!#$%&*+-/=?^_`{|}~.com"
-      )
-
-      validEmails.foreach { validEmail =>
-        val result = form.bind(Map(fieldName -> validEmail))
-        result.errors must not contain FormError(fieldName, invalidKey)
       }
     }
   }

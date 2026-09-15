@@ -40,7 +40,8 @@ class DataRequiredActionImpl @Inject() (implicit val executionContext: Execution
               data,
               request.employerReference,
               request.agentReference,
-              request.isAgent
+              request.isAgent,
+              request.agentCode
             )
           )
         )

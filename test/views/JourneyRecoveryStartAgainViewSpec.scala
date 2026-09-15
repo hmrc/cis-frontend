@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,30 @@ class JourneyRecoveryStartAgainViewSpec extends SpecBase with Matchers {
 
   "JourneyRecoveryStartAgainView" - {
 
-    "must render the page with the correct heading and paragraph with link" in new Setup {
-      val html = view()
-      val doc  = Jsoup.parse(html.body)
+    Seq(
+      ("AGENT", applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("ORGANISATION", applicationConfig.constructionIndustryOrgAccountUrl)
+    ).foreach { case (accountTypeSTR, cisAccountURL) =>
+      s"when accountType is '$accountTypeSTR'" - {
 
-      doc.title                                 must include(messages("journeyRecovery.startAgain.title"))
-      doc.select("h1").text                     must include(messages("journeyRecovery.startAgain.heading"))
-      doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.p1"))
-      doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.p2"))
-      doc.getElementsByClass("govuk-link").text must include(messages("journeyRecovery.startAgain.guidance.link"))
+        "must render the page with the correct heading and paragraph with link" in new Setup {
+          val html = view(cisAccountURL)
+          val doc  = Jsoup.parse(html.body)
+
+          doc.title                                 must include(messages("journeyRecovery.startAgain.title"))
+          doc.select("h1").text                     must include(messages("journeyRecovery.startAgain.heading"))
+          doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.p1"))
+          doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.p2"))
+          doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.contactHMRC.suffix"))
+          doc.getElementsByClass("govuk-link").text must include(
+            messages("journeyRecovery.startAgain.guidance.contactHMRC.link")
+          )
+          doc.select("p").text                      must include(messages("journeyRecovery.startAgain.guidance.cisAccount.prefix"))
+          doc.getElementsByClass("govuk-link").text must include(
+            messages("journeyRecovery.startAgain.guidance.cisAccount.link")
+          )
+        }
+      }
     }
   }
 

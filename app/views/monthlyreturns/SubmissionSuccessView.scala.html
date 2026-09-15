@@ -119,7 +119,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
-        linkUrl = appConfig.manageYourCisReturn + vm.cisId
+        linkUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
     )
 
     @sectionBreak()

@@ -19,10 +19,13 @@ package base
 import config.FrontendAppConfig
 import controllers.actions.*
 import models.UserAnswers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.{OptionValues, TryValues}
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Messages, MessagesApi}
@@ -33,6 +36,9 @@ import services.{FakeFormpRdsReconcileService, FormpRdsReconcileService}
 import play.api.libs.json.Json
 import play.api.mvc.PlayBodyParsers
 import play.api.test.Helpers.stubControllerComponents
+import repositories.SessionRepository
+
+import scala.concurrent.Future
 
 trait SpecBase
     extends AnyFreeSpec
@@ -58,13 +64,20 @@ trait SpecBase
 
   def messages(app: Application): Messages = app.injector.instanceOf[MessagesApi].preferred(FakeRequest())
 
+  protected def mockSessionRepository(userAnswers: Option[UserAnswers]): SessionRepository = {
+    val repository = mock[SessionRepository]
+    when(repository.get(any[String])).thenReturn(Future.successful(userAnswers))
+    repository
+  }
+
   protected def applicationBuilder(
     userAnswers: Option[UserAnswers] = None,
     additionalBindings: Seq[Binding[_]] = Nil,
     isAgent: Boolean = false,
     hasAgentRef: Boolean = true,
     hasEmployeeRef: Boolean = true,
-    formpRdsReconcileService: FormpRdsReconcileService = new FakeFormpRdsReconcileService
+    formpRdsReconcileService: FormpRdsReconcileService = new FakeFormpRdsReconcileService,
+    agentCode: Option[String] = Some("agentCode")
   ): GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure("play.http.router" -> "app.Routes")
@@ -74,7 +87,7 @@ trait SpecBase
           bind[IdentifierAction].to(new FakeIdentifierAction(isAgent, hasAgentRef, hasEmployeeRef)(parsers)),
           bind[IdentifierAction]
             .qualifiedWith("AgentIdentifier")
-            .to(new FakeIdentifierAction(true, true, false)(parsers)),
+            .to(new FakeIdentifierAction(true, true, false, agentCode)(parsers)),
           bind[IdentifierAction]
             .qualifiedWith("ContractorIdentifier")
             .to(new FakeIdentifierAction(false, false, true)(parsers)),

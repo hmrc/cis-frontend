@@ -63,12 +63,37 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
         .url
     }
 
-    "must display error summary when form has errors" in new Setup {
-      val formWithError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+    "must display error summary when form has errors on the value field" in new Setup {
+      val formWithError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.required")
       val htmlWithError = view(formWithError, NormalMode, viewModel)
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
       doc.select(".govuk-error-summary").size() mustBe 1
+    }
+
+    "must display inline error above summary list when summaryList error is present" in new Setup {
+      val formWithError = form
+        .fill(false)
+        .withError("summaryList", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+      val htmlWithError = view(formWithError, NormalMode, viewModel)
+      val doc: Document = Jsoup.parse(htmlWithError.toString)
+
+      doc.select(".govuk-error-summary").size() mustBe 1
+      doc.select("#summaryList-error").size() mustBe 1
+      doc.select("#summaryList-error").text() must include(
+        messages("monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+      )
+    }
+
+    "must not display error styling on radio buttons when summaryList error is present" in new Setup {
+      val formWithError = form
+        .fill(false)
+        .withError("summaryList", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+      val htmlWithError = view(formWithError, NormalMode, viewModel)
+      val doc: Document = Jsoup.parse(htmlWithError.toString)
+
+      doc.select(".govuk-radios--error").size() mustBe 0
+      doc.select(".govuk-form-group--error .govuk-radios").size() mustBe 0
     }
   }
 

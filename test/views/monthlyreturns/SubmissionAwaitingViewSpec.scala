@@ -42,6 +42,11 @@ class SubmissionAwaitingViewSpec extends SpecBase with Matchers {
         messages("monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk")
       )
       doc.select(".govuk-link").text must include(messages("monthlyreturns.submissionAwaiting.links.submit"))
+
+      val manageCisReturnUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
+      doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 1
     }
 
   }
