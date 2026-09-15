@@ -35,7 +35,9 @@ import repositories.SessionRepository
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
-
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.verify
+import pages.monthlyreturns.OriginalSubcontractorCountPage
 import java.time.LocalDate
 import scala.concurrent.Future
 
@@ -289,6 +291,47 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must set OriginalSubcontractorCountPage to total available subcontractors on valid submit" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      val subcontractorService  = mock[SubcontractorService]
+      val monthlyReturnService  = mock[MonthlyReturnService]
+
+      val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      stubService(subcontractorService, pageModel)
+      when(
+        monthlyReturnService.syncMonthlyReturnItems(
+          any[UserAnswers],
+          any[Seq[Long]]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[SubcontractorService].toInstance(subcontractorService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        verify(mockSessionRepository).set(captor.capture())
+        captor.getValue.get(OriginalSubcontractorCountPage) mustBe Some(subcontractors.size)
       }
     }
 

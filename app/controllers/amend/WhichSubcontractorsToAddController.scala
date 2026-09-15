@@ -23,7 +23,7 @@ import models.amend.WhichSubcontractorsToAdd
 import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -137,12 +137,13 @@ class WhichSubcontractorsToAddController @Inject() (
                           ua2 <- Future.fromTry {
                                    val cleared = ua.remove(SelectedSubcontractorPage.all)
                                    cleared.flatMap { clearedAnswers =>
-                                     selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
-                                       case (answersTry, (subcontractor, index)) =>
+                                     selectedSubcontractors.zipWithIndex
+                                       .foldLeft(Try(clearedAnswers)) { case (answersTry, (subcontractor, index)) =>
                                          answersTry.flatMap(
                                            _.set(SelectedSubcontractorPage(index + 1), subcontractor)
                                          )
-                                     }
+                                       }
+                                       .flatMap(_.set(OriginalSubcontractorCountPage, model.subcontractors.size))
                                    }
                                  }
                           _   <- sessionRepository.set(ua2)
