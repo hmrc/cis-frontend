@@ -308,7 +308,7 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
     ).toSeq.flatMap { failedField =>
 
       val value =
-        combined(
+        multiline(
           details.addressLine1,
           details.addressLine2,
           details.addressLine3,
@@ -588,19 +588,14 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
       _.trim.nonEmpty
     )
 
-  private def combined(
-    values: Option[String]*
-  ): Option[String] = {
-
+  private def multiline(values: Option[String]*): Option[String] = {
     val result =
       values.flatten
         .map(_.trim)
         .filter(_.nonEmpty)
-        .mkString(" ")
+        .mkString("\n")
 
-    Option.when(
-      result.nonEmpty
-    )(result)
+    Option.when(result.nonEmpty)(result)
   }
 
   private def yesNo(
