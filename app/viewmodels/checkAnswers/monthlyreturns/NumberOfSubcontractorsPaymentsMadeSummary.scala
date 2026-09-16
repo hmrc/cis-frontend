@@ -26,21 +26,20 @@ import viewmodels.implicits.*
 object NumberOfSubcontractorsPaymentsMadeSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(VerifiedStatusDeclarationPage).map { answer =>
-
-      val value = if (answer) "site.yes" else "site.no"
-
-      SummaryListRowViewModel(
-        key = "monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel",
-        value = ValueViewModel(value),
-        actions = Seq(
-          ActionItemViewModel(
-            "site.change",
-            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
+    answers.get(VerifiedStatusDeclarationPage).flatMap { answer =>
+      SubcontractorDetailsAddedBuilder.build(answers).map { addedSubcontractors =>
+        SummaryListRowViewModel(
+          key = "monthlyreturns.numberOfSubcontractorsPaymentsMade.checkYourAnswersLabel",
+          value = ValueViewModel(addedSubcontractors.rows.size.toString),
+          actions = Seq(
+            ActionItemViewModel(
+              "site.change",
+              controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+            )
+              .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorsPaymentsMade.hidden "))
+              .withAttribute("id" -> "change-number-subcontractors-payments-made")
           )
-            .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
-            .withAttribute("id" -> "change-verified-status-declaration")
         )
-      )
+      }
     }
 }

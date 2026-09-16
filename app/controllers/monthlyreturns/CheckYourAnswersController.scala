@@ -33,6 +33,7 @@ import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.summarylist.*
 import views.html.monthlyreturns.CheckYourAnswersView
 import utils.UserAnswerUtils.isJourneyComplete
+import viewmodels.checkAnswers.monthlyreturns
 
 import java.time.YearMonth
 import javax.inject.Inject
@@ -63,6 +64,7 @@ class CheckYourAnswersController @Inject() (
               case ReturnType.MonthlyStandardReturn | ReturnType.MonthlyAmendedStandardReturn =>
                 Seq(
                   DateConfirmPaymentsSummary.row(request.userAnswers),
+                  NumberOfSubcontractorsPaymentsMadeSummary.row(request.userAnswers),
                   EmploymentStatusDeclarationSummary.row(request.userAnswers),
                   VerifiedStatusDeclarationSummary.row(request.userAnswers),
                   SubmitInactivityRequestSummary.row(request.userAnswers)
