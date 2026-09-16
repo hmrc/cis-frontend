@@ -35,7 +35,13 @@
     @govukTaskList(TaskList(
         items = Seq(
             TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("finalvalidations.reviewContractorDetails.tasklist.schemeName"))),
+                title = TaskListItemTitle(content = HtmlContent(
+                        s"""<span class="govuk-visually-hidden">${
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.schemeName")
+                            }</span>
+                            <span>${
+                                messages("finalvalidations.reviewContractorDetails.tasklist.schemeName")
+                            }<span>""")),
                 href = Some("#"),
                 status = TaskListItemStatus(
                     tag = Some(Tag(content = Text(messages("finalValidations.reviewContractorDetails.taskList.status.incomplete"))))
