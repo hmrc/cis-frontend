@@ -61,12 +61,11 @@
                             )
                         ).toString +
                     link(
-                    linkTextKey = "monthlyreturns.dateConfirmPayments.p1.link",
-                    linkUrl = appConfig.incompleteReturnsUrl,
-                    prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix",
-                    suffixTextKey = "monthlyreturns.dateConfirmPayments.p1.suffix") +
-                        h2("monthlyreturns.dateConfirmPayments.legendText").toString +
-                        paragraph("monthlyreturns.dateConfirmPayments.helpText", baseClass = "govuk-hint").toString
+                        linkTextKey = "monthlyreturns.dateConfirmPayments.p1.link",
+                        linkUrl = appConfig.incompleteReturnsUrl,
+                        hasFullStop = true,
+                        prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix") +
+                        h2("monthlyreturns.dateConfirmPayments.legendText").toString
                     )
                 )
             )
