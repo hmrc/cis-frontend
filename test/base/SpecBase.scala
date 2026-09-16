@@ -32,6 +32,7 @@ import play.api.i18n.{Messages, MessagesApi}
 import play.api.inject.{Binding, bind}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
+import services.{FakeFormpRdsReconcileService, FormpRdsReconcileService}
 import play.api.libs.json.Json
 import play.api.mvc.PlayBodyParsers
 import play.api.test.Helpers.stubControllerComponents
@@ -75,6 +76,7 @@ trait SpecBase
     isAgent: Boolean = false,
     hasAgentRef: Boolean = true,
     hasEmployeeRef: Boolean = true,
+    formpRdsReconcileService: FormpRdsReconcileService = new FakeFormpRdsReconcileService,
     agentCode: Option[String] = Some("agentCode")
   ): GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -89,7 +91,8 @@ trait SpecBase
           bind[IdentifierAction]
             .qualifiedWith("ContractorIdentifier")
             .to(new FakeIdentifierAction(false, false, true)(parsers)),
-          bind[DataRetrievalAction].toInstance(new FakeDataRetrievalAction(userAnswers))
+          bind[DataRetrievalAction].toInstance(new FakeDataRetrievalAction(userAnswers)),
+          bind[FormpRdsReconcileService].toInstance(formpRdsReconcileService)
         ) ++ additionalBindings
       )
 }

@@ -19,7 +19,7 @@ package config
 import com.google.inject.AbstractModule
 import com.google.inject.name.Names
 import controllers.actions.*
-import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilderImpl}
+import services.{FormpRdsReconcileService, FormpRdsReconcileServiceImpl, MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilderImpl}
 import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl, SubmissionSuccessfulServiceGuard, SubmissionSuccessfulServiceGuardImpl}
 
@@ -48,5 +48,6 @@ class Module extends AbstractModule {
     bind(classOf[SubmissionSuccessfulServiceGuard]).to(classOf[SubmissionSuccessfulServiceGuardImpl])
     bind(classOf[Clock]).toInstance(Clock.system(ZoneId.of("Europe/London")))
     bind(classOf[MonthlyReturnItemPayloadBuilder]).to(classOf[MonthlyReturnItemPayloadBuilderImpl])
+    bind(classOf[FormpRdsReconcileService]).to(classOf[FormpRdsReconcileServiceImpl])
   }
 }

@@ -18,20 +18,24 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
-import models.{NormalMode, UserAnswers}
-import models.requests.GetMonthlyReturnForEditRequest
+import models.{EmployerReference, NormalMode, UserAnswers}
+import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 
 import javax.inject.Inject
 import navigation.Navigator
+import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.Logging
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class ContinueReturnJourneyController @Inject() (
   override val messagesApi: MessagesApi,
@@ -39,6 +43,7 @@ class ContinueReturnJourneyController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
+  formpRdsReconcileService: FormpRdsReconcileService,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -74,8 +79,19 @@ class ContinueReturnJourneyController @Inject() (
                 isAgent = request.isAgent
               )
               .flatMap { finalUserAnswers =>
-                sessionRepository.set(finalUserAnswers).map { _ =>
-                  Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, finalUserAnswers))
+                val employerRef =
+                  if (request.isAgent)
+                    finalUserAnswers
+                      .get(AgentClientDataPage)
+                      .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
+                  else
+                    request.employerReference
+                sessionRepository.set(finalUserAnswers).flatMap { _ =>
+                  reconcileFormpRds(
+                    queryParams.instanceId,
+                    employerRef,
+                    Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, finalUserAnswers))
+                  )
                 }
               }
               .recover { case ex =>
@@ -85,5 +101,33 @@ class ContinueReturnJourneyController @Inject() (
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
               }
         }
+    }
+
+  private def reconcileFormpRds(
+    instanceId: String,
+    employerReference: Option[EmployerReference],
+    redirect: => Result
+  )(implicit request: IdentifierRequest[?]): Future[Result] =
+    employerReference match {
+      case Some(ref) =>
+        formpRdsReconcileService
+          .reconcile(instanceId, ref.taxOfficeNumber, ref.taxOfficeReference)
+          .map(_ => redirect)
+          .recover {
+            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+              logger.warn(
+                s"[ContinueReturnJourneyController] Contractor known facts missing in RDS (status ${e.statusCode})"
+              )
+              Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+            case NonFatal(e)                                                                                  =>
+              logger.error(
+                s"[ContinueReturnJourneyController] FormP/RDS reconciliation failed: ${e.getMessage}",
+                e
+              )
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      case None      =>
+        logger.warn("[ContinueReturnJourneyController] Missing employer reference for FormP/RDS reconciliation")
+        Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
     }
 }
