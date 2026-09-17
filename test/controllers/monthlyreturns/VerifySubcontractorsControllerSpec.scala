@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
-import models.NormalMode
+import models.{CheckMode, NormalMode}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -39,6 +39,9 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
   lazy val verifySubcontractorsRoute =
     controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(NormalMode).url
+
+  lazy val changeVerifySubcontractorsRoute =
+    controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(CheckMode).url
 
   val formProvider = new VerifySubcontractorsFormProvider()
   val form         = formProvider()
@@ -123,10 +126,9 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to manage subcontractors when 'true' is submitted" in {
+    "must redirect to verify subcontractors when 'true' is submitted" in {
 
       val mockSessionRepository = mock[SessionRepository]
-
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
@@ -146,7 +148,33 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val appConfig = application.injector.instanceOf[config.FrontendAppConfig]
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual appConfig.manageSubcontractorsUrl("1")
+        redirectLocation(result).value mustEqual appConfig.verifySubcontractorsUrl
+      }
+    }
+
+    "must redirect to verify subcontractors when 'true' is submitted in CheckMode" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, changeVerifySubcontractorsRoute)
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result    = route(application, request).value
+        val appConfig = application.injector.instanceOf[config.FrontendAppConfig]
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual appConfig.verifySubcontractorsUrl
       }
     }
 
