@@ -22,6 +22,7 @@ import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalVal
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
+import models.agent.GetClientListStatusResponse
 import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
@@ -48,6 +49,22 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       .get(url"$cisBaseUrl/taxpayer")
       .execute[CisTaxpayer]
 
+  def prepopulateContractorKnownFacts(
+    instanceId: String,
+    taxOfficeNumber: String,
+    taxOfficeReference: String
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    http
+      .post(url"$cisBaseUrl/contractor-known-facts/prepopulate/$taxOfficeNumber/$taxOfficeReference/$instanceId")
+      .execute[HttpResponse]
+      .flatMap { response =>
+        if (response.status >= 200 && response.status < 300) {
+          Future.unit
+        } else {
+          Future.failed(UpstreamErrorResponse(response.body, response.status, response.status))
+        }
+      }
+
   def getAgentClient(userId: String)(implicit
     hc: HeaderCarrier
   ): Future[Option[JsValue]] =
@@ -68,6 +85,11 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .get(url"$cisBaseUrl/agent/client-taxpayer/$taxOfficeNumber/$taxOfficeReference")
       .execute[CisTaxpayer]
+
+  def startClientList(using HeaderCarrier): Future[GetClientListStatusResponse] =
+    http
+      .post(url"$cisBaseUrl/agent/client-list/retrieval/start")
+      .execute[GetClientListStatusResponse]
 
   def retrieveMonthlyReturns(cisId: String)(implicit hc: HeaderCarrier): Future[MonthlyReturnResponse] =
     http

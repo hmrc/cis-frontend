@@ -24,6 +24,7 @@ import models.finalvalidation.*
 import models.requests.*
 import models.monthlyreturns.*
 import models.ReturnType.MonthlyStandardReturn
+import models.agent.ClientListStatus
 import models.submission.*
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
@@ -388,6 +389,24 @@ class ConstructionIndustrySchemeConnectorSpec
           .futureValue
       }
       ex.getMessage must include("returned 404")
+    }
+  }
+
+  "startClientList" should {
+
+    "POST /cis/agent/client-list/retrieval/start and return succeeded" in {
+      stubFor(
+        post(urlPathEqualTo("/cis/agent/client-list/retrieval/start"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{ "result": "succeeded" }""")
+          )
+      )
+
+      connector.startClientList.futureValue.result mustBe
+        ClientListStatus.Succeeded
     }
   }
 
