@@ -172,7 +172,7 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
         val model =
           UpdateSubcontractorDetailsPageModel(
             subcontractorId,
-            "Hooper And Associates",
+            pageModelBuilder.displayName(subcontractor),
             rows
           )
 

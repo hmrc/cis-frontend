@@ -18,10 +18,11 @@ package controllers.finalvalidations
 
 import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
-import models.finalvalidation.{FinalValidationReadiness, MonthlyFinalValidationSource, ReviewSubcontractorDetailsPageModel, ReviewSubcontractorDetailsRow}
+import models.finalvalidation.*
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
+import pages.monthlyreturns.SelectedSubcontractorPage
 
 import javax.inject.Inject
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -43,6 +44,7 @@ class ReviewSubcontractorDetailsController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   finalValidationDraftService: FinalValidationDraftService,
+  pageModelBuilder: UpdateSubcontractorDetailsPageModelBuilder,
   val controllerComponents: MessagesControllerComponents,
   view: ReviewSubcontractorDetailsView
 )(using ec: ExecutionContext)
@@ -61,7 +63,7 @@ class ReviewSubcontractorDetailsController @Inject() (
                 draft.subcontractors.map { subcontractor =>
                   ReviewSubcontractorDetailsRow(
                     subcontractor.subcontractorId,
-                    subcontractor.displayName,
+                    pageModelBuilder.displayName(subcontractor),
                     subcontractor.readiness == FinalValidationReadiness.Incomplete
                   )
                 }
@@ -109,7 +111,10 @@ class ReviewSubcontractorDetailsController @Inject() (
 
                 for {
                   _              <- finalValidationDraftService.commit(request.cisId, draftId)
-                  cleanedAnswers <- Future.fromTry(clearFinalValidationState(request.userAnswers))
+                  updatedAnswers <- Future.fromTry(
+                                      updateSelectedSubcontractorNames(request.userAnswers, draft)
+                                    )
+                  cleanedAnswers <- Future.fromTry(clearFinalValidationState(updatedAnswers))
                   _              <- sessionRepository.set(cleanedAnswers)
                 } yield continueJourney(source, verificationRequired, cleanedAnswers)
               }
@@ -160,5 +165,42 @@ class ReviewSubcontractorDetailsController @Inject() (
       case "CheckMode"  => Some(CheckMode)
       case _            => None
     }
+
+  private def updateSelectedSubcontractorNames(
+    userAnswers: UserAnswers,
+    draft: FinalValidationDraft
+  ): Try[UserAnswers] = {
+
+    val namesBySubcontractorId =
+      draft.subcontractors.map { subcontractor =>
+        subcontractor.subcontractorId ->
+          pageModelBuilder.displayName(subcontractor)
+      }.toMap
+
+    val selectedSubcontractors =
+      userAnswers
+        .get(SelectedSubcontractorPage.all)
+        .getOrElse(Map.empty)
+
+    val updatedSubcontractors =
+      selectedSubcontractors.map { case (index, subcontractor) =>
+        val updated =
+          namesBySubcontractorId
+            .get(subcontractor.id)
+            .map { name =>
+              subcontractor.copy(
+                name = name
+              )
+            }
+            .getOrElse(subcontractor)
+
+        index -> updated
+      }
+
+    userAnswers.set(
+      SelectedSubcontractorPage.all,
+      updatedSubcontractors
+    )
+  }
 
 }
