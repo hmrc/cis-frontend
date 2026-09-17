@@ -23,23 +23,21 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-object NumberOfSubcontractorsPaymentsMadeSummary {
+object NumberOfSubcontractorPaymentsMadeSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    answers.get(VerifiedStatusDeclarationPage).flatMap { answer =>
-      SubcontractorDetailsAddedBuilder.build(answers).map { addedSubcontractors =>
-        SummaryListRowViewModel(
-          key = "monthlyreturns.numberOfSubcontractorsPaymentsMade.checkYourAnswersLabel",
-          value = ValueViewModel(addedSubcontractors.rows.size.toString),
-          actions = Seq(
-            ActionItemViewModel(
-              "site.change",
-              controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
-            )
-              .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorsPaymentsMade.hidden "))
-              .withAttribute("id" -> "change-number-subcontractors-payments-made")
+    SubcontractorDetailsAddedBuilder.build(answers).map { addedSubcontractors =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel",
+        value = ValueViewModel(addedSubcontractors.rows.size.toString),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
           )
+            .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden"))
+            .withAttribute("id" -> "change-number-subcontractor-payments-made")
         )
-      }
+      )
     }
 }

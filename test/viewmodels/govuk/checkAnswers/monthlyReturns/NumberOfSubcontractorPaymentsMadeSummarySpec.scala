@@ -24,11 +24,11 @@ import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.i18n.Messages
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.stubMessages
-import viewmodels.checkAnswers.monthlyreturns.NumberOfSubcontractorsPaymentsMadeSummary
+import viewmodels.checkAnswers.monthlyreturns.NumberOfSubcontractorPaymentsMadeSummary
 
 import java.time.Instant
 
-class NumberOfSubcontractorsPaymentsMadeSummarySpec extends SpecBase with Matchers {
+class NumberOfSubcontractorPaymentsMadeSummarySpec extends SpecBase with Matchers {
 
   private implicit val messages: Messages = stubMessages()
 
@@ -54,7 +54,7 @@ class NumberOfSubcontractorsPaymentsMadeSummarySpec extends SpecBase with Matche
       "totalTaxDeducted"  -> 200.00
     )
 
-  "NumberOfSubcontractorsPaymentsMadeSummary" - {
+  "NumberOfSubcontractorPaymentsMadeSummary" - {
 
     "must return a SummaryListRow with the number of subcontractors" in {
 
@@ -62,14 +62,11 @@ class NumberOfSubcontractorsPaymentsMadeSummarySpec extends SpecBase with Matche
         1 -> completeSub(1001L, "TyneWear Ltd"),
         2 -> completeSub(1002L, "Another Ltd")
       )
-        .set(VerifiedStatusDeclarationPage, true)
-        .success
-        .value
 
-      val result = NumberOfSubcontractorsPaymentsMadeSummary.row(answers).value
+      val result = NumberOfSubcontractorPaymentsMadeSummary.row(answers).value
 
       result.key.content.asHtml.toString must include(
-        messages("monthlyreturns.numberOfSubcontractorsPaymentsMade.checkYourAnswersLabel")
+        messages("monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel")
       )
 
       result.value.content.asHtml.toString must include("2")
@@ -80,34 +77,17 @@ class NumberOfSubcontractorsPaymentsMadeSummarySpec extends SpecBase with Matche
       val answers = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
       )
-        .set(VerifiedStatusDeclarationPage, true)
-        .success
-        .value
 
-      val result = NumberOfSubcontractorsPaymentsMadeSummary.row(answers).value
+      val result = NumberOfSubcontractorPaymentsMadeSummary.row(answers).value
 
       result.value.content.asHtml.toString must include("1")
-    }
-
-    "must return None when VerifiedStatusDeclarationPage is not set" in {
-
-      val answers = uaWithSubcontractors(
-        1 -> completeSub(1001L, "TyneWear Ltd")
-      )
-
-      val result = NumberOfSubcontractorsPaymentsMadeSummary.row(answers)
-
-      result mustBe None
     }
 
     "must return None when there are no subcontractors" in {
 
       val answers = uaWithSubcontractors()
-        .set(VerifiedStatusDeclarationPage, true)
-        .success
-        .value
 
-      val result = NumberOfSubcontractorsPaymentsMadeSummary.row(answers)
+      val result = NumberOfSubcontractorPaymentsMadeSummary.row(answers)
 
       result mustBe None
     }
@@ -117,11 +97,8 @@ class NumberOfSubcontractorsPaymentsMadeSummarySpec extends SpecBase with Matche
       val answers = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
       )
-        .set(VerifiedStatusDeclarationPage, true)
-        .success
-        .value
 
-      val result = NumberOfSubcontractorsPaymentsMadeSummary.row(answers).value
+      val result = NumberOfSubcontractorPaymentsMadeSummary.row(answers).value
       val action = result.actions.value.items.head
 
       action.href mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
@@ -138,10 +115,10 @@ class NumberOfSubcontractorsPaymentsMadeSummarySpec extends SpecBase with Matche
         .success
         .value
 
-      val result = NumberOfSubcontractorsPaymentsMadeSummary.row(answers).value
+      val result = NumberOfSubcontractorPaymentsMadeSummary.row(answers).value
       val action = result.actions.value.items.head
       action.visuallyHiddenText.value mustBe
-        messages("monthlyreturns.numberOfSubcontractorsPaymentsMade.hidden ")
+        messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden")
     }
   }
 }
