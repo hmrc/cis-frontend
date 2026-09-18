@@ -194,7 +194,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
     "onSubmit" - {
 
-      "redirects to SubcontractorDetailsAddedController when no selected subcontractor requires verification" in {
+      "redirects to SubcontractorDetailsAddedController and passes the original subcontractor count when no selected subcontractor requires verification" in {
         val subcontractorService = mock[SubcontractorService]
         val monthlyReturnService = mock[MonthlyReturnService]
         stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
@@ -205,7 +205,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
-            selected = any[Seq[SelectSubcontractorsViewModel]]
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2)
           )(using any[HeaderCarrier])
         ).thenReturn(Future.successful(answersWithIncompleteSub))
 
@@ -221,6 +222,12 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
             .onPageLoad(models.NormalMode)
             .url
+          verify(monthlyReturnService).storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2)
+          )(using any[HeaderCarrier])
+
         }
       }
 
@@ -232,7 +239,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
-            selected = any[Seq[SelectSubcontractorsViewModel]]
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2)
           )(using any[HeaderCarrier])
         ).thenReturn(
           Future.successful(
@@ -281,7 +289,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         when(
           monthlyReturnService.storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
-            selected = any[Seq[SelectSubcontractorsViewModel]]
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2)
           )(using any[HeaderCarrier])
         ).thenReturn(Future.failed(new RuntimeException("boom")))
 

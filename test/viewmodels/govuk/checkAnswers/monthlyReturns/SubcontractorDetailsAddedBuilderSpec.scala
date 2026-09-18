@@ -19,7 +19,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 import base.SpecBase
 import models.monthlyreturns.SelectedSubcontractor
 import models.{CheckMode, NormalMode, UserAnswers}
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 import play.api.libs.json.Json
 import viewmodels.checkAnswers.monthlyreturns.{SubcontractorDetailsAddedBuilder, SubcontractorDetailsAddedRow}
 
@@ -66,11 +66,12 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
         1 -> completeSub(1001L, "TyneWear Ltd", payments = 1000, materials = 200, tax = 200),
         2 -> incompleteSub(1002L, "Northern Trades Ltd"),
         3 -> incompleteSub(1003L, "BuildRight Construction")
-      )
+      ).set(OriginalSubcontractorCountPage, 3).get
 
       val vm = SubcontractorDetailsAddedBuilder.build(ua).value
 
       vm.hasIncomplete mustBe true
+      vm.showYesNo mustBe false
       vm.rows mustBe Seq(
         SubcontractorDetailsAddedRow(
           index = 1,
@@ -106,6 +107,39 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
             .onPageLoad(CheckMode, 3)
         )
       )
+    }
+
+    "must showYesNo when not all original subcontractors are selected" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(2001L, "A Ltd"),
+        2 -> completeSub(2002L, "B Ltd")
+      ).set(OriginalSubcontractorCountPage, 3).get
+
+      val vm = SubcontractorDetailsAddedBuilder.build(ua).value
+
+      vm.showYesNo mustBe true
+    }
+
+    "must not showYesNo when all original subcontractors are selected" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(2001L, "A Ltd"),
+        2 -> completeSub(2002L, "B Ltd")
+      ).set(OriginalSubcontractorCountPage, 2).get
+
+      val vm = SubcontractorDetailsAddedBuilder.build(ua).value
+
+      vm.showYesNo mustBe false
+    }
+
+    "must not showYesNo when original subcontractor count is not available" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(2001L, "A Ltd"),
+        2 -> completeSub(2002L, "B Ltd")
+      )
+
+      val vm = SubcontractorDetailsAddedBuilder.build(ua).value
+
+      vm.showYesNo mustBe false
     }
 
     "must return Some(viewModel) with hasIncomplete=false and multiple heading when more than one completed" in {
