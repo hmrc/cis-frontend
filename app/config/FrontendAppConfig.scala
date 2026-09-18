@@ -57,7 +57,7 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val taxAgentsAndAdvisorsAuthorisationFormsUrl: String =
     configuration.get[String]("urls.taxAgentsAndAdvisorsAuthorisationForms")
   lazy val clientListSearchUrl: String                       = configuration.get[String]("urls.clientListSearch")
- 
+
   lazy val verifySubcontractorsUrl: String = configuration.get[String]("urls.verifySubcontractors")
 
   private lazy val manageSubcontractorsBaseUrl: String =
