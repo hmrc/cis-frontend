@@ -602,6 +602,8 @@ finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Works referen
 # Sole trader
 finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Subcontractor name
 finalvalidations.updateSubcontractorDetails.soleTrader.tradingName = Trading name
+finalvalidations.updateSubcontractorDetails.soleTrader.names = Names
+finalvalidations.updateSubcontractorDetails.soleTrader.names.noneSelected = None selected
 finalvalidations.updateSubcontractorDetails.soleTrader.addAddress = Add subcontractor address?
 finalvalidations.updateSubcontractorDetails.soleTrader.addUtr = Add UTR?
 finalvalidations.updateSubcontractorDetails.soleTrader.utr = UTR
