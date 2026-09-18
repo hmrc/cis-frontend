@@ -150,6 +150,9 @@ monthlyreturns.returnType.checkYourAnswersLabel = Return type
 monthlyreturns.returnType.value = Monthly nil return
 monthlyreturns.returnType.monthlyReturnValue = Monthly return
 
+monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel = Number of subcontractor payments made
+monthlyreturns.numberOfSubcontractorPaymentsMade.hidden = number of subcontractor payments made
+
 monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Payments to subcontractors
 monthlyreturns.paymentsToSubcontractors.value = None
 

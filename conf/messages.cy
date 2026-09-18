@@ -629,3 +629,6 @@ agent.agentLostAccess.bullet.item.2.link = xxxxxxxxxxxxxxxxxxxx
 agent.agentLostAccess.bullet.item.2.suffix = xxxxxxxxxxxxxxxxxxxx
 agent.agentLostAccess.p2 = xxxxxxxxxxxxxxxxxxxx
 agent.agentLostAccess.return.link = xxxxxxxxxxxxxxxxxxxx
+
+monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
+monthlyreturns.numberOfSubcontractorPaymentsMade.hidden = xxxxxxxxxxxxxxxxxxxx
