@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package models.requests
+package services
 
-import models.EmployerReference
-import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.http.HeaderCarrier
 
-case class IdentifierRequest[A](
-  request: Request[A],
-  userId: String,
-  employerReference: Option[EmployerReference],
-  agentReference: Option[String],
-  isAgent: Boolean = false,
-  agentCode: Option[String] = None
-) extends WrappedRequest[A](request)
+import scala.concurrent.Future
+
+class FakeFormpRdsReconcileService extends FormpRdsReconcileService {
+  override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] =
+    Future.unit
+}
