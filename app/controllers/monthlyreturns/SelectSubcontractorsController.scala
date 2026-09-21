@@ -124,7 +124,8 @@ class SelectSubcontractorsController @Inject() (
                     monthlyReturnService
                       .storeAndSyncSelectedSubcontractors(
                         ua = request.userAnswers,
-                        selected = selectedSubcontractors
+                        selected = selectedSubcontractors,
+                        originalSubcontractorCount = model.subcontractors.size
                       )
                       .flatMap { updatedAnswers =>
                         val validation =
