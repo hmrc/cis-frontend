@@ -51,51 +51,52 @@ journeyRecovery.continue.guidance.p1 = xxxxxxxxxxxxxxxxxxxx
 journeyRecovery.continue.guidance.link = xxxxxxxxxxxxxxxxxxxx
 journeyRecovery.continue.guidance.p2 = xxxxxxxxxxxxxxxxxxxx
 
-journeyRecovery.startAgain.title = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.heading = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.guidance.p1 = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.guidance.p2 = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.guidance.contactHMRC.link = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.guidance.contactHMRC.suffix = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.guidance.cisAccount.prefix = xxxxxxxxxxxxxxxxxxxx
-journeyRecovery.startAgain.guidance.cisAccount.link = xxxxxxxxxxxxxxxxxxxx
+journeyRecovery.startAgain.title                        =  Mae yna broblem gyda’r gwasanaeth hwn
+journeyRecovery.startAgain.heading                      =  Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth hwn
+journeyRecovery.startAgain.guidance.p1                  =  Rhowch gynnig arall arni yn nes ymlaen.
+journeyRecovery.startAgain.guidance.p2                  =  Nid yw’r wybodaeth sydd wedi cael ei rhoi gennych wedi cael ei chadw. Pan fydd y gwasanaeth ar gael, bydd yn rhaid i chi ddechrau eto.
+journeyRecovery.startAgain.guidance.contactHMRC.link    =  Cysylltwch â CThEF
+journeyRecovery.startAgain.guidance.contactHMRC.suffix  =  i gael rhagor o help.
+journeyRecovery.startAgain.guidance.cisAccount.prefix   =  Yn ôl i
+journeyRecovery.startAgain.guidance.cisAccount.link     =  Rheoli’ch cyfrif CIS
 
 signedOut.title = xxxxxxxxxxxxxxxxxxxx
 signedOut.heading = xxxxxxxxxxxxxxxxxxxx
 signedOut.guidance = xxxxxxxxxxxxxxxxxxxx
 
-unauthorised.title = xxxxxxxxxxxxxxxxxxxx
-unauthorised.heading = xxxxxxxxxxxxxxxxxxxx
+unauthorised.title                       =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.heading                     =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.guidance.p1                 =  I ddefnyddio’r gwasanaeth hwn, bydd angen i chi wneud y canlynol:
+unauthorised.guidance.org.p1.prefix      =  cofrestru gyda’r
+unauthorised.guidance.org.p1.link        =  Cynllun Diwydiant Adeiladu
+unauthorised.guidance.org.p1.suffix      =  os ydych yn gontractwr neu’n is-gontractwr
+unauthorised.guidance.agent.p2.prefix    =  cael mynediad at
+unauthorised.guidance.agent.p2.link      =  TWE i Asiantau
+unauthorised.guidance.agent.p2.suffix    =  os ydych yn asiant
 
-unauthorised.guidance.org.p1.prefix = xxxxxxxxxxxxxxxxxxxx
-unauthorised.guidance.org.p1.link = xxxxxxxxxxxxxxxxxxxx
-unauthorised.guidance.org.p1.suffix = xxxxxxxxxxxxxxxxxxxx
-unauthorised.guidance.agent.p2.prefix = xxxxxxxxxxxxxxxxxxxx
-unauthorised.guidance.agent.p2.link = xxxxxxxxxxxxxxxxxxxx
-unauthorised.guidance.agent.p2.suffix = xxxxxxxxxxxxxxxxxxxx
+unauthorised.org.title                   =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.org.heading                 =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.org.guidance.p2.prefix      =  Mae’n rhaid i chi gofrestru’r cyfrif hwn gyda
+unauthorised.org.guidance.p2.link        =  Cynllun y Diwydiant Adeiladu
+unauthorised.org.guidance.p2.suffix      =  cyn y gallwch ddefnyddio’r gwasanaeth hwn.
 
-unauthorised.org.title = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.heading = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.p1 = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.guidance.p2.prefix = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.guidance.p2.link = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.guidance.p2.suffix = xxxxxxxxxxxxxxxxxxxx
+unauthorised.org.standard.title          =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.org.standard.heading        =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.org.standard.p1             =  Dim ond defnyddwyr sydd â chyfrif sefydliad neu asiant sy’n cael defnyddio’r gwasanaeth hwn.
+unauthorised.org.standard.guidance.link  =  Rhagor o wybodaeth am Gynllun y Diwydiant Adeiladu (CIS)
 
-unauthorised.org.standard.title = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.standard.heading = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.standard.paragraph = xxxxxxxxxxxxxxxxxxxx
-unauthorised.org.standard.guidance.link = xxxxxxxxxxxxxxxxxxxx
+unauthorised.individual.title            =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.individual.heading          =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.individual.p1               =  Rydych wedi mewngofnodi gan ddefnyddio cyfrif unigolyn.
+unauthorised.individual.p2               =  Dim ond defnyddwyr sydd â chyfrif sefydliad neu asiant sy’n cael defnyddio’r gwasanaeth hwn.
+unauthorised.individual.link             =  Rhagor o wybodaeth am Gynllun y Diwydiant Adeiladu (CIS)
 
-unauthorised.individual.title = xxxxxxxxxxxxxxxxxxxx
-unauthorised.individual.heading = xxxxxxxxxxxxxxxxxxxx
-unauthorised.individual.p1 = xxxxxxxxxxxxxxxxxxxx
-
-unauthorised.agent.title = xxxxxxxxxxxxxxxxxxxx
-unauthorised.agent.heading = xxxxxxxxxxxxxxxxxxxx
-unauthorised.agent.p1 = xxxxxxxxxxxxxxxxxxxx
-unauthorised.agent.p2.prefix = xxxxxxxxxxxxxxxxxxxx
-unauthorised.agent.p2.link = xxxxxxxxxxxxxxxxxxxx
-unauthorised.agent.p2.suffix = xxxxxxxxxxxxxxxxxxxx
+unauthorised.agent.title                 =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.agent.heading               =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+unauthorised.agent.p1                    =  Rydych wedi mewngofnodi gan ddefnyddio cyfrif asiant.
+unauthorised.agent.p2.prefix             =  Mae’n rhaid i chi gael mynediad at
+unauthorised.agent.p2.link               =  TWE i Asiantau
+unauthorised.agent.p2.suffix             =  er mwyn defnyddio’r gwasanaeth hwn.
 
 monthlyreturns.dateConfirmNilPayments.title = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.heading.h1 = xxxxxxxxxxxxxxxxxxxx
@@ -260,31 +261,33 @@ stub.monthlyreturns.submissionSuccessful.button = xxxxxxxxxxxxxxxxxxxx
 stub.monthlyreturns.submissionUnsuccessful.button = xxxxxxxxxxxxxxxxxxxx
 stub.monthlyreturns.submissionAwaiting.button = xxxxxxxxxxxxxxxxxxxx
 
-monthlyreturns.alreadySubmitted.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.alreadySubmitted.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.alreadySubmitted.nilreturn.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.alreadySubmitted.nilreturn.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.alreadySubmitted.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.alreadySubmitted.link = xxxxxxxxxxxxxxxxxxxx
+monthlyreturns.alreadySubmitted.title = Rydych eisoes wedi cyflwyno eich datganiad misol
+monthlyreturns.alreadySubmitted.heading = Rydych eisoes wedi cyflwyno eich datganiad misol
+monthlyreturns.alreadySubmitted.nilreturn.title = Rydych eisoes wedi cyflwyno eich datganiad ‘dim’ misol
+monthlyreturns.alreadySubmitted.nilreturn.heading = Rydych eisoes wedi cyflwyno eich datganiad ‘dim’ misol
+monthlyreturns.alreadySubmitted.paragraph = Gweld a rheoli eich datganiadau misol yn eich
+monthlyreturns.alreadySubmitted.link = cyfrif Cynllun y Diwydiant Adeiladu
 
-pageNotFound.title = xxxxxxxxxxxxxxxxxxxx
-pageNotFound.heading = xxxxxxxxxxxxxxxxxxxx
-pageNotFound.p1 = xxxxxxxxxxxxxxxxxxxx
-pageNotFound.p2 = xxxxxxxxxxxxxxxxxxxx
-pageNotFound.p3 = xxxxxxxxxxxxxxxxxxxx
-pageNotFound.link = xxxxxxxxxxxxxxxxxxxx
-pageNotFound.p4 = xxxxxxxxxxxxxxxxxxxx
+pageNotFound.title                       =  Heb ddod o hyd i’r dudalen
+pageNotFound.heading                     =  Heb ddod o hyd i’r dudalen
+pageNotFound.p1                          =  Os gwnaethoch deipio’r cyfeiriad gwe, gwiriwch ei fod yn gywir.
+pageNotFound.p2                          =  Os gwnaethoch ludo’r cyfeiriad gwe, gwiriwch eich bod wedi copïo’r cyfeiriad yn llawn.
+pageNotFound.p3                          =  Os yw’r cyfeiriad gwe yn gywir, neu os dewisoch gysylltiad neu fotwm, cysylltwch â
+pageNotFound.link                        =  Desg Gymorth gwasanaethau ar-lein CThEF
+pageNotFound.p4                          =  os oes angen i chi siarad â rhywun.
 
-accessDenied.title = xxxxxxxxxxxxxxxxxxxx
-accessDenied.heading = xxxxxxxxxxxxxxxxxxxx
-accessDenied.link = xxxxxxxxxxxxxxxxxxxx
+accessDenied.title                       =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+accessDenied.heading                     =  Mae’n ddrwg gennym, ond does dim modd i chi ddefnyddio’r gwasanaeth hwn
+accessDenied.paragraph                   =  Dim ond defnyddwyr sydd â chyfrif sefydliad neu asiant sy’n cael defnyddio’r gwasanaeth hwn.
+accessDenied.link                        =  Rhagor o wybodaeth am Gynllun y Diwydiant Adeiladu (CIS)
 
-systemError.title = xxxxxxxxxxxxxxxxxxxx
-systemError.heading = xxxxxxxxxxxxxxxxxxxx
-systemError.p1 = xxxxxxxxxxxxxxxxxxxx
-systemError.p2 = xxxxxxxxxxxxxxxxxxxx
-systemError.link = xxxxxxxxxxxxxxxxxxxx
-systemError.p3 = xxxxxxxxxxxxxxxxxxxx
+systemError.title                        =  Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth hwn
+systemError.heading                      =  Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth hwn
+systemError.p1                           =  Rhowch gynnig arall arni yn nes ymlaen.
+systemError.p2                           =  Cysylltwch â
+systemError.link                         =  Desg Gymorth gwasanaethau ar-lein CThEF
+systemError.p3                           =  os oes angen i chi siarad â rhywun ynghylch Cynllun y Diwydiant Adeiladu, a dyfynnu’r cyfeirnod:
+
 
 monthlyreturns.submittedNoReceipt.title = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submittedNoReceipt.heading = Wedi llwyddo i gyflwyno {0}

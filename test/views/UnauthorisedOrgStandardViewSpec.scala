@@ -36,7 +36,7 @@ class UnauthorisedOrgStandardViewSpec extends SpecBase with Matchers {
 
       doc.title                                 must include(messages("unauthorised.org.standard.title"))
       doc.select("h1").text                     must include(messages("unauthorised.org.standard.heading"))
-      doc.select("p").text                      must include(messages("unauthorised.org.standard.paragraph"))
+      doc.select("p").text                      must include(messages("unauthorised.org.standard.p1"))
       doc.getElementsByClass("govuk-link").text must include(
         messages("unauthorised.org.standard.guidance.link")
       )
