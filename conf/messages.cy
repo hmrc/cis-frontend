@@ -307,14 +307,14 @@ monthlyreturns.submittedNoReceipt.feedback.p2.link = Llenwch arolwg byr
 monthlyreturns.submittedNoReceipt.whatHappensNext.heading = Yr hyn sy’n digwydd nesaf
 monthlyreturns.submittedNoReceipt.whatHappensNext.p = Ni wnaethoch nodi e-bost wrth i chi gyflwyno’r datganiad hwn. Os ydych am nodi e-bost, bydd angen i chi newid eich manylion cyswllt yn yr adran ynglŷn â’ch sefydliad/ffỳrm. Bydd hyn i’w weld yn eich gwasanaethau CThEF.
 
-fileYourMonthlyCisReturn.title = Cyflwyno’ch Datganiad CIS misol
-fileYourMonthlyCisReturn.heading = Cyflwyno’ch Datganiad CIS misol
-fileYourMonthlyCisReturn.p1 = Defnyddiwch y gwasanaeth hwn i gyflwyno’ch datganiad misol ar gyfer y Cynllun y Diwydiant Adeiladu (CIS).
-fileYourMonthlyCisReturn.p2 = Bydd angen i chi nodi’r mis treth a’r flwyddyn dreth ar y datganiad.
+fileYourMonthlyCisReturn.title = xxxxxxxxxxxxxxxxxxxx
+fileYourMonthlyCisReturn.heading = xxxxxxxxxxxxxxxxxxxx
+fileYourMonthlyCisReturn.p1 = xxxxxxxxxxxxxxxxxxxx
+fileYourMonthlyCisReturn.p2 = xxxxxxxxxxxxxxxxxxxx
 
-fileYourNilReturn.title = Cyflwyno’ch datganiad ‘dim’
-fileYourNilReturn.heading = Cyflwyno’ch datganiad ‘dim’
-fileYourNilReturn.p1 = Defnyddiwch y gwasanaeth hwn i gadarnhau nad ydych wedi talu unrhyw is-gontractwyr yn ystod mis treth.
+fileYourNilReturn.title = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.heading = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p1 = xxxxxxxxxxxxxxxxxxxx
 fileYourNilReturn.p2 = Gallwch hefyd gyflwyno cais anactifedd.
 
 monthlyreturns.dateConfirmPayments.title = Pa fis treth a blwyddyn dreth ydych chi’n cyflwyno datganiad ar eu cyfer?

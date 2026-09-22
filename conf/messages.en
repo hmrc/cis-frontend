@@ -310,14 +310,14 @@ monthlyreturns.submittedNoReceipt.feedback.p2.link = Take a short survey
 monthlyreturns.submittedNoReceipt.whatHappensNext.heading = What happens next
 monthlyreturns.submittedNoReceipt.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
-fileYourMonthlyCisReturn.title = File your monthly CIS return
-fileYourMonthlyCisReturn.heading = File your monthly CIS return
-fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
-fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
+fileYourMonthlyCisReturn.title = File a monthly return
+fileYourMonthlyCisReturn.heading = 	File a monthly return
+fileYourMonthlyCisReturn.p1 = Use this service to file a monthly return for the Construction Industry Scheme (CIS).
+fileYourMonthlyCisReturn.p2 = You will need to enter the month and year of the return period.
 
-fileYourNilReturn.title = File your nil return
-fileYourNilReturn.heading = File your nil return
-fileYourNilReturn.p1 = Use this service to confirm you have not paid any subcontractors in a tax month.
+fileYourNilReturn.title = File a nil return
+fileYourNilReturn.heading = File a nil return
+fileYourNilReturn.p1 = Use this service to confirm you have not paid any subcontractors in a return period.
 fileYourNilReturn.p2 = You can also submit an inactivity request.
 
 monthlyreturns.dateConfirmPayments.title = 	Which return period are you filing for?
