@@ -38,7 +38,6 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.DateTimeFormats
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

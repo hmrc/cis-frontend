@@ -28,9 +28,11 @@ class SubmissionAwaitingViewSpec extends SpecBase with Matchers {
   "SubmissionAwaitingView" - {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
-      val fakeCisId = "1"
-      val html      = view(fakeCisId)
-      val doc       = Jsoup.parse(html.body)
+      val manageCisReturnUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
+      val html = view(manageCisReturnUrl)
+      val doc  = Jsoup.parse(html.body)
 
       doc.title                      must include(messages("monthlyreturns.submissionAwaiting.title"))
       doc.select("h1").text          must include(messages("monthlyreturns.submissionAwaiting.heading"))
@@ -42,9 +44,6 @@ class SubmissionAwaitingViewSpec extends SpecBase with Matchers {
         messages("monthlyreturns.submissionAwaiting.links.hmrcOnlineServicesHelpdesk")
       )
       doc.select(".govuk-link").text must include(messages("monthlyreturns.submissionAwaiting.links.submit"))
-
-      val manageCisReturnUrl =
-        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
 
       doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 1
     }
