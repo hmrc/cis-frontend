@@ -19,14 +19,20 @@ package utils.validation
 import models.validation.{FieldValidationFailure, SubcontractorValidationField}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import models.submission.SubcontractorType.Company
 
 class TradingNameValidatorSpec extends AnyWordSpec with Matchers {
+
   "TradingNameValidator - validate tradingName " must {
 
     "return failure when the trading name is empty" in {
       val tradingName = ""
+
       TradingNameValidator
-        .validate(Some("")) mustBe Some(
+        .validate(
+          value = Some(tradingName),
+          subcontractorType = Company
+        ) mustBe Some(
         FieldValidationFailure(
           field = SubcontractorValidationField.TradingName,
           value = Some(tradingName)
@@ -36,8 +42,12 @@ class TradingNameValidatorSpec extends AnyWordSpec with Matchers {
 
     "return failure when the trading name is None" in {
       val tradingName = None
+
       TradingNameValidator
-        .validate(tradingName) mustBe Some(
+        .validate(
+          value = tradingName,
+          subcontractorType = Company
+        ) mustBe Some(
         FieldValidationFailure(
           field = SubcontractorValidationField.TradingName,
           value = None
@@ -48,14 +58,16 @@ class TradingNameValidatorSpec extends AnyWordSpec with Matchers {
     "return no failure for a valid trading name" in {
       TradingNameValidator
         .validate(
-          Some("trading Name")
+          value = Some("trading Name"),
+          subcontractorType = Company
         ) mustBe None
     }
 
     "return no failure for a valid trading name - Test Trading Name 1234@" in {
       TradingNameValidator
         .validate(
-          Some("Test Trading Name 1234@")
+          value = Some("Test Trading Name 1234@"),
+          subcontractorType = Company
         ) mustBe None
     }
 
@@ -65,14 +77,14 @@ class TradingNameValidatorSpec extends AnyWordSpec with Matchers {
 
       TradingNameValidator
         .validate(
-          Some(tradingName)
-        ) mustBe
-        Some(
-          FieldValidationFailure(
-            field = SubcontractorValidationField.TradingName,
-            value = Some(tradingName)
-          )
+          value = Some(tradingName),
+          subcontractorType = Company
+        ) mustBe Some(
+        FieldValidationFailure(
+          field = SubcontractorValidationField.TradingName,
+          value = Some(tradingName)
         )
+      )
     }
   }
 }

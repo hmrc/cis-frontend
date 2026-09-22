@@ -18,27 +18,40 @@ package services
 
 import models.validation.SubcontractorValidationFailure
 import models.monthlyreturns.Subcontractor
+import models.submission.SubcontractorType
 import utils.CompanyValidator
 
 import javax.inject.{Inject, Singleton}
+import scala.util.Try
 
 @Singleton
 class SubcontractorCompanyValidator @Inject() {
   def validate(
     subcontractors: Seq[Subcontractor]
   ): List[SubcontractorValidationFailure] =
-    subcontractors.toList.flatMap { subcontractor =>
-      val failedFields =
-        CompanyValidator.validate(
-          subcontractor,
-          subcontractors
-        )
+    subcontractors.toList
+      .filter(isCompany)
+      .flatMap { subcontractor =>
+        val failedFields =
+          CompanyValidator.validate(
+            subcontractor = subcontractor,
+            subcontractors = subcontractors
+          )
 
-      Option.when(failedFields.nonEmpty) {
-        SubcontractorValidationFailure(
-          subcontractorId = subcontractor.subcontractorId,
-          failedFields = failedFields
-        )
+        Option.when(failedFields.nonEmpty) {
+          SubcontractorValidationFailure(
+            subcontractorId = subcontractor.subcontractorId,
+            failedFields = failedFields
+          )
+        }
       }
-    }
+
+  private def isCompany(
+    subcontractor: Subcontractor
+  ): Boolean =
+    subcontractor.subcontractorType
+      .flatMap { value =>
+        Try(SubcontractorType.fromString(value)).toOption
+      }
+      .contains(SubcontractorType.Company)
 }
