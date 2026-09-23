@@ -14,9 +14,6 @@ GET         /refresh-session                                            controll
 
 GET         /there-is-a-problem                                         controllers.JourneyRecoveryController.onPageLoad(continueUrl: Option[RedirectUrl] ?= None)
 
-GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
-POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
-
 GET         /account/sign-out-survey                                    controllers.auth.AuthController.signOut()
 GET         /account/sign-out                                           controllers.auth.AuthController.signOutNoSurvey()
 GET         /account/signed-out                                         controllers.auth.SignedOutController.onPageLoad()
@@ -26,6 +23,15 @@ GET         /unauthorised/standard-user                                 controll
 GET         /unauthorised/organisation                                  controllers.UnauthorisedOrganisationAffinityController.onPageLoad()
 GET         /unauthorised/individual                                    controllers.UnauthorisedIndividualAffinityController.onPageLoad()
 GET         /unauthorised/agent                                         controllers.UnauthorisedAgentAffinityController.onPageLoad()
+
+GET        /page-not-found                                              controllers.PageNotFoundController.onPageLoad()
+GET        /access-denied                                               controllers.AccessDeniedController.onPageLoad()
+GET        /system-error/there-is-a-problem                             controllers.SystemErrorController.onPageLoad()
+
+GET        /agent/no-longer-authorised                                  controllers.AgentLostAccessController.onPageLoad()
+
+GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
+POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
 GET        /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
@@ -50,10 +56,6 @@ GET        /monthly-return/submission-in-progress/from-manage           controll
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
 GET        /monthly-return/already-submitted                            controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
-
-GET        /page-not-found                                              controllers.PageNotFoundController.onPageLoad()
-GET        /access-denied                                               controllers.AccessDeniedController.onPageLoad()
-GET        /system-error/there-is-a-problem                             controllers.SystemErrorController.onPageLoad()
 
 GET        /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(defaultSelection: Option[Boolean])
 POST       /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
@@ -167,25 +169,25 @@ GET        /monthly-return/continue-return-journey                      controll
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
 
+GET        /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
+POST       /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
+
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)
 GET        /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = CheckMode)
 POST       /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
-POST       /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
-
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
-
-GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
-POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
+
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
+POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
 GET        /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
@@ -204,8 +206,6 @@ POST       /final-validations/add-contractor-utr                        controll
 
 GET        /final-validations/review-contractor-details                 controllers.finalvalidations.ReviewContractorDetailsController.onPageLoad()
 
-GET        /agent/no-longer-authorised                                  controllers.AgentLostAccessController.onPageLoad()
+GET        /final-validations/change/:subcontractorId/:fieldKey/:targetKey       controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
 
-GET       /final-validations/change/:subcontractorId/:fieldKey/:targetKey       controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
-
-GET       /final-validations/return/:handoffId                                  controllers.finalvalidations.FinalValidationReturnController.onPageLoad(handoffId: String)
+GET        /final-validations/return/:handoffId                                  controllers.finalvalidations.FinalValidationReturnController.onPageLoad(handoffId: String)
