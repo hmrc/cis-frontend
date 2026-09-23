@@ -542,8 +542,9 @@ class MonthlyReturnService @Inject() (
                case Some(value) => setOrError(ua4, SubmitInactivityRequestPage, value)
                case None        => Right(ua4)
              }
-      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems, subcontractors)
-    } yield ua6
+      ua6 <- setOrError(ua5, OriginalSubcontractorCountPage, subcontractors.size)
+      ua7 <- populateStandardReturnItems(ua6, monthlyReturnItems, subcontractors)
+    } yield ua7
 
   private def populateStandardReturnItems(
     ua: UserAnswers,

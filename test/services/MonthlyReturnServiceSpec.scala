@@ -1543,6 +1543,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ContractorNamePage) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage) mustBe Some(1L)
 
+      ua.get(OriginalSubcontractorCountPage) mustBe Some(1)
+
       ua.get(SelectedSubcontractorPage(1)).value mustBe SelectedSubcontractor(
         id = 1001L,
         name = "A Ltd",
