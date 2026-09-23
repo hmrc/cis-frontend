@@ -89,8 +89,14 @@ class TrustValidatorSpec extends AnyWordSpec with Matchers {
 
       val subcontractors =
         Seq(
-          subcontractorValid.copy(utr = Some(utr)),
-          subcontractorValid.copy(utr = Some(utr))
+          subcontractorValid.copy(
+            subcontractorId = 1L,
+            utr = Some(utr)
+          ),
+          subcontractorValid.copy(
+            subcontractorId = 2L,
+            utr = Some(utr)
+          )
         )
 
       TrustValidator.validate(
@@ -151,7 +157,7 @@ class TrustValidatorSpec extends AnyWordSpec with Matchers {
       surname = Some("Smith"),
       partnershipTradingName = Some("Smith & Partners"),
       tradingName = tradingName,
-      subcontractorType = Some("Sole Trader"),
+      subcontractorType = Some("trust"),
       addressLine1 = Some("1 High Street"),
       addressLine2 = Some("Central"),
       addressLine3 = Some("London"),

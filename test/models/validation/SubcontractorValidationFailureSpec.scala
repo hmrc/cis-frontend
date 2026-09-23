@@ -85,4 +85,85 @@ class SubcontractorValidationFailureSpec extends SpecBase {
         )
     }
   }
+
+  "merge" - {
+
+    "merge failures for the same subcontractor" in {
+      val emailFailure =
+        FieldValidationFailure(
+          field = EmailAddress,
+          value = Some("invalid-email")
+        )
+
+      val postcodeFailure =
+        FieldValidationFailure(
+          field = Postcode,
+          value = Some("ABCDEFGHI")
+        )
+
+      val result =
+        SubcontractorValidationFailure.merge(
+          List(
+            SubcontractorValidationFailure(
+              subcontractorId = 101L,
+              failedFields = List(emailFailure)
+            )
+          ),
+          List(
+            SubcontractorValidationFailure(
+              subcontractorId = 101L,
+              failedFields = List(postcodeFailure)
+            )
+          )
+        )
+
+      result mustBe List(
+        SubcontractorValidationFailure(
+          subcontractorId = 101L,
+          failedFields = List(
+            emailFailure,
+            postcodeFailure
+          )
+        )
+      )
+    }
+
+    "keep failures for different subcontractors separate" in {
+      val firstFailure =
+        SubcontractorValidationFailure(
+          subcontractorId = 101L,
+          failedFields = List(
+            FieldValidationFailure(
+              field = EmailAddress,
+              value = Some("invalid-email")
+            )
+          )
+        )
+
+      val secondFailure =
+        SubcontractorValidationFailure(
+          subcontractorId = 202L,
+          failedFields = List(
+            FieldValidationFailure(
+              field = Postcode,
+              value = Some("ABCDEFGHI")
+            )
+          )
+        )
+
+      SubcontractorValidationFailure.merge(
+        List(firstFailure),
+        List(secondFailure)
+      ) mustBe List(
+        firstFailure,
+        secondFailure
+      )
+    }
+
+    "return an empty list when there are no failures" in {
+      SubcontractorValidationFailure.merge(
+        List.empty[SubcontractorValidationFailure]
+      ) mustBe List.empty
+    }
+  }
 }

@@ -27,7 +27,7 @@
         appConfig: FrontendAppConfig
 )
 
-@(cisId:String)(implicit request: Request[_], messages: Messages)
+@(returnUrl: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessful.title")),
         showBackLink = false
@@ -54,6 +54,6 @@
         ))
         @link(
             linkTextKey = messages("monthlyreturns.submissionUnsuccessful.submit"),
-            linkUrl     = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url,
+            linkUrl     = returnUrl,
         )
 }

@@ -18,25 +18,41 @@ package services
 
 import models.monthlyreturns.Subcontractor
 import models.validation.SubcontractorValidationFailure
+import models.submission.SubcontractorType
 import utils.TrustValidator
 
 import javax.inject.{Inject, Singleton}
+import scala.util.Try
 
 @Singleton
 class SubcontractorTrustValidator @Inject() {
-  def validate(subcontractors: Seq[Subcontractor]): List[SubcontractorValidationFailure] =
-    subcontractors.toList.flatMap { subcontractor =>
-      val failedFields =
-        TrustValidator.validate(
-          subcontractor,
-          subcontractors
-        )
 
-      Option.when(failedFields.nonEmpty) {
-        SubcontractorValidationFailure(
-          subcontractorId = subcontractor.subcontractorId,
-          failedFields = failedFields
-        )
+  def validate(
+    subcontractors: Seq[Subcontractor]
+  ): List[SubcontractorValidationFailure] =
+    subcontractors.toList
+      .filter(isTrust)
+      .flatMap { subcontractor =>
+        val failedFields =
+          TrustValidator.validate(
+            subcontractor = subcontractor,
+            subcontractors = subcontractors
+          )
+
+        Option.when(failedFields.nonEmpty) {
+          SubcontractorValidationFailure(
+            subcontractorId = subcontractor.subcontractorId,
+            failedFields = failedFields
+          )
+        }
       }
-    }
+
+  private def isTrust(
+    subcontractor: Subcontractor
+  ): Boolean =
+    subcontractor.subcontractorType
+      .flatMap { value =>
+        Try(SubcontractorType.fromString(value)).toOption
+      }
+      .contains(SubcontractorType.Trust)
 }

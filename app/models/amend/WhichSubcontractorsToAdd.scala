@@ -20,6 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.CheckboxItem
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import viewmodels.govuk.checkbox._
+import models.monthlyreturns.Subcontractor as CisSubcontractor
 
 case class Subcontractor(id: String, name: String)
 
@@ -30,7 +31,8 @@ object Subcontractor {
 case class WhichSubcontractorsToAddPageModel(
   subcontractors: Seq[Subcontractor],
   preSelectedIds: Set[String],
-  status: Option[String]
+  status: Option[String],
+  fullSubcontractors: Seq[CisSubcontractor]
 )
 
 object WhichSubcontractorsToAdd {
