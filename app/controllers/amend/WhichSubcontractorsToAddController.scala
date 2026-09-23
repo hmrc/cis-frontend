@@ -25,7 +25,6 @@ import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -149,14 +148,16 @@ class WhichSubcontractorsToAddController @Inject() (
                           ua        <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
                           ua2       <- Future.fromTry {
                                          val cleared = ua.remove(SelectedSubcontractorPage.all)
-                                         cleared.flatMap { clearedAnswers =>
-                                           selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
-                                             case (answersTry, (subcontractor, index)) =>
-                                               answersTry.flatMap(
-                                                 _.set(SelectedSubcontractorPage(index + 1), subcontractor)
-                                               )
+                                         cleared
+                                           .flatMap { clearedAnswers =>
+                                             selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
+                                               case (answersTry, (subcontractor, index)) =>
+                                                 answersTry.flatMap(
+                                                   _.set(SelectedSubcontractorPage(index + 1), subcontractor)
+                                                 )
+                                             }
                                            }
-                                         }.flatMap(_.set(OriginalSubcontractorCountPage, model.subcontractors.size))
+                                           .flatMap(_.set(OriginalSubcontractorCountPage, model.subcontractors.size))
                                        }
                           _         <- sessionRepository.set(ua2)
                           _         <- monthlyReturnService.syncMonthlyReturnItems(ua2, selectedSubcontractorIds.toSeq)
