@@ -22,7 +22,7 @@ import models.UserAnswers
 import models.requests.GetMonthlyReturnForEditRequest
 import navigation.Navigator
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
@@ -31,8 +31,8 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
+import services.{FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
@@ -213,6 +213,101 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
 
         verifyNoInteractions(mockNavigator)
         verifyNoInteractions(mockSessionRepo)
+      }
+    }
+
+    "must redirect to UnauthorisedOrganisationAffinity when reconcile returns PRECONDITION_FAILED" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockNavigator   = mock[Navigator]
+      val mockSessionRepo = mock[SessionRepository]
+      val mockReconcile   = mock[FormpRdsReconcileService]
+
+      val updatedAnswers = UserAnswers("id")
+
+      when(
+        mockService.populateUserAnswersForContinueJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(updatedAnswers)))
+
+      when(
+        mockService.populateAgentClientDataIfRequired(
+          ua = any[UserAnswers],
+          userId = any[String],
+          isAgent = any[Boolean]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(updatedAnswers))
+
+      when(mockSessionRepo.set(any())).thenReturn(Future.successful(true))
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED)))
+
+      val application = applicationBuilder(formpRdsReconcileService = mockReconcile)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[Navigator].toInstance(mockNavigator),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, continueReturnJourneyUrl).withBody(AnyContentAsEmpty)
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    "must redirect to JourneyRecovery when reconcile returns a general error" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockNavigator   = mock[Navigator]
+      val mockSessionRepo = mock[SessionRepository]
+      val mockReconcile   = mock[FormpRdsReconcileService]
+
+      val updatedAnswers = UserAnswers("id")
+
+      when(
+        mockService.populateUserAnswersForContinueJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(updatedAnswers)))
+
+      when(
+        mockService.populateAgentClientDataIfRequired(
+          ua = any[UserAnswers],
+          userId = any[String],
+          isAgent = any[Boolean]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(updatedAnswers))
+
+      when(mockSessionRepo.set(any())).thenReturn(Future.successful(true))
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application = applicationBuilder(formpRdsReconcileService = mockReconcile)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[Navigator].toInstance(mockNavigator),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, continueReturnJourneyUrl).withBody(AnyContentAsEmpty)
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
       }
     }
   }

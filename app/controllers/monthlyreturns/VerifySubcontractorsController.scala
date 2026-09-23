@@ -70,7 +70,7 @@ class VerifySubcontractorsController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield value match {
-              case true  => Redirect(appConfig.manageSubcontractorsUrl(request.cisId))
+              case true  => Redirect(appConfig.verifySubcontractorsUrl)
               case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
             }
         )

@@ -32,10 +32,38 @@ class SubcontractorCompanyValidatorSpec extends SpecBase {
       validator.validate(Seq.empty) mustBe Nil
     }
 
-    "exclude a subcontractor when all common details are valid" in {
+    "exclude a company subcontractor when all fields are valid" in {
       validator.validate(
         Seq(subcontractor(1L))
       ) mustBe Nil
+    }
+
+    "ignore a subcontractor that is not a company" in {
+      val result =
+        validator.validate(
+          Seq(
+            subcontractor(1L).copy(
+              subcontractorType = Some("sole-trader"),
+              crn = Some("invalid-number")
+            )
+          )
+        )
+
+      result mustBe Nil
+    }
+
+    "ignore a subcontractor with an invalid subcontractor type" in {
+      val result =
+        validator.validate(
+          Seq(
+            subcontractor(1L).copy(
+              subcontractorType = Some("invalid"),
+              crn = Some("invalid-number")
+            )
+          )
+        )
+
+      result mustBe Nil
     }
 
     "return a subcontractor containing an invalid works reference number" in {

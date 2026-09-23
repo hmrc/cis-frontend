@@ -36,6 +36,9 @@ class FrontendAppConfigSpec extends SpecBase {
 
       appConfig.manageSubcontractorsUrl("1") mustBe
         "http://localhost:6996/construction-industry-scheme/management/manage-subcontractors/1"
+
+      appConfig.verifySubcontractorsUrl mustBe
+        "http://localhost:6998/construction-industry-scheme/subcontractor/verify/select-subcontractors-to-verify"
     }
 
     "must contain the monthly returns tax start day" in new Setup {

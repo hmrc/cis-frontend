@@ -30,10 +30,11 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val host: String    = configuration.get[String]("host")
   lazy val appName: String = configuration.get[String]("appName")
 
-  private lazy val contactHost                  = configuration.get[String]("contact-frontend.host")
-  private lazy val cisManageFrontendUrl         = configuration.get[String]("cis-manage-frontend.host")
-  private lazy val returnsLandingPagePath       = configuration.get[String]("urls.returnsLandingPagePath")
-  private lazy val contactFormServiceIdentifier = configuration.get[String]("contact-frontend.serviceId")
+  private lazy val contactHost                     = configuration.get[String]("contact-frontend.host")
+  private lazy val cisManageFrontendUrl            = configuration.get[String]("cis-manage-frontend.host")
+  private lazy val returnsLandingPagePath          = configuration.get[String]("urls.returnsLandingPagePath")
+  private lazy val cisContractorFinalValidationUrl = configuration.get[String]("urls.cisContractorFinalValidation")
+  private lazy val contactFormServiceIdentifier    = configuration.get[String]("contact-frontend.serviceId")
 
   def feedbackUrl(implicit request: RequestHeader): String =
     s"$contactHost/contact/beta-feedback?service=$contactFormServiceIdentifier&backUrl=${host + request.uri}"
@@ -57,6 +58,8 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val taxAgentsAndAdvisorsAuthorisationFormsUrl: String =
     configuration.get[String]("urls.taxAgentsAndAdvisorsAuthorisationForms")
   lazy val clientListSearchUrl: String                       = configuration.get[String]("urls.clientListSearch")
+
+  lazy val verifySubcontractorsUrl: String = configuration.get[String]("urls.verifySubcontractors")
 
   private lazy val manageSubcontractorsBaseUrl: String =
     configuration.get[String]("urls.manageSubcontractors")
@@ -105,6 +108,9 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
       }
 
     s"$cisManageFrontendUrl$returnsLandingPagePath/$encodedInstanceId$queryString"
+
+  def cisContractorFinalValidationHandoffUrl(handoffId: String): String =
+    s"$cisContractorFinalValidationUrl/${urlEncode(handoffId)}"
 
   def authoriseClientRequestUrl(agentCode: String): String =
     s"$portalAccountBaseUrl${authoriseClientRequestPath.replace("{agentCode}", agentCode)}"
