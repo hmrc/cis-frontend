@@ -17,7 +17,6 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.{CheckMode, UserAnswers}
-import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*

@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import models.UserAnswers
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
@@ -34,6 +35,9 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
 
   private lazy val submissionUnsuccessfulRoute =
     routes.SubmissionUnsuccessfulController.onPageLoad.url
+
+  private def submissionUnsuccessfulFromManageRoute(cisId: String) =
+    routes.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId).url
 
   "SubmissionUnsuccessful Controller" - {
 
@@ -54,12 +58,14 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
 
         running(application) {
           val request   = FakeRequest(GET, submissionUnsuccessfulRoute)
-          val fakeCisId = "1"
           val result    = route(application, request).value
           val view      = application.injector.instanceOf[SubmissionUnsuccessfulView]
+          val returnUrl = controllers.monthlyreturns.routes.ManageCisReturnController
+            .onExit()
+            .url
 
           status(result) mustEqual OK
-          contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
+          contentAsString(result) mustEqual view(returnUrl)(request, messages(application)).toString
 
           verify(mockMonthlyReturnService)
             .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
@@ -106,6 +112,38 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
 
           status(result) mustEqual SEE_OTHER
           redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+        }
+      }
+    }
+
+    "GET onPageLoadFromManage" - {
+
+      "must return OK and the correct view" in {
+
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+        val application = applicationBuilder(userAnswers = None)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val fakeCisId = "1"
+          val request   = FakeRequest(GET, submissionUnsuccessfulFromManageRoute(fakeCisId))
+          val result    = route(application, request).value
+          val view      = application.injector.instanceOf[SubmissionUnsuccessfulView]
+          val appConfig = application.injector.instanceOf[FrontendAppConfig]
+          val returnUrl = appConfig.returnsLandingPageUrl(
+            fakeCisId,
+            contractorName = None
+          )
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(returnUrl)(request, messages(application)).toString
 
           verify(mockMonthlyReturnService, never())
             .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
