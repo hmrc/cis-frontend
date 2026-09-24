@@ -1311,7 +1311,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
             taxMonth = 3,
             nilReturnIndicator = Some("Y"),
             decInformationCorrect = Some("Y"),
-            decNilReturnNoPayments = Some("Y")
+            decNoMoreSubPayments = Some("Y")
           )
         ),
         subcontractors = Nil,
