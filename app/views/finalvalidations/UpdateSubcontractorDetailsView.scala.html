@@ -37,21 +37,24 @@
 
     @paragraph("finalvalidations.updateSubcontractorDetails.intro")
 
-    @customSummaryList(
-        rows = model.rows.map { row =>
-            (
-                messages(row.labelKey),
-                Seq(
-                    (   row.changeUrl,
-                        "site.change",
-                        row.labelKey
+    <div class="final-validation-subcontractor-details">
+        @customSummaryList(
+            rows = model.rows.map { row =>
+                (
+                    messages(row.labelKey),
+                    Seq(
+                        (
+                            row.changeUrl,
+                            "site.change",
+                            row.labelKey
+                        )
                     )
                 )
-            )
-        },
-        keyClasses  = "govuk-!-font-weight-bold",
-        rowValues   = model.rows.map(_.value.getOrElse(""))
-    )
+            },
+            keyClasses  = "govuk-!-font-weight-bold",
+            rowValues   = model.rows.map(_.value.getOrElse(""))
+        )
+    </div>
 
     @h2("finalvalidations.updateSubcontractorDetails.confirmChanges.heading")
 

@@ -16,22 +16,21 @@
 
 package views.monthlyreturns
 
+import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.i18n.{Lang, Messages, MessagesApi, MessagesImpl}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.i18n.{Lang, Messages, MessagesApi, MessagesImpl}
 import play.api.mvc.{Call, Request}
 import play.api.routing.Router
 import play.api.test.FakeRequest
-import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
+import viewmodels.checkAnswers.monthlyreturns.*
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
-
-import viewmodels.checkAnswers.monthlyreturns._
 
 class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with MockitoSugar {
 
@@ -47,6 +46,24 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
 
       doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.question"))
       doc.text() must not include messages("monthlyreturns.subcontractorDetailsAdded.cancelAmendment")
+    }
+
+    "must display the yes/no radio buttons when showYesNo is true" in new Setup {
+      val viewModelWithYesNo = viewModel.copy(showYesNo = true)
+      val htmlWithYesNo      = view(form, NormalMode, viewModelWithYesNo)
+      val doc: Document      = Jsoup.parse(htmlWithYesNo.toString)
+
+      doc.select(".govuk-radios").size() mustBe 1
+      doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.question"))
+    }
+
+    "must not display the yes/no radio buttons when showYesNo is false" in new Setup {
+      val viewModelWithoutYesNo = viewModel.copy(showYesNo = false)
+      val htmlWithoutYesNo      = view(form, NormalMode, viewModelWithoutYesNo)
+      val doc: Document         = Jsoup.parse(htmlWithoutYesNo.toString)
+
+      doc.select(".govuk-radios").size() mustBe 0
+      doc.text() must not include messages("monthlyreturns.subcontractorDetailsAdded.question")
     }
 
     "must display the 'Cancel amendment' link when isAmendment is true" in new Setup {
@@ -148,7 +165,8 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
             removeCall = Call("GET", "/remove-2")
           )
         ),
-        hasIncomplete = true
+        hasIncomplete = true,
+        showYesNo = true
       )
 
     val html = view(form, NormalMode, viewModel)

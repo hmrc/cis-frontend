@@ -36,7 +36,8 @@ class DataRetrievalActionImpl @Inject() (
         _,
         request.employerReference,
         request.agentReference,
-        request.isAgent
+        request.isAgent,
+        request.agentCode
       )
     }
 }

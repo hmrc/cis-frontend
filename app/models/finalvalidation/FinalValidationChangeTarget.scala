@@ -25,6 +25,7 @@ object FinalValidationChangeTarget {
   case object SubcontractorName extends FinalValidationChangeTarget { val key = "subcontractorName" }
   case object TradingName extends FinalValidationChangeTarget { val key = "tradingName" }
   case object PartnershipTradingName extends FinalValidationChangeTarget { val key = "partnershipTradingName" }
+  case object Names extends FinalValidationChangeTarget { val key = "names" }
 
   case object AddressYesNo extends FinalValidationChangeTarget { val key = "addressYesNo" }
   case object Address extends FinalValidationChangeTarget { val key = "address" }
@@ -50,6 +51,7 @@ object FinalValidationChangeTarget {
       SubcontractorName,
       TradingName,
       PartnershipTradingName,
+      Names,
       AddressYesNo,
       Address,
       ContactDetailsYesNo,

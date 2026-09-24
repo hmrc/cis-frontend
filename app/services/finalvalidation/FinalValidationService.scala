@@ -185,7 +185,6 @@ class FinalValidationService @Inject() (
       case EmailAddress           => details.emailAddress
       case PhoneNumber            => details.phoneNumber
       case MobilePhoneNumber      => details.mobilePhoneNumber
-      case WorkReferenceNumber    => details.worksReferenceNumber
-      case _                      => None
+      case WorksReferenceNumber   => details.worksReferenceNumber
     }
 }

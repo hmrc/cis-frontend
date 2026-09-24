@@ -33,7 +33,7 @@ object FinalValidationFieldMapper {
       case SubcontractorValidationField.SecondName             => FinalValidationField.SecondName
       case SubcontractorValidationField.Surname                => FinalValidationField.Surname
       case SubcontractorValidationField.Nino                   => FinalValidationField.Nino
-      case SubcontractorValidationField.WorksReferenceNumber   => FinalValidationField.WorkReferenceNumber
+      case SubcontractorValidationField.WorksReferenceNumber   => FinalValidationField.WorksReferenceNumber
       case SubcontractorValidationField.AddressLine1           => FinalValidationField.AddressLine1
       case SubcontractorValidationField.AddressLine2           => FinalValidationField.AddressLine2
       case SubcontractorValidationField.AddressLine3           => FinalValidationField.AddressLine3

@@ -4,6 +4,8 @@
 
 GET         /                                                           controllers.IndexController.onPageLoad()
 
+GET         /service-home                                               controllers.ServiceHomeController.onPageLoad()
+
 GET         /assets/*file                                               controllers.Assets.versioned(path="/public", file: Asset)
 
 GET         /language/:lang                                             controllers.LanguageSwitchController.switchToLanguage(lang: String)
@@ -40,8 +42,10 @@ GET        /monthly-return/nil-month-return-inactive                    controll
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
 
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit/from-manage  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId: String)
 
 GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
+GET        /monthly-return/submission-in-progress/from-manage           controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadFromManage(cisId: String)
 
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
@@ -61,14 +65,14 @@ POST       /monthly-return/file-your-nil-return                         controll
 
 GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
 GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
-POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode, returnType: ReturnType = MonthlyStandardReturn)
 GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
-POST       /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyStandardReturn)
 
 GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
-POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode, returnType: ReturnType = MonthlyNilReturn)
 GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
-POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyNilReturn)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
@@ -168,37 +172,39 @@ POST       /amend-monthly-return/which-subcontractors-to-add            controll
 GET        /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = CheckMode)
 POST       /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/cancel-amended-monthly-return                        controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
-POST       /monthly-return/cancel-amended-monthly-return                        controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
+GET        /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
+POST       /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
 
-GET        /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
-POST       /amend-monthly-return/what-do-you-want-to-amend-nil                     controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
+GET        /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
+POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
 
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
-GET        /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
-POST       /amend-monthly-return/what-do-you-want-to-amend-standard                        controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
-GET        /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /amend-monthly-return/are-you-sure-you-want-to-amend                        controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
+GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
 
-GET        /final-validations/add-contractor-email-address                        controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /final-validations/add-contractor-email-address                        controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
+GET        /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
 
-GET        /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /final-validations/add-contractor-scheme-name                        controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = NormalMode)
+GET        /final-validations/add-contractor-scheme-name                controllers.finalvalidations.AddSchemeNameYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /final-validations/add-contractor-scheme-name                controllers.finalvalidations.AddSchemeNameYesNoController.onSubmit(mode: Mode = NormalMode)
 
 GET        /final-validations/update-subcontractor-details/:subcontractorId     controllers.finalvalidations.UpdateSubcontractorDetailsController.onPageLoad(subcontractorId: Long)
 POST       /final-validations/update-subcontractor-details/:subcontractorId     controllers.finalvalidations.UpdateSubcontractorDetailsController.onSubmit(subcontractorId: Long)
 
-GET        /final-validations/review-subcontractor-details      controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoad()
-POST       /final-validations/review-subcontractor-details      controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmit()
+GET        /final-validations/review-subcontractor-details              controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoad()
+POST       /final-validations/review-subcontractor-details              controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmit()
 
-GET        /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /final-validations/add-contractor-utr         controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)
+GET        /final-validations/add-contractor-utr                        controllers.finalvalidations.AddUtrYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /final-validations/add-contractor-utr                        controllers.finalvalidations.AddUtrYesNoController.onSubmit(mode: Mode = NormalMode)
 
-GET        /final-validations/review-contractor-details                         controllers.finalvalidations.ReviewContractorDetailsController.onPageLoad()
+GET        /final-validations/review-contractor-details                 controllers.finalvalidations.ReviewContractorDetailsController.onPageLoad()
+
+GET        /agent/no-longer-authorised                                  controllers.AgentLostAccessController.onPageLoad()
 
 GET       /final-validations/change/:subcontractorId/:fieldKey/:targetKey       controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
 

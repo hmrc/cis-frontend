@@ -72,7 +72,7 @@ class UpdateSubcontractorDetailsController @Inject() (
                   val model =
                     UpdateSubcontractorDetailsPageModel(
                       subcontractor.subcontractorId,
-                      subcontractor.displayName,
+                      pageModelBuilder.displayName(subcontractor),
                       rows
                     )
 
