@@ -602,6 +602,8 @@ finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Cyfeirnod y g
 # Sole trader
 finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Enw’r is-gontractwr
 finalvalidations.updateSubcontractorDetails.soleTrader.tradingName = Masnachu
+finalvalidations.updateSubcontractorDetails.soleTrader.names = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.updateSubcontractorDetails.soleTrader.names.noneSelected = xxxxxxxxxxxxxxxxxxxx
 finalvalidations.updateSubcontractorDetails.soleTrader.addAddress = Ychwanegu cyfeiriad yr is-gontractwr?
 finalvalidations.updateSubcontractorDetails.soleTrader.addUtr = Ychwanegu UTR?
 finalvalidations.updateSubcontractorDetails.soleTrader.utr = UTR
@@ -640,7 +642,7 @@ finalValidations.reviewSubcontractorDetails.heading = Adolygu manylion is-gontra
 finalValidations.reviewSubcontractorDetails.intro = Mae angen i chi adolygu manylion yr is-gontractwr
 finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = Cyflwyno datganiad
 finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Anghyflawn
-finalValidations.reviewSubcontractorDetails.taskList.status.completed = xxxxxxxxxxxxxxxxxxxx
+finalValidations.reviewSubcontractorDetails.taskList.status.completed = Wedi’i gwblhau
 finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Methu parhau eto
 finalValidations.reviewSubcontractorDetails.backLink = Yn ôl i ddewis eich is-gontractwyr
 
@@ -653,9 +655,7 @@ finalvalidations.reviewContractorDetails.heading = Adolygu manylion contractwr
 finalvalidations.reviewContractorDetails.p = Ni allwch gyflwyno datganiad ar hyn o bryd. Mae angen i chi adolygu manylion y contractwr.
 finalvalidations.reviewContractorDetails.tasklist.hidden.review = Adolygu
 finalvalidations.reviewContractorDetails.tasklist.schemeName = Enw’r cynllun
-finalvalidations.reviewContractorDetails.tasklist.hidden.utr = Adolygu
 finalvalidations.reviewContractorDetails.tasklist.utr = Cyfeirnod Unigryw y Trethdalwr
-finalvalidations.reviewContractorDetails.tasklist.hidden.emailAddress = Adolygu
 finalvalidations.reviewContractorDetails.tasklist.emailAddress = Cyfeiriad e-bost
 finalValidations.reviewContractorDetails.taskList.status.incomplete = Anghyflawn
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = Cyflwyno datganiad
