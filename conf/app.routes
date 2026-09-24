@@ -42,8 +42,10 @@ GET        /monthly-return/nil-month-return-inactive                    controll
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
 
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit/from-manage  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId: String)
 
 GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
+GET        /monthly-return/submission-in-progress/from-manage           controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadFromManage(cisId: String)
 
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad

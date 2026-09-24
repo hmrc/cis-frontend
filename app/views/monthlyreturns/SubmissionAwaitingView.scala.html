@@ -24,12 +24,10 @@
         bulletList: BulletList,
         link : Link,
         govukDetails: GovukDetails,
-        govukInsetText: GovukInsetText,
-        govukButton: GovukButton,
         appConfig: FrontendAppConfig,
 )
 
-@(cisId:String)(implicit request: Request[_], messages: Messages)
+@(returnUrl: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionAwaiting.title")),
         showBackLink = false
@@ -57,7 +55,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submissionAwaiting.links.submit",
-        linkUrl     = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url,
+        linkUrl     = returnUrl
 
     )
 
