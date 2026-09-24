@@ -36,22 +36,27 @@ class ReviewContractorDetailsViewSpec extends SpecBase {
     }
 
     "must render the contractor list item details" in new Setup {
-      val taskListLinks = doc.select(".govuk-task-list__link").eachText()
-      taskListLinks must contain(
-        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review") + " " + messages(
-          "finalvalidations.reviewContractorDetails.tasklist.schemeName"
-        )
-      )
-      taskListLinks must contain(
-        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review") + " " + messages(
-          "finalvalidations.reviewContractorDetails.tasklist.utr"
-        )
-      )
-      taskListLinks must contain(
-        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review") + " " + messages(
-          "finalvalidations.reviewContractorDetails.tasklist.emailAddress"
-        )
-      )
+      val firstLink = doc.select(".govuk-task-list__link").get(0)
+
+      firstLink.select(".govuk-visually-hidden").text() mustBe
+        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")
+      firstLink.text() mustBe
+        s"${messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")} ${messages("finalvalidations.reviewContractorDetails.tasklist.schemeName")}"
+
+      val secondLink = doc.select(".govuk-task-list__link").get(1)
+
+      secondLink.select(".govuk-visually-hidden").text() mustBe
+        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")
+      secondLink.text() mustBe
+        s"${messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")} ${messages("finalvalidations.reviewContractorDetails.tasklist.utr")}"
+
+      val thirdLink = doc.select(".govuk-task-list__link").get(2)
+
+      thirdLink.select(".govuk-visually-hidden").text() mustBe
+        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")
+      thirdLink.text() mustBe
+        s"${messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")} ${messages("finalvalidations.reviewContractorDetails.tasklist.emailAddress")}"
+
     }
 
     "must render each Incomplete tag for contractor details" in new Setup {
