@@ -529,17 +529,17 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
     value: Option[String],
     target: FinalValidationChangeTarget,
     changeUrl: ChangeUrl
-  ): Seq[UpdateSubcontractorDetailsRow] =
+  )(implicit messages: Messages): Seq[UpdateSubcontractorDetailsRow] =
     if (hasIssue(subcontractor, field)) {
-      Seq(
-        row(
-          field,
-          labelKey,
-          value,
-          target,
-          changeUrl
+      val displayName =
+        Some(
+          value
+            .map(_.trim)
+            .filter(_.nonEmpty)
+            .getOrElse(messages("finalvalidations.updateSubcontractorDetails.noNameProvided"))
         )
-      )
+
+      Seq(row(field, labelKey, displayName, target, changeUrl))
     } else {
       Seq.empty
     }
