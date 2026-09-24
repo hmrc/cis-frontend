@@ -25,7 +25,7 @@ import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerifi
 import pages.monthlyreturns.SelectedSubcontractorPage
 
 import javax.inject.Inject
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.{I18nSupport, Messages, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import services.finalvalidation.FinalValidationDraftService
@@ -169,7 +169,7 @@ class ReviewSubcontractorDetailsController @Inject() (
   private def updateSelectedSubcontractorNames(
     userAnswers: UserAnswers,
     draft: FinalValidationDraft
-  ): Try[UserAnswers] = {
+  )(implicit messages: Messages): Try[UserAnswers] = {
 
     val namesBySubcontractorId =
       draft.subcontractors.map { subcontractor =>

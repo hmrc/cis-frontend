@@ -674,7 +674,7 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
 
   def displayName(
     subcontractor: FinalValidationDraftSubcontractor
-  ): String = {
+  )(implicit messages: Messages): String = {
 
     val details = subcontractor.proposed
 
@@ -696,6 +696,6 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
     currentDisplayName
       .map(_.trim)
       .filter(_.nonEmpty)
-      .getOrElse(subcontractor.displayName)
+      .getOrElse(messages("finalvalidations.updateSubcontractorDetails.noNameProvided"))
   }
 }
