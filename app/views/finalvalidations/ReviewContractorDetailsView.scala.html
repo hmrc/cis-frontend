@@ -37,7 +37,7 @@
             TaskListItem(
                 title = TaskListItemTitle(content = HtmlContent(
                         s"""<span class="govuk-visually-hidden">${
-                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.schemeName")
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")
                             }</span>
                             <span>${
                                 messages("finalvalidations.reviewContractorDetails.tasklist.schemeName")
@@ -48,14 +48,26 @@
                 )
             ),
             TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("finalvalidations.reviewContractorDetails.tasklist.utr"))),
+                title = TaskListItemTitle(content = HtmlContent(
+                        s"""<span class="govuk-visually-hidden">${
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")
+                            }</span>
+                            <span>${
+                                messages("finalvalidations.reviewContractorDetails.tasklist.utr")
+                            }<span>""")),
                 href = Some("#"),
                 status = TaskListItemStatus(
                     tag = Some(Tag(content = Text(messages("finalValidations.reviewContractorDetails.taskList.status.incomplete"))))
                 )
             ),
             TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("finalvalidations.reviewContractorDetails.tasklist.emailAddress"))),
+                title = TaskListItemTitle(content = HtmlContent(
+                        s"""<span class="govuk-visually-hidden">${
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review")
+                            }</span>
+                            <span>${
+                                messages("finalvalidations.reviewContractorDetails.tasklist.emailAddress")
+                            }<span>""")),
                 href = Some("#"),
                 status = TaskListItemStatus(
                     tag = Some(Tag(content = Text(messages("finalValidations.reviewContractorDetails.taskList.status.incomplete"))))

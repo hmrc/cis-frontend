@@ -37,9 +37,21 @@ class ReviewContractorDetailsViewSpec extends SpecBase {
 
     "must render the contractor list item details" in new Setup {
       val taskListLinks = doc.select(".govuk-task-list__link").eachText()
-      taskListLinks must contain(messages("finalvalidations.reviewContractorDetails.tasklist.schemeName"))
-      taskListLinks must contain(messages("finalvalidations.reviewContractorDetails.tasklist.utr"))
-      taskListLinks must contain(messages("finalvalidations.reviewContractorDetails.tasklist.emailAddress"))
+      taskListLinks must contain(
+        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review") + " " + messages(
+          "finalvalidations.reviewContractorDetails.tasklist.schemeName"
+        )
+      )
+      taskListLinks must contain(
+        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review") + " " + messages(
+          "finalvalidations.reviewContractorDetails.tasklist.utr"
+        )
+      )
+      taskListLinks must contain(
+        messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review") + " " + messages(
+          "finalvalidations.reviewContractorDetails.tasklist.emailAddress"
+        )
+      )
     }
 
     "must render each Incomplete tag for contractor details" in new Setup {
