@@ -37,6 +37,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
 import scala.concurrent.Future
+import pages.monthlyreturns.OriginalSubcontractorCountPage
 
 class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar {
 
@@ -339,7 +340,22 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
-    "must return BadRequest on POST when form has errors (no value)" in {
+    "must return BadRequest on POST when form has errors (no value) and showYesNo is true" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "TyneWear Ltd")
+      ).set(OriginalSubcontractorCountPage, 3).success.value
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(POST, postUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe BAD_REQUEST
+      }
+    }
+
+    "must redirect to SummarySubcontractorPayments on POST when all subcontractors already added (showYesNo is false)" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
       )
@@ -350,7 +366,28 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         val request = FakeRequest(POST, postUrl)
         val result  = route(application, request).value
 
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad().url
+      }
+    }
+
+    "must return BadRequest on POST when all subcontractors already added but details are incomplete" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "Complete Ltd"),
+        2 -> incompleteSub(1002L, "Incomplete Ltd")
+      )
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(POST, postUrl)
+        val result  = route(application, request).value
+
         status(result) mustBe BAD_REQUEST
+        contentAsString(result) must include(
+          "You have not entered payment details for all of your selected subcontractors"
+        )
       }
     }
 
@@ -402,7 +439,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyAmendedStandardReturn" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
-      ).set(ReturnTypePage, MonthlyAmendedStandardReturn).success.value
+      ).set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+        .set(OriginalSubcontractorCountPage, 3)
+        .success
+        .value
 
       val application = buildApp(ua)
 
@@ -422,7 +464,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyStandardReturn" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
-      ).set(ReturnTypePage, MonthlyStandardReturn).success.value
+      ).set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(OriginalSubcontractorCountPage, 3)
+        .success
+        .value
 
       val application = buildApp(ua)
 
