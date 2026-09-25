@@ -600,6 +600,7 @@ finalvalidations.updateSubcontractorDetails.phoneNumber = Phone number
 finalvalidations.updateSubcontractorDetails.mobilePhoneNumber = Mobile number
 finalvalidations.updateSubcontractorDetails.addWorksReferenceNumber = Add works reference number?
 finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Works reference number
+finalvalidations.updateSubcontractorDetails.noNameProvided = No name provided
 
 # Sole trader
 finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Subcontractor name
