@@ -570,7 +570,7 @@ class MonthlyReturnService @Inject() (
     if (monthlyReturn.decNoMoreSubPayments.contains("Y")) {
       Some(true)
     } else {
-      None
+      Some(false)
     }
 
   private def getCisId(ua: UserAnswers): Future[String] =
