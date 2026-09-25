@@ -567,13 +567,10 @@ class MonthlyReturnService @Inject() (
     }
 
   private def deriveSubmitInactivityRequest(monthlyReturn: MonthlyReturn): Option[Boolean] =
-    if (
-      monthlyReturn.decNilReturnNoPayments.contains("Y") ||
-      monthlyReturn.decNoMoreSubPayments.contains("Y")
-    ) {
+    if (monthlyReturn.decNoMoreSubPayments.contains("Y")) {
       Some(true)
     } else {
-      None
+      Some(false)
     }
 
   private def getCisId(ua: UserAnswers): Future[String] =
