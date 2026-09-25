@@ -392,6 +392,160 @@ class ConstructionIndustrySchemeConnectorSpec
     }
   }
 
+  "getMonthlyReturnComplete" should {
+
+    "return GetAllMonthlyReturnDetailsResponse when BE returns 200 with valid JSON" in {
+
+      val request = GetMonthlyReturnCompleteRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 10,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-complete"))
+          .withHeader("Content-Type", equalTo("application/json"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """
+                  |{
+                  |  "scheme": [{
+                  |    "schemeId": 1,
+                  |    "instanceId": "CIS-123",
+                  |    "accountsOfficeReference": "123PA12345678",
+                  |    "taxOfficeNumber": "123",
+                  |    "taxOfficeReference": "AB456",
+                  |    "name": "ABC Construction Ltd"
+                  |  }],
+                  |  "monthlyReturn": [{
+                  |    "monthlyReturnId": 101,
+                  |    "taxYear": 2025,
+                  |    "taxMonth": 10,
+                  |    "status": "SUBMITTED",
+                  |    "amendment": "Y"
+                  |  }],
+                  |  "subcontractors": [],
+                  |  "monthlyReturnItems": [],
+                  |  "submission": [{
+                  |    "submissionId": 3001,
+                  |    "submissionType": "MONTHLY_RETURN",
+                  |    "schemeId": 1
+                  |  }]
+                  |}
+                  |""".stripMargin
+              )
+          )
+      )
+
+      val result =
+        connector.getMonthlyReturnComplete(request).futureValue
+
+      result.scheme.size mustBe 1
+      result.scheme.head.instanceId mustBe "CIS-123"
+
+      result.monthlyReturn.size mustBe 1
+      result.monthlyReturn.head.taxYear mustBe 2025
+      result.monthlyReturn.head.taxMonth mustBe 10
+      result.monthlyReturn.head.status mustBe Some("SUBMITTED")
+
+      result.submission.size mustBe 1
+      result.submission.head.submissionId mustBe 3001
+    }
+
+    "return empty collections when BE returns empty arrays" in {
+
+      val request = GetMonthlyReturnCompleteRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 10,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-complete"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """
+                  |{
+                  |  "scheme": [],
+                  |  "monthlyReturn": [],
+                  |  "subcontractors": [],
+                  |  "monthlyReturnItems": [],
+                  |  "submission": []
+                  |}
+                  |""".stripMargin
+              )
+          )
+      )
+
+      val result =
+        connector.getMonthlyReturnComplete(request).futureValue
+
+      result.scheme mustBe empty
+      result.monthlyReturn mustBe empty
+      result.subcontractors mustBe empty
+      result.monthlyReturnItems mustBe empty
+      result.submission mustBe empty
+    }
+
+    "propagate an upstream error when BE returns 404" in {
+
+      val request = GetMonthlyReturnCompleteRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 10,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-complete"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+              .withBody("Not Found")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getMonthlyReturnComplete(request).futureValue
+      }
+
+      ex.getMessage must include("returned 404")
+    }
+
+    "propagate an upstream error when BE returns 500" in {
+
+      val request = GetMonthlyReturnCompleteRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 10,
+        amendment = "Y"
+      )
+
+      stubFor(
+        post(urlPathEqualTo("/cis/monthly-returns-complete"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("Internal Server Error")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getMonthlyReturnComplete(request).futureValue
+      }
+
+      ex.getMessage must include("returned 500")
+    }
+  }
+
   "startClientList" should {
 
     "POST /cis/agent/client-list/retrieval/start and return succeeded" in {
