@@ -22,7 +22,7 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn,
 import models.monthlyreturns.*
 import models.UserAnswers
 import models.agent.{AgentClientData, ClientListStatus, GetClientListStatusResponse}
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -441,6 +441,150 @@ class MonthlyReturnServiceSpec extends SpecBase {
           .futureValue
       }
       ex.getMessage must include("upstream failed")
+    }
+  }
+
+  "getMonthlyReturnComplete" - {
+
+    val request = GetMonthlyReturnCompleteRequest(
+      instanceId = "CIS-123",
+      taxYear = 2025,
+      taxMonth = 10,
+      amendment = "Y"
+    )
+
+    val response = GetAllMonthlyReturnDetailsResponse(
+      scheme = Seq(
+        ContractorScheme(
+          schemeId = 1,
+          instanceId = "CIS-123",
+          accountsOfficeReference = "123PA12345678",
+          taxOfficeNumber = "123",
+          taxOfficeReference = "AB456",
+          name = Some("ABC Construction Ltd")
+        )
+      ),
+      monthlyReturn = Seq(
+        MonthlyReturn(
+          monthlyReturnId = 101,
+          taxYear = 2025,
+          taxMonth = 10,
+          nilReturnIndicator = Some("N"),
+          status = Some("SUBMITTED"),
+          amendment = Some("Y")
+        )
+      ),
+      subcontractors = Seq.empty,
+      monthlyReturnItems = Seq.empty,
+      submission = Seq(
+        Submission(
+          submissionId = 3001,
+          submissionType = "MONTHLY_RETURN",
+          activeObjectId = Some(101),
+          status = Some("SUBMITTED"),
+          hmrcMarkGenerated = Some("generated-mark"),
+          hmrcMarkGgis = Some("generated-mark"),
+          emailRecipient = Some("test@example.com"),
+          acceptedTime = Some("2025-10-05T12:00:00"),
+          createDate = None,
+          lastUpdate = None,
+          schemeId = 1,
+          agentId = None,
+          l_Migrated = None,
+          submissionRequestDate = None,
+          govTalkErrorCode = None,
+          govTalkErrorType = None,
+          govTalkErrorMessage = None
+        )
+      )
+    )
+
+    "delegate to the connector and return the completed monthly return" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(
+        connector.getMonthlyReturnComplete(eqTo(request))(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(response))
+
+      val result =
+        service.getMonthlyReturnComplete(request).futureValue
+
+      result mustBe response
+
+      verify(connector).getMonthlyReturnComplete(eqTo(request))(
+        any[HeaderCarrier]
+      )
+
+      verifyNoMoreInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "pass amendment Y to the connector for an amended return" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(
+        connector.getMonthlyReturnComplete(
+          any[GetMonthlyReturnCompleteRequest]
+        )(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(response))
+
+      service.getMonthlyReturnComplete(request).futureValue
+
+      val requestCaptor: ArgumentCaptor[GetMonthlyReturnCompleteRequest] =
+        ArgumentCaptor.forClass(
+          classOf[GetMonthlyReturnCompleteRequest]
+        )
+
+      verify(connector).getMonthlyReturnComplete(
+        requestCaptor.capture()
+      )(
+        any[HeaderCarrier]
+      )
+
+      val capturedRequest = requestCaptor.getValue
+
+      capturedRequest.instanceId mustBe "CIS-123"
+      capturedRequest.taxYear mustBe 2025
+      capturedRequest.taxMonth mustBe 10
+      capturedRequest.amendment mustBe "Y"
+
+      verifyNoMoreInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(
+        connector.getMonthlyReturnComplete(eqTo(request))(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(
+        Future.failed(
+          new RuntimeException("completed monthly return retrieval failed")
+        )
+      )
+
+      val exception =
+        service
+          .getMonthlyReturnComplete(request)
+          .failed
+          .futureValue
+
+      exception mustBe a[RuntimeException]
+      exception.getMessage mustBe
+        "completed monthly return retrieval failed"
+
+      verify(connector).getMonthlyReturnComplete(eqTo(request))(
+        any[HeaderCarrier]
+      )
+
+      verifyNoMoreInteractions(connector)
+      verifyNoInteractions(sessionRepo)
     }
   }
 

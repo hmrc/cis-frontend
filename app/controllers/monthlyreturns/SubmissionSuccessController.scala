@@ -22,7 +22,7 @@ import controllers.helpers.SubmissionViewDataSupport
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.ReturnType.reads
-import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import models.requests.{CisIdDataRequest, GetMonthlyReturnCompleteRequest}
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
@@ -72,19 +72,47 @@ class SubmissionSuccessController @Inject() (
             Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
 
           case None =>
-            val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
-
-            monthlyReturnForEditRequest match {
+            GetMonthlyReturnCompleteRequest.fromUserAnswers(ua) match {
               case Left(error) =>
-                logger.error(s"[SubmissionSuccessController] Failed to build GetMonthlyReturnForEditRequest: $error")
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                logger.error(
+                  s"[SubmissionSuccessController] " +
+                    s"Failed to build GetMonthlyReturnCompleteRequest: $error"
+                )
+
+                Future.successful(
+                  Redirect(
+                    controllers.routes.JourneyRecoveryController.onPageLoad()
+                  )
+                )
 
               case Right(req) =>
+                logger.info(
+                  s"[SubmissionSuccessController] Calling getMonthlyReturnComplete " +
+                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment}"
+                )
+
                 for {
-                  monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
-                  vm            <- buildViewModel(ua, monthlyReturn)
-                  uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
-                  _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
+                  monthlyReturn <-
+                    monthlyReturnService.getMonthlyReturnComplete(req)
+
+                  vm <-
+                    buildViewModel(
+                      ua = ua,
+                      monthlyReturn = monthlyReturn
+                    )
+
+                  uaWithCache <-
+                    Future.fromTry(
+                      ua.set(
+                        SubmissionConfirmationCachePage,
+                        cacheFrom(vm)
+                      )
+                    )
+
+                  _ <-
+                    monthlyReturnService.completeSubmissionJourney(
+                      uaWithCache
+                    )
                 } yield Ok(view(vm))
             }
         }

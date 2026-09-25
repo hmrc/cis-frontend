@@ -29,7 +29,7 @@ import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.*
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest}
 import pages.QuestionPage
 import pages.agent.AgentClientDataPage
 import uk.gov.hmrc.http.HeaderCarrier
@@ -95,6 +95,11 @@ class MonthlyReturnService @Inject() (
     hc: HeaderCarrier
   ): Future[GetAllMonthlyReturnDetailsResponse] =
     cisConnector.retrieveMonthlyReturnForEditDetails(monthlyReturnRequest)
+
+  def getMonthlyReturnComplete(
+    request: GetMonthlyReturnCompleteRequest
+  )(implicit hc: HeaderCarrier): Future[GetAllMonthlyReturnDetailsResponse] =
+    cisConnector.getMonthlyReturnComplete(request)
 
   def isEditable(cisId: String, taxMonth: Int, taxYear: Int, isAmendment: Boolean)(implicit
     hc: HeaderCarrier
