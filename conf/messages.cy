@@ -307,14 +307,14 @@ monthlyreturns.submittedNoReceipt.feedback.p2.link = Llenwch arolwg byr
 monthlyreturns.submittedNoReceipt.whatHappensNext.heading = Yr hyn sy’n digwydd nesaf
 monthlyreturns.submittedNoReceipt.whatHappensNext.p = Ni wnaethoch nodi e-bost wrth i chi gyflwyno’r datganiad hwn. Os ydych am nodi e-bost, bydd angen i chi newid eich manylion cyswllt yn yr adran ynglŷn â’ch sefydliad/ffỳrm. Bydd hyn i’w weld yn eich gwasanaethau CThEF.
 
-fileYourMonthlyCisReturn.title = xxxxxxxxxxxxxxxxxxxx
-fileYourMonthlyCisReturn.heading = xxxxxxxxxxxxxxxxxxxx
-fileYourMonthlyCisReturn.p1 = xxxxxxxxxxxxxxxxxxxx
-fileYourMonthlyCisReturn.p2 = xxxxxxxxxxxxxxxxxxxx
+fileYourMonthlyCisReturn.title = Cyflwyno’ch Datganiad CIS misol
+fileYourMonthlyCisReturn.heading = Cyflwyno’ch Datganiad CIS misol
+fileYourMonthlyCisReturn.p1 = Defnyddiwch y gwasanaeth hwn i gyflwyno’ch datganiad misol ar gyfer y Cynllun y Diwydiant Adeiladu (CIS).
+fileYourMonthlyCisReturn.p2 = Bydd angen i chi nodi’r mis treth a’r flwyddyn dreth ar y datganiad.
 
-fileYourNilReturn.title = xxxxxxxxxxxxxxxxxxxx
-fileYourNilReturn.heading = xxxxxxxxxxxxxxxxxxxx
-fileYourNilReturn.p1 = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.title = Cyflwyno’ch datganiad ‘dim’
+fileYourNilReturn.heading = Cyflwyno’ch datganiad ‘dim’
+fileYourNilReturn.p1 = Defnyddiwch y gwasanaeth hwn i gadarnhau nad ydych wedi talu unrhyw is-gontractwyr yn ystod mis treth.
 fileYourNilReturn.p2 = Gallwch hefyd gyflwyno cais anactifedd.
 
 monthlyreturns.dateConfirmPayments.title = Pa fis treth a blwyddyn dreth ydych chi’n cyflwyno datganiad ar eu cyfer?
@@ -574,48 +574,93 @@ amend.areYouSureYouWantToAmendYesNo.yes = Iawn
 amend.areYouSureYouWantToAmendYesNo.no = Na, hoffwn wneud diwygiad gwahanol
 amend.areYouSureYouWantToAmendYesNo.error.required = Mae’n rhaid i chi ddewis un opsiwn i’w ddiwygio
 
-finalvalidations.addEmailAddressYesNo.title = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.addEmailAddressYesNo.heading = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.addEmailAddressYesNo.title = A ydych am nodi cyfeiriad e-bost y contractwr?
+finalvalidations.addEmailAddressYesNo.heading = A ydych am nodi cyfeiriad e-bost y contractwr?
 finalvalidations.addEmailAddressYesNo.error.required = Dewiswch ‘Iawn’ i ychwanegu cyfeiriad e-bost y contractwr
 
-finalvalidations.addSchemeNameYesNo.title = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.addSchemeNameYesNo.heading = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.addSchemeNameYesNo.error.required = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.addSchemeNameYesNo.title = A ydych am nodi enw cynllun y contractwr?
+finalvalidations.addSchemeNameYesNo.heading = A ydych am nodi enw cynllun y contractwr?
+finalvalidations.addSchemeNameYesNo.error.required = Dewiswch ‘Iawn’ i nodi enw cynllun y contractwr
 
-finalvalidations.updateSubcontractorDetails.title = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.heading = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.intro = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.utr = Cyfeirnod Unigryw y Trethdalwr
-finalvalidations.updateSubcontractorDetails.nino = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.utr.change.hidden = Cyfeirnod Unigryw y Trethdalwr
-finalvalidations.updateSubcontractorDetails.nino.change.hidden = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.confirmChanges.heading = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.confirmChanges.body = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.acceptAndSubmit = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.updateSubcontractorDetails.cancelChanges = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.updateSubcontractorDetails.title = {0}
+finalvalidations.updateSubcontractorDetails.heading = {0}
+finalvalidations.updateSubcontractorDetails.intro = Er mwyn cyflwyno eich datganiad, mae’n rhaid i chi adolygu a diweddaru manylion yr is-gontractwr.
+finalvalidations.updateSubcontractorDetails.confirmChanges.heading = Cadarnhau’r newidiadau
+finalvalidations.updateSubcontractorDetails.confirmChanges.body = Drwy newid manylion yr is-gontractwr hwn, rydych chi’n cadarnhau, hyd eithaf eich gwybodaeth, fod y manylion a roddir gennych yn gywir.
+finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Derbyn a chyflwyno
+finalvalidations.updateSubcontractorDetails.cancelChanges = Canslo’r newidiadau
 
-finalValidations.reviewSubcontractorDetails.title = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewSubcontractorDetails.heading = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewSubcontractorDetails.intro = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewSubcontractorDetails.backLink = xxxxxxxxxxxxxxxxxxxx
+# Shared
+finalvalidations.updateSubcontractorDetails.address = Cyfeiriad
+finalvalidations.updateSubcontractorDetails.addContactDetails = Ychwanegu manylion cysylltu?
+finalvalidations.updateSubcontractorDetails.emailAddress = Cyfeiriad e-bost
+finalvalidations.updateSubcontractorDetails.phoneNumber = Rhif ffôn
+finalvalidations.updateSubcontractorDetails.mobilePhoneNumber = Rhif ffôn symudol
+finalvalidations.updateSubcontractorDetails.addWorksReferenceNumber = Ychwanegu cyfeirnod y gwaith?
+finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Cyfeirnod y gwaith
+
+# Sole trader
+finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Enw’r is-gontractwr
+finalvalidations.updateSubcontractorDetails.soleTrader.tradingName = Masnachu
+finalvalidations.updateSubcontractorDetails.soleTrader.names = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.updateSubcontractorDetails.soleTrader.names.noneSelected = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.updateSubcontractorDetails.soleTrader.addAddress = Ychwanegu cyfeiriad yr is-gontractwr?
+finalvalidations.updateSubcontractorDetails.soleTrader.addUtr = Ychwanegu UTR?
+finalvalidations.updateSubcontractorDetails.soleTrader.utr = UTR
+finalvalidations.updateSubcontractorDetails.soleTrader.addNino = Ychwanegu rhif Yswiriant Gwladol?
+finalvalidations.updateSubcontractorDetails.soleTrader.nino = Rhif Yswiriant Gwladol
+
+# Company
+finalvalidations.updateSubcontractorDetails.company.name = Enw’r cwmni
+finalvalidations.updateSubcontractorDetails.company.addAddress = Ychwanegu cyfeiriad y cwmni?
+finalvalidations.updateSubcontractorDetails.company.addUtr = Ychwanegu UTR?
+finalvalidations.updateSubcontractorDetails.company.utr = UTR ar gyfer Treth Gorfforaeth
+finalvalidations.updateSubcontractorDetails.company.addCrn = Ychwanegu rhif cofrestru’r cwmni?
+finalvalidations.updateSubcontractorDetails.company.crn = Rhif cofrestru’r cwmni
+
+# Trust
+finalvalidations.updateSubcontractorDetails.trust.name = Enw’r ymddiriedolaeth
+finalvalidations.updateSubcontractorDetails.trust.addAddress = Ychwanegu cyfeiriad yr ymddiriedolaeth?
+finalvalidations.updateSubcontractorDetails.trust.addUtr = Ychwanegu UTR?
+finalvalidations.updateSubcontractorDetails.trust.utr = UTR Ymddiriedolaeth
+
+# Partnership
+finalvalidations.updateSubcontractorDetails.partnership.name = Enw’r bartneriaeth
+finalvalidations.updateSubcontractorDetails.partnership.nominatedPartner = Partner enwebedig
+finalvalidations.updateSubcontractorDetails.partnership.addAddress = Ychwanegu cyfeiriad y bartneriaeth?
+finalvalidations.updateSubcontractorDetails.partnership.addUtr = Ychwanegu UTR?
+finalvalidations.updateSubcontractorDetails.partnership.utr = UTR ar gyfer y bartneriaeth
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerUtr = Ychwanegu UTR ar gyfer y partner enwebedig?
+finalvalidations.updateSubcontractorDetails.partnership.partnerUtr = UTR ar gyfer y partner enwebedig
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerNino = Ychwanegu rhif Yswiriant Gwladol ar gyfer y partner enwebedig?
+finalvalidations.updateSubcontractorDetails.partnership.partnerNino = Rhif Yswiriant Gwladol ar gyfer y partner enwebedig
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerCrn = Ychwanegu rhif cofrestru’r cwmni ar gyfer y partner enwebedig?
+finalvalidations.updateSubcontractorDetails.partnership.partnerCrn = Rhif cofrestru’r cwmni ar gyfer y partner enwebedig
+
+finalValidations.reviewSubcontractorDetails.title = Adolygu manylion is-gontractwr
+finalValidations.reviewSubcontractorDetails.heading = Adolygu manylion is-gontractwr
+finalValidations.reviewSubcontractorDetails.intro = Mae angen i chi adolygu manylion yr is-gontractwr
+finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = Cyflwyno datganiad
+finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Anghyflawn
+finalValidations.reviewSubcontractorDetails.taskList.status.completed = Wedi’i gwblhau
+finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Methu parhau eto
+finalValidations.reviewSubcontractorDetails.backLink = Yn ôl i ddewis eich is-gontractwyr
 
 finalValidations.addUtrYesNo.title = xxxxxxxxxxxxxxxxxxxx
 finalValidations.addUtrYesNo.heading = xxxxxxxxxxxxxxxxxxxx
 finalValidations.addUtrYesNo.error.required = xxxxxxxxxxxxxxxxxxxx
 
-finalvalidations.reviewContractorDetails.title = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.reviewContractorDetails.heading = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.reviewContractorDetails.p = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.reviewContractorDetails.tasklist.schemeName = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.reviewContractorDetails.title = Adolygu manylion contractwr
+finalvalidations.reviewContractorDetails.heading = Adolygu manylion contractwr
+finalvalidations.reviewContractorDetails.p = Ni allwch gyflwyno datganiad ar hyn o bryd. Mae angen i chi adolygu manylion y contractwr.
+finalvalidations.reviewContractorDetails.tasklist.hidden.review = Adolygu
+finalvalidations.reviewContractorDetails.tasklist.schemeName = Enw’r cynllun
 finalvalidations.reviewContractorDetails.tasklist.utr = Cyfeirnod Unigryw y Trethdalwr
-finalvalidations.reviewContractorDetails.tasklist.emailAddress = xxxxxxxxxxxxxxxxxxxx
-finalValidations.reviewContractorDetails.taskList.status.incomplete = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.reviewContractorDetails.tasklist.fileareturn = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = xxxxxxxxxxxxxxxxxxxx
-finalvalidations.reviewContractorDetails.cisreturndashboardlink = xxxxxxxxxxxxxxxxxxxx
+finalvalidations.reviewContractorDetails.tasklist.emailAddress = Cyfeiriad e-bost
+finalValidations.reviewContractorDetails.taskList.status.incomplete = Anghyflawn
+finalvalidations.reviewContractorDetails.tasklist.fileareturn = Cyflwyno datganiad
+finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Methu dechrau ar y funud
+finalvalidations.reviewContractorDetails.cisreturndashboardlink = Yn ôl i Rheoli’ch chyfrif CIS
 
 agent.agentLostAccess.title = xxxxxxxxxxxxxxxxxxxx
 agent.agentLostAccess.heading = xxxxxxxxxxxxxxxxxxxx
