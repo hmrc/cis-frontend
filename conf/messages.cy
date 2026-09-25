@@ -659,8 +659,8 @@ finalvalidations.reviewContractorDetails.tasklist.utr = Cyfeirnod Unigryw y Tret
 finalvalidations.reviewContractorDetails.tasklist.emailAddress = Cyfeiriad e-bost
 finalValidations.reviewContractorDetails.taskList.status.incomplete = Anghyflawn
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = Cyflwyno datganiad
-finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Dilysu’ch is-gontractwyr
-finalvalidations.reviewContractorDetails.cisreturndashboardlink = Yn ôl i Rheoli’ch chyfrif CIS.
+finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Methu dechrau ar y funud
+finalvalidations.reviewContractorDetails.cisreturndashboardlink = Yn ôl i Rheoli’ch chyfrif CIS
 
 agent.agentLostAccess.title = xxxxxxxxxxxxxxxxxxxx
 agent.agentLostAccess.heading = xxxxxxxxxxxxxxxxxxxx
