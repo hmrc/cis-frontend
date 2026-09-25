@@ -16,25 +16,26 @@
 
 package connectors
 
-import models.JourneyHandoffResponse
+import models.agent.GetClientListStatusResponse
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
 import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalValidationDraftResponse, FinalValidationDraft, UpdateFinalValidationReadinessRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
-import models.agent.GetClientListStatusResponse
+import models.{CisTaxpayerSearchResult, JourneyHandoffResponse}
 import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
-import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.reflect.ClassTag
+import scala.util.Try
 
 @Singleton
 class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, http: HttpClientV2)(implicit
@@ -141,6 +142,12 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
           throw UpstreamErrorResponse(response.body, response.status, response.status)
         }
       }
+
+  def getAllClients(implicit hc: HeaderCarrier): Future[List[CisTaxpayerSearchResult]] =
+    http
+      .get(url"$cisBaseUrl/agent/client-list")
+      .execute[JsObject]
+      .flatMap(json => Future((json \ "clients").as[List[CisTaxpayerSearchResult]]))
 
   def hasClient(taxOfficeNumber: String, taxOfficeReference: String)(implicit
     hc: HeaderCarrier
