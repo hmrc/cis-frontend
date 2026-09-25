@@ -341,27 +341,32 @@ class MonthlyReturnService @Inject() (
         .toMap
 
     for {
-      ua1 <- setOrError(ua, CisIdPage, editRequest.instanceId)
-      ua2 <- setOrError(ua1, ContractorNamePage, contractorName)
-      ua3 <- setOrError(ua2, ReturnTypePage, returnType)
-      ua4 <- setOrError(
-               ua3,
-               DateConfirmPaymentsPage,
-               LocalDate.of(editRequest.taxYear, editRequest.taxMonth, 5)
-             )
-      ua5 <- setOrError(ua4, AmendmentDetailsPage, amendmentDetails)
-      ua6 <- setOrError(ua5, SelectedSubcontractorPage.all, preselectedSubcontractors)
-      ua7 <- existingSubId match {
-               case Some(id) => setOrError(ua6, ResubmissionIdPage, id)
-               case None     => Right(ua6)
-             }
-      ua8 <- setOrError(ua7, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
-      ua9 <- emailRecipient.filter(_.nonEmpty) match {
-               case Some(email) => setOrError(ua8, EnterYourEmailAddressPage, email)
-               case None        => Right(ua8)
-             }
+      ua1  <- setOrError(ua, CisIdPage, editRequest.instanceId)
+      ua2  <- setOrError(ua1, ContractorNamePage, contractorName)
+      ua3  <- setOrError(ua2, ReturnTypePage, returnType)
+      ua4  <- setOrError(
+                ua3,
+                DateConfirmPaymentsPage,
+                LocalDate.of(editRequest.taxYear, editRequest.taxMonth, 5)
+              )
+      ua5  <- setOrError(ua4, AmendmentDetailsPage, amendmentDetails)
+      ua6  <- setOrError(ua5, SelectedSubcontractorPage.all, preselectedSubcontractors)
+      ua7  <- existingSubId match {
+                case Some(id) => setOrError(ua6, ResubmissionIdPage, id)
+                case None     => Right(ua6)
+              }
+      ua8  <- setOrError(ua7, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
+      ua9  <- if (!isNilReturn) {
+                setOrError(ua8, OriginalSubcontractorCountPage, response.subcontractors.size)
+              } else {
+                Right(ua8)
+              }
+      ua10 <- emailRecipient.filter(_.nonEmpty) match {
+                case Some(email) => setOrError(ua9, EnterYourEmailAddressPage, email)
+                case None        => Right(ua9)
+              }
     } yield ContinueAmendJourneyResult(
-      userAnswers = ua9,
+      userAnswers = ua10,
       hasSubcontractors = preselectedSubcontractors.nonEmpty,
       isNilReturn = isNilReturn
     )
@@ -517,9 +522,9 @@ class MonthlyReturnService @Inject() (
                PaymentDetailsConfirmationPage,
                true
              )
-      ua6 <- setOrError(ua5, OriginalSubcontractorCountPage, subcontractors.size)
-      ua7 <- populateStandardReturnItems(ua6, monthlyReturnItems, subcontractors)
-    } yield ua5
+      ua5 <- setOrError(ua4, OriginalSubcontractorCountPage, subcontractors.size)
+      ua6 <- populateStandardReturnItems(ua5, monthlyReturnItems, subcontractors)
+    } yield ua6
 
   private def populateStandardReturnItems(
     ua: UserAnswers,
