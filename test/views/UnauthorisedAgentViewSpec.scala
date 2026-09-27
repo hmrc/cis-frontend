@@ -37,6 +37,9 @@ class UnauthorisedAgentViewSpec extends SpecBase with Matchers {
       doc.title             must include(messages("unauthorised.agent.title"))
       doc.select("h1").text must include(messages("unauthorised.agent.heading"))
       doc.select("p").text  must include(messages("unauthorised.agent.p1"))
+      doc.select("p").text  must include(messages("unauthorised.agent.p2.prefix"))
+      doc.select("p").text  must include(messages("unauthorised.agent.p2.link"))
+      doc.select("p").text  must include(messages("unauthorised.agent.p2.suffix"))
     }
   }
 

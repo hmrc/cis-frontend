@@ -21,9 +21,7 @@
   layout: templates.Layout,
   heading: H1,
   paragraph: Paragraph,
-  bulletListWithLinks: BulletListWithLinks,
-  link: Link,
-  paragraphWithLink: ParagraphWithLink
+  link: Link
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
@@ -33,8 +31,8 @@
   showSignOut = false,
   showBackLink = false
 ) {
-    @heading(messages("unauthorised.agent.heading"), classes = "govuk-heading-xl")
-    @paragraph(messages("unauthorised.agent.p1"), extraClasses = "govuk-!-margin-bottom-5")
+    @heading("unauthorised.agent.heading", classes = "govuk-heading-xl")
+    @paragraph("unauthorised.agent.p1", extraClasses = "govuk-!-margin-bottom-5")
     @link(
         linkTextKey = "unauthorised.agent.p2.link",
         linkUrl = appConfig.payeCisForAgentsOnlineService,

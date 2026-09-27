@@ -21,7 +21,8 @@
     layout: templates.Layout,
     heading: H1,
     link: Link,
-    paragraph: Paragraph
+    paragraph: Paragraph,
+    bulletListWithLinks: BulletListWithLinks
 )
 
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
@@ -31,22 +32,24 @@
     timeout   = false
 ) {
 
-    @heading(messages("unauthorised.heading"), classes = "govuk-heading-xl")
-
-    @link(
-        linkTextKey = "unauthorised.guidance.org.p1.link",
-        linkUrl = appConfig.govUkCISGuidanceUrl,
-        isNewTab = false,
-        prefixTextKey = "unauthorised.guidance.org.p1.prefix",
-        suffixTextKey = "unauthorised.guidance.org.p1.suffix"
-    )
-
-    @link(
-        linkTextKey = "unauthorised.guidance.agent.p2.link",
-        linkUrl = appConfig.payeCisForAgentsOnlineService,
-        paragraphWrapped = true,
-        isNewTab = false,
-        prefixTextKey = "unauthorised.guidance.agent.p2.prefix",
-        suffixTextKey = "unauthorised.guidance.agent.p2.suffix"
+    @heading("unauthorised.heading", classes = "govuk-heading-xl")
+    @paragraph("unauthorised.guidance.p1", extraClasses = "govuk-!-margin-bottom-5")
+    @bulletListWithLinks(
+    items = Seq(
+        link(
+              linkTextKey = "unauthorised.guidance.org.p1.link",
+              linkUrl = appConfig.govUkCISGuidanceUrl,
+              paragraphWrapped = false,
+              prefixTextKey = "unauthorised.guidance.org.p1.prefix",
+              suffixTextKey = "unauthorised.guidance.org.p1.suffix"
+            ),
+        link(
+              linkTextKey = "unauthorised.guidance.agent.p2.link",
+              linkUrl = appConfig.payeCisForAgentsOnlineService,
+              paragraphWrapped = false,
+              prefixTextKey = "unauthorised.guidance.agent.p2.prefix",
+              suffixTextKey = "unauthorised.guidance.agent.p2.suffix"
+            )
+        )
     )
 }
