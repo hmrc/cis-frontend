@@ -18,6 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import itutil.ApplicationWithWiremock
+import models.CisTaxpayerSearchResult
 import models.ReturnType.MonthlyNilReturn
 import models.amend.*
 import models.finalvalidation.*
@@ -177,6 +178,20 @@ class ConstructionIndustrySchemeConnectorSpec
       result.getMessage must include("Something broke")
     }
 
+  }
+
+  "getClientList" should {
+    "parse the 'client' property of the backend response as a list of CisTaxpyers" in {
+      val expectedCisTaxpayers = List(CisTaxpayerSearchResult("12345", "123", "AB12345", None, None, None))
+
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/client-list")) willReturn
+          okJson(Json.obj("clients" -> expectedCisTaxpayers).toString)
+      )
+
+      val actualCisTaxpayers = connector.getAllClients.futureValue
+      actualCisTaxpayers mustBe expectedCisTaxpayers
+    }
   }
 
   "getAgentClientTaxpayer" should {

@@ -16,7 +16,7 @@
 
 package repositories
 
-import com.google.inject.{Inject, Singleton}
+import com.google.inject.Inject
 import com.mongodb.client.model.*
 import models.CisTaxpayerSearchResult
 import org.mongodb.scala.model.Filters
@@ -32,7 +32,6 @@ import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
 class CisTaxpayerCache @Inject() (
   clock: Clock,
   config: Configuration,

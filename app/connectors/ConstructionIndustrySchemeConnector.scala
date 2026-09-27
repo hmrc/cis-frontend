@@ -35,7 +35,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.reflect.ClassTag
-import scala.util.Try
 
 @Singleton
 class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, http: HttpClientV2)(implicit
