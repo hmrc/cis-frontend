@@ -19,15 +19,13 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
-import models.finalvalidation.{CreateFinalValidationDraftRequest, FinalValidationResult, MonthlyFinalValidationSource, SubcontractorFinalValidationFailure}
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.{times, verify, when}
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
-import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationSourcePage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage}
 import play.api.data.Form
 import play.api.inject.bind
@@ -35,7 +33,6 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.finalvalidation.FinalValidationDraftService
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
