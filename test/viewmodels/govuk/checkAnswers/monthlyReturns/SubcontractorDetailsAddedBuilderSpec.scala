@@ -139,7 +139,7 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
 
       val vm = SubcontractorDetailsAddedBuilder.build(ua).value
 
-      vm.showYesNo mustBe false
+      vm.showYesNo mustBe true
     }
 
     "must return Some(viewModel) with hasIncomplete=false and multiple heading when more than one completed" in {

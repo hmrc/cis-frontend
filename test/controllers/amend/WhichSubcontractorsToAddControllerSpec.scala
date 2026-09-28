@@ -19,25 +19,27 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
+import models.finalvalidation.{CreateFinalValidationDraftRequest, FinalValidationResult, MonthlyFinalValidationSource, SubcontractorFinalValidationFailure}
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationSourcePage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage}
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import services.finalvalidation.FinalValidationDraftService
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.WhichSubcontractorsToAddView
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.verify
-import pages.monthlyreturns.OriginalSubcontractorCountPage
+
 import java.time.LocalDate
 import scala.concurrent.Future
 
@@ -327,14 +329,18 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
     "must set OriginalSubcontractorCountPage to total available subcontractors on valid submit" in {
 
-      val mockSessionRepository = mock[SessionRepository]
-      val subcontractorService  = mock[SubcontractorService]
-      val monthlyReturnService  = mock[MonthlyReturnService]
+      val mockSessionRepository  = mock[SessionRepository]
+      val subcontractorService   = mock[SubcontractorService]
+      val monthlyReturnService   = mock[MonthlyReturnService]
+      val finalValidationService = mock[services.finalvalidation.FinalValidationService]
 
       val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
 
-      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockSessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
       stubService(subcontractorService, pageModel)
+
       when(
         monthlyReturnService.syncMonthlyReturnItems(
           any[UserAnswers],
@@ -342,13 +348,25 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(()))
 
+      when(
+        finalValidationService.validate(
+          any[Seq[models.monthlyreturns.Subcontractor]]
+        )
+      ).thenReturn(
+        models.finalvalidation.FinalValidationResult(
+          failures = Seq.empty
+        )
+      )
+
       val application =
         applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
           .overrides(
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[SubcontractorService].toInstance(subcontractorService),
-            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            bind[MonthlyReturnService].toInstance(monthlyReturnService),
+            bind[services.finalvalidation.FinalValidationService]
+              .toInstance(finalValidationService)
           )
           .build()
 
@@ -362,7 +380,11 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         status(result) mustEqual SEE_OTHER
 
         verify(mockSessionRepository).set(captor.capture())
-        captor.getValue.get(OriginalSubcontractorCountPage) mustBe Some(subcontractors.size)
+
+        captor.getValue.get(OriginalSubcontractorCountPage) mustBe
+          Some(subcontractors.size)
+
+        verify(finalValidationService).validate(any())
       }
     }
 

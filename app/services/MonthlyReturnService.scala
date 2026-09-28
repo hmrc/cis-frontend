@@ -357,7 +357,7 @@ class MonthlyReturnService @Inject() (
               }
       ua8  <- setOrError(ua7, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
       ua9  <- if (!isNilReturn) {
-                setOrError(ua8, OriginalSubcontractorCountPage, response.subcontractors.size)
+                setOrError(ua8, OriginalSubcontractorCountPage, preselectedSubcontractors.size)
               } else {
                 Right(ua8)
               }
