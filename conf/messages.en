@@ -343,7 +343,6 @@ monthlyreturns.dateConfirmPayments.WarningIcon = Warning
 monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
 monthlyreturns.dateConfirmPayments.p1.prefix = 	You cannot change a return period after you have started. You must
 monthlyreturns.dateConfirmPayments.p1.link = delete the existing return
-monthlyreturns.dateConfirmPayments.p1.suffix = before you start a new return for the same period.
 monthlyreturns.dateConfirmPayments.legendText = Enter month and year
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmPayments.change.hidden = which tax month and year are you filing a return for
