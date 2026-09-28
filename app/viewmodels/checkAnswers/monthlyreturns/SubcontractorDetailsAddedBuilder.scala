@@ -75,7 +75,7 @@ object SubcontractorDetailsAddedBuilder {
 
       val hasIncomplete  = rows.exists(!_.detailsAdded)
       val addedCount     = rows.size
-      val notAllSelected = originalSubcontractorCount.exists(_ != addedCount)
+      val notAllSelected = originalSubcontractorCount.forall(_ != addedCount)
 
       val (key, args) = headingKeyAndArgs(addedCount)
       Some(
