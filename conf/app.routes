@@ -10,8 +10,6 @@ GET         /assets/*file                                               controll
 
 GET         /language/:lang                                             controllers.LanguageSwitchController.switchToLanguage(lang: String)
 
-GET         /refresh-session                                            controllers.KeepAliveController.keepAlive()
-
 GET         /there-is-a-problem                                         controllers.JourneyRecoveryController.onPageLoad(continueUrl: Option[RedirectUrl] ?= None)
 
 GET         /account/sign-out-survey                                    controllers.auth.AuthController.signOut()

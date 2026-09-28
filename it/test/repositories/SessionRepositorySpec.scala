@@ -121,34 +121,6 @@ class SessionRepositorySpec
     mustPreserveMdc(repository.clear(userAnswers.id))
   }
 
-  ".keepAlive" - {
-
-    "when there is a record for this id" - {
-
-      "must update its lastUpdated to `now` and return true" in {
-
-        insert(userAnswers).futureValue
-
-        val _ = repository.keepAlive(userAnswers.id).futureValue
-
-        val expectedUpdatedAnswers = userAnswers copy (lastUpdated = instant)
-
-        val updatedAnswers = find(Filters.equal("_id", userAnswers.id)).futureValue.headOption.value
-        updatedAnswers mustEqual expectedUpdatedAnswers
-      }
-    }
-
-    "when there is no record for this id" - {
-
-      "must return true" in {
-
-        repository.keepAlive("id that does not exist").futureValue mustEqual true
-      }
-    }
-
-    mustPreserveMdc(repository.keepAlive(userAnswers.id))
-  }
-
   private def mustPreserveMdc[A](f: => Future[A])(implicit pos: Position): Unit =
     "must preserve MDC" in {
 
