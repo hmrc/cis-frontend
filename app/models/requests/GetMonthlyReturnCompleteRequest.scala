@@ -17,6 +17,7 @@
 package models.requests
 
 import models.UserAnswers
+import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.libs.json.{Json, OFormat}
 
@@ -44,13 +45,15 @@ object GetMonthlyReturnCompleteRequest {
                    .get(DateConfirmPaymentsPage)
                    .toRight("Missing DateConfirmPaymentsPage")
 
-      returnType <- userAnswers
-                      .get(ReturnTypePage)
-                      .toRight("Missing ReturnTypePage")
+      _ <- userAnswers
+             .get(ReturnTypePage)
+             .toRight("Missing ReturnTypePage")
     } yield GetMonthlyReturnCompleteRequest(
       instanceId = instanceId,
       taxYear = taxDate.getYear,
       taxMonth = taxDate.getMonthValue,
-      amendment = returnType.amendmentFlag
+      amendment =
+        if (userAnswers.get(AmendmentDetailsPage).isDefined) "Y"
+        else "N"
     )
 }

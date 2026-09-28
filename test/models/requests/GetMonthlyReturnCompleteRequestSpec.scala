@@ -17,6 +17,8 @@
 package models.requests
 
 import base.SpecBase
+import models.amend.AmendmentDetails
+import pages.amend.AmendmentDetailsPage
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 
@@ -29,7 +31,17 @@ class GetMonthlyReturnCompleteRequestSpec extends SpecBase {
 
   "GetMonthlyReturnCompleteRequest.fromUserAnswers" - {
 
-    "return a request with amendment Y for an amended standard return" in {
+    "return a request with amendment Y when AmendmentDetailsPage exists" in {
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = instanceId,
+        taxYear = 2024,
+        taxMonth = 6,
+        contractorName = "Test Contractor",
+        originalReturnType = MonthlyStandardReturn,
+        acceptedTime = None
+      )
+
       val userAnswers = emptyUserAnswers
         .set(CisIdPage, instanceId)
         .success
@@ -38,6 +50,9 @@ class GetMonthlyReturnCompleteRequestSpec extends SpecBase {
         .success
         .value
         .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+        .set(AmendmentDetailsPage, amendmentDetails)
         .success
         .value
 
@@ -55,6 +70,16 @@ class GetMonthlyReturnCompleteRequestSpec extends SpecBase {
     }
 
     "return a request with amendment Y for an amended nil return" in {
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = instanceId,
+        taxYear = 2024,
+        taxMonth = 6,
+        contractorName = "Test Contractor Ltd",
+        originalReturnType = MonthlyStandardReturn,
+        acceptedTime = None
+      )
+
       val userAnswers = emptyUserAnswers
         .set(CisIdPage, instanceId)
         .success
@@ -63,6 +88,9 @@ class GetMonthlyReturnCompleteRequestSpec extends SpecBase {
         .success
         .value
         .set(ReturnTypePage, MonthlyAmendedNilReturn)
+        .success
+        .value
+        .set(AmendmentDetailsPage, amendmentDetails)
         .success
         .value
 

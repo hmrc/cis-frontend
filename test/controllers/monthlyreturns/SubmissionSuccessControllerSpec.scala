@@ -20,6 +20,8 @@ import base.SpecBase
 import models.ReturnType.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
+import models.amend.AmendmentDetails
+import pages.amend.AmendmentDetailsPage
 import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.requests.GetMonthlyReturnCompleteRequest
 import models.submission.SubmissionDetails
@@ -251,8 +253,20 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       }
 
       "must retrieve the completed monthly return with amendment Y for an amendment journey" in {
+        val amendmentDetails = AmendmentDetails(
+          instanceId = "1",
+          taxYear = periodEnd.getYear,
+          taxMonth = periodEnd.getMonthValue,
+          contractorName = contractorName,
+          originalReturnType = MonthlyStandardReturn,
+          acceptedTime = None
+        )
+
         val amendedUserAnswers = ua
           .set(ReturnTypePage, MonthlyAmendedNilReturn)
+          .success
+          .value
+          .set(AmendmentDetailsPage, amendmentDetails)
           .success
           .value
 
@@ -797,29 +811,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           Future.successful(monthlyReturnResponseWithoutContractorName)
         )
 
-        val incompleteUa = userAnswersWithCisId
+        val incompleteUa = userAnswersWithAgentClientData
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
           .value
-          .set(EnterYourEmailAddressPage, email)
-          .success
-          .value
-          .set(DateConfirmPaymentsPage, periodEnd)
-          .success
-          .value
-          .set(
-            SubmissionDetailsPage,
-            SubmissionDetails(
-              id = "123",
-              status = "ACCEPTED",
-              irMark = irMarkBase64,
-              submittedAt = LocalDateTime.now
-            )
-          )
-          .success
-          .value
 
-        val app = buildApp(incompleteUa)
+        val app = buildApp(incompleteUa, isAgent = true)
 
         running(app) {
           val thrown = intercept[RuntimeException] {

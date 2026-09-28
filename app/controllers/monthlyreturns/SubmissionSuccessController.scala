@@ -29,7 +29,7 @@ import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import services.guard.SubmissionSuccessfulServiceGuard
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionSuccessView
@@ -91,7 +91,7 @@ class SubmissionSuccessController @Inject() (
                     s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment}"
                 )
 
-                for {
+                (for {
                   monthlyReturn <-
                     monthlyReturnService.getMonthlyReturnComplete(req)
 
@@ -113,7 +113,14 @@ class SubmissionSuccessController @Inject() (
                     monthlyReturnService.completeSubmissionJourney(
                       uaWithCache
                     )
-                } yield Ok(view(vm))
+                } yield Ok(view(vm))).recoverWith { case ex: UpstreamErrorResponse =>
+                  logger.error(
+                    s"[SubmissionSuccessController] getMonthlyReturnComplete failed " +
+                      s"with status ${ex.statusCode} for instanceId=${req.instanceId}",
+                    ex
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                }
             }
         }
       }
