@@ -358,7 +358,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     "must redirect to SummarySubcontractorPayments on POST when all subcontractors already added (showYesNo is false)" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
-      )
+      ).set(OriginalSubcontractorCountPage, 1).success.value
 
       val application = buildApp(ua)
 
@@ -376,7 +376,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd"),
         2 -> incompleteSub(1002L, "Incomplete Ltd")
-      )
+      ).set(OriginalSubcontractorCountPage, 2).success.value
 
       val application = buildApp(ua)
 
@@ -386,7 +386,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe BAD_REQUEST
         contentAsString(result) must include(
-          "You have not entered payment details for all of your selected subcontractors"
+          messages(application)("monthlyreturns.subcontractorDetailsAdded.error.incomplete")
         )
       }
     }
