@@ -59,6 +59,51 @@ class ReviewContractorDetailsViewSpec extends SpecBase {
 
     }
 
+    "must HTML escape task list message content" in {
+      val app  = applicationBuilder().build()
+      val view = app.injector.instanceOf[ReviewContractorDetailsView]
+
+      implicit val request: play.api.mvc.Request[_] = FakeRequest()
+
+      val messagesApi = app.injector.instanceOf[MessagesApi]
+
+      implicit val messages: Messages =
+        new MessagesImpl(Lang.defaultLang, messagesApi) {
+          override def apply(key: String, args: Any*): String =
+            key match {
+              case "finalvalidations.reviewContractorDetails.tasklist.hidden.review" =>
+                "<script>alert('review')</script>"
+
+              case "finalvalidations.reviewContractorDetails.tasklist.schemeName" =>
+                "<strong>Scheme name</strong>"
+
+              case "finalvalidations.reviewContractorDetails.tasklist.utr" =>
+                "<em>UTR</em>"
+
+              case "finalvalidations.reviewContractorDetails.tasklist.emailAddress" =>
+                "<img src=x onerror=alert('review')>"
+
+              case _ =>
+                super.apply(key, args*)
+            }
+        }
+
+      val doc   = Jsoup.parse(view().body)
+      val links = doc.select(".govuk-task-list__link")
+
+      links.size mustBe 3
+
+      links.get(0).select("script") mustBe empty
+      links.get(0).select("strong") mustBe empty
+      links.get(1).select("em") mustBe empty
+      links.get(2).select("img") mustBe empty
+
+      links.get(0).text() must include("<script>alert('review')</script>")
+      links.get(0).text() must include("<strong>Scheme name</strong>")
+      links.get(1).text() must include("<em>UTR</em>")
+      links.get(2).text() must include("<img src=x onerror=alert('review')>")
+    }
+
     "must render each Incomplete tag for contractor details" in new Setup {
       val tags = doc.select(".govuk-task-list__status .govuk-tag").eachText()
 
