@@ -14,6 +14,7 @@
  * limitations under the License.
  *@
 
+@import models.requests.SchemeAccessRequest
 @import views.html.components.*
 @import viewmodels.govuk._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
@@ -36,11 +37,11 @@
     appConfig: FrontendAppConfig
 )
 
-@(form: Form[_], mode: Mode, messagePrefix: String, returnType: ReturnType)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, messagePrefix: String, returnType: ReturnType)(implicit request: SchemeAccessRequest[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages(s"$messagePrefix.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(request.cisPath, mode, returnType), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))

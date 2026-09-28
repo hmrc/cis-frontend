@@ -66,5 +66,5 @@ class CisTaxpayerService @Inject() (
           logger.warn(s"Fetched client list for ${req.agentInfo} but failed to cache:", ex)
         }
 
-      clientList.find(_.uniqueId == cisId)
+      clientList.find(_.id == cisId)
 }

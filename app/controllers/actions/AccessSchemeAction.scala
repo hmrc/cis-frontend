@@ -103,7 +103,7 @@ class AccessSchemeAction @Inject() (
 
   private def reconcileFormPAndRds(cisTaxpayer: SimpleCisTaxpayer)(using HeaderCarrier) =
     formpRdsReconcileService
-      .reconcile(cisTaxpayer.uniqueId, cisTaxpayer.taxOfficeNumber, cisTaxpayer.taxOfficeRef)
+      .reconcile(cisTaxpayer.id, cisTaxpayer.taxOfficeNumber, cisTaxpayer.taxOfficeRef)
       .map(_ => None)
       .recover {
         case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>

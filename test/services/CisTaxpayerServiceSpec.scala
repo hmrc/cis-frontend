@@ -61,10 +61,10 @@ class CisTaxpayerServiceSpec
         val connectorHasClient = Random.nextBoolean()
         when(mockConnector.hasClient(any, any)(any)) thenReturn Future.successful(connectorHasClient)
 
-        val serviceHasClient = serviceUnderTest.isClient(cisTaxpayer.uniqueId).futureValue
+        val serviceHasClient = serviceUnderTest.isClient(cisTaxpayer.id).futureValue
         serviceHasClient mustBe connectorHasClient
 
-        verify(mockCache).find(cisTaxpayer.uniqueId)
+        verify(mockCache).find(cisTaxpayer.id)
         verify(mockCache, never).insert(any)
 
         verify(mockConnector).hasClient(eqTo(cisTaxpayer.taxOfficeNumber), eqTo(cisTaxpayer.taxOfficeRef))(any)
@@ -80,10 +80,10 @@ class CisTaxpayerServiceSpec
         val cisTaxpayer = randomCisTaxPayer
         when(mockConnector.getAllClients(any)) thenReturn Future.successful(List(cisTaxpayer))
 
-        val serviceHasClient = serviceUnderTest.isClient(cisTaxpayer.uniqueId).futureValue
+        val serviceHasClient = serviceUnderTest.isClient(cisTaxpayer.id).futureValue
         serviceHasClient mustBe true
 
-        verify(mockCache).find(cisTaxpayer.uniqueId)
+        verify(mockCache).find(cisTaxpayer.id)
         verify(mockCache).insert(List(cisTaxpayer))
 
         verify(mockConnector).getAllClients(any)
@@ -96,10 +96,10 @@ class CisTaxpayerServiceSpec
         val cisTaxpayer = randomCisTaxPayer
         when(mockConnector.getAllClients(any)) thenReturn Future.successful(List(cisTaxpayer))
 
-        val serviceHasClient = serviceUnderTest.isClient(cisTaxpayer.uniqueId).futureValue
+        val serviceHasClient = serviceUnderTest.isClient(cisTaxpayer.id).futureValue
         serviceHasClient mustBe true
 
-        verify(mockCache).find(cisTaxpayer.uniqueId)
+        verify(mockCache).find(cisTaxpayer.id)
         verify(mockCache).insert(List(cisTaxpayer))
 
         verify(mockConnector).getAllClients(any)
@@ -146,7 +146,7 @@ class CisTaxpayerServiceSpec
   override protected def afterEach(): Unit = reset(mockCache, mockConnector)
 
   private def randomCisTaxPayer = SimpleCisTaxpayer(
-    uniqueId = randomSchemeId,
+    id = randomSchemeId,
     taxOfficeNumber = Random.nextString(3),
     taxOfficeRef = Random.nextString(7),
     agentOwnRef = None,

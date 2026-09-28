@@ -51,7 +51,7 @@ class CisTaxpayerCache @Inject() (
 
   def insert(cisTaxpayers: Seq[SimpleCisTaxpayer]): Future[Boolean] =
     val now      = clock.instant()
-    val entities = for taxpayer <- cisTaxpayers yield Entity(taxpayer.uniqueId, now, taxpayer)
+    val entities = for cisTaxpayer <- cisTaxpayers yield Entity(cisTaxpayer.id, now, cisTaxpayer)
 
     collection
       .insertMany(entities)

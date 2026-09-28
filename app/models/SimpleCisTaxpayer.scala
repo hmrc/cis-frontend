@@ -20,7 +20,7 @@ import models.monthlyreturns.CisTaxpayer
 import play.api.libs.json.{Json, OFormat}
 
 final case class SimpleCisTaxpayer(
-  uniqueId: String,
+  id: String,
   taxOfficeNumber: String,
   taxOfficeRef: String,
   agentOwnRef: Option[String],

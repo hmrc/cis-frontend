@@ -54,22 +54,22 @@ class FileYourMonthlyCisReturnController @Inject() (
     with I18nSupport
     with Logging {
 
-  def startMonthlyReturn(cisId: String): Action[AnyContent] =
-    (identify andThen accessScheme(cisId)).async { implicit request =>
+  def startMonthlyReturn(cisPath: String): Action[AnyContent] =
+    (identify andThen accessScheme(cisPath)).async { implicit request =>
       startReturn(ReturnType.MonthlyStandardReturn)(monthlyReturnView())
     }
 
-  def startNilReturn(cisId: String): Action[AnyContent] =
-    (identify andThen accessScheme(cisId)).async { implicit request =>
+  def startNilReturn(cisPath: String): Action[AnyContent] =
+    (identify andThen accessScheme(cisPath)).async { implicit request =>
       startReturn(ReturnType.MonthlyNilReturn)(nilReturnView())
     }
 
-  def onSubmit(cisId: String, returnType: ReturnType): Action[AnyContent] =
-    (identify andThen accessScheme(cisId)).async { implicit request =>
+  def onSubmit(cisPath: String, returnType: ReturnType): Action[AnyContent] =
+    (identify andThen accessScheme(cisPath)).async { implicit request =>
       (for {
         cleanAnswers <- request.userAnswers.clearMonthlyReturnJourney.toFuture
         _            <- sessionRepository.set(cleanAnswers)
-      } yield Redirect(routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(returnType))))
+      } yield Redirect(routes.DateConfirmPaymentsController.onPageLoad(cisPath, NormalMode, Some(returnType))))
         .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 

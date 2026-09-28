@@ -38,13 +38,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class DateConfirmPaymentsController @Inject() (
-  override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  accessScheme: AccessSchemeAction,
   formProvider: DateConfirmPaymentsFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -54,8 +51,8 @@ class DateConfirmPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onPageLoad(cisPath: String, mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
+    (identify andThen accessScheme(cisPath)).async { implicit request =>
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
@@ -90,8 +87,8 @@ class DateConfirmPaymentsController @Inject() (
         }
     }
 
-  def onSubmit(mode: Mode, returnType: ReturnType): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: String, mode: Mode, returnType: ReturnType): Action[AnyContent] =
+    (identify andThen accessScheme(cisPath)).async { implicit request =>
       val userAnswers   = request.userAnswers
       val form          = formProvider()
       val isStandard    = returnType == MonthlyStandardReturn
@@ -111,8 +108,7 @@ class DateConfirmPaymentsController @Inject() (
 
             (for {
               uaWithReturnType <- userAnswers.set(ReturnTypePage, returnType).toFuture
-              cisId            <- uaWithReturnType.get(CisIdPage).toFuture
-              isDup            <- monthlyReturnService.isDuplicate(cisId, year, month)
+              isDup            <- monthlyReturnService.isDuplicate(request.cisTaxpayer.id, year, month)
               updatedAnswers   <- Future.fromTry(uaWithReturnType.set(DateConfirmPaymentsPage, value))
               _                <- sessionRepository.set(updatedAnswers)
               result           <- if (isDup) {
@@ -122,7 +118,7 @@ class DateConfirmPaymentsController @Inject() (
                                         .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
                                     Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType)))
                                   } else if (isStandard) {
-                                    val createRequest = MonthlyReturnRequest(cisId, year, month)
+                                    val createRequest = MonthlyReturnRequest(request.cisTaxpayer.id, year, month)
                                     monthlyReturnService
                                       .createMonthlyReturn(createRequest)
                                       .map { _ =>
