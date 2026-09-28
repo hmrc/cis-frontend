@@ -19,12 +19,12 @@ package repositories
 import config.FrontendAppConfig
 import models.UserAnswers
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import play.api.libs.json.Format
+import uk.gov.hmrc.mdc.Mdc
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.mdc.Mdc
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
@@ -55,23 +55,14 @@ class SessionRepository @Inject() (
 
   private def byId(id: String): Bson = Filters.equal("_id", id)
 
-  def keepAlive(id: String): Future[Boolean] = Mdc.preservingMdc {
+  def get(id: String): Future[Option[UserAnswers]] =
     collection
-      .updateOne(
+      .findOneAndUpdate(
         filter = byId(id),
-        update = Updates.set("lastUpdated", Instant.now(clock))
+        update = Updates.set("lastUpdated", Instant.now(clock)),
+        options = FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
       )
-      .toFuture()
-      .map(_ => true)
-  }
-
-  def get(id: String): Future[Option[UserAnswers]] = Mdc.preservingMdc {
-    keepAlive(id).flatMap { _ =>
-      collection
-        .find(byId(id))
-        .headOption()
-    }
-  }
+      .toFutureOption()
 
   def set(answers: UserAnswers): Future[Boolean] = Mdc.preservingMdc {
 
