@@ -28,6 +28,7 @@ import javax.inject.{Inject, Singleton}
 
 @Singleton
 class Navigator @Inject() () {
+  import controllers.actions.AccessSchemeAction.cisPathFrom
 
   private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
     // common
@@ -36,7 +37,7 @@ class Navigator @Inject() () {
 
     // nil return
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
-      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+      ua => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(cisPathFrom(ua), NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
     case (DeclarationPage, _)                        =>
@@ -80,7 +81,8 @@ class Navigator @Inject() () {
       userAnswers =>
         userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
           case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
-            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController
+              .onPageLoad(cisPathFrom(userAnswers), NormalMode)
           case _                                                         =>
             controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
         }
@@ -146,7 +148,8 @@ class Navigator @Inject() () {
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(VerifiedStatusDeclarationPage), mode) match {
       case (Some(_), NormalMode) =>
-        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController
+          .onPageLoad(cisPathFrom(userAnswers), NormalMode)
       case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
     }

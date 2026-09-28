@@ -31,13 +31,10 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SubmitInactivityRequestController @Inject() (
-  override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  accessScheme: AccessSchemeAction,
   formProvider: SubmitInactivityRequestFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: SubmitInactivityRequestView
@@ -45,9 +42,9 @@ class SubmitInactivityRequestController @Inject() (
     extends FrontendBaseController
     with I18nSupport {
 
-  val form = formProvider()
+  private val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+  def onPageLoad(cisPath: String, mode: Mode): Action[AnyContent] = (identify andThen accessScheme(cisPath)) {
     implicit request =>
 
       val preparedForm = request.userAnswers.get(SubmitInactivityRequestPage) match {
@@ -55,15 +52,15 @@ class SubmitInactivityRequestController @Inject() (
         case Some(value) => form.fill(value)
       }
 
-      Ok(view(preparedForm, mode))
+      Ok(view(preparedForm, request.cisPath, mode))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: String, mode: Mode): Action[AnyContent] =
+    (identify andThen accessScheme(cisPath)).async { implicit request =>
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, request.cisPath, mode))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage, value))

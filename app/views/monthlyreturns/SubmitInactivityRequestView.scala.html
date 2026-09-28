@@ -30,11 +30,11 @@
 
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], cisPath: String, mode: Mode)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.submitInactivityRequest.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmit(cisPath, mode), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))

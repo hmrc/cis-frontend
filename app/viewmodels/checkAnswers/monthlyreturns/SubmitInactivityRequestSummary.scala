@@ -24,6 +24,7 @@ import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
 object SubmitInactivityRequestSummary {
+  import controllers.actions.AccessSchemeAction.cisPathFrom
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(SubmitInactivityRequestPage).map { answer =>
@@ -36,7 +37,9 @@ object SubmitInactivityRequestSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController
+              .onPageLoad(cisPathFrom(answers), CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
             .withAttribute("id" -> "change-submit-inactivity-request")

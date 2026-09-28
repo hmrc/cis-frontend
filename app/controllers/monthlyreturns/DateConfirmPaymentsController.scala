@@ -22,9 +22,9 @@ import models.ReturnType.MonthlyStandardReturn
 import models.monthlyreturns.MonthlyReturnRequest
 import models.{Mode, ReturnType}
 import navigation.Navigator
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.Logging
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
@@ -126,7 +126,8 @@ class DateConfirmPaymentsController @Inject() (
                                       }
                                   } else {
                                     for {
-                                      uaWithStatus <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
+                                      uaWithStatus <-
+                                        monthlyReturnService.createNilMonthlyReturn(request.cisTaxpayer.id, updatedAnswers)
                                     } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
                                   }
             } yield result).recover { case NonFatal(ex) =>

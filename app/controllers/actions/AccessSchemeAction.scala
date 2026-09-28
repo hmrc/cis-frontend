@@ -47,7 +47,7 @@ class AccessSchemeAction @Inject() (
     with I18nSupport
     with Logging
     with FrontendHeaderCarrierProvider {
-  import AccessSchemeAction.WILDCARD
+  import AccessSchemeAction.*
 
   /** @param cisPath
     *   For Agents, this is equal to the CIS ID, allowing them work with multiple clients in different tabs. For
@@ -69,13 +69,13 @@ class AccessSchemeAction @Inject() (
             cisTaxpayerService
               .findByCisId(cisPath)
               .flatMap {
-                case Some(cisTaxpayer) => buildRequest(cisTaxpayer, userAnswersId = s"${req.userId}/$cisPath")
+                case Some(cisTaxpayer) => buildRequest(cisTaxpayer)
                 case None              =>
                   logger.info(s"${req.agentInfo} tried to access ${req.uri}.")
                   Future.successful(Left(NotFound(notFoundView())))
               }
         else if cisPath == WILDCARD then
-          cisTaxpayerService.findBySession.flatMap(cisTaxpayer => buildRequest(cisTaxpayer, req.userId))
+          cisTaxpayerService.findBySession.flatMap(cisTaxpayer => buildRequest(cisTaxpayer))
         else if cisPath.forall(_.isLetterOrDigit) then
           // The alphanumeric check above ensures we only do the string replacement below when no URL encoding is used
           logger.info(s"Organisation user tried to access ${req.uri}; replacing scheme ID with wildcard.")
@@ -85,15 +85,12 @@ class AccessSchemeAction @Inject() (
           logger.info(s"Organisation user tried to access ${req.uri} with invalid scheme ID; returning 404.")
           Future.successful(Left(NotFound(notFoundView())))
 
-      /** @param userAnswersId
-        *   For an Organisation user, this is just the user ID because they only have access to 1 scheme. For an Agent
-        *   user, this is the user ID and scheme ID separated by a forward slash, allowing the Agent to manage multiple
-        *   clients in parallel.
-        */
-      private def buildRequest[A](cisTaxpayer: SimpleCisTaxpayer, userAnswersId: String)(using IdentifierRequest[A]) =
+      private def buildRequest[A](cisTaxpayer: SimpleCisTaxpayer)(using req: IdentifierRequest[A]) =
         reconcileFormPAndRds(cisTaxpayer).flatMap {
           case Some(failureResult) => Future.successful(Left(failureResult))
           case None                =>
+            var userAnswersId = req.userId
+            if cisPath == WILDCARD then userAnswersId += UA_SEP + cisPath
             for
               uaOpt <- sessionRepository.get(userAnswersId)
               ua     = uaOpt getOrElse UserAnswers(userAnswersId)
@@ -107,9 +104,7 @@ class AccessSchemeAction @Inject() (
       .map(_ => None)
       .recover {
         case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
-          logger.warn(
-            s"[FileYourMonthlyCisReturnController] Contractor known facts missing in RDS (status ${e.statusCode})"
-          )
+          logger.warn(s"Contractor known facts missing in RDS (status ${e.statusCode})")
           Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
         case NonFatal(e)                                                                                  =>
           logger.error(
@@ -120,5 +115,8 @@ class AccessSchemeAction @Inject() (
       }
 }
 object AccessSchemeAction {
-  val WILDCARD = "-"
+  private val UA_SEP = "/"
+  val WILDCARD       = "-"
+
+  def cisPathFrom(ua: UserAnswers): String = ua.id split UA_SEP lift 1 getOrElse WILDCARD
 }
