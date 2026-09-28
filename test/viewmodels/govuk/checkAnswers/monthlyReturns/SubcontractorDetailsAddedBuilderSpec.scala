@@ -131,7 +131,7 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
       vm.showYesNo mustBe false
     }
 
-    "must not showYesNo when original subcontractor count is not available" in {
+    "must showYesNo when original subcontractor count is not available" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(2001L, "A Ltd"),
         2 -> completeSub(2002L, "B Ltd")
