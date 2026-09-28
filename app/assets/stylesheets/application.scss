@@ -94,3 +94,11 @@
     white-space: pre-line;
   }
 }
+
+// Prevent Safari on iOS from styling auto-detected phone/data links
+a[x-apple-data-detectors] {
+  color: inherit;
+  pointer-events: none;
+  cursor: default;
+  text-decoration: none;
+}

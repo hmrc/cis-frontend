@@ -62,6 +62,9 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .set(SubmitInactivityRequestPage, true)
         .success
         .value
+        .set(DeclarationPage, Set(Declaration.Confirmed))
+        .success
+        .value
 
       val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua)
 
@@ -71,8 +74,9 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
           taxYear = 2024,
           taxMonth = 3,
           amendment = "N",
+          decNoMoreSubPayments = Some("Y"),
           decNilReturnNoPayments = Some("Y"),
-          decInformationCorrect = None,
+          decInformationCorrect = Some("Y"),
           nilReturnIndicator = "Y",
           status = "STARTED",
           version = None
