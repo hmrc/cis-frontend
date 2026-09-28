@@ -18,7 +18,7 @@ package repositories
 
 import com.google.inject.Inject
 import com.mongodb.client.model.*
-import models.CisTaxpayerSearchResult
+import models.SimpleCisTaxpayer
 import org.mongodb.scala.model.Filters
 import play.api.Configuration
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
@@ -49,7 +49,7 @@ class CisTaxpayerCache @Inject() (
       )
     ) {
 
-  def insert(cisTaxpayers: Seq[CisTaxpayerSearchResult]): Future[Boolean] =
+  def insert(cisTaxpayers: Seq[SimpleCisTaxpayer]): Future[Boolean] =
     val now      = clock.instant()
     val entities = for taxpayer <- cisTaxpayers yield Entity(taxpayer.uniqueId, now, taxpayer)
 
@@ -58,7 +58,7 @@ class CisTaxpayerCache @Inject() (
       .toFuture()
       .map(_.wasAcknowledged())
 
-  def find(cisId: String): Future[Option[CisTaxpayerSearchResult]] =
+  def find(cisId: String): Future[Option[SimpleCisTaxpayer]] =
     val now = clock.instant()
 
     collection
@@ -75,11 +75,11 @@ private object CisTaxpayerCache extends MongoJavatimeFormats {
   private val LAST_USED = "lastUsed"
   private val DATA      = "data"
 
-  final case class Entity(cisId: String, lastUsed: Instant, data: CisTaxpayerSearchResult)
+  final case class Entity(cisId: String, lastUsed: Instant, data: SimpleCisTaxpayer)
 
   private val entityFormat: OFormat[Entity] = (
     (__ \ ID).format[String] ~
       (__ \ LAST_USED).format(instantFormat) ~
-      (__ \ DATA).format[CisTaxpayerSearchResult]
+      (__ \ DATA).format[SimpleCisTaxpayer]
   )(Entity.apply, entity => (entity.cisId, entity.lastUsed, entity.data))
 }

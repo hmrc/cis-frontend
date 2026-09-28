@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package models
+package models.requests
 
-import play.api.libs.json.{Json, OFormat}
+import models.{SimpleCisTaxpayer, UserAnswers}
+import play.api.mvc.WrappedRequest
 
-final case class CisTaxpayerSearchResult(
-  uniqueId: String,
-  taxOfficeNumber: String,
-  taxOfficeRef: String,
-  agentOwnRef: Option[String],
-  schemeName: Option[String],
-  utr: Option[String]
-)
-
-object CisTaxpayerSearchResult {
-  given OFormat[CisTaxpayerSearchResult] = Json.format
-}
+final class SchemeAccessRequest[B](
+  val cisPath: String,
+  val cisTaxpayer: SimpleCisTaxpayer,
+  val userAnswers: UserAnswers
+)(using val identifier: IdentifierRequest[B])
+    extends WrappedRequest[B](identifier)

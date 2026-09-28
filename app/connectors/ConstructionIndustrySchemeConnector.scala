@@ -22,7 +22,7 @@ import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalVal
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
-import models.{CisTaxpayerSearchResult, JourneyHandoffResponse}
+import models.{JourneyHandoffResponse, SimpleCisTaxpayer}
 import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
@@ -142,11 +142,11 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         }
       }
 
-  def getAllClients(implicit hc: HeaderCarrier): Future[List[CisTaxpayerSearchResult]] =
+  def getAllClients(implicit hc: HeaderCarrier): Future[List[SimpleCisTaxpayer]] =
     http
       .get(url"$cisBaseUrl/agent/client-list")
       .execute[JsObject]
-      .flatMap(json => Future((json \ "clients").as[List[CisTaxpayerSearchResult]]))
+      .flatMap(json => Future((json \ "clients").as[List[SimpleCisTaxpayer]]))
 
   def hasClient(taxOfficeNumber: String, taxOfficeReference: String)(implicit
     hc: HeaderCarrier

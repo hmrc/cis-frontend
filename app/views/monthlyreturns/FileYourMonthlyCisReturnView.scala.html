@@ -17,6 +17,7 @@
 @import views.html.components._
 @import models.NormalMode
 @import models.ReturnType.MonthlyStandardReturn
+@import models.requests.SchemeAccessRequest
 
 @this(
     layout: templates.Layout,
@@ -26,25 +27,15 @@
     formHelper: FormWithCSRF
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@()(implicit request: SchemeAccessRequest[_], messages: Messages)
 
 @layout(
    pageTitle = titleNoForm(messages("fileYourMonthlyCisReturn.title"))
 ){
-@formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyStandardReturn)) {
-
-@h1(messages("fileYourMonthlyCisReturn.heading"))
-
-@paragraph(
-   message = "fileYourMonthlyCisReturn.p1"
-)
-
-@paragraph(
-   message = "fileYourMonthlyCisReturn.p2"
-)
-
-@govukButton(Button(
-   content = Text(messages("site.continue")),
-))
-}
+    @formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(request.cisPath, MonthlyStandardReturn)) {
+        @h1(messages("fileYourMonthlyCisReturn.heading"))
+        @paragraph(message = "fileYourMonthlyCisReturn.p1")
+        @paragraph(message = "fileYourMonthlyCisReturn.p2")
+        @govukButton(Button(content = Text(messages("site.continue"))))
+    }
 }

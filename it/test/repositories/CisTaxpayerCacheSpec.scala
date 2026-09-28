@@ -16,7 +16,7 @@
 
 package repositories
 
-import models.CisTaxpayerSearchResult
+import models.SimpleCisTaxpayer
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
@@ -69,5 +69,5 @@ class CisTaxpayerCacheSpec
   }
 
   private def buildCisTaxpayer(cisId: String, ton: String, tor: String) =
-    CisTaxpayerSearchResult(cisId, ton, tor, None, None, None)
+    SimpleCisTaxpayer(cisId, ton, tor, None, None, None)
 }

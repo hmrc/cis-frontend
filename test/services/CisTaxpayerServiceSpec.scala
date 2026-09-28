@@ -17,7 +17,7 @@
 package services
 
 import connectors.ConstructionIndustrySchemeConnector
-import models.CisTaxpayerSearchResult
+import models.SimpleCisTaxpayer
 import org.mockito.Mockito.never
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -145,7 +145,7 @@ class CisTaxpayerServiceSpec
 
   override protected def afterEach(): Unit = reset(mockCache, mockConnector)
 
-  private def randomCisTaxPayer = CisTaxpayerSearchResult(
+  private def randomCisTaxPayer = SimpleCisTaxpayer(
     uniqueId = randomSchemeId,
     taxOfficeNumber = Random.nextString(3),
     taxOfficeRef = Random.nextString(7),

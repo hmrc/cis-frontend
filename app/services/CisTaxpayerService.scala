@@ -18,9 +18,11 @@ package services
 
 import com.google.inject.{Inject, Singleton}
 import connectors.ConstructionIndustrySchemeConnector
+import models.SimpleCisTaxpayer
 import models.requests.IdentifierRequest
 import play.api.Logging
 import repositories.CisTaxpayerCache
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendHeaderCarrierProvider
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,28 +36,35 @@ class CisTaxpayerService @Inject() (
     extends Logging
     with FrontendHeaderCarrierProvider {
 
-  def isClient(schemeId: String)(using IdentifierRequest[?]): Future[Boolean] =
+  /** @return the CIS taxpayer deduced from the Organisation user's CIS enrolment. */
+  def findBySession(using HeaderCarrier): Future[SimpleCisTaxpayer] =
+    cisConnector.getCisTaxpayer() map SimpleCisTaxpayer.from
+
+  /** @return None if either the taxpayer can't be found OR they are NOT a client of the agent. */
+  def findByCisId(cisId: String)(using IdentifierRequest[?]): Future[Option[SimpleCisTaxpayer]] =
     cisTaxpayerCache
-      .find(schemeId)
+      .find(cisId)
       .flatMap {
         case Some(cisTaxpayer) =>
-          cisConnector.hasClient(cisTaxpayer.taxOfficeNumber, cisTaxpayer.taxOfficeRef)
+          cisConnector
+            .hasClient(cisTaxpayer.taxOfficeNumber, cisTaxpayer.taxOfficeRef)
+            .map(isClient => if isClient then Some(cisTaxpayer) else None)
         case None              =>
-          logger.info(s"Cache miss for scheme <$schemeId>; using client list.")
-          clientListContains(schemeId)
+          logger.info(s"Cache miss for scheme <$cisId>; using client list.")
+          findInClientList(cisId)
       }
       .recoverWith { ex =>
-        logger.warn(s"Falling back to client list; failed to fetch scheme <$schemeId> from cache:", ex)
-        clientListContains(schemeId)
+        logger.warn(s"Falling back to client list; failed to fetch scheme <$cisId> from cache:", ex)
+        findInClientList(cisId)
       }
 
-  private def clientListContains(schemeId: String)(using req: IdentifierRequest[?]) =
-    for clients <- cisConnector.getAllClients yield
+  private def findInClientList(cisId: String)(using req: IdentifierRequest[?]) =
+    for clientList <- cisConnector.getAllClients yield
       cisTaxpayerCache
-        .insert(clients) // Run this asynchronously to avoid blocking user flow if cache fails
+        .insert(clientList) // Run this asynchronously to avoid blocking user flow if cache fails
         .andThen { case Failure(ex) =>
           logger.warn(s"Fetched client list for ${req.agentInfo} but failed to cache:", ex)
         }
 
-      clients.exists(_.uniqueId == schemeId)
+      clientList.find(_.uniqueId == cisId)
 }

@@ -16,34 +16,20 @@
 
 package controllers
 
-import controllers.actions.IdentifierAction
+import controllers.actions.AccessSchemeAction
 import controllers.monthlyreturns.routes as monthlyReturnsRoutes
-import models.UserAnswers
-import play.api.i18n.I18nSupport
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Results}
-import repositories.SessionRepository
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class IndexController @Inject() (
-  val controllerComponents: MessagesControllerComponents,
-  identify: IdentifierAction,
-  sessionRepository: SessionRepository
-)(implicit ec: ExecutionContext)
-    extends FrontendBaseController
-    with I18nSupport {
+  val controllerComponents: MessagesControllerComponents
+)(using ExecutionContext)
+    extends FrontendBaseController {
 
-  def onPageLoad(): Action[AnyContent] = identify.async { implicit request =>
-
-    // Create initial session data and redirect to the inactivity request page
-    val userAnswers = UserAnswers(request.userId)
-
-    sessionRepository.set(userAnswers).map { _ =>
-      Results.Redirect(
-        monthlyReturnsRoutes.FileYourMonthlyCisReturnController.startNilReturn()
-      )
-    }
+  def onPageLoad(): Action[AnyContent] = Action { implicit request =>
+    Redirect(monthlyReturnsRoutes.FileYourMonthlyCisReturnController.startNilReturn(AccessSchemeAction.WILDCARD))
   }
 }

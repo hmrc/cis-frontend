@@ -57,10 +57,10 @@ GET        /monthly-return/already-submitted                            controll
 GET        /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(defaultSelection: Option[Boolean])
 POST       /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
-GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
-POST       /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyStandardReturn)
-GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
-POST       /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyNilReturn)
+GET        /:cisPath/monthly-return/file-your-monthly-return            controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn(cisPath)
+POST       /:cisPath/monthly-return/file-your-monthly-return            controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(cisPath, returnType: ReturnType = MonthlyStandardReturn)
+GET        /:cisPath/monthly-return/file-your-nil-return                controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn(cisPath)
+POST       /:cisPath/monthly-return/file-your-nil-return                controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(cisPath, returnType: ReturnType = MonthlyNilReturn)
 
 GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
 GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
