@@ -244,6 +244,7 @@ class MonthlyReturnService @Inject() (
   )(implicit hc: HeaderCarrier): Future[Either[String, UserAnswers]] =
     retrieveMonthlyReturnForEditDetails(editRequest).map { response =>
       val contractorName = response.scheme.headOption.flatMap(_.name).map(_.trim).filter(_.nonEmpty)
+      val emailRecipient = response.submission.headOption.flatMap(_.emailRecipient)
 
       for {
         monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
@@ -254,7 +255,8 @@ class MonthlyReturnService @Inject() (
                            monthlyReturnItems = response.monthlyReturnItems,
                            subcontractors = response.subcontractors,
                            submissions = response.submission,
-                           contractorName = contractorName
+                           contractorName = contractorName,
+                           emailRecipient = emailRecipient
                          )
       } yield updatedUa
     }
@@ -397,7 +399,8 @@ class MonthlyReturnService @Inject() (
     monthlyReturnItems: Seq[MonthlyReturnItem],
     subcontractors: Seq[Subcontractor],
     submissions: Seq[Submission],
-    contractorName: Option[String]
+    contractorName: Option[String],
+    emailRecipient: Option[String]
   ): Either[String, UserAnswers] = {
     val resubmissionId = submissions.headOption.map(_.submissionId)
 
@@ -408,7 +411,8 @@ class MonthlyReturnService @Inject() (
           instanceId = instanceId,
           monthlyReturn = monthlyReturn,
           resubmissionId = resubmissionId,
-          contractorName = contractorName
+          contractorName = contractorName,
+          emailRecipient = emailRecipient
         )
 
       case Some("N") =>
@@ -419,7 +423,8 @@ class MonthlyReturnService @Inject() (
           monthlyReturnItems = monthlyReturnItems,
           subcontractors = subcontractors,
           resubmissionId = resubmissionId,
-          contractorName = contractorName
+          contractorName = contractorName,
+          emailRecipient = emailRecipient
         )
 
       case _ =>
@@ -446,7 +451,8 @@ class MonthlyReturnService @Inject() (
     returnType: ReturnType,
     monthlyReturn: MonthlyReturn,
     resubmissionId: Option[Long],
-    contractorName: Option[String]
+    contractorName: Option[String],
+    emailRecipient: Option[String]
   ): Either[String, UserAnswers] =
     for {
       ua1 <- setOrError(ua, CisIdPage, instanceId)
@@ -459,14 +465,16 @@ class MonthlyReturnService @Inject() (
       ua4 <- setIfPresent(ua3, SubmitInactivityRequestPage, deriveSubmitInactivityRequest(monthlyReturn))
       ua5 <- setIfPresent(ua4, ResubmissionIdPage, resubmissionId)
       ua6 <- setIfPresent(ua5, ContractorNamePage, contractorName)
-    } yield ua6
+      ua7 <- setOrError(ua6, ConfirmationByEmailPage, emailRecipient.exists(_.nonEmpty))
+    } yield ua7
 
   private def populateNilReturnAnswers(
     ua: UserAnswers,
     instanceId: String,
     monthlyReturn: MonthlyReturn,
     resubmissionId: Option[Long],
-    contractorName: Option[String]
+    contractorName: Option[String],
+    emailRecipient: Option[String]
   ): Either[String, UserAnswers] = {
     val declarationSet =
       if (monthlyReturn.decInformationCorrect.contains("Y")) Set(Declaration.Confirmed) else Set.empty[Declaration]
@@ -478,7 +486,8 @@ class MonthlyReturnService @Inject() (
                returnType = MonthlyNilReturn,
                monthlyReturn = monthlyReturn,
                resubmissionId = resubmissionId,
-               contractorName = contractorName
+               contractorName = contractorName,
+               emailRecipient = emailRecipient
              )
       ua2 <- setOrError(ua1, DeclarationPage, declarationSet)
     } yield ua2
@@ -491,7 +500,8 @@ class MonthlyReturnService @Inject() (
     monthlyReturnItems: Seq[MonthlyReturnItem],
     subcontractors: Seq[Subcontractor],
     resubmissionId: Option[Long],
-    contractorName: Option[String]
+    contractorName: Option[String],
+    emailRecipient: Option[String]
   ): Either[String, UserAnswers] =
     for {
       ua1 <- populateCommonReturnAnswers(
@@ -500,7 +510,8 @@ class MonthlyReturnService @Inject() (
                returnType = MonthlyStandardReturn,
                monthlyReturn = monthlyReturn,
                resubmissionId = resubmissionId,
-               contractorName = contractorName
+               contractorName = contractorName,
+               emailRecipient = emailRecipient
              )
       ua2 <- setIfPresent(
                ua1,
