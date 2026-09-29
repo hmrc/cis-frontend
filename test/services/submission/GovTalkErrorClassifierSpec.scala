@@ -23,8 +23,8 @@ import play.api.libs.json.Json
 
 class GovTalkErrorClassifierSpec extends AnyWordSpec with Matchers {
 
-  private def errorJs(errorNumber: String, errorType: String, errorText: String) =
-    Json.obj("errorNumber" -> errorNumber, "errorType" -> errorType, "errorText" -> errorText)
+  private def errorJs(number: String, errorType: String, text: String) =
+    Json.obj("number" -> number, "type" -> errorType, "text" -> text)
 
   "GovTalkErrorClassifier" should {
 

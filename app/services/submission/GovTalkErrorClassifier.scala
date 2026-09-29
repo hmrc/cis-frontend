@@ -25,8 +25,8 @@ object GovTalkErrorClassifier {
   private val RecoverableCodes = Set("3000", "2005", "1000")
 
   def classify(status: String, error: Option[JsValue]): GovTalkErrorStatus = {
-    val errorCode = error.flatMap(js => (js \ "errorNumber").asOpt[String])
-    val errorText = error.flatMap(js => (js \ "errorText").asOpt[String]).getOrElse("")
+    val errorCode = error.flatMap(js => (js \ "number").asOpt[String])
+    val errorText = error.flatMap(js => (js \ "text").asOpt[String]).getOrElse("")
 
     (status, errorCode) match {
       case ("DEPARTMENTAL_ERROR", Some(code)) =>
