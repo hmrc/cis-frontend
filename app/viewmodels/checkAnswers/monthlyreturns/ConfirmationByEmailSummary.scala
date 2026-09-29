@@ -24,6 +24,7 @@ import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
 object ConfirmationByEmailSummary {
+  import controllers.actions.AccessSchemeAction.cisPathFrom
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(ConfirmationByEmailPage).map { answer =>
@@ -36,7 +37,9 @@ object ConfirmationByEmailSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.ConfirmationByEmailController
+              .onPageLoad(cisPathFrom(answers), CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
             .withAttribute("id" -> "change-confirmation-by-email")

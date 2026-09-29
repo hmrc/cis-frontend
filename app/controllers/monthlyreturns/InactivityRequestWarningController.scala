@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode}
 import pages.monthlyreturns.SubmitInactivityRequestPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.InactivityRequestWarningView
@@ -27,25 +27,22 @@ import views.html.monthlyreturns.InactivityRequestWarningView
 import javax.inject.Inject
 
 class InactivityRequestWarningController @Inject() (
-  override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  accessScheme: AccessSchemeAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+  def onPageLoad(cisPath: String, mode: Mode): Action[AnyContent] = (identify andThen accessScheme(cisPath)) {
     implicit request =>
       val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage).contains(true)
       if (!inactivityRequested) {
         Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
       } else {
         val nextUrl = mode match {
-          case CheckMode  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
-          case NormalMode => controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+          case CheckMode  => routes.CheckYourAnswersController.onPageLoad(cisPath).url
+          case NormalMode => routes.ConfirmationByEmailController.onPageLoad(cisPath, NormalMode).url
         }
         Ok(view(nextUrl))
       }

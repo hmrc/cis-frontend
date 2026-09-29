@@ -21,7 +21,7 @@ import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.SubmitInactivityRequestPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController

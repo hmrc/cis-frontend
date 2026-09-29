@@ -27,8 +27,8 @@ GET        /system-error/there-is-a-problem                             controll
 
 GET        /agent/no-longer-authorised                                  controllers.AgentLostAccessController.onPageLoad()
 
-GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
-POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
+GET        /:cisPath/monthly-return/check-your-answers                  controllers.monthlyreturns.CheckYourAnswersController.onPageLoad(cisPath)
+POST       /:cisPath/monthly-return/check-your-answers                  controllers.monthlyreturns.CheckYourAnswersController.onSubmit(cisPath)
 
 GET        /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
@@ -117,18 +117,18 @@ POST       /monthly-return/remove-subcontractor/:index            controllers.mo
 GET        /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode, index: Int)
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
-GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
-GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/inactivity-request-warning          controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(cisPath: String, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-inactivity-request-warning   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(cisPath: String, mode: Mode = CheckMode)
 
 GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(cisPath, mode: Mode = NormalMode)
+POST       /:cisPath/monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(cisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(cisPath, mode: Mode = CheckMode)
+POST       /:cisPath/monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(cisPath, mode: Mode = CheckMode)
 
 GET        /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)

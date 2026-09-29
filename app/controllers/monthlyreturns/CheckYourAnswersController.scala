@@ -20,32 +20,29 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.SchemeAccessRequest
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import services.MonthlyReturnService
 import services.submission.SubmissionService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import utils.UserAnswerUtils.isJourneyComplete
 import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.summarylist.*
 import views.html.monthlyreturns.CheckYourAnswersView
-import utils.UserAnswerUtils.isJourneyComplete
 
 import java.time.YearMonth
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class CheckYourAnswersController @Inject() (
-  override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  accessScheme: AccessSchemeAction,
   monthlyReturnService: MonthlyReturnService,
   submissionService: SubmissionService,
-  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView
 )(implicit ec: ExecutionContext)
@@ -54,7 +51,7 @@ class CheckYourAnswersController @Inject() (
     with Logging
     with SubmissionViewDataSupport {
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+  def onPageLoad(cisPath: String): Action[AnyContent] = (identify andThen accessScheme(cisPath)).async {
     implicit request =>
       guardCompletedJourney {
         ReturnTypeSummary.returnType(request.userAnswers) match {
@@ -96,7 +93,7 @@ class CheckYourAnswersController @Inject() (
       }
   }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
+  def onSubmit(cisPath: String): Action[AnyContent] = (identify andThen accessScheme(cisPath)).async {
     implicit request =>
       guardCompletedJourney {
         request.userAnswers.get(ReturnTypePage) match {
@@ -145,7 +142,9 @@ class CheckYourAnswersController @Inject() (
       }
   }
 
-  private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
+  private def guardCompletedJourney(
+    block: => Future[Result]
+  )(implicit request: SchemeAccessRequest[_]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
       case None            =>
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))

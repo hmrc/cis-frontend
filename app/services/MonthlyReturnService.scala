@@ -598,12 +598,6 @@ class MonthlyReturnService @Inject() (
       None
     }
 
-  private def getCisId(ua: UserAnswers): Future[String] =
-    ua.get(CisIdPage) match {
-      case Some(id) => Future.successful(id)
-      case None     => Future.failed(new RuntimeException("CIS ID not found in session data"))
-    }
-
   private def getTaxYear(ua: UserAnswers): Future[Int] =
     ua.get(DateConfirmPaymentsPage) match {
       case Some(date) => Future.successful(date.getYear)

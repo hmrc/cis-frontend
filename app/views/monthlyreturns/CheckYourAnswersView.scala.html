@@ -14,6 +14,7 @@
  * limitations under the License.
  *@
 
+@import models.requests.SchemeAccessRequest
 @import viewmodels.govuk.button.ButtonViewModel
 
 @this(
@@ -25,11 +26,11 @@
     h2: components.H2
 )
 
-@(returnDetailsList: SummaryList, emailList: SummaryList)(implicit request: Request[_], messages: Messages)
+@(returnDetailsList: SummaryList, emailList: SummaryList)(implicit req: SchemeAccessRequest[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.checkYourAnswers.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit()) {
+    @formHelper(action = controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit(req.cisPath)) {
 
         @h1("monthlyreturns.checkYourAnswers.heading")
 
