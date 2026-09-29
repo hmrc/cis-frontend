@@ -26,7 +26,7 @@ object GovTalkErrorStatus {
 
   final case class FatalError(errorCode: String, errorText: String) extends GovTalkErrorStatus
 
-  final case class DepartmentalError(errorText: String) extends GovTalkErrorStatus
+  final case class DepartmentalError(errorCode: String, errorText: String) extends GovTalkErrorStatus
 
   final case class ServerError(httpStatus: Int) extends GovTalkErrorStatus
 

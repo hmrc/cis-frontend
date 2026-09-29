@@ -23,19 +23,22 @@ import play.api.libs.json.Json
 
 class GovTalkErrorClassifierSpec extends AnyWordSpec with Matchers {
 
-  private def errorJs(number: String, errType: String, text: String) =
-    Json.obj("number" -> number, "type" -> errType, "text" -> text)
+  private def errorJs(number: String, errorType: String, text: String) =
+    Json.obj("number" -> number, "type" -> errorType, "text" -> text)
 
   "GovTalkErrorClassifier" should {
 
-    "classify DEPARTMENTAL_ERROR as DepartmentalError carrying the ChRIS text" in {
+    "classify DEPARTMENTAL_ERROR as DepartmentalError carrying the ChRIS code and text" in {
       val err = errorJs("3001", "business", "departmental boom")
 
-      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", Some(err)) mustBe DepartmentalError("departmental boom")
+      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", Some(err)) mustBe DepartmentalError(
+        "3001",
+        "departmental boom"
+      )
     }
 
-    "classify DEPARTMENTAL_ERROR without an error payload as DepartmentalError with empty text" in {
-      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", None) mustBe DepartmentalError("")
+    "classify DEPARTMENTAL_ERROR without an error payload as OtherStatus" in {
+      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", None) mustBe OtherStatus
     }
 
     List("3000", "2005", "1000").foreach { code =>

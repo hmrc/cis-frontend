@@ -108,13 +108,17 @@ class UpdateSubmissionRequestSpec extends AnyWordSpec with Matchers {
           |  "taxMonth": 4,
           |  "amendment": "N",
           |  "submittableStatus": "DEPARTMENTAL_ERROR",
-          |  "govTalkResponse": { "kind": "DepartmentalError", "errorText": "oops" }
+          |  "govTalkResponse": {
+          |    "kind": "DepartmentalError",
+          |    "errorCode": "3001",
+          |    "errorText": "oops"
+          |  }
           |}
         """.stripMargin
       )
 
       val out = js.as[UpdateSubmissionRequest]
-      out.govTalkResponse.value mustBe GovTalkErrorStatus.DepartmentalError("oops")
+      out.govTalkResponse.value mustBe GovTalkErrorStatus.DepartmentalError("3001", "oops")
     }
 
     "ignore unknown fields" in {

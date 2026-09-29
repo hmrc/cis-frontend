@@ -29,13 +29,16 @@ object GovTalkErrorClassifier {
     val errorText = error.flatMap(js => (js \ "text").asOpt[String]).getOrElse("")
 
     (status, errorCode) match {
-      case ("DEPARTMENTAL_ERROR", _)                                                  =>
-        DepartmentalError(errorText)
+      case ("DEPARTMENTAL_ERROR", Some(code)) =>
+        DepartmentalError(code, errorText)
+
       case ("STARTED" | "FATAL_ERROR", Some(code)) if RecoverableCodes.contains(code) =>
         RecoverableError(code, errorText)
-      case ("FATAL_ERROR", Some(code))                                                =>
+
+      case ("FATAL_ERROR", Some(code)) =>
         FatalError(code, errorText)
-      case _                                                                          =>
+
+      case _ =>
         OtherStatus
     }
   }
