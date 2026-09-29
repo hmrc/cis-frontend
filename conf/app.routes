@@ -120,10 +120,10 @@ POST       /monthly-return/change-remove-subcontractor/:index     controllers.mo
 GET        /:cisPath/monthly-return/inactivity-request-warning          controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(cisPath: String, mode: Mode = NormalMode)
 GET        /:cisPath/monthly-return/change-inactivity-request-warning   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(cisPath: String, mode: Mode = CheckMode)
 
-GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(cisPath, mode: Mode = NormalMode)
+POST       /:cisPath/monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(cisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(cisPath, mode: Mode = CheckMode)
+POST       /:cisPath/monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(cisPath, mode: Mode = CheckMode)
 
 GET        /:cisPath/monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(cisPath, mode: Mode = NormalMode)
 POST       /:cisPath/monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(cisPath, mode: Mode = NormalMode)

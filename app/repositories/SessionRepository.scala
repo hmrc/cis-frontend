@@ -55,6 +55,15 @@ class SessionRepository @Inject() (
 
   private def byId(id: String): Bson = Filters.equal("_id", id)
 
+  def getOrCreate(userId: String, cisPath: String): Future[UserAnswers] =
+    collection
+      .findOneAndUpdate(
+        filter = byId(UserAnswers.getId(userId, cisPath)),
+        update = Updates.set("lastUpdated", Instant.now(clock))
+      )
+      .toFutureOption()
+      .map(_ getOrElse UserAnswers.fresh(userId, cisPath))
+
   def get(id: String): Future[Option[UserAnswers]] =
     collection
       .findOneAndUpdate(

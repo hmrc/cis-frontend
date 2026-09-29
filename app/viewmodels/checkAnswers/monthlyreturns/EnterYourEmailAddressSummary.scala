@@ -33,7 +33,7 @@ object EnterYourEmailAddressSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(answers.urlPath, CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
             .withAttribute("id" -> "change-enter-your-email-address")

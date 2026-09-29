@@ -16,8 +16,8 @@
 
 package controllers
 
-import controllers.actions.AccessSchemeAction
 import controllers.monthlyreturns.routes as monthlyReturnsRoutes
+import models.UserAnswers
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
@@ -30,6 +30,6 @@ class IndexController @Inject() (
     extends FrontendBaseController {
 
   def onPageLoad(): Action[AnyContent] = Action { implicit request =>
-    Redirect(monthlyReturnsRoutes.FileYourMonthlyCisReturnController.startNilReturn(AccessSchemeAction.WILDCARD))
+    Redirect(monthlyReturnsRoutes.FileYourMonthlyCisReturnController.startNilReturn(UserAnswers.WILDCARD))
   }
 }

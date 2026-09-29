@@ -28,7 +28,6 @@ import javax.inject.{Inject, Singleton}
 
 @Singleton
 class Navigator @Inject() () {
-  import controllers.actions.AccessSchemeAction.cisPathFrom
 
   private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
     // common
@@ -37,13 +36,13 @@ class Navigator @Inject() () {
 
     // nil return
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
-      ua => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(cisPathFrom(ua), NormalMode)
+      ua => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(ua.urlPath, NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
       _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
     case (DeclarationPage, _)                        =>
-      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(ua))
+      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.urlPath)
     case (InactivityWarningPage, _)                  =>
-      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(ua))
+      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.urlPath)
 
     // monthly return
     case (VerifySubcontractorsPage, _)                      =>
@@ -72,7 +71,7 @@ class Navigator @Inject() () {
     case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
-          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(userAnswers))
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
         } else {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
@@ -82,13 +81,13 @@ class Navigator @Inject() () {
         userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
           case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
             controllers.monthlyreturns.routes.SubmitInactivityRequestController
-              .onPageLoad(cisPathFrom(userAnswers), NormalMode)
+              .onPageLoad(userAnswers.urlPath, NormalMode)
           case _                                                         =>
             controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
         }
     case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-    case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(ua))
+    case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.urlPath)
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
@@ -107,11 +106,11 @@ class Navigator @Inject() () {
     case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
     case (EnterYourEmailAddressPage, _)                     =>
-      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(ua))
+      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.urlPath)
     // amend monthly return
     case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
-    case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(ua))
+    case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.urlPath)
   }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = {
@@ -140,7 +139,7 @@ class Navigator @Inject() () {
       case (Some(_), NormalMode) =>
         controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
       case (Some(_), CheckMode)  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(userAnswers))
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
       case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
@@ -150,9 +149,9 @@ class Navigator @Inject() () {
     (userAnswers.get(VerifiedStatusDeclarationPage), mode) match {
       case (Some(_), NormalMode) =>
         controllers.monthlyreturns.routes.SubmitInactivityRequestController
-          .onPageLoad(cisPathFrom(userAnswers), NormalMode)
+          .onPageLoad(userAnswers.urlPath, NormalMode)
       case (Some(_), CheckMode)  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(userAnswers))
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
       case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
@@ -160,14 +159,14 @@ class Navigator @Inject() () {
     (userAnswers.get(SubmitInactivityRequestPage), mode) match {
       case (Some(true), NormalMode)  =>
         controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoad(cisPathFrom(userAnswers), NormalMode)
+          .onPageLoad(userAnswers.urlPath, NormalMode)
       case (Some(true), CheckMode)   =>
         controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoad(cisPathFrom(userAnswers), CheckMode)
+          .onPageLoad(userAnswers.urlPath, CheckMode)
       case (Some(false), NormalMode) =>
-        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(cisPathFrom(userAnswers), NormalMode)
+        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(userAnswers.urlPath, NormalMode)
       case (Some(false), CheckMode)  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(userAnswers))
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
@@ -176,15 +175,15 @@ class Navigator @Inject() () {
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(ConfirmationByEmailPage), mode) match {
       case (Some(true), mode)        =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(mode)
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(userAnswers.urlPath, mode)
       case (Some(false), NormalMode) =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
-          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(userAnswers))
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
         } else {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
       case (Some(false), CheckMode)  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(cisPathFrom(userAnswers))
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 }

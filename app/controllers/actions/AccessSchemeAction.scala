@@ -47,7 +47,7 @@ class AccessSchemeAction @Inject() (
     with I18nSupport
     with Logging
     with FrontendHeaderCarrierProvider {
-  import AccessSchemeAction.*
+  import UserAnswers.WILDCARD
 
   /** @param cisPath
     *   For Agents, this is equal to the CIS ID, allowing them work with multiple clients in different tabs. For
@@ -74,27 +74,22 @@ class AccessSchemeAction @Inject() (
                   logger.info(s"${req.agentInfo} tried to access ${req.uri}.")
                   Future.successful(Left(NotFound(notFoundView())))
               }
-        else if cisPath == WILDCARD then
-          cisTaxpayerService.findBySession.flatMap(cisTaxpayer => buildRequest(cisTaxpayer))
+        else if cisPath == WILDCARD then cisTaxpayerService.findBySession flatMap buildRequest
         else if cisPath.forall(_.isLetterOrDigit) then
           // The alphanumeric check above ensures we only do the string replacement below when no URL encoding is used
-          logger.info(s"Organisation user tried to access ${req.uri}; replacing scheme ID with wildcard.")
+          logger.info(s"Organisation user tried to access ${req.uri}; replacing CIS ID with wildcard.")
           val wildcardUri = req.uri.replace(s"/$cisPath/", s"/$WILDCARD/")
           Future.successful(Left(Redirect(wildcardUri)))
         else
-          logger.info(s"Organisation user tried to access ${req.uri} with invalid scheme ID; returning 404.")
+          logger.info(s"Organisation user tried to access ${req.uri} with invalid CIS ID; returning 404.")
           Future.successful(Left(NotFound(notFoundView())))
 
       private def buildRequest[A](cisTaxpayer: SimpleCisTaxpayer)(using req: IdentifierRequest[A]) =
         reconcileFormPAndRds(cisTaxpayer).flatMap {
           case Some(failureResult) => Future.successful(Left(failureResult))
           case None                =>
-            var userAnswersId = req.userId
-            if cisPath == WILDCARD then userAnswersId += UA_SEP + cisPath
-            for
-              uaOpt <- sessionRepository.get(userAnswersId)
-              ua     = uaOpt getOrElse UserAnswers(userAnswersId)
-            yield Right(new SchemeAccessRequest(cisPath, cisTaxpayer, ua))
+            for ua <- sessionRepository.getOrCreate(req.userId, cisPath)
+            yield Right(new SchemeAccessRequest(cisTaxpayer, ua))
         }
     }
 
@@ -113,10 +108,4 @@ class AccessSchemeAction @Inject() (
           )
           Some(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
-}
-object AccessSchemeAction {
-  private val UA_SEP = "/"
-  val WILDCARD       = "-"
-
-  def cisPathFrom(ua: UserAnswers): String = ua.id split UA_SEP lift 1 getOrElse WILDCARD
 }

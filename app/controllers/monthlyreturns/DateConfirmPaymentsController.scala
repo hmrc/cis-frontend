@@ -108,7 +108,7 @@ class DateConfirmPaymentsController @Inject() (
 
             (for {
               uaWithReturnType <- userAnswers.set(ReturnTypePage, returnType).toFuture
-              isDup            <- monthlyReturnService.isDuplicate(request.cisTaxpayer.id, year, month)
+              isDup            <- monthlyReturnService.isDuplicate(request.cisId, year, month)
               updatedAnswers   <- Future.fromTry(uaWithReturnType.set(DateConfirmPaymentsPage, value))
               _                <- sessionRepository.set(updatedAnswers)
               result           <- if (isDup) {
@@ -118,7 +118,7 @@ class DateConfirmPaymentsController @Inject() (
                                         .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
                                     Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType)))
                                   } else if (isStandard) {
-                                    val createRequest = MonthlyReturnRequest(request.cisTaxpayer.id, year, month)
+                                    val createRequest = MonthlyReturnRequest(request.cisId, year, month)
                                     monthlyReturnService
                                       .createMonthlyReturn(createRequest)
                                       .map { _ =>
@@ -127,7 +127,7 @@ class DateConfirmPaymentsController @Inject() (
                                   } else {
                                     for {
                                       uaWithStatus <-
-                                        monthlyReturnService.createNilMonthlyReturn(request.cisTaxpayer.id, updatedAnswers)
+                                        monthlyReturnService.createNilMonthlyReturn(request.cisId, updatedAnswers)
                                     } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
                                   }
             } yield result).recover { case NonFatal(ex) =>

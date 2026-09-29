@@ -20,8 +20,11 @@ import models.{SimpleCisTaxpayer, UserAnswers}
 import play.api.mvc.WrappedRequest
 
 final class SchemeAccessRequest[B](
-  val cisPath: String,
   val cisTaxpayer: SimpleCisTaxpayer,
   val userAnswers: UserAnswers
 )(using val identifier: IdentifierRequest[B])
-    extends WrappedRequest[B](identifier)
+    extends WrappedRequest[B](identifier) {
+
+  def cisId: String   = cisTaxpayer.id
+  def cisPath: String = userAnswers.urlPath
+}

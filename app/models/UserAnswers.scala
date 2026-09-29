@@ -29,6 +29,9 @@ final case class UserAnswers(
   data: JsObject = Json.obj(),
   lastUpdated: Instant = Instant.now
 ) {
+  import UserAnswers._
+
+  def urlPath: String = id.split(SEP).lift(1) getOrElse WILDCARD
 
   def get[A](page: Gettable[A])(implicit rds: Reads[A]): Option[A] =
     Reads.optionNoError(Reads.at(page.path)).reads(data).getOrElse(None)
@@ -71,28 +74,20 @@ final case class UserAnswers(
 }
 
 object UserAnswers {
+  import play.api.libs.functional.syntax._
 
-  val reads: Reads[UserAnswers] = {
+  private val SEP = "/"
+  val WILDCARD    = "-"
 
-    import play.api.libs.functional.syntax._
+  def getId(userId: String, urlPath: String): String =
+    if urlPath == WILDCARD then userId else s"$userId$SEP$urlPath"
 
-    (
-      (__ \ "_id").read[String] and
-        (__ \ "data").read[JsObject] and
-        (__ \ "lastUpdated").read(MongoJavatimeFormats.instantFormat)
-    )(UserAnswers.apply _)
-  }
+  def fresh(userId: String, urlPath: String): UserAnswers =
+    apply(getId(userId, urlPath))
 
-  val writes: OWrites[UserAnswers] = {
-
-    import play.api.libs.functional.syntax._
-
-    (
-      (__ \ "_id").write[String] and
-        (__ \ "data").write[JsObject] and
-        (__ \ "lastUpdated").write(MongoJavatimeFormats.instantFormat)
-    )(ua => (ua.id, ua.data, ua.lastUpdated))
-  }
-
-  implicit val format: OFormat[UserAnswers] = OFormat(reads, writes)
+  implicit val format: OFormat[UserAnswers] = (
+    (__ \ "_id").format[String] and
+      (__ \ "data").format[JsObject] and
+      (__ \ "lastUpdated").format(MongoJavatimeFormats.instantFormat)
+  )(apply, ua => (ua.id, ua.data, ua.lastUpdated))
 }
