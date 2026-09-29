@@ -760,8 +760,15 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val chrisResp = mkChrisResp(
         status = "DEPARTMENTAL_ERROR",
         ts = "2025-02-02T10:20:30",
-        err = Some(Json.obj("number" -> "123", "type" -> "business", "text" -> "oops")),
-        accepted = Some("2025-02-02T10:20:30")
+        err = Some(
+          Json.obj(
+            "number" -> "123",
+            "type"   -> "business",
+            "text"   -> "oops"
+          )
+        ),
+        accepted = Some("2025-02-02T10:20:30"),
+        govTalkErrorStatus = Some(GovTalkErrorStatus.DepartmentalError("123", "oops"))
       )
 
       service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
@@ -781,7 +788,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.govtalkErrorCode mustBe Some("123")
       upd.govtalkErrorType mustBe Some("business")
       upd.govtalkErrorMessage mustBe Some("oops")
-      upd.govTalkResponse mustBe Some(GovTalkErrorStatus.DepartmentalError("oops"))
+      upd.govTalkResponse mustBe Some(GovTalkErrorStatus.DepartmentalError("123", "oops"))
     }
 
     "prefer a BE-supplied govTalkErrorStatus over local classification" in {
