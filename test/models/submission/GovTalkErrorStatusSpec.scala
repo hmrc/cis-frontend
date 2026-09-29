@@ -42,8 +42,8 @@ class GovTalkErrorStatusSpec extends AnyWordSpec with Matchers {
     }
 
     "round-trip DepartmentalError" in {
-      val model = DepartmentalError("dept text")
-      val json  = Json.parse("""{ "kind": "DepartmentalError", "errorText": "dept text" }""")
+      val model = DepartmentalError("3001", "dept text")
+      val json  = Json.parse("""{ "kind": "DepartmentalError", "errorCode": "3001", "errorText": "dept text" }""")
 
       Json.toJson(model: GovTalkErrorStatus) mustBe json
       json.as[GovTalkErrorStatus] mustBe model

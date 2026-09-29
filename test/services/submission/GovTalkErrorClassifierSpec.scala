@@ -31,11 +31,14 @@ class GovTalkErrorClassifierSpec extends AnyWordSpec with Matchers {
     "classify DEPARTMENTAL_ERROR as DepartmentalError carrying the ChRIS text" in {
       val err = errorJs("3001", "business", "departmental boom")
 
-      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", Some(err)) mustBe DepartmentalError("departmental boom")
+      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", Some(err)) mustBe DepartmentalError(
+        "3001",
+        "departmental boom"
+      )
     }
 
     "classify DEPARTMENTAL_ERROR without an error payload as DepartmentalError with empty text" in {
-      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", None) mustBe DepartmentalError("")
+      GovTalkErrorClassifier.classify("DEPARTMENTAL_ERROR", None) mustBe DepartmentalError("", "")
     }
 
     List("3000", "2005", "1000").foreach { code =>

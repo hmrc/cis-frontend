@@ -781,7 +781,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       upd.govtalkErrorCode mustBe Some("123")
       upd.govtalkErrorType mustBe Some("business")
       upd.govtalkErrorMessage mustBe Some("oops")
-      upd.govTalkResponse mustBe Some(GovTalkErrorStatus.DepartmentalError("oops"))
+      upd.govTalkResponse mustBe Some(GovTalkErrorStatus.DepartmentalError("123", "oops"))
     }
 
     "prefer a BE-supplied govTalkErrorStatus over local classification" in {

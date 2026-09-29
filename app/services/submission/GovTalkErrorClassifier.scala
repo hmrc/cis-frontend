@@ -30,7 +30,7 @@ object GovTalkErrorClassifier {
 
     (status, errorCode) match {
       case ("DEPARTMENTAL_ERROR", _)                                                  =>
-        DepartmentalError(errorText)
+        DepartmentalError(errorCode.getOrElse(""), errorText)
       case ("STARTED" | "FATAL_ERROR", Some(code)) if RecoverableCodes.contains(code) =>
         RecoverableError(code, errorText)
       case ("FATAL_ERROR", Some(code))                                                =>
