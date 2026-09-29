@@ -55,8 +55,7 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
-
-  val form = formProvider()
+  private val form = formProvider()
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
@@ -84,7 +83,7 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
                 _              <- sessionRepository.set(updatedAnswers)
                 deleteRequest  <- toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers))
                 _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
-                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers))
+                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers("-", updatedAnswers))
                 _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
               } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, updatedAnswers))
 

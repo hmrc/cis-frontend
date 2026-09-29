@@ -21,7 +21,7 @@ import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.ConfirmationByEmailPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController

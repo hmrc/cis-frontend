@@ -116,7 +116,7 @@ class CheckYourAnswersController @Inject() (
               )
               Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
             } else {
-              val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
+              val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.cisId, request.userAnswers)
 
               updateRequest match {
                 case Left(error) =>

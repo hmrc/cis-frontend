@@ -38,7 +38,7 @@ class Navigator @Inject() () {
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
       ua => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(ua.urlPath, NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
-      _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+      ua => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(ua.urlPath)
     case (DeclarationPage, _)                        =>
       ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.urlPath)
     case (InactivityWarningPage, _)                  =>
@@ -73,7 +73,7 @@ class Navigator @Inject() () {
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
         } else {
-          controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(userAnswers.urlPath)
         }
     // amend monthly return
     case (AreYouSureYouWantToAmendYesNoPage, _)             =>
@@ -180,7 +180,7 @@ class Navigator @Inject() () {
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
         } else {
-          controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(userAnswers.urlPath)
         }
       case (Some(false), CheckMode)  =>
         controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.urlPath)
