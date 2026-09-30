@@ -402,7 +402,7 @@ monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = xxxxxx
 
 paymentDetails.title = Beth oedd y cyfanswm y gwnaethoch ei dalu i’r is-gontractwr hwn?
 paymentDetails.heading = Beth oedd y cyfanswm y gwnaethoch ei dalu i {0}?
-paymentDetails.hint = Nodwch y swm gros, heb gynnwys TAW nac unrhyw ddidyniadau. Talgrynnwch i lawr i’r bunt agosaf.
+paymentDetails.hint = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.required = Nodwch gyfanswm y taliadau a wnaed
@@ -416,7 +416,7 @@ paymentDetails.change.hidden = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.costOfMaterials.title = Faint wnaeth yr is-gontractwr hwn ei wario ar gostau deunydd?
 monthlyreturns.costOfMaterials.heading = Faint y gwnaeth {0} ei dalu am gost y deunyddiau?
-monthlyreturns.costOfMaterials.hint = Nodwch gyfanswm cost y deunyddiau a dalwyd gan yr is-gontractwr. Talgrynnwch i lawr i’r bunt agosaf.
+monthlyreturns.costOfMaterials.hint = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.required = Nodwch gyfanswm cost y deunyddiau mewn punnoedd, wedi’i dalgrynnu i lawr i’r bunt agosaf

@@ -404,7 +404,7 @@ monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add an
 
 paymentDetails.title = How much did you pay to this subcontractor in total?
 paymentDetails.heading = How much did you pay to {0} in total?
-paymentDetails.hint = Enter the gross amount, excluding VAT and any deductions. Round down to the nearest pound.
+paymentDetails.hint = Enter the gross amount, excluding VAT and any deductions. Use whole pounds only.
 paymentDetails.checkYourAnswersLabel = Payment Details
 paymentDetails.error.nonNumeric = Enter your paymentDetails using numbers and a decimal point
 paymentDetails.error.required = Enter total payments made
@@ -418,7 +418,7 @@ paymentDetails.change.hidden = Payment Details
 
 monthlyreturns.costOfMaterials.title = How much did this subcontractor pay in material costs?
 monthlyreturns.costOfMaterials.heading = How much did {0} pay in material costs?
-monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Round down to the nearest pound.
+monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Use whole pounds only.
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = Cost Of Materials
 monthlyreturns.costOfMaterials.error.nonNumeric = Enter your cost of materials using numbers and a decimal point
 monthlyreturns.costOfMaterials.error.required = Enter your cost of materials
