@@ -156,7 +156,13 @@ class SubmissionService @Inject() (
     val email      = ua.get(EnterYourEmailAddressPage)
     val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
 
-    val resolvedGovTalkStatus = govTalkErrorStatus.getOrElse(GovTalkErrorClassifier.classify(status, error))
+    val errorCode    = error.flatMap(js => (js \ "number").asOpt[String])
+    val errorType    = error.flatMap(js => (js \ "type").asOpt[String])
+    val errorMessage = error.flatMap(js => (js \ "text").asOpt[String])
+
+    val resolvedGovTalkStatus = govTalkErrorStatus.getOrElse(
+      GovTalkErrorClassifier.classify(status, errorCode, errorMessage.getOrElse(""))
+    )
 
     val update = UpdateSubmissionRequest(
       instanceId = instanceId,
@@ -170,9 +176,9 @@ class SubmissionService @Inject() (
       amendment = returnType.amendmentFlag,
       acceptedTime = acceptedTimestamp,
       submissionRequestDate = Some(ukNow),
-      govtalkErrorCode = error.flatMap(js => (js \ "number").asOpt[String]),
-      govtalkErrorType = error.flatMap(js => (js \ "type").asOpt[String]),
-      govtalkErrorMessage = error.flatMap(js => (js \ "text").asOpt[String]),
+      govtalkErrorCode = errorCode,
+      govtalkErrorType = errorType,
+      govtalkErrorMessage = errorMessage,
       govTalkResponse = Some(resolvedGovTalkStatus)
     )
 
