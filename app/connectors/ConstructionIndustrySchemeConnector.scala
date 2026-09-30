@@ -20,7 +20,7 @@ import models.JourneyHandoffResponse
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
 import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalValidationDraftResponse, FinalValidationDraft, UpdateFinalValidationReadinessRequest}
 import models.monthlyreturns.*
-import models.requests.{GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
+import models.requests.{GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
 import models.agent.GetClientListStatusResponse
 import play.api.Logging
@@ -104,6 +104,14 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .post(url"$cisBaseUrl/monthly-returns-edit/")
       .withBody(Json.toJson(monthlyReturnRequest))
+      .execute[GetAllMonthlyReturnDetailsResponse]
+
+  def getMonthlyReturnComplete(
+    request: GetMonthlyReturnCompleteRequest
+  )(implicit hc: HeaderCarrier): Future[GetAllMonthlyReturnDetailsResponse] =
+    http
+      .post(url"$cisBaseUrl/monthly-returns-complete")
+      .withBody(Json.toJson(request))
       .execute[GetAllMonthlyReturnDetailsResponse]
 
   def createNilMonthlyReturn(

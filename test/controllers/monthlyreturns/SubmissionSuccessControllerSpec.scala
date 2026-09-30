@@ -17,12 +17,13 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.ReturnType.MonthlyNilReturn
 import models.ReturnType.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
+import models.amend.AmendmentDetails
+import pages.amend.AmendmentDetailsPage
 import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.GetMonthlyReturnCompleteRequest
 import models.submission.SubmissionDetails
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -162,35 +163,67 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         .success
         .value
 
-      "must return OK and render key fields" in {
+      "must return OK and render key fields using the completed monthly return" in {
         when(mockGuard.check(any())).thenReturn(true)
+
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
+        ).thenReturn(
+          Future.successful(monthlyReturnResponse)
         )
-          .thenReturn(Future.successful(monthlyReturnResponse))
-        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
-          .thenReturn(Future.unit)
+
+        when(
+          mockMonthlyReturnService.completeSubmissionJourney(
+            any[UserAnswers]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.unit)
 
         val app = buildApp(userAnswersWithReturnType)
 
         running(app) {
           val result = route(app, request).value
+
           status(result) mustBe OK
-          val body   = contentAsString(result)
+
+          val body = contentAsString(result)
+
           body must include(periodEnd.format(monthYearFmt))
           body must include(submittedDate)
           body must include(contractorName)
           body must include(employerRef)
           body must include(email)
+
+          verify(mockMonthlyReturnService)
+            .getMonthlyReturnComplete(
+              any[GetMonthlyReturnCompleteRequest]
+            )(
+              any[HeaderCarrier]
+            )
+
+          verify(mockMonthlyReturnService, never())
+            .retrieveMonthlyReturnForEditDetails(any())(any())
+
+          verify(mockMonthlyReturnService)
+            .completeSubmissionJourney(
+              any[UserAnswers]
+            )(
+              any[HeaderCarrier]
+            )
         }
       }
 
       "must not call getSchemeEmail when email is present in user answers" in {
         when(mockGuard.check(any())).thenReturn(true)
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -219,6 +252,119 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
+      "must retrieve the completed monthly return with amendment Y for an amendment journey" in {
+        val amendmentDetails = AmendmentDetails(
+          instanceId = "1",
+          taxYear = periodEnd.getYear,
+          taxMonth = periodEnd.getMonthValue,
+          contractorName = contractorName,
+          originalReturnType = MonthlyStandardReturn,
+          acceptedTime = None
+        )
+
+        val amendedUserAnswers = ua
+          .set(ReturnTypePage, MonthlyAmendedNilReturn)
+          .success
+          .value
+          .set(AmendmentDetailsPage, amendmentDetails)
+          .success
+          .value
+
+        when(mockGuard.check(any())).thenReturn(true)
+
+        when(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(
+          Future.successful(monthlyReturnResponse)
+        )
+
+        when(
+          mockMonthlyReturnService.completeSubmissionJourney(
+            any[UserAnswers]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.unit)
+
+        val app = buildApp(amendedUserAnswers)
+
+        running(app) {
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val requestCaptor =
+            org.mockito.ArgumentCaptor.forClass(
+              classOf[GetMonthlyReturnCompleteRequest]
+            )
+
+          verify(mockMonthlyReturnService)
+            .getMonthlyReturnComplete(
+              requestCaptor.capture()
+            )(
+              any[HeaderCarrier]
+            )
+
+          val capturedRequest = requestCaptor.getValue
+
+          capturedRequest.instanceId mustBe "1"
+          capturedRequest.taxYear mustBe periodEnd.getYear
+          capturedRequest.taxMonth mustBe periodEnd.getMonthValue
+          capturedRequest.amendment mustBe "Y"
+
+          verify(mockMonthlyReturnService, never())
+            .retrieveMonthlyReturnForEditDetails(any())(any())
+        }
+      }
+
+      "must retrieve the completed monthly return with amendment N for a non-amendment journey" in {
+        when(mockGuard.check(any())).thenReturn(true)
+
+        when(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(
+          Future.successful(monthlyReturnResponse)
+        )
+
+        when(
+          mockMonthlyReturnService.completeSubmissionJourney(
+            any[UserAnswers]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.unit)
+
+        val app = buildApp(userAnswersWithReturnType)
+
+        running(app) {
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val requestCaptor =
+            org.mockito.ArgumentCaptor.forClass(
+              classOf[GetMonthlyReturnCompleteRequest]
+            )
+
+          verify(mockMonthlyReturnService)
+            .getMonthlyReturnComplete(
+              requestCaptor.capture()
+            )(
+              any[HeaderCarrier]
+            )
+
+          requestCaptor.getValue.amendment mustBe "N"
+        }
+      }
+
       "must call getSchemeEmail and use returned email when EnterYourEmailAddressPage is missing" in {
         val fallbackEmail  = "fallback@test.com"
         val uaWithoutEmail = userAnswersWithCisId
@@ -242,7 +388,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(fallbackEmail)))
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -270,7 +418,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .value
 
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -311,7 +461,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
           .thenReturn(Future.failed(new RuntimeException("boom")))
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -328,32 +480,40 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must throw if ReturnTypePage is missing" in {
+      "must redirect to JourneyRecovery if ReturnTypePage is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
-        when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
-            any[HeaderCarrier]
-          )
-        )
-          .thenReturn(Future.successful(monthlyReturnResponse))
+
         val app = buildApp(ua)
 
         running(app) {
-          val thrown = intercept[IllegalStateException] {
-            await(route(app, request).get)
-          }
-          thrown.getMessage must include("[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+          val result = route(app, request).value
+
+          status(result) mustBe SEE_OTHER
+
+          redirectLocation(result).value mustBe
+            controllers.routes.JourneyRecoveryController
+              .onPageLoad()
+              .url
+
+          verify(mockMonthlyReturnService, never())
+            .getMonthlyReturnComplete(any())(any())
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any())(any())
         }
       }
 
       "must throw if contractorName is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
+        ).thenReturn(
+          Future.successful(monthlyReturnResponseWithoutContractorName)
         )
-          .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
         val incompleteUa = userAnswersWithCisId
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
@@ -384,7 +544,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       "must throw if employerReference is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -399,14 +561,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must throw if taxPeriodEnd is missing" in {
+      "must redirect to JourneyRecovery if DateConfirmPaymentsPage is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
-        when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
-            any[HeaderCarrier]
-          )
-        )
-          .thenReturn(Future.successful(monthlyReturnResponse))
+
         val incompleteUa = userAnswersWithCisId
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
@@ -414,12 +571,17 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .set(ContractorNamePage, contractorName)
           .success
           .value
-          .set(EnterYourEmailAddressPage, "test@test.com")
+          .set(EnterYourEmailAddressPage, email)
           .success
           .value
           .set(
             SubmissionDetailsPage,
-            SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
+            SubmissionDetails(
+              id = "123",
+              status = "ACCEPTED",
+              irMark = irMarkBase64,
+              submittedAt = LocalDateTime.now
+            )
           )
           .success
           .value
@@ -428,8 +590,19 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
         running(app) {
           val result = route(app, request).value
+
           status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          redirectLocation(result).value mustBe
+            controllers.routes.JourneyRecoveryController
+              .onPageLoad()
+              .url
+
+          verify(mockMonthlyReturnService, never())
+            .getMonthlyReturnComplete(any())(any())
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any())(any())
         }
       }
 
@@ -460,6 +633,37 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
+      "must fail when retrieving the completed monthly return fails" in {
+        when(mockGuard.check(any())).thenReturn(true)
+
+        when(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(
+          Future.failed(
+            new RuntimeException("completed monthly return retrieval failed")
+          )
+        )
+
+        val app = buildApp(userAnswersWithReturnType)
+
+        running(app) {
+          val thrown = intercept[RuntimeException] {
+            await(route(app, request).get)
+          }
+
+          thrown.getMessage must include(
+            "completed monthly return retrieval failed"
+          )
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any())(any())
+        }
+      }
+
       "when SubmissionConfirmationCachePage is present" - {
 
         val cache = SubmissionConfirmationCache(
@@ -485,13 +689,23 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
           running(app) {
             val result = route(app, request).value
+
             status(result) mustBe OK
-            val body   = contentAsString(result)
+
+            val body = contentAsString(result)
+
             body must include(cache.periodEnd)
             body must include(cache.contractorName)
             body must include(cache.email)
-            verify(mockMonthlyReturnService, never()).retrieveMonthlyReturnForEditDetails(any())(any())
-            verify(mockMonthlyReturnService, never()).completeSubmissionJourney(any())(any())
+
+            verify(mockMonthlyReturnService, never())
+              .getMonthlyReturnComplete(any())(any())
+
+            verify(mockMonthlyReturnService, never())
+              .retrieveMonthlyReturnForEditDetails(any())(any())
+
+            verify(mockMonthlyReturnService, never())
+              .completeSubmissionJourney(any())(any())
           }
         }
 
@@ -551,7 +765,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       "must return OK and render key fields using AgentClientData" in {
         when(mockGuard.check(any())).thenReturn(true)
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -584,26 +800,19 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
       "must throw if contractorName is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
+
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
+        ).thenReturn(
+          Future.successful(monthlyReturnResponseWithoutContractorName)
         )
-          .thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
-        val incompleteUa = userAnswersWithCisId
+
+        val incompleteUa = userAnswersWithAgentClientData
           .set(ReturnTypePage, MonthlyNilReturn)
-          .success
-          .value
-          .set(EnterYourEmailAddressPage, email)
-          .success
-          .value
-          .set(DateConfirmPaymentsPage, periodEnd)
-          .success
-          .value
-          .set(
-            SubmissionDetailsPage,
-            SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
-          )
           .success
           .value
 
@@ -613,14 +822,22 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           val thrown = intercept[RuntimeException] {
             await(route(app, request).get)
           }
-          thrown.getMessage must include("[SubmissionSuccess] Scheme name is missing")
+
+          thrown.getMessage must include(
+            "[SubmissionSuccess] Scheme name is missing"
+          )
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any())(any())
         }
       }
 
       "must throw if agent employerReference is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -676,7 +893,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(fallbackEmail)))
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )
@@ -704,7 +923,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .value
 
         when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
             any[HeaderCarrier]
           )
         )

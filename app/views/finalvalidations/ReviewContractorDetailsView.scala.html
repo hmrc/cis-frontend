@@ -35,21 +35,39 @@
     @govukTaskList(TaskList(
         items = Seq(
             TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("finalvalidations.reviewContractorDetails.tasklist.schemeName"))),
+                title = TaskListItemTitle(content = HtmlContent(
+                        s"""<span class="govuk-visually-hidden">${HtmlFormat.escape(
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review"))
+                            }</span>
+                            <span>${HtmlFormat.escape(
+                                messages("finalvalidations.reviewContractorDetails.tasklist.schemeName"))
+                            }</span>""".stripMargin)),
                 href = Some("#"),
                 status = TaskListItemStatus(
                     tag = Some(Tag(content = Text(messages("finalValidations.reviewContractorDetails.taskList.status.incomplete"))))
                 )
             ),
             TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("finalvalidations.reviewContractorDetails.tasklist.utr"))),
+                title = TaskListItemTitle(content = HtmlContent(
+                        s"""<span class="govuk-visually-hidden">${HtmlFormat.escape(
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review"))
+                            }</span>
+                            <span>${HtmlFormat.escape(
+                                messages("finalvalidations.reviewContractorDetails.tasklist.utr"))
+                            }</span>""".stripMargin)),
                 href = Some("#"),
                 status = TaskListItemStatus(
                     tag = Some(Tag(content = Text(messages("finalValidations.reviewContractorDetails.taskList.status.incomplete"))))
                 )
             ),
             TaskListItem(
-                title = TaskListItemTitle(content = Text(messages("finalvalidations.reviewContractorDetails.tasklist.emailAddress"))),
+                title = TaskListItemTitle(content = HtmlContent(
+                        s"""<span class="govuk-visually-hidden">${HtmlFormat.escape(
+                            messages("finalvalidations.reviewContractorDetails.tasklist.hidden.review"))
+                            }</span>
+                            <span>${HtmlFormat.escape(
+                                messages("finalvalidations.reviewContractorDetails.tasklist.emailAddress"))
+                            }</span>""".stripMargin)),
                 href = Some("#"),
                 status = TaskListItemStatus(
                     tag = Some(Tag(content = Text(messages("finalValidations.reviewContractorDetails.taskList.status.incomplete"))))

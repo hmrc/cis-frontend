@@ -18,19 +18,15 @@ package services.submission
 
 import models.submission.GovTalkErrorStatus
 import models.submission.GovTalkErrorStatus.*
-import play.api.libs.json.JsValue
 
 object GovTalkErrorClassifier {
 
   private val RecoverableCodes = Set("3000", "2005", "1000")
 
-  def classify(status: String, error: Option[JsValue]): GovTalkErrorStatus = {
-    val errorCode = error.flatMap(js => (js \ "number").asOpt[String])
-    val errorText = error.flatMap(js => (js \ "text").asOpt[String]).getOrElse("")
-
+  def classify(status: String, errorCode: Option[String], errorText: String): GovTalkErrorStatus =
     (status, errorCode) match {
-      case ("DEPARTMENTAL_ERROR", _)                                                  =>
-        DepartmentalError(errorText)
+      case ("DEPARTMENTAL_ERROR", code)                                               =>
+        DepartmentalError(code.getOrElse(""), errorText)
       case ("STARTED" | "FATAL_ERROR", Some(code)) if RecoverableCodes.contains(code) =>
         RecoverableError(code, errorText)
       case ("FATAL_ERROR", Some(code))                                                =>
@@ -38,5 +34,4 @@ object GovTalkErrorClassifier {
       case _                                                                          =>
         OtherStatus
     }
-  }
 }

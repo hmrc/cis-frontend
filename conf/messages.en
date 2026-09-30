@@ -60,35 +60,37 @@ journeyRecovery.startAgain.guidance.contactHMRC.suffix = for more help.
 journeyRecovery.startAgain.guidance.cisAccount.prefix = Back to
 journeyRecovery.startAgain.guidance.cisAccount.link = Manage your CIS account
 
+
 signedOut.title = For your security, we signed you out
 signedOut.heading = For your security, we signed you out
 signedOut.guidance = We did not save your answers.
 
-unauthorised.title = You can’t access this service with this account
-unauthorised.heading = You can’t access this service with this account
+unauthorised.title                       =  Sorry, you are unable to use this service
+unauthorised.heading                     =  Sorry, you are unable to use this service
+unauthorised.guidance.p1                 =  To use this service, you will need to:
+unauthorised.guidance.org.p1.prefix      =  register with the
+unauthorised.guidance.org.p1.link        =  Construction Industry Scheme
+unauthorised.guidance.org.p1.suffix      =  if you are a contractor or subcontractor
+unauthorised.guidance.agent.p2.prefix    =  get access to
+unauthorised.guidance.agent.p2.link      =  PAYE for Agents
+unauthorised.guidance.agent.p2.suffix    =  if you are an agent
 
-unauthorised.guidance.org.p1.prefix = If you are a contractor or subcontractor, you will need to register with
-unauthorised.guidance.org.p1.link = Construction Industry Scheme
-unauthorised.guidance.org.p1.suffix = to access this service.
-unauthorised.guidance.agent.p2.prefix = If you are an agent, you will need to request access to
-unauthorised.guidance.agent.p2.link = PAYE for Agents
-unauthorised.guidance.agent.p2.suffix = to use this service.
+unauthorised.org.title                   =  Sorry, you are unable to use this service
+unauthorised.org.heading                 =  Sorry, you are unable to use this service
+unauthorised.org.guidance.p2.prefix      =  You need to register this account with the
+unauthorised.org.guidance.p2.link        =  Construction Industry Scheme
+unauthorised.org.guidance.p2.suffix      =  before you can use this service.
 
-unauthorised.org.title = You need to register to use this service
-unauthorised.org.heading = You need to register to use this service
-unauthorised.org.p1 = You are signed in with an organisation account.
-unauthorised.org.guidance.p2.prefix = Register with the
-unauthorised.org.guidance.p2.link = Construction Industry Scheme
-unauthorised.org.guidance.p2.suffix = to access this service.
+unauthorised.org.standard.title          =  Sorry, you are unable to use this service
+unauthorised.org.standard.heading        =  Sorry, you are unable to use this service
+unauthorised.org.standard.p1             =  Only users with an organisation or agent account can use this service.
+unauthorised.org.standard.guidance.link  =  More information about the Construction Industry Scheme (CIS)
 
-unauthorised.org.standard.title = Sorry, you are unable to use this service
-unauthorised.org.standard.heading = Sorry, you are unable to use this service
-unauthorised.org.standard.paragraph = Return to
-unauthorised.org.standard.guidance.link = Construction Industry Scheme
-
-unauthorised.individual.title = Sorry, you are unable to use this service
-unauthorised.individual.heading = Sorry, you are unable to use this service
-unauthorised.individual.p1 = You are signed in with an individual account. Only users with an organisation or agent services accounts can use this service.
+unauthorised.individual.title            =  Sorry, you are unable to use this service
+unauthorised.individual.heading          =  Sorry, you are unable to use this service
+unauthorised.individual.p1               =  You are signed in with an individual account.
+unauthorised.individual.p2               =  Only users with an organisation or agent account can use this service.
+unauthorised.individual.link             =  More information about the Construction Industry Scheme (CIS)
 
 unauthorised.agent.title = Sorry, you are unable to use this service
 unauthorised.agent.heading = Sorry, you are unable to use this service
@@ -268,7 +270,7 @@ monthlyreturns.alreadySubmitted.heading    = You have already submitted your mon
 monthlyreturns.alreadySubmitted.nilreturn.title      = You have already submitted your monthly nil return
 monthlyreturns.alreadySubmitted.nilreturn.heading    = You have already submitted your monthly nil return
 monthlyreturns.alreadySubmitted.paragraph  = View and manage your monthly returns in your
-monthlyreturns.alreadySubmitted.link       = Construction Industry Scheme account.
+monthlyreturns.alreadySubmitted.link       = Construction Industry Scheme account
 
 pageNotFound.title      = Page not found
 pageNotFound.heading    = Page not found
@@ -278,9 +280,10 @@ pageNotFound.p3         = If the web address is correct or you selected a link o
 pageNotFound.link       = HMRC Online Services Helpdesk
 pageNotFound.p4         = if you need to speak to someone.
 
-accessDenied.title      = Sorry, there is a problem with the service
-accessDenied.heading    = Sorry, there is a problem with the service
-accessDenied.link       = Return to the Construction Industry Scheme start page.
+accessDenied.title                       =  Sorry, you are unable to use this service
+accessDenied.heading                     =  Sorry, you are unable to use this service
+accessDenied.paragraph                   =  Only users with an organisation or agent account can use this service.
+accessDenied.link                        =  More information about the Construction Industry Scheme (CIS)
 
 systemError.title       = Sorry, there is a problem with this service
 systemError.heading     = Sorry, there is a problem with this service
@@ -340,7 +343,6 @@ monthlyreturns.dateConfirmPayments.WarningIcon = Warning
 monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
 monthlyreturns.dateConfirmPayments.p1.prefix = 	You cannot change a return period after you have started. You must
 monthlyreturns.dateConfirmPayments.p1.link = delete the existing return
-monthlyreturns.dateConfirmPayments.p1.suffix = before you start a new return for the same period.
 monthlyreturns.dateConfirmPayments.legendText = Enter month and year
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmPayments.change.hidden = which tax month and year are you filing a return for
@@ -656,6 +658,7 @@ finalValidations.addUtrYesNo.error.required = Select yes to enter the contractor
 finalvalidations.reviewContractorDetails.title = Review contractor details
 finalvalidations.reviewContractorDetails.heading = Review contractor details
 finalvalidations.reviewContractorDetails.p = You cannot file a return at the moment. You need to review the contractor details.
+finalvalidations.reviewContractorDetails.tasklist.hidden.review = Review
 finalvalidations.reviewContractorDetails.tasklist.schemeName = Scheme name
 finalvalidations.reviewContractorDetails.tasklist.utr = Unique Taxpayer Reference
 finalvalidations.reviewContractorDetails.tasklist.emailAddress = Email address
@@ -663,7 +666,6 @@ finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = File a return
 finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Cannot start yet
 finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to manage your CIS account
-finalvalidations.reviewContractorDetails.tasklist.review = Review
 
 agent.agentLostAccess.title                            =  Sorry, you are unable to use this service
 agent.agentLostAccess.heading                          =  Sorry, you are unable to use this service

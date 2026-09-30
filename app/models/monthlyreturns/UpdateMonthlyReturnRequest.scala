@@ -88,6 +88,7 @@ object UpdateMonthlyReturnRequest {
         amendment = returnType.amendmentFlag,
         decInformationCorrect = decInformationCorrect,
         nilReturnIndicator = nilIndicator(returnType),
+        decNoMoreSubPayments = inactivityY(ua),
         status = "STARTED",
         version = None
       )
@@ -96,13 +97,12 @@ object UpdateMonthlyReturnRequest {
         case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
           base.copy(
             decEmpStatusConsidered = ua.get(EmploymentStatusDeclarationPage).map(toYN),
-            decAllSubsVerified = ua.get(VerifiedStatusDeclarationPage).map(toYN),
-            decNoMoreSubPayments = inactivityY(ua)
+            decAllSubsVerified = ua.get(VerifiedStatusDeclarationPage).map(toYN)
           )
 
         case MonthlyNilReturn | MonthlyAmendedNilReturn =>
           base.copy(
-            decNilReturnNoPayments = inactivityY(ua)
+            decNilReturnNoPayments = decInformationCorrect
           )
       }
     }
