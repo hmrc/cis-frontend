@@ -315,10 +315,11 @@ fileYourMonthlyCisReturn.heading = Cyflwyno’ch Datganiad CIS misol
 fileYourMonthlyCisReturn.p1 = Defnyddiwch y gwasanaeth hwn i gyflwyno’ch datganiad misol ar gyfer y Cynllun y Diwydiant Adeiladu (CIS).
 fileYourMonthlyCisReturn.p2 = Bydd angen i chi nodi’r mis treth a’r flwyddyn dreth ar y datganiad.
 
-fileYourNilReturn.title = Cyflwyno’ch datganiad ‘dim’
-fileYourNilReturn.heading = Cyflwyno’ch datganiad ‘dim’
-fileYourNilReturn.p1 = Defnyddiwch y gwasanaeth hwn i gadarnhau nad ydych wedi talu unrhyw is-gontractwyr yn ystod mis treth.
-fileYourNilReturn.p2 = Gallwch hefyd gyflwyno cais anactifedd.
+fileYourNilReturn.title = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.heading = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p1 = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p2 = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p3 = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.dateConfirmPayments.title = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.heading = xxxxxxxxxxxxxxxxxxxx
