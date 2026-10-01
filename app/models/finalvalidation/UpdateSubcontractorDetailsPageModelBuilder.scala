@@ -672,30 +672,27 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
     )(result)
   }
 
-  def displayName(
-    subcontractor: FinalValidationDraftSubcontractor
-  )(implicit messages: Messages): String = {
-
+  def resolvedName(subcontractor: FinalValidationDraftSubcontractor): String = {
     val details = subcontractor.proposed
 
-    val currentDisplayName =
+    val proposedName =
       subcontractorType(subcontractor) match {
-        case SoleTrader =>
-          soleTraderName(details)
-
-        case Company =>
-          details.tradingName
-
-        case Trust =>
-          details.tradingName
-
-        case Partnership =>
-          details.partnershipTradingName
+        case SoleTrader  => soleTraderName(details)
+        case Company     => details.tradingName
+        case Trust       => details.tradingName
+        case Partnership => details.partnershipTradingName
       }
 
-    currentDisplayName
+    proposedName
       .map(_.trim)
       .filter(_.nonEmpty)
-      .getOrElse(messages("finalvalidations.updateSubcontractorDetails.noNameProvided"))
+      .getOrElse(subcontractor.displayName)
   }
+
+  def displayName(
+    subcontractor: FinalValidationDraftSubcontractor
+  )(implicit messages: Messages): String =
+    Option(resolvedName(subcontractor))
+      .filter(_.nonEmpty)
+      .getOrElse(messages("finalvalidations.updateSubcontractorDetails.noNameProvided"))
 }

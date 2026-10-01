@@ -514,7 +514,7 @@ class UpdateSubcontractorDetailsPageModelBuilderSpec extends SpecBase {
       builder.displayName(subbie) mustBe "Alice"
     }
 
-    "must use no name provided as the display name when the proposed name is missing" in {
+    "must fall back to the backend display name when proposed name is missing" in {
 
       given Messages = messages(app)
 
@@ -527,6 +527,24 @@ class UpdateSubcontractorDetailsPageModelBuilderSpec extends SpecBase {
           subcontractorType = "company"
         ).copy(
           displayName = "Old Company Name"
+        )
+
+      builder.displayName(subbie) mustBe "Old Company Name"
+    }
+
+    "must use no name provided as the display name when both proposed and backend names are missing" in {
+
+      given Messages = messages(app)
+
+      val subbie =
+        subcontractor(
+          proposed = FinalValidationSubcontractorDetails(
+            tradingName = None
+          ),
+          issues = Seq.empty,
+          subcontractorType = "company"
+        ).copy(
+          displayName = ""
         )
 
       builder.displayName(subbie) mustBe
