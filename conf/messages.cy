@@ -600,6 +600,7 @@ finalvalidations.updateSubcontractorDetails.phoneNumber = Rhif ffôn
 finalvalidations.updateSubcontractorDetails.mobilePhoneNumber = Rhif ffôn symudol
 finalvalidations.updateSubcontractorDetails.addWorksReferenceNumber = Ychwanegu cyfeirnod y gwaith?
 finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Cyfeirnod y gwaith
+finalvalidations.updateSubcontractorDetails.noNameProvided = xxxxxxxxxxxxxxxxxxxx
 
 # Sole trader
 finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Enw’r is-gontractwr
