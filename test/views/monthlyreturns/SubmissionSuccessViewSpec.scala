@@ -37,6 +37,11 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
 
+      val recruitmentBanner = doc.select(".hmrc-user-research-banner")
+
+      recruitmentBanner.text() must include(messages("recruitmentBanner.title"))
+      recruitmentBanner.text() must include(messages("recruitmentBanner.link.text"))
+
       doc.select(".govuk-panel__title").text must include(
         messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)
       )
@@ -120,6 +125,11 @@ class SubmissionSuccessViewSpec extends SpecBase {
       val doc: Document = Jsoup.parse(html.toString)
 
       doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
+
+      val recruitmentBanner = doc.select(".hmrc-user-research-banner")
+
+      recruitmentBanner.text() must include(messages("recruitmentBanner.title"))
+      recruitmentBanner.text() must include(messages("recruitmentBanner.link.text"))
 
       doc.select(".govuk-panel__title").text must include(
         messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)

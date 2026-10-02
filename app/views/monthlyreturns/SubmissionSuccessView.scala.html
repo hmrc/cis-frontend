@@ -45,6 +45,19 @@
     showBackLink = false
 ) {
 
+    <div class="hmrc-user-research-banner" data-module="hmrc-user-research-banner">
+        <div class="hmrc-user-research-banner__container govuk-width-container">
+            <div class="hmrc-user-research-banner__text">
+                <h2 class="govuk-heading-s hmrc-user-research-banner__title">
+                    @messages("recruitmentBanner.title")
+                </h2>
+                <a class="govuk-link hmrc-user-research-banner__link" rel="noopener noreferrer" href="https://survey.take-part-in-research.service.gov.uk/jfe/form/SV_74GjifgnGv6GsMC?Source=BannerList_HMRC_DASS_CIS" target="_blank">
+                    @messages("recruitmentBanner.link.text")
+                </a>
+            </div>
+        </div>
+    </div>
+
     @govukPanel(
         Panel(
             title   = Text(messages("monthlyreturns.submissionSuccess.heading", messages(s"monthlyreturns.returnType.${vm.submissionType.toString}"))),
