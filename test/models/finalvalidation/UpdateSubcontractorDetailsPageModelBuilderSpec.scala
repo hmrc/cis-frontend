@@ -496,6 +496,24 @@ class UpdateSubcontractorDetailsPageModelBuilderSpec extends SpecBase {
         "Unknown Final Validation field key: unknown"
     }
 
+    "must use the proposed sole trader trading name as the display name when personal name is missing" in {
+
+      given Messages = messages(app)
+
+      val subbie =
+        subcontractor(
+          proposed = FinalValidationSubcontractorDetails(
+            tradingName = Some("Smith Trading")
+          ),
+          issues = Seq.empty,
+          subcontractorType = "soletrader"
+        ).copy(
+          displayName = "No name provided"
+        )
+
+      builder.displayName(subbie) mustBe "Smith Trading"
+    }
+
     "must use the proposed partnership name as the display name" in {
 
       given Messages = messages(app)
