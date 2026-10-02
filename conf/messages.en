@@ -678,3 +678,6 @@ agent.agentLostAccess.bullet.item.2.link               =  form 64—8
 agent.agentLostAccess.bullet.item.2.suffix             =  to authorise you by post
 agent.agentLostAccess.p2                               =  It can take up to 5 working days for new authorisations to appear in your account.
 agent.agentLostAccess.return.link                      =  Return to client list
+
+recruitmentBanner.title = You may receive a voucher for feedback
+recruitmentBanner.link.text = Join our research panel (opens in new tab)
