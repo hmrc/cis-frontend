@@ -37,10 +37,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
 
-      val researchBanner = doc.select(".hmrc-user-research-banner")
+      val recruitmentBanner = doc.select(".hmrc-user-research-banner")
 
-      researchBanner.text() must include(messages("recruitmentBanner.title"))
-      researchBanner.text() must include(messages("recruitmentBanner.link.text"))
+      recruitmentBanner.text() must include(messages("recruitmentBanner.title"))
+      recruitmentBanner.text() must include(messages("recruitmentBanner.link.text"))
 
       doc.select(".govuk-panel__title").text must include(
         messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)
@@ -126,10 +126,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
 
-      val researchBanner = doc.select(".hmrc-user-research-banner")
+      val recruitmentBanner = doc.select(".hmrc-user-research-banner")
 
-      researchBanner.text() must include(messages("recruitmentBanner.title"))
-      researchBanner.text() must include(messages("recruitmentBanner.link.text"))
+      recruitmentBanner.text() must include(messages("recruitmentBanner.title"))
+      recruitmentBanner.text() must include(messages("recruitmentBanner.link.text"))
 
       doc.select(".govuk-panel__title").text must include(
         messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)
