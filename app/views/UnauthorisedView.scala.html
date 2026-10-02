@@ -28,8 +28,7 @@
 @()(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
-    pageTitle = titleNoForm(messages("unauthorised.title")),
-    timeout   = false
+    pageTitle = titleNoForm(messages("unauthorised.title"))
 ) {
 
     @heading("unauthorised.heading", classes = "govuk-heading-xl")
