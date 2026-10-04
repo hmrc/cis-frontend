@@ -128,11 +128,10 @@ class MonthlyReturnService @Inject() (
       case None          => None
     }
 
-  def createNilMonthlyReturn(userAnswers: UserAnswers)(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+  def createNilMonthlyReturn(cisId: String, userAnswers: UserAnswers)(using HeaderCarrier): Future[UserAnswers] = {
     logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")
 
     for {
-      cisId         <- getCisId(userAnswers)
       year          <- getTaxYear(userAnswers)
       month         <- getTaxMonth(userAnswers)
       infoCorrect   <- getInfoCorrectOrDefault(userAnswers)
@@ -595,12 +594,6 @@ class MonthlyReturnService @Inject() (
       Some(false)
     } else {
       None
-    }
-
-  private def getCisId(ua: UserAnswers): Future[String] =
-    ua.get(CisIdPage) match {
-      case Some(id) => Future.successful(id)
-      case None     => Future.failed(new RuntimeException("CIS ID not found in session data"))
     }
 
   private def getTaxYear(ua: UserAnswers): Future[Int] =

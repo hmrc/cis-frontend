@@ -23,8 +23,9 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.WhatDoYouWantToAmendNil
 import models.amend.WhatDoYouWantToAmendNil.{AddPaymentOrSubcontractorDetails, AmendNilReturn}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
+import models.requests.CisPath.{CisId, CisOrg}
 import pages.amend.WhatDoYouWantToAmendNilPage
-import pages.monthlyreturns.ReturnTypePage
+import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -109,15 +110,18 @@ class WhatDoYouWantToAmendNilController @Inject() (
                                          ua3.set(ReturnTypePage, MonthlyAmendedNilReturn)
                                        )
                       _             <- sessionRepository.set(ua4)
+                      cisId         <- Future(request.userAnswers.get(CisIdPage).get)
+                      cisPath        = if request.isAgent then CisId(cisId) else CisOrg
                       updateRequest <- UpdateMonthlyReturnRequest
-                                         .fromUserAnswers(ua4)
+                                         .fromUserAnswers(cisId, ua4)
                                          .fold(
                                            error => Future.failed(new RuntimeException(error)),
                                            request => Future.successful(request)
                                          )
                       _             <- monthlyReturnService.updateMonthlyReturn(updateRequest)
                     } yield Redirect(
-                      controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+                      controllers.monthlyreturns.routes.SubmitInactivityRequestController
+                        .onPageLoad(cisPath, NormalMode)
                     )
                 }
             } yield result

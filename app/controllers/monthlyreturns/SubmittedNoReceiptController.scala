@@ -23,12 +23,11 @@ import models.UserAnswers
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
 import pages.monthlyreturns.*
-import play.api.i18n.{I18nSupport, Lang, MessagesApi}
+import play.api.i18n.{I18nSupport, Lang}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.DateTimeFormats
 import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
 import views.html.monthlyreturns.SubmittedNoReceiptView
@@ -39,7 +38,6 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SubmittedNoReceiptController @Inject() (
-  override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -55,8 +53,6 @@ class SubmittedNoReceiptController @Inject() (
 
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      implicit val hc: HeaderCarrier =
-        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       val ua = request.userAnswers
 
@@ -65,7 +61,7 @@ class SubmittedNoReceiptController @Inject() (
           Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
 
         case None =>
-          val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+          val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(request.cisId, ua)
 
           monthlyReturnForEditRequest match {
             case Left(error) =>

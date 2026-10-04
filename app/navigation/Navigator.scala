@@ -36,13 +36,14 @@ class Navigator @Inject() () {
 
     // nil return
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
-      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+      ua =>
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(ua.journey.cisPath, NormalMode)
     case (ConfirmEmailAddressPage, _)                =>
-      _ => controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+      ua => controllers.monthlyreturns.routes.DeclarationController.onPageLoad(ua.journey.cisPath)
     case (DeclarationPage, _)                        =>
-      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
     case (InactivityWarningPage, _)                  =>
-      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
 
     // monthly return
     case (VerifySubcontractorsPage, _)                      =>
@@ -71,22 +72,23 @@ class Navigator @Inject() () {
     case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
-          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
         } else {
-          controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(userAnswers.journey.cisPath)
         }
     // amend monthly return
     case (AreYouSureYouWantToAmendYesNoPage, _)             =>
       userAnswers =>
         userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
           case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
-            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController
+              .onPageLoad(userAnswers.journey.cisPath, NormalMode)
           case _                                                         =>
             controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
         }
     case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
@@ -105,11 +107,11 @@ class Navigator @Inject() () {
     case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(CheckMode)(userAnswers)
     case (EnterYourEmailAddressPage, _)                     =>
-      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
     // amend monthly return
     case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
-    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
   }
 
   def nextPage(page: Page, mode: Mode, userAnswers: UserAnswers): Call = {
@@ -137,7 +139,8 @@ class Navigator @Inject() () {
     (userAnswers.get(EmploymentStatusDeclarationPage), mode) match {
       case (Some(_), NormalMode) =>
         controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
-      case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (Some(_), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
       case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
@@ -146,22 +149,26 @@ class Navigator @Inject() () {
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(VerifiedStatusDeclarationPage), mode) match {
       case (Some(_), NormalMode) =>
-        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
-      case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController
+          .onPageLoad(userAnswers.journey.cisPath, NormalMode)
+      case (Some(_), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
       case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
-  private def navigatorFromSubmitInactivityRequestPage(
-    mode: Mode
-  )(userAnswers: UserAnswers): Call =
+  private def navigatorFromSubmitInactivityRequestPage(mode: Mode)(userAnswers: UserAnswers): Call =
     (userAnswers.get(SubmitInactivityRequestPage), mode) match {
       case (Some(true), NormalMode)  =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode)
+        controllers.monthlyreturns.routes.InactivityRequestWarningController
+          .onPageLoad(userAnswers.journey.cisPath, NormalMode)
       case (Some(true), CheckMode)   =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
+        controllers.monthlyreturns.routes.InactivityRequestWarningController
+          .onPageLoad(userAnswers.journey.cisPath, CheckMode)
       case (Some(false), NormalMode) =>
-        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
-      case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        controllers.monthlyreturns.routes.ConfirmationByEmailController
+          .onPageLoad(userAnswers.journey.cisPath, NormalMode)
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
@@ -170,14 +177,15 @@ class Navigator @Inject() () {
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(ConfirmationByEmailPage), mode) match {
       case (Some(true), mode)        =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(mode)
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(userAnswers.journey.cisPath, mode)
       case (Some(false), NormalMode) =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
-          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
         } else {
-          controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+          controllers.monthlyreturns.routes.DeclarationController.onPageLoad(userAnswers.journey.cisPath)
         }
-      case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
       case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 }

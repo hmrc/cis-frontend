@@ -18,24 +18,23 @@ package services.submission
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
+import models.UserAnswers
 import models.monthlyreturns.CisTaxpayer
 import models.requests.*
 import models.submission.*
-import models.UserAnswers
-import pages.agent.AgentClientDataPage
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import pages.submission.*
 import play.api.Logging
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
-import play.api.mvc.AnyContent
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendHeaderCarrierProvider
 import utils.DateTimeFormats
 import utils.TypeUtils.*
 
-import java.time.{Clock, Instant, LocalDateTime, YearMonth, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.*
 import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,25 +48,26 @@ class SubmissionService @Inject() (
   chrisRequestBuilder: ChrisSubmissionRequestBuilder,
   clock: Clock
 )(implicit ec: ExecutionContext)
-    extends Logging {
+    extends Logging
+    with FrontendHeaderCarrierProvider {
 
   private val ukZone: ZoneId = ZoneId.of("Europe/London")
 
-  def getOrCreateSubmissionForChris(
-    ua: UserAnswers
-  )(implicit hc: HeaderCarrier): Future[(String, UserAnswers, Boolean)] =
+  def getOrCreateSubmissionForChris(cisId: String, ua: UserAnswers)(using
+    HeaderCarrier
+  ): Future[(String, UserAnswers, Boolean)] =
     ua.get(ResubmissionIdPage) match {
       case Some(resubmissionId) =>
         Future.successful((resubmissionId.toString, ua, true))
       case None                 =>
-        create(ua).map { case (created, updatedUa) =>
+        create(cisId, ua).map { case (created, updatedUa) =>
           (created.submissionId, updatedUa, false)
         }
     }
 
-  def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
+  def create(cisId: String, ua: UserAnswers)(using HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
-      req            <- buildCreateRequest(ua)
+      req            <- buildCreateRequest(cisId, ua)
       response       <- cisConnector.createSubmission(req)
       updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
       _              <- sessionRepository.set(updatedAnswers)
@@ -75,53 +75,35 @@ class SubmissionService @Inject() (
 
   def submitToChrisAndPersist(
     submissionId: String,
+    cisTaxpayer: CisTaxpayer,
     ua: UserAnswers,
     isAgent: Boolean,
     isResubmission: Boolean
   )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] =
 
-    val taxpayerFut: Future[CisTaxpayer] =
-      if (isAgent)
-        ua.get(AgentClientDataPage) match {
-          case Some(agentClientData) =>
-            cisConnector.getAgentClientTaxpayer(
-              agentClientData.taxOfficeNumber,
-              agentClientData.taxOfficeReference
-            )
-          case None                  =>
-            Future.failed(new RuntimeException("Agent client data missing"))
-        }
-      else
-        cisConnector.getCisTaxpayer()
-
     val requiredAnswers = for {
-      cisId      <- ua.get(CisIdPage)
       taxDate    <- ua.get(DateConfirmPaymentsPage)
       isAmendment = ua.get(AmendmentDetailsPage).isDefined
-    } yield (cisId, taxDate.getMonthValue, taxDate.getYear, isAmendment)
+    } yield (taxDate.getMonthValue, taxDate.getYear, isAmendment)
 
     for {
-      taxpayer                                <- taxpayerFut
-      (cisId, taxMonth, taxYear, isAmendment) <-
-        requiredAnswers.fold(
-          Future.failed[(String, Int, Int, Boolean)](
-            new RuntimeException("Month and year of return missing")
-          )
-        )(Future.successful)
-      monthlyReturn                           <- cisConnector.retrieveMonthlyReturnForEditDetails(
-                                                   GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment)
-                                                 )
-      csr                                      = chrisRequestBuilder.build(ua, taxpayer, isAgent, monthlyReturn, isResubmission)
-      response                                <- cisConnector.submitToChris(submissionId, csr)
-      amendment                                = monthlyReturn.monthlyReturn.headOption.flatMap(_.amendment)
-      _                                       <- writeToFeMongo(ua, submissionId, response, amendment)
+      (taxMonth, taxYear, isAmendment) <- requiredAnswers.fold(
+                                            Future.failed[(Int, Int, Boolean)](
+                                              new RuntimeException("Month and year of return missing")
+                                            )
+                                          )(Future.successful)
+      monthlyReturn                    <- cisConnector.retrieveMonthlyReturnForEditDetails(
+                                            GetMonthlyReturnForEditRequest(cisTaxpayer.uniqueId, taxMonth, taxYear, isAmendment)
+                                          )
+      csr                               = chrisRequestBuilder.build(ua, cisTaxpayer, isAgent, monthlyReturn, isResubmission)
+      response                         <- cisConnector.submitToChris(submissionId, csr)
+      amendment                         = monthlyReturn.monthlyReturn.headOption.flatMap(_.amendment)
+      _                                <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
-  def updateSubmissionFromChrisResponse(
-    submissionId: String,
-    ua: UserAnswers,
-    chrisResp: ChrisSubmissionResponse
-  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = updateSubmission(
+  def updateSubmissionFromChrisResponse(submissionId: String, ua: UserAnswers, chrisResp: ChrisSubmissionResponse)(using
+    SchemeRequest[?]
+  ): Future[Unit] = updateSubmission(
     submissionId,
     ua,
     chrisResp.hmrcMarkGenerated,
@@ -141,7 +123,7 @@ class SubmissionService @Inject() (
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None,
     govTalkErrorStatus: Option[GovTalkErrorStatus] = None
-  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  )(using req: SchemeRequest[?]): Future[Unit] = {
     val ukNow = ukLocalDateTimeNow
 
     val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
@@ -151,7 +133,6 @@ class SubmissionService @Inject() (
         .toString
     }
 
-    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
     val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
@@ -159,11 +140,11 @@ class SubmissionService @Inject() (
     val resolvedGovTalkStatus = govTalkErrorStatus.getOrElse(GovTalkErrorClassifier.classify(status, error))
 
     val update = UpdateSubmissionRequest(
-      instanceId = instanceId,
+      instanceId = req.cisId,
       hmrcMarkGenerated = Some(hmrcMarkGenerated),
       hmrcMarkGgis = irMarkReceived,
       emailRecipient = email,
-      agentId = req.agentReference,
+      agentId = req.identifier.agentReference,
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
@@ -184,9 +165,7 @@ class SubmissionService @Inject() (
   def getPollInterval(userAnswers: UserAnswers): Int =
     userAnswers.get(PollIntervalPage).getOrElse(appConfig.submissionPollDefaultIntervalSeconds)
 
-  def checkAndUpdateSubmissionStatusIfAllowed(
-    userAnswers: UserAnswers
-  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[PollDecision] =
+  def checkAndUpdateSubmissionStatusIfAllowed(userAnswers: UserAnswers)(using SchemeRequest[?]): Future[PollDecision] =
     userAnswers.get(LastMessageDatePage) match {
       case Some(receivedAt) =>
         val pollInterval      = getPollInterval(userAnswers)
@@ -203,9 +182,7 @@ class SubmissionService @Inject() (
         checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
     }
 
-  def checkAndUpdateSubmissionStatus(
-    userAnswers: UserAnswers
-  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[String] = {
+  def checkAndUpdateSubmissionStatus(userAnswers: UserAnswers)(using SchemeRequest[?]): Future[String] = {
     val timeout = appConfig.submissionPollTimeoutSeconds
 
     userAnswers.get(SubmissionDetailsPage) match {
@@ -319,15 +296,14 @@ class SubmissionService @Inject() (
 
   // UserAnswer helpers
 
-  private def buildCreateRequest(ua: UserAnswers): Future[CreateSubmissionRequest] = {
-    val instanceId = ua.get(CisIdPage).toRight(new RuntimeException("CIS ID missing")).toTry.get
+  private def buildCreateRequest(cisId: String, ua: UserAnswers): Future[CreateSubmissionRequest] = {
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
     val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
 
     Future.successful(
       CreateSubmissionRequest(
-        instanceId = instanceId,
+        instanceId = cisId,
         taxYear = ym.getYear,
         taxMonth = ym.getMonthValue,
         amendment = returnType.amendmentFlag,
@@ -394,5 +370,4 @@ class SubmissionService @Inject() (
       sessionRepository.set
     )
   }
-
 }

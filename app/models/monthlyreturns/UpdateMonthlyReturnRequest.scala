@@ -65,10 +65,9 @@ object UpdateMonthlyReturnRequest {
       case MonthlyStandardReturn | MonthlyAmendedStandardReturn => "N"
     }
 
-  def fromUserAnswers(ua: UserAnswers): Either[String, UpdateMonthlyReturnRequest] =
+  def fromUserAnswers(cisId: String, ua: UserAnswers): Either[String, UpdateMonthlyReturnRequest] =
     for {
       returnType <- ua.get(ReturnTypePage).toRight("Missing return type")
-      instanceId <- ua.get(CisIdPage).toRight("Missing instanceId")
       date       <- dateFor(ua)
 
       decInformationCorrect = returnType match {
@@ -82,7 +81,7 @@ object UpdateMonthlyReturnRequest {
                               }
     } yield {
       val base = UpdateMonthlyReturnRequest(
-        instanceId = instanceId,
+        instanceId = cisId,
         taxYear = date.getYear,
         taxMonth = date.getMonthValue,
         amendment = returnType.amendmentFlag,

@@ -16,6 +16,7 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
+import models.requests.CisPath
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.EnterYourEmailAddressPage
 import play.api.i18n.Messages
@@ -25,7 +26,7 @@ import viewmodels.implicits.*
 
 object EnterYourEmailAddressSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+  def row(cisPath: CisPath, answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(EnterYourEmailAddressPage).map { answer =>
       SummaryListRowViewModel(
         key = "monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel",
@@ -33,7 +34,7 @@ object EnterYourEmailAddressSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(cisPath, CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
             .withAttribute("id" -> "change-enter-your-email-address")

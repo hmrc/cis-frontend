@@ -16,205 +16,61 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
-import models.{EmployerReference, NormalMode, ReturnType, UserAnswers}
-import models.agent.AgentClientData
-import models.requests.OptionalDataRequest
-import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{CisIdPage, ContractorNamePage, ReturnTypePage}
+import controllers.actions.{IdentifierAction, MonthlyReturnAction, ReconcileFormPAndRdsAction, SchemeAction}
+import models.requests.{CisPath, JourneyRequest}
+import models.{NormalMode, ReturnType}
+import pages.monthlyreturns.ReturnTypePage
 import play.api.Logging
-import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import play.twirl.api.Html
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.TypeUtils.toFuture
-import views.html.monthlyreturns.FileYourMonthlyCisReturnView
-import views.html.monthlyreturns.FileYourNilReturnView
 import utils.UserAnswerUtils.*
+import views.html.monthlyreturns.{FileYourMonthlyCisReturnView, FileYourNilReturnView}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class FileYourMonthlyCisReturnController @Inject() (
-  override val messagesApi: MessagesApi,
   val controllerComponents: MessagesControllerComponents,
   monthlyReturnView: FileYourMonthlyCisReturnView,
   nilReturnView: FileYourNilReturnView,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  sessionRepository: SessionRepository,
-  monthlyReturnService: MonthlyReturnService,
-  formpRdsReconcileService: FormpRdsReconcileService
+  resolveScheme: SchemeAction,
+  reconcileFormPAndRDS: ReconcileFormPAndRdsAction,
+  getJourney: MonthlyReturnAction,
+  sessionRepository: SessionRepository
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
 
-  def startMonthlyReturn(): Action[AnyContent] =
-    (identify andThen getData).async { implicit request =>
-      startReturn(ReturnType.MonthlyStandardReturn)(monthlyReturnView())
+  def startMonthlyReturn(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRDS andThen getJourney).async {
+      implicit request =>
+        startReturn(ReturnType.MonthlyStandardReturn)(monthlyReturnView(cisPath))
     }
 
-  def startNilReturn(): Action[AnyContent] =
-    (identify andThen getData).async { implicit request =>
-      startReturn(ReturnType.MonthlyNilReturn)(nilReturnView())
+  def startNilReturn(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRDS andThen getJourney).async {
+      implicit request =>
+        startReturn(ReturnType.MonthlyNilReturn)(nilReturnView(cisPath))
     }
 
-  def onSubmit(returnType: ReturnType): Action[AnyContent] =
-    (identify andThen getData andThen requireData).async { implicit request =>
+  def onSubmit(cisPath: CisPath, returnType: ReturnType): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
       (for {
         cleanAnswers <- request.userAnswers.clearMonthlyReturnJourney.toFuture
         _            <- sessionRepository.set(cleanAnswers)
-      } yield Redirect(routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(returnType))))
+      } yield Redirect(routes.DateConfirmPaymentsController.onPageLoad(cisPath, NormalMode, Some(returnType))))
         .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
-  private def startReturn(
-    returnType: ReturnType
-  )(render: => Html)(implicit request: OptionalDataRequest[AnyContent]): Future[Result] = {
-    val instanceIdOpt = request.getQueryString("instanceId")
-    val userAnswer    = request.userAnswers.getOrElse(UserAnswers(request.userId))
-    for {
-      updatedAnswers <- Future.fromTry(userAnswer.set(ReturnTypePage, returnType))
+  private def startReturn(returnType: ReturnType)(render: => Html)(using request: JourneyRequest[?]): Future[Result] =
+    for
+      updatedAnswers <- Future.fromTry(request.userAnswers.set(ReturnTypePage, returnType))
       _              <- sessionRepository.set(updatedAnswers)
-      agentData      <- getAgentClient(request)
-      result         <- handleRequest(instanceIdOpt, agentData, updatedAnswers, render)
-    } yield result
-  }
-
-  private def handleRequest(
-    instanceIdOpt: Option[String],
-    agentDataOpt: Option[AgentClientData],
-    userAnswers: UserAnswers,
-    render: => Html
-  )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
-    if (!request.isAgent) {
-      logger.info(
-        s"[FileYourMonthlyCisReturnController] isAgent=${request.isAgent}, " +
-          s"instanceIdOpt=$instanceIdOpt, " +
-          s"hasContractorName=${userAnswers.get(ContractorNamePage).isDefined}"
-      )
-      instanceIdOpt match {
-        case Some(instanceId) =>
-          storeInstanceId(instanceId, userAnswers).flatMap(_ =>
-            reconcileFormpRds(instanceId, request.employerReference, render)
-          )
-        case None             =>
-          monthlyReturnService
-            .resolveAndStoreCisId(userAnswers, false)
-            .flatMap { case (cisId, _) =>
-              reconcileFormpRds(cisId, request.employerReference, render)
-            }
-            .recover { case NonFatal(ex) =>
-              logger.error(
-                s"[FileYourMonthlyCisReturnController] Failed to resolve CIS ID: ${ex.getMessage}",
-                ex
-              )
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-            }
-      }
-    } else {
-      (instanceIdOpt, agentDataOpt) match {
-        case (maybeInstanceId, Some(agentData)) =>
-          val instanceId = maybeInstanceId.getOrElse(agentData.uniqueId)
-          handleAgentFlow(instanceId, agentData, userAnswers, render)
-        case (Some(_), None)                    =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing AgentClientData")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        case (None, None)                       =>
-          logger.error(
-            s"[FileYourMonthlyCisReturnController] Missing instanceId and AgentClientData"
-          )
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      }
-    }
-
-  private def handleAgentFlow(
-    instanceId: String,
-    agentData: AgentClientData,
-    userAnswers: UserAnswers,
-    render: => Html
-  )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
-    monthlyReturnService
-      .hasClient(agentData.taxOfficeNumber, agentData.taxOfficeReference)
-      .flatMap {
-        case true  =>
-          for {
-            uaWithAgent <- storeAgentClientData(agentData, userAnswers)
-            _           <- storeInstanceId(instanceId, uaWithAgent)
-            result      <- reconcileFormpRds(
-                             instanceId,
-                             Some(EmployerReference(agentData.taxOfficeNumber, agentData.taxOfficeReference)),
-                             render
-                           )
-          } yield result
-        case false =>
-          logger.warn(
-            s"[FileYourMonthlyCisReturnController] hasClient = false for " +
-              s"taxOfficeNumber: ${agentData.taxOfficeNumber}, taxOfficeReference: ${agentData.taxOfficeReference}"
-          )
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      }
-      .recover { case NonFatal(e) =>
-        logger.error(s"[FileYourMonthlyCisReturnController] hasClient check failed ${e.getMessage}", e)
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-      }
-
-  private def getAgentClient(implicit
-    request: OptionalDataRequest[_],
-    ec: ExecutionContext,
-    hc: HeaderCarrier
-  ): Future[Option[AgentClientData]] =
-    if (request.isAgent) {
-      monthlyReturnService.getAgentClient(request.userId)
-    } else {
-      Future.successful(None)
-    }
-
-  private def reconcileFormpRds(
-    instanceId: String,
-    employerReference: Option[EmployerReference],
-    render: => Html
-  )(implicit request: OptionalDataRequest[AnyContent]): Future[Result] =
-    employerReference match {
-      case Some(ref) =>
-        formpRdsReconcileService
-          .reconcile(instanceId, ref.taxOfficeNumber, ref.taxOfficeReference)
-          .map(_ => Ok(render))
-          .recover {
-            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
-              logger.warn(
-                s"[FileYourMonthlyCisReturnController] Contractor known facts missing in RDS (status ${e.statusCode})"
-              )
-              Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
-            case NonFatal(e)                                                                                  =>
-              logger.error(
-                s"[FileYourMonthlyCisReturnController] FormP/RDS reconciliation failed: ${e.getMessage}",
-                e
-              )
-              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          }
-      case None      =>
-        logger.warn("[FileYourMonthlyCisReturnController] Missing tax office reference for FormP/RDS reconciliation")
-        Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
-    }
-
-  private def storeInstanceId(instanceId: String, userAnswers: UserAnswers): Future[Unit] =
-    for {
-      updated <- Future.fromTry(userAnswers.set(CisIdPage, instanceId))
-      _       <- sessionRepository.set(updated)
-    } yield ()
-
-  private def storeAgentClientData(data: AgentClientData, ua: UserAnswers): Future[UserAnswers] =
-    for {
-      uaWithAgentClientData <- Future.fromTry(ua.set(AgentClientDataPage, data))
-      _                     <- sessionRepository.set(uaWithAgentClientData)
-    } yield uaWithAgentClientData
-
+    yield Ok(render)
 }

@@ -19,37 +19,30 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
-import models.requests.CisIdDataRequest
+import models.requests.{CisPath, JourneyRequest}
 import models.submission.PollDecision.{Polled, Skip}
 import models.submission.SubmissionStatus.*
 import models.submission.{PollDecision, SubmissionDetails, SubmissionStatus}
-import pages.agent.AgentClientDataPage
 import pages.submission.*
 import play.api.Logging
-import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
-import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, Call, MessagesControllerComponents, Result}
-import services.FormpRdsReconcileService
+import play.api.i18n.I18nSupport
+import play.api.mvc.*
 import services.submission.SubmissionService
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.UserAnswerUtils.isJourneyComplete
 import views.html.monthlyreturns.SubmissionSendingView
 
 import java.time.YearMonth
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class SubmissionSendingController @Inject() (
-  override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
+  getJourney: MonthlyReturnAction,
   submissionService: SubmissionService,
-  formpRdsReconcileService: FormpRdsReconcileService,
   view: SubmissionSendingView,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
@@ -58,85 +51,48 @@ class SubmissionSendingController @Inject() (
     with Logging
     with SubmissionViewDataSupport {
 
-  def onPageLoad: Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      guardCompletedJourney {
-        implicit val hc: HeaderCarrier =
-          HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds andThen getJourney).async {
+      implicit request =>
+        guardCompletedJourney {
 
-        if (!request.userAnswers.isJourneyComplete)
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        else
-          reconcileFormpRdsBeforeChris.flatMap {
-            case Some(redirect) => Future.successful(redirect)
-            case None           =>
-              (for {
-                (submissionId, updatedAnswers, isResubmission) <-
-                  submissionService.getOrCreateSubmissionForChris(request.userAnswers)
-                submitted                                      <-
-                  submissionService.submitToChrisAndPersist(
-                    submissionId,
-                    updatedAnswers,
-                    request.isAgent,
-                    isResubmission
-                  )
-                _                                              <-
-                  submissionService.updateSubmissionFromChrisResponse(
-                    submissionId,
-                    updatedAnswers,
-                    submitted
-                  )
-              } yield SubmissionStatus.fromString(submitted.status) match {
-                case Started                             =>
-                  logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
-                  Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
-                case Pending | SubmissionStatus.Accepted =>
-                  Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
-                case _                                   =>
-                  Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad)
-              }).recover { case ex =>
-                logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
-                Redirect(controllers.routes.SystemErrorController.onPageLoad())
-              }
-          }
-      }
+          if (!request.userAnswers.isJourneyComplete)
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          else
+            (for {
+              (submissionId, updatedAnswers, isResubmission) <-
+                submissionService.getOrCreateSubmissionForChris(request.cisId, request.userAnswers)
+              submitted                                      <-
+                submissionService.submitToChrisAndPersist(
+                  submissionId,
+                  request.cisTaxpayer,
+                  request.userAnswers,
+                  request.identifier.isAgent,
+                  isResubmission
+                )
+              _                                              <-
+                submissionService.updateSubmissionFromChrisResponse(
+                  submissionId,
+                  updatedAnswers,
+                  submitted
+                )
+            } yield SubmissionStatus.fromString(submitted.status) match {
+              case Started                             =>
+                logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
+                Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
+              case Pending | SubmissionStatus.Accepted =>
+                Redirect(routes.SubmissionSendingController.onPollAndRedirect(cisPath))
+              case _                                   =>
+                Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
+            }).recover { case ex =>
+              logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+        }
     }
 
-  private def reconcileFormpRdsBeforeChris(implicit
-    request: CisIdDataRequest[_],
-    hc: HeaderCarrier
-  ): Future[Option[Result]] =
-    resolveTaxOffice(request) match {
-      case Some((taxOfficeNumber, taxOfficeReference)) =>
-        formpRdsReconcileService
-          .reconcile(request.cisId, taxOfficeNumber, taxOfficeReference)
-          .map(_ => None)
-          .recover {
-            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
-              logger.warn(
-                s"[SubmissionSendingController] Contractor known facts missing in RDS (status ${e.statusCode})"
-              )
-              Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
-            case NonFatal(e)                                                                                  =>
-              logger.error(
-                s"[SubmissionSendingController] FormP/RDS reconciliation failed: ${e.getMessage}",
-                e
-              )
-              Some(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-          }
-      case None                                        =>
-        logger.warn("[SubmissionSendingController] Missing tax office reference for FormP/RDS reconciliation")
-        Future.successful(Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
-    }
-
-  private def resolveTaxOffice(request: CisIdDataRequest[_]): Option[(String, String)] =
-    if (request.isAgent)
-      request.userAnswers.get(AgentClientDataPage).map(a => (a.taxOfficeNumber, a.taxOfficeReference))
-    else
-      request.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
-
-  def onPollAndRedirect: Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onPollAndRedirect(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
       guardCompletedJourney {
         request.userAnswers.get(SubmissionDetailsPage) match {
           case None =>
@@ -152,7 +108,7 @@ class SubmissionSendingController @Inject() (
       }
     }
 
-  private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
+  private def guardCompletedJourney(block: => Future[Result])(using request: JourneyRequest[?]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
       case None            =>
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -166,7 +122,7 @@ class SubmissionSendingController @Inject() (
     }
 
   private def pollDecisionResult(decision: PollDecision, pollInterval: String)(implicit
-    request: CisIdDataRequest[_]
+    request: JourneyRequest[_]
   ): Future[Result] =
     decision match {
       case Skip           => sendingPage(pollInterval)
@@ -174,7 +130,7 @@ class SubmissionSendingController @Inject() (
     }
 
   private def polledStatusResult(status: String, pollInterval: String)(implicit
-    request: CisIdDataRequest[_]
+    request: JourneyRequest[_]
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
     SubmissionStatus.fromString(status) match {
@@ -185,7 +141,7 @@ class SubmissionSendingController @Inject() (
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
-          routes.SubmissionSuccessController.onPageLoad
+          routes.SubmissionSuccessController.onPageLoad(request.cisPath)
         )
       case SubmittedNoReceipt                  =>
         sendEmailAndRedirect(
@@ -204,7 +160,7 @@ class SubmissionSendingController @Inject() (
       case _                                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
-  private def sendingPage(pollInterval: String)(implicit request: CisIdDataRequest[_]): Future[Result] =
+  private def sendingPage(pollInterval: String)(using request: Request[_]): Future[Result] =
     Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
 
   private def sendEmailAndRedirect(

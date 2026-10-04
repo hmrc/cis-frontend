@@ -14,6 +14,7 @@
  * limitations under the License.
  *@
 
+@import models.requests.CisPath
 @import viewmodels.govuk._
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 @import models.monthlyreturns.Declaration
@@ -29,7 +30,7 @@
     h1: components.H1
 )
 
-@(mode: Mode)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, mode: Mode)(implicit req: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.declaration.title"))) {
 
@@ -48,6 +49,6 @@
 
     @govukButton(
         ButtonViewModel(messages("monthlyreturns.declaration.submit"))
-            .asLink(controllers.monthlyreturns.routes.DeclarationController.onSubmit().url)
+            .asLink(controllers.monthlyreturns.routes.DeclarationController.onSubmit(cisPath).url)
     )
 }

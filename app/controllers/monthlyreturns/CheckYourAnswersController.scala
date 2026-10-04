@@ -20,32 +20,30 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.{CisPath, JourneyRequest}
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import services.MonthlyReturnService
 import services.submission.SubmissionService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import utils.UserAnswerUtils.isJourneyComplete
 import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.summarylist.*
 import views.html.monthlyreturns.CheckYourAnswersView
-import utils.UserAnswerUtils.isJourneyComplete
 
 import java.time.YearMonth
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class CheckYourAnswersController @Inject() (
-  override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   monthlyReturnService: MonthlyReturnService,
   submissionService: SubmissionService,
-  requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: CheckYourAnswersView
 )(implicit ec: ExecutionContext)
@@ -54,8 +52,8 @@ class CheckYourAnswersController @Inject() (
     with Logging
     with SubmissionViewDataSupport {
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       guardCompletedJourney {
         ReturnTypeSummary.returnType(request.userAnswers) match {
           case Some(returnType) =>
@@ -66,13 +64,13 @@ class CheckYourAnswersController @Inject() (
                   NumberOfSubcontractorPaymentsMadeSummary.row(request.userAnswers),
                   EmploymentStatusDeclarationSummary.row(request.userAnswers),
                   VerifiedStatusDeclarationSummary.row(request.userAnswers),
-                  SubmitInactivityRequestSummary.row(request.userAnswers)
+                  SubmitInactivityRequestSummary.row(cisPath, request.userAnswers)
                 )
               case ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn           =>
                 Seq(
                   DateConfirmNilPaymentsSummary.row(request.userAnswers),
                   PaymentsToSubcontractorsSummary.row,
-                  SubmitInactivityRequestSummary.row(request.userAnswers)
+                  SubmitInactivityRequestSummary.row(cisPath, request.userAnswers)
                 )
             }
 
@@ -81,23 +79,23 @@ class CheckYourAnswersController @Inject() (
             )
 
             val emailRows = Seq(
-              ConfirmationByEmailSummary.row(request.userAnswers),
-              EnterYourEmailAddressSummary.row(request.userAnswers)
+              ConfirmationByEmailSummary.row(cisPath, request.userAnswers),
+              EnterYourEmailAddressSummary.row(cisPath, request.userAnswers)
             )
 
             val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
-            Future.successful(Ok(view(returnDetailsList, emailList)))
+            Future.successful(Ok(view(cisPath, returnDetailsList, emailList)))
 
           case None =>
             logger.warn("[CheckYourAnswersController] Missing ReturnTypePage")
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
       }
-  }
+    }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
-    implicit request =>
+  def onSubmit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       guardCompletedJourney {
         request.userAnswers.get(ReturnTypePage) match {
           case None =>
@@ -117,9 +115,9 @@ class CheckYourAnswersController @Inject() (
               logger.info(
                 "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"
               )
-              Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+              Future.successful(Redirect(routes.AlreadySubmittedController.onPageLoad()))
             } else {
-              val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.userAnswers)
+              val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.cisId, request.userAnswers)
 
               updateRequest match {
                 case Left(error) =>
@@ -133,7 +131,7 @@ class CheckYourAnswersController @Inject() (
                       logger.info(
                         s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
                       )
-                      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
+                      Redirect(routes.SubmissionSendingController.onPageLoad(cisPath))
                     }
                     .recover { case t =>
                       logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
@@ -143,9 +141,9 @@ class CheckYourAnswersController @Inject() (
             }
         }
       }
-  }
+    }
 
-  private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
+  private def guardCompletedJourney(block: => Future[Result])(using request: JourneyRequest[_]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
       case None            =>
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))

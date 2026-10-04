@@ -14,6 +14,8 @@
  * limitations under the License.
  *@
 
+@import models.requests.CisPath
+
 @this(
     layout: templates.Layout,
     govukInsetText: GovukInsetText,
@@ -22,7 +24,7 @@
     govukButton: GovukButton
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionSending.title")),
         showBackLink = false
@@ -40,7 +42,7 @@
 
     @govukButton(
         ButtonViewModel(messages("stub.monthlyreturns.submissionSuccessful.button"))
-        .asLink(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url)
+        .asLink(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad(cisPath).url)
     )
 
     @govukButton(

@@ -10,8 +10,6 @@ GET         /assets/*file                                               controll
 
 GET         /language/:lang                                             controllers.LanguageSwitchController.switchToLanguage(lang: String)
 
-GET         /refresh-session                                            controllers.KeepAliveController.keepAlive()
-
 GET         /there-is-a-problem                                         controllers.JourneyRecoveryController.onPageLoad(continueUrl: Option[RedirectUrl] ?= None)
 
 GET         /account/sign-out-survey                                    controllers.auth.AuthController.signOut()
@@ -24,57 +22,56 @@ GET         /unauthorised/organisation                                  controll
 GET         /unauthorised/individual                                    controllers.UnauthorisedIndividualAffinityController.onPageLoad()
 GET         /unauthorised/agent                                         controllers.UnauthorisedAgentAffinityController.onPageLoad()
 
-GET        /page-not-found                                              controllers.PageNotFoundController.onPageLoad()
 GET        /access-denied                                               controllers.AccessDeniedController.onPageLoad()
 GET        /system-error/there-is-a-problem                             controllers.SystemErrorController.onPageLoad()
 
 GET        /agent/no-longer-authorised                                  controllers.AgentLostAccessController.onPageLoad()
 
-GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
-POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
+GET        /:cisPath/monthly-return/check-your-answers                  controllers.monthlyreturns.CheckYourAnswersController.onPageLoad(cisPath: CisPath)
+POST       /:cisPath/monthly-return/check-your-answers                  controllers.monthlyreturns.CheckYourAnswersController.onSubmit(cisPath: CisPath)
 
 GET        /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/confirm-email-address                        controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-confirm-email-address                 controllers.monthlyreturns.ConfirmEmailAddressController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-confirm-email-address                 controllers.monthlyreturns.ConfirmEmailAddressController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/declaration-no-payments-made                 controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = NormalMode)
-GET        /monthly-return/declaration-no-payments-made/continue        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/declaration-no-payments-made                 controllers.monthlyreturns.DeclarationController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/declaration-no-payments-made/continue        controllers.monthlyreturns.DeclarationController.onSubmit(cisPath: CisPath, mode: Mode = NormalMode)
 
-GET        /monthly-return/submission-send                              controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
-GET        /monthly-return/submission-send/polling                      controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect
+GET        /:cisPath/monthly-return/submission-send                              controllers.monthlyreturns.SubmissionSendingController.onPageLoad(cisPath: CisPath)
+GET        /:cisPath/monthly-return/submission-send/polling                      controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect(cisPath: CisPath)
 
-GET        /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onPageLoad
-POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
+GET        /monthly-return/nil-month-return-inactive                             controllers.monthlyreturns.InactivityWarningController.onPageLoad
+POST       /monthly-return/nil-month-return-inactive                             controllers.monthlyreturns.InactivityWarningController.onSubmit
 
-GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit              controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit/from-manage  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId: String)
 
 GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 GET        /monthly-return/submission-in-progress/from-manage           controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadFromManage(cisId: String)
 
-GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
+GET        /:cisPath/monthly-return/confirmation                        controllers.monthlyreturns.SubmissionSuccessController.onPageLoad(cisPath: CisPath)
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
 GET        /monthly-return/already-submitted                            controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
 
 GET        /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(defaultSelection: Option[Boolean])
 POST       /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
-GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
-POST       /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyStandardReturn)
-GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
-POST       /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyNilReturn)
+GET        /:cisPath/monthly-return/file-your-monthly-return            controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn(cisPath: CisPath)
+POST       /:cisPath/monthly-return/file-your-monthly-return            controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(cisPath: CisPath, returnType: ReturnType = MonthlyStandardReturn)
+GET        /:cisPath/monthly-return/file-your-nil-return                controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn(cisPath: CisPath)
+POST       /:cisPath/monthly-return/file-your-nil-return                controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(cisPath: CisPath, returnType: ReturnType = MonthlyNilReturn)
 
-GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
-GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
-POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode, returnType: ReturnType = MonthlyStandardReturn)
-GET        /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
-POST       /monthly-return/change-date-confirm-payments                 controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyStandardReturn)
+GET        /:cisPath/monthly-return/date-confirm-payments/resume        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
+GET        /:cisPath/monthly-return/date-confirm-payments               controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
+POST       /:cisPath/monthly-return/date-confirm-payments               controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(cisPath: CisPath, mode: Mode = NormalMode, returnType: ReturnType = MonthlyStandardReturn)
+GET        /:cisPath/monthly-return/change-date-confirm-payments        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(cisPath: CisPath, mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
+POST       /:cisPath/monthly-return/change-date-confirm-payments        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(cisPath: CisPath, mode: Mode = CheckMode, returnType: ReturnType = MonthlyStandardReturn)
 
-GET        /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
-POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode, returnType: ReturnType = MonthlyNilReturn)
-GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
-POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyNilReturn)
+GET        /:cisPath/monthly-return/date-confirm-nil-payments           controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
+POST       /:cisPath/monthly-return/date-confirm-nil-payments           controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(cisPath: CisPath, mode: Mode = NormalMode, returnType: ReturnType = MonthlyNilReturn)
+GET        /:cisPath/monthly-return/change-date-confirm-nil-payments    controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(cisPath: CisPath, mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
+POST       /:cisPath/monthly-return/change-date-confirm-nil-payments    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(cisPath: CisPath, mode: Mode = CheckMode, returnType: ReturnType = MonthlyNilReturn)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
@@ -110,28 +107,28 @@ POST       /monthly-return/tax-deducted                                 controll
 GET        /monthly-return/change-tax-deducted                          controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 POST       /monthly-return/change-tax-deducted                          controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
-GET        /monthly-return/submit-inactivity-request                    controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/submit-inactivity-request                    controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/submit-inactivity-request                    controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode)
+POST       /:cisPath/monthly-return/submit-inactivity-request                    controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(cisPath: CisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(cisPath: CisPath, mode: Mode = CheckMode)
+POST       /:cisPath/monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(cisPath: CisPath, mode: Mode = CheckMode)
 
 GET        /monthly-return/remove-subcontractor/:index            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = NormalMode, index: Int)
 POST       /monthly-return/remove-subcontractor/:index            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = NormalMode, index: Int)
 GET        /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode, index: Int)
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
-GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
-GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/inactivity-request-warning          controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-inactivity-request-warning   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(cisPath: CisPath, mode: Mode = CheckMode)
 
-GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode)
+POST       /:cisPath/monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(cisPath: CisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(cisPath: CisPath, mode: Mode = CheckMode)
+POST       /:cisPath/monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(cisPath: CisPath, mode: Mode = CheckMode)
 
-GET        /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+GET        /:cisPath/monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(cisPath: CisPath, mode: Mode = NormalMode)
+POST       /:cisPath/monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(cisPath: CisPath, mode: Mode = NormalMode)
+GET        /:cisPath/monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(cisPath: CisPath, mode: Mode = CheckMode)
+POST       /:cisPath/monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(cisPath: CisPath, mode: Mode = CheckMode)
 
 GET        /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)

@@ -18,44 +18,45 @@ package stub.controllers.monthlyreturns
 
 import controllers.actions.*
 import models.UserAnswers
+import models.requests.CisPath
 import pages.monthlyreturns.{ConfirmEmailAddressPage, DateConfirmPaymentsPage, DeclarationPage, SubmitInactivityRequestPage}
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import stub.views.html.monthlyreturns.StubSubmissionSendingView
+import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class StubSubmissionSendingController @Inject() (
-  override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: StubSubmissionSendingView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
 
-    def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
-      val pagesToRemove =
-        Seq(DateConfirmPaymentsPage, SubmitInactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
+      def removeUserAnswers(userAnswers: UserAnswers): Try[UserAnswers] = {
+        val pagesToRemove =
+          Seq(DateConfirmPaymentsPage, SubmitInactivityRequestPage, ConfirmEmailAddressPage, DeclarationPage)
 
-      pagesToRemove.foldLeft(Try(userAnswers)) { (currentUserAnswers, page) =>
-        currentUserAnswers.flatMap(_.remove(page))
+        pagesToRemove.foldLeft(Try(userAnswers)) { (currentUserAnswers, page) =>
+          currentUserAnswers.flatMap(_.remove(page))
+        }
       }
+
+      for {
+        updatedUserAnswers <- Future.fromTry(removeUserAnswers(request.userAnswers))
+        _                  <- sessionRepository.set(updatedUserAnswers)
+      } yield Ok(view(cisPath))
+
     }
-
-    for {
-      updatedUserAnswers <- Future.fromTry(removeUserAnswers(request.userAnswers))
-      _                  <- sessionRepository.set(updatedUserAnswers)
-    } yield Ok(view())
-
-  }
 }

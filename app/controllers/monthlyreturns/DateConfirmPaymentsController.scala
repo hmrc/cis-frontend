@@ -20,11 +20,12 @@ import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.ReturnType.MonthlyStandardReturn
 import models.monthlyreturns.MonthlyReturnRequest
+import models.requests.CisPath
 import models.{Mode, ReturnType}
 import navigation.Navigator
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.Logging
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.MonthlyReturnService
@@ -38,13 +39,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class DateConfirmPaymentsController @Inject() (
-  override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: MonthlyReturnAction,
   formProvider: DateConfirmPaymentsFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -54,8 +53,8 @@ class DateConfirmPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onPageLoad(cisPath: CisPath, mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
@@ -86,12 +85,12 @@ class DateConfirmPaymentsController @Inject() (
             case Some(value) => form.fill(value)
           }
 
-          Ok(view(preparedForm, mode, messagePrefix, storedReturnType))
+          Ok(view(cisPath, preparedForm, mode, messagePrefix, storedReturnType))
         }
     }
 
-  def onSubmit(mode: Mode, returnType: ReturnType): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode, returnType: ReturnType): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
       val userAnswers   = request.userAnswers
       val form          = formProvider()
       val isStandard    = returnType == MonthlyStandardReturn
@@ -104,15 +103,15 @@ class DateConfirmPaymentsController @Inject() (
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix, returnType))),
+          formWithErrors =>
+            Future.successful(BadRequest(view(cisPath, formWithErrors, mode, messagePrefix, returnType))),
           value => {
             val year  = value.getYear
             val month = value.getMonthValue
 
             (for {
               uaWithReturnType <- userAnswers.set(ReturnTypePage, returnType).toFuture
-              cisId            <- uaWithReturnType.get(CisIdPage).toFuture
-              isDup            <- monthlyReturnService.isDuplicate(cisId, year, month)
+              isDup            <- monthlyReturnService.isDuplicate(request.cisId, year, month)
               updatedAnswers   <- Future.fromTry(uaWithReturnType.set(DateConfirmPaymentsPage, value))
               _                <- sessionRepository.set(updatedAnswers)
               result           <- if (isDup) {
@@ -120,9 +119,9 @@ class DateConfirmPaymentsController @Inject() (
                                       form
                                         .fill(value)
                                         .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-                                    Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType)))
+                                    Future.successful(BadRequest(view(cisPath, dupForm, mode, messagePrefix, returnType)))
                                   } else if (isStandard) {
-                                    val createRequest = MonthlyReturnRequest(cisId, year, month)
+                                    val createRequest = MonthlyReturnRequest(request.cisId, year, month)
                                     monthlyReturnService
                                       .createMonthlyReturn(createRequest)
                                       .map { _ =>
@@ -130,7 +129,8 @@ class DateConfirmPaymentsController @Inject() (
                                       }
                                   } else {
                                     for {
-                                      uaWithStatus <- monthlyReturnService.createNilMonthlyReturn(updatedAnswers)
+                                      uaWithStatus <-
+                                        monthlyReturnService.createNilMonthlyReturn(request.cisId, updatedAnswers)
                                     } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
                                   }
             } yield result).recover { case NonFatal(ex) =>

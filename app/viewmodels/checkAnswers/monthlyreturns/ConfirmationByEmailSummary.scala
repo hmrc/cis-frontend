@@ -16,6 +16,7 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
+import models.requests.CisPath
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.Messages
@@ -25,7 +26,7 @@ import viewmodels.implicits.*
 
 object ConfirmationByEmailSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+  def row(cisPath: CisPath, answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(ConfirmationByEmailPage).map { answer =>
 
       val value = if (answer) "site.yes" else "site.no"
@@ -36,7 +37,7 @@ object ConfirmationByEmailSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(cisPath, CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
             .withAttribute("id" -> "change-confirmation-by-email")

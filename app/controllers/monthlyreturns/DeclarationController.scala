@@ -17,45 +17,43 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-
-import javax.inject.Inject
 import models.Mode
 import models.monthlyreturns.Declaration
+import models.monthlyreturns.Declaration.Confirmed
+import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.DeclarationPage
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeclarationView
-import models.monthlyreturns.Declaration.Confirmed
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class DeclarationController @Inject() (
-  override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: DeclarationView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
+  def onPageLoad(cisPath: CisPath, mode: Mode): Action[AnyContent] = (identify andThen resolveScheme(cisPath)) {
     implicit request =>
-      Ok(view(mode))
+      Ok(view(cisPath, mode))
   }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
       for {
         updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(Confirmed)))
         _              <- sessionRepository.set(updatedAnswers)
       } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
-  }
+    }
 }

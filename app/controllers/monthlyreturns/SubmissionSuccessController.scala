@@ -19,34 +19,31 @@ package controllers.monthlyreturns
 import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
-import models.{ReturnType, UserAnswers}
-import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.ReturnType.reads
-import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
+import models.requests.{CisPath, GetMonthlyReturnForEditRequest, SchemeRequest}
+import models.{ReturnType, UserAnswers}
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
-import play.api.i18n.{I18nSupport, Lang, MessagesApi}
+import play.api.i18n.{I18nSupport, Lang}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import views.html.monthlyreturns.SubmissionSuccessView
 import utils.{DateTimeFormats, IrMarkReferenceGenerator}
 import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
+import views.html.monthlyreturns.SubmissionSuccessView
 
-import java.time.{Clock, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{Clock, ZoneId, ZonedDateTime}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SubmissionSuccessController @Inject() (
-  override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionSuccessView,
   clock: Clock,
@@ -57,11 +54,8 @@ class SubmissionSuccessController @Inject() (
     with I18nSupport
     with SubmissionViewDataSupport {
 
-  def onPageLoad: Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      implicit val hc: HeaderCarrier =
-        HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney).async { implicit request =>
       if (!submissionSuccessGuard.check) {
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       } else {
@@ -72,7 +66,7 @@ class SubmissionSuccessController @Inject() (
             Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
 
           case None =>
-            val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+            val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(request.cisId, ua)
 
             monthlyReturnForEditRequest match {
               case Left(error) =>
@@ -102,15 +96,12 @@ class SubmissionSuccessController @Inject() (
     )
 
   private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers)(implicit
-    request: CisIdDataRequest[_]
+    request: SchemeRequest[?]
   ): SubmissionSuccessViewModel = {
     val reference           = IrMarkReferenceGenerator.fromBase64(
       required(ua.get(SubmissionDetailsPage), "[SubmissionSuccess] submissionDetails missing from userAnswers").irMark
     )
-    val submissionType      =
-      required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
-    val cisId               = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
-    val empRef              = employerRefFrom(request)
+    val submissionType      = required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
     implicit val lang: Lang = messagesApi.preferred(request).lang
 
     val periodEnd = ua
@@ -136,21 +127,17 @@ class SubmissionSuccessController @Inject() (
       submittedTime = cache.submittedTime,
       submittedDate = submittedDate,
       contractorName = cache.contractorName,
-      empRef = empRef,
+      empRef = request.employerRef,
       email = cache.email,
       submissionType = submissionType,
-      cisId = cisId
+      cisId = request.cisId
     )
   }
 
-  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
-    request: CisIdDataRequest[_],
-    hc: HeaderCarrier
+  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(using
+    request: SchemeRequest[_]
   ): Future[SubmissionSuccessViewModel] = {
-    val cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
-
-    val submissionType =
-      required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+    val submissionType = required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
 
     val periodEnd = required(
       periodEndFromUserAnswers(ua),
@@ -167,23 +154,21 @@ class SubmissionSuccessController @Inject() (
       .filter(_.nonEmpty)
       .getOrElse(throw new RuntimeException("[SubmissionSuccess] Scheme name is missing"))
 
-    val empRef = employerRefFrom(request)
-
     implicit val lang: Lang = messagesApi.preferred(request).lang
     val timeFmt             = DateTimeFormatter.ofPattern("h:mma")
     val nowUk               = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
 
-    resolveEmail(ua, cisId).map { email =>
+    resolveEmail(ua, request.cisId).map { email =>
       SubmissionSuccessViewModel(
         reference = reference,
         periodEnd = periodEnd.format(DateTimeFormats.dateTimeFormat()),
         submittedTime = nowUk.format(timeFmt).toLowerCase,
         submittedDate = nowUk.format(DateTimeFormats.fullDateFormat()),
         contractorName = contractorName,
-        empRef = empRef,
+        empRef = request.employerRef,
         email = email,
         submissionType = submissionType,
-        cisId = cisId,
+        cisId = request.cisId,
         submittedDateTimeIso = Some(nowUk.toString)
       )
     }

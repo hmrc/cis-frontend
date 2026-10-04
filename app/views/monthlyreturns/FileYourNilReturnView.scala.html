@@ -16,6 +16,7 @@
 
 @import views.html.components._
 @import models.NormalMode
+@import models.requests.CisPath
 @import models.ReturnType.MonthlyNilReturn
 
 @this(
@@ -26,11 +27,11 @@
     formHelper: FormWithCSRF
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("fileYourNilReturn.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyNilReturn)) {
+    @formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(cisPath, MonthlyNilReturn)) {
 
         @h1(messages("fileYourNilReturn.heading"))
 

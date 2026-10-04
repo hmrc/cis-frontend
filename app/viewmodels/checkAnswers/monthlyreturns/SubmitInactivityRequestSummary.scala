@@ -16,6 +16,7 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
+import models.requests.CisPath
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
@@ -25,7 +26,7 @@ import viewmodels.implicits.*
 
 object SubmitInactivityRequestSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+  def row(cisPath: CisPath, answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(SubmitInactivityRequestPage).map { answer =>
 
       val value = if (answer) "site.yes" else "site.no"
@@ -36,7 +37,7 @@ object SubmitInactivityRequestSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(cisPath, CheckMode).url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
             .withAttribute("id" -> "change-submit-inactivity-request")
