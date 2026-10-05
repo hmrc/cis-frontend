@@ -28,12 +28,22 @@
     hmrcReportTechnicalIssueHelper: HmrcReportTechnicalIssueHelper,
     betaBanner: StandardBetaBanner,
     hmrcStandardPage: HmrcStandardPage,
+    hmrcUserResearchBanner: HmrcUserResearchBanner,
     stylesheets: Stylesheets,
     twoThirdsMainContent: TwoThirdsMainContent,
     fullWidthMainContent: FullWidthMainContent
 )
 
-@(pageTitle: String, showBackLink: Boolean = true, timeout: Boolean = true, showSignOut: Boolean = true, showHmrcBanner: Boolean = false, isFullWidth: Boolean = false)(contentBlock: Html)(implicit rh: RequestHeader, messages: Messages)
+@(
+    pageTitle: String,
+    showBackLink: Boolean = true,
+    timeout: Boolean = true,
+    showSignOut: Boolean = true,
+    showHmrcBanner: Boolean = false,
+    isFullWidth: Boolean = false,
+    showUrBanner: Boolean = false,
+    urBanner: Option[UserResearchBanner] = None
+)(contentBlock: Html)(implicit rh: RequestHeader, messages: Messages)
 
 @head = {
 
@@ -74,7 +84,8 @@
     ),
     banners = Banners(
         displayHmrcBanner = showHmrcBanner,
-        phaseBanner = Some(betaBanner(appConfig.feedbackUrl))
+        phaseBanner = Some(betaBanner(appConfig.feedbackUrl)),
+        userResearchBanner = if(showUrBanner) urBanner else None
     ),
     isWelshTranslationAvailable = appConfig.languageTranslationEnabled,
     backLink = if (showBackLink) Some(BackLink.mimicsBrowserBackButtonViaJavaScript) else None
