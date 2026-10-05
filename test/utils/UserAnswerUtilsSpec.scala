@@ -18,7 +18,7 @@ package utils
 
 import base.SpecBase
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.monthlyreturns.{Declaration, SelectedSubcontractor}
+import models.monthlyreturns.{Declaration, SelectedSubcontractor, SubmissionConfirmationCache}
 import models.submission.SubmissionDetails
 import models.validation.SubcontractorValidationField.EmailAddress
 import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
@@ -327,6 +327,18 @@ class UserAnswerUtilsSpec extends SpecBase {
           )
         )
         .get
+        .set(
+          SubmissionConfirmationCachePage,
+          SubmissionConfirmationCache(
+            periodEnd = "January 2025",
+            contractorName = "Test Contractor Ltd",
+            email = "test@test.com",
+            submittedTime = "12:00pm",
+            submittedDate = "1 January 2025",
+            submittedDateTimeIso = Some("2025-01-01T12:00:00Z")
+          )
+        )
+        .get
         .set(PollUrlPage, "https://poll.example.com")
         .get
         .set(PollIntervalPage, 10)
@@ -375,6 +387,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(SuccessEmailSentPage(submissionId)) mustBe None
       cleared.get(SubmissionJourneyCompletedPage("2025-01")) mustBe None
       cleared.get(SubmissionCreatedPage("2025-01")) mustBe None
+      cleared.get(SubmissionConfirmationCachePage) mustBe None
     }
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {
