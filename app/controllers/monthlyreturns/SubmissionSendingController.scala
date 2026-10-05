@@ -66,7 +66,7 @@ class SubmissionSendingController @Inject() (
                 submissionService.submitToChrisAndPersist(
                   submissionId,
                   request.cisTaxpayer,
-                  request.userAnswers,
+                  updatedAnswers,
                   request.identifier.isAgent,
                   isResubmission
                 )

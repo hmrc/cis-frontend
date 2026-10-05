@@ -19,6 +19,7 @@ package views.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
@@ -52,7 +53,7 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
       val filledForm    = form.fill(true)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(CisOrg, filledForm, NormalMode)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe true
@@ -61,7 +62,7 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'false'" in new Setup {
       val filledForm    = form.fill(false)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(CisOrg, filledForm, NormalMode)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe false
@@ -70,7 +71,7 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
 
     "must render error summary with correct link when form has errors" in new Setup {
       val formWithErrors = form.bind(Map("value" -> ""))
-      val errorHtml      = view(formWithErrors, NormalMode)
+      val errorHtml      = view(CisOrg, formWithErrors, NormalMode)
       val doc: Document  = Jsoup.parse(errorHtml.toString)
 
       doc.select(".govuk-error-summary").size() mustBe 1
@@ -89,6 +90,6 @@ class SubmitInactivityRequestViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode)
+    val html = view(CisOrg, form, NormalMode)
   }
 }

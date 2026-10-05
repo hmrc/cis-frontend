@@ -17,9 +17,9 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import controllers.routes
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -42,7 +42,7 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
   val form         = formProvider()
 
   lazy val confirmationByEmailRoute =
-    controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CisOrg, NormalMode).url
 
   "ConfirmationByEmail Controller" - {
 
@@ -58,7 +58,7 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[ConfirmationByEmailView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode)(request, messages(application)).toString
       }
     }
 
@@ -76,7 +76,10 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form.fill(true), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -122,37 +125,7 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
-      }
-    }
-
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request = FakeRequest(GET, confirmationByEmailRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, confirmationByEmailRoute)
-            .withFormUrlEncodedBody(("value", "true"))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode)(request, messages(application)).toString
       }
     }
   }

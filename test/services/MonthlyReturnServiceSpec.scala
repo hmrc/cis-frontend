@@ -555,8 +555,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val testDate = java.time.LocalDate.of(taxYear, taxMonth, 15)
 
       val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, cisId)
-        .get
         .set(DateConfirmPaymentsPage, testDate)
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
@@ -571,7 +569,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val result = service.createNilMonthlyReturn(userAnswers).futureValue
+      val result = service.createNilMonthlyReturn(cisId, userAnswers).futureValue
 
       val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
         ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
@@ -592,31 +590,14 @@ class MonthlyReturnServiceSpec extends SpecBase {
       result.get(NilReturnStatusPage) mustBe Some("STARTED")
     }
 
-    "fail when CIS ID is missing from session" in {
-      val (service, connector, sessionRepo) = newService()
-
-      val userAnswers = UserAnswers("test-user")
-        .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
-        .get
-
-      val ex = intercept[RuntimeException] {
-        service.createNilMonthlyReturn(userAnswers).futureValue
-      }
-      ex.getMessage must include("CIS ID not found in session data")
-
-      verifyNoInteractions(connector)
-      verifyNoInteractions(sessionRepo)
-    }
-
     "fail when date is missing from session" in {
       val (service, connector, sessionRepo) = newService()
 
+      val cisId       = "CIS-123"
       val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
 
       val ex = intercept[RuntimeException] {
-        service.createNilMonthlyReturn(userAnswers).futureValue
+        service.createNilMonthlyReturn(cisId, userAnswers).futureValue
       }
       ex.getMessage must include("Date confirm nil payments not found in session data")
 
@@ -627,9 +608,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "propagate failures from connector" in {
       val (service, connector, sessionRepo) = newService()
 
+      val cisId       = "CIS-123"
       val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
         .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
@@ -641,7 +621,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.failed(new RuntimeException("Backend error")))
 
       val ex = intercept[RuntimeException] {
-        service.createNilMonthlyReturn(userAnswers).futureValue
+        service.createNilMonthlyReturn(cisId, userAnswers).futureValue
       }
       ex.getMessage must include("Backend error")
 
@@ -652,9 +632,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "propagate failures from session repository" in {
       val (service, connector, sessionRepo) = newService()
 
+      val cisId       = "CIS-123"
       val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
         .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
@@ -668,7 +647,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .thenReturn(Future.failed(new RuntimeException("Session error")))
 
       val ex = intercept[RuntimeException] {
-        service.createNilMonthlyReturn(userAnswers).futureValue
+        service.createNilMonthlyReturn(cisId, userAnswers).futureValue
       }
       ex.getMessage must include("Session error")
 
@@ -685,8 +664,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val testDate = java.time.LocalDate.of(taxYear, taxMonth, 15)
 
       val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, cisId)
-        .get
         .set(DateConfirmPaymentsPage, testDate)
         .get
 
@@ -697,7 +674,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val result = service.createNilMonthlyReturn(userAnswers).futureValue
+      val result = service.createNilMonthlyReturn(cisId, userAnswers).futureValue
 
       val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
         ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
@@ -721,9 +698,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
     "use N when declaration is not confirmed" in {
       val (service, connector, sessionRepo) = newService()
 
+      val cisId       = "CIS-123"
       val userAnswers = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .get
         .set(DateConfirmPaymentsPage, java.time.LocalDate.of(2024, 10, 15))
         .get
         .set(InactivityRequestPage, InactivityRequest.Option1)
@@ -736,7 +712,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      service.createNilMonthlyReturn(userAnswers).futureValue
+      service.createNilMonthlyReturn(cisId, userAnswers).futureValue
 
       val requestCaptor: ArgumentCaptor[NilMonthlyReturnRequest] =
         ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])

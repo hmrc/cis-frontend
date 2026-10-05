@@ -17,31 +17,31 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.ReturnType.MonthlyNilReturn
 import models.ReturnType.*
-import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
+import models.requests.CisPath.CisOrg
 import models.requests.GetMonthlyReturnForEditRequest
 import models.submission.SubmissionDetails
-import org.mockito.Mockito.*
+import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage, SubmissionConfirmationCachePage}
+import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
-import play.api.test.FakeRequest
-import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
+import play.api.test.Helpers.*
 import services.MonthlyReturnService
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter
-import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{format, *}
 import java.util.Locale
 import scala.concurrent.Future
 
@@ -53,7 +53,6 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
   val irMarkBase64: String   = "Pyy1LRJh053AE+nuyp0GJR7oESw="
   val reference: String      = IrMarkReferenceGenerator.fromBase64(irMarkBase64)
   val contractorName: String = "PAL 355 Scheme"
-  val employerRef: String    = "taxOfficeNumber/taxOfficeReference"
 
   private val monthYearFmt             = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val fullDateFmt              = DateTimeFormatter.ofPattern("d MMMM uuuu").withLocale(Locale.UK)
@@ -132,7 +131,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
     AgentClientData("CLIENT-123", "taxOfficeNumber", "taxOfficeReference", Some("PAL 355 Scheme"))
 
   lazy val request: FakeRequest[AnyContentAsEmpty.type] =
-    FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad.url)
+    FakeRequest(GET, routes.SubmissionSuccessController.onPageLoad(CisOrg).url)
 
   private def buildApp(
     userAnswers: UserAnswers,
@@ -144,10 +143,10 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       userAnswers = Some(userAnswers),
       isAgent = isAgent,
       hasEmployeeRef = hasEmployeeRef,
-      hasAgentRef = hasAgentRef
+      hasAgentRef = hasAgentRef,
+      clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
     )
       .overrides(
-        bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
         bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
         bind[SubmissionSuccessfulServiceGuard].toInstance(mockGuard)
       )
@@ -207,18 +206,6 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
-        val app = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-        running(app) {
-          val result = route(app, request).value
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
-            .onPageLoad()
-            .url
-        }
-      }
-
       "must call getSchemeEmail and use returned email when EnterYourEmailAddressPage is missing" in {
         val fallbackEmail  = "fallback@test.com"
         val uaWithoutEmail = userAnswersWithCisId
@@ -239,8 +226,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .value
 
         when(mockGuard.check(any())).thenReturn(true)
-        when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(Some(fallbackEmail)))
+        when(mockMonthlyReturnService.getSchemeEmail(any)(any)) thenReturn Future.successful(Some(fallbackEmail))
         when(
           mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
             any[HeaderCarrier]
@@ -256,7 +242,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           val result = route(app, request).value
           status(result) mustBe OK
           contentAsString(result) must include(fallbackEmail)
-          verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+          verify(mockMonthlyReturnService).getSchemeEmail(eqTo(cisTaxpayer.uniqueId))(any[HeaderCarrier])
         }
       }
 
@@ -324,7 +310,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         running(app) {
           val result = route(app, request).value
           status(result) mustBe OK
-          verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+          verify(mockMonthlyReturnService).getSchemeEmail(eqTo(cisTaxpayer.uniqueId))(any[HeaderCarrier])
         }
       }
 
@@ -378,24 +364,6 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
             await(route(app, request).get)
           }
           thrown.getMessage must include("[SubmissionSuccess] Scheme name is missing")
-        }
-      }
-
-      "must throw if employerReference is missing" in {
-        when(mockGuard.check(any())).thenReturn(true)
-        when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
-            any[HeaderCarrier]
-          )
-        )
-          .thenReturn(Future.successful(monthlyReturnResponse))
-        val app = buildApp(userAnswersWithReturnType, hasEmployeeRef = false)
-
-        running(app) {
-          val thrown = intercept[IllegalStateException] {
-            await(route(app, request).get)
-          }
-          thrown.getMessage must include("employerReference missing for userId=")
         }
       }
 
@@ -570,18 +538,6 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must redirect to Unauthorised Agent Affinity if cisId is not found in UserAnswer" in {
-        val app = applicationBuilder(userAnswers = Some(emptyUserAnswers), isAgent = true).build()
-
-        running(app) {
-          val result = route(app, request).value
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.UnauthorisedAgentAffinityController
-            .onPageLoad()
-            .url
-        }
-      }
-
       "must throw if contractorName is missing" in {
         when(mockGuard.check(any())).thenReturn(true)
         when(
@@ -617,47 +573,6 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must throw if agent employerReference is missing" in {
-        when(mockGuard.check(any())).thenReturn(true)
-        when(
-          mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
-            any[HeaderCarrier]
-          )
-        )
-          .thenReturn(Future.successful(monthlyReturnResponse))
-        lazy val agentDateWithoutTaxRefTaxNumber: AgentClientData =
-          AgentClientData("CLIENT-123", "", "taxOfficeReference", Some("PAL 355 Scheme"))
-
-        val incompleteUa = userAnswersWithCisId
-          .set(ReturnTypePage, MonthlyNilReturn)
-          .success
-          .value
-          .set(EnterYourEmailAddressPage, email)
-          .success
-          .value
-          .set(AgentClientDataPage, agentDateWithoutTaxRefTaxNumber)
-          .success
-          .value
-          .set(DateConfirmPaymentsPage, periodEnd)
-          .success
-          .value
-          .set(
-            SubmissionDetailsPage,
-            SubmissionDetails(id = "123", status = "ACCEPTED", irMark = irMarkBase64, submittedAt = LocalDateTime.now)
-          )
-          .success
-          .value
-
-        val app = buildApp(incompleteUa, isAgent = true, hasAgentRef = false)
-
-        running(app) {
-          val thrown = intercept[IllegalStateException] {
-            await(route(app, request).get)
-          }
-          thrown.getMessage must include("employerReference missing for userId=")
-        }
-      }
-
       "must call getSchemeEmail when email is missing for agent" in {
         val fallbackEmail = "fallback@test.com"
         when(mockGuard.check(any())).thenReturn(true)
@@ -673,7 +588,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .success
           .value
 
-        when(mockMonthlyReturnService.getSchemeEmail(eqTo("1"))(any[HeaderCarrier]))
+        when(mockMonthlyReturnService.getSchemeEmail(any)(any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(fallbackEmail)))
         when(
           mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
@@ -690,7 +605,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           val result = route(app, request).value
           status(result) mustBe OK
           contentAsString(result) must include(fallbackEmail)
-          verify(mockMonthlyReturnService).getSchemeEmail(eqTo("1"))(any[HeaderCarrier])
+          verify(mockMonthlyReturnService).getSchemeEmail(eqTo(cisTaxpayer.uniqueId))(any[HeaderCarrier])
         }
       }
 

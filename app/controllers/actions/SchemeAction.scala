@@ -69,6 +69,10 @@ final class SchemeActionImpl @Inject() (
                   logger.info(s"Could not find scheme <$cisId> for ${request.user}.")
                   Left(NotFound(notFoundView()))
               }
+              .recover { ex =>
+                logger.error(s"Failed to find scheme <$cisId> for ${request.user}:", ex)
+                Left(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
 
       private def resolveSchemeForOrganisation[B](using request: IdentifierRequest[B]) =
         cisPath match

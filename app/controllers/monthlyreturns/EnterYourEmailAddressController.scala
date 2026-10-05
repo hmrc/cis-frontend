@@ -22,6 +22,7 @@ import models.Mode
 import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.EnterYourEmailAddressPage
+import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -44,7 +45,8 @@ class EnterYourEmailAddressController @Inject() (
   view: EnterYourEmailAddressView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   private val form = formProvider()
 
@@ -59,6 +61,10 @@ class EnterYourEmailAddressController @Inject() (
             .map {
               case Some(email) => Ok(view(cisPath, form.fill(email), mode))
               case None        => Ok(view(cisPath, form, mode))
+            }
+            .recover { ex =>
+              logger.warn(s"Falling back to empty form; failed to fetch email from backend:", ex)
+              Ok(view(cisPath, form, mode))
             }
       }
     }

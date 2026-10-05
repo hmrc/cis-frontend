@@ -24,7 +24,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.libs.json.*
 
 import java.time.LocalDate
@@ -73,15 +73,13 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with 
   "UpdateMonthlyReturnRequest.fromUserAnswers" should {
 
     "build a request without AmendmentDetailsPage" in {
-      val ua = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .success
-        .value
+      val cisId = "CIS-123"
+      val ua    = UserAnswers("test-user")
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
 
-      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(cisId, ua)
 
       result shouldBe Right(
         GetMonthlyReturnForEditRequest(
@@ -94,8 +92,9 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with 
     }
 
     "build a request with AmendmentDetailsPage" in {
+      val cisId            = "CIS-123"
       val amendmentDetails = AmendmentDetails(
-        instanceId = "CIS-123",
+        instanceId = cisId,
         taxYear = 2024,
         taxMonth = 3,
         contractorName = "Test Contractor Ltd",
@@ -104,9 +103,6 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with 
       )
 
       val ua = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .success
-        .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
         .success
         .value
@@ -114,11 +110,11 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with 
         .success
         .value
 
-      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(cisId, ua)
 
       result shouldBe Right(
         GetMonthlyReturnForEditRequest(
-          instanceId = "CIS-123",
+          instanceId = cisId,
           taxYear = 2024,
           taxMonth = 3,
           isAmendment = true
@@ -126,21 +122,11 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with 
       )
     }
 
-    "when CisIdPage is missing" in {
-      val ua = UserAnswers("test-user")
-
-      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
-
-      result shouldBe Left("Missing CisIdPage")
-    }
-
     "when DateConfirmPaymentsPage is missing" in {
-      val ua = UserAnswers("test-user")
-        .set(CisIdPage, "CIS-123")
-        .success
-        .value
+      val cisId = "CIS-123"
+      val ua    = UserAnswers("test-user")
 
-      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(cisId, ua)
 
       result shouldBe Left("Missing DateConfirmPayments")
     }

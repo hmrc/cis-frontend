@@ -18,9 +18,9 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
-import models.requests.CisIdDataRequest
+import models.requests.CisPath.CisOrg
 import models.submission.*
-import models.{ReturnType, UserAnswers}
+import models.{JourneyId, ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
@@ -29,7 +29,6 @@ import pages.submission.*
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.AnyContent
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
@@ -38,9 +37,10 @@ import services.submission.SubmissionService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{LocalDate, LocalDateTime}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
+  private given ExecutionContext = ExecutionContext.global
 
   private def buildAppWith(
     ua: Option[UserAnswers],
@@ -53,23 +53,21 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         bind[SessionRepository].toInstance(sessionDb)
       )
 
-  private val completeAnswers = emptyUserAnswers
+  private val completeAnswers = UserAnswers(JourneyId("some_user_id", "MonthlyReturnType", CisOrg.toUrl).asString)
     .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
-    .setOrException(CisIdPage, "test-cis-id")
     .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
     .setOrException(SubmitInactivityRequestPage, true)
     .setOrException(ConfirmationByEmailPage, false)
     .setOrException(DeclarationPage, Set(Confirmed))
 
-  lazy val submissionSendingRoute: String =
-    controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad().url
+  lazy val submissionSendingRoute: String = routes.SubmissionSendingController.onPageLoad(CisOrg).url
   private def mkRequest                   = FakeRequest(GET, submissionSendingRoute)
 
-  private def successRoute              = controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoad.url
-  private def successNoReceiptRoute     = controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoad.url
-  private def awaitingRoute             = controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoad.url
-  private def pollingRoute              = controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
-  private def unsuccessfulRoute         = controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoad.url
+  private def successRoute              = routes.SubmissionSuccessController.onPageLoad(CisOrg).url
+  private def successNoReceiptRoute     = routes.SubmittedNoReceiptController.onPageLoad.url
+  private def awaitingRoute             = routes.SubmissionAwaitingController.onPageLoad.url
+  private def pollingRoute              = routes.SubmissionSendingController.onPollAndRedirect(CisOrg).url
+  private def unsuccessfulRoute         = routes.SubmissionUnsuccessfulController.onPageLoad.url
   private def unsuccessfulResubmitRoute =
     controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url
   private def recoveryRoute             = controllers.routes.JourneyRecoveryController.onPageLoad().url
@@ -103,14 +101,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       error = None
     )
 
-    when(service.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier]))
-      .thenReturn(
-        Future.successful((createdId, updatedAnswers, isResubmission))
-      )
+    when(service.getOrCreateSubmissionForChris(any, any)(using any[HeaderCarrier])) thenReturn
+      Future.successful((createdId, updatedAnswers, isResubmission))
 
     when(
       service.submitToChrisAndPersist(
         eqTo(createdId),
+        any,
         eqTo(updatedAnswers),
         any[Boolean],
         eqTo(isResubmission)
@@ -122,10 +119,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         eqTo(createdId),
         eqTo(updatedAnswers),
         eqTo(submitted)
-      )(
-        any[CisIdDataRequest[AnyContent]],
-        any[HeaderCarrier]
-      )
+      )(any)
     ).thenReturn(Future.successful(()))
 
     (createdId, updatedAnswers, submitted)
@@ -136,12 +130,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
     "redirects to polling page when status is PENDING" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
+
       stubSubmissionFlow(mockService, status = "PENDING")
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe pollingRoute
@@ -155,7 +150,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe pollingRoute
@@ -169,7 +164,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
@@ -179,25 +174,23 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
 
-      when(mockService.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier]))
+      when(mockService.getOrCreateSubmissionForChris(any, any[UserAnswers])(using any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException("boom")))
 
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe systemErrorRoute
 
       verifyNoInteractions(mockMongoDb)
-      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
-        any[HeaderCarrier]
-      )
-      verify(mockService, never()).updateSubmissionFromChrisResponse(any[String], any[UserAnswers], any())(
-        any[CisIdDataRequest[AnyContent]],
-        any[HeaderCarrier]
-      )
+      verify(mockService, never())
+        .submitToChrisAndPersist(any[String], any, any[UserAnswers], any[Boolean], any[Boolean])(
+          any[HeaderCarrier]
+        )
+      verify(mockService, never()).updateSubmissionFromChrisResponse(any[String], any[UserAnswers], any())(any)
     }
 
     "redirects to Unauthorised (CRR3) and does not submit to ChRIS when FormP/RDS reconciliation reports missing known facts" in {
@@ -221,15 +214,16 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unauthorisedRoute
 
-      verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
-      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
-        any[HeaderCarrier]
-      )
+      verify(mockService, never()).getOrCreateSubmissionForChris(any, any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never())
+        .submitToChrisAndPersist(any[String], any, any[UserAnswers], any[Boolean], any[Boolean])(
+          any[HeaderCarrier]
+        )
     }
 
     "redirects to Unauthorised (CRR3) and does not submit to ChRIS when FormP/RDS reconciliation reports known facts not found" in {
@@ -253,15 +247,16 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unauthorisedRoute
 
-      verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
-      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
-        any[HeaderCarrier]
-      )
+      verify(mockService, never()).getOrCreateSubmissionForChris(any, any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never())
+        .submitToChrisAndPersist(any[String], any, any[UserAnswers], any[Boolean], any[Boolean])(
+          any[HeaderCarrier]
+        )
     }
 
     "redirects to Journey Recovery and does not submit to ChRIS when FormP/RDS reconciliation fails unexpectedly" in {
@@ -285,15 +280,16 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
 
-      verify(mockService, never()).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
-      verify(mockService, never()).submitToChrisAndPersist(any[String], any[UserAnswers], any[Boolean], any[Boolean])(
-        any[HeaderCarrier]
-      )
+      verify(mockService, never()).getOrCreateSubmissionForChris(any, any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService, never())
+        .submitToChrisAndPersist(any[String], any, any[UserAnswers], any[Boolean], any[Boolean])(
+          any[HeaderCarrier]
+        )
     }
 
     "redirects to Submission Unsuccessful Resubmit page when status is STARTED" in {
@@ -304,7 +300,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulResubmitRoute
@@ -325,7 +321,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(completedAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe
@@ -347,7 +343,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(incompleteAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
@@ -363,7 +359,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(userAnswersWithCisId), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
@@ -382,17 +378,18 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(completeAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe pollingRoute
 
-      verify(mockService).getOrCreateSubmissionForChris(
-        any[UserAnswers]
-      )(using any[HeaderCarrier])
+      verify(mockService).getOrCreateSubmissionForChris(eqTo(cisTaxpayer.uniqueId), any[UserAnswers])(using
+        any[HeaderCarrier]
+      )
 
       verify(mockService).submitToChrisAndPersist(
         eqTo(createdId),
+        eqTo(cisTaxpayer),
         eqTo(updatedAnswers),
         any[Boolean],
         eqTo(true)
@@ -402,10 +399,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         eqTo(createdId),
         eqTo(updatedAnswers),
         eqTo(submitted)
-      )(
-        any[CisIdDataRequest[AnyContent]],
-        any[HeaderCarrier]
-      )
+      )(any)
     }
   }
 
@@ -432,12 +426,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       )
 
       when(
-        service.getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+        service.getOrCreateSubmissionForChris(any, any[UserAnswers])(using any[HeaderCarrier])
       ).thenReturn(Future.successful((existingSubId.toString, resubmitAnswers, true)))
 
       when(
-        service.submitToChrisAndPersist(eqTo(existingSubId.toString), any[UserAnswers], any[Boolean], eqTo(true))(using
-          any[HeaderCarrier]
+        service.submitToChrisAndPersist(eqTo(existingSubId.toString), any, any[UserAnswers], any[Boolean], eqTo(true))(
+          using any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(submitted))
 
@@ -445,10 +439,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(Future.successful(true))
 
       when(
-        service.updateSubmissionFromChrisResponse(eqTo(existingSubId.toString), any[UserAnswers], eqTo(submitted))(
-          any[CisIdDataRequest[AnyContent]],
-          any[HeaderCarrier]
-        )
+        service.updateSubmissionFromChrisResponse(eqTo(existingSubId.toString), any[UserAnswers], eqTo(submitted))(any)
       ).thenReturn(Future.successful(()))
 
       submitted
@@ -462,13 +453,15 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe pollingRoute
 
-      verify(mockService).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
-      verify(mockService, never()).create(any[UserAnswers])(using any[HeaderCarrier])
+      verify(mockService).getOrCreateSubmissionForChris(eqTo(cisTaxpayer.uniqueId), any[UserAnswers])(using
+        any[HeaderCarrier]
+      )
+      verify(mockService, never()).create(eqTo(cisTaxpayer.uniqueId), any[UserAnswers])(using any[HeaderCarrier])
     }
 
     "redirects to polling when resubmission status is ACCEPTED" in {
@@ -479,7 +472,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe pollingRoute
@@ -493,7 +486,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app        = buildAppWith(Some(resubmitAnswers), mockService, mockMongoDb).build()
       val controller = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = controller.onPageLoad()(mkRequest)
+      val result = controller.onPageLoad(CisOrg)(mkRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulResubmitRoute
@@ -501,7 +494,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
   }
 
   lazy val pollAndRedirectRoute: String =
-    controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect.url
+    controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect(CisOrg).url
   private def mkPollRequest             = FakeRequest(GET, pollAndRedirectRoute)
 
   "SubmissionSendingController.onPollAndRedirect" - {
@@ -518,15 +511,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(userAnswers), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
       verify(mockService, never()).getPollInterval(any[UserAnswers])
-      verify(mockService, never()).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService, never()).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "returns OK with Refresh header when decision is Skip" in {
@@ -551,25 +541,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Skip))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "returns OK with Refresh header when decision is Polled(PENDING)" in {
@@ -594,25 +578,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("PENDING")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "returns OK with Refresh header when decision is Polled(ACCEPTED)" in {
@@ -637,25 +615,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("ACCEPTED")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "redirects to SubmissionAwaiting when decision is Polled(TIMED_OUT)" in {
@@ -680,25 +652,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("TIMED_OUT")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe awaitingRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "redirects to SubmissionSuccess when decision is Polled(SUBMITTED)" in {
@@ -723,10 +689,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED")))
 
@@ -736,15 +699,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
@@ -770,10 +730,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED")))
 
@@ -783,16 +740,13 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
 
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
@@ -818,10 +772,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED_NO_RECEIPT")))
 
@@ -831,15 +782,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successNoReceiptRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
@@ -865,10 +813,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("SUBMITTED_NO_RECEIPT")))
 
@@ -878,15 +823,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successNoReceiptRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       verify(mockService).sendSuccessEmail(any[UserAnswers], any[String])(using any[HeaderCarrier])
     }
 
@@ -912,25 +854,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("FATAL_ERROR")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "redirects to SubmissionUnsuccessful when decision is Polled(DEPARTMENTAL_ERROR)" in {
@@ -955,10 +891,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("DEPARTMENTAL_ERROR")))
 
@@ -968,15 +901,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "redirects to SubmissionUnsuccessful when decision is Polled(DEPARTMENTAL_ERROR) even if sending email fails" in {
@@ -1001,10 +931,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("DEPARTMENTAL_ERROR")))
 
@@ -1014,15 +941,12 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "redirects to JourneyRecovery when decision is Polled with unknown status" in {
@@ -1047,25 +971,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("UNKNOWN_STATUS")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
 
     "redirects to SubmissionUnsuccessfulResubmit when decision is STARTED" in {
@@ -1090,17 +1008,14 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       )
         .thenReturn(Future.successful(PollDecision.Polled("STARTED")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulResubmitRoute
@@ -1121,7 +1036,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       val app = buildAppWith(Some(completedAnswers), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe
@@ -1154,25 +1069,19 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .thenReturn(10)
 
       when(
-        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-          any[HeaderCarrier],
-          any[CisIdDataRequest[AnyContent]]
-        )
+        mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
       ).thenReturn(Future.failed(new RuntimeException("poll failed")))
 
       val app = buildAppWith(Some(uaWithSubmission), mockService, mockMongoDb).build()
       val ctl = app.injector.instanceOf[SubmissionSendingController]
 
-      val result = ctl.onPollAndRedirect()(mkPollRequest)
+      val result = ctl.onPollAndRedirect(CisOrg)(mkPollRequest)
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
 
       verify(mockService).getPollInterval(any[UserAnswers])
-      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
-        any[HeaderCarrier],
-        any[CisIdDataRequest[AnyContent]]
-      )
+      verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using any)
     }
   }
 }

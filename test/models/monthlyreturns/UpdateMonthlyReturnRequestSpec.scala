@@ -19,9 +19,9 @@ package models.monthlyreturns
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.amend.AmendmentDetails
+import org.scalatest.TryValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.TryValues
 import pages.monthlyreturns.*
 import play.api.libs.json.{JsSuccess, Json}
 
@@ -49,11 +49,9 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
   "UpdateMonthlyReturnRequest.fromUserAnswers" should {
 
     "build a request for MonthlyNilReturn (minimal required answers)" in {
-      val ua = UserAnswers("test-user")
+      val cisId = "CIS-123"
+      val ua    = UserAnswers("test-user")
         .set(ReturnTypePage, MonthlyNilReturn)
-        .success
-        .value
-        .set(CisIdPage, "CIS-123")
         .success
         .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
@@ -63,7 +61,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .success
         .value
 
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua)
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(cisId, ua)
 
       result shouldBe Right(
         UpdateMonthlyReturnRequest(
@@ -81,11 +79,9 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
     }
 
     "build a request for MonthlyStandardReturn with standard declarations" in {
-      val ua = UserAnswers("test-user")
+      val cisId = "CIS-456"
+      val ua    = UserAnswers("test-user")
         .set(ReturnTypePage, MonthlyStandardReturn)
-        .success
-        .value
-        .set(CisIdPage, "CIS-456")
         .success
         .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 4, 1))
@@ -104,7 +100,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .success
         .value
 
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua)
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(cisId, ua)
 
       result shouldBe Right(
         UpdateMonthlyReturnRequest(
@@ -124,11 +120,9 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
     }
 
     "build a request for MonthlyStandardReturn without optional inactivity when SubmitInactivityRequestPage is false" in {
-      val ua = UserAnswers("test-user")
+      val cisId = "CIS-789"
+      val ua    = UserAnswers("test-user")
         .set(ReturnTypePage, MonthlyStandardReturn)
-        .success
-        .value
-        .set(CisIdPage, "CIS-789")
         .success
         .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 5, 1))
@@ -147,7 +141,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .success
         .value
 
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua)
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(cisId, ua)
 
       result shouldBe Right(
         UpdateMonthlyReturnRequest(
@@ -167,11 +161,9 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
     }
 
     "not include inactivity when SubmitInactivityRequestPage is missing" in {
-      val ua = UserAnswers("test-user")
+      val cisId = "CIS-999"
+      val ua    = UserAnswers("test-user")
         .set(ReturnTypePage, MonthlyStandardReturn)
-        .success
-        .value
-        .set(CisIdPage, "CIS-999")
         .success
         .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 6, 1))
@@ -187,17 +179,15 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .success
         .value
 
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(cisId, ua).toOption.get
 
       result.decNoMoreSubPayments shouldBe None
     }
 
     "set decInformationCorrect when DeclarationPage has a value" in {
-      val ua = UserAnswers("test-user")
+      val cisId = "CIS-321"
+      val ua    = UserAnswers("test-user")
         .set(ReturnTypePage, MonthlyNilReturn)
-        .success
-        .value
-        .set(CisIdPage, "CIS-321")
         .success
         .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2024, 7, 1))
@@ -210,7 +200,7 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
         .success
         .value
 
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua).toOption.get
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(cisId, ua).toOption.get
 
       result.decInformationCorrect shouldBe Some("Y")
     }

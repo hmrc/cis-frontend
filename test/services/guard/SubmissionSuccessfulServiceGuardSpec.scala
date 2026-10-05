@@ -16,9 +16,10 @@
 
 package services.guard
 
-import models.UserAnswers
-import models.requests.CisIdDataRequest
+import models.monthlyreturns.CisTaxpayer
+import models.requests.{IdentifierRequest, JourneyRequest, SchemeRequest}
 import models.submission.SubmissionDetails
+import models.{EmployerReference, UserAnswers}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pages.submission.SubmissionDetailsPage
@@ -34,13 +35,16 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
   private def emptyUserAnswers(userId: String = "uid"): UserAnswers =
     UserAnswers(userId)
 
-  private def cisIdDataRequest(ua: UserAnswers): CisIdDataRequest[_] =
-    CisIdDataRequest(
-      request = FakeRequest(),
-      userId = ua.id,
-      userAnswers = ua,
-      employerReference = None,
-      cisId = "1"
+  private def journeyRequest(ua: UserAnswers): JourneyRequest[_] =
+    val ton           = "123"
+    val tor           = "AB1234"
+    val empRef        = EmployerReference("123", "AB1234")
+    val identifierReq = IdentifierRequest(FakeRequest(), ua.id, Some(empRef), None, false, None)
+    val cisTaxpayer   =
+      CisTaxpayer("12345", ton, tor, None, None, None, None, None, None, None, None, None, None, None, None, None)
+    JourneyRequest(
+      SchemeRequest(identifierReq, cisTaxpayer),
+      userAnswers = ua
     )
 
   private def submissionDetails(
@@ -61,62 +65,62 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
   "SubmissionSuccessfulServiceGuardImpl.check" should {
 
     "return false when SubmissionDetailsPage is absent" in {
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(emptyUserAnswers())
+      given JourneyRequest[?] = journeyRequest(emptyUserAnswers())
       guard.check mustBe false
     }
 
     "return true when status is SUBMITTED and IRMarks match" in {
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, submissionDetails()).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, submissionDetails()).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe true
     }
 
     "return true when amendment is Y and IRMarks match (even if status is not SUBMITTED)" in {
-      val details                               = submissionDetails(status = "PENDING", amendment = Some("Y"))
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(status = "PENDING", amendment = Some("Y"))
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe true
     }
 
     "return false when status is not SUBMITTED and amendment is not Y" in {
-      val details                               = submissionDetails(status = "PENDING", amendment = Some("N"))
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(status = "PENDING", amendment = Some("N"))
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe false
     }
 
     "return false when status is not SUBMITTED and amendment is None" in {
-      val details                               = submissionDetails(status = "ACCEPTED", amendment = None)
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(status = "ACCEPTED", amendment = None)
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe false
     }
 
     "return false when irMark is empty" in {
-      val details                               = submissionDetails(irMark = "", hmrcMarkGgis = Some(""))
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(irMark = "", hmrcMarkGgis = Some(""))
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe false
     }
 
     "return false when hmrcMarkGgis is None" in {
-      val details                               = submissionDetails(hmrcMarkGgis = None)
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(hmrcMarkGgis = None)
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe false
     }
 
     "return false when hmrcMarkGgis does not match irMark" in {
-      val details                               = submissionDetails(hmrcMarkGgis = Some("differentMark"))
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(hmrcMarkGgis = Some("differentMark"))
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe false
     }
 
     "return false when hmrcMarkGgis is empty string" in {
-      val details                               = submissionDetails(hmrcMarkGgis = Some(""))
-      val ua                                    = emptyUserAnswers().set(SubmissionDetailsPage, details).get
-      implicit val request: CisIdDataRequest[_] = cisIdDataRequest(ua)
+      val details             = submissionDetails(hmrcMarkGgis = Some(""))
+      val ua                  = emptyUserAnswers().set(SubmissionDetailsPage, details).get
+      given JourneyRequest[?] = journeyRequest(ua)
       guard.check mustBe false
     }
   }

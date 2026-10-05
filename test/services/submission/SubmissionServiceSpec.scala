@@ -20,34 +20,32 @@ import base.SpecBase
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.UserAnswers
 import models.agent.AgentClientData
 import models.monthlyreturns.*
 import models.requests.*
 import models.submission.*
+import models.{EmployerReference, UserAnswers}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.*
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsString, Json}
-import play.api.mvc.AnyContent
 import play.api.test.FakeRequest
 import repositories.SessionRepository
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{Clock, Instant, LocalDate, LocalDateTime, YearMonth, ZoneOffset}
+import java.time.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 class SubmissionServiceSpec extends SpecBase with TryValues {
 
-  implicit val hc: HeaderCarrier     = HeaderCarrier()
-  implicit val ec: ExecutionContext  = scala.concurrent.ExecutionContext.global
-  given CisIdDataRequest[AnyContent] = CisIdDataRequest(FakeRequest(), userAnswersId, emptyUserAnswers, "123")
+  implicit val hc: HeaderCarrier    = HeaderCarrier()
+  implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   private val utcClock: Clock = Clock.systemUTC()
 
@@ -60,11 +58,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   ): SubmissionService =
     new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, clock)
 
+  private val cisId    = "12345"
+  private val ton      = "123"
+  private val tor      = "AB456"
   private val taxpayer =
     CisTaxpayer(
-      uniqueId = "123",
-      taxOfficeNumber = "123",
-      taxOfficeRef = "AB456",
+      uniqueId = cisId,
+      taxOfficeNumber = ton,
+      taxOfficeRef = tor,
       employerName1 = Some("TEST LTD"),
       utr = Some("1234567890"),
       aoReference = Some("12345678"),
@@ -79,6 +80,10 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       schemeName = None,
       enrolledSig = None
     )
+
+  private val empRef             = EmployerReference(ton, tor)
+  private val identifierReq      = IdentifierRequest(FakeRequest(), "some_user_id", Some(empRef), None, false, None)
+  private given SchemeRequest[?] = SchemeRequest(identifierReq, taxpayer)
 
   "getOrCreateSubmissionForChris" - {
 
@@ -96,7 +101,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .success
         .value
 
-      val result = service.getOrCreateSubmissionForChris(ua).futureValue
+      val result = service.getOrCreateSubmissionForChris(cisId, ua).futureValue
 
       result mustBe ("13180", ua, true)
 
@@ -122,7 +127,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       when(sessionRepository.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
-      val result = service.getOrCreateSubmissionForChris(uaBase).futureValue
+      val result = service.getOrCreateSubmissionForChris(cisId, uaBase).futureValue
 
       result._1 mustBe "sub-123"
       result._3 mustBe false
@@ -146,7 +151,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val expectedReq = CreateSubmissionRequest(
-        instanceId = "123",
+        instanceId = cisId,
         taxYear = 2025,
         taxMonth = 10,
         amendment = "N",
@@ -159,7 +164,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(beResp))
       when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
-      val out = service.create(uaBase).futureValue
+      val out = service.create(cisId, uaBase).futureValue
       out._1 mustBe beResp
 
       val cap: ArgumentCaptor[CreateSubmissionRequest] =
@@ -167,26 +172,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
       cap.getValue mustBe expectedReq
       verify(sessionRepository).set(any[UserAnswers])
-    }
-
-    "fail when CIS ID is missing" in {
-      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration(
-          "submission-poll-timeout-seconds" -> "60"
-        )
-      )
-      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
-
-      val ua = emptyUserAnswers.set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
-
-      val ex = intercept[RuntimeException] {
-        service.create(ua).futureValue
-      }
-      ex.getMessage must include("CIS ID missing")
-      verifyNoInteractions(connector)
     }
 
     "fail when Month/Year is missing" in {
@@ -201,15 +186,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
-        .set(CisIdPage, "123")
-        .success
-        .value
         .set(ReturnTypePage, MonthlyNilReturn)
         .success
         .value
 
       val ex = intercept[RuntimeException] {
-        service.create(ua).futureValue
+        service.create(cisId, ua).futureValue
       }
       ex.getMessage must include("Date of return missing for monthly return")
       verifyNoInteractions(connector)
@@ -227,9 +209,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
-        .set(CisIdPage, "123")
-        .success
-        .value
         .set(DateConfirmPaymentsPage, LocalDate.of(2025, 11, 10))
         .success
         .value
@@ -245,7 +224,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .thenReturn(Future.successful(beResp))
       when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
-      service.create(ua).futureValue
+      service.create(cisId, ua).futureValue
 
       val cap: ArgumentCaptor[CreateSubmissionRequest] =
         ArgumentCaptor.forClass(classOf[CreateSubmissionRequest])
@@ -268,15 +247,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
 
       val ua = emptyUserAnswers
-        .set(CisIdPage, "123")
-        .success
-        .value
         .set(ReturnTypePage, MonthlyStandardReturn)
         .success
         .value
 
       val ex = intercept[RuntimeException] {
-        service.create(ua).futureValue
+        service.create(cisId, ua).futureValue
       }
 
       ex.getMessage mustBe "Date of return missing for monthly return"
@@ -323,7 +299,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
         stubRetrieveMonthlyReturnForEditDetails(connector)
 
-        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
+        val out = service.submitToChrisAndPersist("sub-123", taxpayer, uaWithInactivityYes, false, false).futureValue
         out mustBe beResp
 
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -369,7 +345,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         ).thenThrow(new RuntimeException("boom-builder"))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, false, false).futureValue
+          service.submitToChrisAndPersist("sub-123", taxpayer, uaBase, false, false).futureValue
         }
         ex.getMessage must include("boom-builder")
 
@@ -392,7 +368,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .thenReturn(Future.successful(taxpayer))
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", emptyUserAnswers, false, false).futureValue
+          service.submitToChrisAndPersist("sub-123", taxpayer, emptyUserAnswers, false, false).futureValue
         }
         ex.getMessage must include("Month and year of return missing")
 
@@ -453,7 +429,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
           .thenReturn(builtCsr)
 
-        val out = service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
+        val out = service.submitToChrisAndPersist("sub-123", taxpayer, uaWithInactivityYes, false, false).futureValue
         out mustBe beRespWithEndpoint
 
         verify(sessionRepository).set(uaCaptor.capture())
@@ -503,7 +479,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
 
-        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
+        service.submitToChrisAndPersist("sub-123", taxpayer, uaWithInactivityYes, false, false).futureValue
 
         val saved = uaCaptor.getValue
         saved.get(SubmissionDetailsPage).value.amendment mustBe Some("Y")
@@ -549,7 +525,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         val uaCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         when(sessionRepository.set(uaCaptor.capture())).thenReturn(Future.successful(true))
 
-        service.submitToChrisAndPersist("sub-123", uaWithInactivityYes, false, false).futureValue
+        service.submitToChrisAndPersist("sub-123", taxpayer, uaWithInactivityYes, false, false).futureValue
 
         val saved = uaCaptor.getValue
         saved.get(SubmissionDetailsPage).value.amendment mustBe None
@@ -597,7 +573,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           .set(eqTo(SubmissionDetailsPage), any)(any())
 
         val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaSpy, false, false).futureValue
+          service.submitToChrisAndPersist("sub-123", taxpayer, uaSpy, false, false).futureValue
         }
         ex.getMessage must include("boom: cannot write submission id")
         verify(sessionRepository, never()).set(any[UserAnswers])
@@ -643,6 +619,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           service
             .submitToChrisAndPersist(
               submissionId = "sub-123",
+              cisTaxpayer = taxpayer,
               ua = uaWithInactivityYes,
               isAgent = false,
               isResubmission = true
@@ -698,7 +675,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         stubRetrieveMonthlyReturnForEditDetails(connector)
 
         val uaWithAgentClientData = uaWithInactivityYes.set(AgentClientDataPage, agentDate).success.value
-        val out                   = service.submitToChrisAndPersist("sub-123", uaWithAgentClientData, true, false).futureValue
+        val out                   = service.submitToChrisAndPersist("sub-123", taxpayer, uaWithAgentClientData, true, false).futureValue
         out mustBe beResp
 
         val cap: ArgumentCaptor[ChrisSubmissionRequest] =
@@ -706,38 +683,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         verify(connector).submitToChris(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
         cap.getValue mustBe builtCsr
       }
-
-      "fail when agent client data is missing" in {
-        val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-        val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-        val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-          Configuration(
-            "submission-poll-timeout-seconds" -> "60"
-          )
-        )
-        val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
-
-        when(connector.getAgentClientTaxpayer(any(), any())(any[HeaderCarrier]))
-          .thenReturn(Future.successful(taxpayer))
-
-        val beResp = mkChrisResp()
-
-        when(sessionRepository.set(any[UserAnswers]))
-          .thenReturn(Future.successful(true))
-
-        when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
-          .thenReturn(Future.successful(beResp))
-
-        val ex = intercept[RuntimeException] {
-          service.submitToChrisAndPersist("sub-123", uaBase, true, false).futureValue
-        }
-        ex.getMessage must include("Agent client data missing")
-        verify(connector, never()).submitToChris(any[String], any[ChrisSubmissionRequest])(any[HeaderCarrier])
-      }
-
     }
-
   }
 
   "updateSubmission" - {
@@ -771,7 +717,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
 
       val upd = cap.getValue
-      upd.instanceId mustBe "123"
+      upd.instanceId mustBe cisId
       upd.taxYear mustBe 2025
       upd.taxMonth mustBe 10
       upd.hmrcMarkGenerated mustBe Some("Dj5TVJDyRYCn9zta5EdySeY4fyA=")
@@ -808,27 +754,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).updateSubmission(eqTo("sub-123"), cap.capture())(any[HeaderCarrier])
 
       cap.getValue.govTalkResponse mustBe Some(GovTalkErrorStatus.ServerError(503))
-    }
-
-    "fail when CIS ID missing" in {
-      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
-      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
-      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
-        Configuration(
-          "submission-poll-timeout-seconds" -> "60"
-        )
-      )
-      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
-
-      val ua        = emptyUserAnswers.set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5)).success.value
-      val chrisResp = mkChrisResp()
-
-      val ex = intercept[RuntimeException] {
-        service.updateSubmissionFromChrisResponse("sub-123", ua, chrisResp).futureValue
-      }
-      ex.getMessage must include("CIS ID missing")
-      verifyNoInteractions(connector)
     }
 
     "fail when Month/Year not selected" in {
@@ -1697,7 +1622,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(
         connector
-          .sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
+          .sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier])
       )
         .thenReturn(Future.unit)
 
@@ -1713,7 +1638,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       savedCaptor.getValue.get(SuccessEmailSentPage(submissionId)).value mustBe true
 
       verify(connector)
-        .sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier], any[ExecutionContext])
+        .sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(any[HeaderCarrier])
       verify(sessionRepository).set(any[UserAnswers])
     }
 
@@ -1843,8 +1768,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(
         connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(
-          any[HeaderCarrier],
-          any[ExecutionContext]
+          any[HeaderCarrier]
         )
       ).thenReturn(Future.unit)
 
@@ -1858,7 +1782,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
 
       verify(connector)
-        .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+        .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier])
 
       reqCaptor.getValue.month mustBe "Hydref"
       reqCaptor.getValue.year mustBe "2025"
@@ -1945,8 +1869,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(
         connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(
-          any[HeaderCarrier],
-          any[ExecutionContext]
+          any[HeaderCarrier]
         )
       ).thenReturn(Future.unit)
 
@@ -1960,7 +1883,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
 
       verify(connector)
-        .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
+        .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier])
 
       reqCaptor.getValue.email mustBe "standard@test.com"
     }
@@ -2087,9 +2010,6 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   private def uaBase: UserAnswers =
     emptyUserAnswers
-      .set(CisIdPage, "123")
-      .success
-      .value
       .set(DateConfirmPaymentsPage, LocalDate.of(2025, 10, 5))
       .success
       .value

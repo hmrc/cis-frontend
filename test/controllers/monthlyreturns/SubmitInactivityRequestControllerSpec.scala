@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.SubmitInactivityRequestFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -40,8 +41,7 @@ class SubmitInactivityRequestControllerSpec extends SpecBase with MockitoSugar {
   val formProvider = new SubmitInactivityRequestFormProvider()
   val form         = formProvider()
 
-  lazy val submitInactivityRequestRoute =
-    controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode).url
+  lazy val submitInactivityRequestRoute = routes.SubmitInactivityRequestController.onPageLoad(CisOrg, NormalMode).url
 
   "SubmitInactivityRequest Controller" - {
 
@@ -57,7 +57,7 @@ class SubmitInactivityRequestControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[SubmitInactivityRequestView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode)(request, messages(application)).toString
       }
     }
 
@@ -75,7 +75,10 @@ class SubmitInactivityRequestControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form.fill(true), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -121,37 +124,7 @@ class SubmitInactivityRequestControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
-      }
-    }
-
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request = FakeRequest(GET, submitInactivityRequestRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, submitInactivityRequestRoute)
-            .withFormUrlEncodedBody(("value", "true"))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode)(request, messages(application)).toString
       }
     }
   }

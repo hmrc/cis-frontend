@@ -26,7 +26,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage, SubmissionConfirmationCachePage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -35,20 +35,20 @@ import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
-import java.time.format.DateTimeFormatter
 import java.time.*
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import scala.concurrent.Future
 
 class SubmittedNoReceiptControllerSpec extends SpecBase {
 
-  val email: String              = "test@test.com"
-  val periodEnd: LocalDate       = LocalDate.of(2018, 3, 5)
-  val fixedInstant: Instant      = Instant.parse("2017-01-06T08:46:00Z")
-  val contractorName: String     = "PAL 355 Scheme"
-  val employerRef: String        = "taxOfficeNumber/taxOfficeReference"
-  val submissionType: ReturnType = ReturnType.MonthlyNilReturn
-  val cisId                      = "1"
+  val email: String                = "test@test.com"
+  val periodEnd: LocalDate         = LocalDate.of(2018, 3, 5)
+  val fixedInstant: Instant        = Instant.parse("2017-01-06T08:46:00Z")
+  val contractorName: String       = "PAL 355 Scheme"
+  override val employerRef: String = "taxOfficeNumber/taxOfficeReference"
+  val submissionType: ReturnType   = ReturnType.MonthlyNilReturn
+  val cisId                        = "1"
 
   private val dmyFmt  = DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK)
   private val timeFmt = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
@@ -134,11 +134,11 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             .thenReturn(Future.unit)
 
           val app =
-            applicationBuilder(userAnswers = Some(baseUa))
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockService)
-              )
+            applicationBuilder(
+              userAnswers = Some(baseUa),
+              clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+            )
+              .overrides(bind[MonthlyReturnService].toInstance(mockService))
               .build()
 
           val view = app.injector.instanceOf[SubmittedNoReceiptView]
@@ -194,11 +194,11 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa))
-            .overrides(
-              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-              bind[MonthlyReturnService].toInstance(mockService)
-            )
+          val app = applicationBuilder(
+            userAnswers = Some(incompleteUa),
+            clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+          )
+            .overrides(bind[MonthlyReturnService].toInstance(mockService))
             .build()
 
           running(app) {
@@ -231,11 +231,11 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa))
-            .overrides(
-              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-              bind[MonthlyReturnService].toInstance(mockService)
-            )
+          val app = applicationBuilder(
+            userAnswers = Some(incompleteUa),
+            clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+          )
+            .overrides(bind[MonthlyReturnService].toInstance(mockService))
             .build()
 
           running(app) {
@@ -255,11 +255,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           )
             .thenReturn(Future.successful(monthlyReturnResponse))
 
-          val app = applicationBuilder(userAnswers = Some(baseUa), hasEmployeeRef = false)
-            .overrides(
-              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-              bind[MonthlyReturnService].toInstance(mockService)
-            )
+          val app = applicationBuilder(
+            userAnswers = Some(baseUa),
+            hasEmployeeRef = false,
+            clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+          )
+            .overrides(bind[MonthlyReturnService].toInstance(mockService))
             .build()
 
           running(app) {
@@ -301,13 +302,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
             .thenReturn(Future.unit)
 
-          val app =
-            applicationBuilder(userAnswers = Some(uaWithoutEmail))
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockService)
-              )
-              .build()
+          val app = applicationBuilder(
+            userAnswers = Some(uaWithoutEmail),
+            clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+          )
+            .overrides(bind[MonthlyReturnService].toInstance(mockService))
+            .build()
 
           val view = app.injector.instanceOf[SubmittedNoReceiptView]
 
@@ -361,13 +361,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
             .thenReturn(Future.unit)
 
-          val app =
-            applicationBuilder(userAnswers = Some(uaNoEmail))
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockService)
-              )
-              .build()
+          val app = applicationBuilder(
+            userAnswers = Some(uaNoEmail),
+            clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+          )
+            .overrides(bind[MonthlyReturnService].toInstance(mockService))
+            .build()
 
           val view = app.injector.instanceOf[SubmittedNoReceiptView]
 
@@ -421,11 +420,11 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-          val app = applicationBuilder(userAnswers = Some(incompleteUa))
-            .overrides(
-              bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-              bind[MonthlyReturnService].toInstance(mockService)
-            )
+          val app = applicationBuilder(
+            userAnswers = Some(incompleteUa),
+            clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+          )
+            .overrides(bind[MonthlyReturnService].toInstance(mockService))
             .build()
 
           running(app) {
@@ -509,13 +508,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
               .thenReturn(Future.unit)
 
-            val app =
-              applicationBuilder(userAnswers = Some(baseUa))
-                .overrides(
-                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                  bind[MonthlyReturnService].toInstance(mockService)
-                )
-                .build()
+            val app = applicationBuilder(
+              userAnswers = Some(baseUa),
+              clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+            )
+              .overrides(bind[MonthlyReturnService].toInstance(mockService))
+              .build()
 
             val view = app.injector.instanceOf[SubmittedNoReceiptView]
 
@@ -571,11 +569,11 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .success
                 .value
 
-            val app = applicationBuilder(userAnswers = Some(incompleteUa))
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockService)
-              )
+            val app = applicationBuilder(
+              userAnswers = Some(incompleteUa),
+              clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+            )
+              .overrides(bind[MonthlyReturnService].toInstance(mockService))
               .build()
 
             running(app) {
@@ -607,13 +605,14 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .success
               .value
 
-            val app =
-              applicationBuilder(userAnswers = Some(incompleteUa), hasEmployeeRef = false, isAgent = true)
-                .overrides(
-                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                  bind[MonthlyReturnService].toInstance(mockService)
-                )
-                .build()
+            val app = applicationBuilder(
+              userAnswers = Some(incompleteUa),
+              hasEmployeeRef = false,
+              isAgent = true,
+              clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+            )
+              .overrides(bind[MonthlyReturnService].toInstance(mockService))
+              .build()
 
             running(app) {
               val thrown = intercept[IllegalStateException] {
@@ -660,11 +659,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .thenReturn(Future.unit)
 
             val app =
-              applicationBuilder(userAnswers = Some(uaWithoutEmail), isAgent = true)
-                .overrides(
-                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                  bind[MonthlyReturnService].toInstance(mockService)
-                )
+              applicationBuilder(
+                userAnswers = Some(uaWithoutEmail),
+                isAgent = true,
+                clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+              )
+                .overrides(bind[MonthlyReturnService].toInstance(mockService))
                 .build()
 
             val view = app.injector.instanceOf[SubmittedNoReceiptView]
@@ -729,11 +729,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .thenReturn(Future.unit)
 
             val app =
-              applicationBuilder(userAnswers = Some(uaNoEmail), isAgent = true)
-                .overrides(
-                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                  bind[MonthlyReturnService].toInstance(mockService)
-                )
+              applicationBuilder(
+                userAnswers = Some(uaNoEmail),
+                isAgent = true,
+                clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+              )
+                .overrides(bind[MonthlyReturnService].toInstance(mockService))
                 .build()
 
             val view = app.injector.instanceOf[SubmittedNoReceiptView]
@@ -791,11 +792,12 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 .success
                 .value
 
-            val app = applicationBuilder(userAnswers = Some(incompleteUa), isAgent = true)
-              .overrides(
-                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                bind[MonthlyReturnService].toInstance(mockService)
-              )
+            val app = applicationBuilder(
+              userAnswers = Some(incompleteUa),
+              isAgent = true,
+              clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+            )
+              .overrides(bind[MonthlyReturnService].toInstance(mockService))
               .build()
 
             running(app) {
@@ -834,11 +836,8 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .thenReturn(Future.unit)
 
             val app =
-              applicationBuilder(userAnswers = Some(uaWithoutEmail))
-                .overrides(
-                  bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
-                  bind[MonthlyReturnService].toInstance(mockService)
-                )
+              applicationBuilder(userAnswers = Some(uaWithoutEmail), clock = Clock.fixed(fixedInstant, ZoneOffset.UTC))
+                .overrides(bind[MonthlyReturnService].toInstance(mockService))
                 .build()
 
             val view = app.injector.instanceOf[SubmittedNoReceiptView]

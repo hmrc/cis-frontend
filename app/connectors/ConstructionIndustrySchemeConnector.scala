@@ -220,7 +220,9 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         }
       }
 
-  def sendSuccessfulEmail(submissionId: String, request: SendSuccessEmailRequest)(using HeaderCarrier): Future[Unit] =
+  def sendSuccessfulEmail(submissionId: String, request: SendSuccessEmailRequest)(implicit
+    hc: HeaderCarrier
+  ): Future[Unit] =
     http
       .post(url"$cisBaseUrl/submissions/$submissionId/send-success-email")
       .withBody(Json.toJson(request))

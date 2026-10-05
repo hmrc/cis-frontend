@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
@@ -29,7 +30,7 @@ class DeclarationViewSpec extends SpecBase with Matchers {
   "DeclarationView" - {
 
     "must render the page with heading, paragraph and button" in new Setup {
-      val html = view(NormalMode)
+      val html = view(CisOrg, NormalMode)
       val doc  = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.declaration.title"))

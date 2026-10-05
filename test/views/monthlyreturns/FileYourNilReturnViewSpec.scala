@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import models.ReturnType.MonthlyNilReturn
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import play.api.i18n.Messages
@@ -36,7 +37,7 @@ class FileYourNilReturnViewSpec extends SpecBase {
 
       val expectedUrl: String =
         controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-          .onSubmit(MonthlyNilReturn)
+          .onSubmit(CisOrg, MonthlyNilReturn)
           .url
 
       val button: Element = doc.getElementsByClass("govuk-button").first()
@@ -56,6 +57,6 @@ class FileYourNilReturnViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view()
+    val html = view(CisOrg)
   }
 }

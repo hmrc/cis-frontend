@@ -17,6 +17,7 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
@@ -40,7 +41,7 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
 
     "must post to the correct form action" in new Setup {
       doc.select("form").attr("action") mustBe controllers.monthlyreturns.routes.CheckYourAnswersController
-        .onSubmit()
+        .onSubmit(CisOrg)
         .url
     }
 
@@ -51,7 +52,7 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
         actions = Seq.empty
       )
       val listWithRow      = SummaryListViewModel(Seq(returnDetailsRow))
-      val docWithRows      = Jsoup.parse(view(listWithRow, SummaryListViewModel(Seq.empty)).body)
+      val docWithRows      = Jsoup.parse(view(CisOrg, listWithRow, SummaryListViewModel(Seq.empty)).body)
 
       docWithRows.select(".govuk-summary-list__key").text   must include("Return period")
       docWithRows.select(".govuk-summary-list__value").text must include("January 2025")
@@ -64,7 +65,7 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
         actions = Seq.empty
       )
       val listWithRow = SummaryListViewModel(Seq(emailRow))
-      val docWithRows = Jsoup.parse(view(SummaryListViewModel(Seq.empty), listWithRow).body)
+      val docWithRows = Jsoup.parse(view(CisOrg, SummaryListViewModel(Seq.empty), listWithRow).body)
 
       docWithRows.select(".govuk-summary-list__key").text   must include("Email confirmation")
       docWithRows.select(".govuk-summary-list__value").text must include("Yes")
@@ -82,7 +83,7 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
         actions = Seq.empty
       )
       val docWithRows = Jsoup.parse(
-        view(SummaryListViewModel(Seq(returnRow)), SummaryListViewModel(Seq(emailRow))).body
+        view(CisOrg, SummaryListViewModel(Seq(returnRow)), SummaryListViewModel(Seq(emailRow))).body
       )
 
       docWithRows.select(".govuk-summary-list").size() mustBe 2
@@ -99,7 +100,7 @@ class CheckYourAnswersViewSpec extends SpecBase with SummaryListFluency {
     )
 
     val doc: Document = Jsoup.parse(
-      view(SummaryListViewModel(Seq.empty), SummaryListViewModel(Seq.empty)).body
+      view(CisOrg, SummaryListViewModel(Seq.empty), SummaryListViewModel(Seq.empty)).body
     )
   }
 }

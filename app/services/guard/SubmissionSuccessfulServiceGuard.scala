@@ -23,13 +23,13 @@ import play.api.Logging
 import javax.inject.Singleton
 
 trait SubmissionSuccessfulServiceGuard {
-  def check(using JourneyRequest[?]): Boolean
+  def check(implicit request: JourneyRequest[?]): Boolean
 }
 
 @Singleton
 class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGuard with Logging {
 
-  def check(using request: JourneyRequest[?]): Boolean =
+  def check(implicit request: JourneyRequest[?]): Boolean =
     request.userAnswers.get(SubmissionDetailsPage).exists { details =>
       val submittedOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
       val irMarksValid         = details.irMark.nonEmpty &&

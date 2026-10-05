@@ -19,6 +19,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 import base.SpecBase
 import controllers.monthlyreturns.routes
 import models.CheckMode
+import models.requests.CisPath.CisOrg
 import org.scalatest.OptionValues
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.Messages
@@ -36,13 +37,15 @@ class ConfirmationByEmailSummarySpec extends SpecBase with OptionValues {
       "must return a SummaryListRow with 'Yes' when answer is true" in {
         val answers = emptyUserAnswers.set(ConfirmationByEmailPage, true).success.value
 
-        val result = ConfirmationByEmailSummary.row(answers).value
+        val result = ConfirmationByEmailSummary.row(CisOrg, answers).value
 
         result.key.content.asHtml.toString   must include(
           messages("monthlyreturns.confirmationByEmail.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include(messages("site.yes"))
-        result.actions.value.items.head.href mustBe routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
+        result.actions.value.items.head.href mustBe routes.ConfirmationByEmailController
+          .onPageLoad(CisOrg, CheckMode)
+          .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.confirmationByEmail.change.hidden"
         )
@@ -51,13 +54,15 @@ class ConfirmationByEmailSummarySpec extends SpecBase with OptionValues {
       "must return a SummaryListRow with 'No' when answer is false" in {
         val answers = emptyUserAnswers.set(ConfirmationByEmailPage, false).success.value
 
-        val result = ConfirmationByEmailSummary.row(answers).value
+        val result = ConfirmationByEmailSummary.row(CisOrg, answers).value
 
         result.key.content.asHtml.toString   must include(
           messages("monthlyreturns.confirmationByEmail.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include(messages("site.no"))
-        result.actions.value.items.head.href mustBe routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
+        result.actions.value.items.head.href mustBe routes.ConfirmationByEmailController
+          .onPageLoad(CisOrg, CheckMode)
+          .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.confirmationByEmail.change.hidden"
         )
@@ -69,7 +74,7 @@ class ConfirmationByEmailSummarySpec extends SpecBase with OptionValues {
       "must return None" in {
         val answers = emptyUserAnswers
 
-        val result = ConfirmationByEmailSummary.row(answers)
+        val result = ConfirmationByEmailSummary.row(CisOrg, answers)
 
         result mustBe None
       }

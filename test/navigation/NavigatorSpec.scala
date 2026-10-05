@@ -24,9 +24,11 @@ import models.*
 import models.amend.*
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn}
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
+import models.requests.CisPath.CisOrg
 import pages.amend.{AreYouSureYouWantToAmendYesNoPage, WhichSubcontractorsToAddPage}
 
 class NavigatorSpec extends SpecBase {
+  private val journeyId = JourneyId("user_id", "MonthlyReturn", "org").asString
 
   val navigator = new Navigator
 
@@ -38,41 +40,41 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           DateConfirmPaymentsPage,
           NormalMode,
-          UserAnswers("id").setOrException(ReturnTypePage, MonthlyNilReturn)
-        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+          UserAnswers(journeyId).setOrException(ReturnTypePage, MonthlyNilReturn)
+        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from SubmitInactivityRequestPage to ConfirmationByEmailController when inactivity request is NO" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, false)
+        val ua = UserAnswers(journeyId).setOrException(SubmitInactivityRequestPage, false)
         navigator.nextPage(
           SubmitInactivityRequestPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from ConfirmEmailAddressPage to DeclarationController" in {
         navigator.nextPage(
           ConfirmEmailAddressPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(CisOrg)
       }
 
       "must go from DeclarationPage to CheckYourAnswers" in {
         navigator.nextPage(
           DeclarationPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from InactivityWarningPage to CheckYourAnswers" in {
         navigator.nextPage(
           InactivityWarningPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from VerifySubcontractorsPage to SubcontractorDetailsAddedController" in {
@@ -181,12 +183,12 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from VerifiedStatusDeclarationPage to SubmitInactivityRequestController when answer is present" in {
-        val ua = UserAnswers("id").setOrException(VerifiedStatusDeclarationPage, true)
+        val ua = UserAnswers(journeyId).setOrException(VerifiedStatusDeclarationPage, true)
         navigator.nextPage(
           VerifiedStatusDeclarationPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from VerifiedStatusDeclarationPage to JourneyRecovery when answer is missing" in {
@@ -198,21 +200,21 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from SubmitInactivityRequestPage to InactivityRequestWarningController when answer is true" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
+        val ua = UserAnswers(journeyId).setOrException(SubmitInactivityRequestPage, true)
         navigator.nextPage(
           SubmitInactivityRequestPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from SubmitInactivityRequestPage to ConfirmationByEmailController when answer is false" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, false)
+        val ua = UserAnswers(journeyId).setOrException(SubmitInactivityRequestPage, false)
         navigator.nextPage(
           SubmitInactivityRequestPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from SubmitInactivityRequestPage to JourneyRecovery when answer is missing" in {
@@ -224,32 +226,32 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from ConfirmationByEmailPage to EnterYourEmailAddressController when answer is true" in {
-        val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, true)
+        val ua = UserAnswers(journeyId).setOrException(ConfirmationByEmailPage, true)
         navigator.nextPage(
           ConfirmationByEmailPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from ConfirmationByEmailPage to DeclarationController when answer is false and no employment status declaration exists" in {
-        val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, false)
+        val ua = UserAnswers(journeyId).setOrException(ConfirmationByEmailPage, false)
         navigator.nextPage(
           ConfirmationByEmailPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(CisOrg)
       }
 
       "must go from ConfirmationByEmailPage to CheckYourAnswers when answer is false and employment status declaration exists" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(ConfirmationByEmailPage, false)
           .setOrException(EmploymentStatusDeclarationPage, true)
         navigator.nextPage(
           ConfirmationByEmailPage,
           NormalMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from ConfirmationByEmailPage to JourneyRecovery when answer is missing" in {
@@ -264,17 +266,17 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           EnterYourEmailAddressPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoad(CisOrg)
       }
 
       "must go from EnterYourEmailAddressPage to CheckYourAnswers when employment status declaration exists" in {
-        val ua = UserAnswers("id").setOrException(EmploymentStatusDeclarationPage, true)
+        val ua = UserAnswers(journeyId).setOrException(EmploymentStatusDeclarationPage, true)
         navigator.nextPage(
           EnterYourEmailAddressPage,
           NormalMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from a page that doesn't exist in the route map to CheckYourAnswers" in {
@@ -283,20 +285,19 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           UnknownPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController
-          .onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from AreYouSureYouWantToAmendYesNoPage to SubmitInactivityRequestController when user answered Yes for Amended StandardReturn" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(AreYouSureYouWantToAmendYesNoPage, AreYouSureYouWantToAmendYesNo.Yes)
           .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
         navigator.nextPage(
           AreYouSureYouWantToAmendYesNoPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from AreYouSureYouWantToAmendYesNoPage to WhatDoYouWantToAmendNilController when user answered No for Amended StandardReturn" in {
@@ -339,26 +340,26 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           DateConfirmPaymentsPage,
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from InactivityRequestPage to CheckYourAnswers in CheckMode when inactivity request is NO" in {
-        val ua = UserAnswers("id").setOrException(InactivityRequestPage, InactivityRequest.Option2)
+        val ua = UserAnswers(journeyId).setOrException(InactivityRequestPage, InactivityRequest.Option2)
         navigator.nextPage(
           InactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from SubmitInactivityRequestPage to InactivityRequestWarningController in CheckMode when inactivity request is YES" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
+        val ua = UserAnswers(journeyId).setOrException(SubmitInactivityRequestPage, true)
         navigator.nextPage(
           SubmitInactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CisOrg, CheckMode)
       }
 
       "must go from SubmitInactivityRequestPage to JourneyRecovery in CheckMode when inactivity request is missing" in {
@@ -373,8 +374,8 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           ConfirmEmailAddressPage,
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from SelectedSubcontractorPaymentsMadePage to CheckAnswersTotalPayments Page in CheckMode" in {
@@ -402,12 +403,12 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from EmploymentStatusDeclarationPage to CheckYourAnswers in CheckMode when answer is present" in {
-        val ua = UserAnswers("id").setOrException(EmploymentStatusDeclarationPage, true)
+        val ua = UserAnswers(journeyId).setOrException(EmploymentStatusDeclarationPage, true)
         navigator.nextPage(
           EmploymentStatusDeclarationPage,
           CheckMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from EmploymentStatusDeclarationPage to JourneyRecovery in CheckMode when answer is missing" in {
@@ -419,12 +420,12 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from VerifiedStatusDeclarationPage to CheckYourAnswers in CheckMode when answer is present" in {
-        val ua = UserAnswers("id").setOrException(VerifiedStatusDeclarationPage, true)
+        val ua = UserAnswers(journeyId).setOrException(VerifiedStatusDeclarationPage, true)
         navigator.nextPage(
           VerifiedStatusDeclarationPage,
           CheckMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from VerifiedStatusDeclarationPage to JourneyRecovery in CheckMode when answer is missing" in {
@@ -436,21 +437,21 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from SubmitInactivityRequestPage to InactivityRequestWarningController in CheckMode when answer is true" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
+        val ua = UserAnswers(journeyId).setOrException(SubmitInactivityRequestPage, true)
         navigator.nextPage(
           SubmitInactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode)
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CisOrg, CheckMode)
       }
 
       "must go from SubmitInactivityRequestPage to CheckYourAnswers in CheckMode when answer is false" in {
-        val ua = UserAnswers("id").setOrException(SubmitInactivityRequestPage, false)
+        val ua = UserAnswers(journeyId).setOrException(SubmitInactivityRequestPage, false)
         navigator.nextPage(
           SubmitInactivityRequestPage,
           CheckMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from SubmitInactivityRequestPage to JourneyRecovery in CheckMode when answer is missing" in {
@@ -462,21 +463,21 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from ConfirmationByEmailPage to EnterYourEmailAddressController in CheckMode when answer is true" in {
-        val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, true)
+        val ua = UserAnswers(journeyId).setOrException(ConfirmationByEmailPage, true)
         navigator.nextPage(
           ConfirmationByEmailPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode)
+        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CisOrg, CheckMode)
       }
 
       "must go from ConfirmationByEmailPage to CheckYourAnswers in CheckMode when answer is false" in {
-        val ua = UserAnswers("id").setOrException(ConfirmationByEmailPage, false)
+        val ua = UserAnswers(journeyId).setOrException(ConfirmationByEmailPage, false)
         navigator.nextPage(
           ConfirmationByEmailPage,
           CheckMode,
           ua
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from ConfirmationByEmailPage to JourneyRecovery in CheckMode when answer is missing" in {
@@ -491,8 +492,8 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           EnterYourEmailAddressPage,
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from a page that doesn't exist in the edit route map to CheckYourAnswers" in {
@@ -501,9 +502,8 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           UnknownPage,
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckYourAnswersController
-          .onPageLoad()
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg)
       }
 
       "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended StandardReturn" in {

@@ -30,6 +30,7 @@ import play.api.test.FakeRequest
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{Clock, Instant, ZoneId}
+import models.requests.CisPath.CisOrg
 
 class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
@@ -58,12 +59,8 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
     "must display error summary when form has errors" in new Setup {
       val formWithError = form.withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-      val htmlWithError = view(
-        formWithError,
-        NormalMode,
-        "monthlyreturns.dateConfirmPayments",
-        MonthlyStandardReturn
-      )
+      val htmlWithError =
+        view(CisOrg, formWithError, NormalMode, "monthlyreturns.dateConfirmPayments", MonthlyStandardReturn)
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
       doc.select(".govuk-error-summary").size mustBe 1
@@ -84,11 +81,6 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(
-      form,
-      NormalMode,
-      "monthlyreturns.dateConfirmPayments",
-      MonthlyStandardReturn
-    )
+    val html = view(CisOrg, form, NormalMode, "monthlyreturns.dateConfirmPayments", MonthlyStandardReturn)
   }
 }

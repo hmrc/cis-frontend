@@ -36,7 +36,7 @@ class NumberOfSubcontractorPaymentsMadeSummarySpec extends SpecBase with Matcher
 
   private def uaWithSubcontractors(subs: (Int, JsObject)*): UserAnswers =
     UserAnswers(
-      id = userAnswersId,
+      id = journeyId,
       data = Json.obj(
         "cisId"               -> "1",
         "dateConfirmPayments" -> "2025-10-01",

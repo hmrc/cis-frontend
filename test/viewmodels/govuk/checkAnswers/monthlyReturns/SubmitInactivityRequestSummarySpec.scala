@@ -19,6 +19,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 import base.SpecBase
 import controllers.monthlyreturns.routes
 import models.CheckMode
+import models.requests.CisPath.CisOrg
 import org.scalatest.OptionValues
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
@@ -36,13 +37,15 @@ class SubmitInactivityRequestSummarySpec extends SpecBase with OptionValues {
       "must return a SummaryListRow with 'Yes' when answer is true" in {
         val answers = emptyUserAnswers.set(SubmitInactivityRequestPage, true).success.value
 
-        val result = SubmitInactivityRequestSummary.row(answers).value
+        val result = SubmitInactivityRequestSummary.row(CisOrg, answers).value
 
         result.key.content.asHtml.toString   must include(
           messages("monthlyreturns.submitInactivityRequest.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include(messages("site.yes"))
-        result.actions.value.items.head.href mustBe routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+        result.actions.value.items.head.href mustBe routes.SubmitInactivityRequestController
+          .onPageLoad(CisOrg, CheckMode)
+          .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.submitInactivityRequest.change.hidden"
         )
@@ -52,13 +55,15 @@ class SubmitInactivityRequestSummarySpec extends SpecBase with OptionValues {
       "must return a SummaryListRow with 'No' when answer is false" in {
         val answers = emptyUserAnswers.set(SubmitInactivityRequestPage, false).success.value
 
-        val result = SubmitInactivityRequestSummary.row(answers).value
+        val result = SubmitInactivityRequestSummary.row(CisOrg, answers).value
 
         result.key.content.asHtml.toString   must include(
           messages("monthlyreturns.submitInactivityRequest.checkYourAnswersLabel")
         )
         result.value.content.asHtml.toString must include(messages("site.no"))
-        result.actions.value.items.head.href mustBe routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+        result.actions.value.items.head.href mustBe routes.SubmitInactivityRequestController
+          .onPageLoad(CisOrg, CheckMode)
+          .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.submitInactivityRequest.change.hidden"
         )
@@ -69,7 +74,7 @@ class SubmitInactivityRequestSummarySpec extends SpecBase with OptionValues {
     "when answer is not present" - {
 
       "must return None" in {
-        val result = SubmitInactivityRequestSummary.row(emptyUserAnswers)
+        val result = SubmitInactivityRequestSummary.row(CisOrg, emptyUserAnswers)
 
         result mustBe None
       }

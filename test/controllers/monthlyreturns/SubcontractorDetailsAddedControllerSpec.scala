@@ -44,7 +44,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
   private def uaWithSubcontractors(subs: (Int, JsObject)*): UserAnswers =
     UserAnswers(
-      id = userAnswersId,
+      id = journeyId,
       data = Json.obj(
         "cisId"               -> "1",
         "dateConfirmPayments" -> "2025-10-01",
@@ -172,7 +172,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     }
 
     "must redirect to Journey Recovery on GET when required answers are missing" in {
-      val ua          = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
+      val ua          = UserAnswers(journeyId).setOrException(CisIdPage, "1")
       val application = buildApp(ua)
 
       running(application) {
@@ -281,7 +281,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     }
 
     "must redirect to SystemError on POST when builder returns None" in {
-      val ua = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
+      val ua = UserAnswers(journeyId).setOrException(CisIdPage, "1")
 
       val application = buildApp(ua)
 
@@ -318,7 +318,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     }
 
     "must redirect to MRAR06 Standard on POST when in amendment mode and no subcontractors remain" in {
-      val ua = UserAnswers(userAnswersId)
+      val ua = UserAnswers(journeyId)
         .setOrException(CisIdPage, "1")
         .set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test", MonthlyAmendedStandardReturn, None))
         .get

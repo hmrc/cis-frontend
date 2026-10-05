@@ -18,11 +18,13 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
+import models.requests.CisPath.CisOrg
 import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
+import pages.submission.SubmissionJourneyCompletedPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -31,7 +33,6 @@ import services.submission.SubmissionService
 import viewmodels.checkAnswers.monthlyreturns.*
 import viewmodels.govuk.SummaryListFluency
 import views.html.monthlyreturns.CheckYourAnswersView
-import pages.submission.SubmissionJourneyCompletedPage
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -40,7 +41,6 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
   private val completeAnswers = emptyUserAnswers
     .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
-    .setOrException(CisIdPage, "test-cis-id")
     .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
     .setOrException(SubmitInactivityRequestPage, true)
     .setOrException(ConfirmationByEmailPage, false)
@@ -70,7 +70,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.CheckYourAnswersController.onPageLoad(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -81,19 +81,19 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
             ReturnTypeSummary.row(userAnswers)(messages(application)),
             DateConfirmNilPaymentsSummary.row(userAnswers)(messages(application)),
             PaymentsToSubcontractorsSummary.row(messages(application)),
-            SubmitInactivityRequestSummary.row(userAnswers)(messages(application))
+            SubmitInactivityRequestSummary.row(CisOrg, userAnswers)(messages(application))
           ).flatten
         )
 
         val emailList = SummaryListViewModel(
           rows = Seq(
-            ConfirmationByEmailSummary.row(userAnswers)(messages(application)),
-            EnterYourEmailAddressSummary.row(userAnswers)(messages(application))
+            ConfirmationByEmailSummary.row(CisOrg, userAnswers)(messages(application)),
+            EnterYourEmailAddressSummary.row(CisOrg, userAnswers)(messages(application))
           ).flatten
         )
 
         status(result) mustEqual OK
-        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        val rendered = view(CisOrg, returnDetailsList, emailList)(request, messages(application)).toString
         contentAsString(result) mustEqual rendered
       }
     }
@@ -126,7 +126,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.CheckYourAnswersController.onPageLoad(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -138,19 +138,19 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
             DateConfirmPaymentsSummary.row(userAnswers)(messages(application)),
             EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)),
             VerifiedStatusDeclarationSummary.row(userAnswers)(messages(application)),
-            SubmitInactivityRequestSummary.row(userAnswers)(messages(application))
+            SubmitInactivityRequestSummary.row(CisOrg, userAnswers)(messages(application))
           ).flatten
         )
 
         val emailList = SummaryListViewModel(
           rows = Seq(
-            ConfirmationByEmailSummary.row(userAnswers)(messages(application)),
-            EnterYourEmailAddressSummary.row(userAnswers)(messages(application))
+            ConfirmationByEmailSummary.row(CisOrg, userAnswers)(messages(application)),
+            EnterYourEmailAddressSummary.row(CisOrg, userAnswers)(messages(application))
           ).flatten
         )
 
         status(result) mustEqual OK
-        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        val rendered = view(CisOrg, returnDetailsList, emailList)(request, messages(application)).toString
         contentAsString(result) mustEqual rendered
       }
     }
@@ -186,7 +186,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.CheckYourAnswersController.onPageLoad(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -198,53 +198,20 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
             DateConfirmPaymentsSummary.row(userAnswers)(messages(application)),
             EmploymentStatusDeclarationSummary.row(userAnswers)(messages(application)),
             VerifiedStatusDeclarationSummary.row(userAnswers)(messages(application)),
-            SubmitInactivityRequestSummary.row(userAnswers)(messages(application))
+            SubmitInactivityRequestSummary.row(CisOrg, userAnswers)(messages(application))
           ).flatten
         )
 
         val emailList = SummaryListViewModel(
           rows = Seq(
-            ConfirmationByEmailSummary.row(userAnswers)(messages(application)),
-            EnterYourEmailAddressSummary.row(userAnswers)(messages(application))
+            ConfirmationByEmailSummary.row(CisOrg, userAnswers)(messages(application)),
+            EnterYourEmailAddressSummary.row(CisOrg, userAnswers)(messages(application))
           ).flatten
         )
 
         status(result) mustEqual OK
-        val rendered = view(returnDetailsList, emailList)(request, messages(application)).toString
+        val rendered = view(CisOrg, returnDetailsList, emailList)(request, messages(application)).toString
         contentAsString(result) mustEqual rendered
-      }
-    }
-
-    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(
-          result
-        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
-          .onPageLoad()
-          .url
-      }
-    }
-
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 
@@ -252,7 +219,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.CheckYourAnswersController.onPageLoad(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -273,7 +240,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -301,14 +268,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
-          .onPageLoad()
-          .url
+        redirectLocation(result).value mustEqual routes.SubmissionSendingController.onPageLoad(CisOrg).url
       }
     }
 
@@ -322,7 +287,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -351,7 +316,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -379,7 +344,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -404,13 +369,11 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
         val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.AlreadySubmittedController
-          .onPageLoad()
-          .url
+        redirectLocation(result).value mustEqual routes.AlreadySubmittedController.onPageLoad().url
       }
     }
 
@@ -426,13 +389,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.CheckYourAnswersController.onPageLoad(CisOrg).url)
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+        redirectLocation(result).value mustEqual routes.AlreadySubmittedController.onPageLoad().url
       }
     }
 
@@ -459,13 +421,12 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+        redirectLocation(result).value mustEqual routes.AlreadySubmittedController.onPageLoad().url
       }
     }
 
@@ -492,7 +453,7 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         .build()
 
       running(application) {
-        val request = FakeRequest(POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit().url)
+        val request = FakeRequest(POST, routes.CheckYourAnswersController.onSubmit(CisOrg).url)
 
         val result = route(application, request).value
 

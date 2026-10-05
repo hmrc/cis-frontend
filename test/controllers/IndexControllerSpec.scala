@@ -19,6 +19,7 @@ package controllers
 import base.SpecBase
 import controllers.monthlyreturns.routes as monthlyReturnsRoutes
 import controllers.routes as mainRoutes
+import models.requests.CisPath.CisOrg
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -57,7 +58,7 @@ class IndexControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual monthlyReturnsRoutes.FileYourMonthlyCisReturnController
-          .startNilReturn()
+          .startNilReturn(CisOrg)
           .url
       }
     }

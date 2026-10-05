@@ -17,6 +17,7 @@
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import helpers.CyaEncodingSpecHelper
+import models.requests.CisPath.CisOrg
 import models.{CheckMode, UserAnswers}
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.TryValues.convertTryToSuccessOrFailure
@@ -43,7 +44,7 @@ class EnterYourEmailAddressSummarySpec extends AnyFreeSpec with Matchers with Cy
           .success
           .value
 
-      val maybeRow = EnterYourEmailAddressSummary.row(answers)
+      val maybeRow = EnterYourEmailAddressSummary.row(CisOrg, answers)
 
       maybeRow shouldBe defined
 
@@ -61,7 +62,7 @@ class EnterYourEmailAddressSummarySpec extends AnyFreeSpec with Matchers with Cy
       val changeAction       = actions.head
       val expectedChangeText = messages("site.change")
       val expectedHref       = controllers.monthlyreturns.routes.EnterYourEmailAddressController
-        .onPageLoad(CheckMode)
+        .onPageLoad(CisOrg, CheckMode)
         .url
       val expectedHiddenText = messages("monthlyreturns.enterYourEmailAddress.change.hidden")
 
@@ -75,7 +76,7 @@ class EnterYourEmailAddressSummarySpec extends AnyFreeSpec with Matchers with Cy
 
       val answers = UserAnswers("test-id")
 
-      EnterYourEmailAddressSummary.row(answers) shouldBe None
+      EnterYourEmailAddressSummary.row(CisOrg, answers) shouldBe None
     }
 
     "must HTML-escape special characters correctly (single encoding only)" in {
@@ -88,7 +89,7 @@ class EnterYourEmailAddressSummarySpec extends AnyFreeSpec with Matchers with Cy
           .success
           .value
 
-      val row = EnterYourEmailAddressSummary.row(answers).value
+      val row = EnterYourEmailAddressSummary.row(CisOrg, answers).value
 
       val html = extractHtml(row)
 

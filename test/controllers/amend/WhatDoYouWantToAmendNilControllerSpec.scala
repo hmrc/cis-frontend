@@ -24,6 +24,7 @@ import models.amend.WhatDoYouWantToAmendNil
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendNil.AmendNilReturn
+import models.requests.CisPath.CisOrg
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
@@ -129,7 +130,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmitInactivityRequestController
-          .onPageLoad(NormalMode)
+          .onPageLoad(CisOrg, NormalMode)
           .url
       }
     }

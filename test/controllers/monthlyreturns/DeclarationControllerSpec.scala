@@ -17,8 +17,9 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import models.monthlyreturns.Declaration
 import models.NormalMode
+import models.monthlyreturns.Declaration
+import models.requests.CisPath.CisOrg
 import navigation.Navigator
 import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.{DateConfirmPaymentsPage, DeclarationPage}
@@ -34,8 +35,8 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute: Call = Call("GET", "/foo")
 
-  lazy val declarationRoute: String = routes.DeclarationController.onPageLoad().url
-  lazy val submitRoute: String      = routes.DeclarationController.onSubmit().url
+  lazy val declarationRoute: String = routes.DeclarationController.onPageLoad(CisOrg).url
+  lazy val submitRoute: String      = routes.DeclarationController.onSubmit(CisOrg).url
 
   "Declaration Controller" - {
 
@@ -52,24 +53,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual OK
 
-        contentAsString(result) mustEqual view(NormalMode)(request, messages(application)).toString
-      }
-    }
-
-    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-        val request = FakeRequest(GET, declarationRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(
-          result
-        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        contentAsString(result) mustEqual view(CisOrg, NormalMode)(request, messages(application)).toString
       }
     }
 
@@ -87,7 +71,7 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(NormalMode)(
+        contentAsString(result) mustEqual view(CisOrg, NormalMode)(
           request,
           messages(application)
         ).toString
@@ -112,24 +96,10 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(NormalMode)(
+        contentAsString(result) mustEqual view(CisOrg, NormalMode)(
           request,
           messages(application)
         ).toString
-      }
-    }
-
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request = FakeRequest(GET, declarationRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 

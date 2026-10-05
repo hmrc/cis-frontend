@@ -101,8 +101,8 @@ class SubmissionService @Inject() (
       _                                <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
-  def updateSubmissionFromChrisResponse(submissionId: String, ua: UserAnswers, chrisResp: ChrisSubmissionResponse)(using
-    SchemeRequest[?]
+  def updateSubmissionFromChrisResponse(submissionId: String, ua: UserAnswers, chrisResp: ChrisSubmissionResponse)(
+    implicit req: SchemeRequest[?]
   ): Future[Unit] = updateSubmission(
     submissionId,
     ua,

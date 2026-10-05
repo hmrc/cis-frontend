@@ -128,7 +128,9 @@ class MonthlyReturnService @Inject() (
       case None          => None
     }
 
-  def createNilMonthlyReturn(cisId: String, userAnswers: UserAnswers)(using HeaderCarrier): Future[UserAnswers] = {
+  def createNilMonthlyReturn(cisId: String, userAnswers: UserAnswers)(implicit
+    hc: HeaderCarrier
+  ): Future[UserAnswers] = {
     logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")
 
     for {

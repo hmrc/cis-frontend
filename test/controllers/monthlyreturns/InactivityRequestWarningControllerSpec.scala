@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import models.{CheckMode, NormalMode}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.test.FakeRequest
@@ -35,16 +36,12 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
       val application = applicationBuilder(userAnswers = Some(userAnswersWithInactivityRequest(true))).build()
 
       running(application) {
-        val request =
-          FakeRequest(
-            GET,
-            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode).url
-          )
+        val request = FakeRequest(GET, routes.InactivityRequestWarningController.onPageLoad(CisOrg, NormalMode).url)
 
         val result = route(application, request).value
 
         val view    = application.injector.instanceOf[InactivityRequestWarningView]
-        val nextUrl = controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+        val nextUrl = routes.ConfirmationByEmailController.onPageLoad(CisOrg, NormalMode).url
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(nextUrl)(request, messages(application)).toString
@@ -59,13 +56,13 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
         val request =
           FakeRequest(
             GET,
-            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CisOrg, CheckMode).url
           )
 
         val result = route(application, request).value
 
         val view    = application.injector.instanceOf[InactivityRequestWarningView]
-        val nextUrl = controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad().url
+        val nextUrl = controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(CisOrg).url
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual view(nextUrl)(request, messages(application)).toString
@@ -80,7 +77,7 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
         val request =
           FakeRequest(
             GET,
-            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode).url
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CisOrg, NormalMode).url
           )
 
         val result = route(application, request).value
@@ -98,7 +95,7 @@ class InactivityRequestWarningControllerSpec extends SpecBase {
         val request =
           FakeRequest(
             GET,
-            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(NormalMode).url
+            controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoad(CisOrg, NormalMode).url
           )
 
         val result = route(application, request).value
