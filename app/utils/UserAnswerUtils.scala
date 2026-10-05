@@ -135,7 +135,6 @@ object UserAnswerUtils {
           val checks = Seq(
             answered(DateConfirmPaymentsPage),
             answered(SubmitInactivityRequestPage),
-            answered(ConfirmationByEmailPage),
             emailSatisfied,
             answered(DeclarationPage)
           )
@@ -151,7 +150,6 @@ object UserAnswerUtils {
             answered(EmploymentStatusDeclarationPage),
             answered(VerifiedStatusDeclarationPage),
             answered(SubmitInactivityRequestPage),
-            answered(ConfirmationByEmailPage),
             emailSatisfied
           ).forall(identity)
 
