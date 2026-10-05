@@ -174,7 +174,7 @@ class ReviewSubcontractorDetailsController @Inject() (
     val namesBySubcontractorId =
       draft.subcontractors.map { subcontractor =>
         subcontractor.subcontractorId ->
-          pageModelBuilder.displayName(subcontractor)
+          pageModelBuilder.resolvedName(subcontractor)
       }.toMap
 
     val selectedSubcontractors =
