@@ -45,10 +45,12 @@ object UserAnswerUtils {
         .values
         .forall(_.isComplete)
 
-    private def emailSatisfied: Boolean = {
-      val byEmail = userAnswers.get(ConfirmationByEmailPage)
-      byEmail.contains(false) || answered(EnterYourEmailAddressPage)
-    }
+    private def emailSatisfied: Boolean =
+      userAnswers.get(ConfirmationByEmailPage) match {
+        case Some(true)  => answered(EnterYourEmailAddressPage)
+        case Some(false) => !answered(EnterYourEmailAddressPage)
+        case None        => false
+      }
 
     def firstIncompleteSubcontractorIndex: Int =
       userAnswers

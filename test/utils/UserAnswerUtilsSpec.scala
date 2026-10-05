@@ -115,6 +115,24 @@ class UserAnswerUtilsSpec extends SpecBase {
 
         ua.isJourneyComplete mustBe false
       }
+
+      "returns false when email is not requested but an email address is still saved (url-hopping scenario)" in {
+        val ua = UserAnswers("id")
+          .set(ReturnTypePage, MonthlyNilReturn)
+          .get
+          .set(DateConfirmPaymentsPage, java.time.LocalDate.now())
+          .get
+          .set(SubmitInactivityRequestPage, true)
+          .get
+          .set(ConfirmationByEmailPage, false)
+          .get
+          .set(EnterYourEmailAddressPage, "stale@test.com")
+          .get
+          .set(DeclarationPage, Set(Declaration.Confirmed))
+          .get
+
+        ua.isJourneyComplete mustBe false
+      }
     }
 
     "when ReturnType is MonthlyStandardReturn" - {
