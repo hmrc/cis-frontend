@@ -315,10 +315,11 @@ fileYourMonthlyCisReturn.heading = Cyflwyno’ch Datganiad CIS misol
 fileYourMonthlyCisReturn.p1 = Defnyddiwch y gwasanaeth hwn i gyflwyno’ch datganiad misol ar gyfer y Cynllun y Diwydiant Adeiladu (CIS).
 fileYourMonthlyCisReturn.p2 = Bydd angen i chi nodi’r mis treth a’r flwyddyn dreth ar y datganiad.
 
-fileYourNilReturn.title = Cyflwyno’ch datganiad ‘dim’
-fileYourNilReturn.heading = Cyflwyno’ch datganiad ‘dim’
-fileYourNilReturn.p1 = Defnyddiwch y gwasanaeth hwn i gadarnhau nad ydych wedi talu unrhyw is-gontractwyr yn ystod mis treth.
-fileYourNilReturn.p2 = Gallwch hefyd gyflwyno cais anactifedd.
+fileYourNilReturn.title = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.heading = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p1 = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p2 = xxxxxxxxxxxxxxxxxxxx
+fileYourNilReturn.p3 = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.dateConfirmPayments.title = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.heading = xxxxxxxxxxxxxxxxxxxx
@@ -360,7 +361,7 @@ monthlyreturns.selectSubcontractors.selectAll.link = Dewis popeth
 monthlyreturns.selectSubcontractors.deselectAll.link = Dad-ddewis popeth
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = I’w cynnwys
 monthlyreturns.selectSubcontractors.table.th.name = Enw
-monthlyreturns.selectSubcontractors.table.th.verificationRequired = Wedi’i ddilysu gan ddefnyddio’r gwasanaeth hwn
+monthlyreturns.selectSubcontractors.table.th.verificationRequired = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.selectSubcontractors.table.th.verificationNumber = Rhif dilysu
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Triniaeth o ran treth
 monthlyreturns.selectSubcontractors.noSubcontractors = Nid oes unrhyw is-gontractwr wedi cael ei ychwanegu eto
@@ -402,26 +403,26 @@ monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = xxxxxx
 
 paymentDetails.title = Beth oedd y cyfanswm y gwnaethoch ei dalu i’r is-gontractwr hwn?
 paymentDetails.heading = Beth oedd y cyfanswm y gwnaethoch ei dalu i {0}?
-paymentDetails.hint = Nodwch y swm gros, heb gynnwys TAW nac unrhyw ddidyniadau. Talgrynnwch i lawr i’r bunt agosaf.
+paymentDetails.hint = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.required = Nodwch gyfanswm y taliadau a wnaed
 paymentDetails.error.invalidNumeric = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.aboveMaximum = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.belowMinimum = xxxxxxxxxxxxxxxxxxxx
-paymentDetails.error.invalid = Nodwch gyfanswm y taliadau a wnaed mewn punnoedd, wedi’i dalgrynnu i lawr i’r bunt agosaf
+paymentDetails.error.invalid = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.maxLength = Mae’n rhaid i gyfanswm y taliadau fod yn llai na £99,999,999
 paymentDetails.error.maxValue = Mae’n rhaid i gyfanswm y taliadau fod yn llai na £99,999,999
 paymentDetails.change.hidden = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.costOfMaterials.title = Faint wnaeth yr is-gontractwr hwn ei wario ar gostau deunydd?
 monthlyreturns.costOfMaterials.heading = Faint y gwnaeth {0} ei dalu am gost y deunyddiau?
-monthlyreturns.costOfMaterials.hint = Nodwch gyfanswm cost y deunyddiau a dalwyd gan yr is-gontractwr. Talgrynnwch i lawr i’r bunt agosaf.
+monthlyreturns.costOfMaterials.hint = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.required = Nodwch gyfanswm cost y deunyddiau mewn punnoedd, wedi’i dalgrynnu i lawr i’r bunt agosaf
 monthlyreturns.costOfMaterials.error.invalidNumeric = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.costOfMaterials.error.invalid = Nodwch gyfanswm cost y deunyddiau mewn punnoedd, wedi’i dalgrynnu i lawr i’r bunt agosaf
+monthlyreturns.costOfMaterials.error.invalid = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.maxLength = Mae’n rhaid i gyfanswm cost y deunyddiau fod yn llai na £99,999,999
 monthlyreturns.costOfMaterials.error.maxValue = Mae’n rhaid i gyfanswm cost y deunyddiau fod yn llai na £99,999,999
 monthlyreturns.costOfMaterials.change.hidden = xxxxxxxxxxxxxxxxxxxx
@@ -600,6 +601,7 @@ finalvalidations.updateSubcontractorDetails.phoneNumber = Rhif ffôn
 finalvalidations.updateSubcontractorDetails.mobilePhoneNumber = Rhif ffôn symudol
 finalvalidations.updateSubcontractorDetails.addWorksReferenceNumber = Ychwanegu cyfeirnod y gwaith?
 finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Cyfeirnod y gwaith
+finalvalidations.updateSubcontractorDetails.noNameProvided = xxxxxxxxxxxxxxxxxxxx
 
 # Sole trader
 finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Enw’r is-gontractwr

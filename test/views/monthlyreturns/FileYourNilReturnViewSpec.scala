@@ -33,6 +33,7 @@ class FileYourNilReturnViewSpec extends SpecBase {
       doc.select("h1").text must include(messages("fileYourNilReturn.heading"))
       doc.select("p").text  must include(messages("fileYourNilReturn.p1"))
       doc.select("p").text  must include(messages("fileYourNilReturn.p2"))
+      doc.select("p").text  must include(messages("fileYourNilReturn.p3"))
 
       val expectedUrl: String =
         controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
