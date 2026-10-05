@@ -160,8 +160,8 @@ monthlyreturns.paymentsToSubcontractors.value = None
 
 monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmNilPayments.change.hidden = confirm nil return payments to subcontractors this month
-monthlyreturns.dateConfirmNilPayments.error.required.month = You must enter a month
-monthlyreturns.dateConfirmNilPayments.error.required.year = You must enter a year
+monthlyreturns.dateConfirmNilPayments.error.required.month = Enter a month between 1 and 12
+monthlyreturns.dateConfirmNilPayments.error.required.year = Enter a year
 monthlyreturns.dateConfirmNilPayments.error.required.two = The ‘Tax month ending’ must include {0} and {1}
 monthlyreturns.dateConfirmNilPayments.error.required = The ‘Tax month ending’ must include {0}
 monthlyreturns.dateConfirmNilPayments.error.invalid = Please enter a valid ‘Tax month ending, month and year’
