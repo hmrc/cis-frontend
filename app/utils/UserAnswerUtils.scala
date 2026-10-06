@@ -127,6 +127,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(WhichSubcontractorsToAddPage))
         .flatMap(_.remove(SubcontractorValidationFailuresPage))
+        .flatMap(_.remove(SubmissionConfirmationCachePage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
