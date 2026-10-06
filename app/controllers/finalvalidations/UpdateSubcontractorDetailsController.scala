@@ -19,6 +19,7 @@ package controllers.finalvalidations
 import controllers.actions.*
 import models.finalvalidation.{FinalValidationReadiness, UpdateSubcontractorDetailsPageModel, UpdateSubcontractorDetailsPageModelBuilder}
 import pages.finalvalidations.FinalValidationDraftIdPage
+import play.api.i18n.Lang.logger
 import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
 
 import javax.inject.{Inject, Singleton}
@@ -79,12 +80,24 @@ class UpdateSubcontractorDetailsController @Inject() (
                   Ok(view(model))
 
                 case None =>
+                  logger.error(
+                    s"[UpdateSubcontractorDetailsController] Unable to load update subcontractor details page: " +
+                      s"subcontractor $subcontractorId is missing from final validation draft"
+                  )
                   Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
               }
             }
 
         case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          logger.error(
+            "[UpdateSubcontractorDetailsController] Unable to load update subcontractor details page: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+
       }
     }
 
@@ -109,12 +122,26 @@ class UpdateSubcontractorDetailsController @Inject() (
                   } yield Redirect(routes.ReviewSubcontractorDetailsController.onPageLoad())
 
                 case None =>
-                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                  logger.error(
+                    s"[UpdateSubcontractorDetailsController] Unable to submit update subcontractor details: " +
+                      s"subcontractor $subcontractorId is missing from final validation draft"
+                  )
+                  Future.successful(
+                    Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                  )
+
               }
             }
 
         case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          logger.error(
+            "[UpdateSubcontractorDetailsController] Unable to submit update subcontractor details: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+
       }
     }
 }

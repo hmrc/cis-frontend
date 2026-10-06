@@ -71,6 +71,10 @@ class FinalValidationReturnController @Inject() (
             }
 
           case None =>
+            logger.error(
+              s"[FinalValidationReturnController] Final Validation handoff not found " +
+                s"for handoffId: $handoffId"
+            )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         }
