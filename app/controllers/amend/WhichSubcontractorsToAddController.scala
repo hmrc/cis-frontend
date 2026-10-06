@@ -89,10 +89,24 @@ class WhichSubcontractorsToAddController @Inject() (
                   )
                   Redirect(controllers.routes.SystemErrorController.onPageLoad())
                 }
-            case false => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            case false =>
+              logger.error(
+                "[WhichSubcontractorsToAddController] Resource not editable"
+              )
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
         }
-        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
+        .getOrElse {
+          logger.error(
+            s"[WhichSubcontractorsToAddController] Missing required answers: " +
+              s"CisIdPage present=${ua.get(CisIdPage).isDefined}, " +
+              s"DateConfirmPaymentsPage present=${ua.get(DateConfirmPaymentsPage).isDefined}"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+        }
+
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -199,6 +213,7 @@ class WhichSubcontractorsToAddController @Inject() (
                     )
 
                 case _ =>
+                  logger.error("[WhichSubcontractorsToAddController] Return status not STARTED or VALIDATED")
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
               }
             }
