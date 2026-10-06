@@ -681,6 +681,3 @@ agent.agentLostAccess.return.link = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.numberOfSubcontractorPaymentsMade.hidden = xxxxxxxxxxxxxxxxxxxx
-
-recruitmentBanner.title = Mae’n bosibl y byddwch yn cael taleb am roi adborth
-recruitmentBanner.link.text = Ymunwch â’n panel ymchwil (yn agor tab newydd)
