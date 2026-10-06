@@ -105,6 +105,10 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
         messages("monthlyreturns.submittedNoReceipt.feedback.p2.link")
       )
 
+      doc
+        .select(s"a[href='${app.injector.instanceOf[config.FrontendAppConfig].cisFeedbackSurveyUrl}']")
+        .text must include(messages("monthlyreturns.submittedNoReceipt.feedback.p2.link"))
+
       doc.select("h2").text must not include
         messages("monthlyreturns.submittedNoReceipt.whatHappensNext.heading")
     }
