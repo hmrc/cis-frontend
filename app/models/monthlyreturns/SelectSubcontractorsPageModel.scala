@@ -20,5 +20,6 @@ import viewmodels.SelectSubcontractorsViewModel
 
 case class SelectSubcontractorsPageModel(
   subcontractors: Seq[SelectSubcontractorsViewModel],
-  initiallySelectedIds: Seq[Int]
+  initiallySelectedIds: Seq[Int],
+  fullSubcontractors: Seq[Subcontractor]
 )

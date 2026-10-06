@@ -109,6 +109,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
   private def subcontractorEmpty: Subcontractor =
     subcontractor(
       utr = None,
+      crn = Some("AB5860"),
       tradingName = None,
       worksReferenceNumber = None
     )
@@ -116,6 +117,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
   private def subcontractorValid: Subcontractor =
     subcontractor(
       utr = Some("5860920998"),
+      crn = Some("AB5860"),
       tradingName = Some("Trading Name"),
       worksReferenceNumber = None
     )
@@ -123,6 +125,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
   private def subcontractorSomeValid: Subcontractor =
     subcontractor(
       utr = Some("5860920998"),
+      crn = Some("AB5860"),
       tradingName = Some("Test Trading Name 1234@"),
       worksReferenceNumber = Some("A12323452345#@[]{}$%^&£~")
     )
@@ -130,6 +133,7 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
   private def subcontractorInvalid: Subcontractor =
     subcontractor(
       utr = Some("12345A7890"),
+      crn = Some("AB5860"),
       tradingName = Some("12345678901234567890123456789012345678901234567890<>"),
       worksReferenceNumber = Some("A12323452345#@[]{}$%^&£~")
     )
@@ -137,21 +141,22 @@ class CompanyValidatorSpec extends AnyWordSpec with Matchers {
   private def subcontractor(
     worksReferenceNumber: Option[String] = None,
     tradingName: Option[String] = None,
-    utr: Option[String] = None
+    utr: Option[String] = None,
+    crn: Option[String] = Some("AB5860")
   ): Subcontractor =
     Subcontractor(
       subcontractorId = 1L,
       utr = utr,
       pageVisited = Some(1),
       partnerUtr = Some("1234567890"),
-      crn = Some("AB5860"),
+      crn = crn,
       firstName = Some("John"),
       nino = Some("AB123456C"),
       secondName = Some("Michael"),
       surname = Some("Smith"),
       partnershipTradingName = Some("Smith & Partners"),
       tradingName = tradingName,
-      subcontractorType = Some("Sole Trader"),
+      subcontractorType = Some("company"),
       addressLine1 = Some("1 High Street"),
       addressLine2 = Some("Central"),
       addressLine3 = Some("London"),

@@ -37,6 +37,8 @@
 
 @head = {
 
+<meta name="format-detection" content="telephone=no">
+
     @if(timeout) {
         @hmrcTimeoutDialog(TimeoutDialog(
             timeout             = Some(appConfig.timeout),
@@ -67,7 +69,7 @@
         mainContentLayout = Some(if(isFullWidth) fullWidthMainContent(_) else twoThirdsMainContent(_))
     ),
     serviceURLs = ServiceURLs(
-        serviceUrl = Some(routes.IndexController.onPageLoad().url),
+        serviceUrl = Some(routes.ServiceHomeController.onPageLoad().url),
         signOutUrl = if(showSignOut) Some(controllers.auth.routes.AuthController.signOut().url) else None
     ),
     banners = Banners(

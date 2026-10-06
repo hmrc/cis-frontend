@@ -30,29 +30,36 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val host: String    = configuration.get[String]("host")
   lazy val appName: String = configuration.get[String]("appName")
 
-  private lazy val contactHost                  = configuration.get[String]("contact-frontend.host")
-  private lazy val cisManageFrontendUrl         = configuration.get[String]("cis-manage-frontend.host")
-  private lazy val returnsLandingPagePath       = configuration.get[String]("urls.returnsLandingPagePath")
-  private lazy val contactFormServiceIdentifier = configuration.get[String]("contact-frontend.serviceId")
+  private lazy val contactHost                     = configuration.get[String]("contact-frontend.host")
+  private lazy val cisManageFrontendUrl            = configuration.get[String]("cis-manage-frontend.host")
+  private lazy val returnsLandingPagePath          = configuration.get[String]("urls.returnsLandingPagePath")
+  private lazy val cisContractorFinalValidationUrl = configuration.get[String]("urls.cisContractorFinalValidation")
+  private lazy val contactFormServiceIdentifier    = configuration.get[String]("contact-frontend.serviceId")
 
   def feedbackUrl(implicit request: RequestHeader): String =
     s"$contactHost/contact/beta-feedback?service=$contactFormServiceIdentifier&backUrl=${host + request.uri}"
 
-  lazy val loginUrl: String                            = configuration.get[String]("urls.login")
-  lazy val loginContinueUrl: String                    = configuration.get[String]("urls.loginContinue")
-  lazy val signOutUrl: String                          = configuration.get[String]("urls.signOut")
-  lazy val govUkCISGuidanceUrl: String                 = configuration.get[String]("urls.govUkCISGuidance")
-  lazy val constructionIndustryAgentAccountUrl: String =
+  lazy val loginUrl: String                                  = configuration.get[String]("urls.login")
+  lazy val loginContinueUrl: String                          = configuration.get[String]("urls.loginContinue")
+  lazy val signOutUrl: String                                = configuration.get[String]("urls.signOut")
+  lazy val govUkCISGuidanceUrl: String                       = configuration.get[String]("urls.govUkCISGuidance")
+  lazy val constructionIndustryAgentAccountUrl: String       =
     configuration.get[String]("urls.constructionIndustryAgentAccount")
-  lazy val constructionIndustryOrgAccountUrl: String   = configuration.get[String]("urls.constructionIndustryOrgAccount")
-  lazy val hmrcOnlineServiceDeskUrl: String            = configuration.get[String]("urls.hmrcOnlineServiceDesk")
-  lazy val manageYourCisReturn: String                 = configuration.get[String]("urls.manageYourCisReturn")
-  lazy val signIntoCISUrl: String                      = configuration.get[String]("urls.signIntoCIS")
-  lazy val contactHMRCUrl: String                      = configuration.get[String]("urls.contactHMRC")
-  lazy val incompleteReturnsUrl: String                = configuration.get[String]("urls.incompleteReturns")
-  lazy val submissionHistoryUrl: String                = configuration.get[String]("urls.submissionHistory")
+  lazy val constructionIndustryOrgAccountUrl: String         = configuration.get[String]("urls.constructionIndustryOrgAccount")
+  lazy val hmrcOnlineServiceDeskUrl: String                  = configuration.get[String]("urls.hmrcOnlineServiceDesk")
+  lazy val manageYourCisReturn: String                       = configuration.get[String]("urls.manageYourCisReturn")
+  lazy val signIntoCISUrl: String                            = configuration.get[String]("urls.signIntoCIS")
+  lazy val contactHMRCUrl: String                            = configuration.get[String]("urls.contactHMRC")
+  lazy val incompleteReturnsUrl: String                      = configuration.get[String]("urls.incompleteReturns")
+  lazy val submissionHistoryUrl: String                      = configuration.get[String]("urls.submissionHistory")
+  lazy val yourSubcontractorsUrl: String                     = configuration.get[String]("urls.yourSubcontractors")
+  lazy val portalAccountBaseUrl: String                      = configuration.get[String]("portal-account.host")
+  lazy val authoriseClientRequestPath: String                = configuration.get[String]("urls.authoriseClientRequest")
+  lazy val taxAgentsAndAdvisorsAuthorisationFormsUrl: String =
+    configuration.get[String]("urls.taxAgentsAndAdvisorsAuthorisationForms")
+  lazy val clientListSearchUrl: String                       = configuration.get[String]("urls.clientListSearch")
 
-  lazy val yourSubcontractorsUrl: String = configuration.get[String]("urls.yourSubcontractors")
+  lazy val verifySubcontractorsUrl: String = configuration.get[String]("urls.verifySubcontractors")
 
   private lazy val manageSubcontractorsBaseUrl: String =
     configuration.get[String]("urls.manageSubcontractors")
@@ -101,6 +108,12 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
       }
 
     s"$cisManageFrontendUrl$returnsLandingPagePath/$encodedInstanceId$queryString"
+
+  def cisContractorFinalValidationHandoffUrl(handoffId: String): String =
+    s"$cisContractorFinalValidationUrl/${urlEncode(handoffId)}"
+
+  def authoriseClientRequestUrl(agentCode: String): String =
+    s"$portalAccountBaseUrl${authoriseClientRequestPath.replace("{agentCode}", agentCode)}"
 
   private def urlEncode(value: String): String =
     URLEncoder.encode(value, StandardCharsets.UTF_8.toString)

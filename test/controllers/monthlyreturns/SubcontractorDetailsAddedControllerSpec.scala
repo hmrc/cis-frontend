@@ -20,11 +20,14 @@ import base.SpecBase
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import models.amend.AmendmentDetails
 import models.{NormalMode, UserAnswers}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.{any, argThat}
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, ReturnTypePage}
+import play.api.data.Form
+import play.twirl.api.Html
+import views.html.monthlyreturns.SubcontractorDetailsAddedView
 import play.api.inject.bind
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
@@ -34,6 +37,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
 import scala.concurrent.Future
+import pages.monthlyreturns.OriginalSubcontractorCountPage
 
 class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar {
 
@@ -69,7 +73,11 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     when(service.isEditable(any[String], any[Int], any[Int], any[Boolean])(any[HeaderCarrier]))
       .thenReturn(Future.successful(editable))
 
-  private def buildApp(ua: UserAnswers, monthlyReturnService: Option[MonthlyReturnService] = None) = {
+  private def buildApp(
+    ua: UserAnswers,
+    monthlyReturnService: Option[MonthlyReturnService] = None,
+    view: Option[SubcontractorDetailsAddedView] = None
+  ) = {
     val base = applicationBuilder(userAnswers = Some(ua))
       .configure(
         "features.welsh-translation" -> false,
@@ -78,8 +86,13 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         "contact-frontend.serviceId" -> "cis-frontend",
         "host"                       -> "http://localhost"
       )
-    monthlyReturnService
-      .fold(base)(svc => base.overrides(bind[MonthlyReturnService].toInstance(svc)))
+
+    val withService =
+      monthlyReturnService
+        .fold(base)(svc => base.overrides(bind[MonthlyReturnService].toInstance(svc)))
+
+    view
+      .fold(withService)(v => withService.overrides(bind[SubcontractorDetailsAddedView].toInstance(v)))
       .build()
   }
 
@@ -172,6 +185,80 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
+    "must retain Yes when the user previously selected that they need to add more subcontractors" in {
+      val ua =
+        uaWithSubcontractors(
+          1 -> completeSub(1001L, "TyneWear Ltd")
+        )
+          .set(AllSubcontractorDetailsAdded, false)
+          .get
+
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val mockView = mock[SubcontractorDetailsAddedView]
+
+      when(
+        mockView.apply(any(), any(), any())(any(), any())
+      ).thenReturn(Html(""))
+
+      val application = buildApp(
+        ua,
+        Some(svc),
+        Some(mockView)
+      )
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+
+        verify(mockView).apply(
+          argThat[Form[Boolean]](_.value.contains(true)),
+          any(),
+          any()
+        )(any(), any())
+      }
+    }
+
+    "must retain No when the user previously selected that they do not need to add more subcontractors" in {
+      val ua =
+        uaWithSubcontractors(
+          1 -> completeSub(1001L, "TyneWear Ltd")
+        )
+          .set(AllSubcontractorDetailsAdded, true)
+          .get
+
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val mockView = mock[SubcontractorDetailsAddedView]
+
+      when(
+        mockView.apply(any(), any(), any())(any(), any())
+      ).thenReturn(Html(""))
+
+      val application = buildApp(
+        ua,
+        Some(svc),
+        Some(mockView)
+      )
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+
+        verify(mockView).apply(
+          argThat[Form[Boolean]](_.value.contains(false)),
+          any(),
+          any()
+        )(any(), any())
+      }
+    }
+
     "must return BadRequest on POST No when viewModel.hasIncomplete = true (incomplete error)" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd"),
@@ -253,10 +340,10 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
-    "must return BadRequest on POST when form has errors (no value)" in {
+    "must return BadRequest on POST when form has errors (no value) and showYesNo is true" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
-      )
+      ).set(OriginalSubcontractorCountPage, 3).success.value
 
       val application = buildApp(ua)
 
@@ -265,6 +352,42 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         val result  = route(application, request).value
 
         status(result) mustBe BAD_REQUEST
+      }
+    }
+
+    "must redirect to SummarySubcontractorPayments on POST when all subcontractors already added (showYesNo is false)" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "TyneWear Ltd")
+      ).set(OriginalSubcontractorCountPage, 1).success.value
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(POST, postUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad().url
+      }
+    }
+
+    "must return BadRequest on POST when all subcontractors already added but details are incomplete" in {
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "Complete Ltd"),
+        2 -> incompleteSub(1002L, "Incomplete Ltd")
+      ).set(OriginalSubcontractorCountPage, 2).success.value
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request = FakeRequest(POST, postUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe BAD_REQUEST
+        contentAsString(result) must include(
+          messages(application)("monthlyreturns.subcontractorDetailsAdded.error.incomplete")
+        )
       }
     }
 
@@ -316,7 +439,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyAmendedStandardReturn" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
-      ).set(ReturnTypePage, MonthlyAmendedStandardReturn).success.value
+      ).set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+        .set(OriginalSubcontractorCountPage, 3)
+        .success
+        .value
 
       val application = buildApp(ua)
 
@@ -336,7 +464,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyStandardReturn" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
-      ).set(ReturnTypePage, MonthlyStandardReturn).success.value
+      ).set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+        .set(OriginalSubcontractorCountPage, 3)
+        .success
+        .value
 
       val application = buildApp(ua)
 

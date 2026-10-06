@@ -25,19 +25,20 @@ import models.amend.DeleteUnsubmittedMonthlyReturnRequest
 import models.monthlyreturns.{MonthlyReturnDetails, MonthlyReturnResponse}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.ConfirmCancelAmendmentYesNoPage
 import pages.monthlyreturns.*
 import play.api.data.Form
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.{AmendMonthlyReturnService, MonthlyReturnService}
-import uk.gov.hmrc.http.HeaderCarrier
+import services.{AmendMonthlyReturnService, FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
 import java.time.LocalDate
@@ -234,6 +235,165 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual appConfig.returnsLandingPageUrl(cisId, None)
+      }
+    }
+
+    "must run the FORMP/RDS reconciliation with the correct arguments before deleting on the happy path" in {
+      val mockSessionRepository   = mock[SessionRepository]
+      val mockAmendMonthlyService = mock[AmendMonthlyReturnService]
+      val mockReconcile           = mock[FormpRdsReconcileService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      when(
+        mockAmendMonthlyService.deleteUnsubmittedMonthlyReturn(any[DeleteUnsubmittedMonthlyReturnRequest]())(
+          any()
+        )
+      ) thenReturn Future.successful(())
+
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, cisId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers), formpRdsReconcileService = mockReconcile)
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock())
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmCancelAmendmentYesNoRoute)
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        val appConfig = application.injector.instanceOf[FrontendAppConfig]
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual appConfig.returnsLandingPageUrl(cisId, None)
+
+        val order = org.mockito.Mockito.inOrder(mockReconcile, mockAmendMonthlyService)
+        order
+          .verify(mockReconcile)
+          .reconcile(eqTo(cisId), eqTo("taxOfficeNumber"), eqTo("taxOfficeReference"))(any[HeaderCarrier])
+        order
+          .verify(mockAmendMonthlyService)
+          .deleteUnsubmittedMonthlyReturn(any[DeleteUnsubmittedMonthlyReturnRequest]())(any())
+      }
+    }
+
+    "must run the FORMP/RDS reconciliation before deleting and not delete when contractor known facts are missing" in {
+      val mockSessionRepository   = mock[SessionRepository]
+      val mockAmendMonthlyService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val failingReconcile = new FormpRdsReconcileService {
+        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+          hc: HeaderCarrier
+        ): Future[Unit] =
+          Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED))
+      }
+
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, cisId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers), formpRdsReconcileService = failingReconcile)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock())
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmCancelAmendmentYesNoRoute)
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+
+        verify(mockAmendMonthlyService, never).deleteUnsubmittedMonthlyReturn(
+          any[DeleteUnsubmittedMonthlyReturnRequest]()
+        )(any())
+      }
+    }
+
+    "must run the FORMP/RDS reconciliation before deleting and not delete when contractor known facts are not found" in {
+      val mockSessionRepository   = mock[SessionRepository]
+      val mockAmendMonthlyService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val failingReconcile = new FormpRdsReconcileService {
+        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+          hc: HeaderCarrier
+        ): Future[Unit] =
+          Future.failed(UpstreamErrorResponse("not found", NOT_FOUND, NOT_FOUND))
+      }
+
+      val userAnswers = emptyUserAnswers
+        .set(CisIdPage, cisId)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 4, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers), formpRdsReconcileService = failingReconcile)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnServiceMock())
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, confirmCancelAmendmentYesNoRoute)
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+
+        verify(mockAmendMonthlyService, never).deleteUnsubmittedMonthlyReturn(
+          any[DeleteUnsubmittedMonthlyReturnRequest]()
+        )(any())
       }
     }
 

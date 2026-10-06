@@ -25,7 +25,7 @@ object Validation {
   final val nameRegex             =
     "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\+\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\^\\\\\\£\\€]*"
   final val worksRefRegex         =
-    "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\+\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\\\\\£\\€]+"
+    "[A-Za-z0-9\"\\~\\!\\@\\#\\$\\%\\*\\:\\;\\=\\?\\s,\\.\\[\\]\\_\\{\\}\\(\\)/\\&\\'\\-\\\\\\£\\€]+"
 
   final val firstCharLetterRegex =
     """^[A-Za-z].*"""
@@ -33,6 +33,9 @@ object Validation {
   final val firstMiddleNameRegex = "[A-Za-z\\'\\-]+"
 
   final val surnameFormat = "[A-Za-z0-9\\s,\\.\\(\\)/\\&\\'\\-]+"
+
+  final val ninoRegex =
+    """^[ABCEGHJKLMNOPRSTWXYZabceghjklmnoprstwxyz][ABCEGHJKLMNPRSTWXYZabceghjklmnprstwxyz][0-9]{6}[ABCDabcd ]*$"""
 
   final val emailRegex = """^[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+@[A-Za-z0-9!#$%&*+-/=?^_`{|}~.]+$"""
 

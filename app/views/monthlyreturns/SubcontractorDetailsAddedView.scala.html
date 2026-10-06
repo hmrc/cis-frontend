@@ -76,15 +76,17 @@
             )
         </div>
 
-        @govukRadios(
-            RadiosViewModel
-                .yesNo(
-                    field = form("value"),
-                    legend = LegendViewModel(
-                    messages("monthlyreturns.subcontractorDetailsAdded.question")
-                ).withCssClass("govuk-fieldset__legend--m")
+        @if(viewModel.showYesNo) {
+            @govukRadios(
+                RadiosViewModel
+                    .yesNo(
+                        field = form("value"),
+                        legend = LegendViewModel(
+                        messages("monthlyreturns.subcontractorDetailsAdded.question")
+                    ).withCssClass("govuk-fieldset__legend--m")
+                )
             )
-        )
+        }
 
         @buttonGroup {
             @govukButton(

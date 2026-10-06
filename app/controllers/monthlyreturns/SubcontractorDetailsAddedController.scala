@@ -68,8 +68,13 @@ class SubcontractorDetailsAddedController @Inject() (
 
           monthlyReturnService.isEditable(cisId, month, year, isAmendment).map {
             case true  =>
+              val preparedForm =
+                ua
+                  .get(AllSubcontractorDetailsAdded)
+                  .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
+
               SubcontractorDetailsAddedBuilder.build(ua) match {
-                case Some(viewModel)     => Ok(view(form, mode, viewModel))
+                case Some(viewModel)     => Ok(view(preparedForm, mode, viewModel))
                 case None if isAmendment =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
                 case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
@@ -96,44 +101,66 @@ class SubcontractorDetailsAddedController @Inject() (
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
         case Some(viewModel) =>
-          form
-            .bindFromRequest()
-            .fold(
-              formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
-              isAddingMoreSubcontractors =>
-                val allSubcontractorDetailsAdded = !isAddingMoreSubcontractors
+          if (!viewModel.showYesNo) {
+            if (viewModel.hasIncomplete) {
+              Future.successful(
+                BadRequest(
+                  view(
+                    form
+                      .fill(false)
+                      .withError("summaryList", "monthlyreturns.subcontractorDetailsAdded.error.incomplete"),
+                    mode,
+                    viewModel
+                  )
+                )
+              )
+            } else {
+              val updatedUa =
+                request.userAnswers.set(AllSubcontractorDetailsAdded, true).getOrElse(request.userAnswers)
+              sessionRepository.set(updatedUa).map { _ =>
+                Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
+              }
+            }
+          } else {
+            form
+              .bindFromRequest()
+              .fold(
+                formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
+                isAddingMoreSubcontractors =>
+                  val allSubcontractorDetailsAdded = !isAddingMoreSubcontractors
 
-                val updatedUa =
-                  request.userAnswers
-                    .set(AllSubcontractorDetailsAdded, allSubcontractorDetailsAdded)
-                    .getOrElse(request.userAnswers)
+                  val updatedUa =
+                    request.userAnswers
+                      .set(AllSubcontractorDetailsAdded, allSubcontractorDetailsAdded)
+                      .getOrElse(request.userAnswers)
 
-                sessionRepository.set(updatedUa).map { _ =>
-                  if (allSubcontractorDetailsAdded && viewModel.hasIncomplete) {
-                    val withError =
-                      form
-                        .fill(isAddingMoreSubcontractors)
-                        .withError(
-                          "summaryList",
-                          "monthlyreturns.subcontractorDetailsAdded.error.incomplete"
-                        )
-                    BadRequest(view(withError, mode, viewModel))
-                  } else if (allSubcontractorDetailsAdded) {
-                    Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
-                  } else {
-                    request.userAnswers.get(ReturnTypePage) match {
-                      case Some(returnType) if returnType == MonthlyStandardReturn =>
-                        Redirect(
-                          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
-                        )
-                      case _                                                       =>
-                        Redirect(
-                          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode)
-                        )
+                  sessionRepository.set(updatedUa).map { _ =>
+                    if (allSubcontractorDetailsAdded && viewModel.hasIncomplete) {
+                      val withError =
+                        form
+                          .fill(isAddingMoreSubcontractors)
+                          .withError(
+                            "summaryList",
+                            "monthlyreturns.subcontractorDetailsAdded.error.incomplete"
+                          )
+                      BadRequest(view(withError, mode, viewModel))
+                    } else if (allSubcontractorDetailsAdded) {
+                      Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
+                    } else {
+                      request.userAnswers.get(ReturnTypePage) match {
+                        case Some(returnType) if returnType == MonthlyStandardReturn =>
+                          Redirect(
+                            controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+                          )
+                        case _                                                       =>
+                          Redirect(
+                            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode)
+                          )
+                      }
                     }
                   }
-                }
-            )
+              )
+          }
       }
     }
 

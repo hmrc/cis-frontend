@@ -63,6 +63,7 @@ class CheckYourAnswersController @Inject() (
               case ReturnType.MonthlyStandardReturn | ReturnType.MonthlyAmendedStandardReturn =>
                 Seq(
                   DateConfirmPaymentsSummary.row(request.userAnswers),
+                  NumberOfSubcontractorPaymentsMadeSummary.row(request.userAnswers),
                   EmploymentStatusDeclarationSummary.row(request.userAnswers),
                   VerifiedStatusDeclarationSummary.row(request.userAnswers),
                   SubmitInactivityRequestSummary.row(request.userAnswers)

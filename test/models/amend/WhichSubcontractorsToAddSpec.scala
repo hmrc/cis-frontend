@@ -29,7 +29,30 @@ class WhichSubcontractorsToAddSpec extends AnyFreeSpec with Matchers with Option
     "must serialise and deserialise" in {
       val sub  = Subcontractor("1", "Alice, A")
       val json = Json.toJson(sub)
+
       json.as[Subcontractor] mustEqual sub
+    }
+  }
+
+  "WhichSubcontractorsToAddPageModel" - {
+
+    "must contain the supplied subcontractors, pre-selected ids and status" in {
+      val subcontractors = Seq(
+        Subcontractor("1", "Alice, A"),
+        Subcontractor("2", "Bob, B")
+      )
+
+      val model = WhichSubcontractorsToAddPageModel(
+        subcontractors = subcontractors,
+        preSelectedIds = Set("2"),
+        status = Some("Incomplete"),
+        fullSubcontractors = Seq.empty
+      )
+
+      model.subcontractors mustEqual subcontractors
+      model.preSelectedIds mustEqual Set("2")
+      model.status mustEqual Some("Incomplete")
+      model.fullSubcontractors mustEqual Seq.empty
     }
   }
 
@@ -50,6 +73,13 @@ class WhichSubcontractorsToAddSpec extends AnyFreeSpec with Matchers with Option
 
       items.head.checked mustEqual false
       items(1).checked mustEqual true
+    }
+
+    "checkboxItems must leave all items unchecked when no pre-selected ids are supplied" in {
+      val subs  = Seq(Subcontractor("1", "Alice, A"), Subcontractor("2", "Bob, B"))
+      val items = WhichSubcontractorsToAdd.checkboxItems(subs)
+
+      items.forall(!_.checked) mustEqual true
     }
 
     "checkboxItems must return items of type CheckboxItem" in {

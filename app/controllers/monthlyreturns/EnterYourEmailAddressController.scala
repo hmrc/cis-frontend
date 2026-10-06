@@ -21,7 +21,7 @@ import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
 import models.requests.CisIdDataRequest
 import navigation.Navigator
-import pages.monthlyreturns.{CisIdPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -56,14 +56,18 @@ class EnterYourEmailAddressController @Inject() (
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      request.userAnswers.get(EnterYourEmailAddressPage) match {
-        case Some(value) =>
-          Future.successful(Ok(view(form.fill(value), mode)))
-        case None        =>
-          getPrepopulationEmailAddress(request).map {
-            case Some(email) => Ok(view(form.fill(email), mode))
-            case None        => Ok(view(form, mode))
-          }
+      if (!request.userAnswers.get(ConfirmationByEmailPage).contains(true)) {
+        Future.successful(Redirect(controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(mode)))
+      } else {
+        request.userAnswers.get(EnterYourEmailAddressPage) match {
+          case Some(value) =>
+            Future.successful(Ok(view(form.fill(value), mode)))
+          case None        =>
+            getPrepopulationEmailAddress(request).map {
+              case Some(email) => Ok(view(form.fill(email), mode))
+              case None        => Ok(view(form, mode))
+            }
+        }
       }
     }
 

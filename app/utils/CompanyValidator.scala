@@ -16,8 +16,9 @@
 
 package utils
 
+import models.submission.SubcontractorType
 import models.monthlyreturns.Subcontractor
-import models.validation.FieldValidationFailure
+import models.validation.{FieldValidationFailure, SubcontractorValidationField}
 import utils.validation.{CrnValidator, TradingNameValidator, UtrValidator, WorksReferenceNumberValidator}
 
 object CompanyValidator {
@@ -35,6 +36,10 @@ object CompanyValidator {
         .validate(subcontractor.utr, subcontractors)
         .toList ++
       TradingNameValidator
-        .validate(subcontractor.tradingName)
+        .validate(
+          value = subcontractor.tradingName,
+          field = SubcontractorValidationField.TradingName,
+          subcontractorType = SubcontractorType.Company
+        )
         .toList
 }

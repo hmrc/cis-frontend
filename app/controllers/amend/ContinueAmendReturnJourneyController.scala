@@ -17,25 +17,30 @@
 package controllers.amend
 
 import controllers.actions.*
-import models.{NormalMode, UserAnswers}
+import models.{EmployerReference, NormalMode, UserAnswers}
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
+import pages.agent.AgentClientDataPage
 
 import javax.inject.Inject
 import play.api.Logging
+import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
-import services.MonthlyReturnService
+import services.{FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class ContinueAmendReturnJourneyController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
+  formpRdsReconcileService: FormpRdsReconcileService,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -64,7 +69,7 @@ class ContinueAmendReturnJourneyController @Inject() (
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
           case Right(result) =>
-            sessionRepository.set(result.userAnswers).map { _ =>
+            val redirect    =
               (queryParams.isOriginalNilReturn.getOrElse(false), result.isNilReturn, result.hasSubcontractors) match {
                 case (_, false, true)  =>
                   Redirect(
@@ -77,7 +82,44 @@ class ContinueAmendReturnJourneyController @Inject() (
                 case _                 =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
               }
+            val employerRef =
+              if (request.isAgent)
+                result.userAnswers
+                  .get(AgentClientDataPage)
+                  .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
+              else
+                request.employerReference
+            sessionRepository.set(result.userAnswers).flatMap { _ =>
+              reconcileFormpRds(queryParams.instanceId, employerRef, redirect)
             }
         }
+    }
+
+  private def reconcileFormpRds(
+    instanceId: String,
+    employerReference: Option[EmployerReference],
+    redirect: => Result
+  )(implicit request: IdentifierRequest[?]): Future[Result] =
+    employerReference match {
+      case Some(ref) =>
+        formpRdsReconcileService
+          .reconcile(instanceId, ref.taxOfficeNumber, ref.taxOfficeReference)
+          .map(_ => redirect)
+          .recover {
+            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+              logger.warn(
+                s"[ContinueAmendReturnJourneyController] Contractor known facts missing in RDS (status ${e.statusCode})"
+              )
+              Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+            case NonFatal(e)                                                                                  =>
+              logger.error(
+                s"[ContinueAmendReturnJourneyController] FormP/RDS reconciliation failed: ${e.getMessage}",
+                e
+              )
+              Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      case None      =>
+        logger.warn("[ContinueAmendReturnJourneyController] Missing employer reference for FormP/RDS reconciliation")
+        Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
     }
 }

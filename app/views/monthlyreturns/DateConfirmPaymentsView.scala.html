@@ -36,11 +36,11 @@
     appConfig: FrontendAppConfig
 )
 
-@(form: Form[_], mode: Mode, messagePrefix: String)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, messagePrefix: String, returnType: ReturnType)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages(s"$messagePrefix.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))
@@ -61,12 +61,11 @@
                             )
                         ).toString +
                     link(
-                    linkTextKey = "monthlyreturns.dateConfirmPayments.p1.link",
-                    linkUrl = appConfig.incompleteReturnsUrl,
-                    prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix",
-                    suffixTextKey = "monthlyreturns.dateConfirmPayments.p1.suffix") +
-                        h2("monthlyreturns.dateConfirmPayments.legendText").toString +
-                        paragraph("monthlyreturns.dateConfirmPayments.helpText", baseClass = "govuk-hint").toString
+                        linkTextKey = "monthlyreturns.dateConfirmPayments.p1.link",
+                        linkUrl = appConfig.incompleteReturnsUrl,
+                        hasFullStop = true,
+                        prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix") +
+                        h2("monthlyreturns.dateConfirmPayments.legendText").toString
                     )
                 )
             )

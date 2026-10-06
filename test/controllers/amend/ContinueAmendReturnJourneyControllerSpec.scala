@@ -20,7 +20,7 @@ import base.SpecBase
 import models.{NormalMode, UserAnswers}
 import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
@@ -28,8 +28,8 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.{ContinueAmendJourneyResult, MonthlyReturnService}
-import uk.gov.hmrc.http.HeaderCarrier
+import services.{ContinueAmendJourneyResult, FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
@@ -306,6 +306,89 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           taxMonth = 1,
           isAmendment = true
         )
+      }
+    }
+
+    "must redirect to UnauthorisedOrganisationAffinity when reconcile returns PRECONDITION_FAILED" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+      val mockReconcile   = mock[FormpRdsReconcileService]
+
+      val result = ContinueAmendJourneyResult(
+        userAnswers = populatedAnswers,
+        hasSubcontractors = false,
+        isNilReturn = false
+      )
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(result)))
+
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED)))
+
+      val application = applicationBuilder(formpRdsReconcileService = mockReconcile)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)
+
+        val res = route(application, request).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe
+          controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    "must redirect to JourneyRecovery when reconcile returns a general error" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+      val mockReconcile   = mock[FormpRdsReconcileService]
+
+      val result = ContinueAmendJourneyResult(
+        userAnswers = populatedAnswers,
+        hasSubcontractors = false,
+        isNilReturn = false
+      )
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Right(result)))
+
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val application = applicationBuilder(formpRdsReconcileService = mockReconcile)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)
+
+        val res = route(application, request).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
       }
     }
   }

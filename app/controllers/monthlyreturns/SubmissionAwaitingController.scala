@@ -16,9 +16,9 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
-import pages.monthlyreturns.CisIdPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -36,7 +36,8 @@ class SubmissionAwaitingController @Inject() (
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionAwaitingView,
-  monthlyReturnService: MonthlyReturnService
+  monthlyReturnService: MonthlyReturnService,
+  appConfig: FrontendAppConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -44,13 +45,26 @@ class SubmissionAwaitingController @Inject() (
 
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      val cisId = required(
-        request.userAnswers.get(CisIdPage),
-        "[SubmissionAwaiting] cisId missing from userAnswers"
-      )
+
+      val returnUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController
+          .onExit()
+          .url
 
       monthlyReturnService
         .completeSubmissionJourney(request.userAnswers)
-        .map(_ => Ok(view(cisId)))
+        .map(_ => Ok(view(returnUrl)))
+    }
+
+  def onPageLoadFromManage(cisId: String): Action[AnyContent] =
+    identify { implicit request =>
+
+      val returnUrl =
+        appConfig.returnsLandingPageUrl(
+          cisId,
+          contractorName = None
+        )
+
+      Ok(view(returnUrl))
     }
 }

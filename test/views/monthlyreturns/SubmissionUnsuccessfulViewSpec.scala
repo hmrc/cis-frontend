@@ -27,9 +27,11 @@ class SubmissionUnsuccessfulViewSpec extends SpecBase {
   "SubmissionUnsuccessfulView" - {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
-      val fakeCisId = Some(userAnswersWithCisId).toString
-      val html      = view(fakeCisId)
-      val doc       = Jsoup.parse(html.body)
+      val manageCisReturnUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
+      val html = view(manageCisReturnUrl)
+      val doc  = Jsoup.parse(html.body)
 
       doc.title                                    must include(messages("monthlyreturns.submissionUnsuccessful.title"))
       doc.select("h1").text                        must include(messages("monthlyreturns.submissionUnsuccessful.heading.h1"))
@@ -45,9 +47,6 @@ class SubmissionUnsuccessfulViewSpec extends SpecBase {
       doc.select("li").text()                      must include(messages("monthlyreturns.submissionUnsuccessful.details.li1"))
       doc.select("li").text()                      must include(messages("monthlyreturns.submissionUnsuccessful.details.li2"))
       doc.select(".govuk-link").text()             must include(messages("monthlyreturns.submissionUnsuccessful.submit"))
-
-      val manageCisReturnUrl =
-        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
 
       doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 1
     }

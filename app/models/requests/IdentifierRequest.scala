@@ -24,5 +24,6 @@ case class IdentifierRequest[A](
   userId: String,
   employerReference: Option[EmployerReference],
   agentReference: Option[String],
-  isAgent: Boolean = false
+  isAgent: Boolean = false,
+  agentCode: Option[String] = None
 ) extends WrappedRequest[A](request)

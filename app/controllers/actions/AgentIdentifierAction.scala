@@ -53,26 +53,26 @@ class AgentIdentifierAction @Inject() (
     authorised(defaultPredicate)
       .retrieve(
         Retrievals.internalId and Retrievals.allEnrolments
-          and Retrievals.affinityGroup and Retrievals.credentialRole
+          and Retrievals.affinityGroup and Retrievals.credentialRole and Retrievals.agentCode
       ) {
-        case Some(internalId) ~ Enrolments(enrolments) ~ Some(Organisation) ~ Some(User) =>
+        case Some(internalId) ~ Enrolments(enrolments) ~ Some(Organisation) ~ Some(User) ~ _ =>
           logger.info("AgentIdentifierAction - Organisation login attempt")
           Future.successful(
             Redirect(controllers.routes.UnauthorisedController.onPageLoad())
           )
-        case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant)                          =>
+        case Some(_) ~ _ ~ Some(Organisation) ~ Some(Assistant) ~ _                          =>
           logger.info("AgentIdentifierAction - Organisation: Assistant login attempt")
           Future.successful(Redirect(controllers.routes.UnauthorisedWrongRoleController.onPageLoad()))
-        case Some(_) ~ _ ~ Some(Individual) ~ _                                          =>
+        case Some(_) ~ _ ~ Some(Individual) ~ _ ~ _                                          =>
           logger.info("AgentIdentifierAction - Individual login attempt")
           Future.successful(
             Redirect(controllers.routes.UnauthorisedIndividualAffinityController.onPageLoad())
           )
-        case Some(internalId) ~ Enrolments(enrolments) ~ Some(Agent) ~ _                 =>
+        case Some(internalId) ~ Enrolments(enrolments) ~ Some(Agent) ~ _ ~ agentCode         =>
           hasCisAgentEnrolment(enrolments)
             .map { agentReference =>
               val identifierRequest =
-                IdentifierRequest(request, internalId, None, Some(agentReference), true)
+                IdentifierRequest(request, internalId, None, Some(agentReference), true, agentCode)
 
               clientListCheckEnforcer(identifierRequest)(block)
             }
@@ -81,7 +81,7 @@ class AgentIdentifierAction @Inject() (
                 Redirect(controllers.routes.UnauthorisedAgentAffinityController.onPageLoad())
               )
             )
-        case _                                                                           =>
+        case _                                                                               =>
           logger.warn("AgentIdentifierAction - Unable to retrieve internal id or affinity group")
           Future.successful(Redirect(routes.UnauthorisedController.onPageLoad()))
       } recover {

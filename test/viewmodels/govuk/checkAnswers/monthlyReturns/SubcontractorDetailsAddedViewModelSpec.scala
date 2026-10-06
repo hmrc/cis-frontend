@@ -28,9 +28,10 @@ class SubcontractorDetailsAddedViewModelSpec extends AnyFreeSpec with Matchers {
     "must return the first headingArg parsed as an Int when present (multiple heading)" in {
       val vm = SubcontractorDetailsAddedViewModel(
         headingKey = "monthlyreturns.subcontractorDetailsAdded.heading.multiple",
-        headingArgs = Seq(Integer.valueOf(3)), // matches {0} in messages.en
+        headingArgs = Seq(Integer.valueOf(3)),
         rows = Nil,
-        hasIncomplete = false
+        hasIncomplete = false,
+        showYesNo = true
       )
 
       vm.addedCount mustBe 3
@@ -41,7 +42,8 @@ class SubcontractorDetailsAddedViewModelSpec extends AnyFreeSpec with Matchers {
         headingKey = "monthlyreturns.subcontractorDetailsAdded.heading.single",
         headingArgs = Seq.empty,
         rows = Nil,
-        hasIncomplete = false
+        hasIncomplete = false,
+        showYesNo = false
       )
 
       vm.addedCount mustBe 1
@@ -67,7 +69,8 @@ class SubcontractorDetailsAddedViewModelSpec extends AnyFreeSpec with Matchers {
         headingKey = "monthlyreturns.subcontractorDetailsAdded.heading.multiple",
         headingArgs = Seq(Integer.valueOf(1)),
         rows = rows,
-        hasIncomplete = true
+        hasIncomplete = true,
+        showYesNo = true
       )
 
       vm.rows mustBe rows

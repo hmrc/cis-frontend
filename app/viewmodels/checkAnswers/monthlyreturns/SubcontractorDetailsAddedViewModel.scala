@@ -33,7 +33,8 @@ case class SubcontractorDetailsAddedViewModel(
   headingArgs: Seq[AnyRef],
   rows: Seq[SubcontractorDetailsAddedRow],
   hasIncomplete: Boolean,
-  isAmendment: Boolean = false
+  isAmendment: Boolean = false,
+  showYesNo: Boolean
 ) {
   def addedCount: Int = headingArgs.headOption.map(_.toString.toInt).getOrElse(1)
 }

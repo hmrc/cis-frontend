@@ -21,11 +21,12 @@ import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhichSubcontractorsToAddPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage}
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -56,10 +57,23 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   private val preSelectedIds = Set("1", "3")
 
+  private def fullSubcontractor(id: Long): models.monthlyreturns.Subcontractor = {
+    val subcontractor = mock[models.monthlyreturns.Subcontractor]
+    when(subcontractor.subcontractorId).thenReturn(id)
+    subcontractor
+  }
+
+  private val fullSubcontractors = Seq(
+    fullSubcontractor(1L),
+    fullSubcontractor(2L),
+    fullSubcontractor(3L)
+  )
+
   private val pageModel = WhichSubcontractorsToAddPageModel(
     subcontractors = subcontractors,
     preSelectedIds = preSelectedIds,
-    status = Some("STARTED")
+    status = Some("STARTED"),
+    fullSubcontractors = fullSubcontractors
   )
 
   private val monthYear = LocalDate.of(2025, 10, 5)
@@ -85,6 +99,15 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         any[Option[UserAnswers]]
       )(any[HeaderCarrier])
     ).thenReturn(Future.successful(model))
+
+  private def stubFinalValidationService(service: services.finalvalidation.FinalValidationService): Unit =
+    when(
+      service.validate(any[Seq[models.monthlyreturns.Subcontractor]])
+    ).thenReturn(
+      models.finalvalidation.FinalValidationResult(
+        failures = Seq.empty
+      )
+    )
 
   "WhichSubcontractorsToAdd Controller" - {
 
@@ -183,12 +206,14 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
     "must redirect to the next page when valid data is submitted and monthly return status = STARTED" in {
 
-      val mockSessionRepository = mock[SessionRepository]
-      val subcontractorService  = mock[SubcontractorService]
-      val monthlyReturnService  = mock[MonthlyReturnService]
+      val mockSessionRepository  = mock[SessionRepository]
+      val subcontractorService   = mock[SubcontractorService]
+      val monthlyReturnService   = mock[MonthlyReturnService]
+      val finalValidationService = mock[services.finalvalidation.FinalValidationService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       stubService(subcontractorService, pageModel)
+      stubFinalValidationService(finalValidationService)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
           any[UserAnswers],
@@ -202,7 +227,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[SubcontractorService].toInstance(subcontractorService),
-            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            bind[MonthlyReturnService].toInstance(monthlyReturnService),
+            bind[services.finalvalidation.FinalValidationService].toInstance(finalValidationService)
           )
           .build()
 
@@ -220,12 +246,14 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
     "must redirect to the next page when valid data is submitted and monthly return status = VALIDATED" in {
 
-      val mockSessionRepository = mock[SessionRepository]
-      val subcontractorService  = mock[SubcontractorService]
-      val monthlyReturnService  = mock[MonthlyReturnService]
+      val mockSessionRepository  = mock[SessionRepository]
+      val subcontractorService   = mock[SubcontractorService]
+      val monthlyReturnService   = mock[MonthlyReturnService]
+      val finalValidationService = mock[services.finalvalidation.FinalValidationService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       stubService(subcontractorService, pageModel.copy(status = Some("VALIDATED")))
+      stubFinalValidationService(finalValidationService)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
           any[UserAnswers],
@@ -239,7 +267,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[SubcontractorService].toInstance(subcontractorService),
-            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            bind[MonthlyReturnService].toInstance(monthlyReturnService),
+            bind[services.finalvalidation.FinalValidationService].toInstance(finalValidationService)
           )
           .build()
 
@@ -257,12 +286,14 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
     "must redirect to the next page when multiple checkboxes are selected" in {
 
-      val mockSessionRepository = mock[SessionRepository]
-      val subcontractorService  = mock[SubcontractorService]
-      val monthlyReturnService  = mock[MonthlyReturnService]
+      val mockSessionRepository  = mock[SessionRepository]
+      val subcontractorService   = mock[SubcontractorService]
+      val monthlyReturnService   = mock[MonthlyReturnService]
+      val finalValidationService = mock[services.finalvalidation.FinalValidationService]
 
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       stubService(subcontractorService, pageModel)
+      stubFinalValidationService(finalValidationService)
       when(
         monthlyReturnService.syncMonthlyReturnItems(
           any[UserAnswers],
@@ -276,7 +307,8 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
             bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[SubcontractorService].toInstance(subcontractorService),
-            bind[MonthlyReturnService].toInstance(monthlyReturnService)
+            bind[MonthlyReturnService].toInstance(monthlyReturnService),
+            bind[services.finalvalidation.FinalValidationService].toInstance(finalValidationService)
           )
           .build()
 
@@ -289,6 +321,67 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual onwardRoute.url
+      }
+    }
+
+    "must set OriginalSubcontractorCountPage to total available subcontractors on valid submit" in {
+
+      val mockSessionRepository  = mock[SessionRepository]
+      val subcontractorService   = mock[SubcontractorService]
+      val monthlyReturnService   = mock[MonthlyReturnService]
+      val finalValidationService = mock[services.finalvalidation.FinalValidationService]
+
+      val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      when(mockSessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      stubService(subcontractorService, pageModel)
+
+      when(
+        monthlyReturnService.syncMonthlyReturnItems(
+          any[UserAnswers],
+          any[Seq[Long]]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(()))
+
+      when(
+        finalValidationService.validate(
+          any[Seq[models.monthlyreturns.Subcontractor]]
+        )
+      ).thenReturn(
+        models.finalvalidation.FinalValidationResult(
+          failures = Seq.empty
+        )
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithRequiredPages))
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[SubcontractorService].toInstance(subcontractorService),
+            bind[MonthlyReturnService].toInstance(monthlyReturnService),
+            bind[services.finalvalidation.FinalValidationService]
+              .toInstance(finalValidationService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whichSubcontractorsToAddRoute)
+            .withFormUrlEncodedBody(("value[0]", subcontractors.head.id))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(OriginalSubcontractorCountPage) mustBe
+          Some(subcontractors.size)
+
+        verify(finalValidationService).validate(any())
       }
     }
 

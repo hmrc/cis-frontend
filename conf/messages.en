@@ -60,35 +60,37 @@ journeyRecovery.startAgain.guidance.contactHMRC.suffix = for more help.
 journeyRecovery.startAgain.guidance.cisAccount.prefix = Back to
 journeyRecovery.startAgain.guidance.cisAccount.link = Manage your CIS account
 
+
 signedOut.title = For your security, we signed you out
 signedOut.heading = For your security, we signed you out
 signedOut.guidance = We did not save your answers.
 
-unauthorised.title = You can’t access this service with this account
-unauthorised.heading = You can’t access this service with this account
+unauthorised.title                       =  Sorry, you are unable to use this service
+unauthorised.heading                     =  Sorry, you are unable to use this service
+unauthorised.guidance.p1                 =  To use this service, you will need to:
+unauthorised.guidance.org.p1.prefix      =  register with the
+unauthorised.guidance.org.p1.link        =  Construction Industry Scheme
+unauthorised.guidance.org.p1.suffix      =  if you are a contractor or subcontractor
+unauthorised.guidance.agent.p2.prefix    =  get access to
+unauthorised.guidance.agent.p2.link      =  PAYE for Agents
+unauthorised.guidance.agent.p2.suffix    =  if you are an agent
 
-unauthorised.guidance.org.p1.prefix = If you are a contractor or subcontractor, you will need to register with
-unauthorised.guidance.org.p1.link = Construction Industry Scheme
-unauthorised.guidance.org.p1.suffix = to access this service.
-unauthorised.guidance.agent.p2.prefix = If you are an agent, you will need to request access to
-unauthorised.guidance.agent.p2.link = PAYE for Agents
-unauthorised.guidance.agent.p2.suffix = to use this service.
+unauthorised.org.title                   =  Sorry, you are unable to use this service
+unauthorised.org.heading                 =  Sorry, you are unable to use this service
+unauthorised.org.guidance.p2.prefix      =  You need to register this account with the
+unauthorised.org.guidance.p2.link        =  Construction Industry Scheme
+unauthorised.org.guidance.p2.suffix      =  before you can use this service.
 
-unauthorised.org.title = You need to register to use this service
-unauthorised.org.heading = You need to register to use this service
-unauthorised.org.p1 = You are signed in with an organisation account.
-unauthorised.org.guidance.p2.prefix = Register with the
-unauthorised.org.guidance.p2.link = Construction Industry Scheme
-unauthorised.org.guidance.p2.suffix = to access this service.
+unauthorised.org.standard.title          =  Sorry, you are unable to use this service
+unauthorised.org.standard.heading        =  Sorry, you are unable to use this service
+unauthorised.org.standard.p1             =  Only users with an organisation or agent account can use this service.
+unauthorised.org.standard.guidance.link  =  More information about the Construction Industry Scheme (CIS)
 
-unauthorised.org.standard.title = Sorry, you are unable to use this service
-unauthorised.org.standard.heading = Sorry, you are unable to use this service
-unauthorised.org.standard.paragraph = Return to
-unauthorised.org.standard.guidance.link = Construction Industry Scheme
-
-unauthorised.individual.title = Sorry, you are unable to use this service
-unauthorised.individual.heading = Sorry, you are unable to use this service
-unauthorised.individual.p1 = You are signed in with an individual account. Only users with an organisation or agent services accounts can use this service.
+unauthorised.individual.title            =  Sorry, you are unable to use this service
+unauthorised.individual.heading          =  Sorry, you are unable to use this service
+unauthorised.individual.p1               =  You are signed in with an individual account.
+unauthorised.individual.p2               =  Only users with an organisation or agent account can use this service.
+unauthorised.individual.link             =  More information about the Construction Industry Scheme (CIS)
 
 unauthorised.agent.title = Sorry, you are unable to use this service
 unauthorised.agent.heading = Sorry, you are unable to use this service
@@ -150,21 +152,24 @@ monthlyreturns.returnType.checkYourAnswersLabel = Return type
 monthlyreturns.returnType.value = Monthly nil return
 monthlyreturns.returnType.monthlyReturnValue = Monthly return
 
+monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel = Number of subcontractor payments made
+monthlyreturns.numberOfSubcontractorPaymentsMade.hidden = number of subcontractor payments made
+
 monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Payments to subcontractors
 monthlyreturns.paymentsToSubcontractors.value = None
 
 monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmNilPayments.change.hidden = confirm nil return payments to subcontractors this month
-monthlyreturns.dateConfirmNilPayments.error.required.month = You must enter a tax month
-monthlyreturns.dateConfirmNilPayments.error.required.year = You must enter a tax year
+monthlyreturns.dateConfirmNilPayments.error.required.month = Enter a month between 1 and 12
+monthlyreturns.dateConfirmNilPayments.error.required.year = Enter a year
 monthlyreturns.dateConfirmNilPayments.error.required.two = The ‘Tax month ending’ must include {0} and {1}
 monthlyreturns.dateConfirmNilPayments.error.required = The ‘Tax month ending’ must include {0}
 monthlyreturns.dateConfirmNilPayments.error.invalid = Please enter a valid ‘Tax month ending, month and year’
-monthlyreturns.dateConfirmNilPayments.error.invalid.month = You must enter a tax month
-monthlyreturns.dateConfirmNilPayments.error.invalid.year = You must enter a tax year
-monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = You must enter a tax month, the date cannot be before {0} {1} {2}
-monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = You must enter a tax year, the date cannot be more than 3 return periods ahead of the current date
-monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear = The return period cannot be before {0} 
+monthlyreturns.dateConfirmNilPayments.error.invalid.month = Enter a month between 1 and 12
+monthlyreturns.dateConfirmNilPayments.error.invalid.year = Enter a valid year like 2025
+monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = You must enter a month, the date cannot be before {0} {1} {2}
+monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = You must enter a year, the date cannot be more than 3 return periods ahead of the current date
+monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear = The return period cannot be before {0}
 
 monthlyreturns.inactivityRequest.title = Do you want to submit an inactivity request?
 monthlyreturns.inactivityRequest.heading = Do you want to submit an inactivity request?
@@ -265,7 +270,7 @@ monthlyreturns.alreadySubmitted.heading    = You have already submitted your mon
 monthlyreturns.alreadySubmitted.nilreturn.title      = You have already submitted your monthly nil return
 monthlyreturns.alreadySubmitted.nilreturn.heading    = You have already submitted your monthly nil return
 monthlyreturns.alreadySubmitted.paragraph  = View and manage your monthly returns in your
-monthlyreturns.alreadySubmitted.link       = Construction Industry Scheme account.
+monthlyreturns.alreadySubmitted.link       = Construction Industry Scheme account
 
 pageNotFound.title      = Page not found
 pageNotFound.heading    = Page not found
@@ -275,9 +280,10 @@ pageNotFound.p3         = If the web address is correct or you selected a link o
 pageNotFound.link       = HMRC Online Services Helpdesk
 pageNotFound.p4         = if you need to speak to someone.
 
-accessDenied.title      = Sorry, there is a problem with the service
-accessDenied.heading    = Sorry, there is a problem with the service
-accessDenied.link       = Return to the Construction Industry Scheme start page.
+accessDenied.title                       =  Sorry, you are unable to use this service
+accessDenied.heading                     =  Sorry, you are unable to use this service
+accessDenied.paragraph                   =  Only users with an organisation or agent account can use this service.
+accessDenied.link                        =  More information about the Construction Industry Scheme (CIS)
 
 systemError.title       = Sorry, there is a problem with this service
 systemError.heading     = Sorry, there is a problem with this service
@@ -307,43 +313,43 @@ monthlyreturns.submittedNoReceipt.feedback.p2.link = Take a short survey
 monthlyreturns.submittedNoReceipt.whatHappensNext.heading = What happens next
 monthlyreturns.submittedNoReceipt.whatHappensNext.p = You did not provide an email when you submitted this return. If you want to provide an email, you need to change your contact details in ‘About your organisation/firm’. You can find this in ‘Your HMRC Services’.
 
-fileYourMonthlyCisReturn.title = File your monthly CIS return
-fileYourMonthlyCisReturn.heading = File your monthly CIS return
-fileYourMonthlyCisReturn.p1 = Use this service to file your monthly return for the Construction Industry Scheme (CIS).
-fileYourMonthlyCisReturn.p2 = You will need to enter the tax month, and tax year, on the return.
+fileYourMonthlyCisReturn.title = File a monthly return
+fileYourMonthlyCisReturn.heading = 	File a monthly return
+fileYourMonthlyCisReturn.p1 = Use this service to file a monthly return for the Construction Industry Scheme (CIS).
+fileYourMonthlyCisReturn.p2 = You will need to enter the month and year of the return period.
 
-fileYourNilReturn.title = File your nil return
-fileYourNilReturn.heading = File your nil return
-fileYourNilReturn.p1 = Use this service to confirm you have not paid any subcontractors in a tax month.
-fileYourNilReturn.p2 = You can also submit an inactivity request.
+fileYourNilReturn.title = File nil returns and inactivity requests
+fileYourNilReturn.heading = File nil returns and inactivity requests
+fileYourNilReturn.p1 = Use this service to confirm you have not paid any subcontractors in a return period.
+fileYourNilReturn.p2 = You can also submit an inactivity request while completing a nil return if you do not expect to pay any subcontractors in the next 6 months.
+fileYourNilReturn.p3 = You may be charged a penalty if you fail to do this.
 
-monthlyreturns.dateConfirmPayments.title = Which tax month and year are you filing a return for?
-monthlyreturns.dateConfirmPayments.heading = Which tax month and year are you filing a return for?
-monthlyreturns.dateConfirmPayments.nilreturn.title = Which tax month and year are you filing a nil return for?
-monthlyreturns.dateConfirmPayments.nilreturn.heading = Which tax month and year are you filing a nil return for?
-monthlyreturns.dateConfirmPayments.taxMonth.error.required = You must enter a tax month
-monthlyreturns.dateConfirmPayments.taxMonth.error.wholeNumber = You must enter a tax month
-monthlyreturns.dateConfirmPayments.taxMonth.error.nonNumeric = You must enter a tax month
-monthlyreturns.dateConfirmPayments.taxMonth.error.range = You must enter a tax month
-monthlyreturns.dateConfirmPayments.taxYear.error.required = You must enter a tax year
-monthlyreturns.dateConfirmPayments.taxYear.error.wholeNumber = You must enter a tax year
-monthlyreturns.dateConfirmPayments.taxYear.error.nonNumeric = You must enter a tax year
-monthlyreturns.dateConfirmPayments.taxYear.error.range = You must enter a tax year
+monthlyreturns.dateConfirmPayments.title = 	Which return period are you filing for?
+monthlyreturns.dateConfirmPayments.heading = 	Which return period are you filing for?
+monthlyreturns.dateConfirmPayments.nilreturn.title = Which nil return period are you filing for?
+
+monthlyreturns.dateConfirmPayments.nilreturn.heading = Which nil return period are you filing for?
+monthlyreturns.dateConfirmPayments.taxMonth.error.required = You must enter a month
+monthlyreturns.dateConfirmPayments.taxMonth.error.wholeNumber = You must enter a month
+monthlyreturns.dateConfirmPayments.taxMonth.error.nonNumeric = You must enter a month
+monthlyreturns.dateConfirmPayments.taxMonth.error.range = You must enter a month
+monthlyreturns.dateConfirmPayments.taxYear.error.required = You must enter a year
+monthlyreturns.dateConfirmPayments.taxYear.error.wholeNumber = You must enter a year
+monthlyreturns.dateConfirmPayments.taxYear.error.nonNumeric = You must enter a year
+monthlyreturns.dateConfirmPayments.taxYear.error.range = You must enter a year
 monthlyreturns.dateConfirmPayments.error.duplicate = A monthly return for this date already exists
-monthlyreturns.dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate = You must enter a tax month, the date cannot be before {0} {1} {2}
-monthlyreturns.dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod = You must enter a tax year, the date cannot be more than 3 return periods ahead of the current date
-monthlyreturns.dateConfirmPayments.paragraph = A return period runs from the 6th of the month you are filing a return for to the 5th of the following month.
+monthlyreturns.dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate = You must enter a month, the date cannot be before {0} {1} {2}
+monthlyreturns.dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod = You must enter a year, the date cannot be more than 3 return periods ahead of the current date
+monthlyreturns.dateConfirmPayments.paragraph = A return period runs from the 6th of the month to the 5th of the following month. For example, for 6 December to 5 January 2025, enter 1 2025.
 monthlyreturns.dateConfirmPayments.WarningIcon = Warning
 monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
-monthlyreturns.dateConfirmPayments.p1.prefix = You cannot change a return period once you have started to complete it. You must
+monthlyreturns.dateConfirmPayments.p1.prefix = 	You cannot change a return period after you have started. You must
 monthlyreturns.dateConfirmPayments.p1.link = delete the existing return
-monthlyreturns.dateConfirmPayments.p1.suffix = before you start a new return for the same period.
-monthlyreturns.dateConfirmPayments.legendText = Tax month and tax year
+monthlyreturns.dateConfirmPayments.legendText = Enter month and year
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
 monthlyreturns.dateConfirmPayments.change.hidden = which tax month and year are you filing a return for
 monthlyreturns.dateConfirmPayments.labelMonth = Tax month
 monthlyreturns.dateConfirmPayments.labelYear = Tax year
-monthlyreturns.dateConfirmPayments.helpText = For example, 9 2025
 
 monthlyreturns.selectSubcontractors.title = Which subcontractors do you want to include?
 monthlyreturns.selectSubcontractors.heading = Which subcontractors do you want to include?
@@ -358,7 +364,7 @@ monthlyreturns.selectSubcontractors.selectAll.link = Select all
 monthlyreturns.selectSubcontractors.deselectAll.link = Deselect all
 monthlyreturns.selectSubcontractors.table.th.includeThisMonth = Include
 monthlyreturns.selectSubcontractors.table.th.name = Name
-monthlyreturns.selectSubcontractors.table.th.verificationRequired = Verified using this service
+monthlyreturns.selectSubcontractors.table.th.verificationRequired = Verification required?
 monthlyreturns.selectSubcontractors.table.th.verificationNumber = Verification number
 monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
@@ -400,26 +406,26 @@ monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Add an
 
 paymentDetails.title = How much did you pay to this subcontractor in total?
 paymentDetails.heading = How much did you pay to {0} in total?
-paymentDetails.hint = Enter the gross amount, excluding VAT and any deductions. Round down to the nearest pound.
+paymentDetails.hint = Enter the gross amount, excluding VAT and any deductions. Use whole pounds only.
 paymentDetails.checkYourAnswersLabel = Payment Details
 paymentDetails.error.nonNumeric = Enter your paymentDetails using numbers and a decimal point
 paymentDetails.error.required = Enter total payments made
 paymentDetails.error.invalidNumeric = Enter your paymentDetails using up to two decimal places
 paymentDetails.error.aboveMaximum = PaymentDetails must be {0} or less
 paymentDetails.error.belowMinimum = PaymentDetails must be {0} or more
-paymentDetails.error.invalid = Enter the total payments made in pounds, rounded down to the nearest pound
+paymentDetails.error.invalid = Total payments made must only use whole pounds
 paymentDetails.error.maxLength = Total payments made must not be greater than £99,999,999
 paymentDetails.error.maxValue = Total payments made must not be greater than £99,999,999
 paymentDetails.change.hidden = Payment Details
 
 monthlyreturns.costOfMaterials.title = How much did this subcontractor pay in material costs?
 monthlyreturns.costOfMaterials.heading = How much did {0} pay in material costs?
-monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Round down to the nearest pound.
+monthlyreturns.costOfMaterials.hint = Enter the total material costs paid by the subcontractor. Use whole pounds only.
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = Cost Of Materials
 monthlyreturns.costOfMaterials.error.nonNumeric = Enter your cost of materials using numbers and a decimal point
 monthlyreturns.costOfMaterials.error.required = Enter your cost of materials
 monthlyreturns.costOfMaterials.error.invalidNumeric = Enter your costOfMaterials using up to two decimal places
-monthlyreturns.costOfMaterials.error.invalid = Enter the total material costs paid in pounds, rounded down to the nearest pound
+monthlyreturns.costOfMaterials.error.invalid = Total material costs must only use whole pounds
 monthlyreturns.costOfMaterials.error.maxLength = Total material costs paid must not be greater than £99,999,999
 monthlyreturns.costOfMaterials.error.maxValue = Total material costs paid must not be greater than £99,999,999
 monthlyreturns.costOfMaterials.change.hidden = cost of materials
@@ -585,20 +591,65 @@ finalvalidations.addSchemeNameYesNo.error.required = Select yes to enter the con
 finalvalidations.updateSubcontractorDetails.title = {0}
 finalvalidations.updateSubcontractorDetails.heading = {0}
 finalvalidations.updateSubcontractorDetails.intro = To file your return, you must review and update the subcontractor details.
-finalvalidations.updateSubcontractorDetails.utr = Unique Taxpayer Reference
-finalvalidations.updateSubcontractorDetails.nino = National Insurance number
-finalvalidations.updateSubcontractorDetails.utr.change.hidden = Unique Taxpayer Reference
-finalvalidations.updateSubcontractorDetails.nino.change.hidden = National Insurance number
 finalvalidations.updateSubcontractorDetails.confirmChanges.heading = Confirm changes
 finalvalidations.updateSubcontractorDetails.confirmChanges.body = By changing this subcontractor’s details you are confirming that, to the best of your knowledge, the details you are providing are correct.
 finalvalidations.updateSubcontractorDetails.acceptAndSubmit = Accept and submit
 finalvalidations.updateSubcontractorDetails.cancelChanges = Cancel changes
+
+# Shared
+finalvalidations.updateSubcontractorDetails.address = Address
+finalvalidations.updateSubcontractorDetails.addContactDetails = Add contact details?
+finalvalidations.updateSubcontractorDetails.emailAddress = Email address
+finalvalidations.updateSubcontractorDetails.phoneNumber = Phone number
+finalvalidations.updateSubcontractorDetails.mobilePhoneNumber = Mobile number
+finalvalidations.updateSubcontractorDetails.addWorksReferenceNumber = Add works reference number?
+finalvalidations.updateSubcontractorDetails.worksReferenceNumber = Works reference number
+finalvalidations.updateSubcontractorDetails.noNameProvided = No name provided
+
+# Sole trader
+finalvalidations.updateSubcontractorDetails.soleTrader.subcontractorName = Subcontractor name
+finalvalidations.updateSubcontractorDetails.soleTrader.tradingName = Trading name
+finalvalidations.updateSubcontractorDetails.soleTrader.names = Names
+finalvalidations.updateSubcontractorDetails.soleTrader.names.noneSelected = None selected
+finalvalidations.updateSubcontractorDetails.soleTrader.addAddress = Add subcontractor address?
+finalvalidations.updateSubcontractorDetails.soleTrader.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.soleTrader.utr = UTR
+finalvalidations.updateSubcontractorDetails.soleTrader.addNino = Add National Insurance number?
+finalvalidations.updateSubcontractorDetails.soleTrader.nino = National Insurance number
+
+# Company
+finalvalidations.updateSubcontractorDetails.company.name = Company name
+finalvalidations.updateSubcontractorDetails.company.addAddress = Add company address?
+finalvalidations.updateSubcontractorDetails.company.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.company.utr = Corporation Tax UTR
+finalvalidations.updateSubcontractorDetails.company.addCrn = Add company registration number?
+finalvalidations.updateSubcontractorDetails.company.crn = Company registration number
+
+# Trust
+finalvalidations.updateSubcontractorDetails.trust.name = Trust name
+finalvalidations.updateSubcontractorDetails.trust.addAddress = Add trust address?
+finalvalidations.updateSubcontractorDetails.trust.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.trust.utr = Trust UTR
+
+# Partnership
+finalvalidations.updateSubcontractorDetails.partnership.name = Partnership name
+finalvalidations.updateSubcontractorDetails.partnership.nominatedPartner = Nominated partner
+finalvalidations.updateSubcontractorDetails.partnership.addAddress = Add partnership address?
+finalvalidations.updateSubcontractorDetails.partnership.addUtr = Add UTR?
+finalvalidations.updateSubcontractorDetails.partnership.utr = Partnership UTR
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerUtr = Add UTR for nominated partner?
+finalvalidations.updateSubcontractorDetails.partnership.partnerUtr = UTR for nominated partner
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerNino = Add National Insurance number for nominated partner?
+finalvalidations.updateSubcontractorDetails.partnership.partnerNino = National Insurance number for nominated partner
+finalvalidations.updateSubcontractorDetails.partnership.addPartnerCrn = Add company registration number for nominated partner?
+finalvalidations.updateSubcontractorDetails.partnership.partnerCrn = Company registration number for nominated partner
 
 finalValidations.reviewSubcontractorDetails.title = Review subcontractor details
 finalValidations.reviewSubcontractorDetails.heading = Review subcontractor details
 finalValidations.reviewSubcontractorDetails.intro = You need to review the subcontractor details
 finalValidations.reviewSubcontractorDetails.taskList.fileAReturn = File a return
 finalValidations.reviewSubcontractorDetails.taskList.status.incomplete = Incomplete
+finalValidations.reviewSubcontractorDetails.taskList.status.completed = Completed
 finalValidations.reviewSubcontractorDetails.taskList.status.cannotContinueYet = Cannot continue yet
 finalValidations.reviewSubcontractorDetails.backLink = Back to select your subcontractors
 
@@ -609,6 +660,7 @@ finalValidations.addUtrYesNo.error.required = Select yes to enter the contractor
 finalvalidations.reviewContractorDetails.title = Review contractor details
 finalvalidations.reviewContractorDetails.heading = Review contractor details
 finalvalidations.reviewContractorDetails.p = You cannot file a return at the moment. You need to review the contractor details.
+finalvalidations.reviewContractorDetails.tasklist.hidden.review = Review
 finalvalidations.reviewContractorDetails.tasklist.schemeName = Scheme name
 finalvalidations.reviewContractorDetails.tasklist.utr = Unique Taxpayer Reference
 finalvalidations.reviewContractorDetails.tasklist.emailAddress = Email address
@@ -616,3 +668,16 @@ finalValidations.reviewContractorDetails.taskList.status.incomplete = Incomplete
 finalvalidations.reviewContractorDetails.tasklist.fileareturn = File a return
 finalvalidations.reviewContractorDetails.tasklist.status.cannotstartyet = Cannot start yet
 finalvalidations.reviewContractorDetails.cisreturndashboardlink = Back to manage your CIS account
+
+agent.agentLostAccess.title                            =  Sorry, you are unable to use this service
+agent.agentLostAccess.heading                          =  Sorry, you are unable to use this service
+agent.agentLostAccess.p1                               =  You are no longer authorised.
+agent.agentLostAccess.h2                               =  What you need to do
+agent.agentLostAccess.bullet.title                     =  Ask your client to authorise you. They can do this by either:
+agent.agentLostAccess.bullet.item.1.prefix             =  authorising you through their
+agent.agentLostAccess.bullet.item.1.link               =  HMRC online account
+agent.agentLostAccess.bullet.item.2.prefix             =  downloading and completing
+agent.agentLostAccess.bullet.item.2.link               =  form 64—8
+agent.agentLostAccess.bullet.item.2.suffix             =  to authorise you by post
+agent.agentLostAccess.p2                               =  It can take up to 5 working days for new authorisations to appear in your account.
+agent.agentLostAccess.return.link                      =  Return to client list

@@ -16,7 +16,7 @@
 
 package controllers.actions
 
-import controllers.actions.ClientListCheckRedirects.systemError
+import controllers.actions.ClientListCheckRedirects.{agentLostAccess, systemError}
 import models.agent.ClientListStatus
 import models.requests.IdentifierRequest
 import play.api.Logging
@@ -43,7 +43,7 @@ class ClientListStatusGuard @Inject() (
         case ClientListStatus.Succeeded                                                                =>
           None
         case ClientListStatus.InProgress | ClientListStatus.Failed | ClientListStatus.InitiateDownload =>
-          Some(systemError) // TODO: Redirect(controllers.agent.routes.AgentLostAccessController.onPageLoad())
+          Some(agentLostAccess)
       }
       .recover { case NonFatal(e) =>
         logger.error("[ClientListStatusGuard] client list check failed", e)
