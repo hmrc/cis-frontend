@@ -28,7 +28,6 @@
     hmrcReportTechnicalIssueHelper: HmrcReportTechnicalIssueHelper,
     betaBanner: StandardBetaBanner,
     hmrcStandardPage: HmrcStandardPage,
-    hmrcUserResearchBanner: HmrcUserResearchBanner,
     stylesheets: Stylesheets,
     twoThirdsMainContent: TwoThirdsMainContent,
     fullWidthMainContent: FullWidthMainContent
@@ -42,7 +41,6 @@
     showHmrcBanner: Boolean = false,
     isFullWidth: Boolean = false,
     showUrBanner: Boolean = false,
-    urBanner: Option[UserResearchBanner] = None
 )(contentBlock: Html)(implicit rh: RequestHeader, messages: Messages)
 
 @head = {
@@ -85,7 +83,7 @@
     banners = Banners(
         displayHmrcBanner = showHmrcBanner,
         phaseBanner = Some(betaBanner(appConfig.feedbackUrl)),
-        userResearchBanner = if(showUrBanner) urBanner else None
+        userResearchBanner = if(showUrBanner) Some(UserResearchBanner(url = appConfig.userResearchUrl)) else None
     ),
     isWelshTranslationAvailable = appConfig.languageTranslationEnabled,
     backLink = if (showBackLink) Some(BackLink.mimicsBrowserBackButtonViaJavaScript) else None
