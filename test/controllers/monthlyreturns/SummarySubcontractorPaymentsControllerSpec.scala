@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import models.monthlyreturns.SelectedSubcontractor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -27,6 +28,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.SessionRepository
 import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
 
 import scala.concurrent.Future
@@ -42,7 +44,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
     }
 
   lazy val summaryRoute =
-    controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad().url
+    controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad(CisOrg).url
 
   "SummarySubcontractorPayments Controller" - {
 
@@ -86,7 +88,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
         )(messages(application))
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(viewModel)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, viewModel)(request, messages(application)).toString
       }
     }
 
@@ -123,7 +125,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
         )(messages(application))
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(viewModel)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, viewModel)(request, messages(application)).toString
       }
     }
 
@@ -147,11 +149,11 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
         )(messages(application))
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(viewModel)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, viewModel)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must return OK for a GET when no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -159,8 +161,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
         val request = FakeRequest(GET, summaryRoute)
         val result  = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
   }

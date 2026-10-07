@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.monthlyreturns
 import models.agent.AgentClientData
+import models.requests.CisPath.{CisId, CisOrg}
 import models.monthlyreturns.{ContractorScheme, GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.requests.GetMonthlyReturnForEditRequest
 import models.{ReturnType, UserAnswers}
@@ -145,6 +146,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val expectedHtml =
             view(
+              CisOrg,
               SubmittedNoReceiptViewModel(
                 periodEnd = periodEnd.format(dmyFmt),
                 submittedTime = submittedTime,
@@ -313,6 +315,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val expectedHtml =
             view(
+              CisOrg,
               SubmittedNoReceiptViewModel(
                 periodEnd = periodEnd.format(dmyFmt),
                 submittedTime = submittedTime,
@@ -372,6 +375,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val expectedHtml =
             view(
+              CisOrg,
               SubmittedNoReceiptViewModel(
                 periodEnd = periodEnd.format(dmyFmt),
                 submittedTime = submittedTime,
@@ -519,6 +523,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val expectedHtml =
               view(
+                CisOrg,
                 SubmittedNoReceiptViewModel(
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
@@ -671,6 +676,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val expectedHtml =
               view(
+                CisId(cisId),
                 SubmittedNoReceiptViewModel(
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
@@ -741,6 +747,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val expectedHtml =
               view(
+                CisId(cisId),
                 SubmittedNoReceiptViewModel(
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
@@ -844,6 +851,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
             val expectedHtml =
               view(
+                CisOrg,
                 SubmittedNoReceiptViewModel(
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,

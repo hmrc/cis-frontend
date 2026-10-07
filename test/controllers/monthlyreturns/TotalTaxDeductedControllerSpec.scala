@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
+import models.requests.CisPath.CisOrg
 import models.monthlyreturns.SelectedSubcontractor
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
@@ -33,6 +34,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.TotalTaxDeductedView
 
 import scala.concurrent.Future
@@ -53,7 +55,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     .value
 
   lazy val totalTaxDeductedRoute: String =
-    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 1, None).url
+    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CisOrg, NormalMode, 1, None).url
 
   "TotalTaxDeducted Controller" - {
 
@@ -69,7 +71,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[TotalTaxDeductedView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -90,7 +92,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(Some(validAnswer)), NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(CisOrg, form.fill(Some(validAnswer)), NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -198,7 +200,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -268,7 +270,10 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to Change Answers total payments when returnTo is changeAnswers" in {
 
-      val changeAnswersPostRoute = "/monthly-return/tax-deducted/1?returnTo=changeAnswers"
+      val changeAnswersPostRoute =
+        controllers.monthlyreturns.routes.TotalTaxDeductedController
+          .onSubmit(CisOrg, NormalMode, 1, Some("changeAnswers"))
+          .url
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -287,7 +292,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(CisOrg, 1).url
       }
     }
 
@@ -296,7 +301,10 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
       val existingAnswerUa =
         userAnswers.set(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67")).success.value
 
-      val changeAnswersPostRoute = "/monthly-return/tax-deducted/1?returnTo=changeAnswers"
+      val changeAnswersPostRoute =
+        controllers.monthlyreturns.routes.TotalTaxDeductedController
+          .onSubmit(CisOrg, NormalMode, 1, Some("changeAnswers"))
+          .url
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -315,7 +323,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(CisOrg, 1).url
 
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
         verify(mockSessionRepository).set(captor.capture())

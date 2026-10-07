@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.CostOfMaterialsFormProvider
+import models.requests.CisPath.CisOrg
 import models.monthlyreturns.SelectedSubcontractor
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
@@ -53,7 +54,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
     .value
 
   lazy val costOfMaterialsRoute: String =
-    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1, None).url
+    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CisOrg, NormalMode, 1, None).url
 
   "CostOfMaterials Controller" - {
 
@@ -69,7 +70,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[CostOfMaterialsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -90,7 +91,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(Some(validAnswer)), NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(CisOrg, form.fill(Some(validAnswer)), NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -171,7 +172,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, companyName, 1, None)(
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode, companyName, 1, None)(
           request,
           messages(application)
         ).toString
@@ -241,7 +242,10 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
     "must redirect to Change Answers total payments when returnTo is changeAnswers" in {
 
-      val changeAnswersPostRoute = s"/monthly-return/materials-cost/1?returnTo=changeAnswers"
+      val changeAnswersPostRoute =
+        controllers.monthlyreturns.routes.CostOfMaterialsController
+          .onSubmit(CisOrg, NormalMode, 1, Some("changeAnswers"))
+          .url
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -260,7 +264,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(CisOrg, 1).url
       }
     }
 
@@ -269,7 +273,10 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       val existingAnswerUa =
         userAnswers.set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal("123")).success.value
 
-      val changeAnswersPostRoute = s"/monthly-return/materials-cost/1?returnTo=changeAnswers"
+      val changeAnswersPostRoute =
+        controllers.monthlyreturns.routes.CostOfMaterialsController
+          .onSubmit(CisOrg, NormalMode, 1, Some("changeAnswers"))
+          .url
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -288,7 +295,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(1).url
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(CisOrg, 1).url
 
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
         verify(mockSessionRepository).set(captor.capture())

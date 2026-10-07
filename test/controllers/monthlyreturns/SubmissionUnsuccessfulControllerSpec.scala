@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import config.FrontendAppConfig
+import models.requests.CisPath.CisOrg
 import models.UserAnswers
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
@@ -34,7 +35,7 @@ import scala.concurrent.Future
 class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
 
   private lazy val submissionUnsuccessfulRoute =
-    routes.SubmissionUnsuccessfulController.onPageLoad.url
+    routes.SubmissionUnsuccessfulController.onPageLoad(CisOrg).url
 
   private def submissionUnsuccessfulFromManageRoute(cisId: String) =
     routes.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId).url
@@ -61,7 +62,7 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
           val result    = route(application, request).value
           val view      = application.injector.instanceOf[SubmissionUnsuccessfulView]
           val returnUrl = controllers.monthlyreturns.routes.ManageCisReturnController
-            .onExit()
+            .onExit(CisOrg)
             .url
 
           status(result) mustEqual OK
@@ -72,51 +73,6 @@ class SubmissionUnsuccessfulControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
-      "must redirect to unauthorised organisation when cisId is missing from UserAnswers" in {
-
-        val mockMonthlyReturnService = mock[MonthlyReturnService]
-
-        val application = applicationBuilder(userAnswers = Some(emptyUserAnswers))
-          .overrides(
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-          )
-          .build()
-
-        running(application) {
-          val request = FakeRequest(GET, submissionUnsuccessfulRoute)
-          val result  = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController
-            .onPageLoad()
-            .url
-
-          verify(mockMonthlyReturnService, never())
-            .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
-        }
-      }
-
-      "must redirect to Journey Recovery when no existing data is found" in {
-
-        val mockMonthlyReturnService = mock[MonthlyReturnService]
-
-        val application = applicationBuilder(userAnswers = None)
-          .overrides(
-            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
-          )
-          .build()
-
-        running(application) {
-          val request = FakeRequest(GET, submissionUnsuccessfulRoute)
-          val result  = route(application, request).value
-
-          status(result) mustEqual SEE_OTHER
-          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-
-          verify(mockMonthlyReturnService, never())
-            .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
-        }
-      }
     }
 
     "GET onPageLoadFromManage" - {

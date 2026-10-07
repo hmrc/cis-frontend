@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import navigation.Navigator
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.bind
@@ -29,8 +30,8 @@ class InactivityWarningControllerSpec extends SpecBase with MockitoSugar {
 
   private def onwardRoute: Call = Call("GET", "/foo")
 
-  private lazy val inactivityWarningRoute = routes.InactivityWarningController.onPageLoad.url
-  private lazy val submitRoute            = routes.InactivityWarningController.onSubmit.url
+  private lazy val inactivityWarningRoute = routes.InactivityWarningController.onPageLoad(CisOrg).url
+  private lazy val submitRoute            = routes.InactivityWarningController.onSubmit(CisOrg).url
 
   "InactivityWarning Controller" - {
 
@@ -44,22 +45,18 @@ class InactivityWarningControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[InactivityWarningView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view()(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+    "must return OK when cisId is not set" in {
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
         val request = FakeRequest(GET, inactivityWarningRoute)
         val result  = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(
-          result
-        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
 
@@ -83,30 +80,14 @@ class InactivityWarningControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must return OK for a GET when no existing data is found" in {
       val application = applicationBuilder(userAnswers = None).build()
 
       running(application) {
         val request = FakeRequest(GET, inactivityWarningRoute)
         val result  = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, submitRoute)
-            .withFormUrlEncodedBody()
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
   }

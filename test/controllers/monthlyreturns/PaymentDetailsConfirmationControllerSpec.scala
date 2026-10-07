@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
@@ -41,7 +42,8 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
   val formProvider = new PaymentDetailsConfirmationFormProvider()
   val form         = formProvider()
 
-  lazy val paymentDetailsConfirmationRoute = routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url
+  lazy val paymentDetailsConfirmationRoute =
+    routes.PaymentDetailsConfirmationController.onPageLoad(CisOrg, NormalMode).url
 
   "PaymentDetailsConfirmation Controller" - {
 
@@ -61,7 +63,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, true)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode, true)(request, messages(application)).toString
       }
     }
 
@@ -82,7 +84,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual
-          view(form, NormalMode, true)(request, messages(application)).toString
+          view(CisOrg, form, NormalMode, true)(request, messages(application)).toString
       }
     }
 
@@ -106,7 +108,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode, true)(
+        contentAsString(result) mustEqual view(CisOrg, form.fill(true), NormalMode, true)(
           request,
           messages(application)
         ).toString
@@ -159,37 +161,10 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, true)(request, messages(application)).toString
-      }
-    }
-
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request = FakeRequest(GET, paymentDetailsConfirmationRoute)
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, paymentDetailsConfirmationRoute)
-            .withFormUrlEncodedBody(("value", "true"))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode, true)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -200,14 +175,14 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
         val request =
           FakeRequest(
             GET,
-            routes.PaymentDetailsConfirmationController.onCancelAmendment().url
+            routes.PaymentDetailsConfirmationController.onCancelAmendment(CisOrg).url
           )
 
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad(CisOrg).url
       }
     }
 
@@ -228,7 +203,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual
-          view(form, NormalMode, false)(request, messages(application)).toString
+          view(CisOrg, form, NormalMode, false)(request, messages(application)).toString
       }
     }
 

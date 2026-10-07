@@ -29,6 +29,7 @@ import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.VerifySubcontractorsView
 
 import scala.concurrent.Future
@@ -38,10 +39,10 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   def onwardRoute = Call("GET", "/foo")
 
   lazy val verifySubcontractorsRoute =
-    controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(CisOrg, NormalMode).url
 
   lazy val changeVerifySubcontractorsRoute =
-    controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(CheckMode).url
+    controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(CisOrg, CheckMode).url
 
   val formProvider = new VerifySubcontractorsFormProvider()
   val form         = formProvider()
@@ -60,7 +61,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[VerifySubcontractorsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode)(request, messages(application)).toString
       }
     }
 
@@ -78,7 +79,10 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[VerifySubcontractorsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(true), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form.fill(true), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -96,7 +100,10 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[VerifySubcontractorsView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(false), NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form.fill(false), NormalMode)(
+          request,
+          messages(application)
+        ).toString
       }
     }
 
@@ -194,11 +201,11 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must return OK for a GET when no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -207,25 +214,7 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, verifySubcontractorsRoute)
-            .withFormUrlEncodedBody(("value", "true"))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
   }

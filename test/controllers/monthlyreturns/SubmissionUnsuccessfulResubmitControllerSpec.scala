@@ -26,6 +26,7 @@ import play.api.test.Helpers.*
 import play.api.inject.bind
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
 import scala.concurrent.Future
@@ -36,7 +37,7 @@ class SubmissionUnsuccessfulResubmitControllerSpec extends SpecBase with Mockito
 
     "must return OK and the correct view for a GET" in {
 
-      val fakeCisId = "1"
+      val fakeCisId = cisTaxpayer.uniqueId
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
@@ -49,33 +50,16 @@ class SubmissionUnsuccessfulResubmitControllerSpec extends SpecBase with Mockito
         .build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url)
+        val request = FakeRequest(GET, routes.SubmissionUnsuccessfulResubmitController.onPageLoad(CisOrg).url)
 
         val result = route(application, request).value
 
         val view = application.injector.instanceOf[SubmissionUnsuccessfulResubmitView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(fakeCisId)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, fakeCisId)(request, messages(application)).toString
 
         verify(mockMonthlyReturnService).completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
-      }
-    }
-
-    "throw IllegalStateException when cisId is missing" in {
-
-      val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
-
-      running(application) {
-
-        val request = FakeRequest(GET, routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url)
-
-        val controller = application.injector.instanceOf[SubmissionUnsuccessfulResubmitController]
-
-        val exception = controller.onPageLoad()(request).failed.futureValue
-
-        exception mustBe a[IllegalStateException]
-        exception.getMessage mustBe "[SubmissionUnsuccessfulResubmit] cisId missing from userAnswers"
       }
     }
   }

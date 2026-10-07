@@ -43,7 +43,7 @@ import scala.concurrent.Future
 class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
   private lazy val whatDoYouWantToAmendNilRoute =
-    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
+    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(CisOrg).url
 
   private val formProvider = new WhatDoYouWantToAmendNilFormProvider()
   private val form         = formProvider()
@@ -74,7 +74,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[WhatDoYouWantToAmendNilView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form)(request, messages(application)).toString
       }
     }
 
@@ -96,7 +96,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(AmendNilReturn))(
+        contentAsString(result) mustEqual view(CisOrg, form.fill(AmendNilReturn))(
           request,
           messages(application)
         ).toString
@@ -165,7 +165,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.amend.routes.WhichSubcontractorsToAddController
-          .onPageLoad(NormalMode)
+          .onPageLoad(CisOrg, NormalMode)
           .url
       }
     }
@@ -186,11 +186,11 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, boundForm)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must return OK for a GET when no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -199,25 +199,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, whatDoYouWantToAmendNilRoute)
-            .withFormUrlEncodedBody(("value", AmendNilReturn.toString))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
 

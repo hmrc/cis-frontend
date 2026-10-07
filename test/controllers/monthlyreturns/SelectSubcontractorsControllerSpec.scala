@@ -32,6 +32,7 @@ import services.finalvalidation.FinalValidationService
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SelectSubcontractorsView
 
 import java.time.LocalDate
@@ -45,7 +46,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   private val formProvider = new SelectSubcontractorsFormProvider()
   private val form         = formProvider()
 
-  private val cisId              = "CIS-123"
+  private val cisId              = cisTaxpayer.uniqueId
   private val taxDate            = LocalDate.of(2025, 10, 15)
   private val taxMonth           = taxDate.getMonthValue
   private val taxYear            = taxDate.getYear
@@ -137,13 +138,17 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(GET, controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url)
+            FakeRequest(
+              GET,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None).url
+            )
 
           val result = route(app, request).value
           val view   = app.injector.instanceOf[SelectSubcontractorsView]
 
           status(result) mustBe OK
           contentAsString(result) mustBe view(
+            CisOrg,
             form.fill(SelectSubcontractorsFormData(subcontractorsToInclude = Seq(1))),
             subcontractors,
             app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl
@@ -160,13 +165,17 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(GET, controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url)
+            FakeRequest(
+              GET,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None).url
+            )
 
           val result = route(app, request).value
           val view   = app.injector.instanceOf[SelectSubcontractorsView]
 
           status(result) mustBe OK
           contentAsString(result) mustBe view(
+            CisOrg,
             form,
             subcontractors,
             app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl
@@ -185,7 +194,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val request =
             FakeRequest(
               GET,
-              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, Some(true)).url
             )
 
           val result = route(app, request).value
@@ -209,7 +218,10 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(GET, controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url)
+            FakeRequest(
+              GET,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None).url
+            )
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
@@ -240,13 +252,13 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(CisOrg).url)
               .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "2")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onPageLoad(models.NormalMode)
+            .onPageLoad(CisOrg, models.NormalMode)
             .url
           verify(monthlyReturnService).storeAndSyncSelectedSubcontractors(
             ua = any[UserAnswers],
@@ -279,13 +291,13 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(CisOrg).url)
               .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
 
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.VerifySubcontractorsController
-            .onPageLoad(models.NormalMode)
+            .onPageLoad(CisOrg, models.NormalMode)
             .url
         }
       }
@@ -299,7 +311,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(CisOrg).url)
               .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "not-a-number")
 
           val result = route(app, request).value
@@ -324,7 +336,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(CisOrg).url)
               .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
 
           val result = route(app, request).value
@@ -342,7 +354,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(CisOrg).url)
               .withFormUrlEncodedBody()
 
           val result = route(app, request).value
@@ -357,7 +369,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         running(app) {
           val request =
-            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(CisOrg).url)
               .withFormUrlEncodedBody("confirmation" -> "true")
 
           val result = route(app, request).value

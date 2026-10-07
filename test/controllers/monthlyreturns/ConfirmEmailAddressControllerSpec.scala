@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.ConfirmEmailAddressFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -41,7 +42,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
   val formProvider       = new ConfirmEmailAddressFormProvider()
   val form: Form[String] = formProvider()
 
-  lazy val confirmEmailAddressRoute: String = routes.ConfirmEmailAddressController.onPageLoad(NormalMode).url
+  lazy val confirmEmailAddressRoute: String = routes.ConfirmEmailAddressController.onPageLoad(CisOrg, NormalMode).url
 
   "ConfirmEmailAddress Controller" - {
 
@@ -57,11 +58,11 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
         val view = application.injector.instanceOf[ConfirmEmailAddressView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Unauthorised Organisation Affinity if cisId is not found in UserAnswer" in {
+    "must return OK when cisId is not set" in {
 
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
@@ -70,11 +71,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(
-          result
-        ).value mustEqual controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
 
@@ -92,7 +89,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill("test@example.com"), NormalMode)(
+        contentAsString(result) mustEqual view(CisOrg, form.fill("test@example.com"), NormalMode)(
           request,
           messages(application)
         ).toString
@@ -141,11 +138,11 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must return OK for a GET when no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -154,24 +151,7 @@ class ConfirmEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, confirmEmailAddressRoute)
-            .withFormUrlEncodedBody(("value", "test@example.com"))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
   }

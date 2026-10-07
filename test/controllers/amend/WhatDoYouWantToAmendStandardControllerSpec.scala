@@ -19,6 +19,7 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 import models.{NormalMode, UserAnswers}
+import models.requests.CisPath.CisOrg
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
 import org.mockito.ArgumentMatchers.any
@@ -38,7 +39,7 @@ import scala.concurrent.Future
 
 class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSugar {
 
-  lazy val whatDoYouWantToAmendStandardRoute = routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+  lazy val whatDoYouWantToAmendStandardRoute = routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
 
   val formProvider = new WhatDoYouWantToAmendStandardFormProvider()
   val form         = formProvider()
@@ -128,7 +129,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val view = application.injector.instanceOf[WhatDoYouWantToAmendStandardView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form)(request, messages(application)).toString
       }
     }
 
@@ -149,7 +150,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form.fill(WhatDoYouWantToAmendStandard.values.head))(
+        contentAsString(result) mustEqual view(CisOrg, form.fill(WhatDoYouWantToAmendStandard.values.head))(
           request,
           messages(application)
         ).toString
@@ -182,7 +183,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual routes.AreYouSureYouWantToAmendYesNoController.onPageLoad().url
+        redirectLocation(result).value mustEqual routes.AreYouSureYouWantToAmendYesNoController.onPageLoad(CisOrg).url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
         verify(mockSessionRepository).set(any())
@@ -227,7 +228,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-          .onPageLoad(models.NormalMode)
+          .onPageLoad(CisOrg, models.NormalMode)
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
@@ -261,7 +262,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.amend.routes.WhichSubcontractorsToAddController
-          .onPageLoad(NormalMode)
+          .onPageLoad(CisOrg, NormalMode)
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
@@ -285,11 +286,11 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, boundForm)(request, messages(application)).toString
       }
     }
 
-    "must redirect to Journey Recovery for a GET if no existing data is found" in {
+    "must return OK for a GET when no existing data is found" in {
 
       val application = applicationBuilder(userAnswers = None).build()
 
@@ -298,25 +299,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
         val result = route(application, request).value
 
-        status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-      }
-    }
-
-    "must redirect to Journey Recovery for a POST if no existing data is found" in {
-
-      val application = applicationBuilder(userAnswers = None).build()
-
-      running(application) {
-        val request =
-          FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
-            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.values.head.toString))
-
-        val result = route(application, request).value
-
-        status(result) mustEqual SEE_OTHER
-
-        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        status(result) mustEqual OK
       }
     }
 

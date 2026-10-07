@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
+import models.requests.CisPath.CisOrg
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
 import models.{CheckMode, Mode, NormalMode, ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -49,10 +50,10 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
   private val subcontractorId   = 123L
 
   private def routeGet(mode: Mode) =
-    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(mode, index).url
+    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onPageLoad(CisOrg, mode, index).url
 
   private def routePost(mode: Mode) =
-    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(mode, index).url
+    controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(CisOrg, mode, index).url
 
   private def uaWithSubcontractor: UserAnswers =
     emptyUserAnswers
@@ -84,7 +85,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         val view = application.injector.instanceOf[ConfirmSubcontractorRemovalView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, subcontractorName, index)(
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode, subcontractorName, index)(
           request,
           messages(application)
         ).toString
@@ -111,7 +112,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, CheckMode).url
 
         verify(mockSessionRepository).set(any())
       }
@@ -142,12 +143,12 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None).url
 
         verify(mockMonthlyReturnService).deleteMonthlyReturnItem(
           eqTo(
             DeleteMonthlyReturnItemRequest(
-              instanceId = "abc-123",
+              instanceId = cisTaxpayer.uniqueId,
               taxYear = 2025,
               taxMonth = 1,
               subcontractorId = subcontractorId,
@@ -200,7 +201,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
       }
     }
 
@@ -243,7 +244,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
       }
     }
 
@@ -275,7 +276,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
       }
     }
 
@@ -318,7 +319,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None).url
       }
     }
 
@@ -360,7 +361,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
       }
     }
 
@@ -404,7 +405,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, CheckMode).url
 
         verify(mockMonthlyReturnService).deleteMonthlyReturnItem(any())(any[HeaderCarrier])
         verify(mockSessionRepository, atLeastOnce()).set(any())
@@ -427,7 +428,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, subcontractorName, index)(
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode, subcontractorName, index)(
           request,
           messages(application)
         ).toString

@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import config.FrontendAppConfig
+import models.requests.CisPath.CisOrg
 import models.UserAnswers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
@@ -48,7 +49,7 @@ class ManageCisReturnControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(GET, routes.ManageCisReturnController.onExit().url)
+          FakeRequest(GET, routes.ManageCisReturnController.onExit(CisOrg).url)
 
         val result = route(application, request).value
 
@@ -57,7 +58,7 @@ class ManageCisReturnControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          appConfig.returnsLandingPageUrl("1", None)
+          appConfig.returnsLandingPageUrl(cisTaxpayer.uniqueId, None)
 
         verify(mockMonthlyReturnService)
           .clearSubmissionJourney(any[UserAnswers])
@@ -79,7 +80,7 @@ class ManageCisReturnControllerSpec extends SpecBase with MockitoSugar {
 
       running(application) {
         val request =
-          FakeRequest(GET, routes.ManageCisReturnController.onExit().url)
+          FakeRequest(GET, routes.ManageCisReturnController.onExit(CisOrg).url)
 
         val result = route(application, request).value
 

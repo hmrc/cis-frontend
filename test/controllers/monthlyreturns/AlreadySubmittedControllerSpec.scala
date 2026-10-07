@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import pages.monthlyreturns.ReturnTypePage
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import play.api.test.FakeRequest
@@ -28,7 +29,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
   "AlreadySubmitted Controller" - {
 
     Seq(
-      ("AGENT", true, applicationConfig.constructionIndustryAgentAccountUrl + "1"),
+      ("AGENT", true, applicationConfig.constructionIndustryAgentAccountUrl + cisTaxpayer.uniqueId),
       ("ORGANISATION", false, applicationConfig.constructionIndustryOrgAccountUrl)
     ).foreach { case (accountTypeSTR, isAgent, cisAccountUrl) =>
       s"when accountType is '$accountTypeSTR'" - {
@@ -39,7 +40,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
 
           running(application) {
             val request =
-              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
+              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(CisOrg).url)
 
             val result = route(application, request).value
 
@@ -62,7 +63,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
 
           running(application) {
             val request =
-              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
+              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(CisOrg).url)
 
             val result = route(application, request).value
 
@@ -86,11 +87,11 @@ class AlreadySubmittedControllerSpec extends SpecBase {
           running(application) {
 
             val request =
-              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url)
+              FakeRequest(GET, controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(CisOrg).url)
 
             val controller = application.injector.instanceOf[AlreadySubmittedController]
 
-            val exception = controller.onPageLoad()(request).failed.futureValue
+            val exception = controller.onPageLoad(CisOrg)(request).failed.futureValue
 
             exception mustBe a[IllegalStateException]
             exception.getMessage mustBe "ReturnTypePage missing from userAnswers"

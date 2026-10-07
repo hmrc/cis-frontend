@@ -19,6 +19,7 @@ package controllers.amend
 import base.SpecBase
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.amend.{Subcontractor, WhichSubcontractorsToAdd, WhichSubcontractorsToAddPageModel}
+import models.requests.CisPath.CisOrg
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -43,9 +44,10 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
 
   def onwardRoute = Call("GET", "/foo")
 
-  lazy val whichSubcontractorsToAddRoute: String = routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+  lazy val whichSubcontractorsToAddRoute: String =
+    routes.WhichSubcontractorsToAddController.onPageLoad(CisOrg, NormalMode).url
 
-  private val cisId   = "CIS-123"
+  private val cisId   = cisTaxpayer.uniqueId
   private val taxDate = LocalDate.of(2025, 10, 5)
 
   private val subcontractors = Seq(
@@ -133,7 +135,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, preSelectedIds)
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode, expectedItems)(
           request,
           messages(application)
         ).toString
@@ -177,7 +179,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val expectedItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors, previouslySelected)
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, NormalMode, expectedItems)(
+        contentAsString(result) mustEqual view(CisOrg, form, NormalMode, expectedItems)(
           request,
           messages(application)
         ).toString
@@ -373,7 +375,7 @@ class WhichSubcontractorsToAddControllerSpec extends SpecBase with MockitoSugar 
         val emptyItems = WhichSubcontractorsToAdd.checkboxItems(subcontractors)
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, NormalMode, emptyItems)(
+        contentAsString(result) mustEqual view(CisOrg, boundForm, NormalMode, emptyItems)(
           request,
           messages(application)
         ).toString

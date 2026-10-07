@@ -39,6 +39,7 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import services.{AmendMonthlyReturnService, FormpRdsReconcileService, MonthlyReturnService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import models.requests.CisPath.CisOrg
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
 import java.time.LocalDate
@@ -52,10 +53,10 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
   val form: Form[Boolean] = formProvider()
 
   lazy val confirmCancelAmendmentYesNoRoute: String =
-    routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+    routes.ConfirmCancelAmendmentYesNoController.onPageLoad(CisOrg).url
 
   private val monthYear: String = "April 2026"
-  private val cisId: String     = "1"
+  private val cisId: String     = cisTaxpayer.uniqueId
 
   private val userAnswersWithDate = emptyUserAnswers
     .set(CisIdPage, cisId)
@@ -125,7 +126,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
         val view = application.injector.instanceOf[ConfirmCancelAmendmentYesNoView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, monthYear)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, monthYear)(request, messages(application)).toString
       }
     }
 
@@ -155,7 +156,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(form, monthYear)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, form, monthYear)(request, messages(application)).toString
 
         val answersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(answersCaptor.capture())
@@ -187,7 +188,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode).url
       }
     }
 
@@ -418,7 +419,7 @@ class ConfirmCancelAmendmentYesNoControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual BAD_REQUEST
-        contentAsString(result) mustEqual view(boundForm, monthYear)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, boundForm, monthYear)(request, messages(application)).toString
       }
     }
 
