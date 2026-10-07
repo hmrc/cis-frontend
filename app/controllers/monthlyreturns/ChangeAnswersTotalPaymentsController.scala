@@ -50,7 +50,9 @@ class ChangeAnswersTotalPaymentsController @Inject() (
 
   def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
     request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-      case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+      case None                =>
+        logger.error(s"[ChangeAnswersTotalPaymentsController][onPageLoad] - Missing SelectedSubcontractorPage Index: $index")
+        Redirect(controllers.routes.SystemErrorController.onPageLoad())
       case Some(subcontractor) =>
         Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
     }
@@ -62,6 +64,9 @@ class ChangeAnswersTotalPaymentsController @Inject() (
 
       payloadBuilder.build(ua, index) match {
         case None =>
+          logger.error(
+            s"[ChangeAnswersTotalPaymentsController][onSubmit] - Failed to build monthly return item payload, index: $index"
+          )
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
         case Some(payload) =>

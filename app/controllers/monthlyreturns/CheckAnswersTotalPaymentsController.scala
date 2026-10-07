@@ -50,7 +50,9 @@ class CheckAnswersTotalPaymentsController @Inject() (
   def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case None                =>
+          logger.error(s"[CheckAnswersTotalPaymentsController][onPageLoad] - Missing SelectedSubcontractorPage for index: $index")
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
           Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
       }
@@ -62,6 +64,9 @@ class CheckAnswersTotalPaymentsController @Inject() (
 
       payloadBuilder.build(ua, index) match {
         case None =>
+          logger.error(
+            s"[CheckAnswersTotalPaymentsController][onSubmit] - Failed to build monthly return item payload, index: $index"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(payload) =>

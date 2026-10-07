@@ -108,7 +108,7 @@ class CheckYourAnswersController @Inject() (
 
           case Some(returnType) if !request.userAnswers.isJourneyComplete =>
             logger.warn(
-              "[CheckYourAnswersController] incomplete journy submission attempt"
+              "[CheckYourAnswersController] incomplete journey submission attempt"
             )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -147,8 +147,13 @@ class CheckYourAnswersController @Inject() (
 
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
-      case None            =>
+      case None =>
+        logger.warn(
+          "[CheckYourAnswersController][guardCompletedJourney] - " +
+            "Unable to determine period end from user answers"
+        )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
       case Some(periodEnd) =>
         val yearMonthPeriod = YearMonth.from(periodEnd).toString
         if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
