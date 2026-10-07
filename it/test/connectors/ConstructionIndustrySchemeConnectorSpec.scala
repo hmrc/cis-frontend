@@ -1956,4 +1956,90 @@ class ConstructionIndustrySchemeConnectorSpec
       upstreamError.message mustBe "draft not ready"
     }
   }
+
+  "resetFinalValidationSubcontractor" should {
+
+    "reset the subcontractor and return the updated draft" in {
+      val updatedDraft =
+        FinalValidationDraft(
+          subcontractors = Seq(
+            FinalValidationDraftSubcontractor(
+              subcontractorId = 1L,
+              subbieResourceRef = 10L,
+              baseVersion = Some(1),
+              subcontractorType = Some("soletrader"),
+              displayName = "First Subcontractor",
+              base = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor")
+              ),
+              proposed = FinalValidationSubcontractorDetails(
+                firstName = Some("First"),
+                surname = Some("Subcontractor")
+              ),
+              changedTargets = Set.empty,
+              issues = Seq(
+                FinalValidationDraftIssue(
+                  fieldKey = "tradingName",
+                  value    = None
+                )
+              ),
+              readiness = FinalValidationReadiness.Incomplete
+            )
+          )
+        )
+
+      stubFor(
+        put(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/subcontractors/1/reset"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                Json.toJson(updatedDraft).toString
+              )
+          )
+      )
+
+      connector
+        .resetFinalValidationSubcontractor(
+          "CIS-123",
+          "draft-123",
+          1L
+        )
+        .futureValue mustBe updatedDraft
+    }
+
+    "fail the future on a non-2xx response" in {
+      stubFor(
+        put(
+          urlPathEqualTo(
+            "/cis/final-validation/drafts/CIS-123/draft-123/subcontractors/1/reset"
+          )
+        )
+          .willReturn(
+            aResponse()
+              .withStatus(BAD_GATEWAY)
+              .withBody("bad gateway")
+          )
+      )
+
+      val error =
+        connector
+          .resetFinalValidationSubcontractor(
+            "CIS-123",
+            "draft-123",
+            1L
+          )
+          .failed
+          .futureValue
+
+      error mustBe a[UpstreamErrorResponse]
+      error.asInstanceOf[UpstreamErrorResponse].statusCode mustBe BAD_GATEWAY
+    }
+  }
 }

@@ -57,6 +57,11 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
       .onSubmit(subcontractorId)
       .url
 
+  private lazy val cancelSubcontractorDetailsRoute =
+    controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
+      .onCancel(subcontractorId)
+      .url
+
   private val userAnswers =
     emptyUserAnswers
       .setOrException(CisIdPage, cisId)
@@ -549,6 +554,105 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
           FakeRequest(
             POST,
             submitSubcontractorDetailsRoute
+          )
+
+        val result =
+          route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController
+            .onPageLoad()
+            .url
+
+        verifyNoInteractions(
+          finalValidationDraftService,
+          finalValidationService
+        )
+      }
+    }
+
+    "must reset the subcontractor and redirect to Review Subcontractor Details for a cancel POST" in {
+
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val finalValidationService =
+        mock[FinalValidationService]
+
+      val resetDraft =
+        draft()
+
+      when(
+        finalValidationDraftService.resetSubcontractor(
+          any[String],
+          any[String],
+          any[Long]
+        )(any[HeaderCarrier])
+      ).thenReturn(
+        Future.successful(resetDraft)
+      )
+
+      val application =
+        applicationWith(
+          userAnswers = Some(userAnswers),
+          finalValidationDraftService = finalValidationDraftService,
+          finalValidationService = finalValidationService
+        )
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            cancelSubcontractorDetailsRoute
+          )
+
+        val result =
+          route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.finalvalidations.routes.ReviewSubcontractorDetailsController
+            .onPageLoad()
+            .url
+
+        verify(finalValidationDraftService)
+          .resetSubcontractor(
+            any[String],
+            any[String],
+            any[Long]
+          )(any[HeaderCarrier])
+
+        verifyNoInteractions(finalValidationService)
+      }
+    }
+
+    "must redirect to Journey Recovery for a cancel POST when the draft id is not found" in {
+
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val finalValidationService =
+        mock[FinalValidationService]
+
+      val answersWithoutDraftId =
+        emptyUserAnswers
+          .setOrException(CisIdPage, cisId)
+
+      val application =
+        applicationWith(
+          userAnswers = Some(answersWithoutDraftId),
+          finalValidationDraftService = finalValidationDraftService,
+          finalValidationService = finalValidationService
+        )
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            cancelSubcontractorDetailsRoute
           )
 
         val result =

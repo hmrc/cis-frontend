@@ -201,6 +201,7 @@ GET        /final-validations/review-contractor-details                 controll
 # Subcontractor - Final Validations
 GET        /monthly-return/final-validations/update-subcontractor-details/:subcontractorId     controllers.finalvalidations.UpdateSubcontractorDetailsController.onPageLoad(subcontractorId: Long)
 POST       /monthly-return/final-validations/update-subcontractor-details/:subcontractorId     controllers.finalvalidations.UpdateSubcontractorDetailsController.onSubmit(subcontractorId: Long)
+POST       /monthly-return/final-validations/update-subcontractor-details/:subcontractorId/cancel  controllers.finalvalidations.UpdateSubcontractorDetailsController.onCancel(subcontractorId: Long)
 GET        /monthly-return/final-validations/review-subcontractor-details                      controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoad()
 POST       /monthly-return/final-validations/review-subcontractor-details                      controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmit()
 GET        /monthly-return/final-validations/change/:subcontractorId/:fieldKey/:targetKey      controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
