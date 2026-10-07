@@ -16,6 +16,7 @@
 
 @import views.html.components._
 @import viewmodels.LegendSize
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -25,11 +26,11 @@
     govukButton: GovukButton,
 )
 
-@(form: Form[_], mode: Mode, subcontractorName: String, index: Int)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, form: Form[_], mode: Mode, subcontractorName: String, index: Int)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.confirmSubcontractorRemoval.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(mode, index), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(cisPath, mode, index), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

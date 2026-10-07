@@ -19,6 +19,7 @@
 @import viewmodels.govuk.all._
 @import viewmodels.implicits._
 @import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
+@import models.requests.CisPath
 
 @this(
         layout: templates.Layout,
@@ -28,7 +29,7 @@
         govukSummaryList: GovukSummaryList
 )
 
-@(viewModel: SummarySubcontractorPaymentsViewModel)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, viewModel: SummarySubcontractorPaymentsViewModel)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.summarySubcontractorPayments.title"))) {
 
@@ -45,6 +46,6 @@
 
     @govukButton(
         ButtonViewModel(messages("site.continue"))
-            .asLink(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url)
+            .asLink(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(cisPath, NormalMode).url)
     )
 }

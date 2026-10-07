@@ -23,9 +23,9 @@ import javax.inject.Inject
 import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
 import models.monthlyreturns.SelectedSubcontractor
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{CisPath, GetMonthlyReturnForEditRequest}
 import pages.amend.{WhatDoYouWantToAmendStandardPage, WhichSubcontractorsToAddPage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -45,8 +45,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: WhatDoYouWantToAmendStandardFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendStandardView
@@ -56,95 +56,108 @@ class WhatDoYouWantToAmendStandardController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
 
-    val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage) match {
-      case None        => form
-      case Some(value) => form.fill(value)
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(view(cisPath, preparedForm))
     }
 
-    Ok(view(preparedForm))
-  }
+  def onSubmit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(cisPath, formWithErrors))),
+          value =>
+            request.userAnswers.get(DateConfirmPaymentsPage) match {
+              case None =>
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-    form
-      .bindFromRequest()
-      .fold(
-        formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
-        value =>
-          val requiredAnswers = for {
-            cisId   <- request.userAnswers.get(CisIdPage)
-            taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-          } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+              case Some(taxDate) =>
+                val cisId = request.cisId
+                val month = taxDate.getMonthValue
+                val year  = taxDate.getYear
 
-          for {
-            (cisId, month, year)     <- requiredAnswers.toFuture
-            monthlyReturn            <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(
-                                          GetMonthlyReturnForEditRequest(
-                                            cisId,
-                                            taxMonth = month,
-                                            taxYear = year,
-                                            isAmendment = true
-                                          )
-                                        )
-            itemsAndSubcontractors    = monthlyReturn.subcontractors
-                                          .map { subcontractor =>
-                                            val item = monthlyReturn.monthlyReturnItems
-                                              .find(_.itemResourceReference == subcontractor.subbieResourceRef)
-                                            (subcontractor, item)
-                                          }
-                                          .collect { case (subcontractor, Some(item)) =>
-                                            (subcontractor, item)
-                                          }
-            preselectedSubcontractors = itemsAndSubcontractors
-                                          .map((sub, item) =>
-                                            SelectedSubcontractor(
-                                              id = sub.subcontractorId,
-                                              name = sub.displayName.getOrElse("No name provided"),
-                                              totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
-                                              costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
-                                              totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
-                                            )
-                                          )
-                                          .zipWithIndex
-                                          .map(x => (x._2 + 1, x._1))
-                                          .toMap
+                for {
+                  monthlyReturn            <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+                                                GetMonthlyReturnForEditRequest(
+                                                  cisId,
+                                                  taxMonth = month,
+                                                  taxYear = year,
+                                                  isAmendment = true
+                                                )
+                                              )
+                  itemsAndSubcontractors    = monthlyReturn.subcontractors
+                                                .map { subcontractor =>
+                                                  val item = monthlyReturn.monthlyReturnItems
+                                                    .find(_.itemResourceReference == subcontractor.subbieResourceRef)
+                                                  (subcontractor, item)
+                                                }
+                                                .collect { case (subcontractor, Some(item)) =>
+                                                  (subcontractor, item)
+                                                }
+                  preselectedSubcontractors = itemsAndSubcontractors
+                                                .map((sub, item) =>
+                                                  SelectedSubcontractor(
+                                                    id = sub.subcontractorId,
+                                                    name = sub.displayName.getOrElse("No name provided"),
+                                                    totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                                    costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                                    totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                                  )
+                                                )
+                                                .zipWithIndex
+                                                .map(x => (x._2 + 1, x._1))
+                                                .toMap
 
-            ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value).toFuture
-            ua2    <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
-            _      <- sessionRepository.set(ua2)
-            result <-
-              value match {
-                case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
-                  Future
-                    .successful(Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad()))
+                  ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value).toFuture
+                  ua2    <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
+                  _      <- sessionRepository.set(ua2)
+                  result <-
+                    value match {
+                      case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
+                        Future.successful(
+                          Redirect(
+                            controllers.amend.routes.AreYouSureYouWantToAmendYesNoController
+                              .onPageLoad(cisPath)
+                          )
+                        )
 
-                case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
-                    if preselectedSubcontractors.isEmpty =>
-                  Future.successful(
-                    Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
-                  )
+                      case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
+                          if preselectedSubcontractors.isEmpty =>
+                        Future.successful(
+                          Redirect(
+                            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(cisPath, NormalMode)
+                          )
+                        )
 
-                case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
-                  amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
-                    case Left(_) =>
-                      Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                      case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
+                        amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
+                          case Left(_) =>
+                            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-                    case Right(_) =>
-                      val subcontractorIds = ua2
-                        .get(SelectedSubcontractorPage.all)
-                        .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
-                      for {
-                        ua3 <- Future.fromTry(ua2.set(WhichSubcontractorsToAddPage, subcontractorIds))
-                        _   <- sessionRepository.set(ua3)
-                      } yield Redirect(
-                        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-                      )
-                  }
-              }
-          } yield result
-      )
-  }
+                          case Right(_) =>
+                            val subcontractorIds = ua2
+                              .get(SelectedSubcontractorPage.all)
+                              .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
+                            for {
+                              ua3 <- Future.fromTry(ua2.set(WhichSubcontractorsToAddPage, subcontractorIds))
+                              _   <- sessionRepository.set(ua3)
+                            } yield Redirect(
+                              controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                                .onPageLoad(cisPath, NormalMode)
+                            )
+                        }
+                    }
+                } yield result
+            }
+        )
+    }
 }

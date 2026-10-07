@@ -17,6 +17,7 @@
 package views.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import models.monthlyreturns.SelectedSubcontractor
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -34,7 +35,7 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
 
     "must render the correct content on the page" in new Setup {
       val index                       = 1
-      val html: HtmlFormat.Appendable = view(viewModel, index)
+      val html: HtmlFormat.Appendable = view(CisOrg, viewModel, index)
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.checkAnswersTotalPayments.title", viewModel.name))

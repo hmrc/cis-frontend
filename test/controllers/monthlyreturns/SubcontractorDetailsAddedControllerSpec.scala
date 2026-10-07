@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import models.amend.AmendmentDetails
 import models.{NormalMode, UserAnswers}
@@ -96,13 +97,13 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
   }
 
   private val getUrl: String =
-    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode).url
 
   private val postUrl: String =
-    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(NormalMode).url
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(CisOrg, NormalMode).url
 
   private val cancelUrl: String =
-    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment(CisOrg).url
 
   "SubcontractorDetailsAddedController" - {
 
@@ -198,7 +199,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       val mockView = mock[SubcontractorDetailsAddedView]
 
       when(
-        mockView.apply(any(), any(), any())(any(), any())
+        mockView.apply(any(), any(), any(), any())(any(), any())
       ).thenReturn(Html(""))
 
       val application = buildApp(
@@ -214,6 +215,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         status(result) mustBe OK
 
         verify(mockView).apply(
+          any(),
           argThat[Form[Boolean]](_.value.contains(true)),
           any(),
           any()
@@ -235,7 +237,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       val mockView = mock[SubcontractorDetailsAddedView]
 
       when(
-        mockView.apply(any(), any(), any())(any(), any())
+        mockView.apply(any(), any(), any(), any())(any(), any())
       ).thenReturn(Html(""))
 
       val application = buildApp(
@@ -251,6 +253,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         status(result) mustBe OK
 
         verify(mockView).apply(
+          any(),
           argThat[Form[Boolean]](_.value.contains(false)),
           any(),
           any()
@@ -312,7 +315,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe controllers.amend.routes.WhatDoYouWantToAmendStandardController
-          .onPageLoad()
+          .onPageLoad(CisOrg)
           .url
       }
     }
@@ -334,7 +337,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe controllers.amend.routes.WhatDoYouWantToAmendStandardController
-          .onPageLoad()
+          .onPageLoad(CisOrg)
           .url
       }
     }
@@ -372,7 +375,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
           controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
-            .onPageLoad()
+            .onPageLoad(CisOrg)
             .url
       }
     }
@@ -415,7 +418,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(CisOrg, NormalMode).url
       }
     }
 
@@ -435,7 +438,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None).url
       }
     }
 
@@ -453,7 +456,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad(CisOrg).url
       }
     }
   }

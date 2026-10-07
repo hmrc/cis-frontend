@@ -21,6 +21,7 @@ import forms.PaymentDetailsFormProvider
 
 import javax.inject.Inject
 import models.Mode
+import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
 import play.api.data.Form
@@ -37,9 +38,8 @@ class PaymentDetailsController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: PaymentDetailsFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: PaymentDetailsView
@@ -49,8 +49,8 @@ class PaymentDetailsController @Inject() (
 
   val form: Form[BigDecimal] = formProvider()
 
-  def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
+  def onPageLoad(cisPath: CisPath, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -61,12 +61,12 @@ class PaymentDetailsController @Inject() (
             case Some(value) => form.fill(value)
           }
 
-          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
+          Ok(view(cisPath, preparedForm, mode, subcontractor.name, index, returnTo))
       }
     }
 
-  def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -76,7 +76,7 @@ class PaymentDetailsController @Inject() (
             .bindFromRequest()
             .fold(
               formWithErrors =>
-                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
+                Future.successful(BadRequest(view(cisPath, formWithErrors, mode, subcontractor.name, index, returnTo))),
               value =>
                 for {
                   updatedAnswers <-
@@ -86,7 +86,9 @@ class PaymentDetailsController @Inject() (
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
                   case Some("changeAnswers") =>
-                    Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+                    Redirect(
+                      controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(cisPath, index)
+                    )
                   case _                     =>
                     Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index), mode, updatedAnswers))
                 }

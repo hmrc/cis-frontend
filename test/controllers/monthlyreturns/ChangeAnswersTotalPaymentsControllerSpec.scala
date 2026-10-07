@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import models.{NormalMode, UserAnswers}
 import models.monthlyreturns.{SelectedSubcontractor, UpdateMonthlyReturnItemRequest}
 import org.mockito.ArgumentCaptor
@@ -56,7 +57,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
       val application = applicationBuilder(userAnswers = Some(ua)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url)
+        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoad(CisOrg, index).url)
 
         val result = route(application, request).value
         val view   = application.injector.instanceOf[ChangeAnswersTotalPaymentsView]
@@ -64,7 +65,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         val expectedVm = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(expectedVm, index)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(CisOrg, expectedVm, index)(request, messages(application)).toString
       }
     }
 
@@ -72,7 +73,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
       val application = applicationBuilder(userAnswers = Some(emptyUserAnswers)).build()
 
       running(application) {
-        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoad(index).url)
+        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoad(CisOrg, index).url)
         val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
@@ -97,7 +98,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
           .build()
 
       running(application) {
-        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(CisOrg, index).url)
         val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
@@ -140,12 +141,12 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
           .build()
 
       running(application) {
-        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(CisOrg, index).url)
         val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+          routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode).url
 
         val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
         verify(mockService).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
@@ -185,7 +186,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
           .build()
 
       running(application) {
-        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(CisOrg, index).url)
         val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
@@ -226,7 +227,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
           .build()
 
       running(application) {
-        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(index).url)
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmit(CisOrg, index).url)
         val result  = route(application, request).value
 
         status(result) mustEqual SEE_OTHER

@@ -19,6 +19,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 import base.SpecBase
 import controllers.monthlyreturns.routes
 import models.CheckMode
+import models.requests.CisPath.CisOrg
 import org.scalatest.OptionValues
 import pages.monthlyreturns.EmploymentStatusDeclarationPage
 import play.api.i18n.Messages
@@ -43,7 +44,7 @@ class EmploymentStatusDeclarationSummarySpec extends SpecBase with OptionValues 
         )
         result.value.content.asHtml.toString must include(messages("site.yes"))
         result.actions.value.items.head.href mustBe routes.EmploymentStatusDeclarationController
-          .onPageLoad(CheckMode)
+          .onPageLoad(CisOrg, CheckMode)
           .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.employmentStatusDeclaration.change.hidden"
@@ -60,7 +61,7 @@ class EmploymentStatusDeclarationSummarySpec extends SpecBase with OptionValues 
         )
         result.value.content.asHtml.toString must include(messages("site.no"))
         result.actions.value.items.head.href mustBe routes.EmploymentStatusDeclarationController
-          .onPageLoad(CheckMode)
+          .onPageLoad(CisOrg, CheckMode)
           .url
         result.actions.value.items.head.visuallyHiddenText.value mustBe messages(
           "monthlyreturns.employmentStatusDeclaration.change.hidden"

@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import config.FrontendAppConfig
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
+import models.requests.CisPath
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -31,9 +32,8 @@ import scala.concurrent.ExecutionContext
 class SubmissionAwaitingController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionAwaitingView,
   monthlyReturnService: MonthlyReturnService,
@@ -43,12 +43,12 @@ class SubmissionAwaitingController @Inject() (
     with I18nSupport
     with SubmissionViewDataSupport {
 
-  def onPageLoad: Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
 
       val returnUrl =
         controllers.monthlyreturns.routes.ManageCisReturnController
-          .onExit()
+          .onExit(cisPath)
           .url
 
       monthlyReturnService

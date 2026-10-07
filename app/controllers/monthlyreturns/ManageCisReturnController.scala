@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import config.FrontendAppConfig
 import controllers.actions.*
+import models.requests.CisPath
 import pages.monthlyreturns.ContractorNamePage
 import play.api.Logging
 import play.api.i18n.I18nSupport
@@ -31,9 +32,8 @@ import scala.util.control.NonFatal
 
 class ManageCisReturnController @Inject() (
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   monthlyReturnService: MonthlyReturnService,
   appConfig: FrontendAppConfig,
   val controllerComponents: MessagesControllerComponents
@@ -42,8 +42,8 @@ class ManageCisReturnController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onExit: Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onExit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       val redirectUrl = appConfig.returnsLandingPageUrl(
         request.cisId,
         request.userAnswers.get(ContractorNamePage)

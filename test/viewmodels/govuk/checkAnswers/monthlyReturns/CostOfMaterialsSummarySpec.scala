@@ -16,6 +16,8 @@
 
 package viewmodels.checkAnswers.monthlyreturns
 
+import models.JourneyId
+import models.requests.CisPath.CisOrg
 import models.{CheckMode, UserAnswers}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
@@ -28,13 +30,14 @@ import play.api.test.Helpers
 class CostOfMaterialsSummarySpec extends AnyFreeSpec with Matchers with OptionValues {
 
   private implicit val messages: Messages = Helpers.stubMessages()
+  private val testJourneyId               = JourneyId("test_user", "MonthlyReturn", CisOrg.toUrl).asString
 
   "CostOfMaterialsSummary" - {
 
     "row" - {
 
       "must return Some(SummaryListRow) when CostOfMaterialsPage is answered" in {
-        val userAnswers = UserAnswers("id")
+        val userAnswers = UserAnswers(testJourneyId)
           .set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal(1234.56))
           .success
           .value
@@ -47,14 +50,14 @@ class CostOfMaterialsSummarySpec extends AnyFreeSpec with Matchers with OptionVa
       }
 
       "must return None when CostOfMaterialsPage is not answered" in {
-        val userAnswers = UserAnswers("id")
+        val userAnswers = UserAnswers(testJourneyId)
         val result      = CostOfMaterialsSummary.row(userAnswers, 1)
 
         result mustBe None
       }
 
       "must include the correct change action URL" in {
-        val userAnswers = UserAnswers("id")
+        val userAnswers = UserAnswers(testJourneyId)
           .set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal(1234.56))
           .success
           .value
@@ -63,12 +66,12 @@ class CostOfMaterialsSummarySpec extends AnyFreeSpec with Matchers with OptionVa
         val action = result.actions.value.items.head
 
         action.href mustEqual controllers.monthlyreturns.routes.CostOfMaterialsController
-          .onPageLoad(CheckMode, 1, None)
+          .onPageLoad(CisOrg, CheckMode, 1, None)
           .url
       }
 
       "must include visually hidden text in the change link" in {
-        val userAnswers = UserAnswers("id")
+        val userAnswers = UserAnswers(testJourneyId)
           .set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal(9999.99))
           .success
           .value
@@ -87,7 +90,7 @@ class CostOfMaterialsSummarySpec extends AnyFreeSpec with Matchers with OptionVa
         )
 
         testCases.foreach { case (input, expectedOutput) =>
-          val userAnswers = UserAnswers("id")
+          val userAnswers = UserAnswers(testJourneyId)
             .set(SelectedSubcontractorMaterialCostsPage(1), input)
             .success
             .value

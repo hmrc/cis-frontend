@@ -17,6 +17,7 @@
 @import views.html.components.*
 @import viewmodels.checkAnswers.monthlyreturns.*
 @import controllers.monthlyreturns.routes.*
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -30,7 +31,7 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, viewModel: SubcontractorDetailsAddedViewModel)(
+@(cisPath: CisPath, form: Form[_], mode: Mode, viewModel: SubcontractorDetailsAddedViewModel)(
     implicit request: Request[_],
     messages: Messages
 )
@@ -38,7 +39,7 @@
 @layout(pageTitle = title(form, messages(viewModel.headingKey, viewModel.headingArgs: _*))) {
 
     @formHelper(
-        action = SubcontractorDetailsAddedController.onSubmit(mode),
+        action = SubcontractorDetailsAddedController.onSubmit(cisPath, mode),
         Symbol("autoComplete") -> "off"
     ) {
 
@@ -95,7 +96,7 @@
             @if(viewModel.isAmendment) {
                 @link(
                         "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
-                        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url,
+                        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment(cisPath).url,
                         paragraphWrapped = false
                 )
             }

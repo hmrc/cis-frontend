@@ -16,6 +16,7 @@
 
 import base.SpecBase
 import forms.monthlyreturns.ConfirmEmailAddressFormProvider
+import models.requests.CisPath.CisOrg
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -29,7 +30,7 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
   "ConfirmEmailAddressView" - {
 
     "must render the page with heading, paragraph, input and button" in new Setup {
-      val html = view(form, NormalMode)
+      val html = view(CisOrg, form, NormalMode)
       val doc  = Jsoup.parse(html.body)
 
       doc.title must include(messages("monthlyreturns.confirmEmailAddress.title"))
@@ -44,7 +45,7 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
 
     "must show error summary and messages when form has errors" in new Setup {
       val boundWithError = form.bind(Map("value" -> ""))
-      val html           = view(boundWithError, NormalMode)
+      val html           = view(CisOrg, boundWithError, NormalMode)
       val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
@@ -57,7 +58,7 @@ class ConfirmEmailAddressViewSpec extends SpecBase with Matchers {
 
     "must render error summary with correct link when form has errors" in new Setup {
       val formWithErrors = form.bind(Map("value" -> ""))
-      val errorHtml      = view(formWithErrors, NormalMode)
+      val errorHtml      = view(CisOrg, formWithErrors, NormalMode)
       val doc: Document  = Jsoup.parse(errorHtml.toString)
 
       doc.select(".govuk-error-summary").size() mustBe 1

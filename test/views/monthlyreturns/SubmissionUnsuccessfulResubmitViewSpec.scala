@@ -24,6 +24,7 @@ import play.api.Application
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
 class SubmissionUnsuccessfulResubmitViewSpec extends SpecBase {
@@ -31,7 +32,7 @@ class SubmissionUnsuccessfulResubmitViewSpec extends SpecBase {
   "SubmissionUnsuccessfulResubmitView" - {
 
     "must render the page with the correct content" in new Setup {
-      val html: HtmlFormat.Appendable = view(cisId = "1")
+      val html: HtmlFormat.Appendable = view(CisOrg, "1")
       val doc: Document               = Jsoup.parse(html.toString)
 
       doc.title             must include(messages("monthlyreturns.submissionUnsuccessfulResubmit.title"))
@@ -73,7 +74,7 @@ class SubmissionUnsuccessfulResubmitViewSpec extends SpecBase {
       )
 
       val manageCisReturnUrl =
-        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit(CisOrg).url
 
       doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 2
     }

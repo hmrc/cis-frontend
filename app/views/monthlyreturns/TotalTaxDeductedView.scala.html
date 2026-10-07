@@ -16,6 +16,7 @@
 
 @import viewmodels.InputWidth._
 @import viewmodels.LabelSize
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -25,11 +26,11 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.totalTaxDeducted.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmit(mode, index, returnTo), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmit(cisPath, mode, index, returnTo), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

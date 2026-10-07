@@ -17,6 +17,7 @@
 @import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 @import viewmodels.checkAnswers.monthlyreturns.TotalPaymentsSummary
 @import models.CheckMode
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -26,7 +27,7 @@
     h1: components.H1
 )
 
-@(subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.changeAnswersTotalPayments.title", subcontractor.name))) {
 
@@ -34,11 +35,11 @@
 
     @govukSummaryList(
         SummaryListViewModel(
-            TotalPaymentsSummary.rowsForChangeAnswers(subcontractor, index)
+            TotalPaymentsSummary.rowsForChangeAnswers(cisPath, subcontractor, index)
         )
     )
 
-    @formHelper(action = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmit(index)) {
+    @formHelper(action = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmit(cisPath, index)) {
         @govukButton(ButtonViewModel(messages("site.continue")))
     }
 }

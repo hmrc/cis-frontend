@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
-import models.requests.DataRequest
+import models.requests.{CisPath, JourneyRequest}
 import models.ReturnType.MonthlyAmendedStandardReturn
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.*
@@ -38,8 +38,8 @@ class ConfirmSubcontractorRemovalController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: ConfirmSubcontractorRemovalFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -50,19 +50,19 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath, mode: Mode, index: Int): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
         case Some(subcontractor) =>
-          Ok(view(form, mode, subcontractor.name, index))
+          Ok(view(cisPath, form, mode, subcontractor.name, index))
       }
-  }
+    }
 
-  def onSubmit(mode: Mode, index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode, index: Int): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -71,7 +71,8 @@ class ConfirmSubcontractorRemovalController @Inject() (
           form
             .bindFromRequest()
             .fold(
-              formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index))),
+              formWithErrors =>
+                Future.successful(BadRequest(view(cisPath, formWithErrors, mode, subcontractor.name, index))),
               confirmRemove =>
                 for {
                   updatedAnswers1 <-
@@ -80,20 +81,23 @@ class ConfirmSubcontractorRemovalController @Inject() (
                   result <-
                     if (!confirmRemove) {
                       sessionRepository.set(updatedAnswers1).map { _ =>
-                        Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                        Redirect(
+                          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                            .onPageLoad(cisPath, mode)
+                        )
                       }
                     } else {
-                      deleteFlow(updatedAnswers1, mode, index)
+                      deleteFlow(cisPath, updatedAnswers1, mode, index)
                     }
                 } yield result
             )
       }
-  }
+    }
 
-  private def deleteFlow(ua: UserAnswers, mode: Mode, index: Int)(implicit
-    request: DataRequest[AnyContent]
+  private def deleteFlow(cisPath: CisPath, ua: UserAnswers, mode: Mode, index: Int)(implicit
+    request: JourneyRequest[AnyContent]
   ): Future[Result] =
-    buildDeletePayload(ua, index) match {
+    buildDeletePayload(ua, index, request.cisId) match {
       case None =>
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -104,29 +108,28 @@ class ConfirmSubcontractorRemovalController @Inject() (
           ua1            <- Future.fromTry(ua.set(WhichSubcontractorsToAddPage, selectedIds))
           updatedAnswers <- Future.fromTry(ua1.remove(SelectedSubcontractorPage(index)))
           _              <- sessionRepository.set(updatedAnswers)
-        } yield redirectAfterDelete(updatedAnswers, mode))
+        } yield redirectAfterDelete(cisPath, updatedAnswers, mode))
           .recover { case e =>
             Redirect(controllers.routes.SystemErrorController.onPageLoad())
           }
     }
 
-  private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
+  private def redirectAfterDelete(cisPath: CisPath, ua: UserAnswers, mode: Mode): Result = {
     val subs                = selectedSubcontractors(ua)
     val isStandardAmendment =
       ua.get(ReturnTypePage).contains(MonthlyAmendedStandardReturn) ||
         ua.get(AmendmentDetailsPage).exists(_.originalReturnType == MonthlyAmendedStandardReturn)
     if (subs.isEmpty && isStandardAmendment) {
-      Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+      Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(cisPath))
     } else if (subs.isEmpty) {
-      Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))
+      Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(cisPath, None))
     } else {
-      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(cisPath, mode))
     }
   }
 
-  private def buildDeletePayload(ua: UserAnswers, index: Int): Option[DeleteMonthlyReturnItemRequest] =
+  private def buildDeletePayload(ua: UserAnswers, index: Int, cisId: String): Option[DeleteMonthlyReturnItemRequest] =
     for {
-      cisId         <- ua.get(CisIdPage)
       monthYear     <- ua.get(DateConfirmPaymentsPage)
       subcontractor <- ua.get(SelectedSubcontractorPage(index))
       returnType    <- ua.get(ReturnTypePage)
@@ -140,5 +143,4 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
     ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
-
 }

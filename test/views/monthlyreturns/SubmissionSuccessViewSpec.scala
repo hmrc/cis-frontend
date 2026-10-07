@@ -25,6 +25,8 @@ import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
 import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
+import models.requests.CisPath.CisOrg
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SubmissionSuccessView
 
 class SubmissionSuccessViewSpec extends SpecBase {
@@ -196,6 +198,6 @@ class SubmissionSuccessViewSpec extends SpecBase {
       cisId = cisId
     )
 
-    lazy val html: HtmlFormat.Appendable = view(vm)
+    lazy val html: HtmlFormat.Appendable = view(CisOrg, vm)
   }
 }

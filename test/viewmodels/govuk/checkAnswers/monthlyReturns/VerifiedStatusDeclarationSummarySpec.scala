@@ -18,6 +18,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
 import models.CheckMode
+import models.requests.CisPath.CisOrg
 import org.scalatest.OptionValues
 import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.i18n.Messages
@@ -48,7 +49,7 @@ class VerifiedStatusDeclarationSummarySpec extends SpecBase with OptionValues {
 
         result.actions.value.items.head.href mustBe
           controllers.monthlyreturns.routes.VerifiedStatusDeclarationController
-            .onPageLoad(CheckMode)
+            .onPageLoad(CisOrg, CheckMode)
             .url
 
         result.actions.value.items.head.visuallyHiddenText.value mustBe
@@ -71,7 +72,7 @@ class VerifiedStatusDeclarationSummarySpec extends SpecBase with OptionValues {
 
         result.actions.value.items.head.href mustBe
           controllers.monthlyreturns.routes.VerifiedStatusDeclarationController
-            .onPageLoad(CheckMode)
+            .onPageLoad(CisOrg, CheckMode)
             .url
 
         result.actions.value.items.head.visuallyHiddenText.value mustBe

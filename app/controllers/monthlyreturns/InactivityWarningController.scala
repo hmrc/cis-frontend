@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.NormalMode
+import models.requests.CisPath
 import navigation.Navigator
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -30,21 +31,20 @@ class InactivityWarningController @Inject() (
   override val messagesApi: MessagesApi,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityWarningView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
-      Ok(view())
-  }
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
+      Ok(view(cisPath))
+    }
 
-  def onSubmit: Action[AnyContent] =
-    (identify andThen getData andThen requireData) { implicit request =>
+  def onSubmit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
       Redirect(navigator.nextPage(pages.monthlyreturns.InactivityWarningPage, NormalMode, request.userAnswers))
     }
 }

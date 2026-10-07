@@ -20,6 +20,7 @@ import base.SpecBase
 import org.jsoup.Jsoup
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SubmissionUnsuccessfulView
 
 class SubmissionUnsuccessfulViewSpec extends SpecBase {
@@ -28,7 +29,7 @@ class SubmissionUnsuccessfulViewSpec extends SpecBase {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
       val manageCisReturnUrl =
-        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit(CisOrg).url
 
       val html = view(manageCisReturnUrl)
       val doc  = Jsoup.parse(html.body)

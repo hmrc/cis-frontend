@@ -81,12 +81,12 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           VerifySubcontractorsPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from VerifySubcontractorsPage to SubcontractorDetailsAddedController when subcontractors are present" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(SelectedSubcontractorPage(0), completeSub)
           .setOrException(SelectedSubcontractorPage(2), incompleteSub)
           .setOrException(SelectedSubcontractorPage(5), incompleteSub)
@@ -95,66 +95,66 @@ class NavigatorSpec extends SpecBase {
           VerifySubcontractorsPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from DateConfirmPaymentsPage to SelectSubcontractorsController when no subcontractors are present" in {
         navigator.nextPage(
           DateConfirmPaymentsPage,
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(CisOrg, None)
       }
 
       "must go from DateConfirmPaymentsPage to SubcontractorDetailsAddedController when subcontractors are present" in {
-        val ua = UserAnswers("id").setOrException(SelectedSubcontractorPage(0), completeSub)
+        val ua = UserAnswers(journeyId).setOrException(SelectedSubcontractorPage(0), completeSub)
         navigator.nextPage(
           DateConfirmPaymentsPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from SelectedSubcontractorPaymentsMadePage to CostOfMaterialsController" in {
         navigator.nextPage(
           SelectedSubcontractorPaymentsMadePage(1),
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1, None)
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CisOrg, NormalMode, 1, None)
       }
 
       "must go from SelectedSubcontractorMaterialCostsPage to TotalTaxDeductedController" in {
         navigator.nextPage(
           SelectedSubcontractorMaterialCostsPage(2),
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 2, None)
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CisOrg, NormalMode, 2, None)
       }
 
       "must go from SelectedSubcontractorTaxDeductedPage to JourneyRecoveryController" in {
         navigator.nextPage(
           SelectedSubcontractorTaxDeductedPage(1),
           NormalMode,
-          UserAnswers("id")
-        ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+          UserAnswers(journeyId)
+        ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(CisOrg, 1)
       }
 
       "must go from PaymentDetailsConfirmationPage to EmploymentStatusDeclarationController when answer is true" in {
-        val ua = UserAnswers("id").setOrException(PaymentDetailsConfirmationPage, true)
+        val ua = UserAnswers(journeyId).setOrException(PaymentDetailsConfirmationPage, true)
         navigator.nextPage(
           PaymentDetailsConfirmationPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from PaymentDetailsConfirmationPage to SubcontractorDetailsAddedController when answer is false" in {
-        val ua = UserAnswers("id").setOrException(PaymentDetailsConfirmationPage, false)
+        val ua = UserAnswers(journeyId).setOrException(PaymentDetailsConfirmationPage, false)
         navigator.nextPage(
           PaymentDetailsConfirmationPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from PaymentDetailsConfirmationPage to JourneyRecovery when answer is missing" in {
@@ -166,12 +166,12 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from EmploymentStatusDeclarationPage to VerifiedStatusDeclarationController when answer is present" in {
-        val ua = UserAnswers("id").setOrException(EmploymentStatusDeclarationPage, true)
+        val ua = UserAnswers(journeyId).setOrException(EmploymentStatusDeclarationPage, true)
         navigator.nextPage(
           EmploymentStatusDeclarationPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from EmploymentStatusDeclarationPage to JourneyRecovery when answer is missing" in {
@@ -301,36 +301,36 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from AreYouSureYouWantToAmendYesNoPage to WhatDoYouWantToAmendNilController when user answered No for Amended StandardReturn" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(AreYouSureYouWantToAmendYesNoPage, AreYouSureYouWantToAmendYesNo.No)
           .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
         navigator.nextPage(
           AreYouSureYouWantToAmendYesNoPage,
           NormalMode,
           ua
-        ) mustBe controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+        ) mustBe controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg)
       }
 
       "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended StandardReturn" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(WhichSubcontractorsToAddPage, Set.empty)
           .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
         navigator.nextPage(
           WhichSubcontractorsToAddPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode)
       }
 
       "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended NilReturn" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(WhichSubcontractorsToAddPage, Set.empty)
           .setOrException(ReturnTypePage, MonthlyAmendedNilReturn)
         navigator.nextPage(
           WhichSubcontractorsToAddPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode)
       }
     }
 
@@ -382,24 +382,24 @@ class NavigatorSpec extends SpecBase {
         navigator.nextPage(
           SelectedSubcontractorPaymentsMadePage(1),
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(CisOrg, 1)
       }
 
       "must go from SelectedSubcontractorMaterialCostsPage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorMaterialCostsPage(1),
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(CisOrg, 1)
       }
 
       "must go from SelectedSubcontractorTaxDeductedPage to CheckAnswersTotalPayments Page in CheckMode" in {
         navigator.nextPage(
           SelectedSubcontractorTaxDeductedPage(1),
           CheckMode,
-          UserAnswers("id")
-        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(1)
+          UserAnswers(journeyId)
+        ) mustBe monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(CisOrg, 1)
       }
 
       "must go from EmploymentStatusDeclarationPage to CheckYourAnswers in CheckMode when answer is present" in {
@@ -507,25 +507,25 @@ class NavigatorSpec extends SpecBase {
       }
 
       "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended StandardReturn" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(WhichSubcontractorsToAddPage, Set.empty)
           .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
         navigator.nextPage(
           WhichSubcontractorsToAddPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, CheckMode)
       }
 
       "must go from WhichSubcontractorsToAddPage to SubcontractorDetailsAddedController when Amended NilReturn" in {
-        val ua = UserAnswers("id")
+        val ua = UserAnswers(journeyId)
           .setOrException(WhichSubcontractorsToAddPage, Set.empty)
           .setOrException(ReturnTypePage, MonthlyAmendedNilReturn)
         navigator.nextPage(
           WhichSubcontractorsToAddPage,
           CheckMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
+        ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, CheckMode)
       }
     }
   }

@@ -23,6 +23,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
+import models.requests.CisPath.CisOrg
 import views.html.amend.AreYouSureYouWantToAmendYesNoView
 
 class AreYouSureYouWantToAmendYesNoViewSpec extends SpecBase {
@@ -47,7 +48,7 @@ class AreYouSureYouWantToAmendYesNoViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'Yes'" in new Setup {
       val filledForm    = form.fill(AreYouSureYouWantToAmendYesNo.Yes)
-      val filledHtml    = view(filledForm)
+      val filledHtml    = view(CisOrg, filledForm)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=yes]").hasAttr("checked") mustBe true
@@ -56,7 +57,7 @@ class AreYouSureYouWantToAmendYesNoViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'No'" in new Setup {
       val filledForm    = form.fill(AreYouSureYouWantToAmendYesNo.No)
-      val filledHtml    = view(filledForm)
+      val filledHtml    = view(CisOrg, filledForm)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=yes]").hasAttr("checked") mustBe false
@@ -65,7 +66,7 @@ class AreYouSureYouWantToAmendYesNoViewSpec extends SpecBase {
 
     "must display error summary when form has errors" in new Setup {
       val errorForm     = form.bind(Map("value" -> ""))
-      val errorHtml     = view(errorForm)
+      val errorHtml     = view(CisOrg, errorForm)
       val doc: Document = Jsoup.parse(errorHtml.toString)
 
       doc.select(".govuk-error-summary").size() mustBe 1
@@ -84,6 +85,6 @@ class AreYouSureYouWantToAmendYesNoViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form)
+    val html = view(CisOrg, form)
   }
 }

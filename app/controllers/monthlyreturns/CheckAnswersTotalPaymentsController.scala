@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.NormalMode
+import models.requests.CisPath
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -35,9 +36,8 @@ import pages.monthlyreturns.SelectedSubcontractorPage
 class CheckAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   monthlyReturnService: MonthlyReturnService,
   payloadBuilder: MonthlyReturnItemPayloadBuilder,
   val controllerComponents: MessagesControllerComponents,
@@ -47,17 +47,17 @@ class CheckAnswersTotalPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath, index: Int): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
-          Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
+          Ok(view(cisPath, CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
       }
-  }
+    }
 
-  def onSubmit(index: Int): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath, index: Int): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       val ua = request.userAnswers
 
       payloadBuilder.build(ua, index) match {
@@ -68,7 +68,9 @@ class CheckAnswersTotalPaymentsController @Inject() (
           monthlyReturnService
             .updateMonthlyReturnItem(payload)
             .map { _ =>
-              Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+              Redirect(
+                controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(cisPath, NormalMode)
+              )
             }
             .recover {
               case u: UpstreamErrorResponse =>

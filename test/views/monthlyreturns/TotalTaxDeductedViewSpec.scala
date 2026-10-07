@@ -19,10 +19,12 @@ package views.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.TotalTaxDeductedView
 
 class TotalTaxDeductedViewSpec extends SpecBase {
@@ -49,7 +51,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
     "must display error summary when form has errors" in new Setup {
       // empty is allowed now (optional), so use invalid non-empty input to trigger errors
       val formWithErrors = form.bind(Map("value" -> "invalid"))
-      val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1, None)
+      val htmlWithErrors = view(CisOrg, formWithErrors, NormalMode, companyName, 1, None)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-summary").size mustBe 1
@@ -58,7 +60,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
     "must display field error when value is invalid" in new Setup {
       val formWithErrors = form.bind(Map("value" -> "invalid"))
-      val htmlWithErrors = view(formWithErrors, NormalMode, companyName, 1, None)
+      val htmlWithErrors = view(CisOrg, formWithErrors, NormalMode, companyName, 1, None)
       val doc: Document  = Jsoup.parse(htmlWithErrors.toString)
 
       doc.select(".govuk-error-message").size mustBe 1
@@ -66,7 +68,7 @@ class TotalTaxDeductedViewSpec extends SpecBase {
 
     "must not display error summary when value is empty (optional)" in new Setup {
       val formNoErrors  = form.bind(Map("value" -> ""))
-      val htmlNoErrors  = view(formNoErrors, NormalMode, companyName, 1, None)
+      val htmlNoErrors  = view(CisOrg, formNoErrors, NormalMode, companyName, 1, None)
       val doc: Document = Jsoup.parse(htmlNoErrors.toString)
 
       doc.select(".govuk-error-summary").size mustBe 0
@@ -86,6 +88,6 @@ class TotalTaxDeductedViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode, companyName, 1, None)
+    val html = view(CisOrg, form, NormalMode, companyName, 1, None)
   }
 }

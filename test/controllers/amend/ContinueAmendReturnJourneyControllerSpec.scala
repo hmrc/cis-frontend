@@ -18,6 +18,7 @@ package controllers.amend
 
 import base.SpecBase
 import models.{NormalMode, UserAnswers}
+import models.requests.CisPath.CisOrg
 import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
@@ -74,7 +75,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
         status(res) mustBe SEE_OTHER
         redirectLocation(res).value mustBe
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode).url
 
         verify(mockSessionRepo).set(populatedAnswers)
       }
@@ -114,7 +115,9 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         val res = route(application, request).value
 
         status(res) mustBe SEE_OTHER
-        redirectLocation(res).value mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
+        redirectLocation(res).value mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController
+          .onPageLoad(CisOrg)
+          .url
       }
     }
 
@@ -153,7 +156,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
         status(res) mustBe SEE_OTHER
         redirectLocation(res).value mustBe
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
       }
     }
 
@@ -192,7 +195,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
         status(res) mustBe SEE_OTHER
         redirectLocation(res).value mustBe
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CisOrg, NormalMode).url
       }
     }
 
@@ -260,7 +263,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
         status(res) mustBe SEE_OTHER
         redirectLocation(res).value mustBe
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
       }
     }
 

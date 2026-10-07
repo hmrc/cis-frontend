@@ -23,9 +23,9 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.WhatDoYouWantToAmendNil
 import models.amend.WhatDoYouWantToAmendNil.{AddPaymentOrSubcontractorDetails, AmendNilReturn}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.CisPath.{CisId, CisOrg}
+import models.requests.CisPath
 import pages.amend.WhatDoYouWantToAmendNilPage
-import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
+import pages.monthlyreturns.ReturnTypePage
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -47,9 +47,8 @@ class WhatDoYouWantToAmendNilController @Inject() (
   amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: WhatDoYouWantToAmendNilFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendNilView
@@ -59,25 +58,25 @@ class WhatDoYouWantToAmendNilController @Inject() (
 
   val form: Form[WhatDoYouWantToAmendNil] = formProvider()
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
 
       val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
-      Ok(view(preparedForm))
-  }
+      Ok(view(cisPath, preparedForm))
+    }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
-    implicit request =>
+  def onSubmit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
+          formWithErrors => Future.successful(BadRequest(view(cisPath, formWithErrors))),
           value =>
             for {
               ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
@@ -99,7 +98,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                                    )
                             _   <- sessionRepository.set(ua2)
                           } yield Redirect(
-                            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode)
+                            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(cisPath, NormalMode)
                           )
                       }
 
@@ -110,10 +109,8 @@ class WhatDoYouWantToAmendNilController @Inject() (
                                          ua3.set(ReturnTypePage, MonthlyAmendedNilReturn)
                                        )
                       _             <- sessionRepository.set(ua4)
-                      cisId         <- Future(request.userAnswers.get(CisIdPage).get)
-                      cisPath        = if request.isAgent then CisId(cisId) else CisOrg
                       updateRequest <- UpdateMonthlyReturnRequest
-                                         .fromUserAnswers(cisId, ua4)
+                                         .fromUserAnswers(request.cisId, ua4)
                                          .fold(
                                            error => Future.failed(new RuntimeException(error)),
                                            request => Future.successful(request)
@@ -126,5 +123,5 @@ class WhatDoYouWantToAmendNilController @Inject() (
                 }
             } yield result
         )
-  }
+    }
 }

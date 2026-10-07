@@ -32,7 +32,9 @@ object NumberOfSubcontractorPaymentsMadeSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+              .onPageLoad(answers.journey.cisPath, CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden"))
             .withAttribute("id" -> "change-number-subcontractor-payments-made")

@@ -79,11 +79,11 @@ class SubmissionSendingController @Inject() (
             } yield SubmissionStatus.fromString(submitted.status) match {
               case Started                             =>
                 logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
-                Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
+                Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad(cisPath))
               case Pending | SubmissionStatus.Accepted =>
                 Redirect(routes.SubmissionSendingController.onPollAndRedirect(cisPath))
               case _                                   =>
-                Redirect(routes.SubmissionUnsuccessfulController.onPageLoad)
+                Redirect(routes.SubmissionUnsuccessfulController.onPageLoad(cisPath))
             }).recover { case ex =>
               logger.error("[SubmissionSendingController] Create/Submit/Update flow failed", ex)
               Redirect(controllers.routes.SystemErrorController.onPageLoad())
@@ -115,7 +115,9 @@ class SubmissionSendingController @Inject() (
       case Some(periodEnd) =>
         val yearMonthPeriod = YearMonth.from(periodEnd).toString
         if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
-          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(request.cisPath))
+          )
         } else {
           block
         }
@@ -134,9 +136,10 @@ class SubmissionSendingController @Inject() (
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
     SubmissionStatus.fromString(status) match {
-      case Started                             => Future.successful(Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad()))
+      case Started                             =>
+        Future.successful(Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad(request.cisPath)))
       case Pending | SubmissionStatus.Accepted => sendingPage(pollInterval)
-      case TimedOut                            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
+      case TimedOut                            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad(request.cisPath)))
       case Submitted                           =>
         sendEmailAndRedirect(
           request.userAnswers,
@@ -153,10 +156,10 @@ class SubmissionSendingController @Inject() (
         sendEmailAndRedirect(
           request.userAnswers,
           langCode,
-          routes.SubmissionUnsuccessfulController.onPageLoad
+          routes.SubmissionUnsuccessfulController.onPageLoad(request.cisPath)
         )
       case SubmissionStatus.FatalError         =>
-        Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
+        Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad(request.cisPath)))
       case _                                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 

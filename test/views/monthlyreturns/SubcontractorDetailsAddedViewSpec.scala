@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.scalatest.freespec.AnyFreeSpec
@@ -50,7 +51,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
 
     "must display the yes/no radio buttons when showYesNo is true" in new Setup {
       val viewModelWithYesNo = viewModel.copy(showYesNo = true)
-      val htmlWithYesNo      = view(form, NormalMode, viewModelWithYesNo)
+      val htmlWithYesNo      = view(CisOrg, form, NormalMode, viewModelWithYesNo)
       val doc: Document      = Jsoup.parse(htmlWithYesNo.toString)
 
       doc.select(".govuk-radios").size() mustBe 1
@@ -59,7 +60,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
 
     "must not display the yes/no radio buttons when showYesNo is false" in new Setup {
       val viewModelWithoutYesNo = viewModel.copy(showYesNo = false)
-      val htmlWithoutYesNo      = view(form, NormalMode, viewModelWithoutYesNo)
+      val htmlWithoutYesNo      = view(CisOrg, form, NormalMode, viewModelWithoutYesNo)
       val doc: Document         = Jsoup.parse(htmlWithoutYesNo.toString)
 
       doc.select(".govuk-radios").size() mustBe 0
@@ -68,7 +69,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
 
     "must display the 'Cancel amendment' link when isAmendment is true" in new Setup {
       val amendmentViewModel = viewModel.copy(isAmendment = true)
-      val amendmentHtml      = view(form, NormalMode, amendmentViewModel)
+      val amendmentHtml      = view(CisOrg, form, NormalMode, amendmentViewModel)
       val doc: Document      = Jsoup.parse(amendmentHtml.toString)
 
       doc.text() must include(messages("monthlyreturns.subcontractorDetailsAdded.cancelAmendment"))
@@ -76,13 +77,13 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
       val cancelLink =
         doc.getElementsMatchingOwnText(messages("monthlyreturns.subcontractorDetailsAdded.cancelAmendment"))
       cancelLink.attr("href") mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-        .onCancelAmendment()
+        .onCancelAmendment(CisOrg)
         .url
     }
 
     "must display error summary when form has errors on the value field" in new Setup {
       val formWithError = form.withError("value", "monthlyreturns.subcontractorDetailsAdded.error.required")
-      val htmlWithError = view(formWithError, NormalMode, viewModel)
+      val htmlWithError = view(CisOrg, formWithError, NormalMode, viewModel)
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
       doc.select(".govuk-error-summary").size() mustBe 1
@@ -92,7 +93,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
       val formWithError = form
         .fill(false)
         .withError("summaryList", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
-      val htmlWithError = view(formWithError, NormalMode, viewModel)
+      val htmlWithError = view(CisOrg, formWithError, NormalMode, viewModel)
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
       doc.select(".govuk-error-summary").size() mustBe 1
@@ -106,7 +107,7 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
       val formWithError = form
         .fill(false)
         .withError("summaryList", "monthlyreturns.subcontractorDetailsAdded.error.incomplete")
-      val htmlWithError = view(formWithError, NormalMode, viewModel)
+      val htmlWithError = view(CisOrg, formWithError, NormalMode, viewModel)
       val doc: Document = Jsoup.parse(htmlWithError.toString)
 
       doc.select(".govuk-radios--error").size() mustBe 0
@@ -169,6 +170,6 @@ class SubcontractorDetailsAddedViewSpec extends AnyFreeSpec with Matchers with M
         showYesNo = true
       )
 
-    val html = view(form, NormalMode, viewModel)
+    val html = view(CisOrg, form, NormalMode, viewModel)
   }
 }

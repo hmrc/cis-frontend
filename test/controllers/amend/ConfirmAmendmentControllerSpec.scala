@@ -30,6 +30,7 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
+import models.requests.CisPath.CisOrg
 import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.amend.ConfirmAmendmentView
@@ -211,7 +212,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(CisOrg).url
 
         val userAnswersCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(userAnswersCaptor.capture())
@@ -256,7 +257,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad().url
+          controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(CisOrg).url
 
         val userAnswersCaptor: ArgumentCaptor[UserAnswers] = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(userAnswersCaptor.capture())

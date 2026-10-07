@@ -33,7 +33,10 @@ object ConfirmEmailAddressSummary {
         key = "monthlyreturns.confirmEmailAddress.checkYourAnswersLabel",
         value = ValueViewModel(HtmlFormat.escape(answer).toString),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.ConfirmEmailAddressController.onPageLoad(CheckMode).url)
+          ActionItemViewModel(
+            "site.change",
+            routes.ConfirmEmailAddressController.onPageLoad(answers.journey.cisPath, CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.confirmEmailAddress.change.hidden"))
             .withAttribute("id" -> "change-confirm-email-address")
         )

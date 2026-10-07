@@ -16,6 +16,7 @@
 
 @import views.html.components._
 @import utils.Utils.{firstRadioId, withIds}
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -29,49 +30,49 @@
     fieldSet: FieldSet
 )
 
-    @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
 
-    @layout(pageTitle = title(form, messages("verifySubcontractors.title"))) {
+@layout(pageTitle = title(form, messages("verifySubcontractors.title"))) {
 
-        @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(cisPath, mode), Symbol("autoComplete") -> "off") {
 
-            @if(form.errors.nonEmpty) {
-                @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))
-            }
-
-            @fieldSet("verifySubcontractors.heading", form = Some(form)) {
-
-            @govukWarningText(
-                WarningText(
-                    iconFallbackText = Some(messages("verifySubcontractors.warningIcon")),
-                    content = Text(messages("verifySubcontractors.warningText"))
-                )
-            )
-
-            @h2(messages("verifySubcontractors.P1"))
-
-            @govukRadios(
-                RadiosViewModel(
-                    field = form("value"),
-                    items = withIds(Seq(
-                        RadioItem(
-                            content = Text(messages("verifySubcontractors.yes")),
-                            value = Some("true"),
-                            hint = Some(Hint(content = Text(messages("verifySubcontractors.yes.hint"))))
-                        ),
-                        RadioItem(
-                            content = Text(messages("verifySubcontractors.no")),
-                            value = Some("false"),
-                            hint = Some(Hint(content = Text(messages("verifySubcontractors.no.hint"))))
-                        )
-                    )),
-                    legend = Legend()
-                ).copy(fieldset = None)
-            )
-
-            @govukButton(
-                ButtonViewModel(messages("site.continue"))
-            )
+        @if(form.errors.nonEmpty) {
+            @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))
         }
+
+        @fieldSet("verifySubcontractors.heading", form = Some(form)) {
+
+        @govukWarningText(
+            WarningText(
+                iconFallbackText = Some(messages("verifySubcontractors.warningIcon")),
+                content = Text(messages("verifySubcontractors.warningText"))
+            )
+        )
+
+        @h2(messages("verifySubcontractors.P1"))
+
+        @govukRadios(
+            RadiosViewModel(
+                field = form("value"),
+                items = withIds(Seq(
+                    RadioItem(
+                        content = Text(messages("verifySubcontractors.yes")),
+                        value = Some("true"),
+                        hint = Some(Hint(content = Text(messages("verifySubcontractors.yes.hint"))))
+                    ),
+                    RadioItem(
+                        content = Text(messages("verifySubcontractors.no")),
+                        value = Some("false"),
+                        hint = Some(Hint(content = Text(messages("verifySubcontractors.no.hint"))))
+                    )
+                )),
+                legend = Legend()
+            ).copy(fieldset = None)
+        )
+
+        @govukButton(
+            ButtonViewModel(messages("site.continue"))
+        )
     }
+}
 }

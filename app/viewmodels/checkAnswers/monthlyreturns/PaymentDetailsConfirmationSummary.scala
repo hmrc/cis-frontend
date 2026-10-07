@@ -36,7 +36,9 @@ object PaymentDetailsConfirmationSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.PaymentDetailsConfirmationController
+              .onPageLoad(answers.journey.cisPath, CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.paymentDetailsConfirmation.change.hidden"))
         )

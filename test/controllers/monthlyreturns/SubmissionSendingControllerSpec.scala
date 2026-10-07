@@ -65,11 +65,11 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
   private def successRoute              = routes.SubmissionSuccessController.onPageLoad(CisOrg).url
   private def successNoReceiptRoute     = routes.SubmittedNoReceiptController.onPageLoad.url
-  private def awaitingRoute             = routes.SubmissionAwaitingController.onPageLoad.url
+  private def awaitingRoute             = routes.SubmissionAwaitingController.onPageLoad(CisOrg).url
   private def pollingRoute              = routes.SubmissionSendingController.onPollAndRedirect(CisOrg).url
-  private def unsuccessfulRoute         = routes.SubmissionUnsuccessfulController.onPageLoad.url
+  private def unsuccessfulRoute         = routes.SubmissionUnsuccessfulController.onPageLoad(CisOrg).url
   private def unsuccessfulResubmitRoute =
-    controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad().url
+    controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad(CisOrg).url
   private def recoveryRoute             = controllers.routes.JourneyRecoveryController.onPageLoad().url
   private def systemErrorRoute          = controllers.routes.SystemErrorController.onPageLoad().url
   private def unauthorisedRoute         =
@@ -325,7 +325,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe
-        controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+        controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(CisOrg).url
 
       verifyNoInteractions(mockService)
       verifyNoInteractions(mockMongoDb)
@@ -1040,7 +1040,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe
-        controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad().url
+        controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(CisOrg).url
 
       verifyNoInteractions(mockService)
       verifyNoInteractions(mockMongoDb)

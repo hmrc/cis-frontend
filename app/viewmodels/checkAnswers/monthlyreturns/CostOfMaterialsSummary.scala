@@ -35,7 +35,9 @@ object CostOfMaterialsSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, None).url
+            controllers.monthlyreturns.routes.CostOfMaterialsController
+              .onPageLoad(answers.journey.cisPath, CheckMode, index, None)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.costOfMaterials.change.hidden"))
         )

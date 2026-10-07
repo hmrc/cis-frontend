@@ -18,6 +18,7 @@ package views.finalvalidations
 
 import base.SpecBase
 import controllers.monthlyreturns.routes.SelectSubcontractorsController
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.Application
@@ -111,7 +112,7 @@ class ReviewSubcontractorDetailsViewSpec extends SpecBase {
       val backLink = doc.select("p.govuk-body > a.govuk-link").last()
 
       backLink.text mustEqual messages("finalValidations.reviewSubcontractorDetails.backLink")
-      backLink.attr("href") mustEqual SelectSubcontractorsController.onPageLoad(None).url
+      backLink.attr("href") mustEqual SelectSubcontractorsController.onPageLoad(CisOrg, None).url
     }
 
     "must render only File a return when subcontractors list is empty" in new Setup {
@@ -153,7 +154,7 @@ class ReviewSubcontractorDetailsViewSpec extends SpecBase {
       ReviewSubcontractorDetailsPageModel(
         subcontractors = subcontractors,
         canContinue = false,
-        backUrl = SelectSubcontractorsController.onPageLoad(None).url
+        backUrl = SelectSubcontractorsController.onPageLoad(CisOrg, None).url
       )
 
     def html: HtmlFormat.Appendable = view(model)

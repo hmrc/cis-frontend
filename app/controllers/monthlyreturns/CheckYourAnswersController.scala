@@ -115,7 +115,7 @@ class CheckYourAnswersController @Inject() (
               logger.info(
                 "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"
               )
-              Future.successful(Redirect(routes.AlreadySubmittedController.onPageLoad()))
+              Future.successful(Redirect(routes.AlreadySubmittedController.onPageLoad(cisPath)))
             } else {
               val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(request.cisId, request.userAnswers)
 
@@ -150,7 +150,9 @@ class CheckYourAnswersController @Inject() (
       case Some(periodEnd) =>
         val yearMonthPeriod = YearMonth.from(periodEnd).toString
         if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
-          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad(request.cisPath))
+          )
         } else {
           block
         }

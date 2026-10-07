@@ -18,7 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
-import pages.monthlyreturns.CisIdPage
+import models.requests.CisPath
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -31,8 +31,8 @@ import scala.concurrent.ExecutionContext
 class SubmissionUnsuccessfulResubmitController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionUnsuccessfulResubmitView,
   monthlyReturnService: MonthlyReturnService
@@ -41,14 +41,10 @@ class SubmissionUnsuccessfulResubmitController @Inject() (
     with I18nSupport
     with SubmissionViewDataSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData).async { implicit request =>
-    val cisId = required(
-      request.userAnswers.get(CisIdPage),
-      "[SubmissionUnsuccessfulResubmit] cisId missing from userAnswers"
-    )
-
-    monthlyReturnService
-      .completeSubmissionJourney(request.userAnswers)
-      .map(_ => Ok(view(cisId)))
-  }
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
+      monthlyReturnService
+        .completeSubmissionJourney(request.userAnswers)
+        .map(_ => Ok(view(cisPath, request.cisId)))
+    }
 }

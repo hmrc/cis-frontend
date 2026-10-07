@@ -17,6 +17,7 @@
 package viewmodels.checkAnswers.monthlyreturns
 
 import models.CheckMode
+import models.requests.CisPath
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
@@ -24,31 +25,34 @@ import viewmodels.govuk.summarylist.*
 
 object TotalPaymentsSummary {
 
-  def rowsForCheckAnswers(subcontractor: CheckAnswersTotalPaymentsViewModel, index: Int)(implicit
+  def rowsForCheckAnswers(cisPath: CisPath, subcontractor: CheckAnswersTotalPaymentsViewModel, index: Int)(implicit
     messages: Messages
   ): Seq[SummaryListRow] =
     Seq(
       row(
         labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
         displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
-        changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index, None).url,
+        changeUrl =
+          controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(cisPath, CheckMode, index, None).url,
         actionId = None
       ),
       row(
         labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials",
         displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
-        changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, None).url,
+        changeUrl =
+          controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(cisPath, CheckMode, index, None).url,
         actionId = None
       ),
       row(
         labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions",
         displayValue = messages("currency.pounds", subcontractor.totalTaxDeducted),
-        changeUrl = controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(CheckMode, index, None).url,
+        changeUrl =
+          controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(cisPath, CheckMode, index, None).url,
         actionId = None
       )
     )
 
-  def rowsForChangeAnswers(subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Int)(implicit
+  def rowsForChangeAnswers(cisPath: CisPath, subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Int)(implicit
     messages: Messages
   ): Seq[SummaryListRow] =
     Seq(
@@ -56,7 +60,7 @@ object TotalPaymentsSummary {
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
         displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
         changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController
-          .onPageLoad(CheckMode, index, Some("changeAnswers"))
+          .onPageLoad(cisPath, CheckMode, index, Some("changeAnswers"))
           .url,
         actionId = Some("total-payment-made")
       ),
@@ -64,7 +68,7 @@ object TotalPaymentsSummary {
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials",
         displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
         changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController
-          .onPageLoad(CheckMode, index, Some("changeAnswers"))
+          .onPageLoad(cisPath, CheckMode, index, Some("changeAnswers"))
           .url,
         actionId = Some("total-cost-of-materials")
       ),
@@ -72,7 +76,7 @@ object TotalPaymentsSummary {
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions",
         displayValue = messages("currency.pounds", subcontractor.totalTaxDeducted),
         changeUrl = controllers.monthlyreturns.routes.TotalTaxDeductedController
-          .onPageLoad(CheckMode, index, Some("changeAnswers"))
+          .onPageLoad(cisPath, CheckMode, index, Some("changeAnswers"))
           .url,
         actionId = Some("total-tax-deductions")
       )

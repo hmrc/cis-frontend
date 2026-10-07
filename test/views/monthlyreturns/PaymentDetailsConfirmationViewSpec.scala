@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
+import models.requests.CisPath.CisOrg
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -49,7 +50,7 @@ class PaymentDetailsConfirmationViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
       val filledForm    = form.fill(true)
-      val filledHtml    = view(filledForm, NormalMode, false)
+      val filledHtml    = view(CisOrg, filledForm, NormalMode, false)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe true
@@ -58,7 +59,7 @@ class PaymentDetailsConfirmationViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'false'" in new Setup {
       val filledForm    = form.fill(false)
-      val filledHtml    = view(filledForm, NormalMode, false)
+      val filledHtml    = view(CisOrg, filledForm, NormalMode, false)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe false
@@ -77,6 +78,6 @@ class PaymentDetailsConfirmationViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode, false)
+    val html = view(CisOrg, form, NormalMode, false)
   }
 }

@@ -18,6 +18,7 @@ package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
 import models.monthlyreturns.SelectedSubcontractor
+import models.requests.CisPath.CisOrg
 import models.{CheckMode, NormalMode, UserAnswers}
 import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 import play.api.libs.json.Json
@@ -28,7 +29,7 @@ import java.time.Instant
 class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
 
   private def baseUa: UserAnswers =
-    UserAnswers(id = "test-user", data = Json.obj(), lastUpdated = Instant.now)
+    UserAnswers(id = journeyId, data = Json.obj(), lastUpdated = Instant.now)
 
   private def uaWithSubcontractors(subs: (Int, SelectedSubcontractor)*): UserAnswers =
     subs.foldLeft(baseUa) { case (ua, (idx, sub)) =>
@@ -80,9 +81,9 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
           detailsAdded = true,
           changeLabel = "monthlyreturns.subcontractorDetailsAdded.amend",
           changeCall = controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
-            .onPageLoad(1),
+            .onPageLoad(CisOrg, 1),
           removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-            .onPageLoad(CheckMode, 1)
+            .onPageLoad(CisOrg, CheckMode, 1)
         ),
         SubcontractorDetailsAddedRow(
           index = 2,
@@ -91,9 +92,9 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
           detailsAdded = false,
           changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
           changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
-            .onPageLoad(NormalMode, 2, None),
+            .onPageLoad(CisOrg, NormalMode, 2, None),
           removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-            .onPageLoad(CheckMode, 2)
+            .onPageLoad(CisOrg, CheckMode, 2)
         ),
         SubcontractorDetailsAddedRow(
           index = 3,
@@ -102,9 +103,9 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
           detailsAdded = false,
           changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
           changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
-            .onPageLoad(NormalMode, 3, None),
+            .onPageLoad(CisOrg, NormalMode, 3, None),
           removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-            .onPageLoad(CheckMode, 3)
+            .onPageLoad(CisOrg, CheckMode, 3)
         )
       )
     }
@@ -172,9 +173,9 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
           detailsAdded = false,
           changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
           changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
-            .onPageLoad(NormalMode, 1, None),
+            .onPageLoad(CisOrg, NormalMode, 1, None),
           removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-            .onPageLoad(CheckMode, 1)
+            .onPageLoad(CisOrg, CheckMode, 1)
         ),
         SubcontractorDetailsAddedRow(
           index = 2,
@@ -183,9 +184,9 @@ class SubcontractorDetailsAddedBuilderSpec extends SpecBase {
           detailsAdded = false,
           changeLabel = "monthlyreturns.subcontractorDetailsAdded.add",
           changeCall = controllers.monthlyreturns.routes.PaymentDetailsController
-            .onPageLoad(NormalMode, 2, None),
+            .onPageLoad(CisOrg, NormalMode, 2, None),
           removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-            .onPageLoad(CheckMode, 2)
+            .onPageLoad(CisOrg, CheckMode, 2)
         )
       )
     }

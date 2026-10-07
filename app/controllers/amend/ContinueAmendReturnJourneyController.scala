@@ -20,6 +20,7 @@ import controllers.actions.*
 import models.{EmployerReference, NormalMode, UserAnswers}
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
 import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
+import models.requests.CisPath.{CisId, CisOrg}
 import pages.agent.AgentClientDataPage
 
 import javax.inject.Inject
@@ -69,18 +70,20 @@ class ContinueAmendReturnJourneyController @Inject() (
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
           case Right(result) =>
+            val cisPath     = if (request.isAgent) CisId(queryParams.instanceId) else CisOrg
             val redirect    =
               (queryParams.isOriginalNilReturn.getOrElse(false), result.isNilReturn, result.hasSubcontractors) match {
                 case (_, false, true)  =>
                   Redirect(
-                    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+                    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                      .onPageLoad(cisPath, NormalMode)
                   )
                 case (_, false, false) =>
-                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(cisPath))
                 case (true, true, _)   =>
-                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad())
+                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(cisPath))
                 case _                 =>
-                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(cisPath))
               }
             val employerRef =
               if (request.isAgent)

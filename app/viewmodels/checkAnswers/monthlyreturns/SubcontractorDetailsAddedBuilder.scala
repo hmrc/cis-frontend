@@ -18,6 +18,7 @@ package viewmodels.checkAnswers.monthlyreturns
 
 import models.monthlyreturns.SelectedSubcontractor
 import models.{CheckMode, NormalMode, UserAnswers}
+import models.requests.CisPath
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 
@@ -37,6 +38,7 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
+    val cisPath                    = ua.journey.cisPath
     val isAmendment                = ua.get(AmendmentDetailsPage).isDefined
     val subcontractorByIndex       = selectedSubcontractors(ua)
     val originalSubcontractorCount = ua.get(OriginalSubcontractorCountPage)
@@ -53,10 +55,10 @@ object SubcontractorDetailsAddedBuilder {
             val changeCall =
               if (added) {
                 controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
-                  .onPageLoad(index)
+                  .onPageLoad(cisPath, index)
               } else {
                 controllers.monthlyreturns.routes.PaymentDetailsController
-                  .onPageLoad(NormalMode, index, None)
+                  .onPageLoad(cisPath, NormalMode, index, None)
               }
 
             SubcontractorDetailsAddedRow(
@@ -68,7 +70,7 @@ object SubcontractorDetailsAddedBuilder {
               else { "monthlyreturns.subcontractorDetailsAdded.add" },
               changeCall = changeCall,
               removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-                .onPageLoad(CheckMode, index)
+                .onPageLoad(cisPath, CheckMode, index)
             )
           }
         }

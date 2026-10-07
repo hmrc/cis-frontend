@@ -15,6 +15,7 @@
  *@
 
 @import config.FrontendAppConfig
+@import models.requests.CisPath
 
 @this(
         layout: templates.Layout,
@@ -26,7 +27,7 @@
         bulletList: components.BulletList
 )
 
-@(cisId: String)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, cisId: String)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.submissionUnsuccessfulResubmit.title")), showBackLink = false) {
 
@@ -34,7 +35,7 @@
 
     @link(
         linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.text",
-        linkUrl       = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url,
+        linkUrl       = controllers.monthlyreturns.routes.ManageCisReturnController.onExit(cisPath).url,
         prefixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.prefix",
         suffixTextKey = "monthlyreturns.submissionUnsuccessfulResubmit.p1.links.suffix",
     )
@@ -59,6 +60,6 @@
 
     @link(
         linkTextKey   = "monthlyreturns.submissionUnsuccessfulResubmit.p5.links.text",
-        linkUrl       = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        linkUrl       = controllers.monthlyreturns.routes.ManageCisReturnController.onExit(cisPath).url
     )
 }

@@ -18,6 +18,7 @@ package controllers.amend
 
 import controllers.actions.*
 import models.{ReturnType, UserAnswers}
+import models.requests.CisPath.{CisId, CisOrg}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
 import pages.agent.AgentClientDataPage
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
@@ -138,6 +139,8 @@ class ConfirmAmendmentController @Inject() (
             version = 0
           )
 
+          val cisPath = if (request.isAgent) CisId(amendmentDetails.instanceId) else CisOrg
+
           (
             for {
               _             <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
@@ -146,11 +149,11 @@ class ConfirmAmendmentController @Inject() (
             } yield amendmentDetails.originalReturnType match {
               case ReturnType.MonthlyStandardReturn =>
                 Redirect(
-                  controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+                  controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(cisPath)
                 )
               case ReturnType.MonthlyNilReturn      =>
                 Redirect(
-                  controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
+                  controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad(cisPath)
                 )
               case unexpected                       =>
                 logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")

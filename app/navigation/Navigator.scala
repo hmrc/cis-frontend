@@ -47,20 +47,26 @@ class Navigator @Inject() () {
 
     // monthly return
     case (VerifySubcontractorsPage, _)                      =>
-      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+      ua =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(ua.journey.cisPath, NormalMode)
     case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       userAnswers =>
         if (userAnswers.get(SelectedSubcontractorPage.all).exists(_.nonEmpty)) {
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoad(userAnswers.journey.cisPath, NormalMode)
         } else {
-          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(userAnswers.journey.cisPath, None)
         }
     case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
-      _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
+      ua =>
+        controllers.monthlyreturns.routes.CostOfMaterialsController
+          .onPageLoad(ua.journey.cisPath, NormalMode, index, None)
     case (SelectedSubcontractorMaterialCostsPage(index), _) =>
-      _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
+      ua =>
+        controllers.monthlyreturns.routes.TotalTaxDeductedController
+          .onPageLoad(ua.journey.cisPath, NormalMode, index, None)
     case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      ua => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(ua.journey.cisPath, index)
     case (PaymentDetailsConfirmationPage, _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
     case (EmploymentStatusDeclarationPage, _)               =>
@@ -84,20 +90,21 @@ class Navigator @Inject() () {
             controllers.monthlyreturns.routes.SubmitInactivityRequestController
               .onPageLoad(userAnswers.journey.cisPath, NormalMode)
           case _                                                         =>
-            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(userAnswers.journey.cisPath)
         }
     case (WhichSubcontractorsToAddPage, _)                  =>
-      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+      ua =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(ua.journey.cisPath, NormalMode)
     case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
     case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      ua => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(ua.journey.cisPath, index)
     case (SelectedSubcontractorMaterialCostsPage(index), _) =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      ua => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(ua.journey.cisPath, index)
     case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
-      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
+      ua => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(ua.journey.cisPath, index)
     case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(CheckMode)(userAnswers)
     case (VerifiedStatusDeclarationPage, _)                 =>
@@ -110,7 +117,8 @@ class Navigator @Inject() () {
       ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
     // amend monthly return
     case (WhichSubcontractorsToAddPage, _)                  =>
-      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
+      ua =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(ua.journey.cisPath, CheckMode)
     case (_, _)                                             => ua => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(ua.journey.cisPath)
   }
 
@@ -127,9 +135,11 @@ class Navigator @Inject() () {
   private def navigatorFromPaymentDetailsConfirmationPage()(userAnswers: UserAnswers): Call =
     userAnswers.get(PaymentDetailsConfirmationPage) match {
       case Some(true)  =>
-        controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
+        controllers.monthlyreturns.routes.EmploymentStatusDeclarationController
+          .onPageLoad(userAnswers.journey.cisPath, NormalMode)
       case Some(false) =>
-        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onPageLoad(userAnswers.journey.cisPath, NormalMode)
       case _           => controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
@@ -138,7 +148,8 @@ class Navigator @Inject() () {
   )(userAnswers: UserAnswers): Call =
     (userAnswers.get(EmploymentStatusDeclarationPage), mode) match {
       case (Some(_), NormalMode) =>
-        controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
+        controllers.monthlyreturns.routes.VerifiedStatusDeclarationController
+          .onPageLoad(userAnswers.journey.cisPath, NormalMode)
       case (Some(_), CheckMode)  =>
         controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad(userAnswers.journey.cisPath)
       case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()

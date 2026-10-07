@@ -19,10 +19,12 @@ package views.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.VerifySubcontractorsView
 
 class VerifySubcontractorsViewSpec extends SpecBase {
@@ -55,7 +57,7 @@ class VerifySubcontractorsViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
       val filledForm    = form.fill(true)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(CisOrg, filledForm, NormalMode)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe true
@@ -64,7 +66,7 @@ class VerifySubcontractorsViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'false'" in new Setup {
       val filledForm    = form.fill(false)
-      val filledHtml    = view(filledForm, NormalMode)
+      val filledHtml    = view(CisOrg, filledForm, NormalMode)
       val doc: Document = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe false
@@ -83,6 +85,6 @@ class VerifySubcontractorsViewSpec extends SpecBase {
       app.injector.instanceOf[play.api.i18n.MessagesApi]
     )
 
-    val html = view(form, NormalMode)
+    val html = view(CisOrg, form, NormalMode)
   }
 }

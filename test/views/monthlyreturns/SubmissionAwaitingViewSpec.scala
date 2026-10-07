@@ -21,6 +21,7 @@ import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SubmissionAwaitingView
 
 class SubmissionAwaitingViewSpec extends SpecBase with Matchers {
@@ -29,7 +30,7 @@ class SubmissionAwaitingViewSpec extends SpecBase with Matchers {
 
     "must render the page with correct heading, paragraphs, and other contents" in new Setup {
       val manageCisReturnUrl =
-        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit(CisOrg).url
 
       val html = view(manageCisReturnUrl)
       val doc  = Jsoup.parse(html.body)

@@ -28,6 +28,7 @@ import play.api.i18n.Messages
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import models.requests.CisPath.CisOrg
 import views.html.amend.WhatDoYouWantToAmendNilView
 
 import java.util
@@ -36,7 +37,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
   "WhatDoYouWantToAmendNilView" should {
 
     "render the page with title, heading, radios and submit button" in new Setup {
-      val html: HtmlFormat.Appendable = view(form)
+      val html: HtmlFormat.Appendable = view(CisOrg, form)
       val doc: Document               = org.jsoup.Jsoup.parse(html.toString())
       doc.select("title").text() must include(messages("whatDoYouWantToAmendNil.title"))
 
@@ -52,7 +53,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
       labels must contain(messages("whatDoYouWantToAmendNil.addPaymentOrSubcontractorDetails"))
 
       doc.select("form").attr("action") mustBe controllers.amend.routes.WhatDoYouWantToAmendNilController
-        .onSubmit()
+        .onSubmit(CisOrg)
         .url
 
       doc.select("form").attr("autocomplete") mustBe "off"
@@ -64,7 +65,7 @@ class WhatDoYouWantToAmendNilViewSpec extends AnyWordSpec with Matchers with Gui
       val errorForm: Form[WhatDoYouWantToAmendNil] =
         form.withError("value", "whatDoYouWantToAmendNil.error.required")
 
-      val html: HtmlFormat.Appendable = view(errorForm)
+      val html: HtmlFormat.Appendable = view(CisOrg, errorForm)
       val doc: Document               = org.jsoup.Jsoup.parse(html.toString())
 
       val summary: Elements = doc.select(".govuk-error-summary")

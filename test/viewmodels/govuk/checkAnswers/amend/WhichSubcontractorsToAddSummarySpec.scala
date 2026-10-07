@@ -18,6 +18,7 @@ package viewmodels.govuk.checkAnswers.amend
 
 import base.SpecBase
 import models.CheckMode
+import models.requests.CisPath.CisOrg
 import org.scalatest.OptionValues
 import pages.amend.WhichSubcontractorsToAddPage
 import play.api.i18n.Messages
@@ -51,7 +52,7 @@ class WhichSubcontractorsToAddSummarySpec extends SpecBase with OptionValues {
 
         result.actions.value.items.head.href mustBe
           controllers.amend.routes.WhichSubcontractorsToAddController
-            .onPageLoad(CheckMode)
+            .onPageLoad(CisOrg, CheckMode)
             .url
 
         result.actions.value.items.head.visuallyHiddenText.value mustBe

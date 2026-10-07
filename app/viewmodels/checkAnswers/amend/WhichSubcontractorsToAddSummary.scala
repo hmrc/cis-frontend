@@ -42,7 +42,10 @@ object WhichSubcontractorsToAddSummary {
         key = "amend.whichSubcontractorsToAdd.checkYourAnswersLabel",
         value = value,
         actions = Seq(
-          ActionItemViewModel("site.change", routes.WhichSubcontractorsToAddController.onPageLoad(CheckMode).url)
+          ActionItemViewModel(
+            "site.change",
+            routes.WhichSubcontractorsToAddController.onPageLoad(answers.journey.cisPath, CheckMode).url
+          )
             .withVisuallyHiddenText(messages("amend.whichSubcontractorsToAdd.change.hidden"))
             .withAttribute("id" -> "which-subcontractors-to-add")
         )

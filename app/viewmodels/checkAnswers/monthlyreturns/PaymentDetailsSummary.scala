@@ -33,7 +33,10 @@ object PaymentDetailsSummary {
         key = "paymentDetails.checkYourAnswersLabel",
         value = ValueViewModel(currencyFormat(answer)),
         actions = Seq(
-          ActionItemViewModel("site.change", routes.PaymentDetailsController.onPageLoad(CheckMode, index, None).url)
+          ActionItemViewModel(
+            "site.change",
+            routes.PaymentDetailsController.onPageLoad(answers.journey.cisPath, CheckMode, index, None).url
+          )
             .withVisuallyHiddenText(messages("paymentDetails.change.hidden"))
         )
       )

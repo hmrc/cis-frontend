@@ -21,7 +21,7 @@ import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
 import models.{NormalMode, UserAnswers}
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.{CisPath, JourneyRequest}
 import pages.agent.AgentClientDataPage
 import pages.amend.ConfirmCancelAmendmentYesNoPage
 import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage}
@@ -49,9 +49,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   formpRdsReconcileService: FormpRdsReconcileService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: ConfirmCancelAmendmentYesNoFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmCancelAmendmentYesNoView,
@@ -63,8 +62,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   val form: Form[Boolean] = formProvider()
 
-  def onPageLoad(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       getMonthYear(request.userAnswers) match {
         case Some(monthYear) =>
           hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
@@ -72,7 +71,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
               for {
                 clearedAnswers <- Future.fromTry(request.userAnswers.remove(ConfirmCancelAmendmentYesNoPage))
                 _              <- sessionRepository.set(clearedAnswers)
-              } yield Ok(view(form, monthYear))
+              } yield Ok(view(cisPath, form, monthYear))
 
             case false =>
               logger.warn(s"[ConfirmCancelAmendmentYesNoController] monthly return status is not cancellable")
@@ -83,10 +82,10 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
           logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
-  }
+    }
 
-  def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
-    implicit request =>
+  def onSubmit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       getMonthYear(request.userAnswers) match {
         case Some(monthYear) =>
           hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
@@ -94,12 +93,12 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
               form
                 .bindFromRequest()
                 .fold(
-                  formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear))),
+                  formWithErrors => Future.successful(BadRequest(view(cisPath, formWithErrors, monthYear))),
                   value =>
                     for {
                       updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmCancelAmendmentYesNoPage, value))
                       _              <- sessionRepository.set(updatedAnswers)
-                      result         <- if (value) handleYes(updatedAnswers, request.cisId) else handleNo
+                      result         <- if (value) handleYes(updatedAnswers, request.cisId) else handleNo(cisPath)
                     } yield result
                 )
 
@@ -112,7 +111,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
           logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
-  }
+    }
 
   private def hasCancellableMonthlyReturnStatus(
     cisId: String,
@@ -143,7 +142,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
-  private def handleYes(ua: UserAnswers, instanceId: String)(implicit request: CisIdDataRequest[_]): Future[Result] = {
+  private def handleYes(ua: UserAnswers, instanceId: String)(implicit request: JourneyRequest[?]): Future[Result] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
     reconcileFormpRds(instanceId, ua).flatMap {
@@ -160,7 +159,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   }
 
   private def reconcileFormpRds(instanceId: String, ua: UserAnswers)(implicit
-    request: CisIdDataRequest[_],
+    request: JourneyRequest[?],
     hc: HeaderCarrier
   ): Future[Option[Result]] =
     resolveTaxOffice(request, ua) match {
@@ -186,15 +185,15 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
         Future.successful(Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
     }
 
-  private def resolveTaxOffice(request: CisIdDataRequest[_], ua: UserAnswers): Option[(String, String)] =
-    if (request.isAgent)
+  private def resolveTaxOffice(request: JourneyRequest[?], ua: UserAnswers): Option[(String, String)] =
+    if (request.identifier.isAgent)
       ua.get(AgentClientDataPage).map(a => (a.taxOfficeNumber, a.taxOfficeReference))
     else
-      request.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
+      request.identifier.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
 
-  private def handleNo: Future[Result] =
+  private def handleNo(cisPath: CisPath): Future[Result] =
     Future.successful(
-      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(cisPath, NormalMode))
     )
 
   private def getMonthYear(ua: UserAnswers)(implicit request: RequestHeader): Option[String] = {

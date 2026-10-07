@@ -22,10 +22,11 @@ import models.Mode
 import models.amend.WhichSubcontractorsToAdd
 import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
 import models.monthlyreturns.SelectedSubcontractor
+import models.requests.CisPath
 import navigation.Navigator
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -44,8 +45,8 @@ class WhichSubcontractorsToAddController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
   subcontractorService: SubcontractorService,
   monthlyReturnService: MonthlyReturnService,
@@ -59,17 +60,15 @@ class WhichSubcontractorsToAddController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-      val ua = request.userAnswers
+  def onPageLoad(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
+      val ua    = request.userAnswers
+      val cisId = request.cisId
 
-      val requiredAnswers = for {
-        cisId   <- ua.get(CisIdPage)
-        taxDate <- ua.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
-
-      requiredAnswers
-        .map { case (cisId, taxMonth, taxYear) =>
+      ua.get(DateConfirmPaymentsPage)
+        .map { taxDate =>
+          val taxMonth = taxDate.getMonthValue
+          val taxYear  = taxDate.getYear
           monthlyReturnService.isEditable(cisId, taxMonth, taxYear, ua.get(AmendmentDetailsPage).isDefined).flatMap {
             case true  =>
               subcontractorService
@@ -80,7 +79,7 @@ class WhichSubcontractorsToAddController @Inject() (
                     .get(WhichSubcontractorsToAddPage)
                     .getOrElse(model.preSelectedIds)
                   val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(model.subcontractors, selectedIds)
-                  Ok(view(form, mode, checkboxItems))
+                  Ok(view(cisPath, form, mode, checkboxItems))
                 }
                 .recover { case ex =>
                   logger.error(
@@ -93,17 +92,18 @@ class WhichSubcontractorsToAddController @Inject() (
           }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
-  }
+    }
 
-  def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
-      val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+  def onSubmit(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
+      val cisId = request.cisId
 
-      requiredAnswers
-        .map { case (cisId, taxMonth, taxYear) =>
+      request.userAnswers
+        .get(DateConfirmPaymentsPage)
+        .map { taxDate =>
+          val taxMonth = taxDate.getMonthValue
+          val taxYear  = taxDate.getYear
+
           subcontractorService
             .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
             .flatMap { model =>
@@ -116,7 +116,12 @@ class WhichSubcontractorsToAddController @Inject() (
                       formWithErrors =>
                         Future.successful(
                           BadRequest(
-                            view(formWithErrors, mode, WhichSubcontractorsToAdd.checkboxItems(model.subcontractors))
+                            view(
+                              cisPath,
+                              formWithErrors,
+                              mode,
+                              WhichSubcontractorsToAdd.checkboxItems(model.subcontractors)
+                            )
                           )
                         ),
                       value =>
@@ -206,5 +211,5 @@ class WhichSubcontractorsToAddController @Inject() (
             }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
-  }
+    }
 }

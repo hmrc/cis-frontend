@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import models.Mode
+import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.VerifiedStatusDeclarationPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -35,9 +36,8 @@ class VerifiedStatusDeclarationController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: VerifiedStatusDeclarationFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: VerifiedStatusDeclarationView
@@ -47,23 +47,23 @@ class VerifiedStatusDeclarationController @Inject() (
 
   val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
 
       val preparedForm = request.userAnswers.get(VerifiedStatusDeclarationPage) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
-      Ok(view(preparedForm, mode))
-  }
+      Ok(view(cisPath, preparedForm, mode))
+    }
 
-  def onSubmit(mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
+          formWithErrors => Future.successful(BadRequest(view(cisPath, formWithErrors, mode))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifiedStatusDeclarationPage, value))

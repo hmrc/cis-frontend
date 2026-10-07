@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.requests.CisPath
 import pages.monthlyreturns.SelectedSubcontractorPage
 import pages.monthlyreturns.SelectedSubcontractorPage.*
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -30,16 +31,15 @@ import javax.inject.Inject
 class SummarySubcontractorPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: SummarySubcontractorPaymentsView
 ) extends FrontendBaseController
     with I18nSupport {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
       val subcontractors = request.userAnswers
         .get(SelectedSubcontractorPage.all)
         .getOrElse(Map.empty)
@@ -58,6 +58,6 @@ class SummarySubcontractorPaymentsController @Inject() (
         totalCisDeductions = totalCisDeductions
       )
 
-      Ok(view(viewModel))
-  }
+      Ok(view(cisPath, viewModel))
+    }
 }

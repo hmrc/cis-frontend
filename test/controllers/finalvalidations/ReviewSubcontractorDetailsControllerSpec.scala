@@ -34,6 +34,7 @@ import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 
 import scala.concurrent.Future
 
@@ -171,7 +172,7 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
               ),
               false,
               controllers.monthlyreturns.routes.SelectSubcontractorsController
-                .onPageLoad(None)
+                .onPageLoad(CisOrg, None)
                 .url
             )
           )(
@@ -316,7 +317,7 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
         redirectLocation(result).value mustBe
           controllers.monthlyreturns.routes.VerifySubcontractorsController
-            .onPageLoad(NormalMode)
+            .onPageLoad(CisOrg, NormalMode)
             .url
 
         verify(finalValidationDraftService)
@@ -395,7 +396,7 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
         redirectLocation(result).value mustBe
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onPageLoad(NormalMode)
+            .onPageLoad(CisOrg, NormalMode)
             .url
 
         verify(finalValidationDraftService)

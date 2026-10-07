@@ -25,6 +25,7 @@ import play.api.data.Form
 import play.api.i18n.{Lang, Messages}
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import models.requests.CisPath.CisOrg
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
 import java.time.LocalDate
@@ -59,7 +60,7 @@ class ConfirmCancelAmendmentYesNoViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'true'" in new Setup {
       val filledForm: Form[Boolean]         = form.fill(true)
-      val filledHtml: HtmlFormat.Appendable = view(filledForm, monthYear)(request, messages)
+      val filledHtml: HtmlFormat.Appendable = view(CisOrg, filledForm, monthYear)(request, messages)
       val doc: Document                     = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe true
@@ -68,7 +69,7 @@ class ConfirmCancelAmendmentYesNoViewSpec extends SpecBase {
 
     "must pre-populate the form when user has previously answered 'false'" in new Setup {
       val filledForm: Form[Boolean]         = form.fill(false)
-      val filledHtml: HtmlFormat.Appendable = view(filledForm, monthYear)(request, messages)
+      val filledHtml: HtmlFormat.Appendable = view(CisOrg, filledForm, monthYear)(request, messages)
       val doc: Document                     = Jsoup.parse(filledHtml.toString)
 
       doc.select("input[value=true]").hasAttr("checked") mustBe false
@@ -92,6 +93,6 @@ class ConfirmCancelAmendmentYesNoViewSpec extends SpecBase {
     val monthYear: String =
       monthYearDate.format(DateTimeFormatter.ofPattern("MMMM uuuu").withLocale(Locale.UK))
 
-    val html: HtmlFormat.Appendable = view(form, monthYear)(request, messages)
+    val html: HtmlFormat.Appendable = view(CisOrg, form, monthYear)(request, messages)
   }
 }

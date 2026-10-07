@@ -17,6 +17,7 @@
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
 import base.SpecBase
+import models.requests.CisPath.CisOrg
 import models.{CheckMode, UserAnswers}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
@@ -102,7 +103,7 @@ class NumberOfSubcontractorPaymentsMadeSummarySpec extends SpecBase with Matcher
       val action = result.actions.value.items.head
 
       action.href mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-        .onPageLoad(CheckMode)
+        .onPageLoad(CisOrg, CheckMode)
         .url
     }
 

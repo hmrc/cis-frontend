@@ -63,7 +63,7 @@ class SubmissionSuccessController @Inject() (
 
         ua.get(SubmissionConfirmationCachePage) match {
           case Some(cache) =>
-            Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
+            Future.successful(Ok(view(cisPath, buildViewModelFromCache(cache, ua))))
 
           case None =>
             val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(request.cisId, ua)
@@ -79,7 +79,7 @@ class SubmissionSuccessController @Inject() (
                   vm            <- buildViewModel(ua, monthlyReturn)
                   uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
                   _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
-                } yield Ok(view(vm))
+                } yield Ok(view(cisPath, vm))
             }
         }
       }

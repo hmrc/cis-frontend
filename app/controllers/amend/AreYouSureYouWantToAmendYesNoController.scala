@@ -25,6 +25,7 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
 import models.amend.DeleteAllMonthlyReturnItemsRequest
 import models.monthlyreturns.UpdateMonthlyReturnRequest
+import models.requests.CisPath
 import pages.monthlyreturns.ReturnTypePage
 import navigation.Navigator
 import pages.amend.AreYouSureYouWantToAmendYesNoPage
@@ -46,9 +47,8 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: AreYouSureYouWantToAmendYesNoFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: AreYouSureYouWantToAmendYesNoView
@@ -58,23 +58,23 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
 
   private val form = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
 
       val preparedForm = request.userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
-      Ok(view(preparedForm))
-  }
+      Ok(view(cisPath, preparedForm))
+    }
 
-  def onSubmit(mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
+          formWithErrors => Future.successful(BadRequest(view(cisPath, formWithErrors))),
           {
             case Yes =>
               for {

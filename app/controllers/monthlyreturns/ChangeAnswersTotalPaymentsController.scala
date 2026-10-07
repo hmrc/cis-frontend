@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.NormalMode
+import models.requests.CisPath
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -37,8 +38,8 @@ class ChangeAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   monthlyReturnService: MonthlyReturnService,
   payloadBuilder: MonthlyReturnItemPayloadBuilder,
   val controllerComponents: MessagesControllerComponents,
@@ -48,16 +49,17 @@ class ChangeAnswersTotalPaymentsController @Inject() (
     with I18nSupport
     with Logging {
 
-  def onPageLoad(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData) { implicit request =>
-    request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-      case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
-      case Some(subcontractor) =>
-        Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
+  def onPageLoad(cisPath: CisPath, index: Int): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
+      request.userAnswers.get(SelectedSubcontractorPage(index)) match {
+        case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        case Some(subcontractor) =>
+          Ok(view(cisPath, ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
+      }
     }
-  }
 
-  def onSubmit(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
-    implicit request =>
+  def onSubmit(cisPath: CisPath, index: Int): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       val ua = request.userAnswers
 
       payloadBuilder.build(ua, index) match {
@@ -69,7 +71,9 @@ class ChangeAnswersTotalPaymentsController @Inject() (
             .updateMonthlyReturnItem(payload)
             .flatMap { _ =>
               sessionRepository.set(ua).map { _ =>
-                Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(cisPath, NormalMode)
+                )
               }
             }
             .recover {
@@ -89,5 +93,5 @@ class ChangeAnswersTotalPaymentsController @Inject() (
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
             }
       }
-  }
+    }
 }

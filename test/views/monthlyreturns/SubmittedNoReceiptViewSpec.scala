@@ -25,6 +25,8 @@ import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
 import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
+import models.requests.CisPath.CisOrg
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
 class SubmittedNoReceiptViewSpec extends SpecBase {
@@ -77,7 +79,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       )
 
       val manageCisReturnUrl =
-        controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        controllers.monthlyreturns.routes.ManageCisReturnController.onExit(CisOrg).url
 
       doc.select(s"""a[href="$manageCisReturnUrl"]""").size mustBe 1
 
@@ -193,6 +195,6 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       cisId = cisId
     )
 
-    lazy val html: HtmlFormat.Appendable = view(vm)
+    lazy val html: HtmlFormat.Appendable = view(CisOrg, vm)
   }
 }

@@ -20,6 +20,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.button.Button
 @import config.FrontendAppConfig
 @import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -33,7 +34,7 @@
     link: components.Link
 )
 
-@(vm: SubmissionSuccessViewModel)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(cisPath: CisPath, vm: SubmissionSuccessViewModel)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(
@@ -119,7 +120,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
-        linkUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        linkUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit(cisPath).url
     )
 
     @sectionBreak()

@@ -15,6 +15,7 @@
  *@
 
 @import models.amend.WhatDoYouWantToAmendStandard
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -24,11 +25,11 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_])(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, form: Form[_])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("amend.whatDoYouWantToAmendStandard.title"))) {
 
-    @formHelper(action = controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmit(), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmit(cisPath), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))

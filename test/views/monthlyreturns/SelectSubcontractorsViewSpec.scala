@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
+import models.requests.CisPath.CisOrg
 import models.monthlyreturns.SelectSubcontractorsFormData
 import org.jsoup.Jsoup
 import play.api.Application
@@ -31,7 +32,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
 
   "SelectSubcontractorsView" - {
     "must render the correct page title and heading" in new Setup {
-      val html = view(form, subcontractors, updateYourListUrl)
+      val html = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       doc.title must include(messages("monthlyreturns.selectSubcontractors.title"))
@@ -39,7 +40,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render the correct links for add subcontractor, select all and deselect all" in new Setup {
-      val html     = view(form, subcontractors, updateYourListUrl)
+      val html     = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc      = Jsoup.parse(html.body)
       val linkText = doc.getElementsByClass("govuk-link").eachText()
 
@@ -49,7 +50,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render update your list link with correct URL" in new Setup {
-      val html = view(form, subcontractors, updateYourListUrl)
+      val html = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val updateListLink =
@@ -58,27 +59,29 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render select all link with correct URL" in new Setup {
-      val html = view(form, subcontractors, updateYourListUrl)
+      val html = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val selectAllLink = doc.select(s"a:contains(${messages("monthlyreturns.selectSubcontractors.selectAll.link")})")
       selectAllLink
-        .attr("href") mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url
+        .attr("href") mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController
+        .onPageLoad(CisOrg, Some(true))
+        .url
     }
 
     "must render deselect all link with correct URL" in new Setup {
-      val html = view(form, subcontractors, updateYourListUrl)
+      val html = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val deselectAllLink =
         doc.select(s"a:contains(${messages("monthlyreturns.selectSubcontractors.deselectAll.link")})")
       deselectAllLink.attr("href") mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController
-        .onPageLoad(Some(false))
+        .onPageLoad(CisOrg, Some(false))
         .url
     }
 
     "must render the table headers in the correct order" in new Setup {
-      val html    = view(form, subcontractors, updateYourListUrl)
+      val html    = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc     = Jsoup.parse(html.body)
       val headers = doc.select("table thead th").eachText()
 
@@ -92,7 +95,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render the correct number of subcontractor rows in the table" in new Setup {
-      val html = view(form, subcontractors, updateYourListUrl)
+      val html = view(CisOrg, form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val rows = doc.select("table tbody tr")
@@ -100,7 +103,7 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     }
 
     "must render empty subcontractor list with message" in new Setup {
-      val html = view(form, Nil, updateYourListUrl)
+      val html = view(CisOrg, form, Nil, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
       val rows = doc.select("table tbody tr")

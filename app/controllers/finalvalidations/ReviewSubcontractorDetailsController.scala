@@ -18,6 +18,7 @@ package controllers.finalvalidations
 
 import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
+import models.requests.CisPath.{CisId, CisOrg}
 import models.finalvalidation.*
 import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
@@ -68,15 +69,18 @@ class ReviewSubcontractorDetailsController @Inject() (
                   )
                 }
 
+              val cisPath = if (request.isAgent) CisId(request.cisId) else CisOrg
               val backUrl =
                 request.userAnswers
                   .get(MonthlyFinalValidationSourcePage)
                   .map {
                     case MonthlyFinalValidationSource.SelectSubcontractors                =>
-                      controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+                      controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(cisPath, None).url
                     case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
                       modeFromString(modeValue)
-                        .map(mode => controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode).url)
+                        .map(mode =>
+                          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(cisPath, mode).url
+                        )
                         .getOrElse(controllers.routes.JourneyRecoveryController.onPageLoad().url)
                   }
                   .getOrElse(controllers.routes.JourneyRecoveryController.onPageLoad().url)
@@ -108,6 +112,7 @@ class ReviewSubcontractorDetailsController @Inject() (
                 Future.successful(Redirect(routes.ReviewSubcontractorDetailsController.onPageLoad()))
               } else {
                 val verificationRequired = request.userAnswers.get(FinalValidationVerificationRequiredPage)
+                val cisPath              = if (request.isAgent) CisId(request.cisId) else CisOrg
 
                 for {
                   _              <- finalValidationDraftService.commit(request.cisId, draftId)
@@ -116,7 +121,7 @@ class ReviewSubcontractorDetailsController @Inject() (
                                     )
                   cleanedAnswers <- Future.fromTry(clearFinalValidationState(updatedAnswers))
                   _              <- sessionRepository.set(cleanedAnswers)
-                } yield continueJourney(source, verificationRequired, cleanedAnswers)
+                } yield continueJourney(cisPath, source, verificationRequired, cleanedAnswers)
               }
             }
 
@@ -133,6 +138,7 @@ class ReviewSubcontractorDetailsController @Inject() (
     } yield withoutVerificationRequired
 
   private def continueJourney(
+    cisPath: models.requests.CisPath,
     source: MonthlyFinalValidationSource,
     verificationRequired: Option[Boolean],
     userAnswers: UserAnswers
@@ -142,10 +148,12 @@ class ReviewSubcontractorDetailsController @Inject() (
         verificationRequired match {
 
           case Some(true) =>
-            Redirect(controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(NormalMode))
+            Redirect(controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(cisPath, NormalMode))
 
           case Some(false) =>
-            Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+            Redirect(
+              controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(cisPath, NormalMode)
+            )
 
           case None =>
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())

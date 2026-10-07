@@ -19,6 +19,7 @@ package views.monthlyreturns
 import base.SpecBase
 import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import models.NormalMode
+import models.requests.CisPath.CisOrg
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.Application
@@ -26,13 +27,14 @@ import play.api.data.Form
 import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
+import models.requests.CisPath.CisOrg
 import views.html.monthlyreturns.VerifiedStatusDeclarationView
 
 class VerifiedStatusDeclarationViewSpec extends SpecBase {
 
   "VerifiedStatusDeclarationView" - {
     "must render the actual content on the page" in new Setup {
-      val html: HtmlFormat.Appendable = view(form, NormalMode)
+      val html: HtmlFormat.Appendable = view(CisOrg, form, NormalMode)
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title                 must include(messages("monthlyreturns.verifiedStatusDeclaration.title"))

@@ -22,6 +22,7 @@ import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import models.requests.CisPath.{CisId, CisOrg}
 import pages.monthlyreturns.*
 import play.api.i18n.{I18nSupport, Lang}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -54,11 +55,12 @@ class SubmittedNoReceiptController @Inject() (
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
 
-      val ua = request.userAnswers
+      val ua      = request.userAnswers
+      val cisPath = if (request.isAgent) CisId(request.cisId) else CisOrg
 
       ua.get(SubmissionConfirmationCachePage) match {
         case Some(cache) =>
-          Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
+          Future.successful(Ok(view(cisPath, buildViewModelFromCache(cache, ua))))
 
         case None =>
           val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(request.cisId, ua)
@@ -74,7 +76,7 @@ class SubmittedNoReceiptController @Inject() (
                 vm            <- buildViewModel(ua, monthlyReturn)
                 uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
                 _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
-              } yield Ok(view(vm))
+              } yield Ok(view(cisPath, vm))
           }
       }
     }

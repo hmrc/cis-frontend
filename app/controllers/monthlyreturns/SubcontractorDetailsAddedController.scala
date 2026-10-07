@@ -19,8 +19,9 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
 import models.Mode
+import models.requests.CisPath
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{AllSubcontractorDetailsAdded, DateConfirmPaymentsPage, ReturnTypePage}
 import models.ReturnType.MonthlyStandardReturn
 import play.api.Logging
 import play.api.data.Form
@@ -38,9 +39,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class SubcontractorDetailsAddedController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: SubcontractorDetailsAddedFormProvider,
   sessionRepository: SessionRepository,
   val controllerComponents: MessagesControllerComponents,
@@ -53,17 +53,18 @@ class SubcontractorDetailsAddedController @Inject() (
 
   val form: Form[Boolean] = formProvider()
 
-  def onPageLoad(mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      val ua = request.userAnswers
+  def onPageLoad(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
+      val ua    = request.userAnswers
+      val cisId = request.cisId
 
-      val requiredAnswers = for {
-        cisId   <- ua.get(CisIdPage)
-        taxDate <- ua.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+      ua.get(DateConfirmPaymentsPage) match {
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-      requiredAnswers match {
-        case Some((cisId, month, year)) =>
+        case Some(taxDate) =>
+          val month       = taxDate.getMonthValue
+          val year        = taxDate.getYear
           val isAmendment = ua.get(AmendmentDetailsPage).isDefined
 
           monthlyReturnService.isEditable(cisId, month, year, isAmendment).map {
@@ -74,28 +75,27 @@ class SubcontractorDetailsAddedController @Inject() (
                   .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
 
               SubcontractorDetailsAddedBuilder.build(ua) match {
-                case Some(viewModel)     => Ok(view(preparedForm, mode, viewModel))
+                case Some(viewModel)     => Ok(view(cisPath, preparedForm, mode, viewModel))
                 case None if isAmendment =>
-                  Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+                  Redirect(
+                    controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(cisPath)
+                  )
                 case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
               }
             case false =>
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           }
-
-        case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 
-  def onSubmit(mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
       val isAmendmentOnSubmit = request.userAnswers.get(AmendmentDetailsPage).isDefined
 
       SubcontractorDetailsAddedBuilder.build(request.userAnswers) match {
         case None if isAmendmentOnSubmit =>
           Future.successful(
-            Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
+            Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad(cisPath))
           )
         case None                        =>
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
@@ -104,7 +104,7 @@ class SubcontractorDetailsAddedController @Inject() (
           form
             .bindFromRequest()
             .fold(
-              formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, viewModel))),
+              formWithErrors => Future.successful(BadRequest(view(cisPath, formWithErrors, mode, viewModel))),
               isAddingMoreSubcontractors =>
                 val allSubcontractorDetailsAdded = !isAddingMoreSubcontractors
 
@@ -122,18 +122,20 @@ class SubcontractorDetailsAddedController @Inject() (
                           "summaryList",
                           "monthlyreturns.subcontractorDetailsAdded.error.incomplete"
                         )
-                    BadRequest(view(withError, mode, viewModel))
+                    BadRequest(view(cisPath, withError, mode, viewModel))
                   } else if (allSubcontractorDetailsAdded) {
-                    Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
+                    Redirect(
+                      controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad(cisPath)
+                    )
                   } else {
                     request.userAnswers.get(ReturnTypePage) match {
                       case Some(returnType) if returnType == MonthlyStandardReturn =>
                         Redirect(
-                          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+                          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(cisPath, None)
                         )
                       case _                                                       =>
                         Redirect(
-                          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode)
+                          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(cisPath, mode)
                         )
                     }
                   }
@@ -142,8 +144,8 @@ class SubcontractorDetailsAddedController @Inject() (
       }
     }
 
-  def onCancelAmendment(): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
-      Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad())
+  def onCancelAmendment(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
+      Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad(cisPath))
     }
 }

@@ -17,9 +17,10 @@
 package controllers.monthlyreturns
 
 import config.FrontendAppConfig
-import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.{IdentifierAction, MonthlyReturnAction, SchemeAction}
 import models.ReturnType
 import models.ReturnType.MonthlyStandardReturn
+import models.requests.CisPath
 import pages.monthlyreturns.ReturnTypePage
 import play.api.Logging
 import play.api.i18n.I18nSupport
@@ -32,20 +33,19 @@ import javax.inject.Inject
 class AlreadySubmittedController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   view: AlreadySubmittedView
 )(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport
     with Logging {
 
-  def onPageLoad: Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
-    implicit request =>
+  def onPageLoad(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
 
       val cisAccountUrl =
-        if (request.isAgent) {
+        if (request.identifier.isAgent) {
           s"${appConfig.constructionIndustryAgentAccountUrl}${request.cisId}"
         } else {
           appConfig.constructionIndustryOrgAccountUrl
@@ -63,5 +63,5 @@ class AlreadySubmittedController @Inject() (
           "monthlyreturns.alreadySubmitted.nilreturn"
         }
       Ok(view(messagePrefix, cisAccountUrl))
-  }
+    }
 }

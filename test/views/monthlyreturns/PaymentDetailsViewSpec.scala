@@ -18,6 +18,7 @@ package views.monthlyreturns
 
 import base.SpecBase
 import forms.PaymentDetailsFormProvider
+import models.requests.CisPath.CisOrg
 import models.NormalMode
 import org.jsoup.Jsoup
 import org.scalatest.matchers.must.Matchers
@@ -31,7 +32,7 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
 
     "must render the page with the correct html elements" in new Setup {
       val companyName = "Test Company Ltd"
-      val html        = view(form, NormalMode, companyName, 1, None)
+      val html        = view(CisOrg, form, NormalMode, companyName, 1, None)
       val doc         = Jsoup.parse(html.body)
 
       doc.title             must include(messages("paymentDetails.title"))
@@ -48,7 +49,7 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
     "must show error summary and messages when form has errors" in new Setup {
       val companyName    = "Test Company Ltd"
       val boundWithError = form.bind(Map("value" -> ""))
-      val html           = view(boundWithError, NormalMode, companyName, 1, None)
+      val html           = view(CisOrg, boundWithError, NormalMode, companyName, 1, None)
       val doc            = Jsoup.parse(html.body)
 
       doc.title must startWith(messages("error.title.prefix"))
@@ -61,13 +62,13 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
 
     "must render with different company names" in new Setup {
       val companyName1 = "Company A"
-      val html1        = view(form, NormalMode, companyName1, 1, None)
+      val html1        = view(CisOrg, form, NormalMode, companyName1, 1, None)
       val doc1         = Jsoup.parse(html1.body)
 
       doc1.select("h1").text must include(companyName1)
 
       val companyName2 = "Company B"
-      val html2        = view(form, NormalMode, companyName2, 1, None)
+      val html2        = view(CisOrg, form, NormalMode, companyName2, 1, None)
       val doc2         = Jsoup.parse(html2.body)
 
       doc2.select("h1").text must include(companyName2)
@@ -75,7 +76,7 @@ class PaymentDetailsViewSpec extends SpecBase with Matchers {
 
     "must have the correct form action" in new Setup {
       val companyName = "Test Company Ltd"
-      val html        = view(form, NormalMode, companyName, 1, None)
+      val html        = view(CisOrg, form, NormalMode, companyName, 1, None)
       val doc         = Jsoup.parse(html.body)
 
       val formElement = doc.select("form").first()

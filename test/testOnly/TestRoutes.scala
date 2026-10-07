@@ -17,6 +17,7 @@
 package testOnly
 
 import controllers.monthlyreturns.SubcontractorDetailsAddedController
+import models.requests.CisPath.CisOrg
 import models.{CheckMode, NormalMode}
 import play.api.routing.{Router, SimpleRouter}
 import play.api.routing.sird.*
@@ -26,15 +27,15 @@ class TestRoutes @Inject() (controller: SubcontractorDetailsAddedController) ext
 
   override def routes: Router.Routes = {
     case GET(p"/monthly-return/subcontractor-details-added") =>
-      controller.onPageLoad(NormalMode)
+      controller.onPageLoad(CisOrg, NormalMode)
 
     case POST(p"/monthly-return/subcontractor-details-added") =>
-      controller.onSubmit(NormalMode)
+      controller.onSubmit(CisOrg, NormalMode)
 
     case GET(p"/monthly-return/change-subcontractor-details-added") =>
-      controller.onPageLoad(CheckMode)
+      controller.onPageLoad(CisOrg, CheckMode)
 
     case POST(p"/monthly-return/change-subcontractor-details-added") =>
-      controller.onSubmit(CheckMode)
+      controller.onSubmit(CisOrg, CheckMode)
   }
 }

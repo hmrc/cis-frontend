@@ -16,6 +16,7 @@
 
 package viewmodels.govuk.checkAnswers.monthlyReturns
 
+import models.requests.CisPath.CisOrg
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.i18n.Messages
@@ -47,12 +48,12 @@ class TotalPaymentsSummarySpec extends AnyFreeSpec with Matchers {
     )
 
   "rowsForCheckAnswers" in {
-    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForCheckAnswers(checkVm, index)
+    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForCheckAnswers(CisOrg, checkVm, index)
     rows must have size 3
   }
 
   "rowsForChangeAnswers" in {
-    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForChangeAnswers(changeVm, index)
+    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForChangeAnswers(CisOrg, changeVm, index)
     rows must have size 3
   }
 }

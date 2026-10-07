@@ -14,6 +14,8 @@
  * limitations under the License.
  *@
 
+@import models.requests.CisPath
+
 @this(
         layout: templates.Layout,
         formHelper: FormWithCSRF,
@@ -23,11 +25,11 @@
         paragraph: components.Paragraph
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.inactivityWarning.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.InactivityWarningController.onSubmit,Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.InactivityWarningController.onSubmit(cisPath),Symbol("autoComplete") -> "off") {
 
         @h1("monthlyreturns.inactivityWarning.heading")
 

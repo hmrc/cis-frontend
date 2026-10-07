@@ -22,8 +22,9 @@ import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
 import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
 import models.monthlyreturns.SelectSubcontractorsFormData
+import models.requests.CisPath
 import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.DateConfirmPaymentsPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -40,9 +41,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class SelectSubcontractorsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireData: DataRequiredAction,
-  requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
@@ -60,13 +60,13 @@ class SelectSubcontractorsController @Inject() (
 
   private val form = formProvider()
 
-  def onPageLoad(defaultSelection: Option[Boolean] = None): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onPageLoad(cisPath: CisPath, defaultSelection: Option[Boolean] = None): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
 
-      val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+      val cisId           = request.cisId
+      val requiredAnswers = request.userAnswers
+        .get(DateConfirmPaymentsPage)
+        .map(taxDate => (cisId, taxDate.getMonthValue, taxDate.getYear))
 
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
@@ -85,19 +85,19 @@ class SelectSubcontractorsController @Inject() (
                   form
                 }
 
-              Ok(view(filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl))
+              Ok(view(cisPath, filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl))
             }
         }
         .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
     }
 
-  def onSubmit(): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
+  def onSubmit(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
 
-      val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+      val cisId           = request.cisId
+      val requiredAnswers = request.userAnswers
+        .get(DateConfirmPaymentsPage)
+        .map(taxDate => (cisId, taxDate.getMonthValue, taxDate.getYear))
 
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
@@ -109,7 +109,7 @@ class SelectSubcontractorsController @Inject() (
                 .fold(
                   formWithErrors =>
                     Future.successful(
-                      BadRequest(view(formWithErrors, model.subcontractors, appConfig.yourSubcontractorsUrl))
+                      BadRequest(view(cisPath, formWithErrors, model.subcontractors, appConfig.yourSubcontractorsUrl))
                     ),
                   formData => {
                     val selectedSubcontractors =
@@ -169,9 +169,13 @@ class SelectSubcontractorsController @Inject() (
                             controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
                           )
                         } else if (verificationRequired) {
-                          Future.successful(Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode)))
+                          Future.successful(
+                            Redirect(routes.VerifySubcontractorsController.onPageLoad(cisPath, NormalMode))
+                          )
                         } else {
-                          Future.successful(Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)))
+                          Future.successful(
+                            Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(cisPath, NormalMode))
+                          )
                         }
                       }
                       .recover { error =>

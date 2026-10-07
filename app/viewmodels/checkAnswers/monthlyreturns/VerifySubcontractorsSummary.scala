@@ -42,7 +42,9 @@ object VerifySubcontractorsSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.VerifySubcontractorsController
+              .onPageLoad(answers.journey.cisPath, CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("verifySubcontractors.change.hidden"))
         )

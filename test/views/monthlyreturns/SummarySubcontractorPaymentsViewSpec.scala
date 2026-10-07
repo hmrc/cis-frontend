@@ -25,6 +25,7 @@ import play.api.test.FakeRequest
 import play.twirl.api.HtmlFormat
 import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
+import models.requests.CisPath.CisOrg
 
 import scala.math.BigDecimal
 
@@ -34,7 +35,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
 
     "must render the page with correct heading and button" in new Setup {
       val html: HtmlFormat.Appendable =
-        view(viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
+        view(CisOrg, viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.title             must include(messages("monthlyreturns.summarySubcontractorPayments.title"))
@@ -43,7 +44,8 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
     }
 
     "must not render intro paragraph when count is 1" in new Setup {
-      val html: HtmlFormat.Appendable = view(viewModel(1, totalPayments, totalMaterialsCost, totalCisDeductions))
+      val html: HtmlFormat.Appendable =
+        view(CisOrg, viewModel(1, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.body().text must not include messages("monthlyreturns.summarySubcontractorPayments.intro", 1)
@@ -51,7 +53,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
 
     "must render intro paragraph when count is greater than 1" in new Setup {
       val html: HtmlFormat.Appendable =
-        view(viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
+        view(CisOrg, viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.select("p").text must include(
@@ -60,7 +62,8 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
     }
 
     "must render intro paragraph when count is 0" in new Setup {
-      val html: HtmlFormat.Appendable = view(viewModel(0, totalPayments, totalMaterialsCost, totalCisDeductions))
+      val html: HtmlFormat.Appendable =
+        view(CisOrg, viewModel(0, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       doc.select("p").text must include(
@@ -70,7 +73,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
 
     "must render summary list with correct totals" in new Setup {
       val html: HtmlFormat.Appendable =
-        view(viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
+        view(CisOrg, viewModel(subcontractorCount, totalPayments, totalMaterialsCost, totalCisDeductions))
       val doc: Document               = Jsoup.parse(html.body)
 
       val summaryRows = doc.select(".govuk-summary-list__row")
@@ -89,6 +92,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
 
     "must format currency values correctly" in new Setup {
       val html: HtmlFormat.Appendable = view(
+        CisOrg,
         viewModel(
           subcontractorCount,
           BigDecimal(1234.56),
@@ -105,7 +109,7 @@ class SummarySubcontractorPaymentsViewSpec extends SpecBase {
     }
 
     "must handle zero values correctly" in new Setup {
-      val html: HtmlFormat.Appendable = view(viewModel(0, BigDecimal(0), BigDecimal(0), BigDecimal(0)))
+      val html: HtmlFormat.Appendable = view(CisOrg, viewModel(0, BigDecimal(0), BigDecimal(0), BigDecimal(0)))
       val doc: Document               = Jsoup.parse(html.body)
 
       val values = doc.select(".govuk-summary-list__value").eachText()

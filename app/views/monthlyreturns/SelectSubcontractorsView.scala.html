@@ -21,6 +21,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.Checkboxes
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.CheckboxItem
 @import viewmodels.SelectSubcontractorsViewModel
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -35,7 +36,7 @@
     formHelper: FormWithCSRF
 )
 
-@(form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel], updateYourListUrl: String)(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel], updateYourListUrl: String)(implicit request: Request[_], messages: Messages)
 
 @layout(
     pageTitle = title(form, messages("monthlyreturns.selectSubcontractors.title"))
@@ -44,7 +45,7 @@
     @h1(messages("monthlyreturns.selectSubcontractors.heading"))
     @paragraph(messages("monthlyreturns.selectSubcontractors.p1"))
 
-    @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()) {
+    @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit(cisPath)) {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractors.headOption.map(s => Map("subcontractorsToInclude" -> s"subcontractor-${s.id}")).getOrElse(Map.empty)))
@@ -60,10 +61,10 @@
         @if(subcontractors.length > 0) {
             @paragraphWithLinks(
                 linkTextUrlOne = "monthlyreturns.selectSubcontractors.selectAll.link",
-                linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url,
+                linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(cisPath, Some(true)).url,
                 suffixTextKey = "|",
                 linkTextUrlTwo = "monthlyreturns.selectSubcontractors.deselectAll.link",
-                linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
+                linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(cisPath, Some(false)).url
             )
         }
 

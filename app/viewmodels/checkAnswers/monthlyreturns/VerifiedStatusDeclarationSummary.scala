@@ -36,7 +36,9 @@ object VerifiedStatusDeclarationSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
+            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController
+              .onPageLoad(answers.journey.cisPath, CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
             .withAttribute("id" -> "change-verified-status-declaration")

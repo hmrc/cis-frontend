@@ -18,6 +18,7 @@
 @import viewmodels.govuk._
 @import viewmodels.LabelSize
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+@import models.requests.CisPath
 
 @this(
     layout: templates.Layout,
@@ -27,11 +28,11 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
+@(cisPath: CisPath, form: Form[_], mode: Mode, companyName: String, index: Int, returnTo: Option[String])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("paymentDetails.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.PaymentDetailsController.onSubmit(mode, index, returnTo), Symbol("autoComplete") -> "off") {
+    @formHelper(action = controllers.monthlyreturns.routes.PaymentDetailsController.onSubmit(cisPath, mode, index, returnTo), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

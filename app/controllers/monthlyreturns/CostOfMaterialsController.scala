@@ -18,7 +18,8 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.CostOfMaterialsFormProvider
-import models.Mode
+import models.{Mode, UserAnswers}
+import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
 import play.api.data.Form
@@ -36,9 +37,8 @@ class CostOfMaterialsController @Inject() (
   sessionRepository: SessionRepository,
   navigator: Navigator,
   identify: IdentifierAction,
-  getData: DataRetrievalAction,
-  requireCisId: CisIdRequiredAction,
-  requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getMonthlyReturn: MonthlyReturnAction,
   formProvider: CostOfMaterialsFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: CostOfMaterialsView
@@ -48,8 +48,8 @@ class CostOfMaterialsController @Inject() (
 
   val form: Form[Option[BigDecimal]] = formProvider()
 
-  def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
+  def onPageLoad(cisPath: CisPath, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
@@ -58,16 +58,18 @@ class CostOfMaterialsController @Inject() (
             case Some(value) => form.fill(Some(value))
           }
 
-          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
+          Ok(view(cisPath, preparedForm, mode, subcontractor.name, index, returnTo))
       }
     }
 
-  def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      def redirect(updatedAnswers: models.UserAnswers): Result =
+  def onSubmit(cisPath: CisPath, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getMonthlyReturn).async { implicit request =>
+      def redirect(updatedAnswers: UserAnswers): Result =
         returnTo match {
           case Some("changeAnswers") =>
-            Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
+            Redirect(
+              controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(cisPath, index)
+            )
           case _                     =>
             Redirect(navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index), mode, updatedAnswers))
         }
@@ -81,7 +83,7 @@ class CostOfMaterialsController @Inject() (
             .bindFromRequest()
             .fold(
               formWithErrors =>
-                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo))),
+                Future.successful(BadRequest(view(cisPath, formWithErrors, mode, subcontractor.name, index, returnTo))),
               valueOpt => {
                 val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
 
