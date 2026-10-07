@@ -88,14 +88,14 @@ class WhatDoYouWantToAmendNilController @Inject() (
                     amendMonthlyReturnService
                       .startStandardAmendment(ua1)
                       .flatMap {
-                        case Left(error)  =>
+                        case Left(error) =>
                           logger.warn(
                             s"[WhatDoYouWantToAmendNil] Failed to start nil amendment: $error"
                           )
                           Future.successful(
                             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
                           )
-                        case Right(_) =>
+                        case Right(_)    =>
                           for {
                             ua2 <- Future.fromTry(
                                      ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn)

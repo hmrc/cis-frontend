@@ -51,7 +51,9 @@ class CheckAnswersTotalPaymentsController @Inject() (
     implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None                =>
-          logger.error(s"[CheckAnswersTotalPaymentsController][onPageLoad] - Missing SelectedSubcontractorPage for index: $index")
+          logger.error(
+            s"[CheckAnswersTotalPaymentsController][onPageLoad] - Missing SelectedSubcontractorPage for index: $index"
+          )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
           Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
