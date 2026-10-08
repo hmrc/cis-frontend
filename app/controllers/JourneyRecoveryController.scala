@@ -45,10 +45,7 @@ class JourneyRecoveryController @Inject() (
   def onPageLoad(continueUrl: Option[RedirectUrl] = None): Action[AnyContent] = identify.async { implicit request =>
     sessionRepository
       .get(request.userId)
-      .recover { case ex =>
-        logger.error("[JourneyRecoveryController][onPageLoad] - failed to retrieve user answers", ex)
-        None
-      }
+      .recover { case _ => None }
       .map { maybeAnswers =>
 
         val cisAccountUrl =
