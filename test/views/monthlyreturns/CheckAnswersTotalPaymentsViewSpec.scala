@@ -63,7 +63,7 @@ class CheckAnswersTotalPaymentsViewSpec extends SpecBase {
       val changeLinksWIthHiddenText = Seq(
         "Total payments to subcontractor",
         "Total cost of materials",
-        "Total CIS deductions"
+        "Total tax deducted"
       )
 
       changeLinksWIthHiddenText.zipWithIndex.foreach { case (text, index) =>
