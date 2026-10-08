@@ -31,7 +31,7 @@ import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import viewmodels.checkAnswers.monthlyreturns.SubmittedNoReceiptViewModel
 import views.html.monthlyreturns.SubmittedNoReceiptView
 
@@ -488,6 +488,37 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               }
               thrown.getMessage must include("[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
             }
+          }
+        }
+
+        "must redirect to Journey Recovery when monthly return service returns an UpstreamErrorResponse" in {
+          val mockService = mock[MonthlyReturnService]
+
+          val upstreamError = UpstreamErrorResponse(
+            message = "Service unavailable",
+            statusCode = INTERNAL_SERVER_ERROR
+          )
+
+          when(
+            mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+              any[HeaderCarrier]
+            )
+          ).thenReturn(Future.failed(upstreamError))
+
+          val app =
+            applicationBuilder(userAnswers = Some(baseUa))
+              .overrides(
+                bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+                bind[MonthlyReturnService].toInstance(mockService)
+              )
+              .build()
+
+          running(app) {
+            val result = route(app, request).value
+
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).value mustBe
+              controllers.routes.JourneyRecoveryController.onPageLoad().url
           }
         }
 

@@ -105,6 +105,10 @@ class SubmissionSuccessViewSpec extends SpecBase {
         messages("monthlyreturns.submissionSuccessful.feedback.p2.link")
       )
 
+      doc
+        .select(s"a[href='${app.injector.instanceOf[config.FrontendAppConfig].cisFeedbackSurveyUrl}']")
+        .text must include(messages("monthlyreturns.submissionSuccessful.feedback.p2.link"))
+
       doc.select("h2").text must not include
         messages("monthlyreturns.submissionSuccessful.whatHappensNext.h2")
 

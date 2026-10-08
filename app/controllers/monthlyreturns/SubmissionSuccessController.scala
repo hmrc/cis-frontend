@@ -22,14 +22,14 @@ import controllers.helpers.SubmissionViewDataSupport
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.ReturnType.reads
-import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import models.requests.{CisIdDataRequest, GetMonthlyReturnCompleteRequest}
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import services.guard.SubmissionSuccessfulServiceGuard
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionSuccessView
@@ -72,20 +72,55 @@ class SubmissionSuccessController @Inject() (
             Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
 
           case None =>
-            val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
-
-            monthlyReturnForEditRequest match {
+            GetMonthlyReturnCompleteRequest.fromUserAnswers(ua) match {
               case Left(error) =>
-                logger.error(s"[SubmissionSuccessController] Failed to build GetMonthlyReturnForEditRequest: $error")
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                logger.error(
+                  s"[SubmissionSuccessController] " +
+                    s"Failed to build GetMonthlyReturnCompleteRequest: $error"
+                )
+
+                Future.successful(
+                  Redirect(
+                    controllers.routes.JourneyRecoveryController.onPageLoad()
+                  )
+                )
 
               case Right(req) =>
-                for {
-                  monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
-                  vm            <- buildViewModel(ua, monthlyReturn)
-                  uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
-                  _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
-                } yield Ok(view(vm))
+                logger.info(
+                  s"[SubmissionSuccessController] Calling getMonthlyReturnComplete " +
+                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment}"
+                )
+
+                (for {
+                  monthlyReturn <-
+                    monthlyReturnService.getMonthlyReturnComplete(req)
+
+                  vm <-
+                    buildViewModel(
+                      ua = ua,
+                      monthlyReturn = monthlyReturn
+                    )
+
+                  uaWithCache <-
+                    Future.fromTry(
+                      ua.set(
+                        SubmissionConfirmationCachePage,
+                        cacheFrom(vm)
+                      )
+                    )
+
+                  _ <-
+                    monthlyReturnService.completeSubmissionJourney(
+                      uaWithCache
+                    )
+                } yield Ok(view(vm))).recoverWith { case ex: UpstreamErrorResponse =>
+                  logger.error(
+                    s"[SubmissionSuccessController] getMonthlyReturnComplete failed " +
+                      s"with status ${ex.statusCode} for instanceId=${req.instanceId}",
+                    ex
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                }
             }
         }
       }
