@@ -222,6 +222,13 @@ class WhichSubcontractorsToAddController @Inject() (
               Redirect(controllers.routes.SystemErrorController.onPageLoad())
             }
         }
-        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
+        .getOrElse {
+          logger.error(
+            s"[WhichSubcontractorsToAddController] Missing required answers: " +
+              s"CisIdPage present=${request.userAnswers.get(CisIdPage).isDefined}, " +
+              s"DateConfirmPaymentsPage present=${request.userAnswers.get(DateConfirmPaymentsPage).isDefined}"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
   }
 }

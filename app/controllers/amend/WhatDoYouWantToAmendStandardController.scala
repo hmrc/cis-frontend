@@ -26,7 +26,7 @@ import models.monthlyreturns.SelectedSubcontractor
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.amend.{WhatDoYouWantToAmendStandardPage, WhichSubcontractorsToAddPage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
-import play.api.i18n.Lang.logger
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
@@ -53,7 +53,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   view: WhatDoYouWantToAmendStandardView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form = formProvider()
 
@@ -131,7 +132,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                 case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
                   amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
                     case Left(error) =>
-                      logger.warn(
+                      logger.error(
                         s"[WhatDoYouWantToAmendStandard] Failed to start standard amendment: $error"
                       )
                       Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))

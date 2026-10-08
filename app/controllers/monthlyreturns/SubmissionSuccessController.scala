@@ -25,6 +25,7 @@ import models.ReturnType.reads
 import models.requests.{CisIdDataRequest, GetMonthlyReturnCompleteRequest}
 import pages.monthlyreturns.*
 import pages.submission.SubmissionDetailsPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
@@ -55,6 +56,7 @@ class SubmissionSuccessController @Inject() (
 )(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
     with I18nSupport
+    with Logging
     with SubmissionViewDataSupport {
 
   def onPageLoad: Action[AnyContent] =
@@ -63,6 +65,7 @@ class SubmissionSuccessController @Inject() (
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       if (!submissionSuccessGuard.check) {
+        logger.error("[SubmissionSuccessController][onPageLoad] - submissionSuccessGuard check failed")
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       } else {
         val ua = request.userAnswers

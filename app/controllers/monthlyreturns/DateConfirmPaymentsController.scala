@@ -72,6 +72,7 @@ class DateConfirmPaymentsController @Inject() (
       } yield uaWithReturnType
         .get(ReturnTypePage)
         .fold {
+          logger.error("[DateConfirmPaymentsController][onPageLoad] - ReturnTypePage missing from user answers")
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         } { storedReturnType =>
           val messagePrefix =
@@ -134,7 +135,11 @@ class DateConfirmPaymentsController @Inject() (
                                     } yield Redirect(navigator.nextPage(DateConfirmPaymentsPage, mode, uaWithStatus))
                                   }
             } yield result).recover { case NonFatal(ex) =>
-              logger.error(s"[DateConfirmPaymentsController] Failed to process submission: ${ex.getMessage}", ex)
+              logger.error(
+                s"[DateConfirmPaymentsController] Failed to process submission (CisIdPage, duplicate check, " +
+                  s"create or save), returnType: $returnType: ${ex.getMessage}",
+                ex
+              )
               Redirect(controllers.routes.SystemErrorController.onPageLoad())
             }
           }

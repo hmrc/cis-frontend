@@ -90,7 +90,7 @@ class CheckYourAnswersController @Inject() (
             Future.successful(Ok(view(returnDetailsList, emailList)))
 
           case None =>
-            logger.warn("[CheckYourAnswersController] Missing ReturnTypePage")
+            logger.error("[CheckYourAnswersController][onPageLoad] - Missing ReturnTypePage")
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
       }
@@ -101,14 +101,14 @@ class CheckYourAnswersController @Inject() (
       guardCompletedJourney {
         request.userAnswers.get(ReturnTypePage) match {
           case None =>
-            logger.warn(
+            logger.error(
               "[CheckYourAnswersController] C6 submit without FormP record (missing ReturnTypePage); redirecting to journey recovery"
             )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
           case Some(returnType) if !request.userAnswers.isJourneyComplete =>
-            logger.warn(
-              "[CheckYourAnswersController] incomplete journey submission attempt"
+            logger.error(
+              "[CheckYourAnswersController][onSubmit] - journey not complete (isJourneyComplete check failed)"
             )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -136,7 +136,7 @@ class CheckYourAnswersController @Inject() (
                       Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad())
                     }
                     .recover { case t =>
-                      logger.error("[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
+                      logger.error(s"[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
                       Redirect(controllers.routes.SystemErrorController.onPageLoad())
                     }
               }
@@ -148,7 +148,7 @@ class CheckYourAnswersController @Inject() (
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
       case None =>
-        logger.warn(
+        logger.error(
           "[CheckYourAnswersController][guardCompletedJourney] - " +
             "Unable to determine period end from user answers"
         )

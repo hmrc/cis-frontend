@@ -83,7 +83,8 @@ class ChangeAnswersTotalPaymentsController @Inject() (
               case u: UpstreamErrorResponse =>
                 logger.error(
                   s"[ChangeAnswersTotalPaymentsController][onSubmit] - updateMonthlyReturnItems failed: status: ${u.statusCode}, " +
-                    s"index: $index, subcontractorId: ${payload.subcontractorId}, message: ${u.message}"
+                    s"index: $index, subcontractorId: ${payload.subcontractorId}, message: ${u.message}",
+                  u
                 )
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
 

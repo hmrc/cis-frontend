@@ -63,7 +63,7 @@ class FinalValidationReturnController @Inject() (
                 }
 
             } else {
-              logger.warn(
+              logger.error(
                 s"[FinalValidationReturnController] Invalid Final Validation handoff correlation " +
                   s"for handoffId: $handoffId"
               )

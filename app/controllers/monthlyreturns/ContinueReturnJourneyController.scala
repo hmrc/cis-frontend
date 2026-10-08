@@ -66,7 +66,7 @@ class ContinueReturnJourneyController @Inject() (
         )
         .flatMap {
           case Left(error) =>
-            logger.warn(
+            logger.error(
               s"[continueReturnJourney] Failed to populate user answers: $error for request: $editRequest"
             )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -95,8 +95,10 @@ class ContinueReturnJourneyController @Inject() (
                 }
               }
               .recover { case ex =>
-                logger.warn(
-                  s"[continueReturnJourney] Failed to populate agent client data for request: $editRequest, error: ${ex.getMessage}"
+                logger.error(
+                  s"[continueReturnJourney] Failed to populate agent client data or save user answers, " +
+                    s"request: $editRequest",
+                  ex
                 )
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
               }

@@ -64,9 +64,10 @@ class SubmissionSendingController @Inject() (
         implicit val hc: HeaderCarrier =
           HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-        if (!request.userAnswers.isJourneyComplete)
+        if (!request.userAnswers.isJourneyComplete) {
+          logger.error("[SubmissionSendingController][onPageLoad] - isJourneyComplete check failed")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        else
+        } else
           reconcileFormpRdsBeforeChris.flatMap {
             case Some(redirect) => Future.successful(redirect)
             case None           =>
@@ -140,6 +141,9 @@ class SubmissionSendingController @Inject() (
       guardCompletedJourney {
         request.userAnswers.get(SubmissionDetailsPage) match {
           case None =>
+            logger.error(
+              "[SubmissionSendingController][onPollAndRedirect] - SubmissionDetailsPage missing from user answers"
+            )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
           case Some(submissionStatus) =>
@@ -147,7 +151,10 @@ class SubmissionSendingController @Inject() (
             submissionService
               .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
               .flatMap(decision => pollDecisionResult(decision, pollInterval))
-              .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              .recover { case ex =>
+                logger.error("[SubmissionSendingController][onPollAndRedirect] - submission status poll failed", ex)
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
         }
       }
     }
@@ -155,6 +162,7 @@ class SubmissionSendingController @Inject() (
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
       case None            =>
+        logger.error("[SubmissionSendingController][guardCompletedJourney] - periodEnd missing from user answers")
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       case Some(periodEnd) =>
         val yearMonthPeriod = YearMonth.from(periodEnd).toString
@@ -201,7 +209,9 @@ class SubmissionSendingController @Inject() (
         )
       case SubmissionStatus.FatalError         =>
         Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
-      case _                                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      case _                                   =>
+        logger.error(s"[SubmissionSendingController][polledStatusResult] - unrecognised status=$status")
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
   private def sendingPage(pollInterval: String)(implicit request: CisIdDataRequest[_]): Future[Result] =

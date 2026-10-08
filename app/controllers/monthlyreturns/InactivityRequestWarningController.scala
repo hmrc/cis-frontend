@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode}
 import pages.monthlyreturns.SubmitInactivityRequestPage
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -35,12 +36,16 @@ class InactivityRequestWarningController @Inject() (
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
       val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage).contains(true)
       if (!inactivityRequested) {
+        logger.error(
+          s"[InactivityRequestWarningController][onPageLoad] - SubmitInactivityRequestPage not true, mode=$mode"
+        )
         Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
       } else {
         val nextUrl = mode match {

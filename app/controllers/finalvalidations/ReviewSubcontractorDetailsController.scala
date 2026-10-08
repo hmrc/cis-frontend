@@ -23,9 +23,9 @@ import navigation.Navigator
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
 import pages.monthlyreturns.SelectedSubcontractorPage
-import play.api.i18n.Lang.logger
 
 import javax.inject.Inject
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -50,7 +50,8 @@ class ReviewSubcontractorDetailsController @Inject() (
   view: ReviewSubcontractorDetailsView
 )(using ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
