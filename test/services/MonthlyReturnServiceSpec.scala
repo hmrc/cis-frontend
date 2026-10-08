@@ -1560,7 +1560,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(CisIdPage) mustBe Some("CIS-123")
       ua.get(ReturnTypePage) mustBe Some(MonthlyNilReturn)
       ua.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 3, 5))
-      ua.get(SubmitInactivityRequestPage) mustBe Some(false)
+      ua.get(SubmitInactivityRequestPage) mustBe None
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe None
       ua.get(DeclarationPage).value mustBe empty
@@ -1858,7 +1858,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       result.isRight mustBe true
       val ua = result.toOption.value
-      ua.get(SubmitInactivityRequestPage) mustBe Some(false)
+      ua.get(SubmitInactivityRequestPage) mustBe None
     }
 
     "must not set employment or verified status declarations when FormP values are missing" in {
@@ -1915,7 +1915,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val ua = result.toOption.value
       ua.get(EmploymentStatusDeclarationPage) mustBe None
       ua.get(VerifiedStatusDeclarationPage) mustBe None
-      ua.get(SubmitInactivityRequestPage) mustBe Some(false)
+      ua.get(SubmitInactivityRequestPage) mustBe None
       ua.get(ConfirmationByEmailPage) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage) mustBe None
     }
