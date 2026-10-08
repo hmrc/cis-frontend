@@ -36,26 +36,18 @@
 }
 
 @fileAReturnSubmitLink() = {
-<span class="app-task-list-row-submit">
-        <span class="govuk-link govuk-link--no-visited-state">
+    @helper.form(
+        action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+    ) {
+        @helper.CSRF.formField
+
+        <button
+                type="submit"
+                class="govuk-link govuk-link--no-visited-state app-task-list-row-submit__button"
+        >
             @messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn")
-        </span>
-
-        @helper.form(
-            action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
-        ) {
-            @helper.CSRF.formField
-
-            <button
-                    type="submit"
-                    class="app-task-list-row-submit__button"
-            >
-                <span class="govuk-visually-hidden">
-                    @messages("finalValidations.reviewSubcontractorDetails.taskList.fileAReturn")
-                </span>
-            </button>
-        }
-    </span>
+        </button>
+    }
 }
 
 @defining(
@@ -100,8 +92,7 @@
                             content = HtmlContent(fileAReturnSubmitLink())
                         ),
                         href = None,
-                        status = incompleteStatus,
-                        classes = "govuk-task-list__item--with-link"
+                        status = incompleteStatus
                     )
                 } else {
                     TaskListItem(
