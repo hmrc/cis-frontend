@@ -49,7 +49,8 @@ class EnterYourEmailAddressController @Inject() (
   view: EnterYourEmailAddressView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form = formProvider()
 
@@ -57,14 +58,18 @@ class EnterYourEmailAddressController @Inject() (
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      request.userAnswers.get(EnterYourEmailAddressPage) match {
-        case Some(value) =>
-          Future.successful(Ok(view(form.fill(value), mode)))
-        case None        =>
-          getPrepopulationEmailAddress(request).map {
-            case Some(email) => Ok(view(form.fill(email), mode))
-            case None        => Ok(view(form, mode))
-          }
+      if (!request.userAnswers.get(ConfirmationByEmailPage).contains(true)) {
+        Future.successful(Redirect(controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(mode)))
+      } else {
+        request.userAnswers.get(EnterYourEmailAddressPage) match {
+          case Some(value) =>
+            Future.successful(Ok(view(form.fill(value), mode)))
+          case None        =>
+            getPrepopulationEmailAddress(request).map {
+              case Some(email) => Ok(view(form.fill(email), mode))
+              case None        => Ok(view(form, mode))
+            }
+        }
       }
     }
 
@@ -75,7 +80,13 @@ class EnterYourEmailAddressController @Inject() (
       case Some(cisId) =>
         monthlyReturnService
           .getSchemeEmail(cisId)
-          .recover { case _ => None }
+          .recover { case ex =>
+            logger.error(
+              s"[EnterYourEmailAddressController][getPrepopulationEmailAddress] - email lookup failed, cisId: $cisId",
+              ex
+            )
+            None
+          }
       case None        =>
         Future.successful(None)
     }
