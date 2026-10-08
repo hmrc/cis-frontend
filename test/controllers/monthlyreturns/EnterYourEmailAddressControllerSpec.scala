@@ -24,7 +24,7 @@ import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.EnterYourEmailAddressPage
+import pages.monthlyreturns.{ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -45,17 +45,17 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
   lazy val enterYourEmailAddressRoute =
     controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(NormalMode).url
 
+  val userAnswersForEmailPage = userAnswersWithCisId.set(ConfirmationByEmailPage, true).success.value
+
   "EnterYourEmailAddress Controller" - {
 
     "must call getSchemeEmail and prepopulate the email address for a GET in NormalMode when not already answered" in {
-
-      val userAnswers = userAnswersWithCisId
 
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
         .thenReturn(Future.successful(Some("prepopulated@test.com")))
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers))
+      val application = applicationBuilder(userAnswers = Some(userAnswersForEmailPage))
         .overrides(
           bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
         )
@@ -78,13 +78,11 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
     "must call getSchemeEmail and render an empty form when the service returns None" in {
 
-      val userAnswers = userAnswersWithCisId
-
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
         .thenReturn(Future.successful(None))
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers))
+      val application = applicationBuilder(userAnswers = Some(userAnswersForEmailPage))
         .overrides(
           bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
         )
@@ -104,13 +102,11 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
     "must call getSchemeEmail and prepopulate the email address for a GET in CheckMode when not already answered" in {
 
-      val userAnswers = userAnswersWithCisId
-
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
         .thenReturn(Future.successful(Some("prepopulated@test.com")))
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers))
+      val application = applicationBuilder(userAnswers = Some(userAnswersForEmailPage))
         .overrides(
           bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
         )
@@ -135,13 +131,11 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
     "must gracefully recover and render the page with an empty form if getSchemeEmail fails" in {
 
-      val userAnswers = userAnswersWithCisId
-
       val mockMonthlyReturnService = mock[MonthlyReturnService]
       when(mockMonthlyReturnService.getSchemeEmail(any())(any()))
         .thenReturn(Future.failed(new RuntimeException("backend error")))
 
-      val application = applicationBuilder(userAnswers = Some(userAnswers))
+      val application = applicationBuilder(userAnswers = Some(userAnswersForEmailPage))
         .overrides(
           bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
         )
@@ -161,7 +155,7 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
     "must populate the view correctly on a GET when the question has previously been answered" in {
 
-      val userAnswers = userAnswersWithCisId.set(EnterYourEmailAddressPage, "answer").success.value
+      val userAnswers = userAnswersForEmailPage.set(EnterYourEmailAddressPage, "answer").success.value
 
       val application = applicationBuilder(userAnswers = Some(userAnswers)).build()
 
@@ -220,6 +214,21 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual BAD_REQUEST
         contentAsString(result) mustEqual view(boundForm, NormalMode)(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to ConfirmationByEmail page on a GET when ConfirmationByEmailPage is not answered with true" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId)).build()
+
+      running(application) {
+        val request = FakeRequest(GET, enterYourEmailAddressRoute)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
       }
     }
 

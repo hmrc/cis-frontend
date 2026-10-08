@@ -21,7 +21,7 @@ import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
 import models.requests.CisIdDataRequest
 import navigation.Navigator
-import pages.monthlyreturns.{CisIdPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -49,8 +49,7 @@ class EnterYourEmailAddressController @Inject() (
   view: EnterYourEmailAddressView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport
-    with Logging {
+    with I18nSupport {
 
   val form = formProvider()
 
@@ -76,13 +75,7 @@ class EnterYourEmailAddressController @Inject() (
       case Some(cisId) =>
         monthlyReturnService
           .getSchemeEmail(cisId)
-          .recover { case ex =>
-            logger.error(
-              s"[EnterYourEmailAddressController][getPrepopulationEmailAddress] - email lookup failed, cisId: $cisId",
-              ex
-            )
-            None
-          }
+          .recover { case _ => None }
       case None        =>
         Future.successful(None)
     }

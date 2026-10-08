@@ -26,7 +26,7 @@ import pages.monthlyreturns.*
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import utils.DateTimeFormats
@@ -73,12 +73,19 @@ class SubmittedNoReceiptController @Inject() (
               Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
             case Right(req) =>
-              for {
+              (for {
                 monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
                 vm            <- buildViewModel(ua, monthlyReturn)
                 uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
                 _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
-              } yield Ok(view(vm))
+              } yield Ok(view(vm))).recoverWith { case ex: UpstreamErrorResponse =>
+                logger.error(
+                  s"[SubmittedNoReceiptController] onPageLoad failed " +
+                    s"with status ${ex.statusCode} for instanceId=${req.instanceId}",
+                  ex
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
           }
       }
     }

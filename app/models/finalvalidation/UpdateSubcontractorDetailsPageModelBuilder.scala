@@ -677,7 +677,7 @@ class UpdateSubcontractorDetailsPageModelBuilder @Inject() {
 
     val proposedName =
       subcontractorType(subcontractor) match {
-        case SoleTrader  => soleTraderName(details)
+        case SoleTrader  => soleTraderName(details).orElse(details.tradingName)
         case Company     => details.tradingName
         case Trust       => details.tradingName
         case Partnership => details.partnershipTradingName

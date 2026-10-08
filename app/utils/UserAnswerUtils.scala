@@ -45,10 +45,12 @@ object UserAnswerUtils {
         .values
         .forall(_.isComplete)
 
-    private def emailSatisfied: Boolean = {
-      val byEmail = userAnswers.get(ConfirmationByEmailPage)
-      byEmail.contains(false) || answered(EnterYourEmailAddressPage)
-    }
+    private def emailSatisfied: Boolean =
+      userAnswers.get(ConfirmationByEmailPage) match {
+        case Some(true)  => answered(EnterYourEmailAddressPage)
+        case Some(false) => !answered(EnterYourEmailAddressPage)
+        case None        => false
+      }
 
     def firstIncompleteSubcontractorIndex: Int =
       userAnswers
@@ -100,6 +102,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(PollIntervalPage))
         .flatMap(_.remove(CorrelationIdPage))
         .flatMap(_.remove(LastMessageDatePage))
+        .flatMap(_.remove(SubmissionConfirmationCachePage))
 
       val withSubmissionIdPages = submissionId.fold(clearedAnswers) { id =>
         clearedAnswers
@@ -126,6 +129,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(SubmitInactivityRequestPage))
         .flatMap(_.remove(WhichSubcontractorsToAddPage))
         .flatMap(_.remove(SubcontractorValidationFailuresPage))
+        .flatMap(_.remove(SubmissionConfirmationCachePage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
@@ -133,7 +137,6 @@ object UserAnswerUtils {
           val checks = Seq(
             answered(DateConfirmPaymentsPage),
             answered(SubmitInactivityRequestPage),
-            answered(ConfirmationByEmailPage),
             emailSatisfied,
             answered(DeclarationPage)
           )
@@ -149,7 +152,6 @@ object UserAnswerUtils {
             answered(EmploymentStatusDeclarationPage),
             answered(VerifiedStatusDeclarationPage),
             answered(SubmitInactivityRequestPage),
-            answered(ConfirmationByEmailPage),
             emailSatisfied
           ).forall(identity)
 

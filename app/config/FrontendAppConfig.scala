@@ -69,8 +69,8 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   private lazy val exitSurveyBaseUrl: String =
     configuration.get[Service]("microservice.services.feedback-frontend").baseUrl
-
-  lazy val exitSurveyUrl: String = s"$exitSurveyBaseUrl/feedback/cis-frontend"
+  lazy val exitSurveyUrl: String             = s"$exitSurveyBaseUrl/feedback/cis-frontend"
+  lazy val cisFeedbackSurveyUrl: String      = s"$exitSurveyBaseUrl/feedback/construction-industry-scheme"
 
   lazy val languageTranslationEnabled: Boolean =
     configuration.get[Boolean]("features.welsh-translation")
