@@ -72,8 +72,8 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val exitSurveyUrl: String = s"$exitSurveyBaseUrl/feedback/cis-frontend"
 
-  lazy val userResearchUrl: String =
-    "https://survey.take-part-in-research.service.gov.uk/jfe/form/SV_74GjifgnGv6GsMC?Source=BannerList_HMRC_DASS_CIS"
+  lazy val userResearchUrl: String                = configuration.get[String]("urls.userResearchUrl")
+  lazy val showUserResearchBannerEnabled: Boolean = configuration.get[Boolean]("features.user-research-banner-enabled")
 
   lazy val languageTranslationEnabled: Boolean =
     configuration.get[Boolean]("features.welsh-translation")
