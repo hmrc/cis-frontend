@@ -1016,6 +1016,23 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     }
   }
 
+  "getRefreshInterval" - {
+    "return the fixed default interval from config, ignoring the ChRIS poll interval in UserAnswers" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+      service.getRefreshInterval mustBe 10
+    }
+  }
+
   "checkAndUpdateSubmissionStatusIfAllowed" - {
 
     "poll and return Polled when lastMessageDate is missing" in {
@@ -1058,6 +1075,46 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       result mustBe PollDecision.Polled("TIMED_OUT")
       verify(sessionRepository).set(any[UserAnswers])
+    }
+
+    "skip polling when lastMessageDate is missing and the first poll interval has not elapsed" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration(
+          "submission-poll-timeout-seconds"          -> "60",
+          "submission-poll-default-interval-seconds" -> "10"
+        )
+      )
+      val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
+      val service                                        = mkService(connector, sessionRepository, appConfig, chrisRequestBuilder)
+
+      val submissionDetails = SubmissionDetails(
+        id = "sub-123",
+        status = "ACCEPTED",
+        irMark = "IR-MARK-123",
+        submittedAt = LocalDateTime.now()
+      )
+
+      val ua = uaBase
+        .set(SubmissionDetailsPage, submissionDetails)
+        .success
+        .value
+        .set(CorrelationIdPage, "123")
+        .success
+        .value
+        .set(PollUrlPage, "someUrl")
+        .success
+        .value
+        .set(PollIntervalPage, 10)
+        .success
+        .value
+
+      val result = service.checkAndUpdateSubmissionStatusIfAllowed(ua).futureValue
+
+      result mustBe PollDecision.Skip
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
     }
 
     "skip polling when lastMessageDate is present and interval has not elapsed" in {

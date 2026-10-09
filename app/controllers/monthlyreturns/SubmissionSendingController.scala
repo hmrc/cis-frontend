@@ -143,10 +143,10 @@ class SubmissionSendingController @Inject() (
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
           case Some(submissionStatus) =>
-            val pollInterval = submissionService.getPollInterval(request.userAnswers).toString
+            val refreshInterval = submissionService.getRefreshInterval.toString
             submissionService
               .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
-              .flatMap(decision => pollDecisionResult(decision, pollInterval))
+              .flatMap(decision => pollDecisionResult(decision, refreshInterval))
               .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
       }
@@ -165,21 +165,21 @@ class SubmissionSendingController @Inject() (
         }
     }
 
-  private def pollDecisionResult(decision: PollDecision, pollInterval: String)(implicit
+  private def pollDecisionResult(decision: PollDecision, refreshInterval: String)(implicit
     request: CisIdDataRequest[_]
   ): Future[Result] =
     decision match {
-      case Skip           => sendingPage(pollInterval)
-      case Polled(status) => polledStatusResult(status, pollInterval)
+      case Skip           => sendingPage(refreshInterval)
+      case Polled(status) => polledStatusResult(status, refreshInterval)
     }
 
-  private def polledStatusResult(status: String, pollInterval: String)(implicit
+  private def polledStatusResult(status: String, refreshInterval: String)(implicit
     request: CisIdDataRequest[_]
   ): Future[Result] =
     val langCode = messagesApi.preferred(request).lang.code
     SubmissionStatus.fromString(status) match {
       case Started                             => Future.successful(Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoad()))
-      case Pending | SubmissionStatus.Accepted => sendingPage(pollInterval)
+      case Pending | SubmissionStatus.Accepted => sendingPage(refreshInterval)
       case TimedOut                            => Future.successful(Redirect(routes.SubmissionAwaitingController.onPageLoad))
       case Submitted                           =>
         sendEmailAndRedirect(
@@ -204,8 +204,8 @@ class SubmissionSendingController @Inject() (
       case _                                   => Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
-  private def sendingPage(pollInterval: String)(implicit request: CisIdDataRequest[_]): Future[Result] =
-    Future.successful(Ok(view()).withHeaders("Refresh" -> pollInterval))
+  private def sendingPage(refreshInterval: String)(implicit request: CisIdDataRequest[_]): Future[Result] =
+    Future.successful(Ok(view()).withHeaders("Refresh" -> refreshInterval))
 
   private def sendEmailAndRedirect(
     userAnswers: UserAnswers,

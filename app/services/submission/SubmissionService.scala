@@ -190,6 +190,11 @@ class SubmissionService @Inject() (
   def getPollInterval(userAnswers: UserAnswers): Int =
     userAnswers.get(PollIntervalPage).getOrElse(appConfig.submissionPollDefaultIntervalSeconds)
 
+  // Fixed cadence at which the "sending" page re-checks; the ChRIS poll interval
+  // (getPollInterval) only throttles whether an actual poll is sent on each check.
+  def getRefreshInterval: Int =
+    appConfig.submissionPollDefaultIntervalSeconds
+
   def checkAndUpdateSubmissionStatusIfAllowed(
     userAnswers: UserAnswers
   )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[PollDecision] =
@@ -205,8 +210,15 @@ class SubmissionService @Inject() (
         }
 
       case None =>
-        logger.warn("[checkAndUpdateSubmissionStatusIfAllowed] Missing lastMessageDate, allowing poll by default")
-        checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+        // No poll has happened yet: the first poll must wait one poll interval after the
+        // submission to ChRIS, rather than polling immediately.
+        val pollInterval = getPollInterval(userAnswers)
+        userAnswers.get(SubmissionDetailsPage) match {
+          case Some(details) if LocalDateTime.now().isBefore(details.submittedAt.plusSeconds(pollInterval)) =>
+            Future.successful(PollDecision.Skip)
+          case _                                                                                            =>
+            checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+        }
     }
 
   def checkAndUpdateSubmissionStatus(
@@ -373,9 +385,7 @@ class SubmissionService @Inject() (
                  id = submissionId,
                  status = response.status,
                  irMark = response.hmrcMarkGenerated,
-                 submittedAt = response.gatewayTimestamp
-                   .flatMap(t => Try(LocalDateTime.parse(t)).toOption)
-                   .getOrElse(LocalDateTime.now),
+                 submittedAt = LocalDateTime.now(),
                  amendment = amendment,
                  hmrcMarkGgis = None
                )

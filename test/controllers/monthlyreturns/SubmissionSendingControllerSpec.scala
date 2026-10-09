@@ -522,7 +522,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
-      verify(mockService, never()).getPollInterval(any[UserAnswers])
+      verify(mockService, never()).getRefreshInterval
       verify(mockService, never()).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -547,7 +547,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -565,7 +565,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -590,7 +590,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -608,7 +608,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -633,7 +633,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -651,7 +651,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe OK
       headers(result).get("Refresh").value mustBe "10"
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -676,7 +676,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -694,7 +694,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe awaitingRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -719,7 +719,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -740,7 +740,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -766,7 +766,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -788,7 +788,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successRoute
 
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -814,7 +814,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -835,7 +835,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successNoReceiptRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -861,7 +861,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -882,7 +882,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe successNoReceiptRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -908,7 +908,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -926,7 +926,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -951,7 +951,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -972,7 +972,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -997,7 +997,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -1018,7 +1018,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe unsuccessfulRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -1043,7 +1043,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -1061,7 +1061,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
 
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
@@ -1086,7 +1086,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -1150,7 +1150,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         .success
         .value
 
-      when(mockService.getPollInterval(any[UserAnswers]))
+      when(mockService.getRefreshInterval)
         .thenReturn(10)
 
       when(
@@ -1168,7 +1168,7 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe SEE_OTHER
       redirectLocation(result).value mustBe recoveryRoute
 
-      verify(mockService).getPollInterval(any[UserAnswers])
+      verify(mockService).getRefreshInterval
       verify(mockService).checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers])(using
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
