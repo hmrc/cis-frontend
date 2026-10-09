@@ -37,7 +37,7 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   private lazy val contactFormServiceIdentifier    = configuration.get[String]("contact-frontend.serviceId")
 
   def feedbackUrl(implicit request: RequestHeader): String =
-    s"$contactHost/contact/beta-feedback?service=$contactFormServiceIdentifier&backUrl=${host + request.uri}"
+    s"$contactHost/contact/beta-feedback?service=construction-industry-scheme&backUrl=${host + request.uri}"
 
   lazy val loginUrl: String                                  = configuration.get[String]("urls.login")
   lazy val loginContinueUrl: String                          = configuration.get[String]("urls.loginContinue")
@@ -71,6 +71,9 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
     configuration.get[Service]("microservice.services.feedback-frontend").baseUrl
   lazy val exitSurveyUrl: String             = s"$exitSurveyBaseUrl/feedback/cis-frontend"
   lazy val cisFeedbackSurveyUrl: String      = s"$exitSurveyBaseUrl/feedback/construction-industry-scheme"
+
+  lazy val userResearchUrl: String                = configuration.get[String]("urls.userResearchUrl")
+  lazy val showUserResearchBannerEnabled: Boolean = configuration.get[Boolean]("features.user-research-banner-enabled")
 
   lazy val languageTranslationEnabled: Boolean =
     configuration.get[Boolean]("features.welsh-translation")
