@@ -212,8 +212,12 @@ class WhichSubcontractorsToAddController @Inject() (
                         } yield result
                     )
 
-                case _ =>
-                  logger.error("[WhichSubcontractorsToAddController] Return status not STARTED or VALIDATED")
+                case unexpectedStatus =>
+                  val statusText = unexpectedStatus.getOrElse("missing")
+                  logger.error(
+                    s"[WhichSubcontractorsToAddController] Unexpected return status: $statusText. " +
+                      "Expected STARTED or VALIDATED."
+                  )
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
               }
             }

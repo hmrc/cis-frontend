@@ -81,7 +81,7 @@ class EnterYourEmailAddressController @Inject() (
         monthlyReturnService
           .getSchemeEmail(cisId)
           .recover { case ex =>
-            logger.error(
+            logger.warn(
               s"[EnterYourEmailAddressController][getPrepopulationEmailAddress] - email lookup failed, cisId: $cisId",
               ex
             )
