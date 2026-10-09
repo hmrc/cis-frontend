@@ -88,7 +88,10 @@ class SelectSubcontractorsController @Inject() (
               Ok(view(filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl))
             }
         }
-        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
+        .getOrElse {
+          logger.error("[SelectSubcontractorsController][onPageLoad] - CisIdPage or DateConfirmPaymentsPage missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
     }
 
   def onSubmit(): Action[AnyContent] =
@@ -185,6 +188,9 @@ class SelectSubcontractorsController @Inject() (
                 )
             }
         }
-        .getOrElse(Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())))
+        .getOrElse {
+          logger.error("[SelectSubcontractorsController][onSubmit] - CisIdPage or DateConfirmPaymentsPage missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
     }
 }

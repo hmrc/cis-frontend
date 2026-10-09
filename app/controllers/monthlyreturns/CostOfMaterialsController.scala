@@ -21,6 +21,7 @@ import forms.monthlyreturns.CostOfMaterialsFormProvider
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
+import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -44,14 +45,19 @@ class CostOfMaterialsController @Inject() (
   view: CostOfMaterialsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form: Form[Option[BigDecimal]] = formProvider()
 
   def onPageLoad(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
-        case None                => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case None                =>
+          logger.error(
+            s"[CostOfMaterialsController][onPageLoad] - SelectedSubcontractorPage missing, index: $index"
+          )
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
           val preparedForm = request.userAnswers.get(SelectedSubcontractorMaterialCostsPage(index)) match {
             case None        => form
@@ -74,6 +80,9 @@ class CostOfMaterialsController @Inject() (
 
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
+          logger.error(
+            s"[CostOfMaterialsController][onSubmit] - SelectedSubcontractorPage missing, index: $index"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(subcontractor) =>

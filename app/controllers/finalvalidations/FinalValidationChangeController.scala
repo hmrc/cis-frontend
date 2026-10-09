@@ -87,12 +87,27 @@ class FinalValidationChangeController @Inject() (
                     }
 
                 case None =>
-                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                  logger.error(
+                    s"[FinalValidationChangeController] Unable to create final validation handoff: " +
+                      s"invalid or incomplete payload for subcontractorId=$subcontractorId, " +
+                      s"fieldKey=$fieldKey, targetKey=$targetKey"
+                  )
+                  Future.successful(
+                    Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                  )
+
               }
             }
 
         case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          logger.error(
+            "[FinalValidationChangeController] Unable to change final validation field: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+
       }
     }
 }

@@ -63,7 +63,7 @@ class FinalValidationReturnController @Inject() (
                 }
 
             } else {
-              logger.warn(
+              logger.error(
                 s"[FinalValidationReturnController] Invalid Final Validation handoff correlation " +
                   s"for handoffId: $handoffId"
               )
@@ -71,6 +71,10 @@ class FinalValidationReturnController @Inject() (
             }
 
           case None =>
+            logger.error(
+              s"[FinalValidationReturnController] Final Validation handoff not found " +
+                s"for handoffId: $handoffId"
+            )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         }
