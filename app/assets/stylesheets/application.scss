@@ -96,6 +96,24 @@
   }
 }
 
+.final-validation-action-form {
+  display: inline-flex;
+  align-items: center;
+}
+
+.final-validation-cancel-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1d70b8;
+  font-size: 19px;
+  font-family: "GDS Transport", arial, sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+  position: relative;
+  top: 10px;
+}
+
 // Prevent Safari on iOS from styling auto-detected phone/data links
 a[x-apple-data-detectors] {
   color: inherit;

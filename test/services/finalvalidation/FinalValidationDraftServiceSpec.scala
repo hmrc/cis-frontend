@@ -113,4 +113,33 @@ class FinalValidationDraftServiceSpec extends SpecBase {
       )
     }
   }
+
+  "resetSubcontractor" - {
+
+    "must reset the subcontractor using the connector" in {
+      val draft = mock[FinalValidationDraft]
+
+      when(
+        connector.resetFinalValidationSubcontractor(
+          "instance-id",
+          "draft-id",
+          101L
+        )
+      ).thenReturn(Future.successful(draft))
+
+      service
+        .resetSubcontractor(
+          instanceId = "instance-id",
+          draftId = "draft-id",
+          subcontractorId = 101L
+        )
+        .futureValue mustBe draft
+
+      verify(connector).resetFinalValidationSubcontractor(
+        "instance-id",
+        "draft-id",
+        101L
+      )
+    }
+  }
 }
