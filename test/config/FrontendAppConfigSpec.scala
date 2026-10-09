@@ -52,6 +52,13 @@ class FrontendAppConfigSpec extends SpecBase {
     "must contain the monthly returns supported years count" in new Setup {
       appConfig.monthlyReturnsSupportedYears mustBe 10
     }
+
+    "exitSurveyUrl" - {
+      "must be built from feedback-frontend service base URL" in new Setup {
+        appConfig.exitSurveyUrl mustBe "http://localhost:9514/feedback/construction-industry-scheme"
+      }
+    }
+
   }
 
   trait Setup {
