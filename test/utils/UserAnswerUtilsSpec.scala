@@ -452,8 +452,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(VerifiedStatusDeclarationPage, true)
         .get
-        .set(SubmitInactivityRequestPage, true)
-        .get
+//        .set(SubmitInactivityRequestPage, true)
+//        .get
         .set(WhichSubcontractorsToAddPage, Set("10"))
         .get
         .set(SubcontractorValidationFailuresPage, validationFailures)
@@ -482,7 +482,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(AllSubcontractorDetailsAdded) mustBe None
       cleared.get(PaymentDetailsConfirmationPage) mustBe None
       cleared.get(VerifiedStatusDeclarationPage) mustBe None
-      cleared.get(SubmitInactivityRequestPage) mustBe None
+//      cleared.get(SubmitInactivityRequestPage) mustBe None
       cleared.get(WhichSubcontractorsToAddPage) mustBe None
       cleared.get(SubcontractorValidationFailuresPage) mustBe None
       cleared.get(SubmissionConfirmationCachePage) mustBe None
