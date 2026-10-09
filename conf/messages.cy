@@ -506,13 +506,13 @@ monthlyreturns.checkAnswersTotalPayments.title = Gwiriwch eich atebion ar gyfer 
 monthlyreturns.checkAnswersTotalPayments.heading = Gwiriwch eich atebion ar gyfer {0}
 monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Cyfanswm y taliadau i’r is-gontractwr
 monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials = Cyfanswm cost y deunyddiau
-monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Cyfanswm y didyniadau CIS
+monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions = Cyfanswm y dreth a ddidynnwyd
 
 monthlyreturns.changeAnswersTotalPayments.title = Newid manylion yr is-gontractwr
 monthlyreturns.changeAnswersTotalPayments.heading = Newid manylion {0}
 monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors = Cyfanswm y taliadau i’r is-gontractwr
 monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials = Cyfanswm cost y deunyddiau
-monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions = Cyfanswm y didyniadau CIS
+monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions = Cyfanswm y dreth a ddidynnwyd
 
 monthlyreturns.verifiedStatusDeclaration.title = Datganiad o’r statws dilysu
 monthlyreturns.verifiedStatusDeclaration.heading = Datganiad o’r statws dilysu
@@ -525,7 +525,7 @@ monthlyreturns.summarySubcontractorPayments.heading = Crynodeb o’r taliadau a 
 monthlyreturns.summarySubcontractorPayments.intro = Rydym wedi ychwanegu manylion talu {0} o is-gontractwyr.
 monthlyreturns.summarySubcontractorPayments.totalPayments.label = Cyfanswm y taliadau i’r is-gontractwr
 monthlyreturns.summarySubcontractorPayments.totalMaterialsCost.label = Cyfanswm cost y deunyddiau
-monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label = Cyfanswm y didyniadau CIS
+monthlyreturns.summarySubcontractorPayments.totalCisDeductions.label = Cyfanswm y dreth a ddidynnwyd
 
 monthlyreturns.submissionUnsuccessfulResubmit.title = Mae yna broblem gyda’ch cyflwyniad
 monthlyreturns.submissionUnsuccessfulResubmit.heading = Mae yna broblem gyda’ch cyflwyniad
