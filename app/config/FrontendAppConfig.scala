@@ -99,6 +99,11 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val stubSendingEnabled: Boolean = configuration.get[Boolean]("features.stub-sending-enabled")
 
+  lazy val useRateLimitedAllowList: Boolean = configuration.get[Boolean]("features.use-rate-limited-allow-list")
+  lazy val splitterServiceName: String      = configuration.get[String]("splitter.service-name")
+  lazy val splitterAllowListName: String    = configuration.get[String]("splitter.allow-list-name")
+  lazy val legacyCisServiceUrl: String      = configuration.get[String]("urls.legacyCisService")
+
   def returnsLandingPageUrl(instanceId: String, contractorName: Option[String]): String =
     val encodedInstanceId = urlEncode(instanceId)
     val queryString       =
