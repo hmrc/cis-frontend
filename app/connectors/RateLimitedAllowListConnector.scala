@@ -20,7 +20,7 @@ import models.{AllowListCheckRequest, AllowListCheckResponse}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, StringContextOps}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class RateLimitedAllowListConnector @Inject() (servicesConfig: ServicesConfig, http: HttpClientV2)(implicit
   ec: ExecutionContext
-) {
+) extends HttpReadsInstances {
 
   private val baseUrl: String = servicesConfig.baseUrl("rate-limited-allow-list")
 
