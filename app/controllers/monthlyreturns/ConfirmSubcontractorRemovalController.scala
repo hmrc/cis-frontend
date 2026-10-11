@@ -24,6 +24,7 @@ import models.ReturnType.MonthlyAmendedStandardReturn
 import models.{Mode, UserAnswers}
 import pages.monthlyreturns.*
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -46,7 +47,8 @@ class ConfirmSubcontractorRemovalController @Inject() (
   view: ConfirmSubcontractorRemovalView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form = formProvider()
 
@@ -54,6 +56,9 @@ class ConfirmSubcontractorRemovalController @Inject() (
     implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
+          logger.error(
+            s"[ConfirmSubcontractorRemovalController][onPageLoad] - SelectedSubcontractorPage missing, index: $index"
+          )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
         case Some(subcontractor) =>
@@ -65,6 +70,9 @@ class ConfirmSubcontractorRemovalController @Inject() (
     implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
+          logger.error(
+            s"[ConfirmSubcontractorRemovalController][onSubmit] - SelectedSubcontractorPage missing, index: $index"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(subcontractor) =>
@@ -95,6 +103,10 @@ class ConfirmSubcontractorRemovalController @Inject() (
   ): Future[Result] =
     buildDeletePayload(ua, index) match {
       case None =>
+        logger.error(
+          s"[ConfirmSubcontractorRemovalController][deleteFlow] - payload build failed, CisIdPage, " +
+            s"DateConfirmPaymentsPage, SelectedSubcontractorPage or ReturnTypePage missing, index: $index"
+        )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
       case Some(payload) =>
@@ -106,6 +118,11 @@ class ConfirmSubcontractorRemovalController @Inject() (
           _              <- sessionRepository.set(updatedAnswers)
         } yield redirectAfterDelete(updatedAnswers, mode))
           .recover { case e =>
+            logger.error(
+              s"[ConfirmSubcontractorRemovalController][deleteFlow] - delete flow failed, index: $index, " +
+                s"subcontractorId: ${payload.subcontractorId}",
+              e
+            )
             Redirect(controllers.routes.SystemErrorController.onPageLoad())
           }
     }

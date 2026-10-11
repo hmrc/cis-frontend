@@ -77,13 +77,21 @@ class SubcontractorDetailsAddedController @Inject() (
                 case Some(viewModel)     => Ok(view(preparedForm, mode, viewModel))
                 case None if isAmendment =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
-                case None                => Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                case None                =>
+                  logger.error("[SubcontractorDetailsAddedController][onPageLoad] - view model build returned None")
+                  Redirect(controllers.routes.SystemErrorController.onPageLoad())
               }
             case false =>
+              logger.error(
+                s"[SubcontractorDetailsAddedController][onPageLoad] - isEditable returned false, cisId=$cisId"
+              )
               Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           }
 
         case None =>
+          logger.error(
+            "[SubcontractorDetailsAddedController][onPageLoad] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
@@ -98,6 +106,7 @@ class SubcontractorDetailsAddedController @Inject() (
             Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
           )
         case None                        =>
+          logger.error("[SubcontractorDetailsAddedController][onSubmit] - view model build returned None")
           Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
 
         case Some(viewModel) =>

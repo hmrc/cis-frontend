@@ -23,6 +23,7 @@ import javax.inject.Inject
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
+import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -45,7 +46,8 @@ class PaymentDetailsController @Inject() (
   view: PaymentDetailsView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form: Form[BigDecimal] = formProvider()
 
@@ -53,6 +55,9 @@ class PaymentDetailsController @Inject() (
     (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
+          logger.error(
+            s"[PaymentDetailsController][onPageLoad] - SelectedSubcontractorPage missing from answers, index=$index"
+          )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
         case Some(subcontractor) =>
@@ -69,6 +74,9 @@ class PaymentDetailsController @Inject() (
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
         case None =>
+          logger.error(
+            s"[PaymentDetailsController][onSubmit] - SelectedSubcontractorPage missing from answers, index=$index"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
         case Some(subcontractor) =>

@@ -37,6 +37,13 @@ class SubmissionSuccessViewSpec extends SpecBase {
 
       doc.title must include(messages("monthlyreturns.submissionSuccess.title", returnTypeMessage))
 
+      val recruitmentBanner = doc.select(".hmrc-user-research-banner")
+
+      recruitmentBanner.isEmpty mustBe false
+      recruitmentBanner.select("a").attr("href") must include(
+        app.injector.instanceOf[config.FrontendAppConfig].userResearchUrl
+      )
+
       doc.select(".govuk-panel__title").text must include(
         messages("monthlyreturns.submissionSuccess.heading", returnTypeMessage)
       )
@@ -115,6 +122,13 @@ class SubmissionSuccessViewSpec extends SpecBase {
       doc.select("a.govuk-link").text must include(
         messages("monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link")
       )
+    }
+
+    "must not render the recruitment banner when user research banner flag is disabled" in new SetupWithBannerDisabled {
+
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select(".hmrc-user-research-banner").isEmpty mustBe true
     }
 
     "must render the page when email is empty" in new Setup {
@@ -198,6 +212,35 @@ class SubmissionSuccessViewSpec extends SpecBase {
       email = email,
       submissionType = submissionType,
       cisId = cisId
+    )
+
+    lazy val html: HtmlFormat.Appendable = view(vm)
+  }
+
+  trait SetupWithBannerDisabled {
+    val app: Application            =
+      applicationBuilder()
+        .configure("features.user-research-banner-enabled" -> false)
+        .build()
+    val view: SubmissionSuccessView = app.injector.instanceOf[SubmissionSuccessView]
+
+    implicit val request: play.api.mvc.Request[_] = FakeRequest()
+    implicit val messages: Messages               =
+      play.api.i18n.MessagesImpl(
+        play.api.i18n.Lang.defaultLang,
+        app.injector.instanceOf[play.api.i18n.MessagesApi]
+      )
+
+    lazy val vm: SubmissionSuccessViewModel = SubmissionSuccessViewModel(
+      reference = "ABC1234567890123456789",
+      periodEnd = "February 2026",
+      submittedTime = "10:30am",
+      submittedDate = "6 Jan 2026",
+      contractorName = "Test Contractor Ltd",
+      empRef = "123/AB456",
+      email = "test@test.com",
+      submissionType = ReturnType.MonthlyNilReturn,
+      cisId = "1"
     )
 
     lazy val html: HtmlFormat.Appendable = view(vm)

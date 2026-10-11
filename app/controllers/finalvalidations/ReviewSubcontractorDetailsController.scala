@@ -25,6 +25,7 @@ import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerifi
 import pages.monthlyreturns.SelectedSubcontractorPage
 
 import javax.inject.Inject
+import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
@@ -49,7 +50,8 @@ class ReviewSubcontractorDetailsController @Inject() (
   view: ReviewSubcontractorDetailsView
 )(using ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def onPageLoad: Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
@@ -77,9 +79,22 @@ class ReviewSubcontractorDetailsController @Inject() (
                     case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
                       modeFromString(modeValue)
                         .map(mode => controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode).url)
-                        .getOrElse(controllers.routes.JourneyRecoveryController.onPageLoad().url)
+                        .getOrElse {
+                          logger.error(
+                            "[ReviewSubcontractorDetailsController] Unable to determine back URL: " +
+                              s"invalid WhichSubcontractorsToAdd mode: $modeValue"
+                          )
+                          controllers.routes.JourneyRecoveryController.onPageLoad().url
+                        }
+
                   }
-                  .getOrElse(controllers.routes.JourneyRecoveryController.onPageLoad().url)
+                  .getOrElse {
+                    logger.error(
+                      "[ReviewSubcontractorDetailsController] Unable to determine back URL: " +
+                        "MonthlyFinalValidationSourcePage is missing from user answers"
+                    )
+                    controllers.routes.JourneyRecoveryController.onPageLoad().url
+                  }
 
               Ok(
                 view(
@@ -89,7 +104,13 @@ class ReviewSubcontractorDetailsController @Inject() (
             }
 
         case None =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          logger.error(
+            "[ReviewSubcontractorDetailsController] Unable to load review page: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
       }
     }
 
@@ -121,7 +142,16 @@ class ReviewSubcontractorDetailsController @Inject() (
             }
 
         case _ =>
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          logger.error(
+            s"[ReviewSubcontractorDetailsController] Unable to submit final validation: " +
+              s"required journey data missing - " +
+              s"FinalValidationDraftIdPage present=${draftIdOpt.isDefined}, " +
+              s"MonthlyFinalValidationSourcePage present=${sourceOpt.isDefined}"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+
       }
     }
 
@@ -148,7 +178,12 @@ class ReviewSubcontractorDetailsController @Inject() (
             Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
 
           case None =>
+            logger.error(
+              "[ReviewSubcontractorDetailsController] Unable to continue journey: " +
+                "FinalValidationVerificationRequiredPage is missing from user answers"
+            )
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
         }
 
       case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
@@ -156,7 +191,14 @@ class ReviewSubcontractorDetailsController @Inject() (
           .map { mode =>
             Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, userAnswers))
           }
-          .getOrElse(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          .getOrElse {
+            logger.error(
+              s"[ReviewSubcontractorDetailsController] Unable to continue journey: " +
+                s"invalid WhichSubcontractorsToAdd mode '$modeValue'"
+            )
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+
     }
 
   private def modeFromString(value: String): Option[Mode] =

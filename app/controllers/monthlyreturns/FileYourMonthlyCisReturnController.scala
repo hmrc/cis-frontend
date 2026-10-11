@@ -72,7 +72,13 @@ class FileYourMonthlyCisReturnController @Inject() (
         cleanAnswers <- request.userAnswers.clearMonthlyReturnJourney.toFuture
         _            <- sessionRepository.set(cleanAnswers)
       } yield Redirect(routes.DateConfirmPaymentsController.onPageLoad(NormalMode, Some(returnType))))
-        .recover(_ => Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        .recover { case ex =>
+          logger.error(
+            "[FileYourMonthlyCisReturnController][onSubmit] - failed clearing journey or storing answers",
+            ex
+          )
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
     }
 
   private def startReturn(
@@ -125,7 +131,7 @@ class FileYourMonthlyCisReturnController @Inject() (
           val instanceId = maybeInstanceId.getOrElse(agentData.uniqueId)
           handleAgentFlow(instanceId, agentData, userAnswers, render)
         case (Some(_), None)                    =>
-          logger.warn(s"[FileYourMonthlyCisReturnController] Missing AgentClientData")
+          logger.error(s"[FileYourMonthlyCisReturnController] Missing AgentClientData")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         case (None, None)                       =>
           logger.error(
@@ -155,7 +161,7 @@ class FileYourMonthlyCisReturnController @Inject() (
                            )
           } yield result
         case false =>
-          logger.warn(
+          logger.error(
             s"[FileYourMonthlyCisReturnController] hasClient = false for " +
               s"taxOfficeNumber: ${agentData.taxOfficeNumber}, taxOfficeReference: ${agentData.taxOfficeReference}"
           )

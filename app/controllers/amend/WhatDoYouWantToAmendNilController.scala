@@ -25,6 +25,7 @@ import models.amend.WhatDoYouWantToAmendNil.{AddPaymentOrSubcontractorDetails, A
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import pages.amend.WhatDoYouWantToAmendNilPage
 import pages.monthlyreturns.ReturnTypePage
+import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -54,7 +55,8 @@ class WhatDoYouWantToAmendNilController @Inject() (
   view: WhatDoYouWantToAmendNilView
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   val form: Form[WhatDoYouWantToAmendNil] = formProvider()
 
@@ -87,11 +89,14 @@ class WhatDoYouWantToAmendNilController @Inject() (
                     amendMonthlyReturnService
                       .startStandardAmendment(ua1)
                       .flatMap {
-                        case Left(_)  =>
+                        case Left(error) =>
+                          logger.error(
+                            s"[WhatDoYouWantToAmendNil] Failed to start nil amendment: $error"
+                          )
                           Future.successful(
                             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
                           )
-                        case Right(_) =>
+                        case Right(_)    =>
                           for {
                             ua2 <- Future.fromTry(
                                      ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn)

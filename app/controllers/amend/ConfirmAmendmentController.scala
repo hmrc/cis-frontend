@@ -157,7 +157,7 @@ class ConfirmAmendmentController @Inject() (
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
             }
           ).recover { case ex =>
-            logger.warn(
+            logger.error(
               s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
               ex
             )

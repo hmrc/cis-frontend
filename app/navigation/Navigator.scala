@@ -22,12 +22,13 @@ import models.amend.*
 import pages.*
 import pages.amend.*
 import pages.monthlyreturns.*
+import play.api.Logging
 import play.api.mvc.Call
 
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class Navigator @Inject() () {
+class Navigator @Inject() () extends Logging {
 
   private val normalRoutes: (Page, ReturnType) => UserAnswers => Call = {
     // common
@@ -128,7 +129,11 @@ class Navigator @Inject() () {
         controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoad(NormalMode)
       case Some(false) =>
         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-      case _           => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case _           =>
+        logger.error(
+          "[Navigator][navigatorFromPaymentDetailsConfirmationPage] - PaymentDetailsConfirmationPage not set"
+        )
+        controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
   private def navigatorFromEmploymentStatusDeclarationPage(
@@ -138,7 +143,11 @@ class Navigator @Inject() () {
       case (Some(_), NormalMode) =>
         controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(NormalMode)
       case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case (None, _)             =>
+        logger.error(
+          "[Navigator][navigatorFromEmploymentStatusDeclarationPage] - EmploymentStatusDeclarationPage not set"
+        )
+        controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
   private def navigatorFromVerifiedStatusDeclarationPage(
@@ -148,7 +157,9 @@ class Navigator @Inject() () {
       case (Some(_), NormalMode) =>
         controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
       case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      case (None, _)             => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case (None, _)             =>
+        logger.error("[Navigator][navigatorFromVerifiedStatusDeclarationPage] - VerifiedStatusDeclarationPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
   private def navigatorFromSubmitInactivityRequestPage(
@@ -162,7 +173,9 @@ class Navigator @Inject() () {
       case (Some(false), NormalMode) =>
         controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode)
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromSubmitInactivityRequestPage] - SubmitInactivityRequestPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
   private def navigatorFromConfirmationByEmailPage(
@@ -178,6 +191,8 @@ class Navigator @Inject() () {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
-      case (None, _)                 => controllers.routes.JourneyRecoveryController.onPageLoad()
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ConfirmationByEmailPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 }
