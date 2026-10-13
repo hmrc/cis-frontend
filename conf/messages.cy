@@ -41,8 +41,6 @@ monthlyreturns.checkYourAnswers.title = Gwiriwch eich atebion cyn cyflwyno’ch 
 monthlyreturns.checkYourAnswers.heading = Gwiriwch eich atebion cyn cyflwyno’ch datganiad
 monthlyreturns.checkYourAnswers.returnDetails.heading = Manylion y datganiad
 monthlyreturns.checkYourAnswers.emailConfirmation.heading = E-bost cadarnhau
-monthlyreturns.checkYourAnswers.submitSection.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.checkYourAnswers.submitSection.confirmation = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.checkYourAnswers.submitSection.button = Cadarnhau a pharhau
 
 journeyRecovery.continue.title = Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth hwn
@@ -158,33 +156,11 @@ monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Cyfnod dod i ben y
 monthlyreturns.dateConfirmNilPayments.change.hidden = Cadarnhau taliadau datganiadau ‘dim’ i is-gontractwyr y mis hwn.
 monthlyreturns.dateConfirmNilPayments.error.required.month = Nodwch fis rhwng 1 a 12
 monthlyreturns.dateConfirmNilPayments.error.required.year = Nodwch flwyddyn
-monthlyreturns.dateConfirmNilPayments.error.required.two = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.error.invalid = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid.month = Nodwch fis rhwng 1 a 12
 monthlyreturns.dateConfirmNilPayments.error.invalid.year = Nodwch flwyddyn ddilys, fel 2025
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Mae’n rhaid i chi nodi mis; ni all y dyddiad fod cyn {0} {1} {2}
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = Mae’n rhaid i chi nodi blwyddyn, ni all y dyddiad fod yn fwy na 3 chyfnod datganiad o flaen y dyddiad presennol
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear = Ni all cyfnod y datganiad fod cyn {0}
-
-monthlyreturns.inactivityRequest.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.change.hidden = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.p1 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.p2 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.insetText = xxxxxxxxxxxxxxxxxxxx
-
-monthlyreturns.confirmEmailAddress.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.input.label = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.error.length = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.error.invalid = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.change.hidden = Cadarnhau’ch cyfeiriad e-bost
 
 monthlyreturns.declaration.title = Datganiad
 monthlyreturns.declaration.heading = Datganiad
@@ -197,12 +173,6 @@ monthlyreturns.declaration.submit = Cadarnhau a pharhau
 monthlyreturns.submissionSending.title = Mae’ch cyflwyniad yn cael ei anfon at CThEF
 monthlyreturns.submissionSending.h1 = Mae’ch cyflwyniad yn cael ei anfon at CThEF
 monthlyreturns.submissionSending.paragraph = Wrth i’ch cyflwyniad gael ei brosesu, peidiwch ag adfywio’r dudalen hon na defnyddio’r botwm i fynd yn ôl.
-
-monthlyreturns.inactivityWarning.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.warning = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.submit = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.submissionUnsuccessful.title = Mae yna broblem dechnegol gyda’ch cyflwyniad
 monthlyreturns.submissionUnsuccessful.heading.h1 = Mae yna broblem dechnegol gyda’ch cyflwyniad
@@ -256,10 +226,6 @@ monthlyreturns.returnType.MonthlyStandardReturn = Datganiad misol
 monthlyreturns.returnType.MonthlyAmendedStandardReturn = Datganiad misol
 monthlyreturns.submissionSuccessful.whatHappensNext.h2 = Yr hyn sy’n digwydd nesaf
 monthlyreturns.submissionSuccessful.whatHappensNext.p = Ni wnaethoch nodi e-bost wrth i chi gyflwyno’r datganiad hwn. Os ydych am nodi e-bost, bydd angen i chi newid eich manylion cyswllt yn yr adran ynglŷn â’ch sefydliad/ffỳrm. Bydd hyn i’w weld yn eich gwasanaethau CThEF.
-
-stub.monthlyreturns.submissionSuccessful.button = xxxxxxxxxxxxxxxxxxxx
-stub.monthlyreturns.submissionUnsuccessful.button = xxxxxxxxxxxxxxxxxxxx
-stub.monthlyreturns.submissionAwaiting.button = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.alreadySubmitted.title = Rydych eisoes wedi cyflwyno eich datganiad misol
 monthlyreturns.alreadySubmitted.heading = Rydych eisoes wedi cyflwyno eich datganiad misol
@@ -343,18 +309,10 @@ monthlyreturns.dateConfirmPayments.p1.prefix = Ni allwch newid cyfnod datganiad 
 monthlyreturns.dateConfirmPayments.p1.link = ddileu'r datganiad bresennol
 monthlyreturns.dateConfirmPayments.legendText = Nodwch fis a blwyddyn
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Cyfnod dod i ben y datganiad
-monthlyreturns.dateConfirmPayments.change.hidden = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.labelMonth = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.labelYear = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.helpText = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.selectSubcontractors.title = Pa is-gontractwyr ydych chi am eu cynnwys?
 monthlyreturns.selectSubcontractors.heading = Pa is-gontractwyr ydych chi am eu cynnwys?
 monthlyreturns.selectSubcontractors.p1 = Rhowch wybod i ni am yr is-gontractwyr rydych yn eu cynnwys yn y datganid misol hwn.
-monthlyreturns.selectSubcontractors.checkbox.label = xxxxxxxxxxxxxxxxxxxx
-
-monthlyreturns.selectSubcontractors.confirmation.required = xxxxxxxxxxxxxxxxxxxx
-
 monthlyreturns.selectSubcontractors.p2 = Gallwch hefyd ychwanegu is-gontractwyr at eich rhestr, tynnu is-gontractwyr o’ch rhestr, a
 monthlyreturns.selectSubcontractors.p2.link = diweddaru’ch rhestr
 monthlyreturns.selectSubcontractors.selectAll.link = Dewis popeth
@@ -390,16 +348,6 @@ verifySubcontractors.no.hint = Bydd treth yn cael ei didynnu ar gyfradd uwch hyd
 verifySubcontractors.checkYourAnswersLabel = Mae gennych is-gontractwyr sydd heb eu dilysu
 verifySubcontractors.error.required = Dewiswch ‘Iawn’ os ydych chi am ddilysu eich is-gontractwyr nawr
 verifySubcontractors.change.hidden = xxxxxxxxxxxxxxxxxxxx
-
-monthlyreturns.subcontractorsPaidThisMonth.title = Is-gontractwyr y gwnaethoch eu talu y mis hwn
-monthlyreturns.subcontractorsPaidThisMonth.heading = Is-gontractwyr y gwnaethoch eu talu y mis hwn
-monthlyreturns.subcontractorsPaidThisMonth.p1 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.p2 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Ychwanegu manylion
-monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden = ar gyfer {0}
-monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden = {0} o'r datganiad hwn
-monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = Ychwanegwch is-gontractwr arall
 
 paymentDetails.title = Beth oedd y cyfanswm y gwnaethoch ei dalu i’r is-gontractwr hwn?
 paymentDetails.heading = Beth oedd y cyfanswm y gwnaethoch ei dalu i {0}?
@@ -488,11 +436,6 @@ monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = cadarnhaumanyl
 monthlyreturns.paymentDetailsConfirmation.error.required = Dewiswch ‘Iawn’ i gadarnhau bod yr wybodaeth rydych wedi’i rhoi yn gywir
 monthlyreturns.paymentDetailsConfirmation.change.hidden = cadarnhaumanyliontaliad
 monthlyreturns.paymentDetailsConfirmation.cancelAmendment = Canslo diwygiad
-
-monthlyreturns.addSubcontractorDetails.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.addSubcontractorDetails.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.addSubcontractorDetails.alreadyAdded = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.addSubcontractorDetails.error.required = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.employmentStatusDeclaration.title = Datganiad o’r statws cyflogaeth
 monthlyreturns.employmentStatusDeclaration.heading = Datganiad o’r statws cyflogaeth
