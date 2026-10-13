@@ -314,7 +314,8 @@ class SubmissionService @Inject() (
           val request        = SendSuccessEmailRequest(
             email = email,
             month = yearMonth.format(DateTimeFormats.monthFormatter(locale)),
-            year = yearMonth.getYear.toString
+            year = yearMonth.getYear.toString,
+            language = langCode
           )
 
           for {

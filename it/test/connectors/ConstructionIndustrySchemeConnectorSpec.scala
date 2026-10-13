@@ -1108,7 +1108,8 @@ class ConstructionIndustrySchemeConnectorSpec
       val req          = SendSuccessEmailRequest(
         email = "test@test.com",
         month = "September",
-        year = "2025"
+        year = "2025",
+        language = "en"
       )
 
       stubFor(
@@ -1122,7 +1123,7 @@ class ConstructionIndustrySchemeConnectorSpec
 
     "fail the future when BE returns non-202 (e.g. 500)" in {
       val submissionId = "sub-err"
-      val req          = SendSuccessEmailRequest("test@test.com", "September", "2025")
+      val req          = SendSuccessEmailRequest("test@test.com", "September", "2025", "en")
 
       stubFor(
         post(urlPathEqualTo(s"/cis/submissions/$submissionId/send-success-email"))
