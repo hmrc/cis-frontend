@@ -23,7 +23,7 @@ import models.NormalMode
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectSubcontractorsFormData
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, IsResumedMonthlyReturnPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -138,7 +138,13 @@ class SelectSubcontractorsController @Inject() (
                                                      MonthlyFinalValidationSource.SelectSubcontractors
                                                    )
                                                  )
-                          _                   <- sessionRepository.set(withSource)
+                          withOrigin          <- Future.fromTry(
+                                                   withSource.set(
+                                                     IsResumedMonthlyReturnPage,
+                                                     withSource.get(IsResumedMonthlyReturnPage).getOrElse(false)
+                                                   )
+                                                 )
+                          _                   <- sessionRepository.set(withOrigin)
                         } yield
                           if (verificationRequired) {
                             Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))

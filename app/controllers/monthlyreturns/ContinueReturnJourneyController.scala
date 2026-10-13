@@ -27,7 +27,7 @@ import javax.inject.Inject
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
-import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -103,7 +103,10 @@ class ContinueReturnJourneyController @Inject() (
                     Success(finalUserAnswers)
                   }
 
-                Future.fromTry(answersWithSource).flatMap { withSource =>
+                val answersWithOrigin =
+                  answersWithSource.flatMap(_.set(IsResumedMonthlyReturnPage, true))
+
+                Future.fromTry(answersWithOrigin).flatMap { withSource =>
                   sessionRepository.set(withSource).flatMap { _ =>
                     reconcileFormpRds(
                       queryParams.instanceId,

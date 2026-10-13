@@ -572,7 +572,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
-    "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyStandardReturn" in {
+    "must redirect on POST Yes when adding more subcontractors on a new standard return" in {
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
@@ -581,9 +581,42 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       ).set(ReturnTypePage, MonthlyStandardReturn)
         .success
         .value
+        .set(pages.monthlyreturns.IsResumedMonthlyReturnPage, false)
+        .success
+        .value
         .set(OriginalSubcontractorCountPage, 3)
         .success
         .value
+
+      val application = buildApp(ua, sessionRepository = Some(mockSessionRepository))
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrl)
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+
+        val userAnswersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(userAnswersCaptor.capture())
+        userAnswersCaptor.getValue.get(MonthlyFinalValidationContinuationPage) mustBe None
+        userAnswersCaptor.getValue.get(AllSubcontractorDetailsAdded) mustBe Some(false)
+        userAnswersCaptor.getValue.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe Some(false)
+      }
+    }
+
+    "must redirect on POST Yes when adding more subcontractors on a resumed standard return" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val ua = uaWithSubcontractors(
+        1 -> completeSub(1001L, "Complete Ltd")
+      ).setOrException(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
+        .setOrException(OriginalSubcontractorCountPage, 3)
 
       val application = buildApp(ua, sessionRepository = Some(mockSessionRepository))
 
@@ -602,6 +635,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         verify(mockSessionRepository).set(userAnswersCaptor.capture())
         userAnswersCaptor.getValue.get(MonthlyFinalValidationContinuationPage) mustBe None
         userAnswersCaptor.getValue.get(AllSubcontractorDetailsAdded) mustBe Some(false)
+        userAnswersCaptor.getValue.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe Some(true)
       }
     }
 

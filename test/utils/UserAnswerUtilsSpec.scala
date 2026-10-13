@@ -349,6 +349,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(MonthlyFinalValidationSourcePage, MonthlyFinalValidationSource.SelectSubcontractors)
         .get
+        .set(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
+        .get
         .set(ConfirmEmailAddressPage, "test@example.com")
         .get
         .set(NilReturnStatusPage, "DRAFT")
@@ -419,6 +421,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(FinalValidationDraftIdPage) mustBe None
       cleared.get(MonthlyFinalValidationContinuationPage) mustBe None
       cleared.get(MonthlyFinalValidationSourcePage) mustBe None
+      cleared.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe None
 
       cleared.get(SubmissionDetailsPage) mustBe None
       cleared.get(PollUrlPage) mustBe None
@@ -491,6 +494,8 @@ class UserAnswerUtilsSpec extends SpecBase {
           MonthlyFinalValidationSource.WhichSubcontractorsToAdd("CheckMode")
         )
         .get
+        .set(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
+        .get
         .set(
           SubmissionConfirmationCachePage,
           SubmissionConfirmationCache(
@@ -522,6 +527,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(FinalValidationDraftIdPage) mustBe None
       cleared.get(MonthlyFinalValidationContinuationPage) mustBe None
       cleared.get(MonthlyFinalValidationSourcePage) mustBe None
+      cleared.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe None
     }
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {

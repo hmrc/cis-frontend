@@ -107,6 +107,9 @@ object UserAnswerUtils {
         .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
         .flatMap(_.remove(MonthlyFinalValidationSourcePage))
 
+        // monthly return journey origin
+        .flatMap(_.remove(IsResumedMonthlyReturnPage))
+
         // ChRIS submission
         .flatMap(_.remove(SubmissionDetailsPage))
         .flatMap(_.remove(PollUrlPage))
@@ -146,6 +149,9 @@ object UserAnswerUtils {
         .flatMap(_.remove(FinalValidationDraftIdPage))
         .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
         .flatMap(_.remove(MonthlyFinalValidationSourcePage))
+
+        // monthly return journey origin
+        .flatMap(_.remove(IsResumedMonthlyReturnPage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {

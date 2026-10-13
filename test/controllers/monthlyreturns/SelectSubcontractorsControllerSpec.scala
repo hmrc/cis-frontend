@@ -260,6 +260,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       "redirects to VerifySubcontractorsController when a incomplete selected subcontractor requires verification" in {
         val subcontractorService = mock[SubcontractorService]
         val monthlyReturnService = mock[MonthlyReturnService]
+        val sessionRepository    = mock[SessionRepository]
         stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
         when(
@@ -272,10 +273,11 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           Future.successful(
             userAnswersWithRequiredPages
               .setOrException(SelectedSubcontractorPage(1), SelectedSubcontractor(1, "test", None, None, None))
+              .setOrException(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
           )
         )
 
-        val app = applicationWith(subcontractorService, monthlyReturnService)
+        val app = applicationWith(subcontractorService, monthlyReturnService, sessionRepository = sessionRepository)
 
         running(app) {
           val request =
@@ -287,6 +289,10 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.VerifySubcontractorsController
             .onPageLoad(models.NormalMode)
             .url
+
+          val userAnswersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(sessionRepository).set(userAnswersCaptor.capture())
+          userAnswersCaptor.getValue.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe Some(true)
         }
       }
 
@@ -340,6 +346,9 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
           userAnswersCaptor.getValue
             .get(MonthlyFinalValidationSourcePage) mustBe Some(MonthlyFinalValidationSource.SelectSubcontractors)
+
+          userAnswersCaptor.getValue
+            .get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe Some(false)
         }
       }
 

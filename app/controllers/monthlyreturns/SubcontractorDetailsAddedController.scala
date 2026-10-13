@@ -18,10 +18,11 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
+import models.ReturnType.MonthlyStandardReturn
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage}
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -227,7 +228,31 @@ class SubcontractorDetailsAddedController @Inject() (
                       } else if (allSubcontractorDetailsAdded) {
                         Redirect(controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad())
                       } else {
-                        Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode))
+                        (
+                          updatedUa.get(ReturnTypePage),
+                          updatedUa.get(IsResumedMonthlyReturnPage)
+                        ) match {
+                          case (Some(MonthlyStandardReturn), Some(false)) =>
+                            Redirect(
+                              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
+                            )
+
+                          case (Some(MonthlyStandardReturn), Some(true)) =>
+                            Redirect(
+                              controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode)
+                            )
+
+                          case (Some(returnType), _) if returnType.amendmentFlag == "Y" =>
+                            Redirect(
+                              controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode)
+                            )
+
+                          case _ =>
+                            logger.error(
+                              "[SubcontractorDetailsAddedController][onSubmit] - Missing or invalid monthly return journey origin"
+                            )
+                            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                        }
                       }
                     }
                 )

@@ -52,9 +52,10 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
       val mockNavigator   = mock[Navigator]
       val mockSessionRepo = mock[SessionRepository]
 
-      val updatedAnswers = UserAnswers("id")
-      val finalAnswers   = updatedAnswers.set(CisIdPage, "CIS-123").success.value
-      val nextPage       = controllers.routes.JourneyRecoveryController.onPageLoad()
+      val updatedAnswers    = UserAnswers("id")
+      val finalAnswers      = updatedAnswers.set(CisIdPage, "CIS-123").success.value
+      val answersWithOrigin = finalAnswers.setOrException(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
+      val nextPage          = controllers.routes.JourneyRecoveryController.onPageLoad()
 
       when(
         mockService.populateUserAnswersForContinueJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
@@ -70,10 +71,10 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(finalAnswers))
 
-      when(mockSessionRepo.set(finalAnswers))
+      when(mockSessionRepo.set(answersWithOrigin))
         .thenReturn(Future.successful(true))
 
-      when(mockNavigator.nextPage(DateConfirmPaymentsPage, NormalMode, finalAnswers))
+      when(mockNavigator.nextPage(DateConfirmPaymentsPage, NormalMode, answersWithOrigin))
         .thenReturn(nextPage)
 
       val application = applicationBuilder()
@@ -104,8 +105,8 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
           isAgent = any[Boolean]
         )(any[HeaderCarrier])
 
-        verify(mockSessionRepo).set(finalAnswers)
-        verify(mockNavigator).nextPage(DateConfirmPaymentsPage, NormalMode, finalAnswers)
+        verify(mockSessionRepo).set(answersWithOrigin)
+        verify(mockNavigator).nextPage(DateConfirmPaymentsPage, NormalMode, answersWithOrigin)
 
         requestCaptor.getValue mustBe GetMonthlyReturnForEditRequest(
           instanceId = "CIS-123",
@@ -139,6 +140,7 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         MonthlyFinalValidationSourcePage,
         MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
       )
+      val answersWithOrigin = answersWithSource.setOrException(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
       val nextPage          = controllers.routes.JourneyRecoveryController.onPageLoad()
 
       when(
@@ -155,10 +157,10 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         )(any[HeaderCarrier])
       ).thenReturn(Future.successful(finalAnswers))
 
-      when(mockSessionRepo.set(answersWithSource))
+      when(mockSessionRepo.set(answersWithOrigin))
         .thenReturn(Future.successful(true))
 
-      when(mockNavigator.nextPage(DateConfirmPaymentsPage, NormalMode, answersWithSource))
+      when(mockNavigator.nextPage(DateConfirmPaymentsPage, NormalMode, answersWithOrigin))
         .thenReturn(nextPage)
 
       val application = applicationBuilder()
@@ -177,8 +179,8 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe nextPage.url
 
-        verify(mockSessionRepo).set(answersWithSource)
-        verify(mockNavigator).nextPage(DateConfirmPaymentsPage, NormalMode, answersWithSource)
+        verify(mockSessionRepo).set(answersWithOrigin)
+        verify(mockNavigator).nextPage(DateConfirmPaymentsPage, NormalMode, answersWithOrigin)
       }
     }
 
