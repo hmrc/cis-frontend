@@ -325,9 +325,8 @@ fileYourNilReturn.p2 = You can also submit an inactivity request while completin
 fileYourNilReturn.p3 = You may be charged a penalty if you fail to do this.
 
 monthlyreturns.dateConfirmPayments.title = 	Which return period are you filing for?
-monthlyreturns.dateConfirmPayments.heading = 	Which return period are you filing for?
+monthlyreturns.dateConfirmPayments.heading = Which return period are you filing for?
 monthlyreturns.dateConfirmPayments.nilreturn.title = Which nil return period are you filing for?
-
 monthlyreturns.dateConfirmPayments.nilreturn.heading = Which nil return period are you filing for?
 monthlyreturns.dateConfirmPayments.taxMonth.error.required = You must enter a month
 monthlyreturns.dateConfirmPayments.taxMonth.error.wholeNumber = You must enter a month
