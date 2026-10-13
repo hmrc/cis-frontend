@@ -290,7 +290,7 @@ fileYourNilReturn.p1 = Use this service to confirm you have not paid any subcont
 fileYourNilReturn.p2 = You can also submit an inactivity request while completing a nil return if you do not expect to pay any subcontractors in the next 6 months.
 fileYourNilReturn.p3 = You may be charged a penalty if you fail to do this.
 
-monthlyreturns.dateConfirmPayments.title = 	Which return period are you filing for?
+monthlyreturns.dateConfirmPayments.title = Which return period are you filing for?
 monthlyreturns.dateConfirmPayments.heading = Which return period are you filing for?
 monthlyreturns.dateConfirmPayments.nilreturn.title = Which nil return period are you filing for?
 monthlyreturns.dateConfirmPayments.nilreturn.heading = Which nil return period are you filing for?
@@ -308,7 +308,7 @@ monthlyreturns.dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod =
 monthlyreturns.dateConfirmPayments.paragraph = A return period runs from the 6th of the month to the 5th of the following month. For example, for 6 December to 5 January 2025, enter 1 2025.
 monthlyreturns.dateConfirmPayments.WarningIcon = Warning
 monthlyreturns.dateConfirmPayments.warning = You are required, by law, to submit this return by the due date (19th of each month). A penalty may be charged for late returns.
-monthlyreturns.dateConfirmPayments.p1.prefix = 	You cannot change a return period after you have started. You must
+monthlyreturns.dateConfirmPayments.p1.prefix = You cannot change a return period after you have started. You must
 monthlyreturns.dateConfirmPayments.p1.link = delete the existing return
 monthlyreturns.dateConfirmPayments.legendText = Enter month and year
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Return period ended
