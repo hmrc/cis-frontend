@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import models.NormalMode
+import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -75,7 +76,21 @@ class CheckAnswersTotalPaymentsController @Inject() (
           monthlyReturnService
             .updateMonthlyReturnItem(payload)
             .map { _ =>
-              Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+              val hasCompletedFinalValidation =
+                ua.get(MonthlyFinalValidationContinuationPage).contains(NormalMode.toString) &&
+                  ua.get(FinalValidationDraftIdPage).isEmpty
+
+              if (hasCompletedFinalValidation) {
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoadAfterFinalValidation(NormalMode)
+                )
+              } else {
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoad(NormalMode)
+                )
+              }
             }
             .recover {
               case u: UpstreamErrorResponse =>

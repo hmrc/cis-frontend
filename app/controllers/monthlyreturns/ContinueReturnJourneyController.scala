@@ -17,6 +17,8 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.ReturnType.MonthlyStandardReturn
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
 import models.{EmployerReference, NormalMode, UserAnswers}
 import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
@@ -24,7 +26,8 @@ import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 import javax.inject.Inject
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.DateConfirmPaymentsPage
+import pages.finalvalidations.MonthlyFinalValidationSourcePage
+import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -35,6 +38,7 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 import scala.util.control.NonFatal
 
 class ContinueReturnJourneyController @Inject() (
@@ -79,19 +83,34 @@ class ContinueReturnJourneyController @Inject() (
                 isAgent = request.isAgent
               )
               .flatMap { finalUserAnswers =>
-                val employerRef =
+                val employerRef       =
                   if (request.isAgent)
                     finalUserAnswers
                       .get(AgentClientDataPage)
                       .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
                   else
                     request.employerReference
-                sessionRepository.set(finalUserAnswers).flatMap { _ =>
-                  reconcileFormpRds(
-                    queryParams.instanceId,
-                    employerRef,
-                    Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, finalUserAnswers))
-                  )
+                val answersWithSource =
+                  if (
+                    finalUserAnswers.get(ReturnTypePage).getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
+                    finalUserAnswers.get(SelectedSubcontractorPage.all).exists(_.nonEmpty)
+                  ) {
+                    finalUserAnswers.set(
+                      MonthlyFinalValidationSourcePage,
+                      MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+                    )
+                  } else {
+                    Success(finalUserAnswers)
+                  }
+
+                Future.fromTry(answersWithSource).flatMap { withSource =>
+                  sessionRepository.set(withSource).flatMap { _ =>
+                    reconcileFormpRds(
+                      queryParams.instanceId,
+                      employerRef,
+                      Redirect(navigator.nextPage(DateConfirmPaymentsPage, NormalMode, withSource))
+                    )
+                  }
                 }
               }
               .recover { case ex =>

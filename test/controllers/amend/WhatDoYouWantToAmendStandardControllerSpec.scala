@@ -20,11 +20,13 @@ import base.SpecBase
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendStandard
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendStandardPage
+import pages.finalvalidations.*
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
@@ -195,6 +197,14 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
       val mockMonthlyReturnService      = mock[MonthlyReturnService]
       val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
 
+      val answersWithFinalValidationState = baseAnswers
+        .setOrException(FinalValidationDraftIdPage, "previous-draft")
+        .setOrException(MonthlyFinalValidationContinuationPage, "CheckMode")
+        .setOrException(
+          MonthlyFinalValidationSourcePage,
+          MonthlyFinalValidationSource.SelectSubcontractors
+        )
+
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
       when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn Future.successful(
         mockMonthlyReturn
@@ -209,7 +219,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
       ) thenReturn Future.successful(Right(()))
 
       val application =
-        applicationBuilder(userAnswers = Some(baseAnswers))
+        applicationBuilder(userAnswers = Some(answersWithFinalValidationState))
           .overrides(
             bind[SessionRepository].toInstance(mockSessionRepository),
             bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
@@ -231,7 +241,16 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
           .url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
-        verify(mockSessionRepository, times(2)).set(any())
+
+        val userAnswersCaptor = org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository, times(2)).set(userAnswersCaptor.capture())
+
+        val savedAnswers = userAnswersCaptor.getAllValues.get(1)
+        savedAnswers.get(FinalValidationDraftIdPage) mustEqual None
+        savedAnswers.get(MonthlyFinalValidationContinuationPage) mustEqual None
+        savedAnswers.get(MonthlyFinalValidationSourcePage) mustEqual Some(
+          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+        )
       }
     }
 

@@ -22,8 +22,10 @@ import models.amend.AmendmentDetails
 import models.{NormalMode, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, argThat}
 import org.mockito.Mockito.{verify, when}
+import org.mockito.ArgumentCaptor
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AmendmentDetailsPage
+import pages.finalvalidations.*
 import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, ReturnTypePage}
 import play.api.data.Form
 import play.twirl.api.Html
@@ -32,6 +34,7 @@ import play.api.inject.bind
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -53,6 +56,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       ),
       lastUpdated = now
     )
+      .setOrException(ReturnTypePage, MonthlyStandardReturn)
+      .setOrException(MonthlyFinalValidationContinuationPage, NormalMode.toString)
 
   private def completeSub(id: Long, name: String): JsObject =
     Json.obj(
@@ -76,7 +81,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
   private def buildApp(
     ua: UserAnswers,
     monthlyReturnService: Option[MonthlyReturnService] = None,
-    view: Option[SubcontractorDetailsAddedView] = None
+    view: Option[SubcontractorDetailsAddedView] = None,
+    sessionRepository: Option[SessionRepository] = None
   ) = {
     val base = applicationBuilder(userAnswers = Some(ua))
       .configure(
@@ -91,8 +97,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       monthlyReturnService
         .fold(base)(svc => base.overrides(bind[MonthlyReturnService].toInstance(svc)))
 
-    view
-      .fold(withService)(v => withService.overrides(bind[SubcontractorDetailsAddedView].toInstance(v)))
+    val withView =
+      view
+        .fold(withService)(v => withService.overrides(bind[SubcontractorDetailsAddedView].toInstance(v)))
+
+    sessionRepository
+      .fold(withView)(repo => withView.overrides(bind[SessionRepository].toInstance(repo)))
       .build()
   }
 
@@ -122,10 +132,91 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
+    "must redirect to ReviewSubcontractorDetails on GET when a Final Validation draft exists" in {
+      val ua  = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+        .setOrException(FinalValidationDraftIdPage, "draft-123")
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad().url
+      }
+    }
+
+    "must redirect to JourneyRecovery on GET when Final Validation source and continuation are missing" in {
+      val ua  = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+        .remove(MonthlyFinalValidationContinuationPage)
+        .get
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(GET, getUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must render page after Final Validation when continuation is valid" in {
+      val ua  = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(NormalMode)
+            .url
+        )
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+      }
+    }
+
+    "must redirect to JourneyRecovery after Final Validation when continuation is missing" in {
+      val ua  = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+        .remove(MonthlyFinalValidationContinuationPage)
+        .get
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(NormalMode)
+            .url
+        )
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
     "must display cancel amendment link on GET when builder returns a view model with isAmendment = true" in {
       val ua  = uaWithSubcontractors(
         1 -> completeSub(1001L, "TyneWear Ltd")
-      ).set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test Contractor", MonthlyStandardReturn, None)).get
+      ).setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
+        .set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test Contractor", MonthlyStandardReturn, None))
+        .get
       val svc = mock[MonthlyReturnService]
       stubIsEditable(svc)
 
@@ -259,6 +350,25 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
+    "must redirect to onPageLoad when submitting before Final Validation completes" in {
+      val ua = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+        .remove(MonthlyFinalValidationContinuationPage)
+        .get
+
+      val application = buildApp(ua)
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrl)
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe getUrl
+      }
+    }
+
     "must return BadRequest on POST No when viewModel.hasIncomplete = true (incomplete error)" in {
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd"),
@@ -282,7 +392,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     }
 
     "must redirect to SystemError on POST when builder returns None" in {
-      val ua = UserAnswers(userAnswersId).setOrException(CisIdPage, "1")
+      val ua = uaWithSubcontractors()
 
       val application = buildApp(ua)
 
@@ -300,6 +410,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
     "must redirect to MRAR06 Standard on GET when in amendment mode and no subcontractors remain" in {
       val ua  = uaWithSubcontractors()
+        .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
         .set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test", MonthlyAmendedStandardReturn, None))
         .get
       val svc = mock[MonthlyReturnService]
@@ -319,8 +430,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     }
 
     "must redirect to MRAR06 Standard on POST when in amendment mode and no subcontractors remain" in {
-      val ua = UserAnswers(userAnswersId)
-        .setOrException(CisIdPage, "1")
+      val ua = uaWithSubcontractors()
+        .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
         .set(AmendmentDetailsPage, AmendmentDetails("1", 2025, 1, "Test", MonthlyAmendedStandardReturn, None))
         .get
 
@@ -462,6 +573,9 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     }
 
     "must redirect on POST Yes when adding more subcontractors ReturnType = MonthlyStandardReturn" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
       val ua = uaWithSubcontractors(
         1 -> completeSub(1001L, "Complete Ltd")
       ).set(ReturnTypePage, MonthlyStandardReturn)
@@ -471,7 +585,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         .success
         .value
 
-      val application = buildApp(ua)
+      val application = buildApp(ua, sessionRepository = Some(mockSessionRepository))
 
       running(application) {
         val request =
@@ -482,7 +596,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url
+          controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode).url
+
+        val userAnswersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(userAnswersCaptor.capture())
+        userAnswersCaptor.getValue.get(MonthlyFinalValidationContinuationPage) mustBe None
+        userAnswersCaptor.getValue.get(AllSubcontractorDetailsAdded) mustBe Some(false)
       }
     }
 

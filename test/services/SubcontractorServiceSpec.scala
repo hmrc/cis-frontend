@@ -22,6 +22,7 @@ import models.requests.GetMonthlyReturnForEditRequest
 import models.monthlyreturns.*
 import models.submission.SubcontractorType
 import pages.amend.WhichSubcontractorsToAddPage
+import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.libs.json.Json
 import org.mockito.ArgumentMatchers.any
 import uk.gov.hmrc.http.HeaderCarrier
@@ -367,6 +368,47 @@ class SubcontractorServiceSpec extends SpecBase {
         model.initiallySelectedIds mustBe Seq.empty
       }
     }
+
+    "always retrieves the standard return even when AmendmentDetailsPage is present" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val ua = emptyUserAnswers.setOrException(
+        pages.amend.AmendmentDetailsPage,
+        models.amend.AmendmentDetails(
+          instanceId = "1",
+          taxYear = 2026,
+          taxMonth = 1,
+          contractorName = "Test Contractor",
+          originalReturnType = models.ReturnType.MonthlyAmendedStandardReturn,
+          acceptedTime = None
+        )
+      )
+
+      val modelF =
+        service.buildSelectSubcontractorPage(
+          cisId = "1",
+          taxMonth = 1,
+          taxYear = 2026,
+          defaultSelection = None,
+          userAnswers = Some(ua),
+          today = LocalDate.of(2026, 1, 29)
+        )
+
+      whenReady(modelF) { model =>
+        model.subcontractors.map(_.id) mustBe Seq(1)
+      }
+    }
   }
 
   "SubcontractorService.resolveSubcontractorName" - {
@@ -549,6 +591,96 @@ class SubcontractorServiceSpec extends SpecBase {
       whenReady(modelF) { model =>
         model.preSelectedIds mustBe Set.empty
         model.status mustBe Some("STARTED")
+      }
+    }
+
+    "retrieves the standard return when isAmendment is false" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1001L)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val modelF = service.buildAmendWhichSubcontractorsPage(
+        cisId = "1",
+        taxMonth = 1,
+        taxYear = 2026,
+        isAmendment = false
+      )
+
+      whenReady(modelF) { model =>
+        model.preSelectedIds mustBe Set("1")
+        model.status mustBe Some("STARTED")
+      }
+    }
+  }
+
+  "SubcontractorService.getSelectedSubcontractorsForFinalValidation" - {
+
+    "returns only selected subcontractors for a standard return" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val ua = emptyUserAnswers
+        .setOrException(pages.monthlyreturns.ReturnTypePage, models.ReturnType.MonthlyStandardReturn)
+        .setOrException(
+          SelectedSubcontractorPage(1),
+          SelectedSubcontractor(2L, "Subbie 2", None, None, None)
+        )
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, ua)
+
+      whenReady(selectedF) { subcontractors =>
+        subcontractors.map(_.subcontractorId) mustBe Seq(2L)
+      }
+    }
+
+    "returns only selected subcontractors for an amended standard return" in {
+      val response = mkResponse(
+        items = Seq.empty,
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val ua = emptyUserAnswers
+        .setOrException(pages.monthlyreturns.ReturnTypePage, models.ReturnType.MonthlyAmendedStandardReturn)
+        .setOrException(
+          SelectedSubcontractorPage(1),
+          SelectedSubcontractor(1L, "Subbie 1", None, None, None)
+        )
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, ua)
+
+      whenReady(selectedF) { subcontractors =>
+        subcontractors.map(_.subcontractorId) mustBe Seq(1L)
       }
     }
   }

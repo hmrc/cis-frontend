@@ -18,17 +18,19 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.UserAnswers
 import models.monthlyreturns.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
-import org.mockito.Answers
+import org.mockito.ArgumentCaptor
 import org.scalatestplus.mockito.MockitoSugar
+import pages.finalvalidations.*
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import services.finalvalidation.FinalValidationService
+import repositories.SessionRepository
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.http.HeaderCarrier
 import viewmodels.SelectSubcontractorsViewModel
@@ -89,19 +91,17 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   private def applicationWith(
     subcontractorService: SubcontractorService,
     monthlyReturnService: MonthlyReturnService,
-    ua: Option[UserAnswers] = Some(userAnswersWithRequiredPages)
+    ua: Option[UserAnswers] = Some(userAnswersWithRequiredPages),
+    sessionRepository: SessionRepository = mock[SessionRepository]
   ) = {
-    val finalValidationService =
-      org.mockito.Mockito.mock(
-        classOf[FinalValidationService],
-        Answers.RETURNS_DEEP_STUBS
-      )
+    when(sessionRepository.set(any[UserAnswers]))
+      .thenReturn(Future.successful(true))
 
     applicationBuilder(userAnswers = ua)
       .overrides(
         bind[SubcontractorService].toInstance(subcontractorService),
         bind[MonthlyReturnService].toInstance(monthlyReturnService),
-        bind[FinalValidationService].toInstance(finalValidationService)
+        bind[SessionRepository].toInstance(sessionRepository)
       )
       .build()
   }
@@ -287,6 +287,59 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustBe controllers.monthlyreturns.routes.VerifySubcontractorsController
             .onPageLoad(models.NormalMode)
             .url
+        }
+      }
+
+      "clears previous Final Validation state and saves SelectSubcontractors as the source" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        val sessionRepository    = mock[SessionRepository]
+        stubBuild(subcontractorService, pageModelNoneSelected, defaultSel = None)
+
+        val answersWithPreviousFinalValidation =
+          userAnswersWithRequiredPages
+            .setOrException(SelectedSubcontractorPage(1), incompleteSub)
+            .setOrException(FinalValidationDraftIdPage, "previous-draft")
+            .setOrException(MonthlyFinalValidationContinuationPage, models.NormalMode.toString)
+
+        when(
+          monthlyReturnService.storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2)
+          )(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(answersWithPreviousFinalValidation))
+
+        val app = applicationWith(
+          subcontractorService,
+          monthlyReturnService,
+          sessionRepository = sessionRepository
+        )
+
+        running(app) {
+          val request =
+            FakeRequest(POST, controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit().url)
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "2")
+
+          val result = route(app, request).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoad(models.NormalMode)
+            .url
+
+          val userAnswersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+          verify(sessionRepository).set(userAnswersCaptor.capture())
+
+          userAnswersCaptor.getValue
+            .get(FinalValidationDraftIdPage) mustBe None
+
+          userAnswersCaptor.getValue
+            .get(MonthlyFinalValidationContinuationPage) mustBe None
+
+          userAnswersCaptor.getValue
+            .get(MonthlyFinalValidationSourcePage) mustBe Some(MonthlyFinalValidationSource.SelectSubcontractors)
         }
       }
 

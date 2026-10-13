@@ -21,9 +21,10 @@ import forms.monthlyreturns.ConfirmSubcontractorRemovalFormProvider
 import models.monthlyreturns.{DeleteMonthlyReturnItemRequest, SelectedSubcontractor}
 import models.requests.DataRequest
 import models.ReturnType.MonthlyAmendedStandardReturn
-import models.{Mode, UserAnswers}
+import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import pages.monthlyreturns.*
 import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
+import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -88,17 +89,17 @@ class ConfirmSubcontractorRemovalController @Inject() (
                   result <-
                     if (!confirmRemove) {
                       sessionRepository.set(updatedAnswers1).map { _ =>
-                        Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+                        redirectAfterValidation(updatedAnswers1)
                       }
                     } else {
-                      deleteFlow(updatedAnswers1, mode, index)
+                      deleteFlow(updatedAnswers1, index)
                     }
                 } yield result
             )
       }
   }
 
-  private def deleteFlow(ua: UserAnswers, mode: Mode, index: Int)(implicit
+  private def deleteFlow(ua: UserAnswers, index: Int)(implicit
     request: DataRequest[AnyContent]
   ): Future[Result] =
     buildDeletePayload(ua, index) match {
@@ -116,7 +117,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
           ua1            <- Future.fromTry(ua.set(WhichSubcontractorsToAddPage, selectedIds))
           updatedAnswers <- Future.fromTry(ua1.remove(SelectedSubcontractorPage(index)))
           _              <- sessionRepository.set(updatedAnswers)
-        } yield redirectAfterDelete(updatedAnswers, mode))
+        } yield redirectAfterDelete(updatedAnswers))
           .recover { case e =>
             logger.error(
               s"[ConfirmSubcontractorRemovalController][deleteFlow] - delete flow failed, index: $index, " +
@@ -127,7 +128,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
           }
     }
 
-  private def redirectAfterDelete(ua: UserAnswers, mode: Mode): Result = {
+  private def redirectAfterDelete(ua: UserAnswers): Result = {
     val subs                = selectedSubcontractors(ua)
     val isStandardAmendment =
       ua.get(ReturnTypePage).contains(MonthlyAmendedStandardReturn) ||
@@ -137,7 +138,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
     } else if (subs.isEmpty) {
       Redirect(controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None))
     } else {
-      Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(mode))
+      redirectAfterValidation(ua)
     }
   }
 
@@ -157,5 +158,25 @@ class ConfirmSubcontractorRemovalController @Inject() (
 
   private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
     ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+
+  private def redirectAfterValidation(ua: UserAnswers): Result =
+    ua.get(MonthlyFinalValidationContinuationPage) match {
+
+      case Some("NormalMode") if ua.get(FinalValidationDraftIdPage).isEmpty =>
+        Redirect(
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(NormalMode)
+        )
+
+      case Some("CheckMode") if ua.get(FinalValidationDraftIdPage).isEmpty =>
+        Redirect(
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(CheckMode)
+        )
+
+      case _ =>
+        logger.error("[ConfirmSubcontractorRemovalController] Missing or invalid Final Validation continuation")
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+    }
 
 }
