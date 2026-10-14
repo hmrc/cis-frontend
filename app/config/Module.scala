@@ -16,38 +16,32 @@
 
 package config
 
-import com.google.inject.AbstractModule
-import com.google.inject.name.Names
 import controllers.actions.*
+import play.api.inject.{Binding, Module as PlayModule}
+import play.api.{Configuration, Environment}
 import services.{FormpRdsReconcileService, FormpRdsReconcileServiceImpl, MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilderImpl}
-import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 import services.guard.{DuplicateMRCreationGuard, DuplicateMRCreationGuardImpl, SubmissionSuccessfulServiceGuard, SubmissionSuccessfulServiceGuardImpl}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
+import utils.{ReferenceGenerator, ReferenceGeneratorImpl}
 
 import java.time.{Clock, ZoneId}
 
-class Module extends AbstractModule {
+class Module extends PlayModule {
 
-  override def configure(): Unit = {
-
-    bind(classOf[DataRetrievalAction]).to(classOf[DataRetrievalActionImpl]).asEagerSingleton()
-    bind(classOf[DataRequiredAction]).to(classOf[DataRequiredActionImpl]).asEagerSingleton()
-    bind(classOf[CisIdRequiredAction]).to(classOf[CisIdRequiredActionImpl]).asEagerSingleton()
-    bind(classOf[ReferenceGenerator]).to(classOf[ReferenceGeneratorImpl]).asEagerSingleton()
-
+  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[?]] = Seq(
+    bind[DataRetrievalAction].to[DataRetrievalActionImpl].eagerly(),
+    bind[DataRequiredAction].to[DataRequiredActionImpl].eagerly(),
+    bind[CisIdRequiredAction].to[CisIdRequiredActionImpl].eagerly(),
+    bind[ReferenceGenerator].to[ReferenceGeneratorImpl].eagerly(),
     // For session based storage instead of cred based, change to SessionIdentifierAction
-    bind(classOf[IdentifierAction]).to(classOf[AuthenticatedIdentifierAction]).asEagerSingleton()
-    bind(classOf[IdentifierAction])
-      .annotatedWith(Names.named("ContractorIdentifier"))
-      .to(classOf[ContractorIdentifierAction])
-      .asEagerSingleton()
-    bind(classOf[IdentifierAction])
-      .annotatedWith(Names.named("AgentIdentifier"))
-      .to(classOf[AgentIdentifierAction])
-      .asEagerSingleton()
-    bind(classOf[DuplicateMRCreationGuard]).to(classOf[DuplicateMRCreationGuardImpl])
-    bind(classOf[SubmissionSuccessfulServiceGuard]).to(classOf[SubmissionSuccessfulServiceGuardImpl])
-    bind(classOf[Clock]).toInstance(Clock.system(ZoneId.of("Europe/London")))
-    bind(classOf[MonthlyReturnItemPayloadBuilder]).to(classOf[MonthlyReturnItemPayloadBuilderImpl])
-    bind(classOf[FormpRdsReconcileService]).to(classOf[FormpRdsReconcileServiceImpl])
-  }
+    bind[IdentifierAction].to[AuthenticatedIdentifierAction].eagerly(),
+    bind[IdentifierAction].qualifiedWith("ContractorIdentifier").to[ContractorIdentifierAction].eagerly(),
+    bind[IdentifierAction].qualifiedWith("AgentIdentifier").to[AgentIdentifierAction].eagerly(),
+    bind[DuplicateMRCreationGuard].to[DuplicateMRCreationGuardImpl],
+    bind[SubmissionSuccessfulServiceGuard].to[SubmissionSuccessfulServiceGuardImpl],
+    bind[Clock].toInstance(Clock.system(ZoneId.of("Europe/London"))),
+    bind[MonthlyReturnItemPayloadBuilder].to[MonthlyReturnItemPayloadBuilderImpl],
+    bind[FormpRdsReconcileService].to[FormpRdsReconcileServiceImpl],
+    bind[Encrypter with Decrypter].toProvider[CryptoProvider]
+  )
 }
