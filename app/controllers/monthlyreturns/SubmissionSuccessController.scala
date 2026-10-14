@@ -24,7 +24,7 @@ import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConf
 import models.ReturnType.reads
 import models.requests.{CisIdDataRequest, GetMonthlyReturnCompleteRequest}
 import pages.monthlyreturns.*
-import pages.submission.SubmissionDetailsPage
+import pages.submission.{CorrelationIdPage, SubmissionDetailsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -65,7 +65,9 @@ class SubmissionSuccessController @Inject() (
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       if (!submissionSuccessGuard.check) {
-        logger.error("[SubmissionSuccessController][onPageLoad] - submissionSuccessGuard check failed")
+        logger.error(
+          s"[SubmissionSuccessController][onPageLoad] - submissionSuccessGuard check failed correlationId=${request.userAnswers.get(CorrelationIdPage).getOrElse("unknown")}"
+        )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       } else {
         val ua = request.userAnswers
@@ -79,7 +81,8 @@ class SubmissionSuccessController @Inject() (
               case Left(error) =>
                 logger.error(
                   s"[SubmissionSuccessController] " +
-                    s"Failed to build GetMonthlyReturnCompleteRequest: $error"
+                    s"Failed to build GetMonthlyReturnCompleteRequest: $error " +
+                    s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}"
                 )
 
                 Future.successful(
@@ -91,7 +94,8 @@ class SubmissionSuccessController @Inject() (
               case Right(req) =>
                 logger.info(
                   s"[SubmissionSuccessController] Calling getMonthlyReturnComplete " +
-                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment}"
+                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment} " +
+                    s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}"
                 )
 
                 (for {
@@ -119,7 +123,8 @@ class SubmissionSuccessController @Inject() (
                 } yield Ok(view(vm))).recoverWith { case ex: UpstreamErrorResponse =>
                   logger.error(
                     s"[SubmissionSuccessController] getMonthlyReturnComplete failed " +
-                      s"with status ${ex.statusCode} for instanceId=${req.instanceId}",
+                      s"with status ${ex.statusCode} for instanceId=${req.instanceId} " +
+                      s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}",
                     ex
                   )
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -240,7 +245,10 @@ class SubmissionSuccessController @Inject() (
             .getSchemeEmail(cisId)
             .map(_.getOrElse(""))
             .recover { case ex =>
-              logger.warn(s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty", ex)
+              logger.warn(
+                s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty, correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}",
+                ex
+              )
               ""
             }
         )
