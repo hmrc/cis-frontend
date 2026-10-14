@@ -18,7 +18,7 @@ package models.requests
 
 import play.api.libs.json.{Json, OFormat}
 
-case class SendSuccessEmailRequest(email: String, month: String, year: String)
+case class SendSuccessEmailRequest(email: String, month: String, year: String, language: String)
 
 object SendSuccessEmailRequest {
   given OFormat[SendSuccessEmailRequest] = Json.format[SendSuccessEmailRequest]

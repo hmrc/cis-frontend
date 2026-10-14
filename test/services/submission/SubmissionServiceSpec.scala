@@ -1919,6 +1919,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       reqCaptor.getValue.month mustBe "Hydref"
       reqCaptor.getValue.year mustBe "2025"
+      reqCaptor.getValue.language mustBe "cy"
     }
 
     "do not send email and just persist when monthly standard return email is missing" in {
@@ -2020,6 +2021,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         .sendSuccessfulEmail(eqTo(submissionId), reqCaptor.capture())(any[HeaderCarrier], any[ExecutionContext])
 
       reqCaptor.getValue.email mustBe "standard@test.com"
+      reqCaptor.getValue.language mustBe "en"
     }
 
     "throw IllegalStateException when DateConfirmPaymentsPage missing" in {
