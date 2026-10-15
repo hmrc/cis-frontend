@@ -19,11 +19,11 @@ package services
 import models.UserAnswers
 import models.monthlyreturns.SelectSubcontractorsPageModel
 import models.requests.GetMonthlyReturnForEditRequest
-import pages.amend.AmendmentDetailsPage
 import models.amend.{Subcontractor as AmendSubcontractor, WhichSubcontractorsToAddPageModel}
 import models.monthlyreturns.Subcontractor
 import models.submission.SubcontractorType
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{ReturnTypePage, SelectedSubcontractorPage}
+
 import scala.util.Try
 import services.SubcontractorService.{TAX_YEAR_START_DAY, TAX_YEAR_START_MONTH, resolveSubcontractorName}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -84,10 +84,9 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     defaultSelection: Option[Boolean],
     userAnswers: Option[UserAnswers] = None,
     today: LocalDate = LocalDate.now()
-  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] = {
-    val isAmendment = userAnswers.exists(_.get(AmendmentDetailsPage).isDefined)
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
     monthlyReturnService
-      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
+      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, false))
       .map { data =>
 
         val previouslyIncludedResourceRefs: Set[Long] =
@@ -158,16 +157,16 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
           fullSubcontractors = data.subcontractors
         )
       }
-  }
 
   def buildAmendWhichSubcontractorsPage(
     cisId: String,
     taxMonth: Int,
     taxYear: Int,
-    userAnswers: Option[UserAnswers] = None
+    userAnswers: Option[UserAnswers] = None,
+    isAmendment: Boolean = true
   )(implicit hc: HeaderCarrier): Future[WhichSubcontractorsToAddPageModel] =
     monthlyReturnService
-      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, true))
+      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
       .map { data =>
 
         val previouslyIncludedResourceRefs: Set[Long] =
@@ -200,6 +199,69 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
           fullSubcontractors = data.subcontractors
         )
       }
+
+  def getSelectedSubcontractorsForFinalValidation(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    ua: UserAnswers
+  )(using hc: HeaderCarrier): Future[Seq[Subcontractor]] =
+    ua.get(SelectedSubcontractorPage.all) match {
+
+      case None =>
+        Future.failed(new IllegalStateException("SelectedSubcontractorPage is missing from user answers"))
+
+      case Some(selectedSubcontractors) =>
+        val selectedIds: Set[Long] =
+          selectedSubcontractors.values.map(_.id).toSet
+
+        val fullSubcontractorsFuture: Future[Seq[Subcontractor]] =
+          ua.get(ReturnTypePage) match {
+
+            case Some(returnType) if returnType.amendmentFlag == "Y" =>
+              buildAmendWhichSubcontractorsPage(
+                cisId,
+                taxMonth,
+                taxYear,
+                Some(ua)
+              ).map(_.fullSubcontractors)
+
+            case Some(_) =>
+              buildSelectSubcontractorPage(
+                cisId,
+                taxMonth,
+                taxYear,
+                None,
+                Some(ua)
+              ).map(_.fullSubcontractors)
+
+            case None =>
+              Future.failed(
+                new IllegalStateException("ReturnTypePage is missing when loading subcontractors for Final Validation")
+              )
+          }
+
+        fullSubcontractorsFuture.flatMap { fullSubcontractors =>
+
+          val loadedIds  = fullSubcontractors.map(_.subcontractorId).toSet
+          val missingIds = selectedIds -- loadedIds
+
+          if (missingIds.nonEmpty) {
+            Future.failed(
+              new IllegalStateException(
+                s"Unable to load selected subcontractors for Final Validation: " +
+                  missingIds.toSeq.sorted.mkString(",")
+              )
+            )
+          } else {
+            Future.successful(
+              fullSubcontractors.filter { subcontractor =>
+                selectedIds.contains(subcontractor.subcontractorId)
+              }
+            )
+          }
+        }
+    }
 
 }
 

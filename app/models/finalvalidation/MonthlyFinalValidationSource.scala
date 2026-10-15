@@ -40,9 +40,7 @@ object MonthlyFinalValidationSource {
             )
         }
 
-      override def reads(
-        json: JsValue
-      ): JsResult[MonthlyFinalValidationSource] =
+      override def reads(json: JsValue): JsResult[MonthlyFinalValidationSource] =
         (json \ "source")
           .validate[String]
           .flatMap {

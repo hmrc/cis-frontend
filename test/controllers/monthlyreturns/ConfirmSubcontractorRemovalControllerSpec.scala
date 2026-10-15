@@ -26,6 +26,7 @@ import org.mockito.Mockito.{atLeastOnce, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import models.amend.AmendmentDetails
 import pages.amend.AmendmentDetailsPage
+import pages.finalvalidations.MonthlyFinalValidationContinuationPage
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
 import pages.submission.ResubmissionIdPage
 import play.api.inject.bind
@@ -91,7 +92,37 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
-    "must redirect to SubcontractorDetailsAdded when 'No' is submitted and persist the answer" in {
+    "must redirect to SubcontractorDetailsAdded after Final Validation when 'No' is submitted and persist the answer" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val ua = uaWithSubcontractor.setOrException(MonthlyFinalValidationContinuationPage, CheckMode.toString)
+
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routePost(CheckMode))
+            .withFormUrlEncodedBody("value" -> "false")
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(CheckMode)
+            .url
+
+        verify(mockSessionRepository).set(any())
+      }
+    }
+
+    "must redirect to Journey Recovery when 'No' is submitted without Final Validation continuation" in {
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
@@ -110,8 +141,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockSessionRepository).set(any())
       }
@@ -364,7 +394,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
       }
     }
 
-    "must call delete service and redirect to SubcontractorDetailsAdded when 'Yes' is submitted and subcontractors remain" in {
+    "must call delete service and redirect to SubcontractorDetailsAdded after Final Validation when 'Yes' is submitted and subcontractors remain" in {
       val mockSessionRepository    = mock[SessionRepository]
       val mockMonthlyReturnService = mock[MonthlyReturnService]
 
@@ -374,6 +404,7 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
       val uaWithTwoSubcontractors =
         uaWithSubcontractor
+          .setOrException(MonthlyFinalValidationContinuationPage, CheckMode.toString)
           .set(
             SelectedSubcontractorPage(2),
             SelectedSubcontractor(
@@ -404,7 +435,9 @@ class ConfirmSubcontractorRemovalControllerSpec extends SpecBase with MockitoSug
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(CheckMode)
+            .url
 
         verify(mockMonthlyReturnService).deleteMonthlyReturnItem(any())(any[HeaderCarrier])
         verify(mockSessionRepository, atLeastOnce()).set(any())

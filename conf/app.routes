@@ -137,6 +137,9 @@ GET        /monthly-return/change-subcontractor-details-added           controll
 POST       /monthly-return/change-subcontractor-details-added           controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
 GET        /monthly-return/subcontractor-details-added/cancel           controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendment()
 
+GET        /monthly-return/subcontractor-details-added/final-validation-complete          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added/final-validation-complete   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = CheckMode)
+
 GET        /monthly-return/payment-details-confirmation                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/payment-details-confirmation                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-payment-details-confirmation          controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = CheckMode)

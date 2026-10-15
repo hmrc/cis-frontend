@@ -22,9 +22,11 @@ import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 import javax.inject.Inject
 import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectedSubcontractor
 import models.requests.GetMonthlyReturnForEditRequest
 import pages.amend.{WhatDoYouWantToAmendStandardPage, WhichSubcontractorsToAddPage}
+import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -141,9 +143,27 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                       val subcontractorIds = ua2
                         .get(SelectedSubcontractorPage.all)
                         .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
+
                       for {
-                        ua3 <- Future.fromTry(ua2.set(WhichSubcontractorsToAddPage, subcontractorIds))
-                        _   <- sessionRepository.set(ua3)
+                        ua3 <- Future.fromTry(
+                                 ua2.set(WhichSubcontractorsToAddPage, subcontractorIds)
+                               )
+
+                        ua4 <- Future.fromTry(
+                                 ua3
+                                   .remove(FinalValidationDraftIdPage)
+                                   .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
+                                   .flatMap(
+                                     _.set(
+                                       MonthlyFinalValidationSourcePage,
+                                       MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                                         NormalMode.toString
+                                       )
+                                     )
+                                   )
+                               )
+
+                        _ <- sessionRepository.set(ua4)
                       } yield Redirect(
                         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
                       )

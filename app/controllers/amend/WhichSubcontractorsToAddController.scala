@@ -20,17 +20,16 @@ import controllers.actions.*
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
-import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectedSubcontractor
 import navigation.Navigator
-import pages.amend.{AmendmentDetailsPage, WhichSubcontractorsToAddPage}
-import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage, SelectedSubcontractorPage}
+import pages.amend.WhichSubcontractorsToAddPage
+import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, OriginalSubcontractorCountPage, ReturnTypePage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.WhichSubcontractorsToAddView
@@ -49,9 +48,6 @@ class WhichSubcontractorsToAddController @Inject() (
   formProvider: WhichSubcontractorsToAddFormProvider,
   subcontractorService: SubcontractorService,
   monthlyReturnService: MonthlyReturnService,
-  finalValidationService: FinalValidationService,
-  finalValidationDraftService: FinalValidationDraftService,
-  finalValidationDraftRequestBuilder: FinalValidationDraftRequestBuilder,
   val controllerComponents: MessagesControllerComponents,
   view: WhichSubcontractorsToAddView
 )(implicit ec: ExecutionContext)
@@ -64,16 +60,23 @@ class WhichSubcontractorsToAddController @Inject() (
       val ua = request.userAnswers
 
       val requiredAnswers = for {
-        cisId   <- ua.get(CisIdPage)
-        taxDate <- ua.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+        cisId      <- ua.get(CisIdPage)
+        taxDate    <- ua.get(DateConfirmPaymentsPage)
+        returnType <- ua.get(ReturnTypePage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear, returnType.amendmentFlag == "Y")
 
       requiredAnswers
-        .map { case (cisId, taxMonth, taxYear) =>
-          monthlyReturnService.isEditable(cisId, taxMonth, taxYear, ua.get(AmendmentDetailsPage).isDefined).flatMap {
+        .map { case (cisId, taxMonth, taxYear, isAmendment) =>
+          monthlyReturnService.isEditable(cisId, taxMonth, taxYear, isAmendment).flatMap {
             case true  =>
               subcontractorService
-                .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
+                .buildAmendWhichSubcontractorsPage(
+                  cisId,
+                  taxMonth,
+                  taxYear,
+                  Some(request.userAnswers),
+                  isAmendment = isAmendment
+                )
                 .map { model =>
                   val form          = formProvider(model.subcontractors)
                   val selectedIds   = request.userAnswers
@@ -98,9 +101,10 @@ class WhichSubcontractorsToAddController @Inject() (
         }
         .getOrElse {
           logger.error(
-            s"[WhichSubcontractorsToAddController] Missing required answers: " +
+            s"[WhichSubcontractorsToAddController] Missing or invalid required answers: " +
               s"CisIdPage present=${ua.get(CisIdPage).isDefined}, " +
-              s"DateConfirmPaymentsPage present=${ua.get(DateConfirmPaymentsPage).isDefined}"
+              s"DateConfirmPaymentsPage present=${ua.get(DateConfirmPaymentsPage).isDefined}, " +
+              s"ReturnTypePage=${ua.get(ReturnTypePage)}"
           )
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -112,14 +116,21 @@ class WhichSubcontractorsToAddController @Inject() (
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
       val requiredAnswers = for {
-        cisId   <- request.userAnswers.get(CisIdPage)
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
-      } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+        cisId      <- request.userAnswers.get(CisIdPage)
+        taxDate    <- request.userAnswers.get(DateConfirmPaymentsPage)
+        returnType <- request.userAnswers.get(ReturnTypePage)
+      } yield (cisId, taxDate.getMonthValue, taxDate.getYear, returnType.amendmentFlag == "Y")
 
       requiredAnswers
-        .map { case (cisId, taxMonth, taxYear) =>
+        .map { case (cisId, taxMonth, taxYear, isAmendment) =>
           subcontractorService
-            .buildAmendWhichSubcontractorsPage(cisId, taxMonth, taxYear, Some(request.userAnswers))
+            .buildAmendWhichSubcontractorsPage(
+              cisId,
+              taxMonth,
+              taxYear,
+              Some(request.userAnswers),
+              isAmendment = isAmendment
+            )
             .flatMap { model =>
               model.status match {
                 case Some("STARTED") | Some("VALIDATED") =>
@@ -153,63 +164,34 @@ class WhichSubcontractorsToAddController @Inject() (
                             )
                           }
                         val selectedSubcontractorIds: Set[Long] = value.map(_.toLong)
-                        val selectedFullSubcontractors          =
-                          model.fullSubcontractors.filter { subcontractor =>
-                            selectedSubcontractorIds.contains(subcontractor.subcontractorId)
-                          }
 
                         for {
-                          ua        <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
-                          ua2       <- Future.fromTry {
-                                         val cleared = ua.remove(SelectedSubcontractorPage.all)
-                                         cleared
-                                           .flatMap { clearedAnswers =>
-                                             selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
-                                               case (answersTry, (subcontractor, index)) =>
-                                                 answersTry.flatMap(
-                                                   _.set(SelectedSubcontractorPage(index + 1), subcontractor)
+                          ua                  <- Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage, value))
+                          ua2                 <- Future.fromTry {
+                                                   val cleared = ua.remove(SelectedSubcontractorPage.all)
+                                                   cleared
+                                                     .flatMap { clearedAnswers =>
+                                                       selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
+                                                         case (answersTry, (subcontractor, index)) =>
+                                                           answersTry.flatMap(
+                                                             _.set(SelectedSubcontractorPage(index + 1), subcontractor)
+                                                           )
+                                                       }
+                                                     }
+                                                     .flatMap(_.set(OriginalSubcontractorCountPage, model.subcontractors.size))
+                                                 }
+                          withoutDraft        <- Future.fromTry(ua2.remove(FinalValidationDraftIdPage))
+                          withoutContinuation <-
+                            Future.fromTry(withoutDraft.remove(MonthlyFinalValidationContinuationPage))
+                          withSource          <- Future.fromTry(
+                                                   withoutContinuation.set(
+                                                     MonthlyFinalValidationSourcePage,
+                                                     MonthlyFinalValidationSource.WhichSubcontractorsToAdd(mode.toString)
+                                                   )
                                                  )
-                                             }
-                                           }
-                                           .flatMap(_.set(OriginalSubcontractorCountPage, model.subcontractors.size))
-                                       }
-                          _         <- sessionRepository.set(ua2)
-                          _         <- monthlyReturnService.syncMonthlyReturnItems(ua2, selectedSubcontractorIds.toSeq)
-                          validation = finalValidationService.validate(subcontractors = selectedFullSubcontractors)
-                          result    <- if (validation.hasErrors) {
-                                         for {
-                                           createRequest <-
-                                             Future.fromTry(
-                                               finalValidationDraftRequestBuilder
-                                                 .build(cisId, selectedFullSubcontractors, validation)
-                                             )
-
-                                           draftId <-
-                                             finalValidationDraftService.create(createRequest)
-
-                                           withDraftId <-
-                                             Future.fromTry(ua2.set(FinalValidationDraftIdPage, draftId))
-
-                                           withSource <-
-                                             Future.fromTry(
-                                               withDraftId.set(
-                                                 MonthlyFinalValidationSourcePage,
-                                                 MonthlyFinalValidationSource.WhichSubcontractorsToAdd(mode.toString)
-                                               )
-                                             )
-
-                                           _ <- sessionRepository.set(withSource)
-
-                                         } yield Redirect(
-                                           controllers.finalvalidations.routes.ReviewSubcontractorDetailsController
-                                             .onPageLoad()
-                                         )
-                                       } else {
-                                         Future.successful(
-                                           Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, ua2))
-                                         )
-                                       }
-                        } yield result
+                          _                   <- sessionRepository.set(withSource)
+                          _                   <- monthlyReturnService.syncMonthlyReturnItems(withSource, selectedSubcontractorIds.toSeq)
+                        } yield Redirect(navigator.nextPage(WhichSubcontractorsToAddPage, mode, withSource))
                     )
 
                 case unexpectedStatus =>
@@ -228,9 +210,10 @@ class WhichSubcontractorsToAddController @Inject() (
         }
         .getOrElse {
           logger.error(
-            s"[WhichSubcontractorsToAddController] Missing required answers: " +
+            s"[WhichSubcontractorsToAddController] Missing or invalid required answers: " +
               s"CisIdPage present=${request.userAnswers.get(CisIdPage).isDefined}, " +
-              s"DateConfirmPaymentsPage present=${request.userAnswers.get(DateConfirmPaymentsPage).isDefined}"
+              s"DateConfirmPaymentsPage present=${request.userAnswers.get(DateConfirmPaymentsPage).isDefined}, " +
+              s"ReturnTypePage=${request.userAnswers.get(ReturnTypePage)}"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
