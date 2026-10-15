@@ -405,7 +405,11 @@ class SubmissionService @Inject() (
 
     updatedUa.fold(
       { err =>
-        logger.error(s"[writeToFeMongo] Failed to update UserAnswers: ${err.getMessage}", err)
+        logger.error(
+          s"[writeToFeMongo] Failed to update UserAnswers: ${err.getMessage} correlationId=${response.correlationId
+              .getOrElse("unknown")}",
+          err
+        )
         Future.failed(err)
       },
       sessionRepository.set
