@@ -17,13 +17,16 @@
 package utils
 
 import base.SpecBase
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.{Declaration, SelectedSubcontractor, SubmissionConfirmationCache}
 import models.submission.SubmissionDetails
 import models.validation.SubcontractorValidationField.EmailAddress
 import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
 import models.{ReturnType, UserAnswers}
+import models.ReturnType.MonthlyAmendedStandardReturn
 import pages.amend.WhichSubcontractorsToAddPage
+import pages.finalvalidations.*
 import pages.monthlyreturns.*
 import pages.submission.*
 import pages.validation.SubcontractorValidationFailuresPage
@@ -331,6 +334,23 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(SubcontractorValidationFailuresPage, validationFailures)
         .get
+        .set(
+          pages.amend.AmendmentDetailsPage,
+          models.amend.AmendmentDetails("1", 2025, 1, "Test", MonthlyAmendedStandardReturn, None)
+        )
+        .get
+        .set(WhichSubcontractorsToAddPage, Set("10"))
+        .get
+        .set(OriginalSubcontractorCountPage, 2)
+        .get
+        .set(FinalValidationDraftIdPage, "draft-123")
+        .get
+        .set(MonthlyFinalValidationContinuationPage, "NormalMode")
+        .get
+        .set(MonthlyFinalValidationSourcePage, MonthlyFinalValidationSource.SelectSubcontractors)
+        .get
+        .set(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
+        .get
         .set(ConfirmEmailAddressPage, "test@example.com")
         .get
         .set(NilReturnStatusPage, "DRAFT")
@@ -395,6 +415,13 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(SubcontractorValidationFailuresPage) mustBe None
       cleared.get(ConfirmEmailAddressPage) mustBe None
       cleared.get(NilReturnStatusPage) mustBe None
+      cleared.get(pages.amend.AmendmentDetailsPage) mustBe None
+      cleared.get(WhichSubcontractorsToAddPage) mustBe None
+      cleared.get(OriginalSubcontractorCountPage) mustBe None
+      cleared.get(FinalValidationDraftIdPage) mustBe None
+      cleared.get(MonthlyFinalValidationContinuationPage) mustBe None
+      cleared.get(MonthlyFinalValidationSourcePage) mustBe None
+      cleared.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe None
 
       cleared.get(SubmissionDetailsPage) mustBe None
       cleared.get(PollUrlPage) mustBe None
@@ -458,6 +485,17 @@ class UserAnswerUtilsSpec extends SpecBase {
         .get
         .set(SubcontractorValidationFailuresPage, validationFailures)
         .get
+        .set(FinalValidationDraftIdPage, "draft-456")
+        .get
+        .set(MonthlyFinalValidationContinuationPage, "CheckMode")
+        .get
+        .set(
+          MonthlyFinalValidationSourcePage,
+          MonthlyFinalValidationSource.WhichSubcontractorsToAdd("CheckMode")
+        )
+        .get
+        .set(pages.monthlyreturns.IsResumedMonthlyReturnPage, true)
+        .get
         .set(
           SubmissionConfirmationCachePage,
           SubmissionConfirmationCache(
@@ -486,6 +524,10 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(WhichSubcontractorsToAddPage) mustBe None
       cleared.get(SubcontractorValidationFailuresPage) mustBe None
       cleared.get(SubmissionConfirmationCachePage) mustBe None
+      cleared.get(FinalValidationDraftIdPage) mustBe None
+      cleared.get(MonthlyFinalValidationContinuationPage) mustBe None
+      cleared.get(MonthlyFinalValidationSourcePage) mustBe None
+      cleared.get(pages.monthlyreturns.IsResumedMonthlyReturnPage) mustBe None
     }
 
     "retains non-journey pages such as CisIdPage and ReturnTypePage" in {

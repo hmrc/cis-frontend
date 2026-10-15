@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
+import pages.finalvalidations.MonthlyFinalValidationContinuationPage
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
@@ -139,6 +140,53 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
           routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+
+        val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
+        verify(mockService).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
+        captor.getValue mustBe payload
+      }
+    }
+
+    "POST must redirect to SubcontractorDetailsAdded after Final Validation when continuation is valid" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+
+      val payload = UpdateMonthlyReturnItemRequest(
+        instanceId = "i-123",
+        taxYear = 2026,
+        taxMonth = 3,
+        subcontractorId = 1,
+        subcontractorName = "TyneWear Ltd",
+        totalPayments = "1,200.00",
+        costOfMaterials = "500.00",
+        totalDeducted = "240.00",
+        amendment = "N"
+      )
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+
+      val ua = userAnswersWithCisId
+        .set(MonthlyFinalValidationContinuationPage, NormalMode.toString)
+        .success
+        .value
+
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.CheckAnswersTotalPaymentsController.onSubmit(index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          routes.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(NormalMode).url
 
         val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
         verify(mockService).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])

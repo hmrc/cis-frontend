@@ -18,11 +18,13 @@ package controllers.amend
 
 import base.SpecBase
 import models.{NormalMode, UserAnswers}
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
+import pages.finalvalidations.MonthlyFinalValidationSourcePage
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
@@ -39,6 +41,11 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
     "/monthly-return/continue-amend-return-journey?instanceId=CIS-123&taxYear=2025&taxMonth=1&isOriginalNilReturn=false"
 
   private val populatedAnswers = UserAnswers("user-id")
+
+  private val populatedAnswersWithSource = populatedAnswers.setOrException(
+    MonthlyFinalValidationSourcePage,
+    MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+  )
 
   "ContinueAmendReturnJourneyController" - {
 
@@ -76,7 +83,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         redirectLocation(res).value mustBe
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
 
-        verify(mockSessionRepo).set(populatedAnswers)
+        verify(mockSessionRepo).set(populatedAnswersWithSource)
       }
     }
 
@@ -193,6 +200,8 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         status(res) mustBe SEE_OTHER
         redirectLocation(res).value mustBe
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
+
+        verify(mockSessionRepo).set(populatedAnswersWithSource)
       }
     }
 

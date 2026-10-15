@@ -17,6 +17,7 @@
 package controllers.finalvalidations
 
 import base.SpecBase
+import models.CheckMode
 import models.UserAnswers
 import models.finalvalidation.*
 import org.mockito.ArgumentCaptor
@@ -24,7 +25,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.monthlyreturns.CisIdPage
-import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
+import pages.finalvalidations.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -187,6 +188,77 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
       }
     }
 
+    "render WhichSubcontractorsToAdd Back URL for CheckMode" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      val answers =
+        userAnswers.setOrException(
+          MonthlyFinalValidationSourcePage,
+          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(CheckMode.toString)
+        )
+
+      when(
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(
+        Future.successful(
+          draft(
+            firstReadiness = "Incomplete",
+            secondReadiness = "Complete"
+          )
+        )
+      )
+
+      val application =
+        applicationWith(
+          userAnswers = answers,
+          finalValidationDraftService = finalValidationDraftService,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, request).value
+
+        val view =
+          application.injector
+            .instanceOf[ReviewSubcontractorDetailsView]
+
+        status(result) mustBe OK
+
+        contentAsString(result) mustBe
+          view(
+            ReviewSubcontractorDetailsPageModel(
+              Seq(
+                ReviewSubcontractorDetailsRow(
+                  1L,
+                  "First Subcontractor",
+                  true
+                ),
+                ReviewSubcontractorDetailsRow(
+                  2L,
+                  "Second Subcontractor",
+                  false
+                )
+              ),
+              false,
+              controllers.amend.routes.WhichSubcontractorsToAddController
+                .onPageLoad(CheckMode)
+                .url
+            )
+          )(
+            request,
+            messages(application)
+          ).toString
+      }
+    }
+
     "redirect to JourneyRecovery when there is no Final Validation draft id" in {
       val finalValidationDraftService =
         mock[FinalValidationDraftService]
@@ -263,7 +335,7 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
       }
     }
 
-    "commit and continue to VerifySubcontractors when verification is required" in {
+    "commit and continue to SubcontractorDetailsAdded after Final Validation when verification is required" in {
       val finalValidationDraftService =
         mock[FinalValidationDraftService]
 
@@ -315,8 +387,8 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
         status(result) mustBe SEE_OTHER
 
         redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.VerifySubcontractorsController
-            .onPageLoad(NormalMode)
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(NormalMode)
             .url
 
         verify(finalValidationDraftService)
@@ -338,11 +410,14 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
           .get(MonthlyFinalValidationSourcePage) mustBe None
 
         userAnswersCaptor.getValue
-          .get(FinalValidationVerificationRequiredPage) mustBe None
+          .get(FinalValidationVerificationRequiredPage) mustBe Some(true)
+
+        userAnswersCaptor.getValue
+          .get(MonthlyFinalValidationContinuationPage) mustBe Some(NormalMode.toString)
       }
     }
 
-    "commit and continue to SubcontractorDetailsAdded when verification is not required" in {
+    "commit and continue to SubcontractorDetailsAdded after Final Validation when verification is not required" in {
       val finalValidationDraftService =
         mock[FinalValidationDraftService]
 
@@ -395,7 +470,7 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
         redirectLocation(result).value mustBe
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onPageLoad(NormalMode)
+            .onPageLoadAfterFinalValidation(NormalMode)
             .url
 
         verify(finalValidationDraftService)
@@ -406,6 +481,85 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
 
         verify(sessionRepository)
           .set(any())
+      }
+    }
+
+    "commit and continue in CheckMode when source is WhichSubcontractorsToAdd" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      val answers =
+        userAnswers.setOrException(
+          MonthlyFinalValidationSourcePage,
+          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(CheckMode.toString)
+        )
+
+      when(
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(
+        Future.successful(
+          draft(
+            firstReadiness = "Complete",
+            secondReadiness = "Complete"
+          )
+        )
+      )
+
+      when(
+        finalValidationDraftService.commit(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.unit)
+
+      when(
+        sessionRepository.set(any())
+      ).thenReturn(Future.successful(true))
+
+      val application =
+        applicationWith(
+          userAnswers = answers,
+          finalValidationDraftService = finalValidationDraftService,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, submitRequest).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadAfterFinalValidation(CheckMode)
+            .url
+
+        verify(finalValidationDraftService)
+          .commit(
+            any[String],
+            any[String]
+          )(any[HeaderCarrier])
+
+        val userAnswersCaptor =
+          ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(sessionRepository)
+          .set(userAnswersCaptor.capture())
+
+        userAnswersCaptor.getValue
+          .get(FinalValidationDraftIdPage) mustBe None
+
+        userAnswersCaptor.getValue
+          .get(MonthlyFinalValidationSourcePage) mustBe None
+
+        userAnswersCaptor.getValue
+          .get(MonthlyFinalValidationContinuationPage) mustBe Some(CheckMode.toString)
       }
     }
 

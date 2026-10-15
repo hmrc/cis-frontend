@@ -89,7 +89,10 @@ class SubmissionSendingController @Inject() (
                   )
               } yield SubmissionStatus.fromString(submitted.status) match {
                 case Started                             =>
-                  logger.info(s"[SubmissionSendingController] submitted.status=${submitted.status}")
+                  logger.info(
+                    s"[SubmissionSendingController] submitted.status=${submitted.status} correlationId=${submitted.correlationId
+                        .getOrElse("unknown")}"
+                  )
                   Redirect(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoad())
                 case Pending | SubmissionStatus.Accepted =>
                   Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect)
@@ -142,7 +145,7 @@ class SubmissionSendingController @Inject() (
         request.userAnswers.get(SubmissionDetailsPage) match {
           case None =>
             logger.error(
-              "[SubmissionSendingController][onPollAndRedirect] - SubmissionDetailsPage missing from user answers"
+              s"[SubmissionSendingController][onPollAndRedirect] - SubmissionDetailsPage missing from user answers correlationId=${request.userAnswers.get(CorrelationIdPage).getOrElse("unknown")}"
             )
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -152,7 +155,10 @@ class SubmissionSendingController @Inject() (
               .checkAndUpdateSubmissionStatusIfAllowed(request.userAnswers)
               .flatMap(decision => pollDecisionResult(decision, refreshInterval))
               .recover { case ex =>
-                logger.error("[SubmissionSendingController][onPollAndRedirect] - submission status poll failed", ex)
+                logger.error(
+                  s"[SubmissionSendingController][onPollAndRedirect] - submission status poll failed correlationId=${request.userAnswers.get(CorrelationIdPage).getOrElse("unknown")}",
+                  ex
+                )
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
               }
         }
@@ -210,7 +216,9 @@ class SubmissionSendingController @Inject() (
       case SubmissionStatus.FatalError         =>
         Future.successful(Redirect(routes.SubmissionUnsuccessfulController.onPageLoad))
       case _                                   =>
-        logger.error(s"[SubmissionSendingController][polledStatusResult] - unrecognised status=$status")
+        logger.error(
+          s"[SubmissionSendingController][polledStatusResult] - unrecognised status=$status correlationId=${request.userAnswers.get(CorrelationIdPage).getOrElse("unknown")}"
+        )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
@@ -225,7 +233,10 @@ class SubmissionSendingController @Inject() (
     submissionService
       .sendSuccessEmail(userAnswers, langCode)
       .recover { case ex =>
-        logger.warn("[SubmissionSendingController] Sending success email failed, continuing", ex)()
+        logger.warn(
+          s"[SubmissionSendingController] Sending success email failed, continuing correlationId=${userAnswers.get(CorrelationIdPage).getOrElse("unknown")}",
+          ex
+        )()
       }
       .map(_ => Redirect(redirect))
 }

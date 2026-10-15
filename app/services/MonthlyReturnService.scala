@@ -67,7 +67,7 @@ class MonthlyReturnService @Inject() (
       case None =>
         logger.info("[resolveAndStoreCisId] cache-miss: fetching CIS taxpayer from backend")
         cisConnector.getCisTaxpayer().flatMap { tp =>
-          logger.info(s"[resolveAndStoreCisId] taxpayer payload:\n${Json.prettyPrint(Json.toJson(tp))}")
+          logger.info("[resolveAndStoreCisId] CIS taxpayer fetched successfully")
           val cisId = tp.uniqueId.trim
           if (cisId.isEmpty) {
             Future.failed(new RuntimeException("Empty cisId (uniqueId) returned from /cis/taxpayer"))

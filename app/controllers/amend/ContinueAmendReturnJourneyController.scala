@@ -17,10 +17,12 @@
 package controllers.amend
 
 import controllers.actions.*
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.{EmployerReference, NormalMode, UserAnswers}
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
 import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 import pages.agent.AgentClientDataPage
+import pages.finalvalidations.MonthlyFinalValidationSourcePage
 
 import javax.inject.Inject
 import play.api.Logging
@@ -33,6 +35,7 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 import scala.util.control.NonFatal
 
 class ContinueAmendReturnJourneyController @Inject() (
@@ -89,9 +92,30 @@ class ContinueAmendReturnJourneyController @Inject() (
                   .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
               else
                 request.employerReference
-            sessionRepository.set(result.userAnswers).flatMap { _ =>
-              reconcileFormpRds(queryParams.instanceId, employerRef, redirect)
-            }
+
+            val answersWithSource =
+              if (!result.isNilReturn && result.hasSubcontractors) {
+                result.userAnswers.set(
+                  MonthlyFinalValidationSourcePage,
+                  MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                    NormalMode.toString
+                  )
+                )
+              } else {
+                Success(result.userAnswers)
+              }
+
+            Future
+              .fromTry(answersWithSource)
+              .flatMap { withSource =>
+                sessionRepository.set(withSource).flatMap { _ =>
+                  reconcileFormpRds(queryParams.instanceId, employerRef, redirect)
+                }
+              }
+              .recover { case NonFatal(ex) =>
+                logger.error("[ContinueAmendReturnJourneyController] Failed to save resumed amendment journey", ex)
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
         }
     }
 

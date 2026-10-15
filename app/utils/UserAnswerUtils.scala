@@ -21,6 +21,7 @@ import models.UserAnswers
 import pages.QuestionPage
 import pages.monthlyreturns.*
 import pages.amend.*
+import pages.finalvalidations.*
 import pages.submission.*
 import pages.validation.SubcontractorValidationFailuresPage
 import play.api.libs.json.Reads
@@ -96,6 +97,19 @@ object UserAnswerUtils {
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
         .flatMap(_.remove(SubcontractorValidationFailuresPage))
 
+        // amendment-specific state
+        .flatMap(_.remove(AmendmentDetailsPage))
+        .flatMap(_.remove(WhichSubcontractorsToAddPage))
+        .flatMap(_.remove(OriginalSubcontractorCountPage))
+
+        // final validation state
+        .flatMap(_.remove(FinalValidationDraftIdPage))
+        .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
+        .flatMap(_.remove(MonthlyFinalValidationSourcePage))
+
+        // monthly return journey origin
+        .flatMap(_.remove(IsResumedMonthlyReturnPage))
+
         // ChRIS submission
         .flatMap(_.remove(SubmissionDetailsPage))
         .flatMap(_.remove(PollUrlPage))
@@ -130,6 +144,14 @@ object UserAnswerUtils {
         .flatMap(_.remove(WhichSubcontractorsToAddPage))
         .flatMap(_.remove(SubcontractorValidationFailuresPage))
         .flatMap(_.remove(SubmissionConfirmationCachePage))
+
+        // final validation state
+        .flatMap(_.remove(FinalValidationDraftIdPage))
+        .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
+        .flatMap(_.remove(MonthlyFinalValidationSourcePage))
+
+        // monthly return journey origin
+        .flatMap(_.remove(IsResumedMonthlyReturnPage))
 
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {

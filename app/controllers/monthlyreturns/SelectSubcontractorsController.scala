@@ -20,15 +20,14 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
-import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
+import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectSubcontractorsFormData
-import pages.finalvalidations.{FinalValidationDraftIdPage, FinalValidationVerificationRequiredPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, IsResumedMonthlyReturnPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import repositories.SessionRepository
-import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
 import services.{MonthlyReturnService, SubcontractorService}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.UserAnswerUtils.*
@@ -49,9 +48,6 @@ class SelectSubcontractorsController @Inject() (
   subcontractorService: SubcontractorService,
   monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
-  finalValidationService: FinalValidationService,
-  finalValidationDraftService: FinalValidationDraftService,
-  finalValidationDraftRequestBuilder: FinalValidationDraftRequestBuilder,
   appConfig: FrontendAppConfig
 )(using ExecutionContext)
     extends FrontendBaseController
@@ -96,12 +92,10 @@ class SelectSubcontractorsController @Inject() (
 
   def onSubmit(): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-
       val requiredAnswers = for {
         cisId   <- request.userAnswers.get(CisIdPage)
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
       } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
-
       requiredAnswers
         .map { (cisId, taxMonth, taxYear) =>
           subcontractorService
@@ -118,12 +112,6 @@ class SelectSubcontractorsController @Inject() (
                     val selectedSubcontractors =
                       model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))
 
-                    val selectedSubcontractorIds: Set[Long] =
-                      formData.subcontractorsToInclude.map(_.toLong).toSet
-
-                    val selectedFullSubcontractors =
-                      model.fullSubcontractors.filter(sub => selectedSubcontractorIds.contains(sub.subcontractorId))
-
                     monthlyReturnService
                       .storeAndSyncSelectedSubcontractors(
                         ua = request.userAnswers,
@@ -131,9 +119,6 @@ class SelectSubcontractorsController @Inject() (
                         originalSubcontractorCount = model.subcontractors.size
                       )
                       .flatMap { updatedAnswers =>
-                        val validation =
-                          finalValidationService.validate(subcontractors = selectedFullSubcontractors)
-
                         val verificationRequired =
                           selectedSubcontractors
                             .filter { subcontractor =>
@@ -142,40 +127,30 @@ class SelectSubcontractorsController @Inject() (
                             }
                             .exists(_.verificationRequired == "Yes")
 
-                        if (validation.hasErrors) {
-                          for {
-                            createRequest    <- Future.fromTry(
-                                                  finalValidationDraftRequestBuilder.build(
-                                                    instanceId = cisId,
-                                                    selectedSubcontractors = selectedFullSubcontractors,
-                                                    validation = validation
-                                                  )
-                                                )
-                            draftId          <- finalValidationDraftService.create(createRequest)
-                            withDraftId      <- Future.fromTry(
-                                                  updatedAnswers.set(FinalValidationDraftIdPage, draftId)
-                                                )
-                            withSource       <- Future.fromTry(
-                                                  withDraftId.set(
-                                                    MonthlyFinalValidationSourcePage,
-                                                    MonthlyFinalValidationSource.SelectSubcontractors
-                                                  )
-                                                )
-                            withContinuation <- Future.fromTry(
-                                                  withSource.set(
-                                                    FinalValidationVerificationRequiredPage,
-                                                    verificationRequired
-                                                  )
-                                                )
-                            _                <- sessionRepository.set(withContinuation)
-                          } yield Redirect(
-                            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
-                          )
-                        } else if (verificationRequired) {
-                          Future.successful(Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode)))
-                        } else {
-                          Future.successful(Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)))
-                        }
+                        for {
+                          withoutDraft        <- Future.fromTry(updatedAnswers.remove(FinalValidationDraftIdPage))
+                          withoutContinuation <- Future.fromTry(
+                                                   withoutDraft.remove(MonthlyFinalValidationContinuationPage)
+                                                 )
+                          withSource          <- Future.fromTry(
+                                                   withoutContinuation.set(
+                                                     MonthlyFinalValidationSourcePage,
+                                                     MonthlyFinalValidationSource.SelectSubcontractors
+                                                   )
+                                                 )
+                          withOrigin          <- Future.fromTry(
+                                                   withSource.set(
+                                                     IsResumedMonthlyReturnPage,
+                                                     withSource.get(IsResumedMonthlyReturnPage).getOrElse(false)
+                                                   )
+                                                 )
+                          _                   <- sessionRepository.set(withOrigin)
+                        } yield
+                          if (verificationRequired) {
+                            Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
+                          } else {
+                            Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+                          }
                       }
                       .recover { error =>
                         logger.error(

@@ -33,10 +33,6 @@ error.title.prefix = Gwall:
 error.prefix = Gwall
 error.summary.title = Mae problem
 
-index.title = Cynllun y Diwydiant Adeiladu
-index.heading = Cynllun y Diwydiant Adeiladu
-index.guidance = xxxxxxxxxxxxxxxxxxxx
-
 monthlyreturns.checkYourAnswers.title = Gwiriwch eich atebion cyn cyflwyno’ch datganiad
 monthlyreturns.checkYourAnswers.heading = Gwiriwch eich atebion cyn cyflwyno’ch datganiad
 monthlyreturns.checkYourAnswers.returnDetails.heading = Manylion y datganiad
@@ -96,15 +92,6 @@ unauthorised.agent.p2.prefix             =  Mae’n rhaid i chi gael mynediad at
 unauthorised.agent.p2.link               =  TWE i Asiantau
 unauthorised.agent.p2.suffix             =  er mwyn defnyddio’r gwasanaeth hwn.
 
-monthlyreturns.dateConfirmNilPayments.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.heading.h1 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.heading.h2 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.hint = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.warning = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.details.summary = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.details = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.table.summary = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.table.caption = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.table.head.timePeriod = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.table.head.monthEnding = xxxxxxxxxxxxxxxxxxxx
@@ -274,7 +261,6 @@ systemError.p2                           =  Cysylltwch â
 systemError.link                         =  Desg Gymorth gwasanaethau ar-lein CThEF
 systemError.p3                           =  os oes angen i chi siarad â rhywun ynghylch Cynllun y Diwydiant Adeiladu, a dyfynnu’r cyfeirnod:
 
-
 monthlyreturns.submittedNoReceipt.title = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submittedNoReceipt.heading = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submittedNoReceipt.p1 = Cyflwynwyd ar {0} am {1}
@@ -333,6 +319,7 @@ monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Cyfnod dod i ben y da
 monthlyreturns.selectSubcontractors.title = Pa is-gontractwyr ydych chi am eu cynnwys?
 monthlyreturns.selectSubcontractors.heading = Pa is-gontractwyr ydych chi am eu cynnwys?
 monthlyreturns.selectSubcontractors.p1 = Rhowch wybod i ni am yr is-gontractwyr rydych yn eu cynnwys yn y datganid misol hwn.
+
 monthlyreturns.selectSubcontractors.p2 = Gallwch hefyd ychwanegu is-gontractwyr at eich rhestr, tynnu is-gontractwyr o’ch rhestr, a
 monthlyreturns.selectSubcontractors.p2.link = diweddaru’ch rhestr
 monthlyreturns.selectSubcontractors.selectAll.link = Dewis popeth
@@ -415,7 +402,6 @@ monthlyreturns.inactivityRequestWarning.title = Cais anactifedd
 monthlyreturns.inactivityRequestWarning.heading = Cais anactifedd
 monthlyreturns.inactivityRequestWarning.p = Rydych yn cyflwyno cais anactifedd. Os bydd eich cais yn cael ei dderbyn, bydd yn ddilys am chwe mis yn unig.
 monthlyreturns.inactivityRequestWarning.warning = Os byddwch yn talu unrhyw is-gontractwyr yn ystod y cyfnod hwn, bydd yn rhaid i chi gyflwyno datganiad misol.
-
 
 monthlyreturns.enterYourEmailAddress.title = Nodwch eich cyfeiriad e-bost
 monthlyreturns.enterYourEmailAddress.heading = Nodwch eich cyfeiriad e-bost
