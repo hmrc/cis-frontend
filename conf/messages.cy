@@ -33,16 +33,10 @@ error.title.prefix = Gwall:
 error.prefix = Gwall
 error.summary.title = Mae problem
 
-index.title = xxxxxxxxxxxxxxxxxxxx
-index.heading = xxxxxxxxxxxxxxxxxxxx
-index.guidance = xxxxxxxxxxxxxxxxxxxx
-
 monthlyreturns.checkYourAnswers.title = Gwiriwch eich atebion cyn cyflwyno’ch datganiad
 monthlyreturns.checkYourAnswers.heading = Gwiriwch eich atebion cyn cyflwyno’ch datganiad
 monthlyreturns.checkYourAnswers.returnDetails.heading = Manylion y datganiad
 monthlyreturns.checkYourAnswers.emailConfirmation.heading = E-bost cadarnhau
-monthlyreturns.checkYourAnswers.submitSection.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.checkYourAnswers.submitSection.confirmation = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.checkYourAnswers.submitSection.button = Cadarnhau a pharhau
 
 journeyRecovery.continue.title = xxxxxxxxxxxxxxxxxxxx
@@ -98,15 +92,6 @@ unauthorised.agent.p2.prefix             =  Mae’n rhaid i chi gael mynediad at
 unauthorised.agent.p2.link               =  TWE i Asiantau
 unauthorised.agent.p2.suffix             =  er mwyn defnyddio’r gwasanaeth hwn.
 
-monthlyreturns.dateConfirmNilPayments.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.heading.h1 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.heading.h2 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.hint = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.warning = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.details.summary = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.details = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.table.summary = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.table.caption = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.table.head.timePeriod = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.table.head.monthEnding = xxxxxxxxxxxxxxxxxxxx
@@ -155,10 +140,8 @@ monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Taliadau i is-go
 monthlyreturns.paymentsToSubcontractors.value = None
 
 monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.change.hidden = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.required.month = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.required.year = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.error.required.two = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.required = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid.month = xxxxxxxxxxxxxxxxxxxx
@@ -166,15 +149,6 @@ monthlyreturns.dateConfirmNilPayments.error.invalid.year = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear = xxxxxxxxxxxxxxxxxxxx
-
-monthlyreturns.inactivityRequest.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.change.hidden = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.p1 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.p2 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityRequest.insetText = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.confirmEmailAddress.title = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.confirmEmailAddress.heading = xxxxxxxxxxxxxxxxxxxx
@@ -288,7 +262,6 @@ systemError.p2                           =  Cysylltwch â
 systemError.link                         =  Desg Gymorth gwasanaethau ar-lein CThEF
 systemError.p3                           =  os oes angen i chi siarad â rhywun ynghylch Cynllun y Diwydiant Adeiladu, a dyfynnu’r cyfeirnod:
 
-
 monthlyreturns.submittedNoReceipt.title = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submittedNoReceipt.heading = Wedi llwyddo i gyflwyno {0}
 monthlyreturns.submittedNoReceipt.p1 = Cyflwynwyd ar {0} am {1}
@@ -325,35 +298,17 @@ monthlyreturns.dateConfirmPayments.title = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.heading = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.nilreturn.title = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.nilreturn.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxMonth.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxMonth.error.wholeNumber = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxMonth.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxMonth.error.range = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxYear.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxYear.error.wholeNumber = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxYear.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxYear.error.range = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.error.duplicate = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxMonth.error.earliestTaxPeriodEndDate = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.taxMonth.error.maxAllowedFutureReturnPeriod = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.WarningIcon = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.warning = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.p1.prefix = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.p1.link = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.legendText = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.change.hidden = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.labelMonth = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.labelYear = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmPayments.helpText = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.selectSubcontractors.title = Pa is-gontractwyr ydych chi am eu cynnwys?
 monthlyreturns.selectSubcontractors.heading = Pa is-gontractwyr ydych chi am eu cynnwys?
 monthlyreturns.selectSubcontractors.p1 = Rhowch wybod i ni am yr is-gontractwyr rydych yn eu cynnwys yn y datganid misol hwn.
-monthlyreturns.selectSubcontractors.checkbox.label = xxxxxxxxxxxxxxxxxxxx
-
-monthlyreturns.selectSubcontractors.confirmation.required = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.selectSubcontractors.p2 = Gallwch hefyd ychwanegu is-gontractwyr at eich rhestr, tynnu is-gontractwyr o’ch rhestr, a
 monthlyreturns.selectSubcontractors.p2.link = diweddaru’ch rhestr
@@ -391,25 +346,11 @@ verifySubcontractors.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
 verifySubcontractors.error.required = Dewiswch ‘Iawn’ os ydych chi am ddilysu eich is-gontractwyr nawr
 verifySubcontractors.change.hidden = xxxxxxxxxxxxxxxxxxxx
 
-monthlyreturns.subcontractorsPaidThisMonth.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.p1 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.p2 = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.link = Ychwanegu manylion
-monthlyreturns.subcontractorsPaidThisMonth.table.remove.link = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.table.addDetails.hidden = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.table.remove.hidden = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.subcontractorsPaidThisMonth.addAnotherSubcontractor.link = xxxxxxxxxxxxxxxxxxxx
-
 paymentDetails.title = Beth oedd y cyfanswm y gwnaethoch ei dalu i’r is-gontractwr hwn?
 paymentDetails.heading = Beth oedd y cyfanswm y gwnaethoch ei dalu i {0}?
 paymentDetails.hint = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-paymentDetails.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.required = Nodwch gyfanswm y taliadau a wnaed
-paymentDetails.error.invalidNumeric = xxxxxxxxxxxxxxxxxxxx
-paymentDetails.error.aboveMaximum = xxxxxxxxxxxxxxxxxxxx
-paymentDetails.error.belowMinimum = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.invalid = xxxxxxxxxxxxxxxxxxxx
 paymentDetails.error.maxLength = Mae’n rhaid i gyfanswm y taliadau fod yn llai na £99,999,999
 paymentDetails.error.maxValue = Mae’n rhaid i gyfanswm y taliadau fod yn llai na £99,999,999
@@ -419,9 +360,7 @@ monthlyreturns.costOfMaterials.title = Faint wnaeth yr is-gontractwr hwn ei wari
 monthlyreturns.costOfMaterials.heading = Faint y gwnaeth {0} ei dalu am gost y deunyddiau?
 monthlyreturns.costOfMaterials.hint = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.costOfMaterials.error.nonNumeric = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.required = Nodwch gyfanswm cost y deunyddiau mewn punnoedd, wedi’i dalgrynnu i lawr i’r bunt agosaf
-monthlyreturns.costOfMaterials.error.invalidNumeric = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.invalid = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.costOfMaterials.error.maxLength = Mae’n rhaid i gyfanswm cost y deunyddiau fod yn llai na £99,999,999
 monthlyreturns.costOfMaterials.error.maxValue = Mae’n rhaid i gyfanswm cost y deunyddiau fod yn llai na £99,999,999
@@ -447,7 +386,6 @@ monthlyreturns.inactivityRequestWarning.title = Cais anactifedd
 monthlyreturns.inactivityRequestWarning.heading = Cais anactifedd
 monthlyreturns.inactivityRequestWarning.p = Rydych yn cyflwyno cais anactifedd. Os bydd eich cais yn cael ei dderbyn, bydd yn ddilys am chwe mis yn unig.
 monthlyreturns.inactivityRequestWarning.warning = Os byddwch yn talu unrhyw is-gontractwyr yn ystod y cyfnod hwn, bydd yn rhaid i chi gyflwyno datganiad misol.
-
 
 monthlyreturns.enterYourEmailAddress.title = Nodwch eich cyfeiriad e-bost
 monthlyreturns.enterYourEmailAddress.heading = Nodwch eich cyfeiriad e-bost
@@ -488,11 +426,6 @@ monthlyreturns.paymentDetailsConfirmation.checkYourAnswersLabel = cadarnhaumanyl
 monthlyreturns.paymentDetailsConfirmation.error.required = Dewiswch ‘Iawn’ i gadarnhau bod yr wybodaeth rydych wedi’i rhoi yn gywir
 monthlyreturns.paymentDetailsConfirmation.change.hidden = cadarnhaumanyliontaliad
 monthlyreturns.paymentDetailsConfirmation.cancelAmendment = Canslo diwygiad
-
-monthlyreturns.addSubcontractorDetails.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.addSubcontractorDetails.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.addSubcontractorDetails.alreadyAdded = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.addSubcontractorDetails.error.required = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.employmentStatusDeclaration.title = Datganiad o’r statws cyflogaeth
 monthlyreturns.employmentStatusDeclaration.heading = Datganiad o’r statws cyflogaeth
