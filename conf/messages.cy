@@ -100,26 +100,13 @@ monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Taliadau i is-go
 monthlyreturns.paymentsToSubcontractors.value = None
 
 monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Cyfnod dod i ben y datganiad
-monthlyreturns.dateConfirmNilPayments.change.hidden = Cadarnhau taliadau datganiadau ‘dim’ i is-gontractwyr y mis hwn.
 monthlyreturns.dateConfirmNilPayments.error.required.month = Nodwch fis rhwng 1 a 12
 monthlyreturns.dateConfirmNilPayments.error.required.year = Nodwch flwyddyn
-monthlyreturns.dateConfirmNilPayments.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.dateConfirmNilPayments.error.invalid = xxxxxxxxxxxxxxxxxxxx
 monthlyreturns.dateConfirmNilPayments.error.invalid.month = Nodwch fis rhwng 1 a 12
 monthlyreturns.dateConfirmNilPayments.error.invalid.year = Nodwch flwyddyn ddilys, fel 2025
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Mae’n rhaid i chi nodi mis; ni all y dyddiad fod cyn {0} {1} {2}
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = Mae’n rhaid i chi nodi blwyddyn, ni all y dyddiad fod yn fwy na 3 chyfnod datganiad o flaen y dyddiad presennol
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestSupportedYear = Ni all cyfnod y datganiad fod cyn {0}
-
-monthlyreturns.confirmEmailAddress.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.input.label = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.checkYourAnswersLabel = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.error.required = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.error.length = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.error.invalid = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.confirmEmailAddress.change.hidden = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.declaration.title = Datganiad
 monthlyreturns.declaration.heading = Datganiad
@@ -132,12 +119,6 @@ monthlyreturns.declaration.submit = Cadarnhau a pharhau
 monthlyreturns.submissionSending.title = Mae’ch cyflwyniad yn cael ei anfon at CThEF
 monthlyreturns.submissionSending.h1 = Mae’ch cyflwyniad yn cael ei anfon at CThEF
 monthlyreturns.submissionSending.paragraph = Wrth i’ch cyflwyniad gael ei brosesu, peidiwch ag adfywio’r dudalen hon na defnyddio’r botwm i fynd yn ôl.
-
-monthlyreturns.inactivityWarning.title = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.heading = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.paragraph = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.warning = xxxxxxxxxxxxxxxxxxxx
-monthlyreturns.inactivityWarning.submit = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.submissionUnsuccessful.title = Mae yna broblem dechnegol gyda’ch cyflwyniad
 monthlyreturns.submissionUnsuccessful.heading.h1 = Mae yna broblem dechnegol gyda’ch cyflwyniad
@@ -191,10 +172,6 @@ monthlyreturns.returnType.MonthlyStandardReturn = Datganiad misol
 monthlyreturns.returnType.MonthlyAmendedStandardReturn = Datganiad misol
 monthlyreturns.submissionSuccessful.whatHappensNext.h2 = Yr hyn sy’n digwydd nesaf
 monthlyreturns.submissionSuccessful.whatHappensNext.p = Ni wnaethoch nodi e-bost wrth i chi gyflwyno’r datganiad hwn. Os ydych am nodi e-bost, bydd angen i chi newid eich manylion cyswllt yn yr adran ynglŷn â’ch sefydliad/ffỳrm. Bydd hyn i’w weld yn eich gwasanaethau CThEF.
-
-stub.monthlyreturns.submissionSuccessful.button = xxxxxxxxxxxxxxxxxxxx
-stub.monthlyreturns.submissionUnsuccessful.button = xxxxxxxxxxxxxxxxxxxx
-stub.monthlyreturns.submissionAwaiting.button = xxxxxxxxxxxxxxxxxxxx
 
 monthlyreturns.alreadySubmitted.title = Rydych eisoes wedi cyflwyno eich datganiad misol
 monthlyreturns.alreadySubmitted.heading = Rydych eisoes wedi cyflwyno eich datganiad misol
