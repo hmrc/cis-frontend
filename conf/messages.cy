@@ -97,7 +97,7 @@ monthlyreturns.returnType.value = Datganiad ‘dim’ misol
 monthlyreturns.returnType.monthlyReturnValue = Datganiad misol
 
 monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Taliadau i is-gontractwyr
-monthlyreturns.paymentsToSubcontractors.value = None
+monthlyreturns.paymentsToSubcontractors.value = Dim
 
 monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Cyfnod dod i ben y datganiad
 monthlyreturns.dateConfirmNilPayments.error.required.month = Nodwch fis rhwng 1 a 12
