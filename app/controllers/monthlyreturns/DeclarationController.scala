@@ -29,7 +29,9 @@ import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeclarationView
 import models.monthlyreturns.Declaration.Confirmed
+import models.requests.CisPath
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class DeclarationController @Inject() (
@@ -40,6 +42,8 @@ class DeclarationController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: DeclarationView
 )(implicit ec: ExecutionContext)
@@ -48,7 +52,7 @@ class DeclarationController @Inject() (
 
   def onPageLoad(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId) {
     implicit request =>
-      Ok(view(mode))
+      Ok(view(mode, routes.DeclarationController.onSubmit().url))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
@@ -58,4 +62,19 @@ class DeclarationController @Inject() (
         _              <- sessionRepository.set(updatedAnswers)
       } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
   }
+
+  // DTR-9431: Display declaration within the UUID-scoped journey.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)) { implicit request =>
+      Ok(view(mode, routes.DeclarationController.onSubmitWithJourneyId(cisPath, uuid).url))
+    }
+
+  // DTR-9431: Save declaration against the UUID-scoped journey.
+  def onSubmitWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+      for {
+        updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage, Set(Confirmed)))
+        _              <- sessionRepository.set(updatedAnswers)
+      } yield Redirect(navigator.nextPage(cisPath, uuid, DeclarationPage, mode, updatedAnswers))
+    }
 }

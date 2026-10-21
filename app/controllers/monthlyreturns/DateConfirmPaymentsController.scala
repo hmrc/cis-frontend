@@ -20,6 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.ReturnType.MonthlyStandardReturn
 import models.monthlyreturns.MonthlyReturnRequest
+import models.requests.CisPath
 import models.{Mode, ReturnType}
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
@@ -33,6 +34,7 @@ import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -45,6 +47,8 @@ class DateConfirmPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: DateConfirmPaymentsFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -87,7 +91,15 @@ class DateConfirmPaymentsController @Inject() (
             case Some(value) => form.fill(value)
           }
 
-          Ok(view(preparedForm, mode, messagePrefix, storedReturnType))
+          Ok(
+            view(
+              preparedForm,
+              mode,
+              messagePrefix,
+              storedReturnType,
+              routes.DateConfirmPaymentsController.onSubmit(mode, storedReturnType)
+            )
+          )
         }
     }
 
@@ -102,10 +114,12 @@ class DateConfirmPaymentsController @Inject() (
         } else {
           "monthlyreturns.dateConfirmPayments.nilreturn"
         }
+      val submitAction  = routes.DateConfirmPaymentsController.onSubmit(mode, returnType)
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix, returnType))),
+          formWithErrors =>
+            Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix, returnType, submitAction))),
           value => {
             val year  = value.getYear
             val month = value.getMonthValue
@@ -121,7 +135,7 @@ class DateConfirmPaymentsController @Inject() (
                                       form
                                         .fill(value)
                                         .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
-                                    Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType)))
+                                    Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType, submitAction)))
                                   } else if (isStandard) {
                                     val createRequest = MonthlyReturnRequest(cisId, year, month)
                                     monthlyReturnService
@@ -144,5 +158,103 @@ class DateConfirmPaymentsController @Inject() (
             }
           }
         )
+    }
+
+  // DTR-9431: Retrieve the UUID-scoped journey and its stored return type.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)) { implicit request =>
+      request.userAnswers.get(ReturnTypePage) match {
+        case Some(returnType) =>
+          val messagePrefix =
+            if returnType == MonthlyStandardReturn then "monthlyreturns.dateConfirmPayments"
+            else "monthlyreturns.dateConfirmPayments.nilreturn"
+
+          val form         = formProvider()
+          val preparedForm = request.userAnswers.get(DateConfirmPaymentsPage).fold(form)(form.fill)
+          val submitAction = routes.DateConfirmPaymentsController.onSubmitWithJourneyId(cisPath, uuid, mode)
+
+          Ok(view(preparedForm, mode, messagePrefix, returnType, submitAction))
+
+        case None =>
+          logger.error("[DateConfirmPaymentsController] ReturnTypePage missing from journey")
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
+    }
+
+  // DTR-9431: Process period selection using the UUID-scoped journey.
+  def onSubmitWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+      request.userAnswers.get(ReturnTypePage) match {
+        case Some(returnType) =>
+          val form          = formProvider()
+          val isStandard    = returnType == MonthlyStandardReturn
+          val messagePrefix =
+            if isStandard then "monthlyreturns.dateConfirmPayments"
+            else "monthlyreturns.dateConfirmPayments.nilreturn"
+
+          val submitAction = routes.DateConfirmPaymentsController.onSubmitWithJourneyId(cisPath, uuid, mode)
+
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors =>
+                Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix, returnType, submitAction))),
+              value =>
+                (for {
+                  isDup  <- monthlyReturnService.isDuplicate(request.cisId, value.getYear, value.getMonthValue)
+                  result <- if (isDup) {
+                              val dupForm = form
+                                .fill(value)
+                                .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
+
+                              Future
+                                .successful(BadRequest(view(dupForm, mode, messagePrefix, returnType, submitAction)))
+                            } else {
+                              for {
+                                updatedAnswers <-
+                                  Future.fromTry(request.userAnswers.set(DateConfirmPaymentsPage, value))
+                                _              <- sessionRepository.set(updatedAnswers)
+                                result         <- if (isStandard) {
+                                                    monthlyReturnService
+                                                      .createMonthlyReturn(
+                                                        MonthlyReturnRequest(request.cisId, value.getYear, value.getMonthValue)
+                                                      )
+                                                      .map(_ =>
+                                                        Redirect(
+                                                          navigator.nextPage(
+                                                            cisPath,
+                                                            uuid,
+                                                            DateConfirmPaymentsPage,
+                                                            mode,
+                                                            updatedAnswers
+                                                          )
+                                                        )
+                                                      )
+                                                  } else {
+                                                    monthlyReturnService
+                                                      .createNilMonthlyReturn(request.cisId, updatedAnswers)
+                                                      .map(ua =>
+                                                        Redirect(
+                                                          navigator.nextPage(
+                                                            cisPath,
+                                                            uuid,
+                                                            DateConfirmPaymentsPage,
+                                                            mode,
+                                                            ua
+                                                          )
+                                                        )
+                                                      )
+                                                  }
+                              } yield result
+                            }
+                } yield result).recover { case NonFatal(ex) =>
+                  logger.error("[DateConfirmPaymentsController] Failed to process scoped return", ex)
+                  Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                }
+            )
+
+        case None =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
     }
 }

@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.requests.CisPath
 import models.{CheckMode, Mode, NormalMode}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.Logging
@@ -25,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.InactivityRequestWarningView
 
+import java.util.UUID
 import javax.inject.Inject
 
 class InactivityRequestWarningController @Inject() (
@@ -33,6 +35,8 @@ class InactivityRequestWarningController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
@@ -55,4 +59,21 @@ class InactivityRequestWarningController @Inject() (
         Ok(view(nextUrl))
       }
   }
+
+  // DTR-9431: Retrieve inactivity answers from the UUID-scoped journey.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)) { implicit request =>
+      val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage).contains(true)
+
+      if !inactivityRequested then {
+        logger.error(s"[InactivityRequestWarningController] Inactivity request not confirmed, mode=$mode")
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      } else {
+        val nextUrl = mode match {
+          case CheckMode  => routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid).url
+          case NormalMode => routes.ConfirmationByEmailController.onPageLoadWithJourneyId(cisPath, uuid, NormalMode).url
+        }
+        Ok(view(nextUrl))
+      }
+    }
 }

@@ -47,7 +47,7 @@ object UpdateMonthlyReturnRequest {
   private val No      = "N"
   private val Started = "STARTED"
 
-  private def toYN(value: Boolean): String = if (value) "Y" else "N"
+  private def toYN(value: Boolean): String = if value then "Y" else "N"
 
   private def dateFor(ua: UserAnswers): Either[String, LocalDate] =
     ua.get(DateConfirmPaymentsPage).toRight("Missing confirmed payment date")
@@ -65,24 +65,38 @@ object UpdateMonthlyReturnRequest {
       case MonthlyStandardReturn | MonthlyAmendedStandardReturn => "N"
     }
 
+  // Existing: Resolve the CIS ID from UserAnswers.
   def fromUserAnswers(ua: UserAnswers): Either[String, UpdateMonthlyReturnRequest] =
     for {
       returnType <- ua.get(ReturnTypePage).toRight("Missing return type")
-      instanceId <- ua.get(CisIdPage).toRight("Missing instanceId")
-      date       <- dateFor(ua)
+      cisId      <- ua.get(CisIdPage).toRight("Missing instanceId")
+      result     <- buildRequest(cisId, ua, returnType)
+    } yield result
 
-      decInformationCorrect = returnType match {
-                                case MonthlyNilReturn | MonthlyAmendedNilReturn =>
-                                  ua.get(DeclarationPage).flatMap { declaration =>
-                                    if (declaration.nonEmpty) Some("Y") else None
-                                  }
+  // DTR-9431: Use the CIS ID resolved by SchemeAction.
+  def fromUserAnswers(cisId: String, ua: UserAnswers): Either[String, UpdateMonthlyReturnRequest] =
+    ua.get(ReturnTypePage)
+      .toRight("Missing return type")
+      .flatMap(buildRequest(cisId, ua, _))
 
-                                case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
-                                  ua.get(PaymentDetailsConfirmationPage).map(toYN)
-                              }
-    } yield {
+  private def buildRequest(
+    cisId: String,
+    ua: UserAnswers,
+    returnType: ReturnType
+  ): Either[String, UpdateMonthlyReturnRequest] =
+    dateFor(ua).map { date =>
+      val decInformationCorrect = returnType match {
+        case MonthlyNilReturn | MonthlyAmendedNilReturn =>
+          ua.get(DeclarationPage).flatMap { declaration =>
+            if declaration.nonEmpty then Some("Y") else None
+          }
+
+        case MonthlyStandardReturn | MonthlyAmendedStandardReturn =>
+          ua.get(PaymentDetailsConfirmationPage).map(toYN)
+      }
+
       val base = UpdateMonthlyReturnRequest(
-        instanceId = instanceId,
+        instanceId = cisId,
         taxYear = date.getYear,
         taxMonth = date.getMonthValue,
         amendment = returnType.amendmentFlag,
@@ -101,9 +115,7 @@ object UpdateMonthlyReturnRequest {
           )
 
         case MonthlyNilReturn | MonthlyAmendedNilReturn =>
-          base.copy(
-            decNilReturnNoPayments = decInformationCorrect
-          )
+          base.copy(decNilReturnNoPayments = decInformationCorrect)
       }
     }
 
