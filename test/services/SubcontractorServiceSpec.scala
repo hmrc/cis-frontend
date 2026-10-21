@@ -178,14 +178,14 @@ class SubcontractorServiceSpec extends SpecBase {
         model.initiallySelectedIds mustBe Seq(1)
 
         val byId = model.subcontractors.map(vm => vm.id -> vm).toMap
-        byId(1).verificationRequired mustBe "Yes"
-        byId(2).verificationRequired mustBe "No"
+        byId(1).verificationRequired mustBe true
+        byId(2).verificationRequired mustBe false
 
-        byId(1).verificationNumber mustBe "Unknown"
-        byId(1).taxTreatment mustBe "Unknown"
+        byId(1).verificationNumber mustBe None
+        byId(1).taxTreatment mustBe None
 
-        byId(2).verificationNumber mustBe "123457"
-        byId(2).taxTreatment mustBe "Gross"
+        byId(2).verificationNumber mustBe Some("123457")
+        byId(2).taxTreatment mustBe Some("monthlyreturns.selectSubcontractors.taxTreatment.gross")
       }
     }
 
@@ -300,7 +300,7 @@ class SubcontractorServiceSpec extends SpecBase {
         )
 
       whenReady(modelF) { model =>
-        model.subcontractors.head.taxTreatment mustBe "Standard rate"
+        model.subcontractors.head.taxTreatment mustBe Some("monthlyreturns.selectSubcontractors.taxTreatment.standard")
       }
     }
 
@@ -336,7 +336,7 @@ class SubcontractorServiceSpec extends SpecBase {
         )
 
       whenReady(modelF) { model =>
-        model.subcontractors.head.taxTreatment mustBe "Higher rate"
+        model.subcontractors.head.taxTreatment mustBe Some("monthlyreturns.selectSubcontractors.taxTreatment.higher")
       }
     }
 

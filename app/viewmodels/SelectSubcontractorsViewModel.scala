@@ -19,7 +19,7 @@ package viewmodels
 case class SelectSubcontractorsViewModel(
   id: Int,
   name: String,
-  verificationRequired: String,
-  verificationNumber: String,
-  taxTreatment: String
+  verificationRequired: Boolean,
+  verificationNumber: Option[String],
+  taxTreatment: Option[String]
 )

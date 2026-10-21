@@ -1070,16 +1070,16 @@ class MonthlyReturnServiceSpec extends SpecBase {
         SelectSubcontractorsViewModel(
           id = 1001,
           name = "A Ltd",
-          verificationRequired = "No",
-          verificationNumber = "",
-          taxTreatment = ""
+          verificationRequired = false,
+          verificationNumber = Some(""),
+          taxTreatment = Some("")
         ),
         SelectSubcontractorsViewModel(
           id = 1002,
           name = "B Ltd",
-          verificationRequired = "Yes",
-          verificationNumber = "",
-          taxTreatment = ""
+          verificationRequired = true,
+          verificationNumber = Some(""),
+          taxTreatment = Some("")
         )
       )
 
@@ -1146,9 +1146,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
         SelectSubcontractorsViewModel(
           id = 1001,
           name = "A Ltd",
-          verificationRequired = "No",
-          verificationNumber = "",
-          taxTreatment = ""
+          verificationRequired = false,
+          verificationNumber = Some(""),
+          taxTreatment = Some("")
         )
       )
 
@@ -1192,9 +1192,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
         SelectSubcontractorsViewModel(
           id = 1001,
           name = "A Ltd",
-          verificationRequired = "No",
-          verificationNumber = "",
-          taxTreatment = ""
+          verificationRequired = false,
+          verificationNumber = Some(""),
+          taxTreatment = Some("")
         )
       )
 
@@ -1231,9 +1231,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
         SelectSubcontractorsViewModel(
           id = 1001,
           name = "A Ltd",
-          verificationRequired = "No",
-          verificationNumber = "",
-          taxTreatment = ""
+          verificationRequired = false,
+          verificationNumber = Some(""),
+          taxTreatment = Some("")
         )
       )
 
