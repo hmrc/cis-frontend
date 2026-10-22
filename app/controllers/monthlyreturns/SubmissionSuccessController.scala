@@ -208,7 +208,7 @@ class SubmissionSuccessController @Inject() (
       .flatMap(_.name)
       .map(_.trim)
       .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("[SubmissionSuccess] Scheme name is missing"))
+      .orElse(ua.get(ContractorNamePage).map(_.trim).filter(_.nonEmpty))
 
     val empRef = employerRefFrom(request)
 

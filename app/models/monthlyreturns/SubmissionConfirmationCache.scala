@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 
 case class SubmissionConfirmationCache(
   periodEnd: String,
-  contractorName: String,
+  contractorName: Option[String],
   email: String,
   submittedTime: String,
   submittedDate: String,

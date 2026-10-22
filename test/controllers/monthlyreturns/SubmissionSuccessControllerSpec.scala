@@ -503,7 +503,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must throw if contractorName is missing" in {
+      "must render without the contractor name row if contractorName is missing" in {
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
         when(mockGuard.check(any())).thenReturn(true)
         when(
           mockMonthlyReturnService.getMonthlyReturnComplete(
@@ -534,10 +536,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         val app = buildApp(incompleteUa)
 
         running(app) {
-          val thrown = intercept[RuntimeException] {
-            await(route(app, request).get)
-          }
-          thrown.getMessage must include("[SubmissionSuccess] Scheme name is missing")
+          val result = route(app, request).value
+          status(result) mustEqual OK
+          contentAsString(result) must not include "Contractor name"
         }
       }
 
@@ -668,7 +669,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
 
         val cache = SubmissionConfirmationCache(
           periodEnd = "March 2018",
-          contractorName = contractorName,
+          contractorName = Some(contractorName),
           email = email,
           submittedTime = "8:46am",
           submittedDate = "6 January 2017"
@@ -695,7 +696,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
             val body = contentAsString(result)
 
             body must include(cache.periodEnd)
-            body must include(cache.contractorName)
+            body must include(cache.contractorName.get)
             body must include(cache.email)
 
             verify(mockMonthlyReturnService, never())
@@ -798,7 +799,9 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must throw if contractorName is missing" in {
+      "must render without the contractor name row if contractorName is missing" in {
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
         when(mockGuard.check(any())).thenReturn(true)
 
         when(
@@ -815,20 +818,16 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .set(ReturnTypePage, MonthlyNilReturn)
           .success
           .value
+          .remove(ContractorNamePage)
+          .success
+          .value
 
         val app = buildApp(incompleteUa, isAgent = true)
 
         running(app) {
-          val thrown = intercept[RuntimeException] {
-            await(route(app, request).get)
-          }
-
-          thrown.getMessage must include(
-            "[SubmissionSuccess] Scheme name is missing"
-          )
-
-          verify(mockMonthlyReturnService, never())
-            .completeSubmissionJourney(any())(any())
+          val result = route(app, request).value
+          status(result) mustEqual OK
+          contentAsString(result) must not include "Contractor name"
         }
       }
 

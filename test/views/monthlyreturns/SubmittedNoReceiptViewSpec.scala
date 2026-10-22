@@ -31,6 +31,25 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
 
   "SubmittedNoReceiptView" - {
 
+    "must omit the contractor name row and render no stray text when contractor name is missing" in new Setup {
+
+      val doc: Document = Jsoup.parse(view(vm.copy(contractorName = None)).toString)
+
+      doc.select(".govuk-summary-list__key").eachText.toString must not include messages(
+        "monthlyreturns.submittedNoReceipt.details.contractorName"
+      )
+      doc.select(".govuk-summary-list__row").size mustBe 3
+      doc.select(".govuk-summary-list").first.parent.ownText   must not include ")"
+    }
+
+    "must render the contractor name row when contractor name is present" in new Setup {
+
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select(".govuk-summary-list__row").size mustBe 4
+      doc.select(".govuk-summary-list__value").first.text mustBe contractorName
+    }
+
     "must render the page when email is provided" in new Setup {
 
       val doc: Document = Jsoup.parse(html.toString)
@@ -190,7 +209,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       periodEnd = periodEnd,
       submittedTime = submittedTime,
       submittedDate = submittedDate,
-      contractorName = contractorName,
+      contractorName = Some(contractorName),
       empRef = empRef,
       email = email,
       submissionType = submissionType,

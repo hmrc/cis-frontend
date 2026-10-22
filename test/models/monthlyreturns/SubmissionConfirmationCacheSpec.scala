@@ -24,7 +24,7 @@ class SubmissionConfirmationCacheSpec extends AnyFreeSpec with Matchers {
 
   private val model = SubmissionConfirmationCache(
     periodEnd = "March 2018",
-    contractorName = "PAL 355 Scheme",
+    contractorName = Some("PAL 355 Scheme"),
     email = "test@test.com",
     submittedTime = "8:46am",
     submittedDate = "6 January 2017"

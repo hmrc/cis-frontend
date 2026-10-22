@@ -51,6 +51,9 @@ class ConfirmAmendmentController @Inject() (
     with I18nSupport
     with Logging {
 
+  // Placeholder the backend substitutes when the scheme has no name (GetSubmittedMonthlyReturnsDataResponse)
+  private val NoNameProvidedPlaceholder = "No name provided"
+
   private val firstDate: Instant  = Instant.parse("2016-02-06T00:00:00Z")
   private val secondDate: Instant = Instant.parse("2016-04-06T00:00:00Z")
 
@@ -66,11 +69,14 @@ class ConfirmAmendmentController @Inject() (
       .getAmendmentHandoff(handoffId)
       .flatMap {
         case Some(handoff) =>
+          val contractorName =
+            Some(handoff.contractorName.trim).filter(n => n.nonEmpty && n != NoNameProvidedPlaceholder)
+
           val amendmentDetails = AmendmentDetails(
             instanceId = handoff.instanceId,
             taxYear = handoff.taxYear,
             taxMonth = handoff.taxMonth,
-            contractorName = handoff.contractorName,
+            contractorName = contractorName.getOrElse(""),
             originalReturnType = handoff.originalReturnType,
             acceptedTime = handoff.acceptedTime
           )
@@ -80,7 +86,7 @@ class ConfirmAmendmentController @Inject() (
               val updatedUserAnswers =
                 UserAnswers(request.userId)
                   .set(CisIdPage, handoff.instanceId)
-                  .flatMap(_.set(ContractorNamePage, handoff.contractorName))
+                  .flatMap(ua => contractorName.fold(Try(ua))(name => ua.set(ContractorNamePage, name)))
                   .flatMap(_.set(ReturnTypePage, amendedReturnType))
                   .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
                   .flatMap(

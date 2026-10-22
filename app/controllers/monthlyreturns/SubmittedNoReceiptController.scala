@@ -147,7 +147,7 @@ class SubmittedNoReceiptController @Inject() (
       .flatMap(_.name)
       .map(_.trim)
       .filter(_.nonEmpty)
-      .getOrElse(throw new RuntimeException("[SubmittedNoReceipt] Scheme name is missing"))
+      .orElse(ua.get(ContractorNamePage).map(_.trim).filter(_.nonEmpty))
     val employerRef         = employerRefFrom(request)
     val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
