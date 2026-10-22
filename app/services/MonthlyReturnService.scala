@@ -224,9 +224,8 @@ class MonthlyReturnService @Inject() (
         sessionRepository.set(updatedAnswers).map(_ => ())
 
       case scala.util.Failure(ex) =>
-        logger.error(
-          "[MonthlyReturnService][completeSubmissionJourney] - dateConfirmPayments missing or set failed",
-          ex
+        logger.warn(
+          s"[MonthlyReturnService][completeSubmissionJourney] - dateConfirmPayments missing or set failed: ${ex.getMessage}"
         )
         Future.unit
     }
