@@ -125,7 +125,7 @@ class SelectSubcontractorsController @Inject() (
                               updatedAnswers.incompleteSubcontractorIds
                                 .contains(subcontractor.id)
                             }
-                            .exists(_.verificationRequired == "Yes")
+                            .exists(_.verificationRequired)
 
                         for {
                           withoutDraft        <- Future.fromTry(updatedAnswers.remove(FinalValidationDraftIdPage))
