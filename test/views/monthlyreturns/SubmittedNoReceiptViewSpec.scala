@@ -190,7 +190,7 @@ class SubmittedNoReceiptViewSpec extends SpecBase {
       periodEnd = periodEnd,
       submittedTime = submittedTime,
       submittedDate = submittedDate,
-      contractorName = contractorName,
+      contractorName = Some(contractorName),
       empRef = empRef,
       email = email,
       submissionType = submissionType,

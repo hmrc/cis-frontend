@@ -68,11 +68,13 @@
     @h2("monthlyreturns.submissionSuccessful.submissionDetails.heading")
 
     @govukSummaryList(
-        SummaryListViewModel(Seq(
+        SummaryListViewModel(
+          vm.contractorName.map(name =>
             SummaryListRowViewModel(
                 key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.contractorName"))),
-                value = ValueViewModel(Text(vm.contractorName))
-            ),
+                value = ValueViewModel(Text(name))
+            )
+          ).toSeq ++ Seq(
             SummaryListRowViewModel(
                 key   = KeyViewModel(Text(messages("monthlyreturns.submissionSuccessful.payeReference"))),
                 value = ValueViewModel(Text(vm.empRef))
@@ -86,6 +88,7 @@
                 value = ValueViewModel(Text(vm.periodEnd))
             )
         ))
+        )
     )
 
     @if(!vm.email.trim.isEmpty) {

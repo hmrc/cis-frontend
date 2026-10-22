@@ -149,7 +149,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 periodEnd = periodEnd.format(dmyFmt),
                 submittedTime = submittedTime,
                 submittedDate = submittedDate,
-                contractorName = contractorName,
+                contractorName = Some(contractorName),
                 empRef = employerRef,
                 email = email,
                 submissionType = submissionType,
@@ -176,8 +176,10 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
           }
         }
 
-        "must throw if contractorName missing" in {
+        "must render without the contractor name row if contractorName missing" in {
           val mockService = mock[MonthlyReturnService]
+          when(mockService.getSchemeEmail(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(None))
+          when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])).thenReturn(Future.unit)
           when(
             mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
               any[HeaderCarrier]
@@ -202,10 +204,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             .build()
 
           running(app) {
-            val thrown = intercept[RuntimeException] {
-              await(route(app, request).get)
-            }
-            thrown.getMessage must include("[SubmittedNoReceipt] Scheme name is missing")
+            val result = route(app, request).value
+            status(result) mustEqual OK
+            contentAsString(result) must not include "Contractor name"
           }
         }
 
@@ -317,7 +318,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 periodEnd = periodEnd.format(dmyFmt),
                 submittedTime = submittedTime,
                 submittedDate = submittedDate,
-                contractorName = contractorName,
+                contractorName = Some(contractorName),
                 empRef = employerRef,
                 email = fallbackEmail,
                 submissionType = submissionType,
@@ -377,7 +378,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                 periodEnd = periodEnd.format(dmyFmt),
                 submittedTime = submittedTime,
                 submittedDate = submittedDate,
-                contractorName = contractorName,
+                contractorName = Some(contractorName),
                 empRef = employerRef,
                 email = "",
                 submissionType = submissionType,
@@ -440,7 +441,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
 
           val cache = SubmissionConfirmationCache(
             periodEnd = "March 2018",
-            contractorName = contractorName,
+            contractorName = Some(contractorName),
             email = email,
             submittedTime = "8:46am",
             submittedDate = "6 January 2017"
@@ -463,7 +464,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               status(result) mustBe OK
               val body   = contentAsString(result)
               body must include(cache.periodEnd)
-              body must include(cache.contractorName)
+              body must include(cache.contractorName.get)
               body must include(cache.email)
               verify(mockService, never()).retrieveMonthlyReturnForEditDetails(any())(any())
               verify(mockService, never()).completeSubmissionJourney(any())(any())
@@ -556,7 +557,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
                   submittedDate = submittedDate,
-                  contractorName = contractorName,
+                  contractorName = Some(contractorName),
                   empRef = employerRef,
                   email = email,
                   submissionType = submissionType,
@@ -583,9 +584,11 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
             }
           }
 
-          "must throw if contractorName missing" in {
+          "must render without the contractor name row if contractorName missing" in {
 
             val mockService = mock[MonthlyReturnService]
+            when(mockService.getSchemeEmail(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(None))
+            when(mockService.completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])).thenReturn(Future.unit)
             when(
               mockService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
                 any[HeaderCarrier]
@@ -610,10 +613,9 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
               .build()
 
             running(app) {
-              val thrown = intercept[RuntimeException] {
-                await(route(app, request).get)
-              }
-              thrown.getMessage must include("[SubmittedNoReceipt] Scheme name is missing")
+              val result = route(app, request).value
+              status(result) mustEqual OK
+              contentAsString(result) must not include "Contractor name"
             }
           }
 
@@ -706,7 +708,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
                   submittedDate = submittedDate,
-                  contractorName = agentDateWithoutTaxRefTaxNumber.schemeName.value,
+                  contractorName = agentDateWithoutTaxRefTaxNumber.schemeName,
                   empRef = employerRef,
                   email = fallbackEmail,
                   submissionType = submissionType,
@@ -775,7 +777,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
                   submittedDate = submittedDate,
-                  contractorName = agentData.schemeName.value,
+                  contractorName = agentData.schemeName,
                   empRef = employerRef,
                   email = "",
                   submissionType = submissionType,
@@ -880,7 +882,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                   periodEnd = periodEnd.format(dmyFmt),
                   submittedTime = submittedTime,
                   submittedDate = submittedDate,
-                  contractorName = contractorName,
+                  contractorName = Some(contractorName),
                   empRef = employerRef,
                   email = "",
                   submissionType = submissionType,

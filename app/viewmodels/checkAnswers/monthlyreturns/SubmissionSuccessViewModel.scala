@@ -23,7 +23,7 @@ case class SubmissionSuccessViewModel(
   periodEnd: String,
   submittedTime: String,
   submittedDate: String,
-  contractorName: String,
+  contractorName: Option[String],
   empRef: String,
   email: String,
   submissionType: ReturnType,

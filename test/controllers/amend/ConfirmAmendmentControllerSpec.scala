@@ -26,6 +26,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
+import pages.monthlyreturns.ContractorNamePage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -93,6 +94,63 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
           any[HeaderCarrier]()
         )
         verify(mockSessionRepository).set(any[UserAnswers]())
+      }
+    }
+
+    "must not store the backend 'No name provided' placeholder as the contractor name" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+      val captor                        = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      when(mockSessionRepository.set(any[UserAnswers]())) thenReturn Future.successful(true)
+      when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+        Some(amendmentDetailsStandard.copy(contractorName = "No name provided"))
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+
+        status(route(application, request).value) mustEqual OK
+
+        verify(mockSessionRepository).set(captor.capture())
+        captor.getValue.get(ContractorNamePage) mustBe None
+        captor.getValue.get(AmendmentDetailsPage).map(_.contractorName) mustBe Some("")
+      }
+    }
+
+    "must store the contractor name from the handoff when present" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+      val captor                        = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      when(mockSessionRepository.set(any[UserAnswers]())) thenReturn Future.successful(true)
+      when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+        Some(amendmentDetailsStandard)
+      )
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(GET, controllers.amend.routes.ConfirmAmendmentController.onPageLoad(handoffId).url)
+
+        status(route(application, request).value) mustEqual OK
+
+        verify(mockSessionRepository).set(captor.capture())
+        captor.getValue.get(ContractorNamePage) mustBe Some("Test Contractor")
       }
     }
 
