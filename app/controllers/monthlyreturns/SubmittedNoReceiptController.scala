@@ -21,10 +21,10 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
-import models.requests.{CisIdDataRequest, GetMonthlyReturnForEditRequest}
+import models.requests.{CisPath, GetMonthlyReturnForEditRequest}
 import pages.monthlyreturns.*
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Request}
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -35,6 +35,7 @@ import views.html.monthlyreturns.SubmittedNoReceiptView
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, ZoneId, ZonedDateTime}
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -44,6 +45,8 @@ class SubmittedNoReceiptController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmittedNoReceiptView,
   clock: Clock,
@@ -58,11 +61,26 @@ class SubmittedNoReceiptController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
+      // DTR-9431: Preserve legacy exit navigation.
+      val exitUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
       val ua = request.userAnswers
 
       ua.get(SubmissionConfirmationCachePage) match {
         case Some(cache) =>
-          Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
+          Future.successful(
+            Ok(
+              view(
+                buildViewModelFromCache(
+                  cache,
+                  ua,
+                  required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers"),
+                  employerRefFrom(request)
+                ),
+                exitUrl
+              )
+            )
+          )
 
         case None =>
           val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
@@ -75,12 +93,77 @@ class SubmittedNoReceiptController @Inject() (
             case Right(req) =>
               (for {
                 monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
-                vm            <- buildViewModel(ua, monthlyReturn)
+                vm            <- buildViewModel(
+                                   ua,
+                                   monthlyReturn,
+                                   required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers"),
+                                   employerRefFrom(request)
+                                 )
                 uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
                 _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
-              } yield Ok(view(vm))).recoverWith { case ex: UpstreamErrorResponse =>
+              } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
                 logger.error(
                   s"[SubmittedNoReceiptController] onPageLoad failed " +
+                    s"with status ${ex.statusCode} for instanceId=${req.instanceId}",
+                  ex
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
+          }
+      }
+    }
+
+  // DTR-9431: Display no-receipt confirmation for a UUID-scoped submission.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+
+      val exitUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController
+          .onExitWithJourneyId(cisPath, uuid)
+          .url
+
+      val ua = request.userAnswers
+
+      ua.get(SubmissionConfirmationCachePage) match {
+        case Some(cache) =>
+          Future.successful(
+            Ok(
+              view(
+                buildViewModelFromCache(
+                  cache,
+                  ua,
+                  request.cisId,
+                  request.employerRef
+                ),
+                exitUrl
+              )
+            )
+          )
+
+        case None =>
+          val monthlyReturnForEditRequest = GetMonthlyReturnForEditRequest.fromUserAnswers(request.cisId, ua)
+
+          monthlyReturnForEditRequest match {
+            case Left(error) =>
+              logger.error(
+                s"[SubmittedNoReceiptController] Failed to build UUID-scoped GetMonthlyReturnForEditRequest: $error"
+              )
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+            case Right(req) =>
+              (for {
+                monthlyReturn <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
+                vm            <- buildViewModel(
+                                   ua,
+                                   monthlyReturn,
+                                   request.cisId,
+                                   request.employerRef
+                                 )
+                uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage, cacheFrom(vm)))
+                _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache)
+              } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
+                logger.error(
+                  s"[SubmittedNoReceiptController] onPageLoadWithJourneyId failed " +
                     s"with status ${ex.statusCode} for instanceId=${req.instanceId}",
                   ex
                 )
@@ -100,13 +183,15 @@ class SubmittedNoReceiptController @Inject() (
       submittedDateTimeIso = vm.submittedDateTimeIso
     )
 
-  private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers)(implicit
-    request: CisIdDataRequest[_]
-  ): SubmittedNoReceiptViewModel = {
+  // DTR-9431: Accept explicit CIS ID and employer reference for scoped journeys.
+  private def buildViewModelFromCache(
+    cache: SubmissionConfirmationCache,
+    ua: UserAnswers,
+    cisId: String,
+    empRef: String
+  )(implicit request: Request[_]): SubmittedNoReceiptViewModel = {
     val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
-    val cisId               = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
-    val empRef              = employerRefFrom(request)
     implicit val lang: Lang = messagesApi.preferred(request).lang
 
     val periodEnd = ua
@@ -138,17 +223,18 @@ class SubmittedNoReceiptController @Inject() (
     )
   }
 
-  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
-    request: CisIdDataRequest[_],
-    hc: HeaderCarrier
-  ): Future[SubmittedNoReceiptViewModel] = {
-    val cisId               = required(ua.get(CisIdPage), "[SubmittedNoReceipt] cisId missing from userAnswers")
+  // DTR-9431: Accept explicit CIS ID and employer reference for scoped journeys.
+  private def buildViewModel(
+    ua: UserAnswers,
+    monthlyReturn: GetAllMonthlyReturnDetailsResponse,
+    cisId: String,
+    employerRef: String
+  )(implicit request: Request[_], hc: HeaderCarrier): Future[SubmittedNoReceiptViewModel] = {
     val contractorName      = monthlyReturn.scheme.headOption
       .flatMap(_.name)
       .map(_.trim)
       .filter(_.nonEmpty)
       .getOrElse(throw new RuntimeException("[SubmittedNoReceipt] Scheme name is missing"))
-    val employerRef         = employerRefFrom(request)
     val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmittedNoReceipt] ReturnTypePage missing from userAnswers")
     implicit val lang: Lang = messagesApi.preferred(request).lang

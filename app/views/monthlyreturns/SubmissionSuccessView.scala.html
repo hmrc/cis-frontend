@@ -33,7 +33,7 @@
     link: components.Link
 )
 
-@(vm: SubmissionSuccessViewModel)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(vm: SubmissionSuccessViewModel, exitUrl: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(
@@ -120,7 +120,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submissionSuccessful.backToManageYourCISReturn.link",
-        linkUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        linkUrl = exitUrl
     )
 
     @sectionBreak()

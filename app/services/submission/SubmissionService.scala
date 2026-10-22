@@ -65,9 +65,35 @@ class SubmissionService @Inject() (
         }
     }
 
+  // DTR-9431: Create a submission for the authorised CIS scheme.
+  def getOrCreateSubmissionForChris(
+    cisId: String,
+    ua: UserAnswers
+  )(implicit hc: HeaderCarrier): Future[(String, UserAnswers, Boolean)] =
+    ua.get(ResubmissionIdPage) match {
+      case Some(resubmissionId) =>
+        Future.successful((resubmissionId.toString, ua, true))
+      case None                 =>
+        create(cisId, ua).map { case (created, updatedUa) =>
+          (created.submissionId, updatedUa, false)
+        }
+    }
+
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
       req            <- buildCreateRequest(ua)
+      response       <- cisConnector.createSubmission(req)
+      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
+      _              <- sessionRepository.set(updatedAnswers)
+    } yield (response, updatedAnswers)
+
+  // DTR-9431: Create a submission using UUID-scoped UserAnswers.
+  def create(
+    cisId: String,
+    ua: UserAnswers
+  )(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
+    for {
+      req            <- buildCreateRequest(cisId, ua)
       response       <- cisConnector.createSubmission(req)
       updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
       _              <- sessionRepository.set(updatedAnswers)
@@ -117,6 +143,39 @@ class SubmissionService @Inject() (
       _                                       <- writeToFeMongo(ua, submissionId, response, amendment)
     } yield response
 
+  // DTR-9431: Submit using the authorised scheme and taxpayer.
+  def submitToChrisAndPersist(
+    submissionId: String,
+    cisId: String,
+    taxpayer: CisTaxpayer,
+    ua: UserAnswers,
+    isAgent: Boolean,
+    isResubmission: Boolean
+  )(implicit hc: HeaderCarrier): Future[ChrisSubmissionResponse] = {
+
+    val requiredAnswers = ua.get(DateConfirmPaymentsPage) match {
+      case Some(taxDate) =>
+        Future.successful(
+          (taxDate.getMonthValue, taxDate.getYear, ua.get(AmendmentDetailsPage).isDefined)
+        )
+      case None          =>
+        Future.failed[(Int, Int, Boolean)](
+          new RuntimeException("Month and year of return missing")
+        )
+    }
+
+    for {
+      (taxMonth, taxYear, isAmendment) <- requiredAnswers
+      monthlyReturn                    <- cisConnector.retrieveMonthlyReturnForEditDetails(
+                                            GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment)
+                                          )
+      csr                               = chrisRequestBuilder.build(ua, taxpayer, isAgent, monthlyReturn, isResubmission)
+      response                         <- cisConnector.submitToChris(submissionId, csr)
+      amendment                         = monthlyReturn.monthlyReturn.headOption.flatMap(_.amendment)
+      _                                <- writeToFeMongo(ua, submissionId, response, amendment)
+    } yield response
+  }
+
   def updateSubmissionFromChrisResponse(
     submissionId: String,
     ua: UserAnswers,
@@ -132,6 +191,27 @@ class SubmissionService @Inject() (
     chrisResp.govTalkErrorStatus
   )
 
+  // DTR-9431: Update the ChRIS response for a UUID-scoped journey.
+  def updateSubmissionFromChrisResponse(
+    cisId: String,
+    agentReference: Option[String],
+    submissionId: String,
+    ua: UserAnswers,
+    chrisResp: ChrisSubmissionResponse
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    updateSubmission(
+      cisId,
+      agentReference,
+      submissionId,
+      ua,
+      chrisResp.hmrcMarkGenerated,
+      chrisResp.status,
+      chrisResp.acceptedTime,
+      None,
+      chrisResp.error,
+      chrisResp.govTalkErrorStatus
+    )
+
   def updateSubmission(
     submissionId: String,
     ua: UserAnswers,
@@ -141,7 +221,33 @@ class SubmissionService @Inject() (
     irMarkReceived: Option[String] = None,
     error: Option[JsValue] = None,
     govTalkErrorStatus: Option[GovTalkErrorStatus] = None
-  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] = {
+  )(implicit req: CisIdDataRequest[AnyContent], hc: HeaderCarrier): Future[Unit] =
+    updateSubmission(
+      ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing")),
+      req.agentReference,
+      submissionId,
+      ua,
+      hmrcMarkGenerated,
+      status,
+      acceptedTime,
+      irMarkReceived,
+      error,
+      govTalkErrorStatus
+    )
+
+  // DTR-9431: Update a submission using the authorised CIS scheme.
+  def updateSubmission(
+    cisId: String,
+    agentReference: Option[String],
+    submissionId: String,
+    ua: UserAnswers,
+    hmrcMarkGenerated: String,
+    status: String,
+    acceptedTime: Option[String],
+    irMarkReceived: Option[String],
+    error: Option[JsValue],
+    govTalkErrorStatus: Option[GovTalkErrorStatus]
+  )(implicit hc: HeaderCarrier): Future[Unit] = {
     val ukNow = ukLocalDateTimeNow
 
     val acceptedTimestamp = Option.when(status == "SUBMITTED" || status == "SUBMITTED_NO_RECEIPT") {
@@ -151,7 +257,6 @@ class SubmissionService @Inject() (
         .toString
     }
 
-    val instanceId = ua.get(CisIdPage).getOrElse(throw new RuntimeException("CIS ID missing"))
     val ym         = selectedYearMonth(ua)
     val email      = ua.get(EnterYourEmailAddressPage)
     val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
@@ -165,11 +270,11 @@ class SubmissionService @Inject() (
     )
 
     val update = UpdateSubmissionRequest(
-      instanceId = instanceId,
+      instanceId = cisId,
       hmrcMarkGenerated = Some(hmrcMarkGenerated),
       hmrcMarkGgis = irMarkReceived,
       emailRecipient = email,
-      agentId = req.agentReference,
+      agentId = agentReference,
       taxYear = ym.getYear,
       taxMonth = ym.getMonthValue,
       submittableStatus = status,
@@ -197,42 +302,107 @@ class SubmissionService @Inject() (
 
   def checkAndUpdateSubmissionStatusIfAllowed(
     userAnswers: UserAnswers
-  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[PollDecision] =
+  )(using hc: HeaderCarrier, req: CisIdDataRequest[AnyContent]): Future[PollDecision] =
+    pollIfAllowed(userAnswers, checkAndUpdateSubmissionStatus(userAnswers))
+
+  // DTR-9431: Poll a UUID-scoped submission.
+  def checkAndUpdateSubmissionStatusIfAllowed(
+    cisId: String,
+    agentReference: Option[String],
+    userAnswers: UserAnswers
+  )(implicit hc: HeaderCarrier): Future[PollDecision] =
+    pollIfAllowed(userAnswers, checkAndUpdateSubmissionStatus(cisId, agentReference, userAnswers))
+
+  private def pollIfAllowed(
+    userAnswers: UserAnswers,
+    poll: => Future[String]
+  ): Future[PollDecision] =
     userAnswers.get(LastMessageDatePage) match {
       case Some(receivedAt) =>
         val pollInterval      = getPollInterval(userAnswers)
         val nextPollAllowedAt = receivedAt.plusSeconds(pollInterval)
 
         if (Instant.now().isAfter(nextPollAllowedAt)) {
-          checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+          poll.map(PollDecision.Polled.apply)
         } else {
           Future.successful(PollDecision.Skip)
         }
 
       case None =>
-        // No poll has happened yet: the first poll must wait one poll interval after the
-        // submission to ChRIS, rather than polling immediately.
         val pollInterval = getPollInterval(userAnswers)
         userAnswers.get(SubmissionDetailsPage) match {
           case Some(details) if LocalDateTime.now().isBefore(details.submittedAt.plusSeconds(pollInterval)) =>
             Future.successful(PollDecision.Skip)
           case _                                                                                            =>
-            checkAndUpdateSubmissionStatus(userAnswers).map(PollDecision.Polled.apply)
+            poll.map(PollDecision.Polled.apply)
         }
     }
 
   def checkAndUpdateSubmissionStatus(
     userAnswers: UserAnswers
-  )(using HeaderCarrier, CisIdDataRequest[AnyContent]): Future[String] = {
+  )(using hc: HeaderCarrier, req: CisIdDataRequest[AnyContent]): Future[String] =
+    pollSubmission(
+      userAnswers,
+      (submissionId, irMark, status, acceptedTime, irMarkReceived, error, govTalkErrorStatus) =>
+        updateSubmission(
+          submissionId,
+          userAnswers,
+          irMark,
+          status,
+          acceptedTime,
+          irMarkReceived,
+          error,
+          govTalkErrorStatus
+        )(req, hc)
+    )
+
+  // DTR-9431: Update the status for the authorised CIS scheme.
+  def checkAndUpdateSubmissionStatus(
+    cisId: String,
+    agentReference: Option[String],
+    userAnswers: UserAnswers
+  )(implicit hc: HeaderCarrier): Future[String] =
+    pollSubmission(
+      userAnswers,
+      (submissionId, irMark, status, acceptedTime, irMarkReceived, error, govTalkErrorStatus) =>
+        updateSubmission(
+          cisId,
+          agentReference,
+          submissionId,
+          userAnswers,
+          irMark,
+          status,
+          acceptedTime,
+          irMarkReceived,
+          error,
+          govTalkErrorStatus
+        )
+    )
+
+  private def pollSubmission(
+    userAnswers: UserAnswers,
+    updateBackend: (
+      String,
+      String,
+      String,
+      Option[String],
+      Option[String],
+      Option[JsValue],
+      Option[GovTalkErrorStatus]
+    ) => Future[Unit]
+  )(implicit hc: HeaderCarrier): Future[String] = {
     val timeout = appConfig.submissionPollTimeoutSeconds
 
     userAnswers.get(SubmissionDetailsPage) match {
-      case None                    => Future.failed(new IllegalStateException("No submission details present"))
+      case None =>
+        Future.failed(new IllegalStateException("No submission details present"))
+
       case Some(submissionDetails)
           if userAnswers
             .get(SubmissionStatusTimedOutPage(submissionDetails.id))
             .contains(true) =>
         Future.successful("TIMED_OUT")
+
       case Some(submissionDetails) =>
         val timeoutDateTime = submissionDetails.submittedAt.plusSeconds(timeout)
         val now             = LocalDateTime.now()
@@ -247,9 +417,8 @@ class SubmissionService @Inject() (
             pollUrl      <- userAnswers.get(PollUrlPage).toFuture
             submissionId <- userAnswers.get(SubmissionDetailsPage).map(_.id).toFuture
             result       <- cisConnector.getSubmissionStatus(pollUrl, submissionId)
-            _            <- updateSubmission(
+            _            <- updateBackend(
                               submissionDetails.id,
-                              userAnswers,
                               submissionDetails.irMark,
                               result.status,
                               result.acceptedTime,
@@ -347,6 +516,23 @@ class SubmissionService @Inject() (
     Future.successful(
       CreateSubmissionRequest(
         instanceId = instanceId,
+        taxYear = ym.getYear,
+        taxMonth = ym.getMonthValue,
+        amendment = returnType.amendmentFlag,
+        emailRecipient = email
+      )
+    )
+  }
+
+  // DTR-9431: Build the submission request without legacy CisIdPage.
+  private def buildCreateRequest(cisId: String, ua: UserAnswers): Future[CreateSubmissionRequest] = {
+    val ym         = selectedYearMonth(ua)
+    val email      = ua.get(EnterYourEmailAddressPage)
+    val returnType = ua.get(ReturnTypePage).getOrElse(throw new RuntimeException("Return type missing"))
+
+    Future.successful(
+      CreateSubmissionRequest(
+        instanceId = cisId,
         taxYear = ym.getYear,
         taxMonth = ym.getMonthValue,
         amendment = returnType.amendmentFlag,

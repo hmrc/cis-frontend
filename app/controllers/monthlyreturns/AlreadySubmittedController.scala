@@ -17,9 +17,10 @@
 package controllers.monthlyreturns
 
 import config.FrontendAppConfig
-import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.*
 import models.ReturnType
 import models.ReturnType.MonthlyStandardReturn
+import models.requests.CisPath
 import pages.monthlyreturns.ReturnTypePage
 import play.api.Logging
 import play.api.i18n.I18nSupport
@@ -27,6 +28,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.AlreadySubmittedView
 
+import java.util.UUID
 import javax.inject.Inject
 
 class AlreadySubmittedController @Inject() (
@@ -35,6 +37,8 @@ class AlreadySubmittedController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   view: AlreadySubmittedView
 )(implicit appConfig: FrontendAppConfig)
     extends FrontendBaseController
@@ -64,4 +68,30 @@ class AlreadySubmittedController @Inject() (
         }
       Ok(view(messagePrefix, cisAccountUrl))
   }
+
+  // DTR-9431: Display already submitted page for a UUID-scoped journey.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)) { implicit request =>
+
+      val cisAccountUrl =
+        if (request.identifier.isAgent) {
+          s"${appConfig.constructionIndustryAgentAccountUrl}${request.cisId}"
+        } else {
+          appConfig.constructionIndustryOrgAccountUrl
+        }
+
+      val returnType = request.userAnswers.get(ReturnTypePage).getOrElse {
+        logger.error("[AlreadySubmittedController] ReturnTypePage missing from UUID-scoped userAnswers")
+        throw new IllegalStateException("ReturnTypePage missing from userAnswers")
+      }
+
+      val messagePrefix =
+        if (returnType == MonthlyStandardReturn) {
+          "monthlyreturns.alreadySubmitted"
+        } else {
+          "monthlyreturns.alreadySubmitted.nilreturn"
+        }
+
+      Ok(view(messagePrefix, cisAccountUrl))
+    }
 }

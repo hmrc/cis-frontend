@@ -43,4 +43,16 @@ object GetMonthlyReturnForEditRequest {
       taxMonth = taxDate.getMonthValue,
       isAmendment = isAmendment
     )
+
+  // DTR-9431: Use the authorised CIS ID for UUID-scoped journeys.
+  def fromUserAnswers(cisId: String, ua: UserAnswers): Either[String, GetMonthlyReturnForEditRequest] =
+    for {
+      taxDate    <- ua.get(DateConfirmPaymentsPage).toRight("Missing DateConfirmPayments")
+      isAmendment = ua.get(AmendmentDetailsPage).isDefined
+    } yield GetMonthlyReturnForEditRequest(
+      instanceId = cisId,
+      taxYear = taxDate.getYear,
+      taxMonth = taxDate.getMonthValue,
+      isAmendment = isAmendment
+    )
 }

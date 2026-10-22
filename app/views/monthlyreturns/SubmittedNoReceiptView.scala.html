@@ -35,7 +35,7 @@
     printLink: PrintLink,
 )
 
-@(vm: SubmittedNoReceiptViewModel)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
+@(vm: SubmittedNoReceiptViewModel, exitUrl: String)(implicit request: Request[_], appConfig: FrontendAppConfig, messages: Messages)
 
 @layout(
     pageTitle = titleNoForm(
@@ -105,7 +105,7 @@
 
     @link(
         linkTextKey = "monthlyreturns.submittedNoReceipt.backToManageYourCISReturn.link",
-        linkUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+        linkUrl = exitUrl
     )
 
     @sectionBreak()

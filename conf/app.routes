@@ -46,18 +46,33 @@ GET        /monthly-return/declaration-no-payments-made/continue/:cisPath/:uuid 
 GET        /monthly-return/submission-send                              controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
 GET        /monthly-return/submission-send/polling                      controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect
 
+# DTR-9431: UUID-scoped ChRIS submission and polling.
+GET        /monthly-return/submission-send/:cisPath/:uuid               controllers.monthlyreturns.SubmissionSendingController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
+GET        /monthly-return/submission-send/polling/:cisPath/:uuid       controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirectWithJourneyId(cisPath: CisPath, uuid: UUID)
+
 GET        /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onPageLoad
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
 
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit/from-manage  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId: String)
 
+# DTR-9431
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit/:cisPath/:uuid  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
+
 GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 GET        /monthly-return/submission-in-progress/from-manage           controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadFromManage(cisId: String)
+
+# DTR-9431
+GET        /monthly-return/submission-in-progress/:cisPath/:uuid        controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
 
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
 GET        /monthly-return/already-submitted                            controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
+
+# DTR-9431
+GET        /monthly-return/confirmation/:cisPath/:uuid                  controllers.monthlyreturns.SubmissionSuccessController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
+GET        /monthly-return/confirmation-no-receipt/:cisPath/:uuid       controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
+GET        /monthly-return/already-submitted/:cisPath/:uuid             controllers.monthlyreturns.AlreadySubmittedController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
 
 GET        /page-not-found                                              controllers.PageNotFoundController.onPageLoad()
 GET        /access-denied                                               controllers.AccessDeniedController.onPageLoad()
@@ -209,9 +224,15 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
+# DTR-9431
+GET        /monthly-return/submission-unsuccessful-resubmit/:cisPath/:uuid          controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID)
+
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
+
+# DTR-9431
+GET        /monthly-return/manage-cis-return/:cisPath/:uuid             controllers.monthlyreturns.ManageCisReturnController.onExitWithJourneyId(cisPath: CisPath, uuid: UUID)
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)

@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.UserAnswers
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, CisPath}
 import models.submission.PollDecision.{Polled, Skip}
 import models.submission.SubmissionStatus.*
 import models.submission.{PollDecision, SubmissionDetails, SubmissionStatus}
@@ -38,6 +38,7 @@ import utils.UserAnswerUtils.isJourneyComplete
 import views.html.monthlyreturns.SubmissionSendingView
 
 import java.time.YearMonth
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -48,6 +49,9 @@ class SubmissionSendingController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
+  getJourney: JourneyAction,
   submissionService: SubmissionService,
   formpRdsReconcileService: FormpRdsReconcileService,
   view: SubmissionSendingView,
@@ -239,4 +243,154 @@ class SubmissionSendingController @Inject() (
         )()
       }
       .map(_ => Redirect(redirect))
+
+  // DTR-9431: Submit a UUID-scoped monthly return to ChRIS.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds andThen getJourney(uuid)).async {
+      implicit request =>
+        guardCompletedJourney(
+          request.userAnswers,
+          routes.AlreadySubmittedController.onPageLoadWithJourneyId(cisPath, uuid)
+        ) {
+          if (!request.userAnswers.isJourneyComplete) {
+            logger.error("[SubmissionSendingController] UUID-scoped journey is incomplete")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          } else
+            (for {
+              (submissionId, updatedAnswers, isResubmission) <-
+                submissionService.getOrCreateSubmissionForChris(request.cisId, request.userAnswers)
+              submitted                                      <-
+                submissionService.submitToChrisAndPersist(
+                  submissionId,
+                  request.cisId,
+                  request.cisTaxpayer,
+                  updatedAnswers,
+                  request.identifier.isAgent,
+                  isResubmission
+                )
+              _                                              <-
+                submissionService.updateSubmissionFromChrisResponse(
+                  request.cisId,
+                  request.identifier.agentReference,
+                  submissionId,
+                  updatedAnswers,
+                  submitted
+                )
+            } yield SubmissionStatus.fromString(submitted.status) match {
+              case Started =>
+                logger.info(
+                  s"[SubmissionSendingController] UUID-scoped submitted.status=${submitted.status} correlationId=${submitted.correlationId
+                      .getOrElse("unknown")}"
+                )
+                Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoadWithJourneyId(cisPath, uuid))
+
+              case Pending | SubmissionStatus.Accepted =>
+                Redirect(routes.SubmissionSendingController.onPollAndRedirectWithJourneyId(cisPath, uuid))
+
+              case _ =>
+                Redirect(routes.SubmissionUnsuccessfulController.onPageLoadWithJourneyId(cisPath, uuid))
+            }).recover { case NonFatal(ex) =>
+              logger.error("[SubmissionSendingController] UUID-scoped ChRIS submission failed", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+        }
+    }
+
+  // DTR-9431: Poll ChRIS submission status using UUID-scoped UserAnswers.
+  def onPollAndRedirectWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+      guardCompletedJourney(
+        request.userAnswers,
+        routes.AlreadySubmittedController.onPageLoadWithJourneyId(cisPath, uuid)
+      ) {
+        request.userAnswers.get(SubmissionDetailsPage) match {
+          case None =>
+            logger.error("[SubmissionSendingController] UUID-scoped SubmissionDetailsPage missing")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Some(_) =>
+            val refreshInterval = submissionService.getRefreshInterval.toString
+            val langCode        = messagesApi.preferred(request).lang.code
+
+            submissionService
+              .checkAndUpdateSubmissionStatusIfAllowed(
+                request.cisId,
+                request.identifier.agentReference,
+                request.userAnswers
+              )
+              .flatMap {
+                case Skip =>
+                  Future.successful(Ok(view()).withHeaders("Refresh" -> refreshInterval))
+
+                case Polled(status) =>
+                  SubmissionStatus.fromString(status) match {
+                    case Started =>
+                      Future.successful(
+                        Redirect(routes.SubmissionUnsuccessfulResubmitController.onPageLoadWithJourneyId(cisPath, uuid))
+                      )
+
+                    case Pending | SubmissionStatus.Accepted =>
+                      Future.successful(Ok(view()).withHeaders("Refresh" -> refreshInterval))
+
+                    case TimedOut =>
+                      Future.successful(
+                        Redirect(routes.SubmissionAwaitingController.onPageLoadWithJourneyId(cisPath, uuid))
+                      )
+
+                    case Submitted =>
+                      sendEmailAndRedirect(
+                        request.userAnswers,
+                        langCode,
+                        routes.SubmissionSuccessController.onPageLoadWithJourneyId(cisPath, uuid)
+                      )
+
+                    case SubmittedNoReceipt =>
+                      sendEmailAndRedirect(
+                        request.userAnswers,
+                        langCode,
+                        routes.SubmittedNoReceiptController.onPageLoadWithJourneyId(cisPath, uuid)
+                      )
+
+                    case DepartmentalError =>
+                      sendEmailAndRedirect(
+                        request.userAnswers,
+                        langCode,
+                        routes.SubmissionUnsuccessfulController.onPageLoadWithJourneyId(cisPath, uuid)
+                      )
+
+                    case SubmissionStatus.FatalError =>
+                      Future.successful(
+                        Redirect(routes.SubmissionUnsuccessfulController.onPageLoadWithJourneyId(cisPath, uuid))
+                      )
+
+                    case _ =>
+                      logger.error(s"[SubmissionSendingController] Unrecognised UUID-scoped submission status=$status")
+                      Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                  }
+              }
+              .recover { case NonFatal(ex) =>
+                logger.error("[SubmissionSendingController] UUID-scoped submission polling failed", ex)
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
+        }
+      }
+    }
+
+  // DTR-9431: Guard completed journeys without depending on legacy CisIdDataRequest.
+  private def guardCompletedJourney(
+    ua: UserAnswers,
+    alreadySubmittedRoute: Call
+  )(block: => Future[Result]): Future[Result] =
+    periodEndFromUserAnswers(ua) match {
+      case None =>
+        logger.error("[SubmissionSendingController] UUID-scoped periodEnd missing")
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case Some(periodEnd) =>
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (ua.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true))
+          Future.successful(Redirect(alreadySubmittedRoute))
+        else
+          block
+    }
 }

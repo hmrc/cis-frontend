@@ -16,6 +16,7 @@
 
 package services.guard
 
+import models.UserAnswers
 import models.requests.CisIdDataRequest
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
@@ -24,13 +25,20 @@ import javax.inject.Singleton
 
 trait SubmissionSuccessfulServiceGuard {
   def check(implicit request: CisIdDataRequest[_]): Boolean
+
+  // DTR-9431: Support UUID-scoped submission journeys.
+  def check(userAnswers: UserAnswers): Boolean
 }
 
 @Singleton
 class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGuard with Logging {
 
   def check(implicit request: CisIdDataRequest[_]): Boolean =
-    request.userAnswers.get(SubmissionDetailsPage).exists { details =>
+    check(request.userAnswers)
+
+  // DTR-9431: Validate submission details without requiring CisIdDataRequest.
+  def check(userAnswers: UserAnswers): Boolean =
+    userAnswers.get(SubmissionDetailsPage).exists { details =>
       val submittedOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
       val irMarksValid         = details.irMark.nonEmpty &&
         details.hmrcMarkGgis.exists(g => g.nonEmpty && g == details.irMark)

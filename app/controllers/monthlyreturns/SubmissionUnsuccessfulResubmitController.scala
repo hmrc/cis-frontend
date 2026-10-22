@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
+import models.requests.CisPath
 import pages.monthlyreturns.CisIdPage
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
@@ -25,6 +26,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
@@ -33,6 +35,8 @@ class SubmissionUnsuccessfulResubmitController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionUnsuccessfulResubmitView,
   monthlyReturnService: MonthlyReturnService
@@ -49,6 +53,14 @@ class SubmissionUnsuccessfulResubmitController @Inject() (
 
     monthlyReturnService
       .completeSubmissionJourney(request.userAnswers)
-      .map(_ => Ok(view(cisId)))
+      .map(_ => Ok(view(cisId, routes.ManageCisReturnController.onExit().url)))
   }
+
+  // DTR-9431: Complete the UUID-scoped submission journey.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+      monthlyReturnService
+        .completeSubmissionJourney(request.userAnswers)
+        .map(_ => Ok(view(request.cisId, routes.ManageCisReturnController.onExitWithJourneyId(cisPath, uuid).url)))
+    }
 }

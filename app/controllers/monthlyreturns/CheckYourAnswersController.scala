@@ -177,9 +177,7 @@ class CheckYourAnswersController @Inject() (
     (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
       val ua = request.userAnswers
 
-      // temporarily redirect to journey recovery, once ChRIS submission is implemented for this journey, this will be
-      // replaced by AlreadySubmittedController.onPageLoad(cisPath, uuid)
-      guardCompletedJourney(ua, controllers.routes.JourneyRecoveryController.onPageLoad()) {
+      guardCompletedJourney(ua, routes.AlreadySubmittedController.onPageLoadWithJourneyId(cisPath, uuid)) {
         ReturnTypeSummary.returnType(ua) match {
           case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
             val returnDetailsList = SummaryListViewModel(rows =
@@ -230,9 +228,7 @@ class CheckYourAnswersController @Inject() (
     (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
       val ua = request.userAnswers
 
-      // temporarily redirect to journey recovery, once ChRIS submission is implemented for this journey, this will be
-      // replaced by AlreadySubmittedController.onPageLoad(cisPath, uuid)
-      guardCompletedJourney(ua, controllers.routes.JourneyRecoveryController.onPageLoad()) {
+      guardCompletedJourney(ua, routes.AlreadySubmittedController.onPageLoadWithJourneyId(cisPath, uuid)) {
         ua.get(ReturnTypePage) match {
           case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) if !ua.isJourneyComplete =>
             logger.error("[CheckYourAnswersController] UUID-scoped journey is incomplete")
@@ -240,8 +236,7 @@ class CheckYourAnswersController @Inject() (
 
           case Some(returnType @ (ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn)) =>
             if submissionService.isAlreadySubmitted(ua) then
-              // Future.successful(Redirect(routes.AlreadySubmittedController.onPageLoad(cisPath, uuid)))
-              Future.successful(NotImplemented("ChRIS submission is not implemented for this journey yet"))
+              Future.successful(Redirect(routes.AlreadySubmittedController.onPageLoadWithJourneyId(cisPath, uuid)))
             else
               UpdateMonthlyReturnRequest.fromUserAnswers(request.cisId, ua) match {
                 case Left(error) =>
@@ -253,8 +248,7 @@ class CheckYourAnswersController @Inject() (
                     .updateMonthlyReturn(updateRequest)
                     .map { _ =>
                       logger.info(s"[CheckYourAnswersController] Updated UUID-scoped return ($returnType)")
-                      // Redirect(routes.SubmissionSendingController.onPageLoad(cisPath, uuid))
-                      NotImplemented("ChRIS submission is not implemented for this journey yet")
+                      Redirect(routes.SubmissionSendingController.onPageLoadWithJourneyId(cisPath, uuid))
                     }
                     .recover { case NonFatal(ex) =>
                       logger.error("[CheckYourAnswersController] Failed to update monthly return", ex)

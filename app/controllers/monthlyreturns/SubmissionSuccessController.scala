@@ -22,12 +22,12 @@ import controllers.helpers.SubmissionViewDataSupport
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.ReturnType.reads
-import models.requests.{CisIdDataRequest, GetMonthlyReturnCompleteRequest}
+import models.requests.{CisPath, GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest}
 import pages.monthlyreturns.*
 import pages.submission.{CorrelationIdPage, SubmissionDetailsPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Request}
 import services.MonthlyReturnService
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -39,6 +39,7 @@ import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 
 import java.time.{Clock, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,6 +49,8 @@ class SubmissionSuccessController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionSuccessView,
   clock: Clock,
@@ -64,6 +67,9 @@ class SubmissionSuccessController @Inject() (
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
+      // DTR-9431: Preserve legacy exit navigation.
+      val exitUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExit().url
+
       if (!submissionSuccessGuard.check) {
         logger.error(
           s"[SubmissionSuccessController][onPageLoad] - submissionSuccessGuard check failed correlationId=${request.userAnswers.get(CorrelationIdPage).getOrElse("unknown")}"
@@ -74,7 +80,19 @@ class SubmissionSuccessController @Inject() (
 
         ua.get(SubmissionConfirmationCachePage) match {
           case Some(cache) =>
-            Future.successful(Ok(view(buildViewModelFromCache(cache, ua))))
+            Future.successful(
+              Ok(
+                view(
+                  buildViewModelFromCache(
+                    cache,
+                    ua,
+                    required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers"),
+                    employerRefFrom(request)
+                  ),
+                  exitUrl
+                )
+              )
+            )
 
           case None =>
             GetMonthlyReturnCompleteRequest.fromUserAnswers(ua) match {
@@ -105,7 +123,9 @@ class SubmissionSuccessController @Inject() (
                   vm <-
                     buildViewModel(
                       ua = ua,
-                      monthlyReturn = monthlyReturn
+                      monthlyReturn = monthlyReturn,
+                      cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers"),
+                      empRef = employerRefFrom(request)
                     )
 
                   uaWithCache <-
@@ -120,9 +140,102 @@ class SubmissionSuccessController @Inject() (
                     monthlyReturnService.completeSubmissionJourney(
                       uaWithCache
                     )
-                } yield Ok(view(vm))).recoverWith { case ex: UpstreamErrorResponse =>
+                } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
                   logger.error(
                     s"[SubmissionSuccessController] getMonthlyReturnComplete failed " +
+                      s"with status ${ex.statusCode} for instanceId=${req.instanceId} " +
+                      s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}",
+                    ex
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                }
+            }
+        }
+      }
+    }
+
+  // DTR-9431: Display confirmation for a UUID-scoped submission.
+  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+
+      val exitUrl =
+        controllers.monthlyreturns.routes.ManageCisReturnController
+          .onExitWithJourneyId(cisPath, uuid)
+          .url
+
+      if (!submissionSuccessGuard.check(request.userAnswers)) {
+        logger.error(
+          s"[SubmissionSuccessController][onPageLoadWithJourneyId] - submissionSuccessGuard check failed correlationId=${request.userAnswers.get(CorrelationIdPage).getOrElse("unknown")}"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      } else {
+        val ua = request.userAnswers
+
+        ua.get(SubmissionConfirmationCachePage) match {
+          case Some(cache) =>
+            Future.successful(
+              Ok(
+                view(
+                  buildViewModelFromCache(
+                    cache,
+                    ua,
+                    request.cisId,
+                    request.employerRef
+                  ),
+                  exitUrl
+                )
+              )
+            )
+
+          case None =>
+            // DTR-9431: Build the request using the authorised CIS ID.
+            GetMonthlyReturnForEditRequest.fromUserAnswers(request.cisId, ua) match {
+              case Left(error) =>
+                logger.error(
+                  s"[SubmissionSuccessController] Failed to build GetMonthlyReturnForEditRequest: $error " +
+                    s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}"
+                )
+
+                Future.successful(
+                  Redirect(
+                    controllers.routes.JourneyRecoveryController.onPageLoad()
+                  )
+                )
+
+              case Right(req) =>
+                logger.info(
+                  s"[SubmissionSuccessController] Calling retrieveMonthlyReturnForEditDetails " +
+                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} isAmendment=${req.isAmendment} " +
+                    s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}"
+                )
+
+                (for {
+                  monthlyReturn <-
+                    monthlyReturnService.retrieveMonthlyReturnForEditDetails(req)
+
+                  vm <-
+                    buildViewModel(
+                      ua = ua,
+                      monthlyReturn = monthlyReturn,
+                      cisId = request.cisId,
+                      empRef = request.employerRef
+                    )
+
+                  uaWithCache <-
+                    Future.fromTry(
+                      ua.set(
+                        SubmissionConfirmationCachePage,
+                        cacheFrom(vm)
+                      )
+                    )
+
+                  _ <-
+                    monthlyReturnService.completeSubmissionJourney(
+                      uaWithCache
+                    )
+                } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
+                  logger.error(
+                    s"[SubmissionSuccessController] UUID-scoped monthly return retrieval failed " +
                       s"with status ${ex.statusCode} for instanceId=${req.instanceId} " +
                       s"correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}",
                     ex
@@ -144,16 +257,18 @@ class SubmissionSuccessController @Inject() (
       submittedDateTimeIso = vm.submittedDateTimeIso
     )
 
-  private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers)(implicit
-    request: CisIdDataRequest[_]
-  ): SubmissionSuccessViewModel = {
+  // DTR-9431: Accept explicit CIS ID and employer reference for scoped journeys.
+  private def buildViewModelFromCache(
+    cache: SubmissionConfirmationCache,
+    ua: UserAnswers,
+    cisId: String,
+    empRef: String
+  )(implicit request: Request[_]): SubmissionSuccessViewModel = {
     val reference           = IrMarkReferenceGenerator.fromBase64(
       required(ua.get(SubmissionDetailsPage), "[SubmissionSuccess] submissionDetails missing from userAnswers").irMark
     )
     val submissionType      =
       required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
-    val cisId               = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
-    val empRef              = employerRefFrom(request)
     implicit val lang: Lang = messagesApi.preferred(request).lang
 
     val periodEnd = ua
@@ -186,11 +301,13 @@ class SubmissionSuccessController @Inject() (
     )
   }
 
-  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse)(implicit
-    request: CisIdDataRequest[_],
-    hc: HeaderCarrier
-  ): Future[SubmissionSuccessViewModel] = {
-    val cisId = required(ua.get(CisIdPage), "[SubmissionSuccess] cisId missing from userAnswers")
+  // DTR-9431: Accept explicit CIS ID and employer reference for scoped journeys.
+  private def buildViewModel(
+    ua: UserAnswers,
+    monthlyReturn: GetAllMonthlyReturnDetailsResponse,
+    cisId: String,
+    empRef: String
+  )(implicit request: Request[_], hc: HeaderCarrier): Future[SubmissionSuccessViewModel] = {
 
     val submissionType =
       required(ua.get(ReturnTypePage), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
@@ -209,8 +326,6 @@ class SubmissionSuccessController @Inject() (
       .map(_.trim)
       .filter(_.nonEmpty)
       .getOrElse(throw new RuntimeException("[SubmissionSuccess] Scheme name is missing"))
-
-    val empRef = employerRefFrom(request)
 
     implicit val lang: Lang = messagesApi.preferred(request).lang
     val timeFmt             = DateTimeFormatter.ofPattern("h:mma")

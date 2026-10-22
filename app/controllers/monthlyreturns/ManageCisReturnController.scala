@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import config.FrontendAppConfig
 import controllers.actions.*
+import models.requests.CisPath
 import pages.monthlyreturns.ContractorNamePage
 import play.api.Logging
 import play.api.i18n.I18nSupport
@@ -25,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -34,6 +36,8 @@ class ManageCisReturnController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   monthlyReturnService: MonthlyReturnService,
   appConfig: FrontendAppConfig,
   val controllerComponents: MessagesControllerComponents
@@ -55,6 +59,26 @@ class ManageCisReturnController @Inject() (
         .recover { case NonFatal(exception) =>
           logger.error(
             "[ManageCisReturnController] Failed to clear monthly return journey",
+            exception
+          )
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
+    }
+
+  // DTR-9431: Exit the UUID-scoped monthly return journey.
+  def onExitWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+      val redirectUrl = appConfig.returnsLandingPageUrl(
+        request.cisId,
+        request.userAnswers.get(ContractorNamePage)
+      )
+
+      monthlyReturnService
+        .clearSubmissionJourney(request.userAnswers)
+        .map(_ => Redirect(redirectUrl))
+        .recover { case NonFatal(exception) =>
+          logger.error(
+            "[ManageCisReturnController] Failed to clear UUID-scoped monthly return journey",
             exception
           )
           Redirect(controllers.routes.SystemErrorController.onPageLoad())
