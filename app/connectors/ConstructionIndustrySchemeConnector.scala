@@ -17,18 +17,18 @@
 package connectors
 
 import models.JourneyHandoffResponse
+import models.agent.GetClientListStatusResponse
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest, DeleteAllMonthlyReturnItemsRequest, DeleteUnsubmittedMonthlyReturnRequest}
 import models.finalvalidation.{CreateFinalValidationDraftRequest, CreateFinalValidationDraftResponse, FinalValidationDraft, UpdateFinalValidationReadinessRequest}
 import models.monthlyreturns.*
 import models.requests.{GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest, SendSuccessEmailRequest}
 import models.submission.*
-import models.agent.GetClientListStatusResponse
 import play.api.Logging
 import play.api.http.Status.*
-import play.api.libs.json.{JsObject, JsValue, Json, Reads}
+import play.api.libs.json.*
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
-import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
@@ -150,6 +150,12 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
         }
       }
 
+  def getAllClients(using HeaderCarrier): Future[List[CisTaxpayer]] =
+    http
+      .get(url"$cisBaseUrl/agent/client-list")
+      .execute[JsObject]
+      .map(json => (json \ "clients").as[List[CisTaxpayer]])
+
   def hasClient(taxOfficeNumber: String, taxOfficeReference: String)(implicit
     hc: HeaderCarrier
   ): Future[Boolean] =
@@ -220,8 +226,7 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
       }
 
   def sendSuccessfulEmail(submissionId: String, request: SendSuccessEmailRequest)(implicit
-    hc: HeaderCarrier,
-    ec: ExecutionContext
+    hc: HeaderCarrier
   ): Future[Unit] =
     http
       .post(url"$cisBaseUrl/submissions/$submissionId/send-success-email")
