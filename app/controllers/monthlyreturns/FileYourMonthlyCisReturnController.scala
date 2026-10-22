@@ -16,10 +16,10 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.*
+import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
 import models.{EmployerReference, NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import models.requests.{CisPath, OptionalDataRequest}
+import models.requests.OptionalDataRequest
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, ReturnTypePage}
 import play.api.Logging
@@ -28,7 +28,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import play.twirl.api.Html
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, JourneyService, MonthlyReturnService}
+import services.{FormpRdsReconcileService, MonthlyReturnService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.TypeUtils.toFuture
@@ -50,10 +50,7 @@ class FileYourMonthlyCisReturnController @Inject() (
   requireData: DataRequiredAction,
   sessionRepository: SessionRepository,
   monthlyReturnService: MonthlyReturnService,
-  formpRdsReconcileService: FormpRdsReconcileService,
-  resolveScheme: SchemeAction,
-  reconcileFormPAndRDS: ReconcileFormPAndRdsAction,
-  journeyService: JourneyService
+  formpRdsReconcileService: FormpRdsReconcileService
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -61,16 +58,12 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   def startMonthlyReturn(): Action[AnyContent] =
     (identify andThen getData).async { implicit request =>
-      startReturn(ReturnType.MonthlyStandardReturn)(
-        monthlyReturnView(routes.FileYourMonthlyCisReturnController.onSubmit(ReturnType.MonthlyStandardReturn))
-      )
+      startReturn(ReturnType.MonthlyStandardReturn)(monthlyReturnView())
     }
 
   def startNilReturn(): Action[AnyContent] =
     (identify andThen getData).async { implicit request =>
-      startReturn(ReturnType.MonthlyNilReturn)(
-        nilReturnView(routes.FileYourMonthlyCisReturnController.onSubmit(ReturnType.MonthlyNilReturn))
-      )
+      startReturn(ReturnType.MonthlyNilReturn)(nilReturnView())
     }
 
   def onSubmit(returnType: ReturnType): Action[AnyContent] =
@@ -229,42 +222,5 @@ class FileYourMonthlyCisReturnController @Inject() (
       uaWithAgentClientData <- Future.fromTry(ua.set(AgentClientDataPage, data))
       _                     <- sessionRepository.set(uaWithAgentClientData)
     } yield uaWithAgentClientData
-
-  // DTR-9431: New scheme-scoped entry points.
-  // Resolve and reconcile the CIS scheme without creating a journey.
-
-  def startMonthlyReturnWithCisPath(cisPath: CisPath): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRDS) { implicit request =>
-      Ok(
-        monthlyReturnView(
-          routes.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath, ReturnType.MonthlyStandardReturn)
-        )
-      )
-    }
-
-  def startNilReturnWithCisPath(cisPath: CisPath): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRDS) { implicit request =>
-      Ok(
-        nilReturnView(
-          routes.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath, ReturnType.MonthlyNilReturn)
-        )
-      )
-    }
-
-  // DTR-9431: Create a new UUID-scoped journey on submission.
-  // No clearing is required because the journey starts with fresh UserAnswers.
-
-  def onSubmitWithCisPath(cisPath: CisPath, returnType: ReturnType): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRDS).async { implicit request =>
-      journeyService
-        .create(request, _.set(ReturnTypePage, returnType))
-        .map { journeyId =>
-          Redirect(routes.DateConfirmPaymentsController.onPageLoadWithJourneyId(cisPath, journeyId.uuid, NormalMode))
-        }
-        .recover { case NonFatal(ex) =>
-          logger.error("[FileYourMonthlyCisReturnController] Failed to create journey", ex)
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        }
-    }
 
 }

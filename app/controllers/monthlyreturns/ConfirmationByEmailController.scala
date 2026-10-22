@@ -19,7 +19,6 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.Mode
-import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -28,7 +27,6 @@ import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.ConfirmationByEmailView
 
-import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,8 +38,6 @@ class ConfirmationByEmailController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
   formProvider: ConfirmationByEmailFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmationByEmailView
@@ -59,46 +55,20 @@ class ConfirmationByEmailController @Inject() (
         case Some(value) => form.fill(value)
       }
 
-      Ok(view(preparedForm, mode, routes.ConfirmationByEmailController.onSubmit(mode)))
+      Ok(view(preparedForm, mode))
   }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      val submitAction = routes.ConfirmationByEmailController.onSubmit(mode)
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, submitAction))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(ConfirmationByEmailPage, mode, updatedAnswers))
-        )
-    }
-
-  // DTR-9431: Retrieve confirmation preference from the UUID-scoped journey.
-  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)) { implicit request =>
-      val preparedForm = request.userAnswers.get(ConfirmationByEmailPage).fold(form)(form.fill)
-
-      Ok(view(preparedForm, mode, routes.ConfirmationByEmailController.onSubmitWithJourneyId(cisPath, uuid, mode)))
-    }
-
-  // DTR-9431: Save the preference and continue within the UUID-scoped journey.
-  def onSubmitWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
-      val submitAction = routes.ConfirmationByEmailController.onSubmitWithJourneyId(cisPath, uuid, mode)
-
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, submitAction))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(cisPath, uuid, ConfirmationByEmailPage, mode, updatedAnswers))
         )
     }
 }

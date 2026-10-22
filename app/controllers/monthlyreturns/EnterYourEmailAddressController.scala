@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
-import models.requests.{CisIdDataRequest, CisPath}
+import models.requests.CisIdDataRequest
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.Logging
@@ -32,10 +32,8 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
-import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class EnterYourEmailAddressController @Inject() (
   override val messagesApi: MessagesApi,
@@ -45,8 +43,6 @@ class EnterYourEmailAddressController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
   formProvider: EnterYourEmailAddressFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -61,18 +57,17 @@ class EnterYourEmailAddressController @Inject() (
   def onPageLoad(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val submitAction               = routes.EnterYourEmailAddressController.onSubmit(mode)
 
       if (!request.userAnswers.get(ConfirmationByEmailPage).contains(true)) {
         Future.successful(Redirect(controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(mode)))
       } else {
         request.userAnswers.get(EnterYourEmailAddressPage) match {
           case Some(value) =>
-            Future.successful(Ok(view(form.fill(value), mode, submitAction)))
+            Future.successful(Ok(view(form.fill(value), mode)))
           case None        =>
             getPrepopulationEmailAddress(request).map {
-              case Some(email) => Ok(view(form.fill(email), mode, submitAction))
-              case None        => Ok(view(form, mode, submitAction))
+              case Some(email) => Ok(view(form.fill(email), mode))
+              case None        => Ok(view(form, mode))
             }
         }
       }
@@ -98,57 +93,15 @@ class EnterYourEmailAddressController @Inject() (
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
-      val submitAction = routes.EnterYourEmailAddressController.onSubmit(mode)
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, submitAction))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode))),
           value =>
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(EnterYourEmailAddressPage, mode, updatedAnswers))
-        )
-    }
-
-  // DTR-9431: Retrieve the email address from the UUID-scoped journey.
-  // Use the resolved scheme's CIS ID for email prepopulation.
-  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val submitAction               = routes.EnterYourEmailAddressController.onSubmitWithJourneyId(cisPath, uuid, mode)
-
-      if !request.userAnswers.get(ConfirmationByEmailPage).contains(true) then
-        Future.successful(Redirect(routes.ConfirmationByEmailController.onPageLoadWithJourneyId(cisPath, uuid, mode)))
-      else
-        request.userAnswers.get(EnterYourEmailAddressPage) match {
-          case Some(value) =>
-            Future.successful(Ok(view(form.fill(value), mode, submitAction)))
-          case None        =>
-            monthlyReturnService
-              .getSchemeEmail(request.cisId)
-              .map(email => Ok(view(email.fold(form)(form.fill), mode, submitAction)))
-              .recover { case NonFatal(ex) =>
-                logger.warn("[EnterYourEmailAddressController] Scheme email lookup failed", ex)
-                Ok(view(form, mode, submitAction))
-              }
-        }
-    }
-
-  // DTR-9431: Save the email address against the UUID-scoped journey.
-  def onSubmitWithJourneyId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
-      val submitAction = routes.EnterYourEmailAddressController.onSubmitWithJourneyId(cisPath, uuid, mode)
-
-      form
-        .bindFromRequest()
-        .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, submitAction))),
-          value =>
-            for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage, value))
-              _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(cisPath, uuid, EnterYourEmailAddressPage, mode, updatedAnswers))
         )
     }
 }

@@ -18,14 +18,14 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
-import models.{CheckMode, ReturnType, UserAnswers}
+import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.{CisIdDataRequest, CisPath}
+import models.requests.CisIdDataRequest
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, Call, MessagesControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import services.MonthlyReturnService
 import services.submission.SubmissionService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -35,18 +35,14 @@ import views.html.monthlyreturns.CheckYourAnswersView
 import utils.UserAnswerUtils.isJourneyComplete
 
 import java.time.YearMonth
-import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class CheckYourAnswersController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
   monthlyReturnService: MonthlyReturnService,
   submissionService: SubmissionService,
   requireCisId: CisIdRequiredAction,
@@ -91,7 +87,7 @@ class CheckYourAnswersController @Inject() (
 
             val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
-            Future.successful(Ok(view(returnDetailsList, emailList, routes.CheckYourAnswersController.onSubmit())))
+            Future.successful(Ok(view(returnDetailsList, emailList)))
 
           case None =>
             logger.error("[CheckYourAnswersController][onPageLoad] - Missing ReturnTypePage")
@@ -150,123 +146,20 @@ class CheckYourAnswersController @Inject() (
   }
 
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
-    guardCompletedJourney(
-      request.userAnswers,
-      routes.AlreadySubmittedController.onPageLoad()
-    )(block)
-
-  // DTR-9431: Check journey completion without depending on the legacy request type.
-  private def guardCompletedJourney(
-    ua: UserAnswers,
-    alreadySubmittedRoute: Call
-  )(block: => Future[Result]): Future[Result] =
-    periodEndFromUserAnswers(ua) match {
+    periodEndFromUserAnswers(request.userAnswers) match {
       case None =>
-        logger.error("[CheckYourAnswersController] Unable to determine period end")
+        logger.error(
+          "[CheckYourAnswersController][guardCompletedJourney] - " +
+            "Unable to determine period end from user answers"
+        )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
       case Some(periodEnd) =>
-        val period = YearMonth.from(periodEnd).toString
-        if ua.get(SubmissionJourneyCompletedPage(period)).contains(true) then
-          Future.successful(Redirect(alreadySubmittedRoute))
-        else block
-    }
-
-  // DTR-9431: Display answers from the UUID-scoped nil-return journey.
-  def onPageLoadWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
-      val ua = request.userAnswers
-
-      // temporarily redirect to journey recovery, once ChRIS submission is implemented for this journey, this will be
-      // replaced by AlreadySubmittedController.onPageLoad(cisPath, uuid)
-      guardCompletedJourney(ua, controllers.routes.JourneyRecoveryController.onPageLoad()) {
-        ReturnTypeSummary.returnType(ua) match {
-          case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
-            val returnDetailsList = SummaryListViewModel(rows =
-              Seq(
-                ReturnTypeSummary.row(ua),
-                DateConfirmNilPaymentsSummary.row(ua),
-                PaymentsToSubcontractorsSummary.row,
-                SubmitInactivityRequestSummary.row(
-                  ua,
-                  routes.SubmitInactivityRequestController.onPageLoadWithJourneyId(cisPath, uuid, CheckMode)
-                )
-              ).flatten
-            )
-
-            val emailList = SummaryListViewModel(rows =
-              Seq(
-                ConfirmationByEmailSummary.row(
-                  ua,
-                  routes.ConfirmationByEmailController.onPageLoadWithJourneyId(cisPath, uuid, CheckMode)
-                ),
-                EnterYourEmailAddressSummary.row(
-                  ua,
-                  routes.EnterYourEmailAddressController.onPageLoadWithJourneyId(cisPath, uuid, CheckMode)
-                )
-              ).flatten
-            )
-
-            Future.successful(
-              Ok(
-                view(
-                  returnDetailsList,
-                  emailList,
-                  routes.CheckYourAnswersController.onSubmitWithJourneyId(cisPath, uuid)
-                )
-              )
-            )
-
-          // TODO DTR-9431: Add scoped standard-return summary rows.
-          case _                                                                      =>
-            logger.error("[CheckYourAnswersController] Missing or unsupported return type")
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
+          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+        } else {
+          block
         }
-      }
-    }
-
-  // DTR-9431: Submit the UUID-scoped nil return.
-  def onSubmitWithJourneyId(cisPath: CisPath, uuid: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
-      val ua = request.userAnswers
-
-      // temporarily redirect to journey recovery, once ChRIS submission is implemented for this journey, this will be
-      // replaced by AlreadySubmittedController.onPageLoad(cisPath, uuid)
-      guardCompletedJourney(ua, controllers.routes.JourneyRecoveryController.onPageLoad()) {
-        ua.get(ReturnTypePage) match {
-          case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) if !ua.isJourneyComplete =>
-            logger.error("[CheckYourAnswersController] UUID-scoped journey is incomplete")
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-          case Some(returnType @ (ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn)) =>
-            if submissionService.isAlreadySubmitted(ua) then
-              // Future.successful(Redirect(routes.AlreadySubmittedController.onPageLoad(cisPath, uuid)))
-              Future.successful(NotImplemented("ChRIS submission is not implemented for this journey yet"))
-            else
-              UpdateMonthlyReturnRequest.fromUserAnswers(request.cisId, ua) match {
-                case Left(error) =>
-                  logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
-                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-
-                case Right(updateRequest) =>
-                  monthlyReturnService
-                    .updateMonthlyReturn(updateRequest)
-                    .map { _ =>
-                      logger.info(s"[CheckYourAnswersController] Updated UUID-scoped return ($returnType)")
-                      // Redirect(routes.SubmissionSendingController.onPageLoad(cisPath, uuid))
-                      NotImplemented("ChRIS submission is not implemented for this journey yet")
-                    }
-                    .recover { case NonFatal(ex) =>
-                      logger.error("[CheckYourAnswersController] Failed to update monthly return", ex)
-                      Redirect(controllers.routes.SystemErrorController.onPageLoad())
-                    }
-              }
-
-          // TODO DTR-9431: Add scoped standard-return submission.
-          case _                                                                                     =>
-            logger.error("[CheckYourAnswersController] Missing or unsupported return type")
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        }
-      }
     }
 }

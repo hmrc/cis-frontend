@@ -26,11 +26,11 @@
     formHelper: FormWithCSRF
 )
 
-@(submitAction: Call)(implicit request: Request[_], messages: Messages)
+@()(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("fileYourNilReturn.title"))) {
 
-    @formHelper(action = submitAction) {
+    @formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyNilReturn)) {
 
         @h1(messages("fileYourNilReturn.heading"))
 

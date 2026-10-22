@@ -19,7 +19,6 @@ package viewmodels.checkAnswers.monthlyreturns
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
-import play.api.mvc.Call
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
@@ -27,18 +26,18 @@ import viewmodels.implicits.*
 object SubmitInactivityRequestSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    row(answers, controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode))
-
-  // DTR-9431: Accept a UUID-scoped change-answer route.
-  def row(answers: UserAnswers, changeAction: Call)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(SubmitInactivityRequestPage).map { answer =>
-      val value = if answer then "site.yes" else "site.no"
+
+      val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
         key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
-          ActionItemViewModel("site.change", changeAction.url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
             .withAttribute("id" -> "change-submit-inactivity-request")
         )

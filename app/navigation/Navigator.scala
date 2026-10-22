@@ -19,14 +19,12 @@ package navigation
 import models.*
 import models.ReturnType.*
 import models.amend.*
-import models.requests.CisPath
 import pages.*
 import pages.amend.*
 import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.mvc.Call
 
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -196,97 +194,5 @@ class Navigator @Inject() () extends Logging {
       case (None, _)                 =>
         logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ConfirmationByEmailPage not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
-    }
-
-  // DTR-9431: UUID-scoped journey navigation.
-  def nextPage(cisPath: CisPath, uuid: UUID, page: Page, mode: Mode, userAnswers: UserAnswers): Call =
-    (page, mode, userAnswers.get(ReturnTypePage)) match {
-      case (DateConfirmPaymentsPage, NormalMode, Some(MonthlyNilReturn)) =>
-        controllers.monthlyreturns.routes.SubmitInactivityRequestController
-          .onPageLoadWithJourneyId(cisPath, uuid, NormalMode)
-
-      case (DateConfirmPaymentsPage, CheckMode, Some(MonthlyNilReturn)) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case (SubmitInactivityRequestPage, _, Some(MonthlyNilReturn)) =>
-        navigatorFromSubmitInactivityRequestPage(cisPath, uuid, mode)(userAnswers)
-
-      case (ConfirmationByEmailPage, _, Some(MonthlyNilReturn)) =>
-        navigatorFromConfirmationByEmailPage(cisPath, uuid, mode)(userAnswers)
-
-      case (EnterYourEmailAddressPage, _, Some(MonthlyNilReturn)) =>
-        navigatorFromEnterYourEmailAddressPage(cisPath, uuid, mode)(userAnswers)
-
-      case (DeclarationPage, _, Some(MonthlyNilReturn)) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case _ =>
-        logger.error(s"[Navigator] No UUID-scoped route for page: $page, mode: $mode")
-        controllers.routes.JourneyRecoveryController.onPageLoad()
-    }
-
-  // DTR-9431: Navigate from inactivity request within the UUID-scoped journey.
-  private def navigatorFromSubmitInactivityRequestPage(
-    cisPath: CisPath,
-    uuid: UUID,
-    mode: Mode
-  )(userAnswers: UserAnswers): Call =
-    (userAnswers.get(SubmitInactivityRequestPage), mode) match {
-      case (Some(true), NormalMode) =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoadWithJourneyId(cisPath, uuid, NormalMode)
-
-      case (Some(true), CheckMode) =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoadWithJourneyId(cisPath, uuid, CheckMode)
-
-      case (Some(false), NormalMode) =>
-        controllers.monthlyreturns.routes.ConfirmationByEmailController
-          .onPageLoadWithJourneyId(cisPath, uuid, NormalMode)
-
-      case (Some(false), CheckMode) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case (None, _) =>
-        logger.error("[Navigator] SubmitInactivityRequestPage missing from UUID-scoped journey")
-        controllers.routes.JourneyRecoveryController.onPageLoad()
-    }
-
-  // DTR-9431: Navigate from email confirmation within the UUID-scoped nil-return journey.
-  private def navigatorFromConfirmationByEmailPage(
-    cisPath: CisPath,
-    uuid: UUID,
-    mode: Mode
-  )(userAnswers: UserAnswers): Call =
-    (userAnswers.get(ConfirmationByEmailPage), mode) match {
-      case (Some(true), m) =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithJourneyId(cisPath, uuid, m)
-
-      case (Some(false), NormalMode) =>
-        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case (Some(false), CheckMode) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case (None, _) =>
-        logger.error("[Navigator] ConfirmationByEmailPage missing from UUID-scoped journey")
-        controllers.routes.JourneyRecoveryController.onPageLoad()
-    }
-
-  // DTR-9431: Navigate after email address entry without losing the journey context.
-  private def navigatorFromEnterYourEmailAddressPage(
-    cisPath: CisPath,
-    uuid: UUID,
-    mode: Mode
-  )(userAnswers: UserAnswers): Call =
-    mode match {
-      case CheckMode =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case NormalMode if userAnswers.get(EmploymentStatusDeclarationPage).isDefined =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithJourneyId(cisPath, uuid)
-
-      case NormalMode =>
-        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithJourneyId(cisPath, uuid)
     }
 }
