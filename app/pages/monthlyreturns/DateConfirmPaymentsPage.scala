@@ -16,14 +16,16 @@
 
 package pages.monthlyreturns
 
-import pages.QuestionPage
+import pages.{QuestionPage, QuestionPageWithId}
 import play.api.libs.json.JsPath
 
 import java.time.LocalDate
 
-case object DateConfirmPaymentsPage extends QuestionPage[LocalDate] {
+case object DateConfirmPaymentsPage extends QuestionPage[LocalDate] with QuestionPageWithId[LocalDate] {
 
   override def path: JsPath = JsPath \ toString
+
+  override def pathWithId(id: String): JsPath = JsPath \ id \ toString
 
   override def toString: String = "dateConfirmPayments"
 }

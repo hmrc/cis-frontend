@@ -16,10 +16,11 @@
 
 package controllers.monthlyreturns
 
-import controllers.actions.{DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.*
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{EmployerReference, NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import models.requests.OptionalDataRequest
+import models.requests.{CisPath, OptionalDataRequest}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, ReturnTypePage}
 import play.api.Logging
@@ -28,7 +29,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import play.twirl.api.Html
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
+import services.{FormpRdsReconcileService, JourneyService, MonthlyReturnService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.TypeUtils.toFuture
@@ -48,9 +49,12 @@ class FileYourMonthlyCisReturnController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
   sessionRepository: SessionRepository,
   monthlyReturnService: MonthlyReturnService,
-  formpRdsReconcileService: FormpRdsReconcileService
+  formpRdsReconcileService: FormpRdsReconcileService,
+  journeyService: JourneyService
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -222,5 +226,44 @@ class FileYourMonthlyCisReturnController @Inject() (
       uaWithAgentClientData <- Future.fromTry(ua.set(AgentClientDataPage, data))
       _                     <- sessionRepository.set(uaWithAgentClientData)
     } yield uaWithAgentClientData
+
+  // DTR-9431: New CisPath-scoped entry points.
+
+  def startNilReturnWithCisPath(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds) { implicit request =>
+      Ok(
+        nilReturnView(
+          Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath, MonthlyNilReturn))
+        )
+      )
+    }
+
+  def startMonthlyReturnWithCisPath(cisPath: CisPath): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds) { implicit request =>
+      Ok(
+        monthlyReturnView(
+          Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath, MonthlyStandardReturn))
+        )
+      )
+    }
+
+  // DTR-9431: Create a new randomId journey on submission.
+  def onSubmitWithCisPath(cisPath: CisPath, returnType: ReturnType): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath)).async { implicit request =>
+      journeyService
+        .create(
+          request,
+          (ua, id) => ua.setSubJourney(ReturnTypePage, id, returnType)
+        )
+        .map { uuid =>
+          Redirect(
+            routes.DateConfirmPaymentsController.onPageLoadWithId(cisPath, uuid, NormalMode)
+          )
+        }
+        .recover { case NonFatal(ex) =>
+          logger.error(s"[FileYourMonthlyCisReturnController][onSubmitWithCisPath] Failed to create journey", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+    }
 
 }

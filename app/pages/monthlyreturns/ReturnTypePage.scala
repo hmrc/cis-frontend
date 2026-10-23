@@ -17,12 +17,14 @@
 package pages.monthlyreturns
 
 import models.ReturnType
-import pages.QuestionPage
+import pages.{QuestionPage, QuestionPageWithId}
 import play.api.libs.json.JsPath
 
-case object ReturnTypePage extends QuestionPage[ReturnType] {
+case object ReturnTypePage extends QuestionPage[ReturnType] with QuestionPageWithId[ReturnType] {
 
   override def path: JsPath = JsPath \ toString
+
+  override def pathWithId(id: String): JsPath = JsPath \ id \ toString
 
   override def toString: String = "returnType"
 }

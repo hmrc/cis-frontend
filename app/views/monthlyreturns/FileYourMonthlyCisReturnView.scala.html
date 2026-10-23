@@ -17,6 +17,7 @@
 @import views.html.components._
 @import models.NormalMode
 @import models.ReturnType.MonthlyStandardReturn
+@import play.api.mvc.Call
 
 @this(
     layout: templates.Layout,
@@ -26,12 +27,16 @@
     formHelper: FormWithCSRF
 )
 
-@()(implicit request: Request[_], messages: Messages)
+@(formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @layout(
    pageTitle = titleNoForm(messages("fileYourMonthlyCisReturn.title"))
 ){
-@formHelper(action = controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyStandardReturn)) {
+@formHelper(
+    action = formAction.getOrElse(
+        controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController.onSubmit(MonthlyStandardReturn)
+    )
+) {
 
 @h1(messages("fileYourMonthlyCisReturn.heading"))
 

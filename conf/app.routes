@@ -63,6 +63,12 @@ POST       /monthly-return/file-your-monthly-return                     controll
 GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
 POST       /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyNilReturn)
 
+# DTR-9431
+GET        /monthly-return/file-your-nil-return/:cisPath                controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturnWithCisPath(cisPath: CisPath)
+GET        /monthly-return/file-your-monthly-return/:cisPath            controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturnWithCisPath(cisPath: CisPath)
+POST       /monthly-return/file-your-nil-return/:cisPath                controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath: CisPath, returnType: ReturnType = MonthlyNilReturn)
+POST       /monthly-return/file-your-monthly-return/:cisPath            controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath: CisPath, returnType: ReturnType = MonthlyStandardReturn)
+
 GET        /monthly-return/date-confirm-payments/resume                 controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = None)
 GET        /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = NormalMode, returnType: Option[ReturnType] = Some(MonthlyStandardReturn))
 POST       /monthly-return/date-confirm-payments                        controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode, returnType: ReturnType = MonthlyStandardReturn)
@@ -73,6 +79,12 @@ GET        /monthly-return/date-confirm-nil-payments                    controll
 POST       /monthly-return/date-confirm-nil-payments                    controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = NormalMode, returnType: ReturnType = MonthlyNilReturn)
 GET        /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoad(mode: Mode = CheckMode, returnType: Option[ReturnType] = Some(MonthlyNilReturn))
 POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyNilReturn)
+
+# DTR-9431
+GET        /monthly-return/date-confirm-payments/:cisPath/:uuid         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(cisPath: CisPath, uuid: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-payments/:cisPath/:uuid         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(cisPath: CisPath, uuid: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-payments/:cisPath/:uuid  controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(cisPath: CisPath, uuid: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-payments/:cisPath/:uuid  controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(cisPath: CisPath, uuid: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
