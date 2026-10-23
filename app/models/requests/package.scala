@@ -20,8 +20,6 @@ import models.monthlyreturns.CisTaxpayer
 import models.requests.CisPath.{CisId, CisOrg}
 import play.api.mvc.WrappedRequest
 
-import java.util.UUID
-
 package object requests {
 
   class SchemeRequest[B](

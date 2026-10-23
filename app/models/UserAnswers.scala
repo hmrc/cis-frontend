@@ -73,10 +73,8 @@ final case class UserAnswers(
     }
 
   def initialiseSubJourney(id: String): Try[UserAnswers] =
-    if data.value.contains(id) then
-      Failure(new IllegalArgumentException(s"Subjourney already exists for id: $id"))
-    else
-      Success(copy(data = data + (id -> Json.obj())))
+    if data.value.contains(id) then Failure(new IllegalArgumentException(s"Subjourney already exists for id: $id"))
+    else Success(copy(data = data + (id -> Json.obj())))
 
   def hasSubJourney(id: String): Boolean =
     data.value.get(id).exists {

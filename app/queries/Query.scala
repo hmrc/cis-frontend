@@ -35,6 +35,6 @@ trait Settable[A] extends Query {
 }
 
 trait SettableWithId[A] extends Settable[A] {
-  
+
   def pathWithId(id: String): JsPath
 }

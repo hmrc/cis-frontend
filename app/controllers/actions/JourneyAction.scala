@@ -48,7 +48,7 @@ final class JourneyActionImpl @Inject() (
         sessionRepository.get(req.identifier.userId).map {
           case Some(ua) if ua.hasSubJourney(id) =>
             Right(new JourneyRequest(req, id, ua))
-          case _ =>
+          case _                                =>
             Left(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
       }

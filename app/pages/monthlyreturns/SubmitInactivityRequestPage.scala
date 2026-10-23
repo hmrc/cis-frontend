@@ -16,12 +16,14 @@
 
 package pages.monthlyreturns
 
-import pages.QuestionPage
+import pages.{QuestionPage, QuestionPageWithId}
 import play.api.libs.json.JsPath
 
-case object SubmitInactivityRequestPage extends QuestionPage[Boolean] {
+case object SubmitInactivityRequestPage extends QuestionPage[Boolean] with QuestionPageWithId[Boolean] {
 
   override def path: JsPath = JsPath \ toString
+
+  override def pathWithId(id: String): JsPath = JsPath \ id \ toString
 
   override def toString: String = "submitInactivityRequest"
 }

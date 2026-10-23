@@ -27,20 +27,20 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class JourneyService @Inject()(sessionRepository: SessionRepository)(using ec: ExecutionContext) {
+class JourneyService @Inject() (sessionRepository: SessionRepository)(using ec: ExecutionContext) {
 
   def create[B](req: SchemeRequest[B]): Future[UUID] =
     create(req, (ua, _) => Success(ua))
 
   def create[B](req: SchemeRequest[B], initialise: (UserAnswers, String) => Try[UserAnswers]): Future[UUID] = {
-    val uuid = UUID.randomUUID()
+    val uuid       = UUID.randomUUID()
     val documentId = req.identifier.userId
-    val id = JourneyScope.subJourneyId(req.cisPath, uuid)
+    val id         = JourneyScope.subJourneyId(req.cisPath, uuid)
 
     sessionRepository.get(documentId).flatMap { existing =>
       val userAnswers =
         existing.getOrElse(UserAnswers(documentId))
-        
+
       val initialisedAnswers = for {
         started <- userAnswers.initialiseSubJourney(id)
         updated <- initialise(started, id)
