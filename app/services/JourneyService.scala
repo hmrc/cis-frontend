@@ -17,31 +17,42 @@
 package services
 
 import javax.inject.{Inject, Singleton}
-import models.{JourneyId, UserAnswers}
+
+import models.{JourneyScope, UserAnswers}
 import models.requests.SchemeRequest
 import repositories.SessionRepository
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
-class JourneyService @Inject() (
-  sessionRepository: SessionRepository
-)(using ec: ExecutionContext) {
+class JourneyService @Inject()(sessionRepository: SessionRepository)(using ec: ExecutionContext) {
 
-  def create[B](req: SchemeRequest[B]): Future[JourneyId] =
-    create(req, ua => Success(ua))
+  def create[B](req: SchemeRequest[B]): Future[UUID] =
+    create(req, (ua, _) => Success(ua))
 
-  def create[B](
-    req: SchemeRequest[B],
-    initialise: UserAnswers => Try[UserAnswers]
-  ): Future[JourneyId] = {
-    val journeyId = JourneyId(req.identifier.userId, req.cisPath, UUID.randomUUID())
+  def create[B](req: SchemeRequest[B], initialise: (UserAnswers, String) => Try[UserAnswers]): Future[UUID] = {
+    val uuid = UUID.randomUUID()
+    val documentId = req.identifier.userId
+    val id = JourneyScope.subJourneyId(req.cisPath, uuid)
 
-    Future.fromTry(initialise(UserAnswers(journeyId.asString))).flatMap { ua =>
-      if ua.id != journeyId.asString then Future.failed(new IllegalArgumentException("Incorrect journey ID"))
-      else sessionRepository.set(ua).map(_ => journeyId)
+    sessionRepository.get(documentId).flatMap { existing =>
+      val userAnswers =
+        existing.getOrElse(UserAnswers(documentId))
+        
+      val initialisedAnswers = for {
+        started <- userAnswers.initialiseSubJourney(id)
+        updated <- initialise(started, id)
+        result  <- if updated.id == documentId then Success(updated)
+                   else Failure(new IllegalArgumentException("Incorrect session ID"))
+      } yield result
+
+      Future.fromTry(initialisedAnswers).flatMap { updatedAnswers =>
+        sessionRepository
+          .set(updatedAnswers)
+          .map(_ => uuid)
+      }
     }
   }
 }

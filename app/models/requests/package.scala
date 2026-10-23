@@ -38,10 +38,7 @@ package object requests {
 
   class JourneyRequest[B](
     scheme: SchemeRequest[B],
-    val journeyId: JourneyId,
+    val subJourneyId: String,
     val userAnswers: UserAnswers
-  ) extends SchemeRequest[B](scheme.identifier, scheme.cisTaxpayer) {
-
-    def journeyUuid: UUID = journeyId.uuid
-  }
+  ) extends SchemeRequest[B](scheme.identifier, scheme.cisTaxpayer)
 }
