@@ -125,12 +125,12 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     )
 
     val subcontractors = Seq(
-      SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
+      SelectSubcontractorsViewModel(1, "Alice, A", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(2, "Bob, B", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(3, "Charles, C", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(4, "Dave, D", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(5, "Elise, E", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(6, "Frank, F", true, Some("Unknown"), Some("Unknown"))
     )
   }
 
@@ -150,12 +150,12 @@ class SelectSubcontractorsViewSpec extends SpecBase {
     )
 
     val subcontractors = Seq(
-      SelectSubcontractorsViewModel(1, "Alice, A", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(2, "Bob, B", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(3, "Charles, C", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(4, "Dave, D", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(5, "Elise, E", "Yes", "Unknown", "Unknown"),
-      SelectSubcontractorsViewModel(6, "Frank, F", "Yes", "Unknown", "Unknown")
+      SelectSubcontractorsViewModel(1, "Alice, A", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(2, "Bob, B", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(3, "Charles, C", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(4, "Dave, D", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(5, "Elise, E", true, Some("Unknown"), Some("Unknown")),
+      SelectSubcontractorsViewModel(6, "Frank, F", true, Some("Unknown"), Some("Unknown"))
     )
   }
 }

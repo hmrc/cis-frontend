@@ -263,6 +263,11 @@ monthlyreturns.selectSubcontractors.table.th.taxTreatment = Tax treatment
 monthlyreturns.selectSubcontractors.noSubcontractors = No subcontractors have been added yet
 monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Include {0}
 monthlyreturns.selectSubcontractors.error.required = You have not selected any subcontractors
+monthlyreturns.selectSubcontractors.noNameProvided = No name provided
+monthlyreturns.selectSubcontractors.unknown = Unknown
+monthlyreturns.selectSubcontractors.taxTreatment.standard = Standard rate
+monthlyreturns.selectSubcontractors.taxTreatment.higher = Higher rate
+monthlyreturns.selectSubcontractors.taxTreatment.gross = Gross
 
 monthlyreturns.totalTaxDeducted.title = How much tax in total did you deduct from this subcontractor?
 monthlyreturns.totalTaxDeducted.heading = How much tax in total did you deduct from {0}?

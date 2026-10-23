@@ -70,8 +70,8 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       .value
 
   private val subcontractors = Seq(
-    SelectSubcontractorsViewModel(1, "A", "Yes", "Unknown", "Unknown"),
-    SelectSubcontractorsViewModel(2, "B", "No", "Unknown", "Unknown")
+    SelectSubcontractorsViewModel(1, "A", true, Some("Unknown"), Some("Unknown")),
+    SelectSubcontractorsViewModel(2, "B", false, Some("Unknown"), Some("Unknown"))
   )
 
   private val pageModelSelected =

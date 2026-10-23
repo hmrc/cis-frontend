@@ -260,6 +260,11 @@ monthlyreturns.selectSubcontractors.table.th.taxTreatment = Triniaeth o ran tret
 monthlyreturns.selectSubcontractors.noSubcontractors = Nid oes unrhyw is-gontractwr wedi cael ei ychwanegu eto
 monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel = Cynnwys {0}
 monthlyreturns.selectSubcontractors.error.required = Nid ydych wedi dewis unrhyw is-gontractwyr
+monthlyreturns.selectSubcontractor.noNameProvided = Dim enw wedi'i roi
+monthlyreturns.selectSubcontractors.unknown = Anhysbys
+monthlyreturns.selectSubcontractors.taxTreatment.standard = Cyfradd safonol
+monthlyreturns.selectSubcontractors.taxTreatment.higher = Cyfradd uwch
+monthlyreturns.selectSubcontractors.taxTreatment.gross = Gros
 
 monthlyreturns.totalTaxDeducted.title = Beth oedd cyfanswm y dreth y gwnaethoch ei dynnu gan yr is-gontractwr hwn?
 monthlyreturns.totalTaxDeducted.heading = Beth oedd cyfanswm y dreth y gwnaethoch ei didynnu o {0}?

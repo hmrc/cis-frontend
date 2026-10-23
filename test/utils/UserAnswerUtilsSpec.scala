@@ -369,7 +369,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           SubmissionConfirmationCachePage,
           SubmissionConfirmationCache(
             periodEnd = "January 2025",
-            contractorName = "Test Contractor Ltd",
+            contractorName = Some("Test Contractor Ltd"),
             email = "test@test.com",
             submittedTime = "12:00pm",
             submittedDate = "1 January 2025",
@@ -500,7 +500,7 @@ class UserAnswerUtilsSpec extends SpecBase {
           SubmissionConfirmationCachePage,
           SubmissionConfirmationCache(
             periodEnd = "January 2025",
-            contractorName = "Test Contractor Ltd",
+            contractorName = Some("Test Contractor Ltd"),
             email = "test@test.com",
             submittedTime = "12:00pm",
             submittedDate = "1 January 2025",

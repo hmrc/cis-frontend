@@ -30,7 +30,7 @@ class SubmissionSuccessViewModelSpec extends AnyWordSpec with Matchers {
         periodEnd = "January 2025",
         submittedTime = "10:30am",
         submittedDate = "1 January 2025",
-        contractorName = "Test Contractor",
+        contractorName = Some("Test Contractor"),
         empRef = "123/AB456",
         email = "test@example.com",
         submissionType = ReturnType.MonthlyStandardReturn,
