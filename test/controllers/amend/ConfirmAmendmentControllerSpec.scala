@@ -277,6 +277,44 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
+    "must not amend the return again when onSubmit is repeated after a successful amend" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(AmendmentDetailsPage, amendmentDetailsStandard)
+          .success
+          .value
+          .set(ConfirmAmendmentPage, true)
+          .success
+          .value
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, controllers.amend.routes.ConfirmAmendmentController.onSubmit().url)
+            .withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+
+        verify(mockAmendMonthlyReturnService, never()).createAmendedMonthlyReturn(any())(any())
+      }
+    }
+
     "must redirect to What Do You Want To Amend Nil when onSubmit succeeds with MonthlyNilReturn" in {
       val mockSessionRepository         = mock[SessionRepository]
       val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
