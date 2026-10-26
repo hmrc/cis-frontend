@@ -253,11 +253,11 @@ class FileYourMonthlyCisReturnController @Inject() (
       journeyService
         .create(
           request,
-          (ua, id) => ua.setSubJourney(ReturnTypePage, id, returnType)
+          (ua, id) => ua.set(ReturnTypePage(id), returnType)
         )
-        .map { uuid =>
+        .map { flowId =>
           Redirect(
-            routes.DateConfirmPaymentsController.onPageLoadWithId(cisPath, uuid, NormalMode)
+            routes.DateConfirmPaymentsController.onPageLoadWithId(cisPath, flowId, NormalMode)
           )
         }
         .recover { case NonFatal(ex) =>

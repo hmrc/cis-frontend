@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @ImplementedBy(classOf[JourneyActionImpl])
 abstract class JourneyAction {
 
-  def apply(uuid: UUID): ActionRefiner[SchemeRequest, JourneyRequest]
+  def apply(flowId: UUID): ActionRefiner[SchemeRequest, JourneyRequest]
 }
 
 @Singleton
@@ -38,12 +38,12 @@ final class JourneyActionImpl @Inject() (
 )(using ec: ExecutionContext)
     extends JourneyAction {
 
-  def apply(uuid: UUID): ActionRefiner[SchemeRequest, JourneyRequest] =
+  def apply(flowId: UUID): ActionRefiner[SchemeRequest, JourneyRequest] =
     new ActionRefiner[SchemeRequest, JourneyRequest] with Results {
       val executionContext: ExecutionContext = ec
 
       def refine[B](req: SchemeRequest[B]): Future[Either[Result, JourneyRequest[B]]] = {
-        val id = JourneyScope.subJourneyId(req.cisPath, uuid)
+        val id = JourneyScope.subJourneyId(req.cisPath, flowId)
 
         sessionRepository.get(req.identifier.userId).map {
           case Some(ua) if ua.hasSubJourney(id) =>

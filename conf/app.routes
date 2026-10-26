@@ -81,10 +81,10 @@ GET        /monthly-return/change-date-confirm-nil-payments             controll
 POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyNilReturn)
 
 # DTR-9431
-GET        /monthly-return/date-confirm-payments/:cisPath/:uuid         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(cisPath: CisPath, uuid: UUID, mode: Mode = NormalMode)
-POST       /monthly-return/date-confirm-payments/:cisPath/:uuid         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(cisPath: CisPath, uuid: UUID, mode: Mode = NormalMode)
-GET        /monthly-return/change-date-confirm-payments/:cisPath/:uuid  controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(cisPath: CisPath, uuid: UUID, mode: Mode = CheckMode)
-POST       /monthly-return/change-date-confirm-payments/:cisPath/:uuid  controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(cisPath: CisPath, uuid: UUID, mode: Mode = CheckMode)
+GET        /monthly-return/date-confirm-payments/:cisPath/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/date-confirm-payments/:cisPath/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-date-confirm-payments/:cisPath/:flowId  controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-date-confirm-payments/:cisPath/:flowId  controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)

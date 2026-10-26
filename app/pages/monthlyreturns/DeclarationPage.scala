@@ -17,14 +17,19 @@
 package pages.monthlyreturns
 
 import models.monthlyreturns.Declaration
-import pages.{QuestionPage, QuestionPageWithId}
+import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object DeclarationPage extends QuestionPage[Set[Declaration]] with QuestionPageWithId[Set[Declaration]] {
+case class DeclarationPage(id: String) extends QuestionPage[Set[Declaration]] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "declaration"
+}
+
+case object DeclarationPage extends QuestionPage[Set[Declaration]] {
 
   override def path: JsPath = JsPath \ toString
-
-  override def pathWithId(id: String): JsPath = JsPath \ id \ toString
 
   override def toString: String = "declaration"
 }

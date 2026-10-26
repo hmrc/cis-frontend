@@ -16,9 +16,9 @@
 
 package models
 
-import pages.{QuestionPage, QuestionPageWithId}
+import pages.QuestionPage
 import play.api.libs.json.*
-import queries.{Gettable, Settable, SettableWithId}
+import queries.{Gettable, Settable}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
@@ -33,9 +33,6 @@ final case class UserAnswers(
   def get[A](page: Gettable[A])(implicit rds: Reads[A]): Option[A] =
     Reads.optionNoError(Reads.at(page.path)).reads(data).getOrElse(None)
 
-  def getWithId[A](id: String, page: QuestionPageWithId[A])(implicit rds: Reads[A]): Option[A] =
-    Reads.optionNoError(Reads.at(page.pathWithId(id))).reads(data).getOrElse(None)
-
   def setOrException[A](page: QuestionPage[A], value: A)(implicit writes: Writes[A]): UserAnswers =
     set(page, value) match {
       case Success(ua) => ua
@@ -45,21 +42,6 @@ final case class UserAnswers(
   def set[A](page: Settable[A], value: A)(implicit writes: Writes[A]): Try[UserAnswers] =
     page.cleanup(Some(value), this).flatMap { ua =>
       val updatedData = ua.data.setObject(page.path, Json.toJson(value)) match {
-        case JsSuccess(jsValue, _) =>
-          Success(jsValue)
-        case JsError(errors)       =>
-          Failure(JsResultException(errors))
-      }
-
-      updatedData.flatMap { d =>
-        val updatedAnswers = copy(data = d)
-        page.cleanup(Some(value), updatedAnswers)
-      }
-    }
-
-  def setSubJourney[A](page: SettableWithId[A], id: String, value: A)(implicit writes: Writes[A]): Try[UserAnswers] =
-    page.cleanup(Some(value), this).flatMap { ua =>
-      val updatedData = ua.data.setObject(page.pathWithId(id), Json.toJson(value)) match {
         case JsSuccess(jsValue, _) =>
           Success(jsValue)
         case JsError(errors)       =>

@@ -152,10 +152,10 @@ class DateConfirmPaymentsController @Inject() (
 
   // DTR-9431: New ID-scoped journey.
 
-  def onPageLoadWithId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)) { implicit request =>
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
       request.userAnswers
-        .getWithId(request.subJourneyId, ReturnTypePage)
+        .get(ReturnTypePage(request.subJourneyId))
         .fold {
           logger.error("[DateConfirmPaymentsController][onPageLoadWithId] ReturnTypePage missing")
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -166,20 +166,20 @@ class DateConfirmPaymentsController @Inject() (
 
           val form         = formProvider()
           val preparedForm =
-            request.userAnswers.getWithId(request.subJourneyId, DateConfirmPaymentsPage).fold(form)(form.fill)
-          val formAction   = Some(routes.DateConfirmPaymentsController.onSubmitWithId(cisPath, uuid, mode))
+            request.userAnswers.get(DateConfirmPaymentsPage(request.subJourneyId)).fold(form)(form.fill)
+          val formAction   = Some(routes.DateConfirmPaymentsController.onSubmitWithId(cisPath, flowId, mode))
 
           Ok(view(preparedForm, mode, messagePrefix, returnType, formAction))
         }
     }
 
-  def onSubmitWithId(cisPath: CisPath, uuid: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(uuid)).async { implicit request =>
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
       userAnswers
-        .getWithId(request.subJourneyId, ReturnTypePage)
+        .get(ReturnTypePage(request.subJourneyId))
         .fold[Future[Result]] {
           logger.error("[DateConfirmPaymentsController][onSubmitWithId] ReturnTypePage missing")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
@@ -189,7 +189,7 @@ class DateConfirmPaymentsController @Inject() (
             if isStandard then "monthlyreturns.dateConfirmPayments"
             else "monthlyreturns.dateConfirmPayments.nilreturn"
 
-          val formAction = Some(routes.DateConfirmPaymentsController.onSubmitWithId(cisPath, uuid, mode))
+          val formAction = Some(routes.DateConfirmPaymentsController.onSubmitWithId(cisPath, flowId, mode))
 
           form
             .bindFromRequest()
@@ -211,7 +211,7 @@ class DateConfirmPaymentsController @Inject() (
                               for {
                                 updatedAnswers <-
                                   Future.fromTry(
-                                    userAnswers.setSubJourney(DateConfirmPaymentsPage, request.subJourneyId, value)
+                                    userAnswers.set(DateConfirmPaymentsPage(request.subJourneyId), value)
                                   )
                                 _              <- sessionRepository.set(updatedAnswers)
                                 result         <- if (isStandard) {
@@ -220,7 +220,7 @@ class DateConfirmPaymentsController @Inject() (
                                                       // TODO: DTR-9430 - Temporary redirect until the next ID-scoped journey page is implemented.
                                                       Redirect(
                                                         routes.DateConfirmPaymentsController
-                                                          .onPageLoadWithId(cisPath, uuid, mode)
+                                                          .onPageLoadWithId(cisPath, flowId, mode)
                                                       )
                                                     }
                                                   } else {
@@ -234,7 +234,7 @@ class DateConfirmPaymentsController @Inject() (
                                                         // TODO: DTR-9430 - Temporary redirect until the next ID-scoped journey page is implemented.
                                                         Redirect(
                                                           routes.DateConfirmPaymentsController
-                                                            .onPageLoadWithId(cisPath, uuid, mode)
+                                                            .onPageLoadWithId(cisPath, flowId, mode)
                                                         )
                                                       }
                                                   }

@@ -19,14 +19,12 @@ package navigation
 import models.*
 import models.ReturnType.*
 import models.amend.*
-import models.requests.CisPath
 import pages.*
 import pages.amend.*
 import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.mvc.Call
 
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 @Singleton

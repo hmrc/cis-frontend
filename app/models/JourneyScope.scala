@@ -21,6 +21,6 @@ import models.requests.CisPath
 import java.util.UUID
 
 object JourneyScope {
-  def subJourneyId(cisPath: CisPath, uuid: UUID): String =
-    s"${cisPath.toUrl}_$uuid"
+  def subJourneyId(cisPath: CisPath, flowId: UUID): String =
+    s"${cisPath.toUrl}_$flowId"
 }

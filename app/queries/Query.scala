@@ -33,8 +33,3 @@ trait Settable[A] extends Query {
   def cleanup(value: Option[A], userAnswers: UserAnswers): Try[UserAnswers] =
     Success(userAnswers)
 }
-
-trait SettableWithId[A] extends Settable[A] {
-
-  def pathWithId(id: String): JsPath
-}

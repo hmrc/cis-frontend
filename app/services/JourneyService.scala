@@ -33,9 +33,9 @@ class JourneyService @Inject() (sessionRepository: SessionRepository)(using ec: 
     create(req, (ua, _) => Success(ua))
 
   def create[B](req: SchemeRequest[B], initialise: (UserAnswers, String) => Try[UserAnswers]): Future[UUID] = {
-    val uuid       = UUID.randomUUID()
+    val flowId     = UUID.randomUUID()
     val documentId = req.identifier.userId
-    val id         = JourneyScope.subJourneyId(req.cisPath, uuid)
+    val id         = JourneyScope.subJourneyId(req.cisPath, flowId)
 
     sessionRepository.get(documentId).flatMap { existing =>
       val userAnswers =
@@ -51,7 +51,7 @@ class JourneyService @Inject() (sessionRepository: SessionRepository)(using ec: 
       Future.fromTry(initialisedAnswers).flatMap { updatedAnswers =>
         sessionRepository
           .set(updatedAnswers)
-          .map(_ => uuid)
+          .map(_ => flowId)
       }
     }
   }

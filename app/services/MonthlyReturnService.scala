@@ -153,11 +153,11 @@ class MonthlyReturnService @Inject() (
   ): Future[UserAnswers] = {
     logger.info("[MonthlyReturnService] Starting FormP monthly nil return creation process")
 
-    userAnswers.getWithId(id, DateConfirmPaymentsPage) match {
+    userAnswers.get(DateConfirmPaymentsPage(id)) match {
       case Some(date) =>
         val infoCorrect   =
-          if (userAnswers.getWithId(id, DeclarationPage).exists(_.contains(Declaration.Confirmed))) "Y" else "N"
-        val nilNoPayments = if (userAnswers.getWithId(id, SubmitInactivityRequestPage).contains(true)) "Y" else "N"
+          if (userAnswers.get(DeclarationPage(id)).exists(_.contains(Declaration.Confirmed))) "Y" else "N"
+        val nilNoPayments = if (userAnswers.get(SubmitInactivityRequestPage(id)).contains(true)) "Y" else "N"
 
         for {
           resp  <- callBackendToCreate(cisId, date.getYear, date.getMonthValue, infoCorrect, nilNoPayments)
@@ -672,7 +672,7 @@ class MonthlyReturnService @Inject() (
 
   // DTR-9431 overloaded method to support subjourney id for nil return creation
   private def persistStatus(ua: UserAnswers, status: String, id: String): Future[UserAnswers] =
-    ua.setSubJourney(NilReturnStatusPage, id, status) match {
+    ua.set(NilReturnStatusPage(id), status) match {
       case scala.util.Success(updated) => sessionRepository.set(updated).map(_ => updated)
       case scala.util.Failure(err)     => Future.failed(err)
     }
