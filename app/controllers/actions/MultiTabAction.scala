@@ -17,7 +17,7 @@
 package controllers.actions
 
 import config.FrontendAppConfig
-import models.requests.IdentifierRequest
+import models.requests.SchemeRequest
 import play.api.mvc.{ActionFilter, Result, Results}
 
 import javax.inject.{Inject, Singleton}
@@ -25,13 +25,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MultiTabAction @Inject() (appConfig: FrontendAppConfig)(using ec: ExecutionContext)
-    extends ActionFilter[IdentifierRequest] {
+    extends ActionFilter[SchemeRequest] {
 
   override protected def executionContext: ExecutionContext = ec
 
-  override protected def filter[A](request: IdentifierRequest[A]): Future[Option[Result]] =
+  override protected def filter[A](request: SchemeRequest[A]): Future[Option[Result]] =
     Future.successful {
       if (appConfig.multiTabEnabled) None
-      else Some(Results.Redirect(appConfig.manageYourCisReturn))
+      else Some(Results.Redirect(appConfig.returnsLandingPageUrl(request.cisId, None)))
     }
 }

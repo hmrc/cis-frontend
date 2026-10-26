@@ -50,7 +50,7 @@ final class SchemeActionImpl @Inject() (
   given FrontendAppConfig = config
 
   def apply(cisPath: CisPath): ActionFunction[IdentifierRequest, SchemeRequest] =
-    multiTabAction.andThen(resolve(cisPath))
+    resolve(cisPath).andThen(multiTabAction)
 
   private def resolve(cisPath: CisPath): ActionRefiner[IdentifierRequest, SchemeRequest] =
     new ActionRefiner with FrontendHeaderCarrierProvider {
