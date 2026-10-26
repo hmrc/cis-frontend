@@ -22,7 +22,7 @@ import models.requests.CisPath.*
 import models.requests.{CisPath, IdentifierRequest, SchemeRequest}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{ActionRefiner, Result, Results}
+import play.api.mvc.{ActionFunction, ActionRefiner, Result, Results}
 import services.CisTaxpayerService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendHeaderCarrierProvider
 import views.html.PageNotFoundView
@@ -31,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @ImplementedBy(classOf[SchemeActionImpl])
 abstract class SchemeAction {
-  def apply(cisPath: CisPath): ActionRefiner[IdentifierRequest, SchemeRequest]
+  def apply(cisPath: CisPath): ActionFunction[IdentifierRequest, SchemeRequest]
 }
 
 @Singleton
@@ -39,7 +39,8 @@ final class SchemeActionImpl @Inject() (
   val messagesApi: MessagesApi,
   config: FrontendAppConfig,
   cisTaxpayerService: CisTaxpayerService,
-  notFoundView: PageNotFoundView
+  notFoundView: PageNotFoundView,
+  multiTabAction: MultiTabAction
 )(using ec: ExecutionContext)
     extends SchemeAction
     with Results
@@ -48,7 +49,10 @@ final class SchemeActionImpl @Inject() (
 
   given FrontendAppConfig = config
 
-  def apply(cisPath: CisPath): ActionRefiner[IdentifierRequest, SchemeRequest] =
+  def apply(cisPath: CisPath): ActionFunction[IdentifierRequest, SchemeRequest] =
+    multiTabAction.andThen(resolve(cisPath))
+
+  private def resolve(cisPath: CisPath): ActionRefiner[IdentifierRequest, SchemeRequest] =
     new ActionRefiner with FrontendHeaderCarrierProvider {
       val executionContext: ExecutionContext = ec
 
