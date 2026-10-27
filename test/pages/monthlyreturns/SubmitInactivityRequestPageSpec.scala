@@ -30,5 +30,14 @@ class SubmitInactivityRequestPageSpec extends SpecBase {
     "have the correct toString" in {
       SubmitInactivityRequestPage.toString mustBe "submitInactivityRequest"
     }
+
+    "have the correct scoped path" in {
+      SubmitInactivityRequestPage("org_flow-1").path mustBe
+        (JsPath \ "org_flow-1" \ "submitInactivityRequest")
+    }
+
+    "have the correct scoped toString" in {
+      SubmitInactivityRequestPage("org_flow-1").toString mustBe "submitInactivityRequest"
+    }
   }
 }

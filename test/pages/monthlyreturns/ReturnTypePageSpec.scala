@@ -30,5 +30,14 @@ class ReturnTypePageSpec extends SpecBase {
     "have the correct toString" in {
       ReturnTypePage.toString mustBe "returnType"
     }
+
+    "have the correct scoped path" in {
+      ReturnTypePage("org_flow-1").path mustBe
+        (JsPath \ "org_flow-1" \ "returnType")
+    }
+
+    "have the correct scoped toString" in {
+      ReturnTypePage("org_flow-1").toString mustBe "returnType"
+    }
   }
 }

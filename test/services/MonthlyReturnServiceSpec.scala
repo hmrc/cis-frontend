@@ -889,6 +889,150 @@ class MonthlyReturnServiceSpec extends SpecBase {
     }
   }
 
+  "createNilMonthlyReturn with subjourney ID" - {
+
+    "create a nil return using scoped answers and persist the scoped status" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId = "CIS-123"
+      val id    = "org_flow-1"
+      val date  = LocalDate.of(2026, 7, 5)
+
+      val ua = UserAnswers("test")
+        .initialiseSubJourney(id)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage(id), date)
+        .success
+        .value
+        .set(DeclarationPage(id), Set(Declaration.Confirmed))
+        .success
+        .value
+        .set(SubmitInactivityRequestPage(id), true)
+        .success
+        .value
+
+      val backendResponse = mock(classOf[NilMonthlyReturnResponse])
+      when(backendResponse.status).thenReturn("STARTED")
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(backendResponse))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.createNilMonthlyReturn(ua, cisId, id).futureValue
+
+      val payloadCaptor = ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(payloadCaptor.capture())(any[HeaderCarrier])
+
+      val payload = payloadCaptor.getValue
+
+      payload.instanceId mustBe cisId
+      payload.taxYear mustBe 2026
+      payload.taxMonth mustBe 7
+      payload.decInformationCorrect mustBe "Y"
+      payload.decNilReturnNoPayments mustBe "Y"
+
+      val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedAnswers = uaCaptor.getValue
+
+      savedAnswers.get(NilReturnStatusPage(id)) mustBe Some("STARTED")
+      savedAnswers.get(NilReturnStatusPage) mustBe None
+
+      result mustBe savedAnswers
+    }
+
+    "default declaration and inactivity flags to N when scoped answers are missing" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId = "CIS-123"
+      val id    = "org_flow-1"
+      val date  = LocalDate.of(2026, 7, 5)
+
+      val ua = UserAnswers("test")
+        .initialiseSubJourney(id)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage(id), date)
+        .success
+        .value
+
+      val backendResponse = mock(classOf[NilMonthlyReturnResponse])
+      when(backendResponse.status).thenReturn("STARTED")
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(backendResponse))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.createNilMonthlyReturn(ua, cisId, id).futureValue
+
+      val payloadCaptor = ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(payloadCaptor.capture())(any[HeaderCarrier])
+
+      payloadCaptor.getValue.decInformationCorrect mustBe "N"
+      payloadCaptor.getValue.decNilReturnNoPayments mustBe "N"
+
+      result.get(NilReturnStatusPage(id)) mustBe Some("STARTED")
+    }
+
+    "fail when DateConfirmPaymentsPage is missing from the subjourney" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId = "CIS-123"
+      val id    = "org_flow-1"
+
+      val ua = UserAnswers("test")
+        .initialiseSubJourney(id)
+        .success
+        .value
+
+      val exception = service
+        .createNilMonthlyReturn(ua, cisId, id)
+        .failed
+        .futureValue
+
+      exception mustBe a[RuntimeException]
+      exception.getMessage mustBe "Date confirm nil payments not found in subjourney"
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when the backend cannot create the nil return" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val cisId = "CIS-123"
+      val id    = "org_flow-1"
+      val date  = LocalDate.of(2026, 7, 5)
+
+      val ua = UserAnswers("test")
+        .initialiseSubJourney(id)
+        .success
+        .value
+        .set(DateConfirmPaymentsPage(id), date)
+        .success
+        .value
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Backend error")))
+
+      val exception = service
+        .createNilMonthlyReturn(ua, cisId, id)
+        .failed
+        .futureValue
+
+      exception.getMessage mustBe "Backend error"
+
+      verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
   "updateMonthlyReturn" - {
 
     "delegate to connector and complete successfully" in {
