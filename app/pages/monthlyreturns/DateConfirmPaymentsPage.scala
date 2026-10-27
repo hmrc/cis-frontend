@@ -21,6 +21,13 @@ import play.api.libs.json.JsPath
 
 import java.time.LocalDate
 
+case class DateConfirmPaymentsPage(id: String) extends QuestionPage[LocalDate] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "dateConfirmPayments"
+}
+
 case object DateConfirmPaymentsPage extends QuestionPage[LocalDate] {
 
   override def path: JsPath = JsPath \ toString

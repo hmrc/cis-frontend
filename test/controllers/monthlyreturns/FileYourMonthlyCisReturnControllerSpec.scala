@@ -17,22 +17,67 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import models.agent.AgentClientData
-import models.{NormalMode, ReturnType, UserAnswers}
+import models.monthlyreturns.CisTaxpayer
+import models.requests.CisPath.{CisId, CisOrg}
+import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.requests.IdentifierRequest
+import models.{JourneyScope, NormalMode, ReturnType, UserAnswers}
 import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers
+import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 
 import scala.concurrent.Future
 import org.scalatestplus.mockito.MockitoSugar
+import pages.monthlyreturns.ReturnTypePage
+import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import play.api.inject.bind
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
+import services.{CisTaxpayerService, FormpRdsReconcileService, MonthlyReturnService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.util.UUID
+
 class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar {
+
+  private val cisId = "123456789"
+
+  private def scopedApplication(
+    mockRepo: SessionRepository,
+    mockReconcile: FormpRdsReconcileService,
+    enabled: Boolean = true,
+    isAgent: Boolean = false
+  ): Application = {
+    val taxpayer = mock[CisTaxpayer]
+
+    when(taxpayer.uniqueId).thenReturn(cisId)
+    when(taxpayer.taxOfficeNumber).thenReturn("123")
+    when(taxpayer.taxOfficeRef).thenReturn("AB456")
+
+    val taxpayerService = mock[CisTaxpayerService]
+
+    if (isAgent) {
+      when(taxpayerService.findForAgent(eqTo(cisId))(using any[IdentifierRequest[?]]))
+        .thenReturn(Future.successful(Some(taxpayer)))
+    } else {
+      when(taxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
+        .thenReturn(Future.successful(taxpayer))
+    }
+
+    applicationBuilder(
+      isAgent = isAgent,
+      formpRdsReconcileService = mockReconcile
+    )
+      .configure("features.multi-tab-enabled" -> enabled)
+      .overrides(
+        bind[CisTaxpayerService].toInstance(taxpayerService),
+        bind[SessionRepository].toInstance(mockRepo)
+      )
+      .build()
+  }
 
   "FileYourMonthlyCisReturnController.startMonthlyReturn" - {
 
@@ -948,6 +993,311 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         verify(mockReconcile)
           .reconcile(eqTo("CIS-123"), eqTo("163"), eqTo("AB0063"))(any[HeaderCarrier])
+      }
+    }
+  }
+
+  "FileYourMonthlyCisReturnController UUID-scoped entry points" - {
+
+    "return OK for the new standard monthly return entry point" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startMonthlyReturnWithCisPath(CisOrg)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        val expectedPostRoute =
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .url
+
+        status(result) mustBe OK
+        contentAsString(result) must include(expectedPostRoute)
+
+        verify(mockReconcile)
+          .reconcile(eqTo(cisId), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
+
+        verifyNoInteractions(mockRepo)
+      }
+    }
+
+    "return OK for the new nil return entry point" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startNilReturnWithCisPath(CisOrg)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        val expectedPostRoute =
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisOrg, MonthlyNilReturn)
+            .url
+
+        status(result) mustBe OK
+        contentAsString(result) must include(expectedPostRoute)
+
+        verify(mockReconcile)
+          .reconcile(eqTo(cisId), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
+
+        verifyNoInteractions(mockRepo)
+      }
+    }
+
+    "redirect to CIS Manage Returns when multi-tab is disabled" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      val app = scopedApplication(mockRepo, mockReconcile, enabled = false)
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startMonthlyReturnWithCisPath(CisOrg)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        val expectedUrl = app.injector
+          .instanceOf[FrontendAppConfig]
+          .returnsLandingPageUrl(cisId, None)
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe expectedUrl
+
+        verifyNoInteractions(mockRepo, mockReconcile)
+      }
+    }
+
+    "redirect the nil return entry point when multi-tab is disabled" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      val app = scopedApplication(mockRepo, mockReconcile, enabled = false)
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startNilReturnWithCisPath(CisOrg)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        val expectedUrl = app.injector
+          .instanceOf[FrontendAppConfig]
+          .returnsLandingPageUrl(cisId, None)
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe expectedUrl
+
+        verifyNoInteractions(mockRepo, mockReconcile)
+      }
+    }
+
+    "create a UUID-scoped standard return journey on submission" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.get(any[String]))
+        .thenReturn(Future.successful(Some(emptyUserAnswers)))
+
+      when(mockRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        val redirectUrl = redirectLocation(result).value
+        val flowId      = UUID.fromString(redirectUrl.split("/").last)
+        val id          = JourneyScope.subJourneyId(CisOrg, flowId)
+
+        redirectUrl mustBe
+          controllers.monthlyreturns.routes.DateConfirmPaymentsController
+            .onPageLoadWithId(CisOrg, flowId, NormalMode)
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(mockRepo).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.hasSubJourney(id) mustBe true
+        savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+        savedAnswers.get(ReturnTypePage) mustBe None
+      }
+    }
+
+    "create a UUID-scoped nil return journey on submission" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.get(any[String]))
+        .thenReturn(Future.successful(Some(emptyUserAnswers)))
+
+      when(mockRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisOrg, MonthlyNilReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        val redirectUrl = redirectLocation(result).value
+        val flowId      = UUID.fromString(redirectUrl.split("/").last)
+        val id          = JourneyScope.subJourneyId(CisOrg, flowId)
+
+        redirectUrl mustBe
+          controllers.monthlyreturns.routes.DateConfirmPaymentsController
+            .onPageLoadWithId(CisOrg, flowId, NormalMode)
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(mockRepo).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.hasSubJourney(id) mustBe true
+        savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyNilReturn)
+        savedAnswers.get(ReturnTypePage) mustBe None
+      }
+    }
+
+    "not create a new journey when multi-tab is disabled" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      val app = scopedApplication(mockRepo, mockReconcile, enabled = false)
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        val expectedUrl = app.injector
+          .instanceOf[FrontendAppConfig]
+          .returnsLandingPageUrl(cisId, None)
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe expectedUrl
+
+        verifyNoInteractions(mockRepo, mockReconcile)
+      }
+    }
+
+    "redirect to Journey Recovery when journey creation fails" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.get(any[String]))
+        .thenReturn(Future.failed(new RuntimeException("Database error")))
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockRepo, never()).set(any[UserAnswers])
+      }
+    }
+
+    "return OK for an authorised agent client" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val app = scopedApplication(
+        mockRepo,
+        mockReconcile,
+        isAgent = true
+      )
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startMonthlyReturnWithCisPath(CisId(cisId))
+            .url
+        )
+
+        val result = route(app, request).value
+
+        val expectedPostRoute =
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisPath(CisId(cisId), MonthlyStandardReturn)
+            .url
+
+        status(result) mustBe OK
+        contentAsString(result) must include(expectedPostRoute)
+
+        verify(mockReconcile)
+          .reconcile(eqTo(cisId), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
       }
     }
   }

@@ -74,6 +74,7 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
 
   lazy val userResearchUrl: String                = configuration.get[String]("urls.userResearchUrl")
   lazy val showUserResearchBannerEnabled: Boolean = configuration.get[Boolean]("features.user-research-banner-enabled")
+  lazy val multiTabEnabled: Boolean               = configuration.get[Boolean]("features.multi-tab-enabled")
 
   lazy val languageTranslationEnabled: Boolean =
     configuration.get[Boolean]("features.welsh-translation")

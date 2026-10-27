@@ -1073,6 +1073,63 @@ class ConstructionIndustrySchemeConnectorSpec
     }
   }
 
+  "getAllClients" should {
+
+    "return a list of CisTaxpayer when BE returns 200 with valid JSON" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/client-list"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """
+                  |{
+                  |  "clients": [
+                  |    {
+                  |      "uniqueId": "123",
+                  |      "taxOfficeNumber": "111",
+                  |      "taxOfficeRef": "test111",
+                  |      "employerName1": "TEST LTD"
+                  |    },
+                  |    {
+                  |      "uniqueId": "456",
+                  |      "taxOfficeNumber": "222",
+                  |      "taxOfficeRef": "test222",
+                  |      "employerName1": "ANOTHER LTD"
+                  |    }
+                  |  ]
+                  |}
+                  |""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getAllClients.futureValue
+
+      result.size mustBe 2
+      result.map(_.uniqueId) mustBe List("123", "456")
+      result.map(_.taxOfficeNumber) mustBe List("111", "222")
+      result.map(_.taxOfficeRef) mustBe List("test111", "test222")
+      result.map(_.employerName1) mustBe List(Some("TEST LTD"), Some("ANOTHER LTD"))
+    }
+
+    "return a failed Future when BE returns 500" in {
+      stubFor(
+        get(urlPathEqualTo("/cis/agent/client-list"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+
+      val exception = connector.getAllClients.failed.futureValue
+
+      exception mustBe a[UpstreamErrorResponse]
+      exception.asInstanceOf[UpstreamErrorResponse].statusCode mustBe INTERNAL_SERVER_ERROR
+    }
+  }
+  
   "hasClient(taxOfficeNumber, taxOfficeReference)" should {
 
     "GET /cis/agent/has-client/:ton/:tor and return true when BE returns 200" in {

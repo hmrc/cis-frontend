@@ -20,12 +20,13 @@ import controllers.actions.*
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.ReturnType.MonthlyStandardReturn
 import models.monthlyreturns.MonthlyReturnRequest
+import models.requests.CisPath
 import models.{Mode, ReturnType}
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -33,6 +34,7 @@ import utils.TypeUtils.toFuture
 import views.html.monthlyreturns.DateConfirmPaymentsView
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -45,6 +47,8 @@ class DateConfirmPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: DateConfirmPaymentsFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -144,5 +148,107 @@ class DateConfirmPaymentsController @Inject() (
             }
           }
         )
+    }
+
+  // DTR-9431: New ID-scoped journey.
+
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+      request.userAnswers
+        .get(ReturnTypePage(request.subJourneyId))
+        .fold {
+          logger.error("[DateConfirmPaymentsController][onPageLoadWithId] ReturnTypePage missing")
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        } { returnType =>
+          val messagePrefix =
+            if returnType == MonthlyStandardReturn then "monthlyreturns.dateConfirmPayments"
+            else "monthlyreturns.dateConfirmPayments.nilreturn"
+
+          val form         = formProvider()
+          val preparedForm =
+            request.userAnswers.get(DateConfirmPaymentsPage(request.subJourneyId)).fold(form)(form.fill)
+          val formAction   = Some(routes.DateConfirmPaymentsController.onSubmitWithId(cisPath, flowId, mode))
+
+          Ok(view(preparedForm, mode, messagePrefix, returnType, formAction))
+        }
+    }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val userAnswers = request.userAnswers
+      val form        = formProvider()
+
+      userAnswers
+        .get(ReturnTypePage(request.subJourneyId))
+        .fold[Future[Result]] {
+          logger.error("[DateConfirmPaymentsController][onSubmitWithId] ReturnTypePage missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        } { returnType =>
+          val isStandard    = returnType == MonthlyStandardReturn
+          val messagePrefix =
+            if isStandard then "monthlyreturns.dateConfirmPayments"
+            else "monthlyreturns.dateConfirmPayments.nilreturn"
+
+          val formAction = Some(routes.DateConfirmPaymentsController.onSubmitWithId(cisPath, flowId, mode))
+
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors =>
+                Future.successful(BadRequest(view(formWithErrors, mode, messagePrefix, returnType, formAction))),
+              value => {
+                val year  = value.getYear
+                val month = value.getMonthValue
+
+                (for {
+                  isDup  <- monthlyReturnService.isDuplicate(request.cisId, year, month)
+                  result <- if (isDup) {
+                              val dupForm = form
+                                .fill(value)
+                                .withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
+                              Future.successful(BadRequest(view(dupForm, mode, messagePrefix, returnType, formAction)))
+                            } else {
+                              for {
+                                updatedAnswers <-
+                                  Future.fromTry(
+                                    userAnswers.set(DateConfirmPaymentsPage(request.subJourneyId), value)
+                                  )
+                                _              <- sessionRepository.set(updatedAnswers)
+                                result         <- if (isStandard) {
+                                                    val createRequest = MonthlyReturnRequest(request.cisId, year, month)
+                                                    monthlyReturnService.createMonthlyReturn(createRequest).map { _ =>
+                                                      // TODO: DTR-9430 - Temporary redirect until the next ID-scoped journey page is implemented.
+                                                      Redirect(
+                                                        routes.DateConfirmPaymentsController
+                                                          .onPageLoadWithId(cisPath, flowId, mode)
+                                                      )
+                                                    }
+                                                  } else {
+                                                    monthlyReturnService
+                                                      .createNilMonthlyReturn(
+                                                        updatedAnswers,
+                                                        request.cisId,
+                                                        request.subJourneyId
+                                                      )
+                                                      .map { _ =>
+                                                        // TODO: DTR-9430 - Temporary redirect until the next ID-scoped journey page is implemented.
+                                                        Redirect(
+                                                          routes.DateConfirmPaymentsController
+                                                            .onPageLoadWithId(cisPath, flowId, mode)
+                                                        )
+                                                      }
+                                                  }
+                              } yield result
+                            }
+                } yield result).recover { case NonFatal(ex) =>
+                  logger.error(
+                    s"[DateConfirmPaymentsController][onSubmitWithId] Failed to process submission: ${ex.getMessage}",
+                    ex
+                  )
+                  Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                }
+              }
+            )
+        }
     }
 }

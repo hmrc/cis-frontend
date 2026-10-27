@@ -106,13 +106,13 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       .build()
   }
 
-  private val getUrl: String =
+  private def getUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode).url
 
-  private val postUrl: String =
+  private def postUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(NormalMode).url
 
-  private val cancelUrl: String =
+  private def cancelUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url
 
   "SubcontractorDetailsAddedController" - {

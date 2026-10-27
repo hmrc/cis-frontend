@@ -19,6 +19,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 @import uk.gov.hmrc.hmrcfrontend.views.html.components.implicits._
 @import config.FrontendAppConfig
+@import play.api.mvc.Call
 
 @this(
     layout: templates.Layout,
@@ -35,11 +36,11 @@
     appConfig: FrontendAppConfig
 )
 
-@(form: Form[_], mode: Mode, messagePrefix: String, returnType: ReturnType)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, messagePrefix: String, returnType: ReturnType, formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages(s"$messagePrefix.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType), Symbol("autoComplete") -> "off") {
+    @formHelper(action = formAction.getOrElse(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType)), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))

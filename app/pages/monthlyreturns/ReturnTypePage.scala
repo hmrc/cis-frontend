@@ -20,6 +20,13 @@ import models.ReturnType
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class ReturnTypePage(id: String) extends QuestionPage[ReturnType] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "returnType"
+}
+
 case object ReturnTypePage extends QuestionPage[ReturnType] {
 
   override def path: JsPath = JsPath \ toString

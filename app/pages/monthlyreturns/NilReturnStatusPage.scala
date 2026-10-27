@@ -19,7 +19,16 @@ package pages.monthlyreturns
 import play.api.libs.json.JsPath
 import pages.QuestionPage
 
+case class NilReturnStatusPage(id: String) extends QuestionPage[String] {
+
+  override def path: JsPath = JsPath \ id \ "nilReturnStatus"
+
+  override def toString: String = "nil-return-status"
+}
+
 object NilReturnStatusPage extends QuestionPage[String] {
-  override def path: JsPath     = JsPath \ "nilReturnStatus"
+
+  override def path: JsPath = JsPath \ "nilReturnStatus"
+
   override def toString: String = "nil-return-status"
 }
