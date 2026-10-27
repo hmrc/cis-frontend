@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, CisPath}
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.Logging
@@ -32,8 +32,10 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class EnterYourEmailAddressController @Inject() (
   override val messagesApi: MessagesApi,
@@ -43,6 +45,8 @@ class EnterYourEmailAddressController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: EnterYourEmailAddressFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -102,6 +106,52 @@ class EnterYourEmailAddressController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(EnterYourEmailAddressPage, mode, updatedAnswers))
+        )
+    }
+
+  // Multi-tab
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+      val id         = request.subJourneyId
+      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(cisPath, flowId, mode))
+
+      if (!request.userAnswers.get(ConfirmationByEmailPage(id)).contains(true)) {
+        Future.successful(Redirect(routes.ConfirmationByEmailController.onPageLoadWithId(cisPath, flowId, mode)))
+      } else {
+        request.userAnswers.get(EnterYourEmailAddressPage(id)) match {
+          case Some(value) =>
+            Future.successful(Ok(view(form.fill(value), mode, formAction)))
+          case None        =>
+            monthlyReturnService
+              .getSchemeEmail(request.cisId)
+              .recover { case NonFatal(ex) =>
+                logger.warn("[EnterYourEmailAddressController][onPageLoadWithId] - email lookup failed", ex)
+                None
+              }
+              .map {
+                case Some(email) => Ok(view(form.fill(email), mode, formAction))
+                case None        => Ok(view(form, mode, formAction))
+              }
+        }
+      }
+    }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val id         = request.subJourneyId
+      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(cisPath, flowId, mode))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          value =>
+            for {
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage(id), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(cisPath, flowId, EnterYourEmailAddressPage, mode, updatedAnswers))
         )
     }
 }

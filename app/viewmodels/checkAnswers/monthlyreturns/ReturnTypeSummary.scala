@@ -40,4 +40,22 @@ object ReturnTypeSummary {
         value = ValueViewModel(messages(valueKey))
       )
     }
+
+  // Multi-tab: Get return type from the ID-scoped journey.
+  def returnType(answers: UserAnswers, id: String): Option[ReturnType] =
+    answers.get(ReturnTypePage(id))
+
+  // Multi-tab: Summary for the ID-scoped journey.
+  def row(answers: UserAnswers, id: String)(implicit messages: Messages): Option[SummaryListRow] =
+    returnType(answers, id).map { returnType =>
+      val valueKey = returnType match {
+        case MonthlyStandardReturn | MonthlyAmendedStandardReturn => "monthlyreturns.returnType.monthlyReturnValue"
+        case MonthlyNilReturn | MonthlyAmendedNilReturn           => "monthlyreturns.returnType.value"
+      }
+
+      SummaryListRowViewModel(
+        key = messages("monthlyreturns.returnType.checkYourAnswersLabel"),
+        value = ValueViewModel(messages(valueKey))
+      )
+    }
 }

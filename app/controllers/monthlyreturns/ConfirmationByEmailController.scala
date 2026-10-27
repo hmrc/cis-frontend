@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.Mode
+import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -27,6 +28,7 @@ import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.ConfirmationByEmailView
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,6 +40,8 @@ class ConfirmationByEmailController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: ConfirmationByEmailFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmationByEmailView
@@ -69,6 +73,37 @@ class ConfirmationByEmailController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(ConfirmationByEmailPage, mode, updatedAnswers))
+        )
+    }
+
+  // Multi-tab: New ID-scoped journey.
+
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+      val preparedForm = request.userAnswers.get(ConfirmationByEmailPage(request.subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      val formAction = Some(routes.ConfirmationByEmailController.onSubmitWithId(cisPath, flowId, mode))
+
+      Ok(view(preparedForm, mode, formAction))
+    }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val formAction = Some(routes.ConfirmationByEmailController.onSubmitWithId(cisPath, flowId, mode))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          value =>
+            for {
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage(request.subJourneyId), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(cisPath, flowId, ConfirmationByEmailPage, mode, updatedAnswers))
         )
     }
 }

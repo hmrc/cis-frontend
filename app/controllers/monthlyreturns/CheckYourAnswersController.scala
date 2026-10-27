@@ -18,9 +18,9 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
-import models.ReturnType
+import models.{CheckMode, ReturnType}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, CisPath}
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
@@ -35,6 +35,7 @@ import views.html.monthlyreturns.CheckYourAnswersView
 import utils.UserAnswerUtils.isJourneyComplete
 
 import java.time.YearMonth
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,6 +44,8 @@ class CheckYourAnswersController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   monthlyReturnService: MonthlyReturnService,
   submissionService: SubmissionService,
   requireCisId: CisIdRequiredAction,
@@ -161,5 +164,57 @@ class CheckYourAnswersController @Inject() (
         } else {
           block
         }
+    }
+
+  // Multi-tab: Display answers for the ID-scoped return journey.
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val userAnswers = request.userAnswers
+      val id          = request.subJourneyId
+
+      ReturnTypeSummary.returnType(userAnswers, id) match {
+        case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
+          val returnDetailsList = SummaryListViewModel(
+            rows = Seq(
+              ReturnTypeSummary.row(userAnswers, id),
+              DateConfirmNilPaymentsSummary.row(userAnswers, id),
+              PaymentsToSubcontractorsSummary.row,
+              SubmitInactivityRequestSummary.row(
+                userAnswers,
+                id,
+                routes.SubmitInactivityRequestController.onPageLoadWithId(cisPath, flowId, CheckMode)
+              )
+            ).flatten
+          )
+
+          val emailList = SummaryListViewModel(
+            rows = Seq(
+              ConfirmationByEmailSummary.row(
+                userAnswers,
+                id,
+                routes.ConfirmationByEmailController.onPageLoadWithId(cisPath, flowId, CheckMode)
+              ),
+              EnterYourEmailAddressSummary.row(
+                userAnswers,
+                id,
+                routes.EnterYourEmailAddressController.onPageLoadWithId(cisPath, flowId, CheckMode)
+              )
+            ).flatten
+          )
+
+          val formAction = Some(routes.CheckYourAnswersController.onSubmitWithId(cisPath, flowId))
+
+          Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
+
+        case _ =>
+          logger.error("[CheckYourAnswersController][onPageLoadWithId] - Missing or unsupported return type")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
+  // Multi-tab: Placeholder until ChRIS submission is implemented.
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+      NotImplemented("Multi-tab ChRIS submission is not implemented yet")
     }
 }

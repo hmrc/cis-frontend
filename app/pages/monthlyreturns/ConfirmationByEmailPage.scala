@@ -22,6 +22,19 @@ import play.api.libs.json.JsPath
 
 import scala.util.Try
 
+case class ConfirmationByEmailPage(id: String) extends QuestionPage[Boolean] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "confirmationByEmail"
+
+  override def cleanup(value: Option[Boolean], userAnswers: UserAnswers): Try[UserAnswers] =
+    value match {
+      case Some(false) | None => userAnswers.remove(EnterYourEmailAddressPage(id))
+      case _                  => super.cleanup(value, userAnswers)
+    }
+}
+
 case object ConfirmationByEmailPage extends QuestionPage[Boolean] {
 
   override def path: JsPath = JsPath \ toString

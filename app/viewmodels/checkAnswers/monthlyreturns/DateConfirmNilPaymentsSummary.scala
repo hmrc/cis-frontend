@@ -36,4 +36,16 @@ object DateConfirmNilPaymentsSummary {
         value = ValueViewModel(returnPeriodText)
       )
     }
+
+  // Multi-tab: Summary for the ID-scoped return journey.
+  def row(answers: UserAnswers, id: String)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(DateConfirmPaymentsPage(id)).map { answer =>
+
+      val returnPeriodText = answer.format(DateTimeFormats.dateTimeFormat()(messages.lang))
+
+      SummaryListRowViewModel(
+        key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
+        value = ValueViewModel(returnPeriodText)
+      )
+    }
 }

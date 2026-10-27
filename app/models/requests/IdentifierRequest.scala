@@ -29,9 +29,6 @@ case class IdentifierRequest[A](
 ) extends WrappedRequest[A](request) {
 
   def user: String =
-    if isAgent then
-      val ref  = agentReference getOrElse "-"
-      val code = agentCode getOrElse "-"
-      s"Agent <ref:$ref;code:$code>"
-    else s"Organisation <userId: $userId>"
+    if isAgent then "Agent"
+    else "Organisation"
 }

@@ -19,12 +19,14 @@ package navigation
 import models.*
 import models.ReturnType.*
 import models.amend.*
+import models.requests.CisPath
 import pages.*
 import pages.amend.*
 import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.mvc.Call
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -194,5 +196,96 @@ class Navigator @Inject() () extends Logging {
       case (None, _)                 =>
         logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ConfirmationByEmailPage not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  // Multi-tab: Navigate within a UUID-scoped monthly return journey
+  def nextPage(
+    cisPath: CisPath,
+    flowId: UUID,
+    page: Page,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call =
+    (page, mode) match {
+      case (DateConfirmPaymentsPage, NormalMode) =>
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController
+          .onPageLoadWithId(cisPath, flowId, NormalMode)
+
+      case (DateConfirmPaymentsPage, CheckMode) =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+
+      case (SubmitInactivityRequestPage, _) =>
+        navigatorFromSubmitInactivityRequestPage(cisPath, flowId, mode, userAnswers)
+
+      case (ConfirmationByEmailPage, _) =>
+        navigatorFromConfirmationByEmailPage(cisPath, flowId, mode, userAnswers)
+
+      case (EnterYourEmailAddressPage, _) =>
+        navigatorFromEnterYourEmailAddressPage(cisPath, flowId, mode)
+
+      case (DeclarationPage, _) =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+
+      case _ =>
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromSubmitInactivityRequestPage(
+    cisPath: CisPath,
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+
+    val id = JourneyScope.subJourneyId(cisPath, flowId)
+
+    (userAnswers.get(SubmitInactivityRequestPage(id)), mode) match {
+      case (Some(true), NormalMode)  =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController
+          .onPageLoadWithId(cisPath, flowId, NormalMode)
+      case (Some(true), CheckMode)   =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController
+          .onPageLoadWithId(cisPath, flowId, CheckMode)
+      case (Some(false), NormalMode) =>
+        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(cisPath, flowId, NormalMode)
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromSubmitInactivityRequestPage] - Scoped answer not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromConfirmationByEmailPage(
+    cisPath: CisPath,
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = JourneyScope.subJourneyId(cisPath, flowId)
+
+    (userAnswers.get(ConfirmationByEmailPage(id)), mode) match {
+      case (Some(true), mode)        =>
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(cisPath, flowId, mode)
+      case (Some(false), NormalMode) =>
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(cisPath, flowId)
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ID-scoped ConfirmationByEmailPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromEnterYourEmailAddressPage(
+    cisPath: CisPath,
+    flowId: UUID,
+    mode: Mode
+  ): Call =
+    mode match {
+      case NormalMode =>
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(cisPath, flowId)
+      case CheckMode  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
     }
 }

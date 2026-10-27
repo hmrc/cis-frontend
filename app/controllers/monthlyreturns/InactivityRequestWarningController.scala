@@ -17,7 +17,8 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.{CheckMode, Mode, NormalMode}
+import models.requests.CisPath
+import models.{CheckMode, JourneyScope, Mode, NormalMode}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -25,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.InactivityRequestWarningView
 
+import java.util.UUID
 import javax.inject.Inject
 
 class InactivityRequestWarningController @Inject() (
@@ -33,6 +35,8 @@ class InactivityRequestWarningController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
@@ -55,4 +59,29 @@ class InactivityRequestWarningController @Inject() (
         Ok(view(nextUrl))
       }
   }
+
+  // Multi-tab: UUID-scoped inactivity request warning
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+      val id = JourneyScope.subJourneyId(cisPath, flowId)
+
+      val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage(id)).contains(true)
+
+      if (!inactivityRequested) {
+        logger.error(
+          s"[InactivityRequestWarningController][onPageLoadWithId] - SubmitInactivityRequestPage not true, mode=$mode"
+        )
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      } else {
+        val nextUrl = mode match {
+          case CheckMode  =>
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId).url
+          case NormalMode =>
+            controllers.monthlyreturns.routes.ConfirmationByEmailController
+              .onPageLoadWithId(cisPath, flowId, NormalMode)
+              .url
+        }
+        Ok(view(nextUrl))
+      }
+    }
 }
