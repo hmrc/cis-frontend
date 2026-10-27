@@ -29,7 +29,7 @@
 
 @layout(pageTitle = title(form, messages("whatDoYouWantToAmendNil.title"))) {
 
-    @formHelper(action = controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmit(), Symbol("autoComplete") -> "off") {
+    @formHelper(action = formAction.getOrElse(controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmit()), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> "value_0")))
