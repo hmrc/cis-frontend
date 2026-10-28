@@ -148,7 +148,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
   def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val formAction = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(cisPath, flowId))
+      val formAction                 = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(cisPath, flowId))
 
       form
         .bindFromRequest()

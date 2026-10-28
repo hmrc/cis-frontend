@@ -454,7 +454,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       "must start a standard amendment, set the return type and redirect when AddPaymentOrSubcontractorDetails is submitted" in {
         val flowId       = UUID.randomUUID()
-        val id = scopedId(flowId)
+        val id           = scopedId(flowId)
         val amendService = mock[AmendMonthlyReturnService]
 
         when(amendService.startStandardAmendment(any[UserAnswers]())(any()))
@@ -509,7 +509,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       "must set the nil return type, update the monthly return and redirect when AmendNilReturn is submitted" in {
         val flowId               = UUID.randomUUID()
-        val id = scopedId(flowId)
+        val id                   = scopedId(flowId)
         val monthlyReturnService = mock[MonthlyReturnService]
 
         when(monthlyReturnService.updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any()))
@@ -529,7 +529,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
           val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
           verify(repository, atLeastOnce()).set(captor.capture())
-          val saved = captor.getAllValues.asScala.toList.last
+          val saved  = captor.getAllValues.asScala.toList.last
 
           saved.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedNilReturn)
           saved.hasSubJourney(id) mustBe true
