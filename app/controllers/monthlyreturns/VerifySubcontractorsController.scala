@@ -62,16 +62,15 @@ class VerifySubcontractorsController @Inject() (
   }
 
   def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) {
-    implicit request =>
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
       val preparedForm = request.userAnswers.get(VerifySubcontractorsPage(request.subJourneyId)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
-      val formAction = Some(routes.VerifySubcontractorsPage.onSubmitWithId(cisPath, flowId, mode))
+      val formAction   = Some(routes.VerifySubcontractorsPage.onSubmitWithId(cisPath, flowId, mode))
 
       Ok(view(preparedForm, mode, formAction))
-  }
+    }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
@@ -99,11 +98,15 @@ class VerifySubcontractorsController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
           value =>
             for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(request.subJourneyId), value))
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(request.subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield value match {
               case true  => Redirect(appConfig.verifySubcontractorsUrl) // TODO DTR-9474: Update to use future id scope
-              case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers)) // TODO DTR-9474: Update to use future id scope
+              case false =>
+                Redirect(
+                  navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers)
+                ) // TODO DTR-9474: Update to use future id scope
             }
         )
     }
