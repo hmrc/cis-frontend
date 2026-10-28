@@ -208,7 +208,7 @@ class SelectSubcontractorsController @Inject() (
                   filledForm,
                   model.subcontractors,
                   appConfig.yourSubcontractorsUrl,
-                  formActions,
+                  formAction,
                   preSelectedAction,
                   noneSelectedAction
                 )
@@ -280,9 +280,9 @@ class SelectSubcontractorsController @Inject() (
                           _                   <- sessionRepository.set(withOrigin)
                         } yield
                           if (verificationRequired) {
-                            Redirect(routes.VerifySubcontractorsController.onPageLoad(NormalMode))
+                            Redirect(routes.VerifySubcontractorsController.onPageLoadWithId(cisPath, flowId, NormalMode))
                           } else {
-                            Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
+                            Redirect(routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)) // TODO DTR-9474: Update to use future scoped id
                           }
                       }
                       .recover { error =>
@@ -290,7 +290,7 @@ class SelectSubcontractorsController @Inject() (
                           s"[SelectSubcontractorsController] Failed storing/syncing selected subcontractors: ${error.toString}",
                           error
                         )
-                        Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                        Redirect(controllers.routes.SystemErrorController.onPageLoad()) // TODO DTR-9474: Do we need to update to use scoped id?
                       }
                   }
                 )
@@ -298,7 +298,7 @@ class SelectSubcontractorsController @Inject() (
         }
         .getOrElse {
           logger.error("[SelectSubcontractorsController][onSubmit] - CisIdPage or DateConfirmPaymentsPage missing")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())) // TODO DTR-9474: Do we need to update to use scoped id?
         }
     }
 }
