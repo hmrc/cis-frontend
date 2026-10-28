@@ -144,9 +144,13 @@ class ConfirmAmendmentController @Inject() (
             version = 0
           )
 
+          // A repeat POST (double click, back then resubmit) must not amend the same return again
+          val alreadyAmended = request.userAnswers.flatMap(_.get(ConfirmAmendmentPage)).contains(true)
+
           (
             for {
-              _             <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
+              _             <- if (alreadyAmended) Future.unit
+                               else amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
               updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
               _             <- sessionRepository.set(updatedAnswers)
             } yield amendmentDetails.originalReturnType match {

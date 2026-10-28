@@ -16,12 +16,12 @@
 
 package repositories
 
-import com.google.inject.Inject
+import com.google.inject.{Inject, Singleton}
 import com.mongodb.client.model.*
 import models.monthlyreturns.CisTaxpayer
 import org.mongodb.scala.model.Filters
 import play.api.Configuration
-import repositories.CisTaxpayerCache.*
+import repositories.CisTaxpayerCache.{EMP_REF, Entity, ID, LAST_USED, entityFormat}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -30,6 +30,7 @@ import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class CisTaxpayerCache @Inject() (
   clock: Clock,
   config: Configuration,

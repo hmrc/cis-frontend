@@ -84,7 +84,13 @@ final class SchemeActionImpl @Inject() (
         cisPath match
           case CisOrg =>
             cisTaxpayerService.findForOrganisation
-              .map(cisTaxpayer => Right(new SchemeRequest(request, cisTaxpayer)))
+              .map[Either[Result, SchemeRequest[B]]] { cisTaxpayer =>
+                Right(new SchemeRequest(request, cisTaxpayer))
+              }
+              .recover { case ex =>
+                logger.error("Failed to find scheme for organisation:", ex)
+                Left(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
 
           case CisId(cisId) =>
             logger.info(s"${request.user} tried to access ${request.uri}; redirect to Org URI.")
