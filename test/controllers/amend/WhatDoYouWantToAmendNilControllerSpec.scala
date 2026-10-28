@@ -366,7 +366,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       "must populate the view when the question has previously been answered" in {
         val flowId  = UUID.randomUUID()
         val answers = withSubJourney(completeUserAnswers, flowId)
-          .set(WhatDoYouWantToAmendNilPage, AmendNilReturn)
+          .set(WhatDoYouWantToAmendNilPage(scopedId(flowId)), AmendNilReturn)
           .success
           .value
 
@@ -439,9 +439,14 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         )
 
         running(application) {
-          val result = route(application, post(flowId, "invalid value")).value
+          val request = post(flowId, "invalid value")
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[WhatDoYouWantToAmendNilView]
+          val action  = Some(controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(CisOrg, flowId))
 
           status(result) mustEqual BAD_REQUEST
+          contentAsString(result) mustEqual
+            view(form.bind(Map("value" -> "invalid value")), action)(request, messages(application)).toString
           verifyNoInteractions(amendService, monthlyReturnService)
           verify(repository, never()).set(any())
         }
@@ -449,6 +454,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       "must start a standard amendment, set the return type and redirect when AddPaymentOrSubcontractorDetails is submitted" in {
         val flowId       = UUID.randomUUID()
+        val id = scopedId(flowId)
         val amendService = mock[AmendMonthlyReturnService]
 
         when(amendService.startStandardAmendment(any[UserAnswers]())(any()))
@@ -469,11 +475,14 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           verify(repository, times(2)).set(captor.capture())
           val saved  = captor.getAllValues.asScala.toList
 
-          saved.head.get(WhatDoYouWantToAmendNilPage) mustBe Some(
+          saved.head.get(WhatDoYouWantToAmendNilPage(id)) mustBe Some(
             WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails
           )
-          saved.last.get(ReturnTypePage) mustBe Some(MonthlyAmendedStandardReturn)
-          saved.last.hasSubJourney(scopedId(flowId)) mustBe true
+          saved.last.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedStandardReturn)
+          saved.last.hasSubJourney(id) mustBe true
+
+          saved.last.get(WhatDoYouWantToAmendNilPage) mustBe None
+          saved.last.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
 
           verify(amendService).startStandardAmendment(any[UserAnswers]())(any())
         }
@@ -500,6 +509,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       "must set the nil return type, update the monthly return and redirect when AmendNilReturn is submitted" in {
         val flowId               = UUID.randomUUID()
+        val id = scopedId(flowId)
         val monthlyReturnService = mock[MonthlyReturnService]
 
         when(monthlyReturnService.updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any()))
@@ -519,10 +529,10 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
           val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
           verify(repository, atLeastOnce()).set(captor.capture())
-          val saved  = captor.getAllValues.asScala.toList.last
+          val saved = captor.getAllValues.asScala.toList.last
 
-          saved.get(ReturnTypePage) mustBe Some(MonthlyAmendedNilReturn)
-          saved.hasSubJourney(scopedId(flowId)) mustBe true
+          saved.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedNilReturn)
+          saved.hasSubJourney(id) mustBe true
 
           verify(monthlyReturnService).updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any())
         }

@@ -135,7 +135,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
 
   def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage) match {
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage(request.subJourneyId)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
@@ -148,14 +148,15 @@ class WhatDoYouWantToAmendNilController @Inject() (
   def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      val formAction = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(cisPath, flowId))
 
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors))),
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
           value =>
             for {
-              ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage, value))
+              ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage(request.subJourneyId), value))
               _      <- sessionRepository.set(ua1)
               result <-
                 value match {
@@ -173,7 +174,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                         case Right(_)    =>
                           for {
                             ua2 <- Future.fromTry(
-                                     ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn)
+                                     ua1.set(ReturnTypePage(request.subJourneyId), MonthlyAmendedStandardReturn)
                                    )
                             _   <- sessionRepository.set(ua2)
                           } yield Redirect(
@@ -189,7 +190,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                     for {
                       ua3           <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
                       ua4           <- Future.fromTry(
-                                         ua3.set(ReturnTypePage, MonthlyAmendedNilReturn)
+                                         ua3.set(ReturnTypePage(request.subJourneyId), MonthlyAmendedNilReturn)
                                        )
                       _             <- sessionRepository.set(ua4)
                       updateRequest <- UpdateMonthlyReturnRequest
