@@ -33,31 +33,36 @@ case class SelectedSubcontractorNamePage(index: Int, id: Option[String] = None) 
   override def toString: String = "name"
 }
 
-case class SelectedSubcontractorPaymentsMadePage(index: Int, id: Option[String] = None) extends QuestionPage[BigDecimal] {
+case class SelectedSubcontractorPaymentsMadePage(index: Int, id: Option[String] = None)
+    extends QuestionPage[BigDecimal] {
   override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
   override def toString: String = "totalPaymentsMade"
 }
 
-case class SelectedSubcontractorMaterialCostsPage(index: Int, id: Option[String] = None) extends QuestionPage[BigDecimal] {
+case class SelectedSubcontractorMaterialCostsPage(index: Int, id: Option[String] = None)
+    extends QuestionPage[BigDecimal] {
   override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
   override def toString: String = "costOfMaterials"
 }
 
-case class SelectedSubcontractorTaxDeductedPage(index: Int, id: Option[String] = None) extends QuestionPage[BigDecimal] {
+case class SelectedSubcontractorTaxDeductedPage(index: Int, id: Option[String] = None)
+    extends QuestionPage[BigDecimal] {
   override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
   override def toString: String = "totalTaxDeducted"
 }
 
-case class SelectedSubcontractorPage(index: Int, id: Option[String] = None) extends QuestionPage[SelectedSubcontractor] {
-  override def path: JsPath = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString
+case class SelectedSubcontractorPage(index: Int, id: Option[String] = None)
+    extends QuestionPage[SelectedSubcontractor] {
+  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString
   override def toString: String = s"subcontractor-$index"
 }
 
 object SelectedSubcontractorPage {
-  def all(id: Option[String] = None): IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
-    override def path: JsPath     = basePath(id) \ toString
-    override def toString: String = "subcontractors"
-  }
+  def all(id: Option[String] = None): IndexedQuestionPage[SelectedSubcontractor] =
+    new IndexedQuestionPage[SelectedSubcontractor] {
+      override def path: JsPath     = basePath(id) \ toString
+      override def toString: String = "subcontractors"
+    }
 
   def basePath(id: Option[String]): JsPath =
     id match {

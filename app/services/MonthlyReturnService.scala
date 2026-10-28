@@ -188,10 +188,10 @@ class MonthlyReturnService @Inject() (
     cisConnector.deleteMonthlyReturnItem(payload)
 
   def storeAndSyncSelectedSubcontractors(
-                                          ua: UserAnswers,
-                                          selected: Seq[SelectSubcontractorsViewModel],
-                                          originalSubcontractorCount: Int
-                                        )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    ua: UserAnswers,
+    selected: Seq[SelectSubcontractorsViewModel],
+    originalSubcontractorCount: Int
+  )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val selectedIds: Seq[Long]         = selected.map(_.id)
     val existingSelectedSubcontractors =
       ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)

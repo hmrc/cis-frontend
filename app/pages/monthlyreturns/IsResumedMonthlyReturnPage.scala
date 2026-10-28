@@ -20,11 +20,11 @@ import pages.QuestionPage
 import play.api.libs.json.JsPath
 
 case class IsResumedMonthlyReturnPage(id: String) extends QuestionPage[Boolean] {
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath     = JsPath \ id \ toString
   override def toString: String = "isResumedMonthlyReturn"
 }
 
 case object IsResumedMonthlyReturnPage extends QuestionPage[Boolean] {
-  override def path: JsPath = JsPath \ toString
+  override def path: JsPath     = JsPath \ toString
   override def toString: String = "isResumedMonthlyReturn"
 }

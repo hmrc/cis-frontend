@@ -197,11 +197,22 @@ class SelectSubcontractorsController @Inject() (
                   form
                 }
 
-              val formAction   = Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId))
-              val preSelectedAction   = Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true)))
-              val noneSelectedAction   = Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
+              val formAction         = Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId))
+              val preSelectedAction  =
+                Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true)))
+              val noneSelectedAction =
+                Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
 
-              Ok(view(filledForm, model.subcontractors, appConfig.yourSubcontractorsUrl, formActions, preSelectedAction, noneSelectedAction))
+              Ok(
+                view(
+                  filledForm,
+                  model.subcontractors,
+                  appConfig.yourSubcontractorsUrl,
+                  formActions,
+                  preSelectedAction,
+                  noneSelectedAction
+                )
+              )
             }
         }
         .getOrElse {
@@ -212,7 +223,7 @@ class SelectSubcontractorsController @Inject() (
 
   def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val subJourneyId = request.subJourneyId
+      val subJourneyId    = request.subJourneyId
       val requiredAnswers = for {
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)
@@ -248,10 +259,12 @@ class SelectSubcontractorsController @Inject() (
                             .exists(_.verificationRequired)
 
                         for {
-                          withoutDraft        <- Future.fromTry(updatedAnswers.remove(FinalValidationDraftIdPage(subJourneyId)))
-                          withoutContinuation <- Future.fromTry(
-                                                   withoutDraft.remove(MonthlyFinalValidationContinuationPage(subJourneyId))
-                                                 )
+                          withoutDraft        <-
+                            Future.fromTry(updatedAnswers.remove(FinalValidationDraftIdPage(subJourneyId)))
+                          withoutContinuation <-
+                            Future.fromTry(
+                              withoutDraft.remove(MonthlyFinalValidationContinuationPage(subJourneyId))
+                            )
                           withSource          <- Future.fromTry(
                                                    withoutContinuation.set(
                                                      MonthlyFinalValidationSourcePage(subJourneyId),

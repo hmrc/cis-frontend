@@ -20,11 +20,11 @@ import pages.QuestionPage
 import play.api.libs.json.JsPath
 
 case class OriginalSubcontractorCountPage(id: String) extends QuestionPage[Int] {
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath     = JsPath \ id \ toString
   override def toString: String = "originalSubcontractorCount"
 }
 
 case object OriginalSubcontractorCountPage extends QuestionPage[Int] {
-  override def path: JsPath = JsPath \ toString
+  override def path: JsPath     = JsPath \ toString
   override def toString: String = "originalSubcontractorCount"
 }
