@@ -188,10 +188,10 @@ class MonthlyReturnService @Inject() (
     cisConnector.deleteMonthlyReturnItem(payload)
 
   def storeAndSyncSelectedSubcontractors(
-    ua: UserAnswers,
-    selected: Seq[SelectSubcontractorsViewModel],
-    originalSubcontractorCount: Int
-  )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+                                          ua: UserAnswers,
+                                          selected: Seq[SelectSubcontractorsViewModel],
+                                          originalSubcontractorCount: Int
+                                        )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val selectedIds: Seq[Long]         = selected.map(_.id)
     val existingSelectedSubcontractors =
       ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
@@ -215,6 +215,48 @@ class MonthlyReturnService @Inject() (
         }
         .flatMap(_.remove(VerifySubcontractorsPage))
         .flatMap(_.set(OriginalSubcontractorCountPage, originalSubcontractorCount))
+
+    Future
+      .fromTry(updatedTry)
+      .flatMap { updatedUa =>
+        sessionRepository.set(updatedUa).flatMap {
+          case false =>
+            Future.failed(new RuntimeException("Failed to persist selected subcontractors in session"))
+          case true  =>
+            syncMonthlyReturnItems(updatedUa, selectedIds).map(_ => updatedUa)
+        }
+      }
+  }
+
+  def storeAndSyncSelectedSubcontractors(
+    ua: UserAnswers,
+    selected: Seq[SelectSubcontractorsViewModel],
+    originalSubcontractorCount: Int,
+    id: String
+  )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
+    val selectedIds: Seq[Long]         = selected.map(_.id)
+    val existingSelectedSubcontractors =
+      ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
+    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all(id))
+    val updatedTry: Try[UserAnswers]   =
+      selected.zipWithIndex
+        .foldLeft(cleared) { case (uaTry, (vm, index)) =>
+          uaTry.flatMap { answers =>
+            val existing = existingSelectedSubcontractors.values.find(_.id == vm.id)
+            answers.set(
+              SelectedSubcontractorPage(index + 1, id),
+              SelectedSubcontractor(
+                vm.id,
+                vm.name,
+                existing.flatMap(_.totalPaymentsMade),
+                existing.flatMap(_.costOfMaterials),
+                existing.flatMap(_.totalTaxDeducted)
+              )
+            )
+          }
+        }
+        .flatMap(_.remove(VerifySubcontractorsPage(id)))
+        .flatMap(_.set(OriginalSubcontractorCountPage, originalSubcontractorCount(id)))
 
     Future
       .fromTry(updatedTry)

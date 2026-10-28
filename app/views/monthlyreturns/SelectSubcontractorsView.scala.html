@@ -35,7 +35,14 @@
     formHelper: FormWithCSRF
 )
 
-@(form: Form[SelectSubcontractorsFormData], subcontractors: Seq[SelectSubcontractorsViewModel], updateYourListUrl: String)(implicit request: Request[_], messages: Messages)
+@(
+    form: Form[SelectSubcontractorsFormData],
+    subcontractors: Seq[SelectSubcontractorsViewModel],
+    updateYourListUrl: String,
+    formAction: Option[Call] = None,
+    preSelectedAction: Option[Call] = None,
+    noneSelectedAction: Option[Call] = None
+)(implicit request: Request[_], messages: Messages)
 
 @layout(
     pageTitle = title(form, messages("monthlyreturns.selectSubcontractors.title"))
@@ -44,7 +51,10 @@
     @h1(messages("monthlyreturns.selectSubcontractors.heading"))
     @paragraph(messages("monthlyreturns.selectSubcontractors.p1"))
 
-    @formHelper(action = controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()) {
+    @formHelper(
+        action = formAction.getOrElse(
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()
+        ) {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractors.headOption.map(s => Map("subcontractorsToInclude" -> s"subcontractor-${s.id}")).getOrElse(Map.empty)))
@@ -60,10 +70,14 @@
         @if(subcontractors.length > 0) {
             @paragraphWithLinks(
                 linkTextUrlOne = "monthlyreturns.selectSubcontractors.selectAll.link",
-                linkUrlOne = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url,
+                linkUrlOne = preSelectedAction.getOrElse(
+                    controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url
+                ),
                 suffixTextKey = "|",
                 linkTextUrlTwo = "monthlyreturns.selectSubcontractors.deselectAll.link",
-                linkUrlTwo = controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
+                linkUrlTwo = noneSelectedAction.getOrElse(
+                    controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
+                )
             )
         }
 
