@@ -157,8 +157,17 @@ GET        /monthly-return/change-subcontractor-details-added           controll
 POST       /monthly-return/change-subcontractor-details-added           controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
 GET        /monthly-return/subcontractor-details-added/cancel           controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendment()
 
+GET        /monthly-return/subcontractor-details-added/:cisPath/:flowId             controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/subcontractor-details-added/:cisPath/:flowId             controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added/:cisPath/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-subcontractor-details-added/:cisPath/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
+GET        /monthly-return/subcontractor-details-added/cancel/:cisPath/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendment(cisPath: CisPath, flowId: UUID,)
+
 GET        /monthly-return/subcontractor-details-added/final-validation-complete          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = NormalMode)
 GET        /monthly-return/change-subcontractor-details-added/final-validation-complete   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = CheckMode)
+
+GET        /monthly-return/subcontractor-details-added/final-validation-complete/:cisPath/:flowId          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added/final-validation-complete/:cisPath/:flowId   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/payment-details-confirmation                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/payment-details-confirmation                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)

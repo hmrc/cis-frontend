@@ -20,10 +20,12 @@ import models.amend.AmendmentDetails
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object AmendmentDetailsPage extends QuestionPage[AmendmentDetails] {
-
-  override def path: JsPath = JsPath \ toString
-
+case class AmendmentDetailsPage(id: String) extends QuestionPage[AmendmentDetails] {
+  override def path: JsPath     = JsPath \ id \ toString
   override def toString: String = "amendmentDetails"
+}
 
+case object AmendmentDetailsPage extends QuestionPage[AmendmentDetails] {
+  override def path: JsPath     = JsPath \ toString
+  override def toString: String = "amendmentDetails"
 }

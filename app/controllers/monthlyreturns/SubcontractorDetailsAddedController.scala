@@ -18,6 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
+import models.requests.CisPath
 import models.ReturnType.MonthlyStandardReturn
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
@@ -37,6 +38,7 @@ import viewmodels.checkAnswers.monthlyreturns.SubcontractorDetailsAddedBuilder
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
@@ -110,6 +112,65 @@ class SubcontractorDetailsAddedController @Inject() (
       }
     }
 
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val ua           = request.userAnswers
+      val cisId        = request.cisId
+      val subJourneyId = request.subJourneyId
+
+      val requiredAnswers = for {
+        taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
+        returnType <- ua.get(ReturnTypePage(subJourneyId))
+      } yield (taxDate.getMonthValue, taxDate.getYear, returnType.amendmentFlag == "Y")
+
+      requiredAnswers match {
+        case Some((month, year, isAmendment)) =>
+          monthlyReturnService.isEditable(cisId, month, year, isAmendment).flatMap {
+            case true =>
+              if (ua.get(FinalValidationDraftIdPage(subJourneyId)).isDefined) {
+                Future.successful(
+                  Redirect(
+                    controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
+                  ) // TODO DTR-9474: Update to use future id scope
+                )
+              } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
+                Future.successful(
+                  renderPageWithId(cisPath, flowId, mode, ua)
+                ) // TODO DTR-9474: Update to use future id scope
+              } else {
+                ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
+                  case Some(source) if sourceMode(source).contains(mode) =>
+                    runFinalValidationWithId(cisPath, flowId, cisId, month, year, mode, ua)
+
+                  case _ =>
+                    logger.error(
+                      "[SubcontractorDetailsAddedController][onPageLoad] - Missing or invalid MonthlyFinalValidationSourcePage"
+                    )
+                    Future.successful(
+                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                    ) // TODO DTR-9474: Do we need to update to use id scope?
+                }
+              }
+
+            case false =>
+              logger.error(
+                s"[SubcontractorDetailsAddedController][onPageLoad] - isEditable returned false, cisId=$cisId"
+              )
+              Future.successful(
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              ) // TODO DTR-9474: Do we need to update to use id scope?
+          }
+
+        case None =>
+          logger.error(
+            "[SubcontractorDetailsAddedController][onPageLoad] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          ) // TODO DTR-9474: Do we need to update to use id scope?
+      }
+    }
+
   def onPageLoadAfterFinalValidation(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       val ua = request.userAnswers
@@ -146,6 +207,52 @@ class SubcontractorDetailsAddedController @Inject() (
             "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - CisIdPage or DateConfirmPaymentsPage missing"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
+  def onPageLoadAfterFinalValidationWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val ua           = request.userAnswers
+      val cisId        = request.cisId
+      val subJourneyId = request.subJourneyId
+
+      val requiredAnswers = for {
+        taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
+        returnType <- ua.get(ReturnTypePage(subJourneyId))
+      } yield (taxDate.getMonthValue, taxDate.getYear, returnType.amendmentFlag == "Y")
+
+      requiredAnswers match {
+        case Some((month, year, isAmendment)) =>
+          monthlyReturnService.isEditable(cisId, month, year, isAmendment).map {
+            case true
+                if ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString) &&
+                  ua.get(FinalValidationDraftIdPage(subJourneyId)).isEmpty =>
+              renderPageWithId(cisPath, flowId, mode, ua)
+
+            case true =>
+              logger.error(
+                "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - Final Validation continuation missing or invalid"
+              )
+              Redirect(
+                controllers.routes.JourneyRecoveryController.onPageLoad()
+              ) // TODO DTR-9474: Do we need to update to use id scope?
+
+            case false =>
+              logger.error(
+                s"[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - isEditable returned false, cisId=$cisId"
+              )
+              Redirect(
+                controllers.routes.JourneyRecoveryController.onPageLoad()
+              ) // TODO DTR-9474: Do we need to update to use id scope?
+          }
+
+        case None =>
+          logger.error(
+            "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          ) // TODO DTR-9474: Do we need to update to use id scope?
       }
     }
 
@@ -261,9 +368,175 @@ class SubcontractorDetailsAddedController @Inject() (
       }
     }
 
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val subJourneyId = request.subJourneyId
+
+      val hasPassedFinalValidation =
+        request.userAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString) &&
+          request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)).isEmpty
+
+      if (request.userAnswers.get(ReturnTypePage(subJourneyId)).isEmpty) {
+        logger.error("[SubcontractorDetailsAddedController][onSubmit] - ReturnTypePage missing")
+        Future.successful(
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        ) // TODO DTR-9474: Do we need to update to use id scope?
+      } else if (!hasPassedFinalValidation) {
+        Future.successful(
+          Redirect(
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+              .onPageLoadWithId(cisPath, flowId, mode)
+          )
+        )
+      } else {
+        val isAmendmentOnSubmit = request.userAnswers.get(ReturnTypePage(subJourneyId)).exists(_.amendmentFlag == "Y")
+        val formAction          = SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
+        val cancelAction        = controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onCancelAmendmentWithId(cisPath, flowId)
+          .url
+
+        SubcontractorDetailsAddedBuilder.build(request.userAnswers) match {
+          case None if isAmendmentOnSubmit =>
+            Future.successful(
+              Redirect(
+                controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+              ) // TODO DTR-9474: Update with future id scope
+            )
+          case None                        =>
+            logger.error("[SubcontractorDetailsAddedController][onSubmit] - view model build returned None")
+            Future.successful(
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            ) // TODO DTR-9474: Do we need to update to use id scope?
+
+          case Some(viewModel) =>
+            if (!viewModel.showYesNo) {
+              if (viewModel.hasIncomplete) {
+                Future.successful(
+                  BadRequest(
+                    view(
+                      form
+                        .fill(false)
+                        .withError("summaryList", "monthlyreturns.subcontractorDetailsAdded.error.incomplete"),
+                      mode,
+                      viewModel,
+                      formAction,
+                      cancelAction
+                    )
+                  )
+                )
+              } else {
+                val updatedUa =
+                  request.userAnswers
+                    .set(AllSubcontractorDetailsAdded(subJourneyId), true)
+                    .getOrElse(request.userAnswers)
+                sessionRepository.set(updatedUa).map { _ =>
+                  Redirect(
+                    controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad()
+                  ) // TODO DTR-9474: Update with future id scope
+                }
+              }
+            } else {
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors =>
+                    Future.successful(
+                      BadRequest(
+                        view(
+                          formWithErrors,
+                          mode,
+                          viewModel,
+                          formAction,
+                          cancelAction
+                        )
+                      )
+                    ),
+                  isAddingMoreSubcontractors =>
+                    val allSubcontractorDetailsAdded = !isAddingMoreSubcontractors
+
+                    val updatedUa =
+                      request.userAnswers
+                        .set(AllSubcontractorDetailsAdded, allSubcontractorDetailsAdded)
+                        .flatMap { answers =>
+                          if (isAddingMoreSubcontractors) {
+                            answers.remove(MonthlyFinalValidationContinuationPage(subJourneyId))
+                          } else {
+                            Success(answers)
+                          }
+                        }
+                        .getOrElse(request.userAnswers)
+
+                    sessionRepository.set(updatedUa).map { _ =>
+                      if (allSubcontractorDetailsAdded && viewModel.hasIncomplete) {
+                        val withError =
+                          form
+                            .fill(isAddingMoreSubcontractors)
+                            .withError(
+                              "summaryList",
+                              "monthlyreturns.subcontractorDetailsAdded.error.incomplete"
+                            )
+                        BadRequest(
+                          view(
+                            withError,
+                            mode,
+                            viewModel,
+                            formAction,
+                            cancelAction
+                          )
+                        )
+                      } else if (allSubcontractorDetailsAdded) {
+                        Redirect(
+                          controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad()
+                        ) // TODO DTR-9474: Update with future id scope
+                      } else {
+                        (
+                          updatedUa.get(ReturnTypePage(subJourneyId)),
+                          updatedUa.get(IsResumedMonthlyReturnPage(subJourneyId))
+                        ) match {
+                          case (Some(MonthlyStandardReturn), Some(false)) =>
+                            Redirect(
+                              controllers.monthlyreturns.routes.SelectSubcontractorsController
+                                .onPageLoadWithId(cisPath, flowId, None)
+                            )
+
+                          case (Some(MonthlyStandardReturn), Some(true)) =>
+                            Redirect(
+                              controllers.amend.routes.WhichSubcontractorsToAddController
+                                .onPageLoad(mode) // TODO DTR-9474: Update with future id scope
+                            )
+
+                          case (Some(returnType), _) if returnType.amendmentFlag == "Y" =>
+                            Redirect(
+                              controllers.amend.routes.WhichSubcontractorsToAddController
+                                .onPageLoad(mode) // TODO DTR-9474: Update with future id scope
+                            )
+
+                          case _ =>
+                            logger.error(
+                              "[SubcontractorDetailsAddedController][onSubmit] - Missing or invalid monthly return journey origin"
+                            )
+                            Redirect(
+                              controllers.routes.JourneyRecoveryController.onPageLoad()
+                            ) // TODO DTR-9474: Do we need to update to use id scope?
+                        }
+                      }
+                    }
+                )
+            }
+        }
+      }
+    }
+
   def onCancelAmendment(): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad())
+    }
+
+  def onCancelAmendmentWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+      Redirect(
+        controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad()
+      ) // TODO DTR-9474: Update with future id scope
     }
 
   private def runFinalValidation(
@@ -311,6 +584,61 @@ class SubcontractorDetailsAddedController @Inject() (
       }
   }
 
+  private def runFinalValidationWithId(
+    cisPath: CisPath,
+    flowId: UUID,
+    cisId: String,
+    month: Int,
+    year: Int,
+    mode: Mode,
+    ua: UserAnswers
+  )(implicit request: Request[?]): Future[Result] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
+      request,
+      request.session
+    ) // TODO DTR-9474: Update with future id scope
+
+    subcontractorService
+      .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua) // TODO DTR-9474: Update with future id scope
+      .flatMap { selectedFullSubcontractors =>
+        val validation = finalValidationService.validate(subcontractors = selectedFullSubcontractors)
+        logger.info(
+          s"[SubcontractorDetailsAddedController][runFinalValidationWithId] " +
+            s"selectedCount=${selectedFullSubcontractors.size}, " +
+            s"hasErrors=${validation.hasErrors}"
+        )
+
+        if (validation.hasErrors) {
+          for {
+            createRequest <- Future.fromTry(
+                               finalValidationDraftRequestBuilder.build( // TODO DTR-9474: Update with future id scope
+                                 instanceId = cisId,
+                                 selectedSubcontractors = selectedFullSubcontractors,
+                                 validation = validation
+                               )
+                             )
+            draftId       <- finalValidationDraftService.create(createRequest)
+            withDraftId   <- Future.fromTry(ua.set(FinalValidationDraftIdPage, draftId))
+            _             <- sessionRepository.set(withDraftId)
+          } yield Redirect(
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
+          ) // TODO DTR-9474: Update with future id scope
+        } else {
+          for {
+            withContinuation <-
+              Future.fromTry(ua.set(MonthlyFinalValidationContinuationPage(request.subJourneyId), mode.toString))
+            _                <- sessionRepository.set(withContinuation)
+          } yield renderPageWithId(cisPath, flowId, mode, withContinuation)
+        }
+      }
+      .recover { case ex =>
+        logger.error(s"[SubcontractorDetailsAddedController] Final validation failed: ${ex.getMessage}", ex)
+        Redirect(
+          controllers.routes.SystemErrorController.onPageLoad()
+        ) // TODO DTR-9474: Do we need to update to use id scope?
+      }
+  }
+
   private def renderPage(
     mode: Mode,
     ua: UserAnswers
@@ -340,6 +668,56 @@ class SubcontractorDetailsAddedController @Inject() (
           case None =>
             logger.error("[SubcontractorDetailsAddedController][renderPage] - view model build returned None")
             Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
+    }
+
+  private def renderPageWithId(
+    cisPath: CisPath,
+    flowId: UUID,
+    mode: Mode,
+    ua: UserAnswers
+  )(implicit request: Request[?]): Result =
+    ua.get(ReturnTypePage(request.subJourneyId)) match {
+
+      case None =>
+        logger.error("[SubcontractorDetailsAddedController][renderPageWithId] - ReturnTypePage missing")
+        Redirect(
+          controllers.routes.JourneyRecoveryController.onPageLoad()
+        ) // TODO DTR-9474: Do we need to update to use id scope?
+
+      case Some(returnType) =>
+        val preparedForm =
+          ua.get(AllSubcontractorDetailsAdded(request.subJourneyId))
+            .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
+        val formAction   = SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
+        val cancelAction = controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onCancelAmendmentWithId(cisPath, flowId)
+          .url
+
+        SubcontractorDetailsAddedBuilder.build(ua) match {
+
+          case Some(viewModel) =>
+            Ok(
+              view(
+                preparedForm,
+                mode,
+                viewModel,
+                formAction,
+                cancelAction
+              )
+            )
+
+          case None if returnType.amendmentFlag == "Y" =>
+            Redirect(
+              controllers.amend.routes.WhatDoYouWantToAmendStandardController // TODO DTR-9474: Update with future id scope
+                .onPageLoad()
+            )
+
+          case None =>
+            logger.error("[SubcontractorDetailsAddedController][renderPageWithId] - view model build returned None")
+            Redirect(
+              controllers.routes.SystemErrorController.onPageLoad()
+            ) // TODO DTR-9474: Do we need to update to use id scope?
         }
     }
 
