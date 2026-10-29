@@ -47,5 +47,30 @@ class ResubmissionIdPageSpec extends SpecBase {
 
       ua2.get(ResubmissionIdPage) mustBe None
     }
+
+    "have the correct scoped path" in {
+      ResubmissionIdPage("org_flow-1").path mustBe
+        (JsPath \ "org_flow-1" \ "submission" \ "resubmissionId")
+    }
+
+    "have the correct scoped toString" in {
+      ResubmissionIdPage("org_flow-1").toString mustBe "resubmissionId"
+    }
+
+    "SCOPED set, get, and remove a value in UserAnswers" in {
+      val ua1 = UserAnswers("test")
+        .set(ResubmissionIdPage("org_flow-1"), 12345L)
+        .success
+        .value
+
+      ua1.get(ResubmissionIdPage("org_flow-1")).value mustBe 12345L
+
+      val ua2 = ua1
+        .remove(ResubmissionIdPage("org_flow-1"))
+        .success
+        .value
+
+      ua2.get(ResubmissionIdPage("org_flow-1")) mustBe None
+    }
   }
 }

@@ -74,3 +74,33 @@ object SelectedSubcontractorPage {
     def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted)
   }
 }
+
+case class ScopedSelectedSubcontractorPage(id: String, index: Int) extends QuestionPage[SelectedSubcontractor] {
+  override def path: JsPath     = JsPath \ id \ "subcontractors" \ index.toString
+  override def toString: String = s"subcontractor-$index"
+}
+
+object ScopedSelectedSubcontractorPage {
+  def all(id: String): IndexedQuestionPage[SelectedSubcontractor] =
+    new IndexedQuestionPage[SelectedSubcontractor] {
+      override def path: JsPath     = JsPath \ id \ "subcontractors"
+      override def toString: String = "subcontractors"
+    }
+
+  extension (ua: UserAnswers) {
+    private def sumPaymentsField(id: String)(
+      getField: SelectedSubcontractor => Option[BigDecimal]
+    ): Option[BigDecimal] =
+      ua.get(all(id)).map { subcontractors =>
+        subcontractors.values
+          .filter(_.isComplete)
+          .flatMap(x => getField(x).toList)
+          .sum
+          .setScale(2, RoundingMode.HALF_DOWN)
+      }
+
+    def summaryTotalPayments(id: String): Option[BigDecimal]      = sumPaymentsField(id)(_.totalPaymentsMade)
+    def summaryTotalMaterialsCost(id: String): Option[BigDecimal] = sumPaymentsField(id)(_.costOfMaterials)
+    def summaryTotalCisDeductions(id: String): Option[BigDecimal] = sumPaymentsField(id)(_.totalTaxDeducted)
+  }
+}

@@ -19,6 +19,13 @@ package pages.monthlyreturns
 import play.api.libs.json.JsPath
 import pages.QuestionPage
 
+case class EmploymentStatusDeclarationPage(id: String) extends QuestionPage[Boolean] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "employmentStatusDeclaration"
+}
+
 case object EmploymentStatusDeclarationPage extends QuestionPage[Boolean] {
 
   override def path: JsPath = JsPath \ toString
