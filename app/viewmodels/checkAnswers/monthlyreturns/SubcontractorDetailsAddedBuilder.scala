@@ -36,7 +36,7 @@ object SubcontractorDetailsAddedBuilder {
       ("monthlyreturns.subcontractorDetailsAdded.heading.multiple", Seq(addedCount.asInstanceOf[AnyRef]))
     }
 
-  def build(id: Option[String] = None, ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
+  def build(ua: UserAnswers, id: Option[String] = None): Option[SubcontractorDetailsAddedViewModel] = {
     val isAmendment                = ua.get(AmendmentDetailsPage(id)).isDefined
     val subcontractorByIndex       = selectedSubcontractors(id, ua)
     val originalSubcontractorCount = ua.get(OriginalSubcontractorCountPage(id))

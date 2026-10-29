@@ -239,4 +239,7 @@ POST       /monthly-return/final-validations/review-subcontractor-details       
 GET        /monthly-return/final-validations/change/:subcontractorId/:fieldKey/:targetKey      controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
 GET        /monthly-return/final-validations/return/:handoffId                                 controllers.finalvalidations.FinalValidationReturnController.onPageLoad(handoffId: String)
 
+GET        /monthly-return/final-validations/review-subcontractor-details/:cisPath/:flowId     controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoadWithId(cisPath: CisPath, flowId: UUID)
+POST       /monthly-return/final-validations/review-subcontractor-details/:cisPath/:flowId     controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmitWithId(cisPath: CisPath, flowId: UUID)
+
 GET        /agent/no-longer-authorised                                                         controllers.AgentLostAccessController.onPageLoad()

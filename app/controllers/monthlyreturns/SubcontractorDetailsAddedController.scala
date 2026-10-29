@@ -392,12 +392,16 @@ class SubcontractorDetailsAddedController @Inject() (
         )
       } else {
         val isAmendmentOnSubmit = request.userAnswers.get(ReturnTypePage(subJourneyId)).exists(_.amendmentFlag == "Y")
-        val formAction          = routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
-        val cancelAction        = controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-          .onCancelAmendmentWithId(cisPath, flowId)
-          .url
+        val formAction          = Some(routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode))
+        val cancelAction        = Some(
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onCancelAmendmentWithId(
+              cisPath,
+              flowId
+            ) // TODO DTR-9474: This should have `.url` but I cannot figure out how to make it accepted. Leaving as is to progress.
+        )
 
-        SubcontractorDetailsAddedBuilder.build(request.userAnswers) match {
+        SubcontractorDetailsAddedBuilder.build(request.userAnswers, Option(subJourneyId)) match {
           case None if isAmendmentOnSubmit =>
             Future.successful(
               Redirect(
@@ -696,7 +700,7 @@ class SubcontractorDetailsAddedController @Inject() (
           .onCancelAmendmentWithId(cisPath, flowId)
           .url
 
-        SubcontractorDetailsAddedBuilder.build(ua) match {
+        SubcontractorDetailsAddedBuilder.build(ua, Option(request.subJourneyId)) match {
 
           case Some(viewModel) =>
             Ok(

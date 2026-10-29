@@ -26,7 +26,11 @@
     link: Link
 )
 
-@(model: ReviewSubcontractorDetailsPageModel)(implicit request: Request[_], messages: Messages)
+@(
+    model: ReviewSubcontractorDetailsPageModel,
+    formAction: Option[Call] = None,
+    taskListAction: Option[Call] = None
+)(implicit request: Request[_], messages: Messages)
 
 @reviewSubcontractorTitle(name: String) = {
     <span class="govuk-visually-hidden">
@@ -37,7 +41,9 @@
 
 @fileAReturnSubmitLink() = {
     @helper.form(
-        action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+        action = formAction.getOrElse(
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+        )
     ) {
         @helper.CSRF.formField
 
@@ -74,7 +80,9 @@
                 if (row.hasErrors) {
                     TaskListItem(
                         title = TaskListItemTitle(content = HtmlContent(reviewSubcontractorTitle(row.name))),
-                        href = Some(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId).url),
+                        href = taskListAction.getOrElse(
+                            Some(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId).url)
+                        ),
                         status = incompleteStatus
                     )
                 } else {
