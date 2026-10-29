@@ -35,7 +35,7 @@
     mode: Mode,
     viewModel: SubcontractorDetailsAddedViewModel,
     formAction: Option[Call] = None,
-    cancelAction: Option[Call] = None,
+    cancelAction: Option[String] = None,
 )(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages(viewModel.headingKey, viewModel.headingArgs: _*))) {
@@ -99,8 +99,8 @@
             )
             @if(viewModel.isAmendment) {
                 @link(
-                        "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
-                        cancelAction.getOrElse(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url),
+                        linkTextKey = "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
+                        linkUrl = cancelAction.getOrElse(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url),
                         paragraphWrapped = false
                 )
             }

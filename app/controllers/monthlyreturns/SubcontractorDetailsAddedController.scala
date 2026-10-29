@@ -137,12 +137,12 @@ class SubcontractorDetailsAddedController @Inject() (
                 )
               } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
                 Future.successful(
-                  renderPageWithId(cisPath, flowId, mode, ua)
+                  renderPageWithId(subJourneyId, cisPath, flowId, mode, ua)
                 ) // TODO DTR-9474: Update to use future id scope
               } else {
                 ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
                   case Some(source) if sourceMode(source).contains(mode) =>
-                    runFinalValidationWithId(cisPath, flowId, cisId, month, year, mode, ua)
+                    runFinalValidationWithId(subJourneyId, cisPath, flowId, cisId, month, year, mode, ua)
 
                   case _ =>
                     logger.error(
@@ -229,7 +229,7 @@ class SubcontractorDetailsAddedController @Inject() (
             case true
                 if ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString) &&
                   ua.get(FinalValidationDraftIdPage(subJourneyId)).isEmpty =>
-              renderPageWithId(cisPath, flowId, mode, ua)
+              renderPageWithId(subJourneyId, cisPath, flowId, mode, ua)
 
             case true =>
               logger.error(
@@ -398,7 +398,8 @@ class SubcontractorDetailsAddedController @Inject() (
             .onCancelAmendmentWithId(
               cisPath,
               flowId
-            ) // TODO DTR-9474: This should have `.url` but I cannot figure out how to make it accepted. Leaving as is to progress.
+            )
+            .url
         )
 
         SubcontractorDetailsAddedBuilder.build(request.userAnswers, Option(subJourneyId)) match {
@@ -591,6 +592,7 @@ class SubcontractorDetailsAddedController @Inject() (
   }
 
   private def runFinalValidationWithId(
+    subJourneyId: String,
     cisPath: CisPath,
     flowId: UUID,
     cisId: String,
@@ -632,9 +634,9 @@ class SubcontractorDetailsAddedController @Inject() (
         } else {
           for {
             withContinuation <-
-              Future.fromTry(ua.set(MonthlyFinalValidationContinuationPage(request.subJourneyId), mode.toString))
+              Future.fromTry(ua.set(MonthlyFinalValidationContinuationPage(subJourneyId), mode.toString))
             _                <- sessionRepository.set(withContinuation)
-          } yield renderPageWithId(cisPath, flowId, mode, withContinuation)
+          } yield renderPageWithId(subJourneyId, cisPath, flowId, mode, withContinuation)
         }
       }
       .recover { case ex =>
@@ -678,12 +680,13 @@ class SubcontractorDetailsAddedController @Inject() (
     }
 
   private def renderPageWithId(
+    subJourneyId: String,
     cisPath: CisPath,
     flowId: UUID,
     mode: Mode,
     ua: UserAnswers
   )(implicit request: Request[?]): Result =
-    ua.get(ReturnTypePage(request.subJourneyId)) match {
+    ua.get(ReturnTypePage(subJourneyId)) match {
 
       case None =>
         logger.error("[SubcontractorDetailsAddedController][renderPageWithId] - ReturnTypePage missing")
@@ -693,14 +696,16 @@ class SubcontractorDetailsAddedController @Inject() (
 
       case Some(returnType) =>
         val preparedForm =
-          ua.get(AllSubcontractorDetailsAdded(request.subJourneyId))
+          ua.get(AllSubcontractorDetailsAdded(subJourneyId))
             .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
-        val formAction   = routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
-        val cancelAction = controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-          .onCancelAmendmentWithId(cisPath, flowId)
-          .url
+        val formAction   = Some(routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode))
+        val cancelAction = Some(
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onCancelAmendmentWithId(cisPath, flowId)
+            .url
+        )
 
-        SubcontractorDetailsAddedBuilder.build(ua, Option(request.subJourneyId)) match {
+        SubcontractorDetailsAddedBuilder.build(ua, Option(subJourneyId)) match {
 
           case Some(viewModel) =>
             Ok(

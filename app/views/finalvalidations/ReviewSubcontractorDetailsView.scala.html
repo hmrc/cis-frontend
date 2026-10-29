@@ -74,15 +74,14 @@
 
         @p("finalValidations.reviewSubcontractorDetails.intro")
 
+        <!--TODO DTR-9474: Implement taskListAction.getOrElse for href-->
         @govukTaskList(TaskList(
             idPrefix = "review-subcontractor-details",
             items = model.subcontractors.map { row =>
                 if (row.hasErrors) {
                     TaskListItem(
                         title = TaskListItemTitle(content = HtmlContent(reviewSubcontractorTitle(row.name))),
-                        href = taskListAction.getOrElse(
-                            Some(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId).url)
-                        ),
+                        href = Some(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId).url),
                         status = incompleteStatus
                     )
                 } else {

@@ -43,6 +43,8 @@ class VerifySubcontractorsController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: VerifySubcontractorsFormProvider,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: VerifySubcontractorsView
 )(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
@@ -67,7 +69,8 @@ class VerifySubcontractorsController @Inject() (
         case None        => form
         case Some(value) => form.fill(value)
       }
-      val formAction   = Some(routes.VerifySubcontractorsPage.onSubmitWithId(cisPath, flowId, mode))
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(cisPath, flowId, mode))
 
       Ok(view(preparedForm, mode, formAction))
     }
@@ -91,7 +94,8 @@ class VerifySubcontractorsController @Inject() (
 
   def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val formAction = Some(routes.VerifySubcontractorsPage.onSubmitWithId(cisPath, flowId, mode))
+      val formAction =
+        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(cisPath, flowId, mode))
       form
         .bindFromRequest()
         .fold(

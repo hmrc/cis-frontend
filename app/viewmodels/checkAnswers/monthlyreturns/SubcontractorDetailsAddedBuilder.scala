@@ -24,7 +24,7 @@ import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontract
 object SubcontractorDetailsAddedBuilder {
 
   private def selectedSubcontractors(id: Option[String], ua: UserAnswers): Map[Int, SelectedSubcontractor] =
-    ua.get(SelectedSubcontractorPage(id).all).getOrElse(Map.empty)
+    ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
 
   private def detailsAdded(sub: SelectedSubcontractor): Boolean =
     sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
@@ -37,9 +37,13 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers, id: Option[String] = None): Option[SubcontractorDetailsAddedViewModel] = {
-    val isAmendment                = ua.get(AmendmentDetailsPage(id)).isDefined
+    val isAmendment                =
+      ua.get(AmendmentDetailsPage(id.toString))
+        .isDefined // TODO DTR-9474: Investigate compilation error when not cast to String
     val subcontractorByIndex       = selectedSubcontractors(id, ua)
-    val originalSubcontractorCount = ua.get(OriginalSubcontractorCountPage(id))
+    val originalSubcontractorCount = ua.get(
+      OriginalSubcontractorCountPage(id.toString)
+    ) // TODO DTR-9474: Investigate compilation error when not cast to String
     val indexes                    = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {

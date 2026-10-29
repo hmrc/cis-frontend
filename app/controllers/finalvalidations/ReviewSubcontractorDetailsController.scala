@@ -43,6 +43,8 @@ class ReviewSubcontractorDetailsController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   sessionRepository: SessionRepository,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   finalValidationDraftService: FinalValidationDraftService,
   pageModelBuilder: UpdateSubcontractorDetailsPageModelBuilder,
   val controllerComponents: MessagesControllerComponents,
@@ -119,7 +121,7 @@ class ReviewSubcontractorDetailsController @Inject() (
               val backUrl =
                 request.userAnswers
                   .get(MonthlyFinalValidationSourcePage(request.subJourneyId))
-                  .map(backUrlFromSourceWithId(cisPath, flowId))
+                  .map(source => backUrlFromSourceWithId(cisPath, flowId, source))
                   .getOrElse {
                     logger.error(
                       "[ReviewSubcontractorDetailsController] Unable to determine back URL: " +
@@ -128,20 +130,16 @@ class ReviewSubcontractorDetailsController @Inject() (
                     controllers.routes.JourneyRecoveryController.onPageLoad().url
                   }
 
-              val formAction     = Some(
+              val formAction = Some(
                 controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmitWithId(cisPath, flowId)
               )
-              val taskListAction = Some(
-                controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
-                  .onPageLoad(row.subcontractorId)
-                  .url
-              ) // TODO DTR-9474: Update to use future id scope
+//              val taskListAction = "" // TODO DTR-9474: Update to use future id scope, complication with use of row within view
 
               Ok(
                 view(
                   ReviewSubcontractorDetailsPageModel(rows, draft.allComplete, backUrl),
-                  formAction,
-                  taskListAction
+                  formAction
+//                  taskListAction
                 )
               )
             }
@@ -366,7 +364,7 @@ class ReviewSubcontractorDetailsController @Inject() (
 
     val selectedSubcontractors =
       userAnswers
-        .get(SelectedSubcontractorPage(id).all)
+        .get(SelectedSubcontractorPage.all(Some(id)))
         .getOrElse(Map.empty)
 
     val updatedSubcontractors =
@@ -385,7 +383,7 @@ class ReviewSubcontractorDetailsController @Inject() (
       }
 
     userAnswers.set(
-      SelectedSubcontractorPage(id).all,
+      SelectedSubcontractorPage.all(Some(id)),
       updatedSubcontractors
     )
   }
