@@ -180,6 +180,10 @@ GET        /monthly-return/submission-unsuccessful-resubmit             controll
 
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+
+# DTR-9475
+GET        /monthly-return/continue-return-journey/:cisPath                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourneyWithCisPath(cisPath: CisPath, queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+#GET        /monthly-return/continue-amend-return-journey/:cisPath                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourneyWithCisPath(cisPath: CisPath, queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
