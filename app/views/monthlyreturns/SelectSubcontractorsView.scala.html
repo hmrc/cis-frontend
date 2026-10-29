@@ -54,7 +54,8 @@
     @formHelper(
         action = formAction.getOrElse(
             controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmit()
-        ) {
+        )
+    ) {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = subcontractors.headOption.map(s => Map("subcontractorsToInclude" -> s"subcontractor-${s.id}")).getOrElse(Map.empty)))
@@ -70,12 +71,12 @@
         @if(subcontractors.length > 0) {
             @paragraphWithLinks(
                 linkTextUrlOne = "monthlyreturns.selectSubcontractors.selectAll.link",
-                linkUrlOne = preSelectedAction.getOrElse(
+                linkUrlOne = preSelectedAction.map(_.url).getOrElse(
                     controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url
                 ),
                 suffixTextKey = "|",
                 linkTextUrlTwo = "monthlyreturns.selectSubcontractors.deselectAll.link",
-                linkUrlTwo = noneSelectedAction.getOrElse(
+                linkUrlTwo = noneSelectedAction.map(_.url).getOrElse(
                     controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(false)).url
                 )
             )

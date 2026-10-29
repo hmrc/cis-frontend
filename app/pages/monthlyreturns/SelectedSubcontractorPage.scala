@@ -58,7 +58,13 @@ case class SelectedSubcontractorPage(index: Int, id: Option[String] = None)
 }
 
 object SelectedSubcontractorPage {
-  def all(id: Option[String] = None): IndexedQuestionPage[SelectedSubcontractor] =
+  def all: IndexedQuestionPage[SelectedSubcontractor] =
+    new IndexedQuestionPage[SelectedSubcontractor] {
+      override def path: JsPath     = JsPath \ toString
+      override def toString: String = "subcontractors"
+    }
+
+  def all(id: Option[String]): IndexedQuestionPage[SelectedSubcontractor] =
     new IndexedQuestionPage[SelectedSubcontractor] {
       override def path: JsPath     = basePath(id) \ toString
       override def toString: String = "subcontractors"
@@ -71,8 +77,11 @@ object SelectedSubcontractorPage {
     }
 
   extension (ua: UserAnswers) {
-    private def sumPaymentsField(getField: SelectedSubcontractor => Option[BigDecimal]): Option[BigDecimal] =
-      ua.get(all).map { subcontractors =>
+    private def sumPaymentsField(
+      getField: SelectedSubcontractor => Option[BigDecimal],
+      id: Option[String]
+    ): Option[BigDecimal] =
+      ua.get(all(id)).map { subcontractors =>
         subcontractors.values
           .filter(_.isComplete)
           .flatMap(x => getField(x).toList)
@@ -80,8 +89,13 @@ object SelectedSubcontractorPage {
           .setScale(2, RoundingMode.HALF_DOWN)
       }
 
-    def summaryTotalPayments: Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade)
-    def summaryTotalMaterialsCost: Option[BigDecimal] = sumPaymentsField(_.costOfMaterials)
-    def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted)
+    def summaryTotalPayments: Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade, None)
+    def summaryTotalMaterialsCost: Option[BigDecimal] = sumPaymentsField(_.costOfMaterials, None)
+    def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted, None)
+
+    // ID-scoped subcontractor payment details
+    def summaryTotalPayments(id: String): Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade, Some(id))
+    def summaryTotalMaterialsCost(id: String): Option[BigDecimal] = sumPaymentsField(_.costOfMaterials, Some(id))
+    def summaryTotalCisDeductions(id: String): Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted, Some(id))
   }
 }

@@ -183,7 +183,14 @@ class SelectSubcontractorsController @Inject() (
       requiredAnswers
         .map { (taxMonth, taxYear) =>
           subcontractorService
-            .buildSelectSubcontractorPage(request.cisId, taxMonth, taxYear, defaultSelection, Some(request.userAnswers))
+            .buildSelectSubcontractorPage(
+              cisId = request.cisId,
+              taxMonth = taxMonth,
+              taxYear = taxYear,
+              defaultSelection = defaultSelection,
+              userAnswers = Some(request.userAnswers),
+              id = request.subJourneyId
+            )
             .map { model =>
 
               val filledForm =
@@ -216,7 +223,9 @@ class SelectSubcontractorsController @Inject() (
             }
         }
         .getOrElse {
-          logger.error("[SelectSubcontractorsController][onPageLoad] - CisIdPage or DateConfirmPaymentsPage missing")
+          logger.error(
+            "[SelectSubcontractorsController][onPageLoadWithId] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
     }
@@ -230,14 +239,30 @@ class SelectSubcontractorsController @Inject() (
       requiredAnswers
         .map { (taxMonth, taxYear) =>
           subcontractorService
-            .buildSelectSubcontractorPage(request.cisId, taxMonth, taxYear, None, Some(request.userAnswers))
+            .buildSelectSubcontractorPage(
+              cisId = request.cisId,
+              taxMonth = taxMonth,
+              taxYear = taxYear,
+              defaultSelection = None,
+              userAnswers = Some(request.userAnswers),
+              id = request.subJourneyId
+            )
             .flatMap { model =>
               form
                 .bindFromRequest()
                 .fold(
                   formWithErrors =>
                     Future.successful(
-                      BadRequest(view(formWithErrors, model.subcontractors, appConfig.yourSubcontractorsUrl))
+                      BadRequest(
+                        view(
+                          formWithErrors,
+                          model.subcontractors,
+                          appConfig.yourSubcontractorsUrl,
+                          Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId)),
+                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true))),
+                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
+                        )
+                      )
                     ),
                   formData => {
                     val selectedSubcontractors =
@@ -247,13 +272,16 @@ class SelectSubcontractorsController @Inject() (
                       .storeAndSyncSelectedSubcontractors(
                         ua = request.userAnswers,
                         selected = selectedSubcontractors,
-                        originalSubcontractorCount = model.subcontractors.size
+                        originalSubcontractorCount = model.subcontractors.size,
+                        cisId = request.cisId,
+                        id = request.subJourneyId
                       )
                       .flatMap { updatedAnswers =>
                         val verificationRequired =
                           selectedSubcontractors
                             .filter { subcontractor =>
-                              updatedAnswers.incompleteSubcontractorIds
+                              updatedAnswers
+                                .incompleteSubcontractorIds(request.subJourneyId)
                                 .contains(subcontractor.id)
                             }
                             .exists(_.verificationRequired)
@@ -285,8 +313,8 @@ class SelectSubcontractorsController @Inject() (
                             )
                           } else {
                             Redirect(
-                              routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-                            ) // TODO DTR-9474: Update to use future scoped id
+                              routes.SubcontractorDetailsAddedController.onPageLoadWithId(cisPath, flowId, NormalMode)
+                            )
                           }
                       }
                       .recover { error =>
@@ -296,17 +324,19 @@ class SelectSubcontractorsController @Inject() (
                         )
                         Redirect(
                           controllers.routes.SystemErrorController.onPageLoad()
-                        ) // TODO DTR-9474: Do we need to update to use scoped id?
+                        ) // TODO DTR-9474: Do we need to update to use scoped id? - Not Required
                       }
                   }
                 )
             }
         }
         .getOrElse {
-          logger.error("[SelectSubcontractorsController][onSubmit] - CisIdPage or DateConfirmPaymentsPage missing")
+          logger.error(
+            "[SelectSubcontractorsController][onSubmitWithId] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          ) // TODO DTR-9474: Do we need to update to use scoped id?
+          ) // TODO DTR-9474: Do we need to update to use scoped id? - Not Required
         }
     }
 }

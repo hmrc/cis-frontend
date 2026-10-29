@@ -71,6 +71,17 @@ object UserAnswerUtils {
         .map(_.id)
         .toSeq
 
+    // Multi-tab: Return incomplete subcontractor IDs for the current journey.
+    def incompleteSubcontractorIds(id: String): Seq[Long] =
+      userAnswers
+        .get(SelectedSubcontractorPage.all(Some(id)))
+        .getOrElse(Map.empty)
+        .values
+        .iterator
+        .filterNot(_.isComplete)
+        .map(_.id)
+        .toSeq
+
     def clearMonthlyReturnJourney: Try[UserAnswers] = {
       val submissionId = userAnswers.get(SubmissionDetailsPage).map(_.id)
       val period       = userAnswers.get(DateConfirmPaymentsPage).map(d => YearMonth.from(d).toString)

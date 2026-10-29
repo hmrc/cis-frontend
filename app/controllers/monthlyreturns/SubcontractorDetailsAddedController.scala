@@ -48,6 +48,8 @@ class SubcontractorDetailsAddedController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: SubcontractorDetailsAddedFormProvider,
   sessionRepository: SessionRepository,
   val controllerComponents: MessagesControllerComponents,
@@ -390,7 +392,7 @@ class SubcontractorDetailsAddedController @Inject() (
         )
       } else {
         val isAmendmentOnSubmit = request.userAnswers.get(ReturnTypePage(subJourneyId)).exists(_.amendmentFlag == "Y")
-        val formAction          = SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
+        val formAction          = routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
         val cancelAction        = controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
           .onCancelAmendmentWithId(cisPath, flowId)
           .url
@@ -689,7 +691,7 @@ class SubcontractorDetailsAddedController @Inject() (
         val preparedForm =
           ua.get(AllSubcontractorDetailsAdded(request.subJourneyId))
             .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
-        val formAction   = SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
+        val formAction   = routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode)
         val cancelAction = controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
           .onCancelAmendmentWithId(cisPath, flowId)
           .url

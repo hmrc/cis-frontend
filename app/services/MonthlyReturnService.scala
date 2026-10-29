@@ -184,6 +184,17 @@ class MonthlyReturnService @Inject() (
   )(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.syncMonthlyReturnItems(SelectedSubcontractorsRequest.from(ua, selectedSubcontractorIds))
 
+  // Multi-tab: Sync monthly return items for the selected ID-scoped journey.
+  def syncMonthlyReturnItems(
+    ua: UserAnswers,
+    selectedSubcontractorIds: Seq[Long],
+    cisId: String,
+    id: String
+  )(implicit hc: HeaderCarrier): Future[Unit] =
+    cisConnector.syncMonthlyReturnItems(
+      SelectedSubcontractorsRequest.from(ua, selectedSubcontractorIds, cisId, id)
+    )
+
   def deleteMonthlyReturnItem(payload: DeleteMonthlyReturnItemRequest)(implicit hc: HeaderCarrier): Future[Unit] =
     cisConnector.deleteMonthlyReturnItem(payload)
 
@@ -228,23 +239,24 @@ class MonthlyReturnService @Inject() (
       }
   }
 
+  // Multi-tab: Store and sync selected subcontractors for the ID-scoped journey.
   def storeAndSyncSelectedSubcontractors(
     ua: UserAnswers,
     selected: Seq[SelectSubcontractorsViewModel],
     originalSubcontractorCount: Int,
+    cisId: String,
     id: String
   )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val selectedIds: Seq[Long]         = selected.map(_.id)
-    val existingSelectedSubcontractors =
-      ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
-    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all(id))
+    val existingSelectedSubcontractors = ua.get(SelectedSubcontractorPage.all(Some(id))).getOrElse(Map.empty)
+    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all(Some(id)))
     val updatedTry: Try[UserAnswers]   =
       selected.zipWithIndex
         .foldLeft(cleared) { case (uaTry, (vm, index)) =>
           uaTry.flatMap { answers =>
             val existing = existingSelectedSubcontractors.values.find(_.id == vm.id)
             answers.set(
-              SelectedSubcontractorPage(index + 1, id),
+              SelectedSubcontractorPage(index + 1, Some(id)),
               SelectedSubcontractor(
                 vm.id,
                 vm.name,
@@ -256,7 +268,7 @@ class MonthlyReturnService @Inject() (
           }
         }
         .flatMap(_.remove(VerifySubcontractorsPage(id)))
-        .flatMap(_.set(OriginalSubcontractorCountPage, originalSubcontractorCount(id)))
+        .flatMap(_.set(OriginalSubcontractorCountPage(id), originalSubcontractorCount))
 
     Future
       .fromTry(updatedTry)
@@ -265,7 +277,7 @@ class MonthlyReturnService @Inject() (
           case false =>
             Future.failed(new RuntimeException("Failed to persist selected subcontractors in session"))
           case true  =>
-            syncMonthlyReturnItems(updatedUa, selectedIds).map(_ => updatedUa)
+            syncMonthlyReturnItems(updatedUa, selectedIds, cisId, id).map(_ => updatedUa)
         }
       }
   }
