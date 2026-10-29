@@ -2009,6 +2009,533 @@ class MonthlyReturnServiceSpec extends SpecBase {
     }
   }
 
+  "populateUserAnswersForContinueJourney with subjourney ID" - {
+
+    val id = "org_flow-1"
+
+    val editRequest = GetMonthlyReturnForEditRequest(
+      instanceId = "CIS-123",
+      taxYear = 2025,
+      taxMonth = 3,
+      isAmendment = false
+    )
+
+    def scopedAnswers: UserAnswers =
+      UserAnswers("id").initialiseSubJourney(id).success.value
+
+    def submission(submissionId: Long = 1L): Submission =
+      Submission(
+        submissionId = submissionId,
+        submissionType = "MONTHLY_RETURN",
+        activeObjectId = None,
+        status = None,
+        hmrcMarkGenerated = None,
+        hmrcMarkGgis = None,
+        emailRecipient = Some("test@example.com"),
+        acceptedTime = None,
+        createDate = None,
+        lastUpdate = None,
+        schemeId = 1,
+        agentId = None,
+        l_Migrated = None,
+        submissionRequestDate = None,
+        govTalkErrorCode = None,
+        govTalkErrorType = None,
+        govTalkErrorMessage = None
+      )
+
+    def subcontractor(subId: Long, name: String): Subcontractor =
+      Subcontractor(
+        subcontractorId = subId,
+        utr = None,
+        pageVisited = None,
+        partnerUtr = None,
+        crn = None,
+        firstName = None,
+        nino = None,
+        secondName = None,
+        surname = None,
+        partnershipTradingName = None,
+        tradingName = None,
+        subcontractorType = None,
+        addressLine1 = None,
+        addressLine2 = None,
+        addressLine3 = None,
+        addressLine4 = None,
+        country = None,
+        postCode = None,
+        emailAddress = None,
+        phoneNumber = None,
+        mobilePhoneNumber = None,
+        worksReferenceNumber = None,
+        createDate = None,
+        lastUpdate = None,
+        subbieResourceRef = None,
+        matched = None,
+        autoVerified = None,
+        verified = None,
+        verificationNumber = None,
+        taxTreatment = None,
+        verificationDate = None,
+        version = None,
+        updatedTaxTreatment = None,
+        lastMonthlyReturnDate = None,
+        pendingVerifications = None,
+        displayName = Some(name)
+      )
+
+    def item(subId: Option[Long], payments: String): MonthlyReturnItem =
+      MonthlyReturnItem(
+        monthlyReturnId = 101,
+        monthlyReturnItemId = 2001,
+        totalPayments = Some(payments),
+        costOfMaterials = Some("100.00"),
+        totalDeducted = Some("100.00"),
+        unmatchedTaxRateIndicator = None,
+        subcontractorId = subId,
+        subcontractorName = None,
+        verificationNumber = None,
+        itemResourceReference = None
+      )
+
+    def stub(connector: ConstructionIndustrySchemeConnector, payload: GetAllMonthlyReturnDetailsResponse): Unit =
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+    "populate nil return answers under the subjourney id without touching the session" in {
+      val (service, connector, sessionRepo) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme(Some("  ABC Construction Ltd  "))),
+          monthlyReturn = Seq(
+            MonthlyReturn(
+              monthlyReturnId = 101,
+              taxYear = 2025,
+              taxMonth = 3,
+              nilReturnIndicator = Some("Y"),
+              decInformationCorrect = Some("Y"),
+              decNoMoreSubPayments = Some("Y")
+            )
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Seq(submission())
+        )
+      )
+
+      val result = service.populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+
+      ua.get(CisIdPage(id)) mustBe Some("CIS-123")
+      ua.get(ReturnTypePage(id)) mustBe Some(MonthlyNilReturn)
+      ua.get(DateConfirmPaymentsPage(id)) mustBe Some(LocalDate.of(2025, 3, 5))
+      ua.get(SubmitInactivityRequestPage(id)) mustBe Some(true)
+      ua.get(DeclarationPage(id)) mustBe Some(Set(Declaration.Confirmed))
+      ua.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage(id)) mustBe Some(1L)
+      ua.hasSubJourney(id) mustBe true
+
+      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(editRequest))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "must not write to the legacy unscoped keys" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(
+              monthlyReturnId = 101,
+              taxYear = 2025,
+              taxMonth = 3,
+              nilReturnIndicator = Some("Y"),
+              decInformationCorrect = Some("Y")
+            )
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Seq(submission())
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(CisIdPage) mustBe None
+      ua.get(ReturnTypePage) mustBe None
+      ua.get(DateConfirmPaymentsPage) mustBe None
+      ua.get(SubmitInactivityRequestPage) mustBe None
+      ua.get(DeclarationPage) mustBe None
+      ua.get(ContractorNamePage) mustBe None
+      ua.get(ResubmissionIdPage) mustBe None
+    }
+
+    "set an empty declaration and false inactivity flag when decInformationCorrect is missing" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(
+              monthlyReturnId = 101,
+              taxYear = 2025,
+              taxMonth = 3,
+              nilReturnIndicator = Some("Y"),
+              decInformationCorrect = None,
+              decNilReturnNoPayments = None
+            )
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Nil
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(DeclarationPage(id)).value mustBe empty
+      ua.get(SubmitInactivityRequestPage(id)) mustBe Some(false)
+      ua.get(ResubmissionIdPage(id)) mustBe None
+    }
+
+    "populate standard return answers and subcontractor items under the subjourney id" in {
+      val (service, connector, sessionRepo) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme(Some("ABC Construction Ltd"))),
+          monthlyReturn = Seq(
+            MonthlyReturn(
+              monthlyReturnId = 101,
+              taxYear = 2025,
+              taxMonth = 3,
+              nilReturnIndicator = Some("N"),
+              decNilReturnNoPayments = Some("N"),
+              decNoMoreSubPayments = Some("Y"),
+              decEmpStatusConsidered = Some("Y"),
+              decAllSubsVerified = Some("Y")
+            )
+          ),
+          subcontractors = Seq(subcontractor(1001, "A Ltd")),
+          monthlyReturnItems = Seq(item(Some(1001), "1,000.00")),
+          submission = Seq(submission())
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+      ua.get(SubmitInactivityRequestPage(id)) mustBe Some(true)
+      ua.get(EmploymentStatusDeclarationPage(id)) mustBe Some(true)
+      ua.get(VerifiedStatusDeclarationPage(id)) mustBe Some(true)
+      ua.get(PaymentDetailsConfirmationPage(id)) mustBe Some(true)
+      ua.get(OriginalSubcontractorCountPage(id)) mustBe Some(1)
+      ua.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
+      ua.get(ResubmissionIdPage(id)) mustBe Some(1L)
+
+      ua.get(ScopedSelectedSubcontractorPage(id, 1)).value mustBe SelectedSubcontractor(
+        id = 1001L,
+        name = "A Ltd",
+        totalPaymentsMade = Some(BigDecimal("1000.00")),
+        costOfMaterials = Some(BigDecimal("100.00")),
+        totalTaxDeducted = Some(BigDecimal("100.00"))
+      )
+
+      // legacy keys untouched
+      ua.get(ReturnTypePage) mustBe None
+      ua.get(OriginalSubcontractorCountPage) mustBe None
+      ua.get(SelectedSubcontractorPage(1)) mustBe None
+      ua.get(SelectedSubcontractorPage.all) mustBe None
+
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "must not set employment or verified status declarations when FormP values are missing" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(monthlyReturnId = 101, taxYear = 2025, taxMonth = 3, nilReturnIndicator = Some("N"))
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Seq(submission())
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(EmploymentStatusDeclarationPage(id)) mustBe None
+      ua.get(VerifiedStatusDeclarationPage(id)) mustBe None
+      ua.get(SubmitInactivityRequestPage(id)) mustBe Some(false)
+    }
+
+    "must set employment and verified status declarations from explicit N values" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(
+              monthlyReturnId = 101,
+              taxYear = 2025,
+              taxMonth = 3,
+              nilReturnIndicator = Some("N"),
+              decEmpStatusConsidered = Some("N"),
+              decAllSubsVerified = Some("N")
+            )
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Nil
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(EmploymentStatusDeclarationPage(id)) mustBe Some(false)
+      ua.get(VerifiedStatusDeclarationPage(id)) mustBe Some(false)
+    }
+
+    "use a placeholder name and zero id for items without a matching subcontractor" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(monthlyReturnId = 101, taxYear = 2025, taxMonth = 3, nilReturnIndicator = Some("N"))
+          ),
+          subcontractors = Seq(subcontractor(1001, "A Ltd")),
+          monthlyReturnItems = Seq(item(Some(9999), "10.00"), item(None, "20.00")),
+          submission = Nil
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(s => (s.id, s.name)) mustBe
+        Some((9999L, "No name provided"))
+      ua.get(ScopedSelectedSubcontractorPage(id, 2)).map(s => (s.id, s.name)) mustBe
+        Some((0L, "No name provided"))
+      ua.get(OriginalSubcontractorCountPage(id)) mustBe Some(1)
+    }
+
+    "replace stale scoped subcontractors from a previous load of the same journey" in {
+      val (service, connector, _) = newService()
+
+      val stale = SelectedSubcontractor(
+        id = 7777L,
+        name = "Stale Ltd",
+        totalPaymentsMade = Some(BigDecimal("1.00")),
+        costOfMaterials = Some(BigDecimal("1.00")),
+        totalTaxDeducted = Some(BigDecimal("1.00"))
+      )
+
+      val existing = scopedAnswers
+        .set(ScopedSelectedSubcontractorPage(id, 2), stale)
+        .success
+        .value
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(monthlyReturnId = 101, taxYear = 2025, taxMonth = 3, nilReturnIndicator = Some("N"))
+          ),
+          subcontractors = Seq(subcontractor(1001, "A Ltd")),
+          monthlyReturnItems = Seq(item(Some(1001), "1,000.00")),
+          submission = Nil
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(existing, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(_.id) mustBe Some(1001L)
+      ua.get(ScopedSelectedSubcontractorPage(id, 2)) mustBe None
+    }
+
+    "must not change answers belonging to another journey or the legacy keys" in {
+      val (service, connector, _) = newService()
+
+      val otherId            = "org_flow-2"
+      val otherSubcontractor = SelectedSubcontractor(
+        id = 2002L,
+        name = "Other Ltd",
+        totalPaymentsMade = Some(BigDecimal("5.00")),
+        costOfMaterials = Some(BigDecimal("1.00")),
+        totalTaxDeducted = Some(BigDecimal("0.50"))
+      )
+
+      val existing = scopedAnswers
+        .initialiseSubJourney(otherId)
+        .success
+        .value
+        .set(CisIdPage(otherId), "OTHER-CIS")
+        .success
+        .value
+        .set(ReturnTypePage(otherId), MonthlyStandardReturn)
+        .success
+        .value
+        .set(ScopedSelectedSubcontractorPage(otherId, 1), otherSubcontractor)
+        .success
+        .value
+        .set(CisIdPage, "LEGACY-CIS")
+        .success
+        .value
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Seq(contractorScheme()),
+          monthlyReturn = Seq(
+            MonthlyReturn(
+              monthlyReturnId = 101,
+              taxYear = 2025,
+              taxMonth = 3,
+              nilReturnIndicator = Some("N")
+            )
+          ),
+          subcontractors = Seq(subcontractor(1001, "A Ltd")),
+          monthlyReturnItems = Seq(item(Some(1001), "1,000.00")),
+          submission = Nil
+        )
+      )
+
+      val ua = service
+        .populateUserAnswersForContinueJourney(existing, id, editRequest)
+        .futureValue
+        .toOption
+        .value
+
+      ua.get(CisIdPage(id)) mustBe Some("CIS-123")
+
+      ua.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
+      ua.get(ReturnTypePage(otherId)) mustBe Some(MonthlyStandardReturn)
+      ua.get(ScopedSelectedSubcontractorPage(otherId, 1)) mustBe Some(otherSubcontractor)
+      ua.get(CisIdPage) mustBe Some("LEGACY-CIS")
+    }
+
+    "return Left when no monthly return is found" in {
+      val (service, connector, sessionRepo) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Nil,
+          monthlyReturn = Nil,
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Nil
+        )
+      )
+
+      service.populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest).futureValue mustBe
+        Left("Missing monthly return")
+
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "return Left when nil return indicator is missing" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Nil,
+          monthlyReturn = Seq(
+            MonthlyReturn(monthlyReturnId = 101, taxYear = 2025, taxMonth = 3, nilReturnIndicator = None)
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Nil
+        )
+      )
+
+      service.populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest).futureValue mustBe
+        Left("Missing nil return indicator")
+    }
+
+    "return Left when nil return indicator has an unexpected value" in {
+      val (service, connector, _) = newService()
+
+      stub(
+        connector,
+        GetAllMonthlyReturnDetailsResponse(
+          scheme = Nil,
+          monthlyReturn = Seq(
+            MonthlyReturn(monthlyReturnId = 101, taxYear = 2025, taxMonth = 3, nilReturnIndicator = Some("X"))
+          ),
+          subcontractors = Nil,
+          monthlyReturnItems = Nil,
+          submission = Nil
+        )
+      )
+
+      service.populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest).futureValue mustBe
+        Left("Missing nil return indicator")
+    }
+
+    "propagate failures from the connector" in {
+      val (service, connector, sessionRepo) = newService()
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("upstream failed")))
+
+      val ex = service
+        .populateUserAnswersForContinueJourney(scopedAnswers, id, editRequest)
+        .failed
+        .futureValue
+
+      ex.getMessage mustBe "upstream failed"
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
   "populateUserAnswersForContinueAmendJourney" - {
 
     val editRequest = GetMonthlyReturnForEditRequest(

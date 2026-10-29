@@ -27,5 +27,14 @@ class IsResumedMonthlyReturnPageSpec extends SpecBase {
       IsResumedMonthlyReturnPage.path mustBe (JsPath \ "isResumedMonthlyReturn")
       IsResumedMonthlyReturnPage.toString mustBe "isResumedMonthlyReturn"
     }
+
+    "have the correct scoped path" in {
+      IsResumedMonthlyReturnPage("org_flow-1").path mustBe
+        (JsPath \ "org_flow-1" \ "isResumedMonthlyReturn")
+    }
+
+    "have the correct scoped toString" in {
+      IsResumedMonthlyReturnPage("org_flow-1").toString mustBe "isResumedMonthlyReturn"
+    }
   }
 }
