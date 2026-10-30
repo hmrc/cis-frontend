@@ -407,7 +407,7 @@ class SubcontractorDetailsAddedController @Inject() (
             Future.successful(
               Redirect(
                 controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
-              ) // TODO DTR-9474: Update with future id scope
+              )
             )
           case None                        =>
             logger.error("[SubcontractorDetailsAddedController][onSubmit] - view model build returned None")

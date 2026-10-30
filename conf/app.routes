@@ -191,7 +191,9 @@ POST       /monthly-return/verified-status-declaration                  controll
 GET        /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
+GET        /monthly-return/summary-subcontractor-payments                       controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
+
+GET        /monthly-return/summary-subcontractor-payments/:cisPath/:flowId      controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoadWithId(cisPath: CisPath, flowId: UUID)
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
