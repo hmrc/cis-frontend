@@ -27,7 +27,7 @@ import javax.inject.Inject
 import java.util.UUID
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, Call, MessagesControllerComponents}
 import repositories.SessionRepository
 import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -113,7 +113,8 @@ class ReviewSubcontractorDetailsController @Inject() (
                 draft.subcontractors.map { subcontractor =>
                   ReviewSubcontractorDetailsRow(
                     subcontractor.subcontractorId,
-                    pageModelBuilder.displayName(subcontractor), // TODO DTR-9474: Need to investigate this
+                    pageModelBuilder
+                      .displayName(subcontractor), // TODO DTR-9474: Need to check, but I dont think this needs changed
                     subcontractor.readiness == FinalValidationReadiness.Incomplete
                   )
                 }
@@ -133,7 +134,12 @@ class ReviewSubcontractorDetailsController @Inject() (
               val formAction = Some(
                 controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmitWithId(cisPath, flowId)
               )
-//              val taskListAction = "" // TODO DTR-9474: Update to use future id scope, complication with use of row within view
+
+//              def taskListAction(rowSubcontractorId: Long): Option[Call] = Some(
+//                controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
+//                  .onPageLoadWithId(cisPath, flowId, rowSubcontractorId).url
+//              )
+              // TODO DTR-9474: Update to use future id scope, complication with use of row within view
 
               Ok(
                 view(
@@ -217,7 +223,9 @@ class ReviewSubcontractorDetailsController @Inject() (
                 )
               } else {
                 for {
-                  _                <- finalValidationDraftService.commit(request.cisId, draftId)
+                  _                <-
+                    finalValidationDraftService
+                      .commit(request.cisId, draftId) // TODO DTR-9474: Final validation out of scope
                   updatedAnswers   <- Future.fromTry(
                                         updateSelectedSubcontractorNamesWithId(subJourneyId, request.userAnswers, draft)
                                       )
@@ -268,7 +276,7 @@ class ReviewSubcontractorDetailsController @Inject() (
 
   private def modeFromSource(
     source: MonthlyFinalValidationSource
-  ): Option[Mode] = // TODO DTR-9474: Investigate for changes
+  ): Option[Mode] = // TODO DTR-9474: Final validation out of scope
     source match {
       case MonthlyFinalValidationSource.SelectSubcontractors =>
         Some(NormalMode)
@@ -296,7 +304,7 @@ class ReviewSubcontractorDetailsController @Inject() (
 
   private def backUrlFromSourceWithId(cisPath: CisPath, flowId: UUID, source: MonthlyFinalValidationSource): String =
     source match {
-      case MonthlyFinalValidationSource.SelectSubcontractors =>
+      case MonthlyFinalValidationSource.SelectSubcontractors => // TODO DTR-9474: Final validation out of scope
         controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, None).url
 
       case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>

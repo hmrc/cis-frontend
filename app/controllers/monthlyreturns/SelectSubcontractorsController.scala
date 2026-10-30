@@ -324,7 +324,7 @@ class SelectSubcontractorsController @Inject() (
                         )
                         Redirect(
                           controllers.routes.SystemErrorController.onPageLoad()
-                        ) // TODO DTR-9474: Do we need to update to use scoped id? - Not Required
+                        )
                       }
                   }
                 )
@@ -336,7 +336,7 @@ class SelectSubcontractorsController @Inject() (
           )
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          ) // TODO DTR-9474: Do we need to update to use scoped id? - Not Required
+          )
         }
     }
 }

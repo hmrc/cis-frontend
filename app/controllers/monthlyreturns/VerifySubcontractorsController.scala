@@ -109,7 +109,7 @@ class VerifySubcontractorsController @Inject() (
               case true  => Redirect(appConfig.verifySubcontractorsUrl) // TODO DTR-9474: Update to use future id scope
               case false =>
                 Redirect(
-                  navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers)
+                  navigator.nextPage(VerifySubcontractorsPage(request.subJourneyId), mode, request.userAnswers)
                 ) // TODO DTR-9474: Update to use future id scope
             }
         )
