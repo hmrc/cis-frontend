@@ -20,6 +20,8 @@ import controllers.actions.*
 import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 
 import javax.inject.Inject
+import java.util.UUID
+import models.requests.CisPath
 import models.Mode
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
@@ -44,6 +46,8 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
   amendMonthlyReturnService: AmendMonthlyReturnService,
   monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -68,6 +72,18 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
 
       Ok(view(preparedForm))
   }
+
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+      val formAction   =
+        Some(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(cisPath, flowId))
+      val preparedForm = request.userAnswers.get(AreYouSureYouWantToAmendYesNoPage(request.subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(view(preparedForm, formAction))
+    }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
@@ -94,6 +110,41 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
                 ua2 <- Future.fromTry(ua1.set(ReturnTypePage, MonthlyAmendedStandardReturn))
                 _   <- sessionRepository.set(ua2)
               } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage, mode, ua2))
+          }
+        )
+    }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val subJourneyId = request.subJourneyId
+      val formAction   =
+        Some(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(cisPath, flowId))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
+          {
+            case Yes =>
+              for {
+                ua1            <- Future.fromTry(request.userAnswers.set(ReturnTypePage(subJourneyId), MonthlyAmendedNilReturn))
+                ua2            <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
+                updatedAnswers <- Future.fromTry(ua2.set(AreYouSureYouWantToAmendYesNoPage(subJourneyId), Yes))
+                _              <- sessionRepository.set(updatedAnswers)
+                deleteRequest  <- toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers))
+                _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
+                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers))
+                _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
+              } yield Redirect(
+                navigator.nextPage(AreYouSureYouWantToAmendYesNoPage(subJourneyId), mode, updatedAnswers)
+              )
+
+            case No =>
+              for {
+                ua1 <- Future.fromTry(request.userAnswers.set(AreYouSureYouWantToAmendYesNoPage(subJourneyId), No))
+                ua2 <- Future.fromTry(ua1.set(ReturnTypePage(subJourneyId), MonthlyAmendedStandardReturn))
+                _   <- sessionRepository.set(ua2)
+              } yield Redirect(navigator.nextPage(AreYouSureYouWantToAmendYesNoPage(subJourneyId), mode, ua2))
           }
         )
     }

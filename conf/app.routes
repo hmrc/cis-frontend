@@ -224,6 +224,9 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controll
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:cisPath/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(cisPath: CisPath, flowId: UUID)
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:cisPath/:flowId    controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath: CisPath, flowId: UUID)
 
+GET        /amend-monthly-return/are-you-sure-you-want-to-amend/:cisPath/:flowId        controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
+POST       /amend-monthly-return/are-you-sure-you-want-to-amend/:cisPath/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(cisPath: CisPath, flowId: UUID,mode: Mode = NormalMode)
+
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
 

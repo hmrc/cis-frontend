@@ -250,8 +250,11 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                   case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
                     Future
                       .successful(
-                        Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad())
-                      ) // TODO DTR-9474: Change to use id
+                        Redirect(
+                          controllers.amend.routes.AreYouSureYouWantToAmendYesNoController
+                            .onPageLoadWithId(cisPath, flowId)
+                        )
+                      )
 
                   case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
                       if preselectedSubcontractors.isEmpty =>
