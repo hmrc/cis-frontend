@@ -146,12 +146,14 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val formAction =
+      val cisId        = request.cisId
+      val subJourneyId = request.subJourneyId
+      val formAction   =
         Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(cisPath, flowId))
 
-      getMonthYearWithId(request.subJourneyId, request.userAnswers) match {
+      getMonthYearWithId(subJourneyId, request.userAnswers) match {
         case Some(monthYear) =>
-          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
+          hasCancellableMonthlyReturnStatusWithId(subJourneyId, cisId, request.userAnswers).flatMap {
             case true =>
               form
                 .bindFromRequest()
@@ -159,9 +161,12 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
                   formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, formAction))),
                   value =>
                     for {
-                      updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmCancelAmendmentYesNoPage, value))
+                      updatedAnswers <-
+                        Future.fromTry(
+                          request.userAnswers.set(ConfirmCancelAmendmentYesNoPage(subJourneyId), value)
+                        )
                       _              <- sessionRepository.set(updatedAnswers)
-                      result         <- if (value) handleYesWithId(cisPath, flowId, updatedAnswers, request.cisId)
+                      result         <- if (value) handleYesWithId(subJourneyId, cisPath, flowId, updatedAnswers, cisId)
                                         else handleNoWithId(cisPath, flowId)
                     } yield result
                 )
@@ -206,6 +211,36 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
+  private def hasCancellableMonthlyReturnStatusWithId(
+    subJourneyId: String,
+    cisId: String,
+    ua: UserAnswers
+  )(implicit request: RequestHeader): Future[Boolean] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    monthlyReturnService
+      .retrieveAllMonthlyReturns(cisId)
+      .map { response =>
+        ua.get(DateConfirmPaymentsPage(subJourneyId)).exists { monthYear =>
+          response.monthlyReturnList.exists { monthlyReturn =>
+            monthlyReturn.taxYear == monthYear.getYear &&
+            monthlyReturn.taxMonth == monthYear.getMonthValue &&
+            monthlyReturn.amendment.contains("Y") &&
+            monthlyReturn.status.exists { status =>
+              status == "STARTED" || status == "VALIDATED"
+            }
+          }
+        }
+      }
+      .recover { case e =>
+        logger.error(
+          s"[ConfirmCancelAmendmentYesNoController] error checking monthly return status for cisId=$cisId",
+          e
+        )
+        false
+      }
+  }
+
   private def handleYes(ua: UserAnswers, instanceId: String)(implicit request: CisIdDataRequest[_]): Future[Result] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
@@ -222,16 +257,21 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     }
   }
 
-  private def handleYesWithId(cisPath: CisPath, flowId: UUID, ua: UserAnswers, instanceId: String)(implicit
+  private def handleYesWithId(
+    subJourneyId: String,
+    cisPath: CisPath,
+    flowId: UUID,
+    ua: UserAnswers,
+    instanceId: String
+  )(implicit
     request: CisIdDataRequest[_]
   ): Future[Result] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-    val subJourneyId               = request.subJourneyId
 
-    reconcileFormpRds(instanceId, ua).flatMap {
+    reconcileFormpRdsWithId(subJourneyId, instanceId, ua).flatMap {
       case Some(redirect) => Future.successful(redirect)
       case None           =>
-        val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswers(subJourneyId, ua)
+        val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswersWithId(subJourneyId, ua)
 
         amendMonthlyReturnService
           .deleteUnsubmittedMonthlyReturn(deleteRequest)
