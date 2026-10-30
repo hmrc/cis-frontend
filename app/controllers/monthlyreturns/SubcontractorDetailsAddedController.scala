@@ -133,12 +133,12 @@ class SubcontractorDetailsAddedController @Inject() (
                 Future.successful(
                   Redirect(
                     controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
-                  ) // TODO DTR-9474: Update to use future id scope
+                  )
                 )
               } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
                 Future.successful(
                   renderPageWithId(subJourneyId, cisPath, flowId, mode, ua)
-                ) // TODO DTR-9474: Update to use future id scope
+                )
               } else {
                 ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
                   case Some(source) if sourceMode(source).contains(mode) =>
@@ -146,30 +146,30 @@ class SubcontractorDetailsAddedController @Inject() (
 
                   case _ =>
                     logger.error(
-                      "[SubcontractorDetailsAddedController][onPageLoad] - Missing or invalid MonthlyFinalValidationSourcePage"
+                      "[SubcontractorDetailsAddedController][onPageLoadWithId] - Missing or invalid MonthlyFinalValidationSourcePage"
                     )
                     Future.successful(
                       Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-                    ) // TODO DTR-9474: Do we need to update to use id scope?
+                    )
                 }
               }
 
             case false =>
               logger.error(
-                s"[SubcontractorDetailsAddedController][onPageLoad] - isEditable returned false, cisId=$cisId"
+                s"[SubcontractorDetailsAddedController][onPageLoadWithId] - isEditable returned false, cisId=$cisId"
               )
               Future.successful(
                 Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              ) // TODO DTR-9474: Do we need to update to use id scope?
+              )
           }
 
         case None =>
           logger.error(
-            "[SubcontractorDetailsAddedController][onPageLoad] - CisIdPage or DateConfirmPaymentsPage missing"
+            "[SubcontractorDetailsAddedController][onPageLoadWithId] - CisIdPage or DateConfirmPaymentsPage missing"
           )
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          ) // TODO DTR-9474: Do we need to update to use id scope?
+          )
       }
     }
 
@@ -233,28 +233,28 @@ class SubcontractorDetailsAddedController @Inject() (
 
             case true =>
               logger.error(
-                "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - Final Validation continuation missing or invalid"
+                "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidationWithId] - Final Validation continuation missing or invalid"
               )
               Redirect(
                 controllers.routes.JourneyRecoveryController.onPageLoad()
-              ) // TODO DTR-9474: Do we need to update to use id scope?
+              )
 
             case false =>
               logger.error(
-                s"[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - isEditable returned false, cisId=$cisId"
+                s"[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidationWithId] - isEditable returned false, cisId=$cisId"
               )
               Redirect(
                 controllers.routes.JourneyRecoveryController.onPageLoad()
-              ) // TODO DTR-9474: Do we need to update to use id scope?
+              )
           }
 
         case None =>
           logger.error(
-            "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidation] - CisIdPage or DateConfirmPaymentsPage missing"
+            "[SubcontractorDetailsAddedController][onPageLoadAfterFinalValidationWithId] - CisIdPage or DateConfirmPaymentsPage missing"
           )
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          ) // TODO DTR-9474: Do we need to update to use id scope?
+          )
       }
     }
 
@@ -382,7 +382,7 @@ class SubcontractorDetailsAddedController @Inject() (
         logger.error("[SubcontractorDetailsAddedController][onSubmit] - ReturnTypePage missing")
         Future.successful(
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        ) // TODO DTR-9474: Do we need to update to use id scope?
+        )
       } else if (!hasPassedFinalValidation) {
         Future.successful(
           Redirect(
