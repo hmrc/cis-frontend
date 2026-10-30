@@ -20,6 +20,7 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
+import models.requests.CisPath
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectSubcontractorsFormData
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
@@ -34,6 +35,7 @@ import utils.UserAnswerUtils.*
 import views.html.monthlyreturns.SelectSubcontractorsView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class SelectSubcontractorsController @Inject() (
@@ -42,6 +44,8 @@ class SelectSubcontractorsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
@@ -166,6 +170,173 @@ class SelectSubcontractorsController @Inject() (
         .getOrElse {
           logger.error("[SelectSubcontractorsController][onSubmit] - CisIdPage or DateConfirmPaymentsPage missing")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
+    }
+
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, defaultSelection: Option[Boolean] = None): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+
+      val requiredAnswers = for {
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(request.subJourneyId))
+      } yield (taxDate.getMonthValue, taxDate.getYear)
+
+      requiredAnswers
+        .map { (taxMonth, taxYear) =>
+          subcontractorService
+            .buildSelectSubcontractorPage(
+              cisId = request.cisId,
+              taxMonth = taxMonth,
+              taxYear = taxYear,
+              defaultSelection = defaultSelection,
+              userAnswers = Some(request.userAnswers),
+              id = request.subJourneyId
+            )
+            .map { model =>
+
+              val filledForm =
+                if (model.initiallySelectedIds.nonEmpty) {
+                  form.fill(
+                    SelectSubcontractorsFormData(
+                      subcontractorsToInclude = model.initiallySelectedIds
+                    )
+                  )
+                } else {
+                  form
+                }
+
+              val formAction         = Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId))
+              val preSelectedAction  =
+                Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true)))
+              val noneSelectedAction =
+                Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
+
+              Ok(
+                view(
+                  filledForm,
+                  model.subcontractors,
+                  appConfig.yourSubcontractorsUrl,
+                  formAction,
+                  preSelectedAction,
+                  noneSelectedAction
+                )
+              )
+            }
+        }
+        .getOrElse {
+          logger.error(
+            "[SelectSubcontractorsController][onPageLoadWithId] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
+    }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val subJourneyId    = request.subJourneyId
+      val requiredAnswers = for {
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
+      } yield (taxDate.getMonthValue, taxDate.getYear)
+      requiredAnswers
+        .map { (taxMonth, taxYear) =>
+          subcontractorService
+            .buildSelectSubcontractorPage(
+              cisId = request.cisId,
+              taxMonth = taxMonth,
+              taxYear = taxYear,
+              defaultSelection = None,
+              userAnswers = Some(request.userAnswers),
+              id = request.subJourneyId
+            )
+            .flatMap { model =>
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors =>
+                    Future.successful(
+                      BadRequest(
+                        view(
+                          formWithErrors,
+                          model.subcontractors,
+                          appConfig.yourSubcontractorsUrl,
+                          Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId)),
+                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true))),
+                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
+                        )
+                      )
+                    ),
+                  formData => {
+                    val selectedSubcontractors =
+                      model.subcontractors.filter(x => formData.subcontractorsToInclude.contains(x.id))
+
+                    monthlyReturnService
+                      .storeAndSyncSelectedSubcontractors(
+                        ua = request.userAnswers,
+                        selected = selectedSubcontractors,
+                        originalSubcontractorCount = model.subcontractors.size,
+                        cisId = request.cisId,
+                        id = request.subJourneyId
+                      )
+                      .flatMap { updatedAnswers =>
+                        val verificationRequired =
+                          selectedSubcontractors
+                            .filter { subcontractor =>
+                              updatedAnswers
+                                .incompleteSubcontractorIds(request.subJourneyId)
+                                .contains(subcontractor.id)
+                            }
+                            .exists(_.verificationRequired)
+
+                        for {
+                          withoutDraft        <-
+                            Future.fromTry(updatedAnswers.remove(FinalValidationDraftIdPage(subJourneyId)))
+                          withoutContinuation <-
+                            Future.fromTry(
+                              withoutDraft.remove(MonthlyFinalValidationContinuationPage(subJourneyId))
+                            )
+                          withSource          <- Future.fromTry(
+                                                   withoutContinuation.set(
+                                                     MonthlyFinalValidationSourcePage(subJourneyId),
+                                                     MonthlyFinalValidationSource.SelectSubcontractors
+                                                   )
+                                                 )
+                          withOrigin          <- Future.fromTry(
+                                                   withSource.set(
+                                                     IsResumedMonthlyReturnPage(subJourneyId),
+                                                     withSource.get(IsResumedMonthlyReturnPage(subJourneyId)).getOrElse(false)
+                                                   )
+                                                 )
+                          _                   <- sessionRepository.set(withOrigin)
+                        } yield
+                          if (verificationRequired) {
+                            Redirect(
+                              routes.VerifySubcontractorsController.onPageLoadWithId(cisPath, flowId, NormalMode)
+                            )
+                          } else {
+                            Redirect(
+                              routes.SubcontractorDetailsAddedController.onPageLoadWithId(cisPath, flowId, NormalMode)
+                            )
+                          }
+                      }
+                      .recover { error =>
+                        logger.error(
+                          s"[SelectSubcontractorsController] Failed storing/syncing selected subcontractors: ${error.toString}",
+                          error
+                        )
+                        Redirect(
+                          controllers.routes.SystemErrorController.onPageLoad()
+                        )
+                      }
+                  }
+                )
+            }
+        }
+        .getOrElse {
+          logger.error(
+            "[SelectSubcontractorsController][onSubmitWithId] - CisIdPage or DateConfirmPaymentsPage missing"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
         }
     }
 }

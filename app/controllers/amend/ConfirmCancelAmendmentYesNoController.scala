@@ -19,6 +19,7 @@ package controllers.amend
 import config.FrontendAppConfig
 import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
+import models.requests.CisPath
 import models.{NormalMode, UserAnswers}
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
 import models.requests.CisIdDataRequest
@@ -39,6 +40,7 @@ import utils.DateTimeFormats
 import views.html.amend.ConfirmCancelAmendmentYesNoView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -49,6 +51,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   formpRdsReconcileService: FormpRdsReconcileService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
@@ -85,6 +89,32 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val formAction =
+        Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(cisPath, flowId))
+
+      getMonthYearWithId(request.subJourneyId, request.userAnswers) match {
+        case Some(monthYear) =>
+          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
+            case true =>
+              for {
+                clearedAnswers <-
+                  Future.fromTry(request.userAnswers.remove(ConfirmCancelAmendmentYesNoPage(request.subJourneyId)))
+                _              <- sessionRepository.set(clearedAnswers)
+              } yield Ok(view(form, monthYear, formAction))
+
+            case false =>
+              logger.warn(s"[ConfirmCancelAmendmentYesNoController] monthly return status is not cancellable")
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
+
+        case None =>
+          logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       getMonthYear(request.userAnswers) match {
@@ -114,6 +144,44 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val cisId        = request.cisId
+      val subJourneyId = request.subJourneyId
+      val formAction   =
+        Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(cisPath, flowId))
+
+      getMonthYearWithId(subJourneyId, request.userAnswers) match {
+        case Some(monthYear) =>
+          hasCancellableMonthlyReturnStatusWithId(subJourneyId, cisId, request.userAnswers).flatMap {
+            case true =>
+              form
+                .bindFromRequest()
+                .fold(
+                  formWithErrors => Future.successful(BadRequest(view(formWithErrors, monthYear, formAction))),
+                  value =>
+                    for {
+                      updatedAnswers <-
+                        Future.fromTry(
+                          request.userAnswers.set(ConfirmCancelAmendmentYesNoPage(subJourneyId), value)
+                        )
+                      _              <- sessionRepository.set(updatedAnswers)
+                      result         <- if (value) handleYesWithId(subJourneyId, cisPath, flowId, updatedAnswers, cisId)
+                                        else handleNoWithId(cisPath, flowId)
+                    } yield result
+                )
+
+            case false =>
+              logger.warn(s"[ConfirmCancelAmendmentYesNoController] monthly return status is not cancellable")
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
+
+        case None =>
+          logger.error("[ConfirmCancelAmendmentYesNoController] monthYear missing")
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
   private def hasCancellableMonthlyReturnStatus(
     cisId: String,
     ua: UserAnswers
@@ -124,6 +192,36 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       .retrieveAllMonthlyReturns(cisId)
       .map { response =>
         ua.get(DateConfirmPaymentsPage).exists { monthYear =>
+          response.monthlyReturnList.exists { monthlyReturn =>
+            monthlyReturn.taxYear == monthYear.getYear &&
+            monthlyReturn.taxMonth == monthYear.getMonthValue &&
+            monthlyReturn.amendment.contains("Y") &&
+            monthlyReturn.status.exists { status =>
+              status == "STARTED" || status == "VALIDATED"
+            }
+          }
+        }
+      }
+      .recover { case e =>
+        logger.error(
+          s"[ConfirmCancelAmendmentYesNoController] error checking monthly return status for cisId=$cisId",
+          e
+        )
+        false
+      }
+  }
+
+  private def hasCancellableMonthlyReturnStatusWithId(
+    subJourneyId: String,
+    cisId: String,
+    ua: UserAnswers
+  )(implicit request: RequestHeader): Future[Boolean] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    monthlyReturnService
+      .retrieveAllMonthlyReturns(cisId)
+      .map { response =>
+        ua.get(DateConfirmPaymentsPage(subJourneyId)).exists { monthYear =>
           response.monthlyReturnList.exists { monthlyReturn =>
             monthlyReturn.taxYear == monthYear.getYear &&
             monthlyReturn.taxMonth == monthYear.getMonthValue &&
@@ -159,11 +257,62 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     }
   }
 
+  private def handleYesWithId(
+    subJourneyId: String,
+    cisPath: CisPath,
+    flowId: UUID,
+    ua: UserAnswers,
+    instanceId: String
+  )(implicit
+    request: CisIdDataRequest[_]
+  ): Future[Result] = {
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+    reconcileFormpRdsWithId(subJourneyId, instanceId, ua).flatMap {
+      case Some(redirect) => Future.successful(redirect)
+      case None           =>
+        val deleteRequest = DeleteUnsubmittedMonthlyReturnRequest.fromUserAnswersWithId(subJourneyId, ua)
+
+        amendMonthlyReturnService
+          .deleteUnsubmittedMonthlyReturn(deleteRequest)
+          .map { _ =>
+            Redirect(appConfig.returnsLandingPageUrl(instanceId, ua.get(ContractorNamePage(subJourneyId))))
+          }
+    }
+  }
+
   private def reconcileFormpRds(instanceId: String, ua: UserAnswers)(implicit
     request: CisIdDataRequest[_],
     hc: HeaderCarrier
   ): Future[Option[Result]] =
     resolveTaxOffice(request, ua) match {
+      case Some((taxOfficeNumber, taxOfficeReference)) =>
+        formpRdsReconcileService
+          .reconcile(instanceId, taxOfficeNumber, taxOfficeReference)
+          .map(_ => None)
+          .recover {
+            case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+              logger.warn(
+                s"[ConfirmCancelAmendmentYesNoController] Contractor known facts missing in RDS (status ${e.statusCode})"
+              )
+              Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+            case NonFatal(e)                                                                                  =>
+              logger.error(
+                s"[ConfirmCancelAmendmentYesNoController] FormP/RDS reconciliation failed: ${e.getMessage}",
+                e
+              )
+              Some(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
+      case None                                        =>
+        logger.warn("[ConfirmCancelAmendmentYesNoController] Missing tax office reference for FormP/RDS reconciliation")
+        Future.successful(Some(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())))
+    }
+
+  private def reconcileFormpRdsWithId(subJourneyId: String, instanceId: String, ua: UserAnswers)(implicit
+    request: CisIdDataRequest[_],
+    hc: HeaderCarrier
+  ): Future[Option[Result]] =
+    resolveTaxOfficeWithId(subJourneyId, request, ua) match {
       case Some((taxOfficeNumber, taxOfficeReference)) =>
         formpRdsReconcileService
           .reconcile(instanceId, taxOfficeNumber, taxOfficeReference)
@@ -192,13 +341,38 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     else
       request.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
 
+  private def resolveTaxOfficeWithId(
+    subJourneyId: String,
+    request: CisIdDataRequest[_],
+    ua: UserAnswers
+  ): Option[(String, String)] =
+    if (request.isAgent)
+      ua.get(AgentClientDataPage(subJourneyId)).map(a => (a.taxOfficeNumber, a.taxOfficeReference))
+    else
+      request.employerReference.map(ref => (ref.taxOfficeNumber, ref.taxOfficeReference))
+
   private def handleNo: Future[Result] =
     Future.successful(
       Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
     )
 
+  private def handleNoWithId(cisPath: CisPath, flowId: UUID): Future[Result] =
+    Future.successful(
+      Redirect(
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onPageLoadWithId(cisPath, flowId, NormalMode)
+      )
+    )
+
   private def getMonthYear(ua: UserAnswers)(implicit request: RequestHeader): Option[String] = {
     implicit val lang: Lang = messagesApi.preferred(request).lang
     ua.get(DateConfirmPaymentsPage).map(_.format(DateTimeFormats.dateTimeFormat()))
+  }
+
+  private def getMonthYearWithId(subJourneyId: String, ua: UserAnswers)(implicit
+    request: RequestHeader
+  ): Option[String] = {
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+    ua.get(DateConfirmPaymentsPage(subJourneyId)).map(_.format(DateTimeFormats.dateTimeFormat()))
   }
 }

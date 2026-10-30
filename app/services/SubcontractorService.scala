@@ -85,6 +85,45 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     userAnswers: Option[UserAnswers] = None,
     today: LocalDate = LocalDate.now()
   )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
+    buildSelectSubcontractorPageInternal(
+      cisId,
+      taxMonth,
+      taxYear,
+      defaultSelection,
+      userAnswers,
+      None,
+      today
+    )
+
+  // Multi-tab: Build the page model for an ID-scoped monthly return.
+  def buildSelectSubcontractorPage(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    defaultSelection: Option[Boolean],
+    userAnswers: Option[UserAnswers],
+    id: String
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
+    buildSelectSubcontractorPageInternal(
+      cisId,
+      taxMonth,
+      taxYear,
+      defaultSelection,
+      userAnswers,
+      Some(id),
+      LocalDate.now()
+    )
+
+  // Multi-tab: Shared implementation for legacy and ID-scoped journeys.
+  private def buildSelectSubcontractorPageInternal(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    defaultSelection: Option[Boolean],
+    userAnswers: Option[UserAnswers],
+    id: Option[String],
+    today: LocalDate
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
     monthlyReturnService
       .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, false))
       .map { data =>
@@ -132,7 +171,7 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
 
         val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
 
-        val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all)).getOrElse(Map())
+        val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all(id))).getOrElse(Map())
 
         val initiallySelectedIds: Seq[Int] = defaultSelection match {
           case Some(true)                              => subcontractorViewModels.map(_.id)

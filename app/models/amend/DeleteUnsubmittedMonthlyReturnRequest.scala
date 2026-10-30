@@ -43,4 +43,21 @@ object DeleteUnsubmittedMonthlyReturnRequest {
       amendment = returnType.amendmentFlag
     )
   }
+
+  def fromUserAnswersWithId(subJourneyId: String, ua: UserAnswers): DeleteUnsubmittedMonthlyReturnRequest = {
+    val instanceId = ua
+      .get(CisIdPage)
+      .getOrElse(throw new RuntimeException("Missing instanceId")) // TODO DTR-9474: Do we need to udate CisIdPage?
+    val monthYear  =
+      ua.get(DateConfirmPaymentsPage(subJourneyId))
+        .getOrElse(throw new RuntimeException("Missing confirmed payment date"))
+    val returnType = ua.get(ReturnTypePage(subJourneyId)).getOrElse(throw new RuntimeException("Missing return type"))
+
+    DeleteUnsubmittedMonthlyReturnRequest(
+      instanceId = instanceId,
+      taxYear = monthYear.getYear,
+      taxMonth = monthYear.getMonthValue,
+      amendment = returnType.amendmentFlag
+    )
+  }
 }

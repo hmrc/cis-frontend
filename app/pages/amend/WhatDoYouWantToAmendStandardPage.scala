@@ -20,6 +20,13 @@ import models.amend.WhatDoYouWantToAmendStandard
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class WhatDoYouWantToAmendStandardPage(id: String) extends QuestionPage[WhatDoYouWantToAmendStandard] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "whatDoYouWantToAmendStandard"
+}
+
 case object WhatDoYouWantToAmendStandardPage extends QuestionPage[WhatDoYouWantToAmendStandard] {
 
   override def path: JsPath = JsPath \ toString

@@ -19,10 +19,12 @@ package pages.finalvalidations
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
-case object FinalValidationDraftIdPage extends QuestionPage[String] {
-
-  override def path: JsPath = JsPath \ "finalvalidation" \ toString
-
+case class FinalValidationDraftIdPage(id: String) extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ id \ "finalvalidation" \ toString
   override def toString: String = "finalValidationDraftId"
+}
 
+case object FinalValidationDraftIdPage extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ "finalvalidation" \ toString
+  override def toString: String = "finalValidationDraftId"
 }

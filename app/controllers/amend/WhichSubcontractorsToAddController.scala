@@ -17,6 +17,7 @@
 package controllers.amend
 
 import controllers.actions.*
+import models.requests.CisPath
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
@@ -35,6 +36,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.amend.WhichSubcontractorsToAddView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -45,6 +47,8 @@ class WhichSubcontractorsToAddController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
   subcontractorService: SubcontractorService,
   monthlyReturnService: MonthlyReturnService,
@@ -112,6 +116,72 @@ class WhichSubcontractorsToAddController @Inject() (
         }
 
   }
+
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val ua           = request.userAnswers
+      val cisId        = request.cisId
+      val subJourneyId = request.subJourneyId
+
+      val requiredAnswers = for {
+        taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
+        returnType <- ua.get(ReturnTypePage(subJourneyId))
+      } yield (taxDate.getMonthValue, taxDate.getYear, returnType.amendmentFlag == "Y")
+
+      requiredAnswers
+        .map { case (taxMonth, taxYear, isAmendment) =>
+          monthlyReturnService
+            .isEditable(cisId, taxMonth, taxYear, isAmendment)
+            .flatMap { // TODO DTR-9474: Check if this need updated with id
+              case true  =>
+                subcontractorService
+                  .buildAmendWhichSubcontractorsPage( // TODO DTR-9474: Check if this need updated with id
+                    cisId,
+                    taxMonth,
+                    taxYear,
+                    Some(request.userAnswers),
+                    isAmendment = isAmendment
+                  )
+                  .map { model =>
+                    val form          = formProvider(model.subcontractors)
+                    val selectedIds   = request.userAnswers
+                      .get(WhichSubcontractorsToAddPage(subJourneyId))
+                      .getOrElse(model.preSelectedIds)
+                    val checkboxItems = WhichSubcontractorsToAdd.checkboxItems(model.subcontractors, selectedIds)
+                    val formAction    =
+                      Some(
+                        controllers.amend.routes.WhichSubcontractorsToAddController
+                          .onSubmitWithId(cisPath, flowId, mode)
+                      )
+                    Ok(view(form, mode, checkboxItems, formAction))
+                  }
+                  .recover { case ex =>
+                    logger.error(
+                      s"[WhichSubcontractorsToAddController] Failed to load subcontractors: ${ex.getMessage}",
+                      ex
+                    )
+                    Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                  }
+              case false =>
+                logger.error(
+                  "[WhichSubcontractorsToAddController] Resource not editable"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            }
+        }
+        .getOrElse {
+          logger.error(
+            s"[WhichSubcontractorsToAddController] Missing or invalid required answers: " +
+              s"CisIdPage present=${ua.get(CisIdPage).isDefined}, " +
+              s"DateConfirmPaymentsPage present=${ua.get(DateConfirmPaymentsPage(subJourneyId)).isDefined}, " +
+              s"ReturnTypePage=${ua.get(ReturnTypePage(subJourneyId))}"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+        }
+
+    }
 
   def onSubmit(mode: Mode): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
@@ -218,4 +288,131 @@ class WhichSubcontractorsToAddController @Inject() (
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
   }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      val cisId        = request.cisId
+      val subJourneyId = request.subJourneyId
+
+      val requiredAnswers = for {
+        taxDate    <- request.userAnswers.get(DateConfirmPaymentsPage)
+        returnType <- request.userAnswers.get(ReturnTypePage)
+      } yield (taxDate.getMonthValue, taxDate.getYear, returnType.amendmentFlag == "Y")
+
+      requiredAnswers
+        .map { case (taxMonth, taxYear, isAmendment) =>
+          subcontractorService
+            .buildAmendWhichSubcontractorsPage( // TODO DTR-9474: Check if this need updated with id
+              cisId,
+              taxMonth,
+              taxYear,
+              Some(request.userAnswers),
+              isAmendment = isAmendment
+            )
+            .flatMap { model =>
+              model.status match {
+                case Some("STARTED") | Some("VALIDATED") =>
+                  val form       = formProvider(model.subcontractors)
+                  val formAction =
+                    Some(
+                      controllers.amend.routes.WhichSubcontractorsToAddController.onSubmitWithId(cisPath, flowId, mode)
+                    )
+                  form
+                    .bindFromRequest()
+                    .fold(
+                      formWithErrors =>
+                        Future.successful(
+                          BadRequest(
+                            view(
+                              formWithErrors,
+                              mode,
+                              WhichSubcontractorsToAdd.checkboxItems(model.subcontractors),
+                              formAction
+                            )
+                          )
+                        ),
+                      value =>
+                        val selectedSubcontractors              = model.subcontractors
+                          .filter(subcontractor => value.contains(subcontractor.id))
+                          .map { subcontractor =>
+                            val existingSelectedSubcontractor =
+                              request.userAnswers
+                                .get(SelectedSubcontractorPage.all(Some(subJourneyId)))
+                                .flatMap { subcontractors =>
+                                  subcontractors.values.find(_.id == subcontractor.id.toLong)
+                                }
+
+                            SelectedSubcontractor(
+                              id = subcontractor.id.toLong,
+                              name = subcontractor.name,
+                              totalPaymentsMade = existingSelectedSubcontractor.flatMap(_.totalPaymentsMade),
+                              costOfMaterials = existingSelectedSubcontractor.flatMap(_.costOfMaterials),
+                              totalTaxDeducted = existingSelectedSubcontractor.flatMap(_.totalTaxDeducted)
+                            )
+                          }
+                        val selectedSubcontractorIds: Set[Long] = value.map(_.toLong)
+
+                        for {
+                          ua                  <-
+                            Future.fromTry(request.userAnswers.set(WhichSubcontractorsToAddPage(subJourneyId), value))
+                          ua2                 <- Future.fromTry {
+                                                   val cleared = ua.remove(SelectedSubcontractorPage.all(Some(subJourneyId)))
+                                                   cleared
+                                                     .flatMap { clearedAnswers =>
+                                                       selectedSubcontractors.zipWithIndex.foldLeft(Try(clearedAnswers)) {
+                                                         case (answersTry, (subcontractor, index)) =>
+                                                           answersTry.flatMap(
+                                                             _.set(
+                                                               SelectedSubcontractorPage(index + 1, Some(subJourneyId)),
+                                                               subcontractor
+                                                             )
+                                                           )
+                                                       }
+                                                     }
+                                                     .flatMap(
+                                                       _.set(OriginalSubcontractorCountPage(subJourneyId), model.subcontractors.size)
+                                                     )
+                                                 }
+                          withoutDraft        <- Future.fromTry(ua2.remove(FinalValidationDraftIdPage(subJourneyId)))
+                          withoutContinuation <-
+                            Future.fromTry(withoutDraft.remove(MonthlyFinalValidationContinuationPage(subJourneyId)))
+                          withSource          <- Future.fromTry(
+                                                   withoutContinuation.set(
+                                                     MonthlyFinalValidationSourcePage(subJourneyId),
+                                                     MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                                                       mode.toString
+                                                     ) // TODO DTR-9474: Final validation out of scope
+                                                   )
+                                                 )
+                          _                   <- sessionRepository.set(withSource)
+                          _                   <- monthlyReturnService.syncMonthlyReturnItems(withSource, selectedSubcontractorIds.toSeq)
+                        } yield Redirect(
+                          navigator.nextPage(WhichSubcontractorsToAddPage(subJourneyId), mode, withSource)
+                        )
+                    )
+
+                case unexpectedStatus =>
+                  val statusText = unexpectedStatus.getOrElse("missing")
+                  logger.error(
+                    s"[WhichSubcontractorsToAddController] Unexpected return status: $statusText. " +
+                      "Expected STARTED or VALIDATED."
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              }
+            }
+            .recover { case ex =>
+              logger.error(s"[WhichSubcontractorsToAddController] Submit failed: ${ex.getMessage}", ex)
+              Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+        }
+        .getOrElse {
+          logger.error(
+            s"[WhichSubcontractorsToAddController] Missing or invalid required answers: " +
+              s"CisIdPage present=${request.userAnswers.get(CisIdPage).isDefined}, " + // TODO DTR-9474: This page is in a different format to others, should it be converted to case object and then have the case class with id added?
+              s"DateConfirmPaymentsPage present=${request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId)).isDefined}, " +
+              s"ReturnTypePage=${request.userAnswers.get(ReturnTypePage(subJourneyId))}"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
+    }
 }

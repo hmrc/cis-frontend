@@ -23,8 +23,8 @@ import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontract
 
 object SubcontractorDetailsAddedBuilder {
 
-  private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
-    ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+  private def selectedSubcontractors(id: Option[String], ua: UserAnswers): Map[Int, SelectedSubcontractor] =
+    ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
 
   private def detailsAdded(sub: SelectedSubcontractor): Boolean =
     sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
@@ -36,10 +36,14 @@ object SubcontractorDetailsAddedBuilder {
       ("monthlyreturns.subcontractorDetailsAdded.heading.multiple", Seq(addedCount.asInstanceOf[AnyRef]))
     }
 
-  def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
-    val isAmendment                = ua.get(AmendmentDetailsPage).isDefined
-    val subcontractorByIndex       = selectedSubcontractors(ua)
-    val originalSubcontractorCount = ua.get(OriginalSubcontractorCountPage)
+  def build(ua: UserAnswers, id: Option[String] = None): Option[SubcontractorDetailsAddedViewModel] = {
+    val isAmendment                =
+      ua.get(AmendmentDetailsPage(id.toString))
+        .isDefined // TODO DTR-9474: Investigate compilation error when not cast to String
+    val subcontractorByIndex       = selectedSubcontractors(id, ua)
+    val originalSubcontractorCount = ua.get(
+      OriginalSubcontractorCountPage(id.toString)
+    ) // TODO DTR-9474: Investigate compilation error when not cast to String
     val indexes                    = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {
@@ -52,10 +56,10 @@ object SubcontractorDetailsAddedBuilder {
             val added      = detailsAdded(sub)
             val changeCall =
               if (added) {
-                controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController // TODO DTR-9474: Update with future id scope
                   .onPageLoad(index)
               } else {
-                controllers.monthlyreturns.routes.PaymentDetailsController
+                controllers.monthlyreturns.routes.PaymentDetailsController // TODO DTR-9474: Update with future id scope
                   .onPageLoad(NormalMode, index, None)
               }
 
@@ -67,8 +71,9 @@ object SubcontractorDetailsAddedBuilder {
               changeLabel = if (added) { "monthlyreturns.subcontractorDetailsAdded.amend" }
               else { "monthlyreturns.subcontractorDetailsAdded.add" },
               changeCall = changeCall,
-              removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-                .onPageLoad(CheckMode, index)
+              removeCall =
+                controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController // TODO DTR-9474: Update with future id scope
+                  .onPageLoad(CheckMode, index)
             )
           }
         }
