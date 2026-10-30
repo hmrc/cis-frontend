@@ -19,6 +19,13 @@ package pages.amend
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class WhichSubcontractorsToAddPage(id: String) extends QuestionPage[Set[String]] {
+
+  override def path: JsPath = JsPath \ id \ toString
+
+  override def toString: String = "whichSubcontractorsToAdd"
+}
+
 case object WhichSubcontractorsToAddPage extends QuestionPage[Set[String]] {
 
   override def path: JsPath = JsPath \ toString

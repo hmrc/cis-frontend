@@ -140,6 +140,7 @@ class ReviewSubcontractorDetailsController @Inject() (
 //                  .onPageLoadWithId(cisPath, flowId, rowSubcontractorId).url
 //              )
               // TODO DTR-9474: Update to use future id scope, complication with use of row within view
+              // TODO DTR-9474: Final validation out of scope
 
               Ok(
                 view(

@@ -22,11 +22,21 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, checkboxItems: Seq[uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.CheckboxItem])(implicit request: Request[_], messages: Messages)
+@(
+    form: Form[_],
+    mode: Mode,
+    checkboxItems: Seq[uk.gov.hmrc.govukfrontend.views.viewmodels.checkboxes.CheckboxItem],
+    formAction: Option[Call] = None
+)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("amend.whichSubcontractorsToAdd.title"))) {
 
-    @formHelper(action = controllers.amend.routes.WhichSubcontractorsToAddController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+    @formHelper(
+        action = formAction.getOrElse(
+            controllers.amend.routes.WhichSubcontractorsToAddController.onSubmit(mode)
+        ),
+        Symbol("autoComplete") -> "off"
+    ) {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value_0")))

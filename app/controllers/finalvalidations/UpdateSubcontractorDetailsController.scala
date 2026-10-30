@@ -292,7 +292,7 @@ class UpdateSubcontractorDetailsController @Inject() (
 
         case None =>
           Future.successful(
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoadWithId(cisPath, flowId))
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           )
       }
     }
