@@ -593,7 +593,7 @@ class SubcontractorDetailsAddedController @Inject() (
       }
   }
 
-  private def runFinalValidationWithId(
+  private def runFinalValidationWithId( // TODO DTR-9474: Final validation out of scope
     subJourneyId: String,
     cisPath: CisPath,
     flowId: UUID,
@@ -606,7 +606,7 @@ class SubcontractorDetailsAddedController @Inject() (
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
       request,
       request.session
-    ) // TODO DTR-9474: Update with future id scope
+    )
 
     subcontractorService
       .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua) // TODO DTR-9474: Update with future id scope
@@ -628,11 +628,11 @@ class SubcontractorDetailsAddedController @Inject() (
                                )
                              )
             draftId       <- finalValidationDraftService.create(createRequest)
-            withDraftId   <- Future.fromTry(ua.set(FinalValidationDraftIdPage, draftId))
+            withDraftId   <- Future.fromTry(ua.set(FinalValidationDraftIdPage(subJourneyId), draftId))
             _             <- sessionRepository.set(withDraftId)
           } yield Redirect(
-            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
-          ) // TODO DTR-9474: Update with future id scope
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(cisPath, flowId)
+          )
         } else {
           for {
             withContinuation <-
@@ -645,7 +645,7 @@ class SubcontractorDetailsAddedController @Inject() (
         logger.error(s"[SubcontractorDetailsAddedController] Final validation failed: ${ex.getMessage}", ex)
         Redirect(
           controllers.routes.SystemErrorController.onPageLoad()
-        ) // TODO DTR-9474: Do we need to update to use id scope?
+        )
       }
   }
 
@@ -694,7 +694,7 @@ class SubcontractorDetailsAddedController @Inject() (
         logger.error("[SubcontractorDetailsAddedController][renderPageWithId] - ReturnTypePage missing")
         Redirect(
           controllers.routes.JourneyRecoveryController.onPageLoad()
-        ) // TODO DTR-9474: Do we need to update to use id scope?
+        )
 
       case Some(returnType) =>
         val preparedForm =
@@ -722,15 +722,15 @@ class SubcontractorDetailsAddedController @Inject() (
 
           case None if returnType.amendmentFlag == "Y" =>
             Redirect(
-              controllers.amend.routes.WhatDoYouWantToAmendStandardController // TODO DTR-9474: Update with future id scope
-                .onPageLoad()
+              controllers.amend.routes.WhatDoYouWantToAmendStandardController
+                .onPageLoadWithId(cisPath, flowId)
             )
 
           case None =>
             logger.error("[SubcontractorDetailsAddedController][renderPageWithId] - view model build returned None")
             Redirect(
               controllers.routes.SystemErrorController.onPageLoad()
-            ) // TODO DTR-9474: Do we need to update to use id scope?
+            )
         }
     }
 
