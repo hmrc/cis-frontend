@@ -544,8 +544,8 @@ class SubcontractorDetailsAddedController @Inject() (
   def onCancelAmendmentWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
     (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
       Redirect(
-        controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad()
-      ) // TODO DTR-9474: Update with future id scope
+        controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(cisPath, flowId)
+      )
     }
 
   private def runFinalValidation(

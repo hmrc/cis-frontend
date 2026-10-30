@@ -214,6 +214,9 @@ POST       /amend-monthly-return/change-which-subcontractors-to-add/:cisPath/:fl
 GET        /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
 POST       /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
 
+GET        /monthly-return/cancel-amended-monthly-return/:cisPath/:flowId                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(cisPath: CisPath, flowId: UUID)
+POST       /monthly-return/cancel-amended-monthly-return/:cisPath/:flowId                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmitWithId(cisPath: CisPath, flowId: UUID)
+
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
 
