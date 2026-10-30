@@ -231,9 +231,10 @@ class ReviewSubcontractorDetailsController @Inject() (
                                         updateSelectedSubcontractorNamesWithId(subJourneyId, request.userAnswers, draft)
                                       )
                   cleanedAnswers   <- Future.fromTry(clearFinalValidationStateWithId(subJourneyId, updatedAnswers))
-                  withContinuation <- Future.fromTry(
-                                        cleanedAnswers.set(MonthlyFinalValidationContinuationPage, mode.toString)
-                                      )
+                  withContinuation <-
+                    Future.fromTry(
+                      cleanedAnswers.set(MonthlyFinalValidationContinuationPage(subJourneyId), mode.toString)
+                    )
                   _                <- sessionRepository.set(withContinuation)
                 } yield Redirect(
                   controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
@@ -311,8 +312,8 @@ class ReviewSubcontractorDetailsController @Inject() (
       case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
         modeFromString(modeValue)
           .map(mode =>
-            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(mode).url
-          ) // TODO DTR-9474: Update to use future id scope
+            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(cisPath, flowId, mode).url
+          )
           .getOrElse {
             logger.error(
               "[ReviewSubcontractorDetailsController] Unable to determine back URL: " +
@@ -360,7 +361,7 @@ class ReviewSubcontractorDetailsController @Inject() (
   }
 
   private def updateSelectedSubcontractorNamesWithId(
-    id: String,
+    subJourneyId: String,
     userAnswers: UserAnswers,
     draft: FinalValidationDraft
   ): Try[UserAnswers] = {
@@ -373,7 +374,7 @@ class ReviewSubcontractorDetailsController @Inject() (
 
     val selectedSubcontractors =
       userAnswers
-        .get(SelectedSubcontractorPage.all(Some(id)))
+        .get(SelectedSubcontractorPage.all(Some(subJourneyId)))
         .getOrElse(Map.empty)
 
     val updatedSubcontractors =
@@ -392,7 +393,7 @@ class ReviewSubcontractorDetailsController @Inject() (
       }
 
     userAnswers.set(
-      SelectedSubcontractorPage.all(Some(id)),
+      SelectedSubcontractorPage.all(Some(subJourneyId)),
       updatedSubcontractors
     )
   }
