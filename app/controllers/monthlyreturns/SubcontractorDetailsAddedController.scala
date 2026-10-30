@@ -438,8 +438,9 @@ class SubcontractorDetailsAddedController @Inject() (
                     .getOrElse(request.userAnswers)
                 sessionRepository.set(updatedUa).map { _ =>
                   Redirect(
-                    controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad()
-                  ) // TODO DTR-9474: Update with future id scope
+                    controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
+                      .onPageLoadWithId(cisPath, flowId)
+                  )
                 }
               }
             } else {
