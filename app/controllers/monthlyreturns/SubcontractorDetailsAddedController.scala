@@ -511,22 +511,22 @@ class SubcontractorDetailsAddedController @Inject() (
                           case (Some(MonthlyStandardReturn), Some(true)) =>
                             Redirect(
                               controllers.amend.routes.WhichSubcontractorsToAddController
-                                .onPageLoad(mode) // TODO DTR-9474: Update with future id scope
+                                .onPageLoadWithId(cisPath, flowId, mode)
                             )
 
                           case (Some(returnType), _) if returnType.amendmentFlag == "Y" =>
                             Redirect(
                               controllers.amend.routes.WhichSubcontractorsToAddController
-                                .onPageLoad(mode) // TODO DTR-9474: Update with future id scope
+                                .onPageLoadWithId(cisPath, flowId, mode)
                             )
 
                           case _ =>
                             logger.error(
-                              "[SubcontractorDetailsAddedController][onSubmit] - Missing or invalid monthly return journey origin"
+                              "[SubcontractorDetailsAddedController][onSubmitWithId] - Missing or invalid monthly return journey origin"
                             )
                             Redirect(
                               controllers.routes.JourneyRecoveryController.onPageLoad()
-                            ) // TODO DTR-9474: Do we need to update to use id scope?
+                            )
                         }
                       }
                     }
