@@ -86,6 +86,8 @@ class ConfirmAmendmentController @Inject() (
               val updatedUserAnswers =
                 UserAnswers(request.userId)
                   .set(CisIdPage, handoff.instanceId)
+                  // TODO: ContractorNamePage TAKES AN ID + ReturnTypePage TAKES AN ID, AmendmentDetailsPage TAKES AN ID
+                  // DateConfirmPaymentsPage TAKES AN ID (HAS ONE ALREADY USE THAT PAGE)
                   .flatMap(ua => contractorName.fold(Try(ua))(name => ua.set(ContractorNamePage, name)))
                   .flatMap(_.set(ReturnTypePage, amendedReturnType))
                   .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
@@ -100,6 +102,7 @@ class ConfirmAmendmentController @Inject() (
                 monthlyReturnService.getAgentClient(request.userId).flatMap {
                   case Some(agentData) =>
                     for {
+                      // Todo: does AgentClientDataPage need an ID as well?
                       uaWithAgentClientData <- Future.fromTry(
                                                  updatedUserAnswers.set(AgentClientDataPage, agentData)
                                                )
@@ -133,17 +136,18 @@ class ConfirmAmendmentController @Inject() (
 
   def onSubmit: Action[AnyContent] =
     (identify andThen getData).async { implicit request =>
+      // TODO: AmendmentDetailsPage needs an ID?
       request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
         case Some(amendmentDetails) =>
           implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-          val createRequest = CreateAmendedMonthlyReturnRequest(
+          val createRequest  = CreateAmendedMonthlyReturnRequest(
             instanceId = amendmentDetails.instanceId,
             taxYear = amendmentDetails.taxYear,
             taxMonth = amendmentDetails.taxMonth,
             version = 0
           )
-
+          // TODO: ConfirmAmendmentPage needs an ID?
           // A repeat POST (double click, back then resubmit) must not amend the same return again
           val alreadyAmended = request.userAnswers.flatMap(_.get(ConfirmAmendmentPage)).contains(true)
 
@@ -156,10 +160,14 @@ class ConfirmAmendmentController @Inject() (
             } yield amendmentDetails.originalReturnType match {
               case ReturnType.MonthlyStandardReturn =>
                 Redirect(
+                  // TODO: INSTEAD OF onPageLoad USE onPageLoadWithId?
                   controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
                 )
               case ReturnType.MonthlyNilReturn      =>
                 Redirect(
+                  // TODO: DO I NEED TO WORK ON THE WhatDoYouWantToAmendNilController and create new onpageload and onsubmit?
+                  // NOTE: ON LINE 247 in: WhatDoYouWantToAmendStandardController
+                  //      I have AreYouSureYouWantToAmendYesNoController.onPageLload
                   controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
                 )
               case unexpected                       =>
@@ -181,4 +189,12 @@ class ConfirmAmendmentController @Inject() (
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
+
+    /** TODO:
+      *   1. Create new routes for onsubmit and onpageload 2. Create new onpageload and onsubmit metods 3. Modify all
+      *      the pages that are used in these 2 methods to take an id = String e.g: case class ConfirmAmendmentPage(id:
+      *      String) extends QuestionPage[LocalDate] {}
+      *
+      * 4. DO I NEED TO WORK ON THE WhatDoYouWantToAmendNilController and create new onpageload and onsubmit? #LINE 169
+      */
 }
