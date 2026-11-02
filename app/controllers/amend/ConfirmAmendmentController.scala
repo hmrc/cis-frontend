@@ -19,6 +19,7 @@ package controllers.amend
 import controllers.actions.*
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
+import models.requests.CisPath
 import pages.agent.AgentClientDataPage
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
 import pages.monthlyreturns.*
@@ -43,7 +44,9 @@ class ConfirmAmendmentController @Inject() (
   getData: DataRetrievalAction,
   sessionRepository: SessionRepository,
   amendMonthlyReturnService: AmendMonthlyReturnService,
+  // TODO: NEED TO USE THE JOURNEY SERVICE HERE?
   monthlyReturnService: MonthlyReturnService,
+  resolveScheme: SchemeAction,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmAmendmentView
 )(implicit ec: ExecutionContext)
@@ -86,8 +89,6 @@ class ConfirmAmendmentController @Inject() (
               val updatedUserAnswers =
                 UserAnswers(request.userId)
                   .set(CisIdPage, handoff.instanceId)
-                  // TODO: ContractorNamePage TAKES AN ID + ReturnTypePage TAKES AN ID, AmendmentDetailsPage TAKES AN ID
-                  // DateConfirmPaymentsPage TAKES AN ID (HAS ONE ALREADY USE THAT PAGE)
                   .flatMap(ua => contractorName.fold(Try(ua))(name => ua.set(ContractorNamePage, name)))
                   .flatMap(_.set(ReturnTypePage, amendedReturnType))
                   .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
@@ -102,7 +103,6 @@ class ConfirmAmendmentController @Inject() (
                 monthlyReturnService.getAgentClient(request.userId).flatMap {
                   case Some(agentData) =>
                     for {
-                      // Todo: does AgentClientDataPage need an ID as well?
                       uaWithAgentClientData <- Future.fromTry(
                                                  updatedUserAnswers.set(AgentClientDataPage, agentData)
                                                )
@@ -134,7 +134,140 @@ class ConfirmAmendmentController @Inject() (
       }
   }
 
-  def onSubmit: Action[AnyContent] =
+  def onSubmit: Action[AnyContent]                                              =
+    (identify andThen getData).async { implicit request =>
+      request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
+        case Some(amendmentDetails) =>
+          implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+
+          val createRequest  = CreateAmendedMonthlyReturnRequest(
+            instanceId = amendmentDetails.instanceId,
+            taxYear = amendmentDetails.taxYear,
+            taxMonth = amendmentDetails.taxMonth,
+            version = 0
+          )
+          // A repeat POST (double click, back then resubmit) must not amend the same return again
+          val alreadyAmended = request.userAnswers.flatMap(_.get(ConfirmAmendmentPage)).contains(true)
+
+          (
+            for {
+              _             <- if (alreadyAmended) Future.unit
+                               else amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
+              updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
+              _             <- sessionRepository.set(updatedAnswers)
+            } yield amendmentDetails.originalReturnType match {
+              case ReturnType.MonthlyStandardReturn =>
+                Redirect(
+                  controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+                )
+              case ReturnType.MonthlyNilReturn      =>
+                Redirect(
+                  controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
+                )
+              case unexpected                       =>
+                logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+            }
+          ).recover { case ex =>
+            logger.error(
+              s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
+              ex
+            )
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+
+        case None =>
+          logger.warn(
+            s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      }
+    }
+
+    /** TODO: Modify all the pages that are used in these 2 methods to take an id = String e.g: case class
+      * ConfirmAmendmentPage(id:String) extends QuestionPage[LocalDate] {}
+      */
+
+    // TODO: IN PROGRES NOT WORKING ATM.
+  def onPageLoadWithId(cisPath: CisPath, handoffId: String): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath)).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      // TODO: CREATE VARIABLES OR PASS DIRECTLY request.identifier... when needed?
+      val userId                     = request.identifier.userId
+
+      amendMonthlyReturnService
+        .getAmendmentHandoff(handoffId)
+        .flatMap {
+          case Some(handoff) =>
+            val contractorName =
+              Some(handoff.contractorName.trim).filter(n => n.nonEmpty && n != NoNameProvidedPlaceholder)
+
+            val amendmentDetails = AmendmentDetails(
+              instanceId = handoff.instanceId,
+              taxYear = handoff.taxYear,
+              taxMonth = handoff.taxMonth,
+              contractorName = contractorName.getOrElse(""),
+              originalReturnType = handoff.originalReturnType,
+              acceptedTime = handoff.acceptedTime
+            )
+
+            ReturnType.amendedFrom(handoff.originalReturnType) match {
+              case Some(amendedReturnType) =>
+                val updatedUserAnswers =
+                  UserAnswers(userId)
+                    .set(CisIdPage, handoff.instanceId)
+                    // TODO: ContractorNamePage TAKES AN ID + ReturnTypePage TAKES AN ID, AmendmentDetailsPage TAKES AN ID?
+                    // DateConfirmPaymentsPage TAKES AN ID (HAS ONE ALREADY USE THAT PAGE)
+                    .flatMap(ua => contractorName.fold(Try(ua))(name => ua.set(ContractorNamePage, name)))
+                    .flatMap(_.set(ReturnTypePage, amendedReturnType))
+                    .flatMap(_.set(AmendmentDetailsPage, amendmentDetails))
+                    .flatMap(
+                      _.set(
+                        DateConfirmPaymentsPage, // TODO: DOES IT TAKE AN ID?
+                        LocalDate.of(amendmentDetails.taxYear, amendmentDetails.taxMonth, 5)
+                      )
+                    )
+                    .get
+
+                val showWarning = isInWarningPeriod(handoff.acceptedTime)
+
+                if (request.identifier.isAgent) {
+                  monthlyReturnService.getAgentClient(userId).flatMap {
+                    case Some(agentData) =>
+                      for {
+                        // Todo: does AgentClientDataPage need an ID as well?
+                        uaWithAgentClientData <- Future.fromTry(
+                                                   updatedUserAnswers.set(AgentClientDataPage, agentData)
+                                                 )
+                        _                     <- sessionRepository.set(uaWithAgentClientData)
+                      } yield Ok(view(showWarning))
+
+                    case None =>
+                      logger.warn("[ConfirmAmendmentController] Agent data not found")
+                      Future.successful(
+                        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                      )
+                  }
+                } else {
+                  sessionRepository.set(updatedUserAnswers).map { _ =>
+                    Ok(view(showWarning))
+                  }
+                }
+
+              case None =>
+                logger.warn(
+                  s"[ConfirmAmendmentController] Unexpected originalReturnType in handoff: ${handoff.originalReturnType}"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            }
+
+          case None =>
+            logger.warn(s"[ConfirmAmendmentController] No handoff found for handoffId: $handoffId")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
+    }
+
+  def onSubmitWithId(cisPath: CisPath): Action[AnyContent] =
     (identify andThen getData).async { implicit request =>
       // TODO: AmendmentDetailsPage needs an ID?
       request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
@@ -165,9 +298,7 @@ class ConfirmAmendmentController @Inject() (
                 )
               case ReturnType.MonthlyNilReturn      =>
                 Redirect(
-                  // TODO: DO I NEED TO WORK ON THE WhatDoYouWantToAmendNilController and create new onpageload and onsubmit?
-                  // NOTE: ON LINE 247 in: WhatDoYouWantToAmendStandardController
-                  //      I have AreYouSureYouWantToAmendYesNoController.onPageLload
+                  // TODO: WhatDoYouWantToAmendNilController -> Jesses PR? to use onPageLoadWithId?
                   controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
                 )
               case unexpected                       =>
@@ -190,11 +321,4 @@ class ConfirmAmendmentController @Inject() (
       }
     }
 
-    /** TODO:
-      *   1. Create new routes for onsubmit and onpageload 2. Create new onpageload and onsubmit metods 3. Modify all
-      *      the pages that are used in these 2 methods to take an id = String e.g: case class ConfirmAmendmentPage(id:
-      *      String) extends QuestionPage[LocalDate] {}
-      *
-      * 4. DO I NEED TO WORK ON THE WhatDoYouWantToAmendNilController and create new onpageload and onsubmit? #LINE 169
-      */
 }

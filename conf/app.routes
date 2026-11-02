@@ -195,6 +195,8 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controll
 
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
+# GET        /manage-cis-return/amend-monthly-return/confirm-amendments/:cisPath   controllers.amend.ConfirmAmendmentController.onPageLoadWithId(cisPath: CisPath, handoffId: String)
+# POST       /manage-cis-return/amend-monthly-return/confirm-amendments/:cisPath   controllers.amend.ConfirmAmendmentController.onSubmitWithId(cisPath: CisPath)
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
