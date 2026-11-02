@@ -328,6 +328,24 @@ class MonthlyReturnService @Inject() (
       } yield updatedUa
     }
 
+  def populateUserAnswersForContinueAmendJourney(
+    ua: UserAnswers,
+    id: String,
+    editRequest: GetMonthlyReturnForEditRequest
+  )(implicit hc: HeaderCarrier): Future[Either[String, ContinueAmendJourneyResult]] =
+    retrieveMonthlyReturnForEditDetails(editRequest).map { response =>
+      for {
+        monthlyReturn <- response.monthlyReturn.headOption.toRight("Missing monthly return")
+        updatedUa     <- populateContinueAmendJourneyAnswers(
+                           ua = ua,
+                           id = id,
+                           editRequest = editRequest,
+                           response = response,
+                           monthlyReturn = monthlyReturn
+                         )
+      } yield updatedUa
+    }
+
   private def populateContinueAmendJourneyAnswers(
     ua: UserAnswers,
     editRequest: GetMonthlyReturnForEditRequest,
@@ -346,6 +364,36 @@ class MonthlyReturnService @Inject() (
       case Some("N") =>
         buildContinueAmendJourneyAnswers(
           ua = ua,
+          editRequest = editRequest,
+          response = response,
+          isNilReturn = false,
+          returnType = MonthlyAmendedStandardReturn
+        )
+      case _         =>
+        Left("Missing nil return indicator")
+    }
+
+  private def populateContinueAmendJourneyAnswers(
+    ua: UserAnswers,
+    id: String,
+    editRequest: GetMonthlyReturnForEditRequest,
+    response: GetAllMonthlyReturnDetailsResponse,
+    monthlyReturn: MonthlyReturn
+  ): Either[String, ContinueAmendJourneyResult] =
+    monthlyReturn.nilReturnIndicator match {
+      case Some("Y") =>
+        buildContinueAmendJourneyAnswers(
+          ua = ua,
+          id = id,
+          editRequest = editRequest,
+          response = response,
+          isNilReturn = true,
+          returnType = MonthlyAmendedNilReturn
+        )
+      case Some("N") =>
+        buildContinueAmendJourneyAnswers(
+          ua = ua,
+          id = id,
           editRequest = editRequest,
           response = response,
           isNilReturn = false,
@@ -416,6 +464,77 @@ class MonthlyReturnService @Inject() (
               }
       ua10 <- emailRecipient.filter(_.nonEmpty) match {
                 case Some(email) => setOrError(ua9, EnterYourEmailAddressPage, email)
+                case None        => Right(ua9)
+              }
+    } yield ContinueAmendJourneyResult(
+      userAnswers = ua10,
+      hasSubcontractors = preselectedSubcontractors.nonEmpty,
+      isNilReturn = isNilReturn
+    )
+  }
+
+  private def buildContinueAmendJourneyAnswers(
+    ua: UserAnswers,
+    id: String,
+    editRequest: GetMonthlyReturnForEditRequest,
+    response: GetAllMonthlyReturnDetailsResponse,
+    isNilReturn: Boolean,
+    returnType: ReturnType
+  ): Either[String, ContinueAmendJourneyResult] = {
+    val emailRecipient   = response.submission.headOption.flatMap(_.emailRecipient)
+    val existingSubId    = response.submission.headOption.map(_.submissionId)
+    val contractorName   = response.scheme.headOption.flatMap(_.name).getOrElse("")
+    val amendmentDetails = AmendmentDetails(
+      instanceId = editRequest.instanceId,
+      taxYear = editRequest.taxYear,
+      taxMonth = editRequest.taxMonth,
+      contractorName = contractorName,
+      originalReturnType = returnType,
+      acceptedTime = response.submission.headOption.flatMap(_.acceptedTime)
+    )
+
+    val preselectedSubcontractors: Map[Int, SelectedSubcontractor] =
+      response.subcontractors
+        .flatMap { sub =>
+          response.monthlyReturnItems
+            .find(item => item.itemResourceReference == sub.subbieResourceRef)
+            .map { item =>
+              SelectedSubcontractor(
+                id = sub.subcontractorId,
+                name = sub.displayName.getOrElse("No name provided"),
+                totalPaymentsMade = toBigDecimal(item.totalPayments),
+                costOfMaterials = toBigDecimal(item.costOfMaterials),
+                totalTaxDeducted = toBigDecimal(item.totalDeducted)
+              )
+            }
+        }
+        .zipWithIndex
+        .map { case (sub, idx) => (idx + 1, sub) }
+        .toMap
+
+    for {
+      ua1  <- setOrError(ua, CisIdPage(id), editRequest.instanceId)
+      ua2  <- setOrError(ua1, ContractorNamePage(id), contractorName)
+      ua3  <- setOrError(ua2, ReturnTypePage(id), returnType)
+      ua4  <- setOrError(
+                ua3,
+                DateConfirmPaymentsPage(id),
+                LocalDate.of(editRequest.taxYear, editRequest.taxMonth, 5)
+              )
+      ua5  <- setOrError(ua4, AmendmentDetailsPage(id), amendmentDetails)
+      ua6  <- setOrError(ua5, ScopedSelectedSubcontractorPage.all(id), preselectedSubcontractors)
+      ua7  <- existingSubId match {
+                case Some(subId) => setOrError(ua6, ResubmissionIdPage(id), subId) // renamed from `id`: see below
+                case None        => Right(ua6)
+              }
+      ua8  <- setOrError(ua7, ConfirmationByEmailPage(id), emailRecipient.exists(_.nonEmpty))
+      ua9  <- if (!isNilReturn) {
+                setOrError(ua8, OriginalSubcontractorCountPage(id), response.subcontractors.size)
+              } else {
+                Right(ua8)
+              }
+      ua10 <- emailRecipient.filter(_.nonEmpty) match {
+                case Some(email) => setOrError(ua9, EnterYourEmailAddressPage(id), email)
                 case None        => Right(ua9)
               }
     } yield ContinueAmendJourneyResult(

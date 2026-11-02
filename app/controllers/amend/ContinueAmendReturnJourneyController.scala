@@ -18,9 +18,9 @@ package controllers.amend
 
 import controllers.actions.*
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.{EmployerReference, NormalMode, UserAnswers}
+import models.{EmployerReference, JourneyScope, NormalMode, UserAnswers}
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
-import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
+import models.requests.{CisPath, GetMonthlyReturnForEditRequest, IdentifierRequest}
 import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
 
@@ -30,7 +30,7 @@ import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
+import services.{FormpRdsReconcileService, JourneyService, MonthlyReturnService}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
@@ -44,6 +44,9 @@ class ContinueAmendReturnJourneyController @Inject() (
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
   formpRdsReconcileService: FormpRdsReconcileService,
+  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
+  resolveScheme: SchemeAction,
+  journeyService: JourneyService,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -145,5 +148,100 @@ class ContinueAmendReturnJourneyController @Inject() (
       case None      =>
         logger.warn("[ContinueAmendReturnJourneyController] Missing employer reference for FormP/RDS reconciliation")
         Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+    }
+
+  def continueAmendReturnJourneyWithCisPath(
+    cisPath: CisPath,
+    queryParams: ContinueReturnJourneyQueryParams
+  ): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds).async { implicit request =>
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = queryParams.instanceId,
+        taxYear = queryParams.taxYear,
+        taxMonth = queryParams.taxMonth,
+        isAmendment = true
+      )
+
+      journeyService
+        .create(request)
+        .flatMap { flowId =>
+          val id     = JourneyScope.subJourneyId(request.cisPath, flowId)
+          val userId = request.identifier.userId
+
+          sessionRepository.get(userId).flatMap { existing =>
+            monthlyReturnService
+              .populateUserAnswersForContinueAmendJourney(
+                existing.getOrElse(UserAnswers(userId)),
+                id,
+                editRequest
+              )
+              .flatMap {
+                case Left(error) =>
+                  logger.warn(
+                    s"[continueAmendReturnJourneyWithCisPath] Failed to populate user answers: $error for request: $editRequest"
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+                case Right(result) =>
+                  // TODO: Temp redirect until the standard amend pages have ID-scoped routes. Real targets noted below.
+                  val tempRedirect =
+                    Redirect(
+                      controllers.amend.routes.WhatDoYouWantToAmendNilController
+                        .onPageLoadWithId(request.cisPath, flowId)
+                    )
+
+                  val redirect =
+                    (
+                      queryParams.isOriginalNilReturn.getOrElse(false),
+                      result.isNilReturn,
+                      result.hasSubcontractors
+                    ) match {
+                      case (_, false, true)  =>
+                        // SubcontractorDetailsAddedController.onPageLoadWithId(request.cisPath, flowId, NormalMode)
+                        tempRedirect
+                      case (_, false, false) =>
+                        // WhatDoYouWantToAmendStandardController.onPageLoadWithId(request.cisPath, flowId)
+                        tempRedirect
+                      case (true, true, _)   =>
+                        Redirect(
+                          controllers.amend.routes.WhatDoYouWantToAmendNilController
+                            .onPageLoadWithId(request.cisPath, flowId)
+                        )
+                      case _                 =>
+                        // WhatDoYouWantToAmendStandardController.onPageLoadWithId(request.cisPath, flowId)
+                        tempRedirect
+                    }
+
+                  val answersWithSource =
+                    if (!result.isNilReturn && result.hasSubcontractors) {
+                      result.userAnswers.set(
+                        MonthlyFinalValidationSourcePage(id),
+                        MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                          NormalMode.toString
+                        )
+                      )
+                    } else {
+                      Success(result.userAnswers)
+                    }
+
+                  Future
+                    .fromTry(answersWithSource)
+                    .flatMap { withSource =>
+                      sessionRepository.set(withSource).map(_ => redirect)
+                    }
+                    .recover { case NonFatal(ex) =>
+                      logger.error(
+                        "[ContinueAmendReturnJourneyController] Failed to save resumed amendment journey",
+                        ex
+                      )
+                      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                    }
+              }
+          }
+        }
+        .recover { case NonFatal(ex) =>
+          logger.error("[ContinueAmendReturnJourneyController] Failed to start amend journey", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
     }
 }
