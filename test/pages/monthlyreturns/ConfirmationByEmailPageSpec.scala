@@ -23,42 +23,86 @@ class ConfirmationByEmailPageSpec extends SpecBase {
 
   "ConfirmationByEmailPage" - {
 
-    "have the correct path" in {
-      ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
-    }
+    "unscoped" - {
 
-    "have the correct toString" in {
-      ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
-    }
-
-    "cleanup" - {
-
-      "must remove EnterYourEmailAddressPage when answer is No" in {
-        val userAnswers = emptyUserAnswers
-          .setOrException(EnterYourEmailAddressPage, "test@example.com")
-
-        val result = ConfirmationByEmailPage.cleanup(Some(false), userAnswers).success.value
-
-        result.get(EnterYourEmailAddressPage) mustBe None
+      "have the correct path" in {
+        ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
       }
 
-      "must remove EnterYourEmailAddressPage when answer is removed" in {
-        val userAnswers = emptyUserAnswers
-          .setOrException(EnterYourEmailAddressPage, "test@example.com")
-
-        val result = ConfirmationByEmailPage.cleanup(None, userAnswers).success.value
-
-        result.get(EnterYourEmailAddressPage) mustBe None
+      "have the correct toString" in {
+        ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
       }
 
-      "must retain EnterYourEmailAddressPage when answer is Yes" in {
-        val userAnswers = emptyUserAnswers
-          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+      "cleanup" - {
 
-        val result = ConfirmationByEmailPage.cleanup(Some(true), userAnswers).success.value
+        "must remove EnterYourEmailAddressPage when answer is No" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage, "test@example.com")
 
-        result.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+          val result = ConfirmationByEmailPage.cleanup(Some(false), userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage) mustBe None
+        }
+
+        "must remove EnterYourEmailAddressPage when answer is removed" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+          val result = ConfirmationByEmailPage.cleanup(None, userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage) mustBe None
+        }
+
+        "must retain EnterYourEmailAddressPage when answer is Yes" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+          val result = ConfirmationByEmailPage.cleanup(Some(true), userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+        }
       }
     }
+
+    "id scoped" - {
+      "have the correct path" in {
+        ConfirmationByEmailPage("CIS-ORG-1").path mustBe (JsPath \ "CIS-ORG-1" \ "confirmationByEmail")
+      }
+
+      "have the correct toString" in {
+        ConfirmationByEmailPage("CIS-ORG-1").toString mustBe "confirmationByEmail"
+      }
+
+      "cleanup" - {
+
+        "must remove EnterYourEmailAddressPage when answer is No" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage("CIS-ORG-1"), "test@example.com")
+
+          val result = ConfirmationByEmailPage("CIS-ORG-1").cleanup(Some(false), userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage("CIS-ORG-1")) mustBe None
+        }
+
+        "must remove EnterYourEmailAddressPage when answer is removed" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage("CIS-ORG-1"), "test@example.com")
+
+          val result = ConfirmationByEmailPage("CIS-ORG-1").cleanup(None, userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage("CIS-ORG-1")) mustBe None
+        }
+
+        "must retain EnterYourEmailAddressPage when answer is Yes" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage("CIS-ORG-1"), "test@example.com")
+
+          val result = ConfirmationByEmailPage("CIS-ORG-1").cleanup(Some(true), userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage("CIS-ORG-1")) mustBe Some("test@example.com")
+        }
+      }
+    }
+
   }
 }

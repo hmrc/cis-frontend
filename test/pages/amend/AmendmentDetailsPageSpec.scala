@@ -23,6 +23,11 @@ class AmendmentDetailsPageSpec extends SpecBase {
 
   "AmendmentDetailsPage" - {
 
+    "must use scoped amendmentDetails path" in {
+      AmendmentDetailsPage("CIS-ORG-1").path mustBe JsPath \ "CIS-ORG-1" \ "amendmentDetails"
+      AmendmentDetailsPage("CIS-ORG-1").toString mustBe "amendmentDetails"
+    }
+
     "must use amendmentDetails path" in {
       AmendmentDetailsPage.path mustBe JsPath \ "amendmentDetails"
       AmendmentDetailsPage.toString mustBe "amendmentDetails"
