@@ -37,7 +37,7 @@ object Validation {
   final val ninoRegex =
     """^[ABCEGHJKLMNOPRSTWXYZabceghjklmnoprstwxyz][ABCEGHJKLMNPRSTWXYZabceghjklmnprstwxyz][0-9]{6}[ABCDabcd ]*$"""
 
-  final val emailRegex =  """^([a-zA-Z0-9.!#$%&’'*+/=?^_`{|}~-]+)@([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*)$"""
+  final val emailRegex = """^([a-zA-Z0-9.!#$%&’'*+/=?^_`{|}~-]+)@([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*)$"""
 
   final val mobileRegex = """^[0-9\(\)\-\s]*$"""
 
