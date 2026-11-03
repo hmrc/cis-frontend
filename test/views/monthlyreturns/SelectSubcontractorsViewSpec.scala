@@ -66,6 +66,25 @@ class SelectSubcontractorsViewSpec extends SpecBase {
         .attr("href") mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(Some(true)).url
     }
 
+    "must render a unique accessible label for each subcontractor checkbox" in new Setup {
+      val html = view(form, subcontractors, updateYourListUrl)
+      val doc  = Jsoup.parse(html.body)
+
+      subcontractors.foreach { subcontractor =>
+        val checkbox = doc.select(s"#subcontractor-${subcontractor.id}")
+
+        checkbox.size mustBe 1
+
+        val label = doc.select(s"""label[for="subcontractor-${subcontractor.id}"]""")
+
+        label.text() mustBe
+          s"${messages(
+              "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
+              subcontractor.name
+            )} - ${subcontractor.id}"
+      }
+    }
+
     "must render deselect all link with correct URL" in new Setup {
       val html = view(form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
