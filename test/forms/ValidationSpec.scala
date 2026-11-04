@@ -56,16 +56,43 @@ class ValidationSpec extends AnyFreeSpec with Matchers {
         matches("user!#$%&*+-/=?^_`{|}~@example.com") mustBe true
       }
 
-      "must match special characters in the domain" in {
-        matches("user@domain!#$%&*+-/=?^_`{|}~.com") mustBe true
-      }
-
       "must match an IPv4 address" in {
         matches("test@192.168.1.1") mustBe true
       }
 
-      "must match when domain starts with a dot" in {
-        matches("test@.example.com") mustBe true
+      "must match an apostrophe in the local part" in {
+        matches("o'brien@example.com") mustBe true
+      }
+
+      "must match a curly apostrophe in the local part" in {
+        matches("o’brien@example.com") mustBe true
+      }
+
+      "must match a domain without a TLD" in {
+        matches("test@localhost") mustBe true
+      }
+    }
+
+    "invalid domains" - {
+
+      "must not match special characters in the domain" in {
+        matches("user@domain!#$%&*+-/=?^_`{|}~.com") mustBe false
+      }
+
+      "must not match when domain starts with a dot" in {
+        matches("test@.example.com") mustBe false
+      }
+
+      "must not match when domain ends with a dot" in {
+        matches("test@example.com.") mustBe false
+      }
+
+      "must not match consecutive dots in the domain" in {
+        matches("test@example..com") mustBe false
+      }
+
+      "must not match an underscore in the domain" in {
+        matches("test@my_domain.com") mustBe false
       }
     }
 
