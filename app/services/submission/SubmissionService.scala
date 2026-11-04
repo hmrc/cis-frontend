@@ -31,6 +31,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.mvc.AnyContent
 import repositories.SessionRepository
+import services.MonthlyReturnItemPayloadBuilder
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
 import utils.TypeUtils.*
@@ -39,6 +40,7 @@ import java.time.{Clock, Instant, LocalDateTime, YearMonth, ZoneId, ZoneOffset, 
 import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Success, Try}
 
 @Singleton
@@ -47,11 +49,14 @@ class SubmissionService @Inject() (
   appConfig: FrontendAppConfig,
   sessionRepository: SessionRepository,
   chrisRequestBuilder: ChrisSubmissionRequestBuilder,
+  itemPayloadBuilder: MonthlyReturnItemPayloadBuilder,
   clock: Clock
 )(implicit ec: ExecutionContext)
     extends Logging {
 
   private val ukZone: ZoneId = ZoneId.of("Europe/London")
+
+  private val ItemRefreshBatchSize: Int = 5
 
   def getOrCreateSubmissionForChris(
     ua: UserAnswers
@@ -60,9 +65,52 @@ class SubmissionService @Inject() (
       case Some(resubmissionId) =>
         Future.successful((resubmissionId.toString, ua, true))
       case None                 =>
-        create(ua).map { case (created, updatedUa) =>
-          (created.submissionId, updatedUa, false)
-        }
+        refreshMonthlyReturnItems(ua)
+          .flatMap(_ => create(ua))
+          .map { case (created, updatedUa) =>
+            (created.submissionId, updatedUa, false)
+          }
+    }
+
+  /** Writes the subcontractor name and verification number onto every stored monthly return item before the return is
+    * submitted.
+    *
+    * A return started in the legacy service stores payment details on its items but not the name or verification
+    * number, which the legacy service only adds at submission. When such a return is continued in this service, the
+    * check/change answers pages (the only places the item update is called) can be skipped, so the items would be
+    * submitted blank. Rewriting each item here, using the same payload as those pages, covers every route to
+    * submission.
+    *
+    * A failure to refresh an item is logged and does not stop the submission.
+    */
+  def refreshMonthlyReturnItems(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val indexes: Seq[Int] =
+      ua.get(SelectedSubcontractorPage.all).map(_.keys.toSeq.sorted).getOrElse(Seq.empty)
+
+    indexes.grouped(ItemRefreshBatchSize).foldLeft(Future.unit) { (previous, batch) =>
+      previous.flatMap(_ => Future.traverse(batch)(index => refreshMonthlyReturnItem(ua, index)).map(_ => ()))
+    }
+  }
+
+  private def refreshMonthlyReturnItem(ua: UserAnswers, index: Int)(implicit hc: HeaderCarrier): Future[Unit] =
+    itemPayloadBuilder.build(ua, index) match {
+      case None          =>
+        logger.warn(
+          s"[SubmissionService][refreshMonthlyReturnItem] - Could not build item payload, so the item was not refreshed, index: $index"
+        )
+        Future.unit
+      case Some(payload) =>
+        cisConnector
+          .updateMonthlyReturnItem(payload)
+          .recover { case NonFatal(e) =>
+            logger.error(
+              s"[SubmissionService][refreshMonthlyReturnItem] - Failed to refresh item before submission, " +
+                s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
+                s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}, " +
+                s"message: ${e.getMessage}",
+              e
+            )
+          }
     }
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
