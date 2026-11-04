@@ -70,18 +70,18 @@ class SelectSubcontractorsViewSpec extends SpecBase {
       val html = view(form, subcontractors, updateYourListUrl)
       val doc  = Jsoup.parse(html.body)
 
-      subcontractors.foreach { subcontractor =>
+      subcontractors.zipWithIndex.foreach { case (subcontractor, index) =>
         val checkbox = doc.select(s"#subcontractor-${subcontractor.id}")
 
         checkbox.size mustBe 1
 
         val label = doc.select(s"""label[for="subcontractor-${subcontractor.id}"]""")
 
-        label.text() mustBe
-          s"${messages(
-              "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
-              subcontractor.name
-            )} - ${subcontractor.id}"
+        label.text() mustBe messages(
+          "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
+          index + 1,
+          subcontractor.name
+        )
       }
     }
 

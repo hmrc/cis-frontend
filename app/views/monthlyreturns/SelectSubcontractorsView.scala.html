@@ -98,12 +98,11 @@
                                                 CheckboxItem(
                                                 value = subcontractor.id.toString,
                                                 content = HtmlContent(
-                                                s"""<span class="govuk-visually-hidden">${
-                                                      messages(
-                                                        "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
-                                                        subcontractor.name
-                                                      )
-                                                    } - ${subcontractor.id}</span>"""
+                                                s"""<span class="govuk-visually-hidden">${messages(
+                                                    "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
+                                                    index + 1,
+                                                    subcontractor.name
+                                                  )}</span>"""
                                                 ),
                                                 checked = form.value.toList
                                                 .flatMap(_.subcontractorsToInclude)
