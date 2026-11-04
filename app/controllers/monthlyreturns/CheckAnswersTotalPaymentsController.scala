@@ -96,14 +96,17 @@ class CheckAnswersTotalPaymentsController @Inject() (
               case u: UpstreamErrorResponse =>
                 logger.error(
                   s"[CheckAnswersTotalPaymentsController][onSubmit] UpdateMonthlyReturnItem failed, status: ${u.statusCode}," +
-                    s" index: $index subcontractorId: ${payload.subcontractorId}, message: ${u.message}",
+                    s" instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}," +
+                    s" amendment: ${payload.amendment}, index: $index subcontractorId: ${payload.subcontractorId}," +
+                    s" message: ${u.message}",
                   u
                 )
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
               case NonFatal(e)              =>
                 logger.error(
                   s"[CheckAnswersTotalPaymentsController][onSubmit] UpdateMonthlyReturnItem failed," +
-                    s" index: $index subcontractorId: ${payload.subcontractorId}",
+                    s" instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}," +
+                    s" amendment: ${payload.amendment}, index: $index subcontractorId: ${payload.subcontractorId}",
                   e
                 )
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
