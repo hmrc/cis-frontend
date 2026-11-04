@@ -212,6 +212,32 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verifyNoInteractions(connector)
     }
 
+    "refresh the items one at a time, never in parallel" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        =
+        mkService(connector, mock(classOf[SessionRepository]), appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      val inFlight    = new java.util.concurrent.atomic.AtomicInteger(0)
+      val maxInFlight = new java.util.concurrent.atomic.AtomicInteger(0)
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenAnswer { _ =>
+          val now = inFlight.incrementAndGet()
+          maxInFlight.updateAndGet(m => math.max(m, now))
+          Future {
+            Thread.sleep(25)
+            inFlight.decrementAndGet()
+            ()
+          }
+        }
+
+      service.refreshMonthlyReturnItems(uaWithSelectedSubcontractors(6)).futureValue mustBe (())
+
+      verify(connector, times(6)).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+      maxInFlight.get() mustBe 1
+    }
+
     "skip, without failing, an item whose payload cannot be built" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))

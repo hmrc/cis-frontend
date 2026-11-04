@@ -56,8 +56,6 @@ class SubmissionService @Inject() (
 
   private val ukZone: ZoneId = ZoneId.of("Europe/London")
 
-  private val ItemRefreshBatchSize: Int = 5
-
   def getOrCreateSubmissionForChris(
     ua: UserAnswers
   )(implicit hc: HeaderCarrier): Future[(String, UserAnswers, Boolean)] =
@@ -82,14 +80,18 @@ class SubmissionService @Inject() (
     * items feed the submitted return details page. Rewriting each item here, using the same payload as those pages,
     * covers every route to submission.
     *
+    * Items are refreshed one at a time, not in parallel. Each backend item update also bumps a version counter on the
+    * scheme and fails with a lost-update error if another update to the same scheme overlaps it, which would roll back
+    * the item's name. Running the updates concurrently would therefore lose all but one of them.
+    *
     * A failure to refresh an item is logged and does not stop the submission.
     */
   def refreshMonthlyReturnItems(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
     val indexes: Seq[Int] =
       ua.get(SelectedSubcontractorPage.all).map(_.keys.toSeq.sorted).getOrElse(Seq.empty)
 
-    indexes.grouped(ItemRefreshBatchSize).foldLeft(Future.unit) { (previous, batch) =>
-      previous.flatMap(_ => Future.traverse(batch)(index => refreshMonthlyReturnItem(ua, index)).map(_ => ()))
+    indexes.foldLeft(Future.unit) { (previous, index) =>
+      previous.flatMap(_ => refreshMonthlyReturnItem(ua, index))
     }
   }
 
