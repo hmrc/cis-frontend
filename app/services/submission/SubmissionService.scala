@@ -77,9 +77,10 @@ class SubmissionService @Inject() (
     *
     * A return started in the legacy service stores payment details on its items but not the name or verification
     * number, which the legacy service only adds at submission. When such a return is continued in this service, the
-    * check/change answers pages (the only places the item update is called) can be skipped, so the items would be
-    * submitted blank. Rewriting each item here, using the same payload as those pages, covers every route to
-    * submission.
+    * check/change answers pages (the only places the item update is called) can be skipped, so the stored items would
+    * stay blank. The submission sent to ChRIS is built from the user's answers and is not affected, but the stored
+    * items feed the submitted return details page. Rewriting each item here, using the same payload as those pages,
+    * covers every route to submission.
     *
     * A failure to refresh an item is logged and does not stop the submission.
     */
