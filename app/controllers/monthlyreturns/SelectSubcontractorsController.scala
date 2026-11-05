@@ -20,7 +20,6 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.SelectSubcontractorsFormProvider
 import models.NormalMode
-import models.requests.CisPath
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectSubcontractorsFormData
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
@@ -44,8 +43,7 @@ class SelectSubcontractorsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: SelectSubcontractorsView,
   formProvider: SelectSubcontractorsFormProvider,
@@ -173,11 +171,11 @@ class SelectSubcontractorsController @Inject() (
         }
     }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, defaultSelection: Option[Boolean] = None): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-
+  def onPageLoadWithId(flowId: UUID, defaultSelection: Option[Boolean] = None): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId    = flowId.toString
       val requiredAnswers = for {
-        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(request.subJourneyId))
+        taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)
 
       requiredAnswers
@@ -189,7 +187,7 @@ class SelectSubcontractorsController @Inject() (
               taxYear = taxYear,
               defaultSelection = defaultSelection,
               userAnswers = Some(request.userAnswers),
-              id = request.subJourneyId
+              id = subJourneyId
             )
             .map { model =>
 
@@ -204,11 +202,11 @@ class SelectSubcontractorsController @Inject() (
                   form
                 }
 
-              val formAction         = Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId))
+              val formAction         = Some(routes.SelectSubcontractorsController.onSubmitWithId(flowId))
               val preSelectedAction  =
-                Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true)))
+                Some(routes.SelectSubcontractorsController.onPageLoadWithId(flowId, Some(true)))
               val noneSelectedAction =
-                Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
+                Some(routes.SelectSubcontractorsController.onPageLoadWithId(flowId, Some(false)))
 
               Ok(
                 view(
@@ -230,9 +228,9 @@ class SelectSubcontractorsController @Inject() (
         }
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val subJourneyId    = request.subJourneyId
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId    = flowId.toString
       val requiredAnswers = for {
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)
@@ -245,7 +243,7 @@ class SelectSubcontractorsController @Inject() (
               taxYear = taxYear,
               defaultSelection = None,
               userAnswers = Some(request.userAnswers),
-              id = request.subJourneyId
+              id = subJourneyId
             )
             .flatMap { model =>
               form
@@ -258,9 +256,9 @@ class SelectSubcontractorsController @Inject() (
                           formWithErrors,
                           model.subcontractors,
                           appConfig.yourSubcontractorsUrl,
-                          Some(routes.SelectSubcontractorsController.onSubmitWithId(cisPath, flowId)),
-                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(true))),
-                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, Some(false)))
+                          Some(routes.SelectSubcontractorsController.onSubmitWithId(flowId)),
+                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(flowId, Some(true))),
+                          Some(routes.SelectSubcontractorsController.onPageLoadWithId(flowId, Some(false)))
                         )
                       )
                     ),
@@ -274,14 +272,14 @@ class SelectSubcontractorsController @Inject() (
                         selected = selectedSubcontractors,
                         originalSubcontractorCount = model.subcontractors.size,
                         cisId = request.cisId,
-                        id = request.subJourneyId
+                        id = subJourneyId
                       )
                       .flatMap { updatedAnswers =>
                         val verificationRequired =
                           selectedSubcontractors
                             .filter { subcontractor =>
                               updatedAnswers
-                                .incompleteSubcontractorIds(request.subJourneyId)
+                                .incompleteSubcontractorIds(subJourneyId)
                                 .contains(subcontractor.id)
                             }
                             .exists(_.verificationRequired)
