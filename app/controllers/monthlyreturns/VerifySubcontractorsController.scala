@@ -20,7 +20,6 @@ import config.FrontendAppConfig
 import controllers.actions.*
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
 import models.Mode
-import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.VerifySubcontractorsPage
 import play.api.data.Form
@@ -43,8 +42,7 @@ class VerifySubcontractorsController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: VerifySubcontractorsFormProvider,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: VerifySubcontractorsView
 )(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
@@ -63,14 +61,15 @@ class VerifySubcontractorsController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val preparedForm = request.userAnswers.get(VerifySubcontractorsPage(request.subJourneyId)) match {
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val preparedForm = request.userAnswers.get(VerifySubcontractorsPage(subJourneyId)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
       val formAction   =
-        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(cisPath, flowId, mode))
+        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, mode))
 
       Ok(view(preparedForm, mode, formAction))
     }
@@ -92,10 +91,11 @@ class VerifySubcontractorsController @Inject() (
         )
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
       val formAction =
-        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(cisPath, flowId, mode))
+        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, mode))
       form
         .bindFromRequest()
         .fold(
@@ -103,14 +103,14 @@ class VerifySubcontractorsController @Inject() (
           value =>
             for {
               updatedAnswers <-
-                Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(request.subJourneyId), value))
+                Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield value match {
               case true  => Redirect(appConfig.verifySubcontractorsUrl) // TODO DTR-9474: Update to use future id scope
               case false =>
                 Redirect(
-                  navigator.nextPage(VerifySubcontractorsPage(request.subJourneyId), mode, request.userAnswers)
-                ) // TODO DTR-9474: Update to use future id scope
+                  navigator.nextPage(VerifySubcontractorsPage(subJourneyId), mode, request.userAnswers)
+                ) // TODO DTR-9474: Update Navigator to use future id scope
             }
         )
     }

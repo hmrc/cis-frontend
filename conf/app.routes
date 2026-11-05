@@ -94,10 +94,10 @@ POST       /monthly-return/unverified-subcontractors                            
 GET        /monthly-return/change-unverified-subcontractors                     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-unverified-subcontractors                     controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
 
-GET        /monthly-return/unverified-subcontractors/:cisPath/:flowId           controllers.monthlyreturns.VerifySubcontractorsController.onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
-POST       /monthly-return/unverified-subcontractors/:cisPath/:flowId           controllers.monthlyreturns.VerifySubcontractorsController.onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode = NormalMode)
-GET        /monthly-return/change-unverified-subcontractors/:cisPath/:flowId    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
-POST       /monthly-return/change-unverified-subcontractors/:cisPath/:flowId    controllers.monthlyreturns.VerifySubcontractorsController.onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode = CheckMode)
+GET        /monthly-return/unverified-subcontractors/:flowId           controllers.monthlyreturns.VerifySubcontractorsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/unverified-subcontractors/:flowId           controllers.monthlyreturns.VerifySubcontractorsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-unverified-subcontractors/:flowId    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-unverified-subcontractors/:flowId    controllers.monthlyreturns.VerifySubcontractorsController.onSubmitWithId( flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/payment-details/:index                       controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
 POST       /monthly-return/payment-details/:index                       controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode, index: Int, returnTo: Option[String])

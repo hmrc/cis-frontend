@@ -307,11 +307,11 @@ class SelectSubcontractorsController @Inject() (
                         } yield
                           if (verificationRequired) {
                             Redirect(
-                              routes.VerifySubcontractorsController.onPageLoadWithId(cisPath, flowId, NormalMode)
+                              routes.VerifySubcontractorsController.onPageLoadWithId(flowId, NormalMode)
                             )
                           } else {
                             Redirect(
-                              routes.SubcontractorDetailsAddedController.onPageLoadWithId(cisPath, flowId, NormalMode)
+                              routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
                             )
                           }
                       }
