@@ -17,7 +17,6 @@
 package controllers.finalvalidations
 
 import controllers.actions.*
-import models.requests.CisPath
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import models.finalvalidation.*
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
@@ -43,8 +42,7 @@ class ReviewSubcontractorDetailsController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   sessionRepository: SessionRepository,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   finalValidationDraftService: FinalValidationDraftService,
   pageModelBuilder: UpdateSubcontractorDetailsPageModelBuilder,
   val controllerComponents: MessagesControllerComponents,
@@ -101,10 +99,11 @@ class ReviewSubcontractorDetailsController @Inject() (
       }
     }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      request.userAnswers.get(FinalValidationDraftIdPage(request.subJourneyId)) match {
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
 
+      request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
           finalValidationDraftService // TODO DTR-9474: Need to investigate this
             .get(request.cisId, draftId)
@@ -121,8 +120,8 @@ class ReviewSubcontractorDetailsController @Inject() (
 
               val backUrl =
                 request.userAnswers
-                  .get(MonthlyFinalValidationSourcePage(request.subJourneyId))
-                  .map(source => backUrlFromSourceWithId(cisPath, flowId, source))
+                  .get(MonthlyFinalValidationSourcePage(subJourneyId))
+                  .map(source => backUrlFromSourceWithId(flowId, source))
                   .getOrElse {
                     logger.error(
                       "[ReviewSubcontractorDetailsController] Unable to determine back URL: " +
@@ -132,12 +131,12 @@ class ReviewSubcontractorDetailsController @Inject() (
                   }
 
               val formAction = Some(
-                controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmitWithId(cisPath, flowId)
+                controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmitWithId(flowId)
               )
 
 //              def taskListAction(rowSubcontractorId: Long): Option[Call] = Some(
 //                controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
-//                  .onPageLoadWithId(cisPath, flowId, rowSubcontractorId).url
+//                  .onPageLoadWithId(flowId, rowSubcontractorId).url
 //              )
               // TODO DTR-9474: Update to use future id scope, complication with use of row within view
               // TODO DTR-9474: Final validation out of scope
@@ -207,9 +206,9 @@ class ReviewSubcontractorDetailsController @Inject() (
       }
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val subJourneyId = request.subJourneyId
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
       val draftIdOpt   = request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId))
       val sourceOpt    = request.userAnswers.get(MonthlyFinalValidationSourcePage(subJourneyId))
 
@@ -220,7 +219,7 @@ class ReviewSubcontractorDetailsController @Inject() (
             .flatMap { draft =>
               if (!draft.allComplete) {
                 Future.successful(
-                  Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(cisPath, flowId))
+                  Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId))
                 )
               } else {
                 for {
@@ -238,7 +237,7 @@ class ReviewSubcontractorDetailsController @Inject() (
                   _                <- sessionRepository.set(withContinuation)
                 } yield Redirect(
                   controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-                    .onPageLoadAfterFinalValidationWithId(cisPath, flowId, mode)
+                    .onPageLoadAfterFinalValidationWithId(flowId, mode)
                 )
               }
             }
@@ -304,16 +303,14 @@ class ReviewSubcontractorDetailsController @Inject() (
           }
     }
 
-  private def backUrlFromSourceWithId(cisPath: CisPath, flowId: UUID, source: MonthlyFinalValidationSource): String =
+  private def backUrlFromSourceWithId(flowId: UUID, source: MonthlyFinalValidationSource): String =
     source match {
       case MonthlyFinalValidationSource.SelectSubcontractors => // TODO DTR-9474: Final validation out of scope
-        controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(cisPath, flowId, None).url
+        controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, None).url
 
       case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
         modeFromString(modeValue)
-          .map(mode =>
-            controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(cisPath, flowId, mode).url
-          )
+          .map(mode => controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(flowId, mode).url)
           .getOrElse {
             logger.error(
               "[ReviewSubcontractorDetailsController] Unable to determine back URL: " +

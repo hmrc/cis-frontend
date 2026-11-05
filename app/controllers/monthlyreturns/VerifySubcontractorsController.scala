@@ -94,7 +94,7 @@ class VerifySubcontractorsController @Inject() (
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val formAction =
+      val formAction   =
         Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, mode))
       form
         .bindFromRequest()
