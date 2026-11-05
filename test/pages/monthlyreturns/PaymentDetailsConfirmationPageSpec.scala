@@ -29,5 +29,14 @@ class PaymentDetailsConfirmationPageSpec extends SpecBase {
     "have the correct toString" in {
       PaymentDetailsConfirmationPage.toString mustBe "paymentDetailsConfirmation"
     }
+
+    "have the correct scoped path" in {
+      PaymentDetailsConfirmationPage("org_flow-1").path mustBe
+        (JsPath \ "org_flow-1" \ "paymentDetailsConfirmation")
+    }
+
+    "have the correct scoped toString" in {
+      PaymentDetailsConfirmationPage("org_flow-1").toString mustBe "paymentDetailsConfirmation"
+    }
   }
 }

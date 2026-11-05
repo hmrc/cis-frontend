@@ -29,5 +29,14 @@ class EmploymentStatusDeclarationPageSpec extends SpecBase {
     "have the correct toString" in {
       EmploymentStatusDeclarationPage.toString mustBe "employmentStatusDeclaration"
     }
+
+    "have the correct scoped path" in {
+      EmploymentStatusDeclarationPage("org_flow-1").path mustBe
+        (JsPath \ "org_flow-1" \ "employmentStatusDeclaration")
+    }
+
+    "have the correct scoped toString" in {
+      EmploymentStatusDeclarationPage("org_flow-1").toString mustBe "employmentStatusDeclaration"
+    }
   }
 }

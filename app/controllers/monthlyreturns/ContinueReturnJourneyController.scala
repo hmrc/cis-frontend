@@ -20,20 +20,20 @@ import controllers.actions.*
 import models.ReturnType.MonthlyStandardReturn
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.ContinueReturnJourneyQueryParams
-import models.{EmployerReference, NormalMode, UserAnswers}
-import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
+import models.{EmployerReference, JourneyScope, NormalMode, UserAnswers}
+import models.requests.{CisPath, GetMonthlyReturnForEditRequest, IdentifierRequest}
 
 import javax.inject.Inject
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
-import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, ScopedSelectedSubcontractorPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
+import services.{FormpRdsReconcileService, JourneyService, MonthlyReturnService}
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
@@ -48,6 +48,9 @@ class ContinueReturnJourneyController @Inject() (
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
   formpRdsReconcileService: FormpRdsReconcileService,
+  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
+  resolveScheme: SchemeAction,
+  journeyService: JourneyService,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -154,4 +157,82 @@ class ContinueReturnJourneyController @Inject() (
         logger.warn("[ContinueReturnJourneyController] Missing employer reference for FormP/RDS reconciliation")
         Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
     }
+
+  def continueReturnJourneyWithCisPath(
+    cisPath: CisPath,
+    queryParams: ContinueReturnJourneyQueryParams
+  ): Action[AnyContent] = (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds).async {
+    implicit request =>
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = queryParams.instanceId,
+        taxYear = queryParams.taxYear,
+        taxMonth = queryParams.taxMonth,
+        isAmendment = false
+      )
+
+      journeyService.create(request).flatMap { flowId =>
+        val id     = JourneyScope.subJourneyId(request.cisPath, flowId)
+        val userId = request.identifier.userId
+
+        sessionRepository.get(userId).flatMap { existing =>
+          monthlyReturnService
+            .populateUserAnswersForContinueJourney(
+              existing.getOrElse(UserAnswers(userId)),
+              id,
+              editRequest
+            )
+            .flatMap {
+              case Left(error) =>
+                logger.error(
+                  s"[continueReturnJourneyWithCisPath] Failed to populate user answers: $error for request: $editRequest"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+              case Right(updatedUserAnswers) =>
+                monthlyReturnService
+                  .populateAgentClientDataIfRequired(
+                    ua = updatedUserAnswers,
+                    userId = userId,
+                    isAgent = request.identifier.isAgent
+                  )
+                  .flatMap { finalUserAnswers =>
+                    val answersWithSource =
+                      if (
+                        finalUserAnswers
+                          .get(ReturnTypePage(id))
+                          .getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
+                        finalUserAnswers.get(ScopedSelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
+                      ) {
+                        finalUserAnswers.set(
+                          MonthlyFinalValidationSourcePage(id),
+                          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+                        )
+                      } else {
+                        Success(finalUserAnswers)
+                      }
+
+                    val answersWithOrigin =
+                      answersWithSource.flatMap(_.set(IsResumedMonthlyReturnPage(id), true))
+
+                    Future.fromTry(answersWithOrigin).flatMap { withSource =>
+                      sessionRepository.set(withSource).map { _ =>
+                        // TODO: Temp redirect until the page after DateConfirmPayments has an ID-scoped route.
+                        Redirect(
+                          routes.DateConfirmPaymentsController.onPageLoadWithId(request.cisPath, flowId, NormalMode)
+                        )
+                      }
+                    }
+                  }
+                  .recover { case ex =>
+                    logger.error(
+                      s"[continueReturnJourneyWithCisPath] Failed to populate agent client data or save user answers, " +
+                        s"request: $editRequest",
+                      ex
+                    )
+                    Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                  }
+            }
+        }
+      }
+  }
 }

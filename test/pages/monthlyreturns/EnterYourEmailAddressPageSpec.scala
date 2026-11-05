@@ -30,5 +30,13 @@ class EnterYourEmailAddressPageSpec extends SpecBase {
     "have the correct toString" in {
       EnterYourEmailAddressPage.toString mustBe "enterYourEmailAddress"
     }
+
+    "have the correct scoped path" in {
+      EnterYourEmailAddressPage("CIS-ORG-1").path mustBe (JsPath \ "CIS-ORG-1" \ "enterYourEmailAddress")
+    }
+
+    "have the correct scoped toString" in {
+      EnterYourEmailAddressPage("CIS-ORG-1").toString mustBe "enterYourEmailAddress"
+    }
   }
 }
