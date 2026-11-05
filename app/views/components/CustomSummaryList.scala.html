@@ -21,7 +21,7 @@
 <dl class="govuk-summary-list @if(rowValues.isEmpty){hmrc-list-with-actions hmrc-list-with-actions--short}">
     @for(((item, links), index) <- rows.zipWithIndex) {
         <div class="govuk-summary-list__row">
-            <dt id="@("name-label-" + index)" class="govuk-summary-list__key @keyClasses hmrc-summary-list__key">
+            <dt class="govuk-summary-list__key @keyClasses hmrc-summary-list__key">
                 @item
             </dt>
             @if(rowValues.isDefinedAt(index)) {<dd class="govuk-summary-list__value">@rowValues(index)</dd>}

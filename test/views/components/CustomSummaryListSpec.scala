@@ -90,16 +90,14 @@ class CustomSummaryListSpec extends SpecBase {
       }
     }
 
-    "must render a unique name label id for each row" in new Setup {
+    "must not render an id on key elements (avoids duplicate ids)" in new Setup {
       val html = customSummaryListRows(rows = selectedRowsNoLinks)
       val doc  = Jsoup.parse(html.body)
 
-      val renderedRows = doc.select(".govuk-summary-list__row")
+      val keys = doc.select(".govuk-summary-list__key")
 
-      renderedRows.size mustBe 3
-      renderedRows.get(0).select(".govuk-summary-list__key").attr("id") mustBe "name-label-0"
-      renderedRows.get(1).select(".govuk-summary-list__key").attr("id") mustBe "name-label-1"
-      renderedRows.get(2).select(".govuk-summary-list__key").attr("id") mustBe "name-label-2"
+      keys.size mustBe 3
+      keys.forEach(key => key.hasAttr("id") mustBe false)
     }
 
     "must apply custom keyClasses to key elements when provided" in new Setup {
