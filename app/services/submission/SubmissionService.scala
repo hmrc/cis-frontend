@@ -63,12 +63,30 @@ class SubmissionService @Inject() (
       case Some(resubmissionId) =>
         Future.successful((resubmissionId.toString, ua, true))
       case None                 =>
-        refreshMonthlyReturnItems(ua)
-          .flatMap(_ => create(ua))
-          .map { case (created, updatedUa) =>
-            (created.submissionId, updatedUa, false)
-          }
+        existingCreatedSubmissionId(ua) match {
+          case Some(submissionId) =>
+            // A retry after a partial failure. The return has left STARTED, so item updates would be rejected and a
+            // second create would break the unique submission key. Reuse the submission already created.
+            logger.warn(
+              s"[SubmissionService][getOrCreateSubmissionForChris] - Submission already created, reusing submissionId: $submissionId"
+            )
+            Future.successful((submissionId, ua, false))
+          case None               =>
+            refreshMonthlyReturnItems(ua)
+              .flatMap(_ => create(ua))
+              .map { case (created, updatedUa) =>
+                (created.submissionId, updatedUa, false)
+              }
+        }
     }
+
+  private def existingCreatedSubmissionId(ua: UserAnswers): Option[String] = {
+    val period = selectedYearMonth(ua).toString
+    if (ua.get(SubmissionCreatedPage(period)).contains(true)) ua.get(CreatedSubmissionIdPage(period)) else None
+  }
+
+  /** Number of consecutive item refresh failures after which the remaining items are skipped. */
+  private val MaxConsecutiveRefreshFailures = 3
 
   /** Writes the subcontractor name and verification number onto every stored monthly return item before the return is
     * submitted.
@@ -84,34 +102,59 @@ class SubmissionService @Inject() (
     * scheme and fails with a lost-update error if another update to the same scheme overlaps it, which would roll back
     * the item's name. Running the updates concurrently would therefore lose all but one of them.
     *
-    * A failure to refresh an item is logged and does not stop the submission.
+    * A failure to refresh an item does not stop the submission. After [[MaxConsecutiveRefreshFailures]] failures in a
+    * row the remaining items are skipped, because the backend is rejecting the updates (for example the return is no
+    * longer STARTED) and trying hundreds more only delays the submission. One summary line is logged.
     */
   def refreshMonthlyReturnItems(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
     val indexes: Seq[Int] =
       ua.get(SelectedSubcontractorPage.all).map(_.keys.toSeq.sorted).getOrElse(Seq.empty)
 
-    indexes.foldLeft(Future.unit) { (previous, index) =>
-      previous.flatMap(_ => refreshMonthlyReturnItem(ua, index))
-    }
+    def loop(remaining: List[Int], consecutiveFailures: Int, failed: Int, firstError: Option[String]): Future[Unit] =
+      remaining match {
+        case Nil                                                       =>
+          logRefreshSummary(indexes.size, failed, skipped = 0, firstError)
+          Future.unit
+        case _ if consecutiveFailures >= MaxConsecutiveRefreshFailures =>
+          logRefreshSummary(indexes.size, failed, skipped = remaining.size, firstError)
+          Future.unit
+        case index :: rest                                             =>
+          refreshMonthlyReturnItem(ua, index).flatMap {
+            case None        => loop(rest, 0, failed, firstError)
+            case Some(error) => loop(rest, consecutiveFailures + 1, failed + 1, firstError.orElse(Some(error)))
+          }
+      }
+
+    loop(indexes.toList, 0, 0, None)
   }
 
-  private def refreshMonthlyReturnItem(ua: UserAnswers, index: Int)(implicit hc: HeaderCarrier): Future[Unit] =
+  private def logRefreshSummary(total: Int, failed: Int, skipped: Int, firstError: Option[String]): Unit =
+    if (failed > 0) {
+      logger.error(
+        s"[SubmissionService][refreshMonthlyReturnItems] - Failed to refresh $failed of $total items before submission " +
+          s"($skipped skipped after repeated failures), first error: ${firstError.getOrElse("unknown")}"
+      )
+    }
+
+  /** Completes with None on success, or the error message when the item could not be refreshed. */
+  private def refreshMonthlyReturnItem(ua: UserAnswers, index: Int)(implicit
+    hc: HeaderCarrier
+  ): Future[Option[String]] =
     itemPayloadBuilder.build(ua, index) match {
       case None          =>
         logger.warn(
           s"[SubmissionService][refreshMonthlyReturnItem] - Could not build item payload, so the item was not refreshed, index: $index"
         )
-        Future.unit
+        Future.successful(None)
       case Some(payload) =>
         cisConnector
           .updateMonthlyReturnItem(payload)
+          .map(_ => Option.empty[String])
           .recover { case NonFatal(e) =>
-            logger.error(
-              s"[SubmissionService][refreshMonthlyReturnItem] - Failed to refresh item before submission, " +
-                s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
+            Some(
+              s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
                 s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}, " +
-                s"message: ${e.getMessage}",
-              e
+                s"message: ${e.getMessage}"
             )
           }
     }
@@ -120,7 +163,11 @@ class SubmissionService @Inject() (
     for {
       req            <- buildCreateRequest(ua)
       response       <- cisConnector.createSubmission(req)
-      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
+      period          = selectedYearMonth(ua).toString
+      updatedAnswers <- Future.fromTry(
+                          ua.set(SubmissionCreatedPage(period), true)
+                            .flatMap(_.set(CreatedSubmissionIdPage(period), response.submissionId))
+                        )
       _              <- sessionRepository.set(updatedAnswers)
     } yield (response, updatedAnswers)
 
