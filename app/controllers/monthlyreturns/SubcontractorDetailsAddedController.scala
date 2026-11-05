@@ -18,7 +18,6 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubcontractorDetailsAddedFormProvider
-import models.requests.CisPath
 import models.ReturnType.MonthlyStandardReturn
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import models.finalvalidation.{FinalValidationDraftRequestBuilder, MonthlyFinalValidationSource}
@@ -48,8 +47,7 @@ class SubcontractorDetailsAddedController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: SubcontractorDetailsAddedFormProvider,
   sessionRepository: SessionRepository,
   val controllerComponents: MessagesControllerComponents,
@@ -114,11 +112,11 @@ class SubcontractorDetailsAddedController @Inject() (
       }
     }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
       val cisId        = request.cisId
-      val subJourneyId = request.subJourneyId
+      val subJourneyId = flowId.toString
 
       val requiredAnswers = for {
         taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
@@ -137,12 +135,12 @@ class SubcontractorDetailsAddedController @Inject() (
                 )
               } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
                 Future.successful(
-                  renderPageWithId(subJourneyId, cisPath, flowId, mode, ua)
+                  renderPageWithId(subJourneyId, flowId, mode, ua)
                 )
               } else {
                 ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
                   case Some(source) if sourceMode(source).contains(mode) =>
-                    runFinalValidationWithId(subJourneyId, cisPath, flowId, cisId, month, year, mode, ua)
+                    runFinalValidationWithId(subJourneyId, flowId, cisId, month, year, mode, ua)
 
                   case _ =>
                     logger.error(
@@ -212,11 +210,11 @@ class SubcontractorDetailsAddedController @Inject() (
       }
     }
 
-  def onPageLoadAfterFinalValidationWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onPageLoadAfterFinalValidationWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
       val cisId        = request.cisId
-      val subJourneyId = request.subJourneyId
+      val subJourneyId = flowId.toString
 
       val requiredAnswers = for {
         taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
@@ -229,7 +227,7 @@ class SubcontractorDetailsAddedController @Inject() (
             case true
                 if ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString) &&
                   ua.get(FinalValidationDraftIdPage(subJourneyId)).isEmpty =>
-              renderPageWithId(subJourneyId, cisPath, flowId, mode, ua)
+              renderPageWithId(subJourneyId, flowId, mode, ua)
 
             case true =>
               logger.error(
@@ -370,9 +368,9 @@ class SubcontractorDetailsAddedController @Inject() (
       }
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val subJourneyId = request.subJourneyId
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
 
       val hasPassedFinalValidation =
         request.userAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString) &&
@@ -387,18 +385,15 @@ class SubcontractorDetailsAddedController @Inject() (
         Future.successful(
           Redirect(
             controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-              .onPageLoadWithId(cisPath, flowId, mode)
+              .onPageLoadWithId(flowId, mode)
           )
         )
       } else {
         val isAmendmentOnSubmit = request.userAnswers.get(ReturnTypePage(subJourneyId)).exists(_.amendmentFlag == "Y")
-        val formAction          = Some(routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode))
+        val formAction          = Some(routes.SubcontractorDetailsAddedController.onSubmitWithId(flowId, mode))
         val cancelAction        = Some(
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onCancelAmendmentWithId(
-              cisPath,
-              flowId
-            )
+            .onCancelAmendmentWithId(flowId)
             .url
         )
 
@@ -439,7 +434,7 @@ class SubcontractorDetailsAddedController @Inject() (
                 sessionRepository.set(updatedUa).map { _ =>
                   Redirect(
                     controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
-                      .onPageLoadWithId(cisPath, flowId)
+                      .onPageLoadWithId(flowId)
                   )
                 }
               }
@@ -495,7 +490,7 @@ class SubcontractorDetailsAddedController @Inject() (
                       } else if (allSubcontractorDetailsAdded) {
                         Redirect(
                           controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
-                            .onPageLoadWithId(cisPath, flowId)
+                            .onPageLoadWithId(flowId)
                         )
                       } else {
                         (
@@ -505,19 +500,19 @@ class SubcontractorDetailsAddedController @Inject() (
                           case (Some(MonthlyStandardReturn), Some(false)) =>
                             Redirect(
                               controllers.monthlyreturns.routes.SelectSubcontractorsController
-                                .onPageLoadWithId(cisPath, flowId, None)
+                                .onPageLoadWithId(flowId, None)
                             )
 
                           case (Some(MonthlyStandardReturn), Some(true)) =>
                             Redirect(
                               controllers.amend.routes.WhichSubcontractorsToAddController
-                                .onPageLoadWithId(cisPath, flowId, mode)
+                                .onPageLoadWithId(flowId, mode)
                             )
 
                           case (Some(returnType), _) if returnType.amendmentFlag == "Y" =>
                             Redirect(
                               controllers.amend.routes.WhichSubcontractorsToAddController
-                                .onPageLoadWithId(cisPath, flowId, mode)
+                                .onPageLoadWithId(flowId, mode)
                             )
 
                           case _ =>
@@ -541,10 +536,10 @@ class SubcontractorDetailsAddedController @Inject() (
       Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad())
     }
 
-  def onCancelAmendmentWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+  def onCancelAmendmentWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       Redirect(
-        controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(cisPath, flowId)
+        controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId)
       )
     }
 
@@ -595,7 +590,6 @@ class SubcontractorDetailsAddedController @Inject() (
 
   private def runFinalValidationWithId( // TODO DTR-9474: Final validation out of scope
     subJourneyId: String,
-    cisPath: CisPath,
     flowId: UUID,
     cisId: String,
     month: Int,
@@ -631,14 +625,14 @@ class SubcontractorDetailsAddedController @Inject() (
             withDraftId   <- Future.fromTry(ua.set(FinalValidationDraftIdPage(subJourneyId), draftId))
             _             <- sessionRepository.set(withDraftId)
           } yield Redirect(
-            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(cisPath, flowId)
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId)
           )
         } else {
           for {
             withContinuation <-
               Future.fromTry(ua.set(MonthlyFinalValidationContinuationPage(subJourneyId), mode.toString))
             _                <- sessionRepository.set(withContinuation)
-          } yield renderPageWithId(subJourneyId, cisPath, flowId, mode, withContinuation)
+          } yield renderPageWithId(subJourneyId, flowId, mode, withContinuation)
         }
       }
       .recover { case ex =>
@@ -683,7 +677,6 @@ class SubcontractorDetailsAddedController @Inject() (
 
   private def renderPageWithId(
     subJourneyId: String,
-    cisPath: CisPath,
     flowId: UUID,
     mode: Mode,
     ua: UserAnswers
@@ -700,10 +693,10 @@ class SubcontractorDetailsAddedController @Inject() (
         val preparedForm =
           ua.get(AllSubcontractorDetailsAdded(subJourneyId))
             .fold(form)(allSubcontractorDetailsAdded => form.fill(!allSubcontractorDetailsAdded))
-        val formAction   = Some(routes.SubcontractorDetailsAddedController.onSubmitWithId(cisPath, flowId, mode))
+        val formAction   = Some(routes.SubcontractorDetailsAddedController.onSubmitWithId(flowId, mode))
         val cancelAction = Some(
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-            .onCancelAmendmentWithId(cisPath, flowId)
+            .onCancelAmendmentWithId(flowId)
             .url
         )
 
@@ -723,7 +716,7 @@ class SubcontractorDetailsAddedController @Inject() (
           case None if returnType.amendmentFlag == "Y" =>
             Redirect(
               controllers.amend.routes.WhatDoYouWantToAmendStandardController
-                .onPageLoadWithId(cisPath, flowId)
+                .onPageLoadWithId(flowId)
             )
 
           case None =>
