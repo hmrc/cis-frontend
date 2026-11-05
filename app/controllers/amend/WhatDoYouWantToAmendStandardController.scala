@@ -24,7 +24,7 @@ import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectedSubcontractor
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{CisPath, GetMonthlyReturnForEditRequest}
 import pages.amend.{WhatDoYouWantToAmendStandardPage, WhichSubcontractorsToAddPage}
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
@@ -40,6 +40,7 @@ import utils.TypeUtils.toFuture
 import utils.Utils.toBigDecimal
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class WhatDoYouWantToAmendStandardController @Inject() (
@@ -50,6 +51,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  resolveScheme: SchemeAction,
+  getJourney: JourneyAction,
   formProvider: WhatDoYouWantToAmendStandardFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendStandardView
@@ -172,4 +175,124 @@ class WhatDoYouWantToAmendStandardController @Inject() (
           } yield result
       )
   }
+
+  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(request.subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      val formAction = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath, flowId))
+
+      Ok(view(preparedForm, formAction))
+    }
+
+  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
+    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      val formAction                 = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath, flowId))
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
+          value =>
+            val requiredAnswers = for {
+              cisId   <- request.userAnswers.get(CisIdPage)
+              taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+            } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+            for {
+              (cisId, month, year)     <- requiredAnswers.toFuture
+              monthlyReturn            <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+                                            GetMonthlyReturnForEditRequest(
+                                              cisId,
+                                              taxMonth = month,
+                                              taxYear = year,
+                                              isAmendment = true
+                                            )
+                                          )
+              itemsAndSubcontractors    = monthlyReturn.subcontractors
+                                            .map { subcontractor =>
+                                              val item = monthlyReturn.monthlyReturnItems
+                                                .find(_.itemResourceReference == subcontractor.subbieResourceRef)
+                                              (subcontractor, item)
+                                            }
+                                            .collect { case (subcontractor, Some(item)) =>
+                                              (subcontractor, item)
+                                            }
+              preselectedSubcontractors = itemsAndSubcontractors
+                                            .map((sub, item) =>
+                                              SelectedSubcontractor(
+                                                id = sub.subcontractorId,
+                                                name = sub.displayName.getOrElse("No name provided"),
+                                                totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                                costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                                totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                              )
+                                            )
+                                            .zipWithIndex
+                                            .map(x => (x._2 + 1, x._1))
+                                            .toMap
+
+              ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(request.subJourneyId), value).toFuture
+              ua2    <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
+              _      <- sessionRepository.set(ua2)
+              result <-
+                value match {
+                  case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
+                    Future
+                      .successful(
+                        Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad())
+                      )
+
+                  case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
+                      if preselectedSubcontractors.isEmpty =>
+                    Future.successful(
+                      Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                    )
+
+                  case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
+                    amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
+                      case Left(error) =>
+                        logger.error(
+                          s"[WhatDoYouWantToAmendStandard] Failed to start standard amendment: $error"
+                        )
+                        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+                      case Right(_) =>
+                        val subcontractorIds = ua2
+                          .get(SelectedSubcontractorPage.all)
+                          .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
+
+                        for {
+                          ua3 <- Future.fromTry(
+                                   ua2.set(WhichSubcontractorsToAddPage, subcontractorIds)
+                                 )
+
+                          ua4 <- Future.fromTry(
+                                   ua3
+                                     .remove(FinalValidationDraftIdPage)
+                                     .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
+                                     .flatMap(
+                                       _.set(
+                                         MonthlyFinalValidationSourcePage,
+                                         MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                                           NormalMode.toString
+                                         )
+                                       )
+                                     )
+                                 )
+
+                          _ <- sessionRepository.set(ua4)
+                        } yield Redirect(
+                          // TODO: DO I NEED TO CREATE NEW ON PAGE LOAD FOR SubcontractorDetailsAddedController OR SOMEONE ELSE IS DOING IT ALREADY?
+                          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+                        )
+                    }
+                }
+            } yield result
+        )
+    }
 }

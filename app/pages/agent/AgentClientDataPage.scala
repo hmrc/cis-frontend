@@ -20,6 +20,11 @@ import models.agent.AgentClientData
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class AgentClientDataPage(id: String) extends QuestionPage[AgentClientData] {
+  override def path: JsPath     = JsPath \ id \ "agent"
+  override def toString: String = "agentClientData"
+}
+
 case object AgentClientDataPage extends QuestionPage[AgentClientData] {
   override def path: JsPath     = JsPath \ "agent"
   override def toString: String = "agentClientData"
