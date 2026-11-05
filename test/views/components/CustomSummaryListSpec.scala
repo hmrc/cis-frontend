@@ -90,6 +90,18 @@ class CustomSummaryListSpec extends SpecBase {
       }
     }
 
+    "must render a unique name label id for each row" in new Setup {
+      val html = customSummaryListRows(rows = selectedRowsNoLinks)
+      val doc  = Jsoup.parse(html.body)
+
+      val renderedRows = doc.select(".govuk-summary-list__row")
+
+      renderedRows.size mustBe 3
+      renderedRows.get(0).select(".govuk-summary-list__key").attr("id") mustBe "name-label-0"
+      renderedRows.get(1).select(".govuk-summary-list__key").attr("id") mustBe "name-label-1"
+      renderedRows.get(2).select(".govuk-summary-list__key").attr("id") mustBe "name-label-2"
+    }
+
     "must apply custom keyClasses to key elements when provided" in new Setup {
       val html = customSummaryListRows(rows = selectedRowsNoLinks, keyClasses = "govuk-body govuk-!-font-weight-bold")
       val doc  = Jsoup.parse(html.body)
