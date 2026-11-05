@@ -22,14 +22,13 @@ import controllers.routes
 import forms.monthlyreturns.DateConfirmPaymentsFormProvider
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.CisTaxpayer
-import models.requests.CisPath.CisOrg
-import models.{JourneyScope, NormalMode, ReturnType, UserAnswers}
+import models.{NormalMode, ReturnType, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, anyInt, eq as eqTo}
-import org.mockito.Mockito.{verify, verifyNoInteractions, when}
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{DateConfirmPaymentsPage, ReturnTypePage}
+import pages.monthlyreturns.*
 import play.api.Application
 import play.api.i18n.Messages
 import play.api.inject.bind
@@ -59,7 +58,8 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   def onwardRoute: Call = Call("GET", "/foo")
 
-  val validAnswer: LocalDate = LocalDate.now(clock)
+  val validAnswer: LocalDate        = LocalDate.now(clock)
+  val expectedScopedDate: LocalDate = LocalDate.of(2026, 7, 5)
 
   lazy val dateConfirmPaymentsRoute: String =
     controllers.monthlyreturns.routes.DateConfirmPaymentsController
@@ -100,13 +100,13 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
       )
 
   private def scopedId(flowId: UUID): String =
-    JourneyScope.subJourneyId(CisOrg, flowId)
+    flowId.toString
 
   private def scopedUserAnswers(flowId: UUID, returnType: ReturnType): UserAnswers = {
     val id = scopedId(flowId)
 
     emptyUserAnswers
-      .initialiseSubJourney(id)
+      .set(CisIdPage(id), "1")
       .success
       .value
       .set(ReturnTypePage(id), returnType)
@@ -116,12 +116,12 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   private def scopedGetRoute(flowId: UUID): String =
     controllers.monthlyreturns.routes.DateConfirmPaymentsController
-      .onPageLoadWithId(CisOrg, flowId, NormalMode)
+      .onPageLoadWithId(flowId, NormalMode)
       .url
 
   private def scopedPostRoute(flowId: UUID): String =
     controllers.monthlyreturns.routes.DateConfirmPaymentsController
-      .onSubmitWithId(CisOrg, flowId, NormalMode)
+      .onSubmitWithId(flowId, NormalMode)
       .url
 
   private def scopedPostRequest(flowId: UUID): FakeRequest[AnyContentAsFormUrlEncoded] =
@@ -147,7 +147,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
     when(taxpayerService.findForOrganisation(using any()))
       .thenReturn(Future.successful(taxpayer))
 
-    val application = applicationBuilder()
+    val application = applicationBuilder(userAnswers = userAnswers)
       .configure("features.multi-tab-enabled" -> enabled)
       .overrides(
         bind[SessionRepository].toInstance(repository),
@@ -494,7 +494,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
           val formAction = Some(
             controllers.monthlyreturns.routes.DateConfirmPaymentsController
-              .onSubmitWithId(CisOrg, flowId, NormalMode)
+              .onSubmitWithId(flowId, NormalMode)
           )
 
           status(result) mustBe OK
@@ -526,7 +526,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
           val formAction = Some(
             controllers.monthlyreturns.routes.DateConfirmPaymentsController
-              .onSubmitWithId(CisOrg, flowId, NormalMode)
+              .onSubmitWithId(flowId, NormalMode)
           )
 
           status(result) mustBe OK
@@ -548,11 +548,52 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         running(application) {
           val request = FakeRequest(GET, scopedGetRoute(flowId))
           val result  = route(application, request).value
+          val view    = application.injector.instanceOf[DateConfirmPaymentsView]
+
+          val formAction = Some(
+            controllers.monthlyreturns.routes.DateConfirmPaymentsController
+              .onSubmitWithId(flowId, NormalMode)
+          )
 
           status(result) mustBe OK
-          contentAsString(result) must include(
-            messages(application)("monthlyreturns.dateConfirmPayments.nilreturn.title")
+          contentAsString(result) mustBe view(
+            form,
+            NormalMode,
+            "monthlyreturns.dateConfirmPayments.nilreturn",
+            MonthlyNilReturn,
+            formAction
+          )(request, messages(application)).toString
+        }
+      }
+
+      "must save an optional return type in the scoped answers on GET" in {
+        val flowId = UUID.randomUUID()
+        val id     = scopedId(flowId)
+
+        val userAnswers = emptyUserAnswers
+          .set(CisIdPage(id), "1")
+          .success
+          .value
+
+        val (application, repository) = scopedApplication(Some(userAnswers))
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.DateConfirmPaymentsController
+              .onPageLoadWithId(flowId, NormalMode, Some(MonthlyNilReturn))
+              .url
           )
+
+          val result = route(application, request).value
+
+          status(result) mustBe OK
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(repository).set(captor.capture())
+
+          captor.getValue.get(ReturnTypePage(id)) mustBe Some(MonthlyNilReturn)
+          captor.getValue.get(ReturnTypePage) mustBe None
         }
       }
 
@@ -569,11 +610,11 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
-      "must redirect to Journey Recovery when the scoped ReturnTypePage is missing" in {
+      "must not fall back to the legacy CIS ID when the scoped CIS ID is missing" in {
         val flowId = UUID.randomUUID()
 
-        val userAnswers = emptyUserAnswers
-          .initialiseSubJourney(scopedId(flowId))
+        val userAnswers = userAnswersWithCisId
+          .set(ReturnTypePage(scopedId(flowId)), MonthlyStandardReturn)
           .success
           .value
 
@@ -588,6 +629,51 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
+      "must redirect to Journey Recovery when the scoped ReturnTypePage is missing" in {
+        val flowId = UUID.randomUUID()
+
+        val userAnswers = emptyUserAnswers
+          .set(CisIdPage(scopedId(flowId)), "1")
+          .success
+          .value
+
+        val (application, repository) = scopedApplication(Some(userAnswers))
+
+        running(application) {
+          val result = route(application, FakeRequest(GET, scopedGetRoute(flowId))).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(repository).set(any[UserAnswers])
+        }
+      }
+
+      "must redirect to Journey Recovery on POST when the scoped ReturnTypePage is missing" in {
+        val flowId = UUID.randomUUID()
+
+        val userAnswers = emptyUserAnswers
+          .set(CisIdPage(scopedId(flowId)), "1")
+          .success
+          .value
+          .set(ReturnTypePage, MonthlyStandardReturn)
+          .success
+          .value
+
+        val (application, repository) = scopedApplication(Some(userAnswers))
+
+        running(application) {
+          val result = route(application, scopedPostRequest(flowId)).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(repository, never()).set(any[UserAnswers])
+        }
+      }
+
       "must save the scoped date and create a standard return" in {
         val flowId      = UUID.randomUUID()
         val id          = scopedId(flowId)
@@ -597,7 +683,6 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
         when(monthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
           .thenReturn(Future.successful(false))
-
         when(monthlyReturnService.createMonthlyReturn(any())(any()))
           .thenReturn(Future.successful(()))
 
@@ -613,10 +698,15 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
           verify(repository).set(captor.capture())
 
-          captor.getValue.get(DateConfirmPaymentsPage(id)) mustBe Some(
-            LocalDate.of(2026, 7, 5)
-          )
-          captor.getValue.get(DateConfirmPaymentsPage) mustBe None
+          val savedAnswers = captor.getValue
+
+          savedAnswers.get(DateConfirmPaymentsPage(id)) mustBe Some(expectedScopedDate)
+          savedAnswers.get(DateConfirmPaymentsPage) mustBe None
+          savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+
+          verify(monthlyReturnService)
+            .isDuplicate(eqTo("1"), eqTo(validAnswer.getYear), eqTo(validAnswer.getMonthValue))(any())
+          verify(monthlyReturnService).createMonthlyReturn(any())(any())
         }
       }
 
@@ -629,7 +719,6 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
         when(monthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
           .thenReturn(Future.successful(false))
-
         when(monthlyReturnService.createNilMonthlyReturn(any[UserAnswers], eqTo("1"), eqTo(id))(any()))
           .thenReturn(Future.successful(userAnswers))
 
@@ -645,16 +734,17 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
           verify(repository).set(captor.capture())
 
-          captor.getValue.get(DateConfirmPaymentsPage(id)) mustBe Some(
-            LocalDate.of(2026, 7, 5)
-          )
+          val savedAnswers = captor.getValue
+
+          savedAnswers.get(DateConfirmPaymentsPage(id)) mustBe Some(expectedScopedDate)
+          savedAnswers.get(DateConfirmPaymentsPage) mustBe None
 
           verify(monthlyReturnService)
             .createNilMonthlyReturn(any[UserAnswers], eqTo("1"), eqTo(id))(any())
         }
       }
 
-      "must return Bad Request when invalid data is submitted" in {
+      "must return Bad Request and errors when invalid data is submitted" in {
         val flowId               = UUID.randomUUID()
         val userAnswers          = scopedUserAnswers(flowId, MonthlyStandardReturn)
         val monthlyReturnService = mock[MonthlyReturnService]
@@ -669,13 +759,14 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           val result = route(application, request).value
 
           status(result) mustBe BAD_REQUEST
-
           verifyNoInteractions(monthlyReturnService)
+          verify(repository, never()).set(any[UserAnswers])
         }
       }
 
-      "must return a duplicate error without saving the scoped date" in {
+      "must return a duplicate error and still save the scoped date" in {
         val flowId               = UUID.randomUUID()
+        val id                   = scopedId(flowId)
         val userAnswers          = scopedUserAnswers(flowId, MonthlyStandardReturn)
         val monthlyReturnService = mock[MonthlyReturnService]
 
@@ -692,6 +783,14 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           contentAsString(result) must include(
             messages(application)("monthlyreturns.dateConfirmPayments.error.duplicate")
           )
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(repository).set(captor.capture())
+
+          captor.getValue.get(DateConfirmPaymentsPage(id)) mustBe Some(expectedScopedDate)
+          captor.getValue.get(DateConfirmPaymentsPage) mustBe None
+
+          verify(monthlyReturnService, never()).createMonthlyReturn(any())(any())
         }
       }
 
@@ -703,7 +802,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         when(monthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
           .thenReturn(Future.failed(new RuntimeException("Backend error")))
 
-        val (application, _) =
+        val (application, repository) =
           scopedApplication(Some(userAnswers), monthlyReturnService)
 
         running(application) {
@@ -712,6 +811,33 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe
             routes.SystemErrorController.onPageLoad().url
+
+          verify(repository, never()).set(any[UserAnswers])
+        }
+      }
+
+      "must redirect to System Error when saving the scoped date fails" in {
+        val flowId               = UUID.randomUUID()
+        val userAnswers          = scopedUserAnswers(flowId, MonthlyStandardReturn)
+        val monthlyReturnService = mock[MonthlyReturnService]
+
+        when(monthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
+          .thenReturn(Future.successful(false))
+
+        val (application, repository) =
+          scopedApplication(Some(userAnswers), monthlyReturnService)
+
+        when(repository.set(any[UserAnswers]))
+          .thenReturn(Future.failed(new RuntimeException("Database error")))
+
+        running(application) {
+          val result = route(application, scopedPostRequest(flowId)).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            routes.SystemErrorController.onPageLoad().url
+
+          verify(monthlyReturnService, never()).createMonthlyReturn(any())(any())
         }
       }
 
@@ -744,10 +870,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         val secondDate = LocalDate.of(2025, 3, 5)
 
         val userAnswers = scopedUserAnswers(firstFlowId, MonthlyStandardReturn)
-          .initialiseSubJourney(secondId)
+          .set(CisIdPage(secondId), "2")
           .success
           .value
-          .set(ReturnTypePage(secondId), MonthlyStandardReturn)
+          .set(ReturnTypePage(secondId), MonthlyNilReturn)
           .success
           .value
           .set(DateConfirmPaymentsPage(secondId), secondDate)
@@ -758,7 +884,6 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
         when(monthlyReturnService.isDuplicate(eqTo("1"), anyInt(), anyInt())(any()))
           .thenReturn(Future.successful(false))
-
         when(monthlyReturnService.createMonthlyReturn(any())(any()))
           .thenReturn(Future.successful(()))
 
@@ -775,8 +900,10 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
           val savedAnswers = captor.getValue
 
-          savedAnswers.get(DateConfirmPaymentsPage(firstId)) mustBe Some(validAnswer.withDayOfMonth(5))
+          savedAnswers.get(DateConfirmPaymentsPage(firstId)) mustBe Some(expectedScopedDate)
           savedAnswers.get(DateConfirmPaymentsPage(secondId)) mustBe Some(secondDate)
+          savedAnswers.get(ReturnTypePage(secondId)) mustBe Some(MonthlyNilReturn)
+          savedAnswers.get(CisIdPage(secondId)) mustBe Some("2")
         }
       }
     }
