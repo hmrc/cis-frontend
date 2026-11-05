@@ -63,27 +63,12 @@ class SubmissionService @Inject() (
       case Some(resubmissionId) =>
         Future.successful((resubmissionId.toString, ua, true))
       case None                 =>
-        existingCreatedSubmissionId(ua) match {
-          case Some(submissionId) =>
-            // A retry after a partial failure. The return has left STARTED, so item updates would be rejected and a
-            // second create would break the unique submission key. Reuse the submission already created.
-            logger.warn(
-              s"[SubmissionService][getOrCreateSubmissionForChris] - Submission already created, reusing submissionId: $submissionId"
-            )
-            Future.successful((submissionId, ua, false))
-          case None               =>
-            refreshMonthlyReturnItems(ua)
-              .flatMap(_ => create(ua))
-              .map { case (created, updatedUa) =>
-                (created.submissionId, updatedUa, false)
-              }
-        }
+        refreshMonthlyReturnItems(ua)
+          .flatMap(_ => create(ua))
+          .map { case (created, updatedUa) =>
+            (created.submissionId, updatedUa, false)
+          }
     }
-
-  private def existingCreatedSubmissionId(ua: UserAnswers): Option[String] = {
-    val period = selectedYearMonth(ua).toString
-    if (ua.get(SubmissionCreatedPage(period)).contains(true)) ua.get(CreatedSubmissionIdPage(period)) else None
-  }
 
   /** Number of consecutive item refresh failures after which the remaining items are skipped. */
   private val MaxConsecutiveRefreshFailures = 3
@@ -163,11 +148,7 @@ class SubmissionService @Inject() (
     for {
       req            <- buildCreateRequest(ua)
       response       <- cisConnector.createSubmission(req)
-      period          = selectedYearMonth(ua).toString
-      updatedAnswers <- Future.fromTry(
-                          ua.set(SubmissionCreatedPage(period), true)
-                            .flatMap(_.set(CreatedSubmissionIdPage(period), response.submissionId))
-                        )
+      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
       _              <- sessionRepository.set(updatedAnswers)
     } yield (response, updatedAnswers)
 

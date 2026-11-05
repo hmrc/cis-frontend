@@ -127,7 +127,6 @@ object UserAnswerUtils {
       period.fold(withSubmissionIdPages) { p =>
         withSubmissionIdPages
           .flatMap(_.remove(SubmissionCreatedPage(p)))
-          .flatMap(_.remove(CreatedSubmissionIdPage(p)))
           .flatMap(_.remove(SubmissionJourneyCompletedPage(p)))
       }
     }
