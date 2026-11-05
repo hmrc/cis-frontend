@@ -19,7 +19,6 @@ package controllers.amend
 import config.FrontendAppConfig
 import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
-import models.requests.CisPath
 import models.{NormalMode, UserAnswers}
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
 import models.requests.CisIdDataRequest
@@ -51,8 +50,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   formpRdsReconcileService: FormpRdsReconcileService,
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
@@ -89,18 +87,19 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val formAction =
-        Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(cisPath, flowId))
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(flowId))
 
-      getMonthYearWithId(request.subJourneyId, request.userAnswers) match {
+      getMonthYearWithId(subJourneyId, request.userAnswers) match {
         case Some(monthYear) =>
           hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
             case true =>
               for {
                 clearedAnswers <-
-                  Future.fromTry(request.userAnswers.remove(ConfirmCancelAmendmentYesNoPage(request.subJourneyId)))
+                  Future.fromTry(request.userAnswers.remove(ConfirmCancelAmendmentYesNoPage(subJourneyId)))
                 _              <- sessionRepository.set(clearedAnswers)
               } yield Ok(view(form, monthYear, formAction))
 
@@ -144,12 +143,12 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       }
   }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val cisId        = request.cisId
-      val subJourneyId = request.subJourneyId
+      val subJourneyId = flowId.toString
       val formAction   =
-        Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(cisPath, flowId))
+        Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(flowId))
 
       getMonthYearWithId(subJourneyId, request.userAnswers) match {
         case Some(monthYear) =>
@@ -166,8 +165,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
                           request.userAnswers.set(ConfirmCancelAmendmentYesNoPage(subJourneyId), value)
                         )
                       _              <- sessionRepository.set(updatedAnswers)
-                      result         <- if (value) handleYesWithId(subJourneyId, cisPath, flowId, updatedAnswers, cisId)
-                                        else handleNoWithId(cisPath, flowId)
+                      result         <- if (value) handleYesWithId(subJourneyId, flowId, updatedAnswers, cisId)
+                                        else handleNoWithId(flowId)
                     } yield result
                 )
 
@@ -259,7 +258,6 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   private def handleYesWithId(
     subJourneyId: String,
-    cisPath: CisPath,
     flowId: UUID,
     ua: UserAnswers,
     instanceId: String
