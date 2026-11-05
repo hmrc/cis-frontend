@@ -18,7 +18,7 @@ package services.submission
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.monthlyreturns.CisTaxpayer
+import models.monthlyreturns.{CisTaxpayer, UpdateMonthlyReturnItemRequest}
 import models.requests.*
 import models.submission.*
 import models.UserAnswers
@@ -70,9 +70,6 @@ class SubmissionService @Inject() (
           }
     }
 
-  /** Number of consecutive item refresh failures after which the remaining items are skipped. */
-  private val MaxConsecutiveRefreshFailures = 3
-
   /** Writes the subcontractor name and verification number onto every stored monthly return item before the return is
     * submitted.
     *
@@ -87,62 +84,41 @@ class SubmissionService @Inject() (
     * scheme and fails with a lost-update error if another update to the same scheme overlaps it, which would roll back
     * the item's name. Running the updates concurrently would therefore lose all but one of them.
     *
-    * A failure to refresh an item does not stop the submission. After [[MaxConsecutiveRefreshFailures]] failures in a
-    * row the remaining items are skipped, because the backend is rejecting the updates (for example the return is no
-    * longer STARTED) and trying hundreds more only delays the submission. One summary line is logged.
+    * Every item must be refreshed. A failed update is retried once; if it fails again, or the payload cannot be built,
+    * the returned future fails and no submission is created, so a return is never submitted with blank item names.
+    * Stopping at the first such item also avoids making hundreds of calls that would all fail when the backend rejects
+    * the return (its stored procedure only accepts a STARTED return).
     */
   def refreshMonthlyReturnItems(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
     val indexes: Seq[Int] =
       ua.get(SelectedSubcontractorPage.all).map(_.keys.toSeq.sorted).getOrElse(Seq.empty)
 
-    def loop(remaining: List[Int], consecutiveFailures: Int, failed: Int, firstError: Option[String]): Future[Unit] =
-      remaining match {
-        case Nil                                                       =>
-          logRefreshSummary(indexes.size, failed, skipped = 0, firstError)
-          Future.unit
-        case _ if consecutiveFailures >= MaxConsecutiveRefreshFailures =>
-          logRefreshSummary(indexes.size, failed, skipped = remaining.size, firstError)
-          Future.unit
-        case index :: rest                                             =>
-          refreshMonthlyReturnItem(ua, index).flatMap {
-            case None        => loop(rest, 0, failed, firstError)
-            case Some(error) => loop(rest, consecutiveFailures + 1, failed + 1, firstError.orElse(Some(error)))
-          }
-      }
-
-    loop(indexes.toList, 0, 0, None)
+    indexes.foldLeft(Future.unit)((previous, index) => previous.flatMap(_ => refreshMonthlyReturnItem(ua, index)))
   }
 
-  private def logRefreshSummary(total: Int, failed: Int, skipped: Int, firstError: Option[String]): Unit =
-    if (failed > 0) {
-      logger.error(
-        s"[SubmissionService][refreshMonthlyReturnItems] - Failed to refresh $failed of $total items before submission " +
-          s"($skipped skipped after repeated failures), first error: ${firstError.getOrElse("unknown")}"
-      )
-    }
-
-  /** Completes with None on success, or the error message when the item could not be refreshed. */
-  private def refreshMonthlyReturnItem(ua: UserAnswers, index: Int)(implicit
-    hc: HeaderCarrier
-  ): Future[Option[String]] =
+  private def refreshMonthlyReturnItem(ua: UserAnswers, index: Int)(implicit hc: HeaderCarrier): Future[Unit] =
     itemPayloadBuilder.build(ua, index) match {
       case None          =>
-        logger.warn(
-          s"[SubmissionService][refreshMonthlyReturnItem] - Could not build item payload, so the item was not refreshed, index: $index"
-        )
-        Future.successful(None)
+        val message = s"Could not build item payload, so the item was not refreshed, index: $index"
+        logger.error(s"[SubmissionService][refreshMonthlyReturnItem] - $message")
+        Future.failed(new IllegalStateException(message))
       case Some(payload) =>
-        cisConnector
-          .updateMonthlyReturnItem(payload)
-          .map(_ => Option.empty[String])
-          .recover { case NonFatal(e) =>
-            Some(
-              s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
-                s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}, " +
-                s"message: ${e.getMessage}"
-            )
+        cisConnector.updateMonthlyReturnItem(payload).recoverWith { case NonFatal(first) =>
+          logger.warn(
+            s"[SubmissionService][refreshMonthlyReturnItem] - Item update failed, retrying once. ${describe(payload, index)}, message: ${first.getMessage}"
+          )
+          cisConnector.updateMonthlyReturnItem(payload).recoverWith { case NonFatal(second) =>
+            val message =
+              s"Failed to refresh monthly return item. ${describe(payload, index)}, message: ${second.getMessage}"
+            logger.error(s"[SubmissionService][refreshMonthlyReturnItem] - $message")
+            Future.failed(new IllegalStateException(message, second))
           }
+        }
     }
+
+  private def describe(payload: UpdateMonthlyReturnItemRequest, index: Int): String =
+    s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
+      s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}"
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
