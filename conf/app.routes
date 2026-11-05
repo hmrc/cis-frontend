@@ -81,9 +81,9 @@ GET        /monthly-return/change-date-confirm-nil-payments             controll
 POST       /monthly-return/change-date-confirm-nil-payments             controllers.monthlyreturns.DateConfirmPaymentsController.onSubmit(mode: Mode = CheckMode, returnType: ReturnType = MonthlyNilReturn)
 
 # Multi-tab
-GET        /monthly-return/date-confirm-payments/:flowId                controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, returnType: Option[ReturnType] ?= None)
+GET        /monthly-return/date-confirm-payments/:flowId                controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
 POST       /monthly-return/date-confirm-payments/:flowId                controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
-GET        /monthly-return/change-date-confirm-payments/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, returnType: Option[ReturnType] ?= None)
+GET        /monthly-return/change-date-confirm-payments/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)

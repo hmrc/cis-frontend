@@ -16,6 +16,7 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{EmployerReference, NormalMode, ReturnType, UserAnswers}
@@ -52,11 +53,11 @@ class FileYourMonthlyCisReturnController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  multiTabAction: MultiTabAction,
   sessionRepository: SessionRepository,
   monthlyReturnService: MonthlyReturnService,
   formpRdsReconcileService: FormpRdsReconcileService,
-  cisTaxpayerService: CisTaxpayerService
+  cisTaxpayerService: CisTaxpayerService,
+  appConfig: FrontendAppConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -239,6 +240,21 @@ class FileYourMonthlyCisReturnController @Inject() (
       cisTaxpayerService.findForOrganisation
         .map(taxpayer => Option.when(taxpayer.uniqueId == cisId)(taxpayer))
 
+  // Multi-tab: Resolve and authorise the selected CIS taxpayer.
+  private def withResolvedTaxpayer[A](cisId: String)(
+    handle: CisTaxpayer => Future[Result]
+  )(using request: IdentifierRequest[A]): Future[Result] =
+    resolveTaxpayer(cisId).flatMap {
+      case Some(taxpayer) if !appConfig.multiTabEnabled =>
+        Future.successful(Redirect(appConfig.returnsLandingPageUrl(taxpayer.uniqueId, None)))
+
+      case Some(taxpayer) =>
+        handle(taxpayer)
+
+      case None =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+    }
+
   // Multi-tab: Reconcile FormP/RDS before rendering the entry page.
   private def reconcileScopedReturn(taxpayer: CisTaxpayer, render: => Result)(using HeaderCarrier): Future[Result] =
     formpRdsReconcileService
@@ -255,21 +271,13 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   // Multi-tab: New CIS ID-scoped entry points.
   def startNilReturnWithCisId(cisId: String): Action[AnyContent] =
-    (identify andThen multiTabAction.forStart(cisId)).async { implicit request =>
-      resolveTaxpayer(cisId)
-        .flatMap {
-          case Some(taxpayer) =>
-            reconcileScopedReturn(
-              taxpayer,
-              Ok(
-                nilReturnView(
-                  Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisId(cisId, MonthlyNilReturn))
-                )
-              )
-            )
-          case None           =>
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        }
+    identify.async { implicit request =>
+      withResolvedTaxpayer(cisId) { taxpayer =>
+        reconcileScopedReturn(
+          taxpayer,
+          Ok(nilReturnView(Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisId(cisId, MonthlyNilReturn))))
+        )
+      }
         .recover { case NonFatal(ex) =>
           logger.error(s"[FileYourMonthlyCisReturnController][startNilReturnWithCisId] Failed to start journey", ex)
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -277,21 +285,17 @@ class FileYourMonthlyCisReturnController @Inject() (
     }
 
   def startMonthlyReturnWithCisId(cisId: String): Action[AnyContent] =
-    (identify andThen multiTabAction.forStart(cisId)).async { implicit request =>
-      resolveTaxpayer(cisId)
-        .flatMap {
-          case Some(taxpayer) =>
-            reconcileScopedReturn(
-              taxpayer,
-              Ok(
-                monthlyReturnView(
-                  Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisId(cisId, MonthlyStandardReturn))
-                )
-              )
+    identify.async { implicit request =>
+      withResolvedTaxpayer(cisId) { taxpayer =>
+        reconcileScopedReturn(
+          taxpayer,
+          Ok(
+            monthlyReturnView(
+              Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisId(cisId, MonthlyStandardReturn))
             )
-          case None           =>
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        }
+          )
+        )
+      }
         .recover { case NonFatal(ex) =>
           logger.error(s"[FileYourMonthlyCisReturnController][startMonthlyReturnWithCisId] Failed to start journey", ex)
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
@@ -300,48 +304,44 @@ class FileYourMonthlyCisReturnController @Inject() (
 
   // Multi-tab: Create a new UUID-scoped journey on submission.
   def onSubmitWithCisId(cisId: String, returnType: ReturnType): Action[AnyContent] =
-    (identify andThen multiTabAction.forStart(cisId)).async { implicit request =>
-      resolveTaxpayer(cisId)
-        .flatMap {
-          case Some(taxpayer) =>
-            val flowId = UUID.randomUUID()
-            val id     = flowId.toString
+    identify.async { implicit request =>
+      withResolvedTaxpayer(cisId) { taxpayer =>
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
 
-            sessionRepository
-              .get(request.userId)
-              .flatMap { existing =>
-                val userAnswers = existing.getOrElse(UserAnswers(request.userId))
+        sessionRepository
+          .get(request.userId)
+          .flatMap { existing =>
+            val userAnswers = existing.getOrElse(UserAnswers(request.userId))
 
-                val updatedAnswers = for {
-                  withCisId      <- userAnswers.set(CisIdPage(id), taxpayer.uniqueId)
-                  withContractor <- withCisId.set(ContractorNamePage(id), taxpayer.schemeName.getOrElse(""))
-                  withAgent      <- if request.isAgent then
-                                      withContractor.set(
-                                        AgentClientDataPage(id),
-                                        AgentClientData(
-                                          taxpayer.uniqueId,
-                                          taxpayer.taxOfficeNumber,
-                                          taxpayer.taxOfficeRef,
-                                          taxpayer.schemeName
-                                        )
-                                      )
-                                    else Success(withContractor)
-                  updated        <- withAgent.set(ReturnTypePage(id), returnType)
-                } yield updated
+            val updatedAnswers = for {
+              withCisId      <- userAnswers.set(CisIdPage(id), taxpayer.uniqueId)
+              withContractor <- withCisId.set(ContractorNamePage(id), taxpayer.schemeName.getOrElse(""))
+              withAgent      <- if request.isAgent then
+                                  withContractor.set(
+                                    AgentClientDataPage(id),
+                                    AgentClientData(
+                                      taxpayer.uniqueId,
+                                      taxpayer.taxOfficeNumber,
+                                      taxpayer.taxOfficeRef,
+                                      taxpayer.schemeName
+                                    )
+                                  )
+                                else Success(withContractor)
+              updated        <- withAgent.set(ReturnTypePage(id), returnType)
+            } yield updated
 
-                Future
-                  .fromTry(updatedAnswers)
-                  .flatMap { updated =>
-                    sessionRepository
-                      .set(updated)
-                      .map { _ =>
-                        Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
-                      }
+            Future
+              .fromTry(updatedAnswers)
+              .flatMap { updated =>
+                sessionRepository
+                  .set(updated)
+                  .map { _ =>
+                    Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
                   }
               }
-          case None           =>
-            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-        }
+          }
+      }
         .recover { case NonFatal(ex) =>
           logger.error(s"[FileYourMonthlyCisReturnController][onSubmitWithCisId] Failed to create journey", ex)
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())

@@ -149,39 +149,36 @@ class DateConfirmPaymentsController @Inject() (
     }
 
   // DTR-9431: New ID-scoped journey.
-
-  def onPageLoadWithId(flowId: UUID, mode: Mode, returnType: Option[ReturnType] = None): Action[AnyContent] =
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val id          = flowId.toString
       val userAnswers = request.userAnswers
       val form        = formProvider()
 
-      for {
-        uaWithReturnType <-
-          returnType.fold(Future.successful(userAnswers))(r => userAnswers.set(ReturnTypePage(id), r).toFuture)
-        _                <- sessionRepository.set(uaWithReturnType)
-      } yield uaWithReturnType
-        .get(ReturnTypePage(id))
-        .fold {
-          logger.error("[DateConfirmPaymentsController][onPageLoadWithId] - ReturnTypePage missing from user answers")
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        } { storedReturnType =>
-          val messagePrefix =
-            if (storedReturnType == MonthlyStandardReturn) {
-              "monthlyreturns.dateConfirmPayments"
-            } else {
-              "monthlyreturns.dateConfirmPayments.nilreturn"
+      Future.successful {
+        userAnswers
+          .get(ReturnTypePage(id))
+          .fold {
+            logger.error("[DateConfirmPaymentsController][onPageLoadWithId] - ReturnTypePage missing from user answers")
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          } { storedReturnType =>
+            val messagePrefix =
+              if (storedReturnType == MonthlyStandardReturn) {
+                "monthlyreturns.dateConfirmPayments"
+              } else {
+                "monthlyreturns.dateConfirmPayments.nilreturn"
+              }
+
+            val preparedForm = userAnswers.get(DateConfirmPaymentsPage(id)) match {
+              case None        => form
+              case Some(value) => form.fill(value)
             }
 
-          val preparedForm = uaWithReturnType.get(DateConfirmPaymentsPage(id)) match {
-            case None        => form
-            case Some(value) => form.fill(value)
+            val formAction = Some(routes.DateConfirmPaymentsController.onSubmitWithId(flowId, mode))
+
+            Ok(view(preparedForm, mode, messagePrefix, storedReturnType, formAction))
           }
-
-          val formAction = Some(routes.DateConfirmPaymentsController.onSubmitWithId(flowId, mode))
-
-          Ok(view(preparedForm, mode, messagePrefix, storedReturnType, formAction))
-        }
+      }
     }
 
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =

@@ -566,34 +566,32 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
         }
       }
 
-      "must save an optional return type in the scoped answers on GET" in {
-        val flowId = UUID.randomUUID()
-        val id     = scopedId(flowId)
-
-        val userAnswers = emptyUserAnswers
-          .set(CisIdPage(id), "1")
-          .success
-          .value
+      "must use the saved scoped return type without updating user answers on GET" in {
+        val flowId      = UUID.randomUUID()
+        val userAnswers = scopedUserAnswers(flowId, MonthlyNilReturn)
 
         val (application, repository) = scopedApplication(Some(userAnswers))
 
         running(application) {
-          val request = FakeRequest(
-            GET,
+          val request = FakeRequest(GET, scopedGetRoute(flowId))
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[DateConfirmPaymentsView]
+
+          val formAction = Some(
             controllers.monthlyreturns.routes.DateConfirmPaymentsController
-              .onPageLoadWithId(flowId, NormalMode, Some(MonthlyNilReturn))
-              .url
+              .onSubmitWithId(flowId, NormalMode)
           )
 
-          val result = route(application, request).value
-
           status(result) mustBe OK
+          contentAsString(result) mustBe view(
+            form,
+            NormalMode,
+            "monthlyreturns.dateConfirmPayments.nilreturn",
+            MonthlyNilReturn,
+            formAction
+          )(request, messages(application)).toString
 
-          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
-          verify(repository).set(captor.capture())
-
-          captor.getValue.get(ReturnTypePage(id)) mustBe Some(MonthlyNilReturn)
-          captor.getValue.get(ReturnTypePage) mustBe None
+          verify(repository, never()).set(any[UserAnswers])
         }
       }
 
@@ -646,7 +644,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustBe
             routes.JourneyRecoveryController.onPageLoad().url
 
-          verify(repository).set(any[UserAnswers])
+          verify(repository, never()).set(any[UserAnswers])
         }
       }
 
