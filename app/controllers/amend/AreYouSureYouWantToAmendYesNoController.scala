@@ -21,7 +21,6 @@ import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 
 import javax.inject.Inject
 import java.util.UUID
-import models.requests.CisPath
 import models.Mode
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.AreYouSureYouWantToAmendYesNo.{No, Yes}
@@ -46,8 +45,7 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
   amendMonthlyReturnService: AmendMonthlyReturnService,
   monthlyReturnService: MonthlyReturnService,
   sessionRepository: SessionRepository,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
@@ -73,11 +71,11 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
       Ok(view(preparedForm))
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val formAction   =
-        Some(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(cisPath, flowId))
-      val preparedForm = request.userAnswers.get(AreYouSureYouWantToAmendYesNoPage(request.subJourneyId)) match {
+        Some(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(flowId))
+      val preparedForm = request.userAnswers.get(AreYouSureYouWantToAmendYesNoPage(flowId.toString)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
@@ -114,11 +112,11 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
         )
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val subJourneyId = request.subJourneyId
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
       val formAction   =
-        Some(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(cisPath, flowId))
+        Some(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(flowId))
 
       form
         .bindFromRequest()
