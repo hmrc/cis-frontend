@@ -21,7 +21,6 @@ import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 
 import javax.inject.Inject
 import java.util.UUID
-import models.requests.CisPath
 import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
@@ -49,8 +48,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   monthlyReturnService: MonthlyReturnService,
   amendMonthlyReturnService: AmendMonthlyReturnService,
   sessionRepository: SessionRepository,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
@@ -74,16 +72,16 @@ class WhatDoYouWantToAmendStandardController @Inject() (
     Ok(view(preparedForm))
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(request.subJourneyId)) match {
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(flowId.toString)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
       val formAction =
-        Some(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath, flowId))
+        Some(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
 
       Ok(view(preparedForm, formAction))
     }
@@ -191,14 +189,14 @@ class WhatDoYouWantToAmendStandardController @Inject() (
       )
   }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       val cisId        = request.cisId
-      val subJourneyID = request.subJourneyId
+      val subJourneyId = flowId.toString
       val formAction   =
-        Some(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath, flowId))
+        Some(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
 
       form
         .bindFromRequest()
@@ -242,8 +240,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                             .map(x => (x._2 + 1, x._1))
                                             .toMap
 
-              ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(subJourneyID), value).toFuture
-              ua2    <- ua1.set(SelectedSubcontractorPage.all(Some(subJourneyID)), preselectedSubcontractors).toFuture
+              ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(subJourneyId), value).toFuture
+              ua2    <- ua1.set(SelectedSubcontractorPage.all(Some(subJourneyId)), preselectedSubcontractors).toFuture
               _      <- sessionRepository.set(ua2)
               result <-
                 value match {
@@ -252,7 +250,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                       .successful(
                         Redirect(
                           controllers.amend.routes.AreYouSureYouWantToAmendYesNoController
-                            .onPageLoadWithId(cisPath, flowId)
+                            .onPageLoadWithId(flowId)
                         )
                       )
 
@@ -261,7 +259,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                     Future.successful(
                       Redirect(
                         controllers.amend.routes.WhichSubcontractorsToAddController
-                          .onPageLoadWithId(cisPath, flowId, NormalMode)
+                          .onPageLoadWithId(flowId, NormalMode)
                       )
                     )
 
@@ -275,23 +273,23 @@ class WhatDoYouWantToAmendStandardController @Inject() (
 
                       case Right(_) =>
                         val subcontractorIds = ua2
-                          .get(SelectedSubcontractorPage.all(Some(subJourneyID)))
+                          .get(SelectedSubcontractorPage.all(Some(subJourneyId)))
                           .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
 
                         for {
                           ua3 <- Future.fromTry(
-                                   ua2.set(WhichSubcontractorsToAddPage(subJourneyID), subcontractorIds)
+                                   ua2.set(WhichSubcontractorsToAddPage(subJourneyId), subcontractorIds)
                                  )
 
                           ua4 <- Future.fromTry(
                                    ua3
                                      .remove(
-                                       FinalValidationDraftIdPage(subJourneyID)
+                                       FinalValidationDraftIdPage(subJourneyId)
                                      ) // TODO DTR-9474: Final validation out of scope
-                                     .flatMap(_.remove(MonthlyFinalValidationContinuationPage(subJourneyID)))
+                                     .flatMap(_.remove(MonthlyFinalValidationContinuationPage(subJourneyId)))
                                      .flatMap(
                                        _.set(
-                                         MonthlyFinalValidationSourcePage(subJourneyID),
+                                         MonthlyFinalValidationSourcePage(subJourneyId),
                                          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
                                            NormalMode.toString
                                          )
@@ -302,7 +300,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                           _ <- sessionRepository.set(ua4)
                         } yield Redirect(
                           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-                            .onPageLoadWithId(cisPath, flowId, NormalMode)
+                            .onPageLoadWithId(flowId, NormalMode)
                         )
                     }
                 }
