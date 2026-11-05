@@ -17,7 +17,6 @@
 package controllers.amend
 
 import controllers.actions.*
-import models.requests.CisPath
 import forms.amend.WhichSubcontractorsToAddFormProvider
 import models.Mode
 import models.amend.WhichSubcontractorsToAdd
@@ -47,8 +46,7 @@ class WhichSubcontractorsToAddController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: WhichSubcontractorsToAddFormProvider,
   subcontractorService: SubcontractorService,
   monthlyReturnService: MonthlyReturnService,
@@ -117,11 +115,11 @@ class WhichSubcontractorsToAddController @Inject() (
 
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
       val cisId        = request.cisId
-      val subJourneyId = request.subJourneyId
+      val subJourneyId = flowId.toString
 
       val requiredAnswers = for {
         taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
@@ -151,7 +149,7 @@ class WhichSubcontractorsToAddController @Inject() (
                     val formAction    =
                       Some(
                         controllers.amend.routes.WhichSubcontractorsToAddController
-                          .onSubmitWithId(cisPath, flowId, mode)
+                          .onSubmitWithId(flowId, mode)
                       )
                     Ok(view(form, mode, checkboxItems, formAction))
                   }
@@ -289,10 +287,10 @@ class WhichSubcontractorsToAddController @Inject() (
         }
   }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val cisId        = request.cisId
-      val subJourneyId = request.subJourneyId
+      val subJourneyId = flowId.toString
 
       val requiredAnswers = for {
         taxDate    <- request.userAnswers.get(DateConfirmPaymentsPage)
@@ -315,7 +313,7 @@ class WhichSubcontractorsToAddController @Inject() (
                   val form       = formProvider(model.subcontractors)
                   val formAction =
                     Some(
-                      controllers.amend.routes.WhichSubcontractorsToAddController.onSubmitWithId(cisPath, flowId, mode)
+                      controllers.amend.routes.WhichSubcontractorsToAddController.onSubmitWithId(flowId, mode)
                     )
                   form
                     .bindFromRequest()
