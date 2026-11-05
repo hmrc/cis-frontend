@@ -17,7 +17,6 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.requests.CisPath
 import models.NormalMode
 import pages.monthlyreturns.SelectedSubcontractorPage
 import pages.monthlyreturns.SelectedSubcontractorPage.*
@@ -34,8 +33,7 @@ class SummarySubcontractorPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
@@ -66,9 +64,9 @@ class SummarySubcontractorPaymentsController @Inject() (
       Ok(view(viewModel))
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val subJourneyId   = request.subJourneyId
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId   = flowId.toString
       val subcontractors = request.userAnswers
         .get(SelectedSubcontractorPage.all(Some(subJourneyId)))
         .getOrElse(Map.empty)
