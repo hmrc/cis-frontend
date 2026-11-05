@@ -52,22 +52,12 @@ class MultiTabActionSpec extends SpecBase {
       None
     )
 
-  private def mockTaxpayer(uniqueId: String): CisTaxpayer = {
-    val taxpayer = mock[CisTaxpayer]
-
-    when(taxpayer.uniqueId).thenReturn(uniqueId)
-
-    taxpayer
-  }
-
   "MultiTabAction.forJourney" - {
 
-    "allow the request when the UUID-scoped CIS ID is authorised and multi-tab is enabled" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val taxpayer           = mockTaxpayer(cisId)
-      val flowId             = UUID.randomUUID()
+    "allow the request when the UUID-scoped CIS ID exists and multi-tab is enabled" in {
+      val appConfig = mock[FrontendAppConfig]
+      val action    = new MultiTabAction(appConfig)
+      val flowId    = UUID.randomUUID()
 
       val userAnswers = emptyUserAnswers
         .set(CisIdPage(flowId.toString), cisId)
@@ -76,8 +66,6 @@ class MultiTabActionSpec extends SpecBase {
       val request = dataRequest(userAnswers)
 
       when(appConfig.multiTabEnabled).thenReturn(true)
-      when(cisTaxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
-        .thenReturn(Future.successful(taxpayer))
 
       val result = action
         .forJourney(flowId)
@@ -91,12 +79,10 @@ class MultiTabActionSpec extends SpecBase {
     }
 
     "redirect to the CIS Manage Returns dashboard when multi-tab is disabled" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val taxpayer           = mockTaxpayer(cisId)
-      val flowId             = UUID.randomUUID()
-      val landingUrl         = s"http://localhost:6996/construction-industry-scheme/management/manage-cis-return/$cisId"
+      val appConfig  = mock[FrontendAppConfig]
+      val action     = new MultiTabAction(appConfig)
+      val flowId     = UUID.randomUUID()
+      val landingUrl = s"http://localhost:6996/construction-industry-scheme/management/manage-cis-return/$cisId"
 
       val userAnswers = emptyUserAnswers
         .set(CisIdPage(flowId.toString), cisId)
@@ -106,8 +92,6 @@ class MultiTabActionSpec extends SpecBase {
 
       when(appConfig.multiTabEnabled).thenReturn(false)
       when(appConfig.returnsLandingPageUrl(cisId, None)).thenReturn(landingUrl)
-      when(cisTaxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
-        .thenReturn(Future.successful(taxpayer))
 
       val result = action
         .forJourney(flowId)
@@ -122,11 +106,10 @@ class MultiTabActionSpec extends SpecBase {
     }
 
     "redirect to Journey Recovery when the UUID-scoped CIS ID is missing" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val flowId             = UUID.randomUUID()
-      val request            = dataRequest(emptyUserAnswers)
+      val appConfig = mock[FrontendAppConfig]
+      val action    = new MultiTabAction(appConfig)
+      val flowId    = UUID.randomUUID()
+      val request   = dataRequest(emptyUserAnswers)
 
       val result = action
         .forJourney(flowId)
@@ -139,15 +122,12 @@ class MultiTabActionSpec extends SpecBase {
       result.header.status mustBe SEE_OTHER
       result.header.headers.get("Location") mustBe
         Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
-
-      verifyNoInteractions(cisTaxpayerService)
     }
 
     "not fall back to the legacy CIS ID when the UUID-scoped CIS ID is missing" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val flowId             = UUID.randomUUID()
+      val appConfig = mock[FrontendAppConfig]
+      val action    = new MultiTabAction(appConfig)
+      val flowId    = UUID.randomUUID()
 
       val userAnswers = emptyUserAnswers
         .set(CisIdPage, cisId)
@@ -166,26 +146,18 @@ class MultiTabActionSpec extends SpecBase {
       result.header.status mustBe SEE_OTHER
       result.header.headers.get("Location") mustBe
         Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
-
-      verifyNoInteractions(cisTaxpayerService)
     }
 
-    "redirect to Journey Recovery when the scoped CIS ID does not belong to the organisation" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val taxpayer           = mockTaxpayer(cisId)
-      val flowId             = UUID.randomUUID()
+    "redirect to Journey Recovery when the UUID-scoped CIS ID is empty" in {
+      val appConfig = mock[FrontendAppConfig]
+      val action    = new MultiTabAction(appConfig)
+      val flowId    = UUID.randomUUID()
 
       val userAnswers = emptyUserAnswers
-        .set(CisIdPage(flowId.toString), "987654321")
+        .set(CisIdPage(flowId.toString), "")
         .get
 
       val request = dataRequest(userAnswers)
-
-      when(appConfig.multiTabEnabled).thenReturn(true)
-      when(cisTaxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
-        .thenReturn(Future.successful(taxpayer))
 
       val result = action
         .forJourney(flowId)
@@ -200,12 +172,10 @@ class MultiTabActionSpec extends SpecBase {
         Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
     }
 
-    "allow the request when the UUID-scoped CIS ID belongs to an authorised agent client" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val taxpayer           = mockTaxpayer(cisId)
-      val flowId             = UUID.randomUUID()
+    "allow the request when the UUID-scoped CIS ID exists for an agent" in {
+      val appConfig = mock[FrontendAppConfig]
+      val action    = new MultiTabAction(appConfig)
+      val flowId    = UUID.randomUUID()
 
       val userAnswers = emptyUserAnswers
         .set(CisIdPage(flowId.toString), cisId)
@@ -214,8 +184,6 @@ class MultiTabActionSpec extends SpecBase {
       val request = dataRequest(userAnswers, isAgent = true)
 
       when(appConfig.multiTabEnabled).thenReturn(true)
-      when(cisTaxpayerService.findForAgent(eqTo(cisId))(using any[IdentifierRequest[?]]))
-        .thenReturn(Future.successful(Some(taxpayer)))
 
       val result = action
         .forJourney(flowId)
@@ -226,67 +194,6 @@ class MultiTabActionSpec extends SpecBase {
         .futureValue
 
       result.header.status mustBe OK
-
-      verify(cisTaxpayerService)
-        .findForAgent(eqTo(cisId))(using any[IdentifierRequest[?]])
-    }
-
-    "redirect to Journey Recovery when the agent is not authorised for the UUID-scoped CIS ID" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val flowId             = UUID.randomUUID()
-
-      val userAnswers = emptyUserAnswers
-        .set(CisIdPage(flowId.toString), cisId)
-        .get
-
-      val request = dataRequest(userAnswers, isAgent = true)
-
-      when(appConfig.multiTabEnabled).thenReturn(true)
-      when(cisTaxpayerService.findForAgent(eqTo(cisId))(using any[IdentifierRequest[?]]))
-        .thenReturn(Future.successful(None))
-
-      val result = action
-        .forJourney(flowId)
-        .invokeBlock(
-          request,
-          _ => Future.successful(Results.Ok)
-        )
-        .futureValue
-
-      result.header.status mustBe SEE_OTHER
-      result.header.headers.get("Location") mustBe
-        Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
-    }
-
-    "redirect to Journey Recovery when CIS taxpayer lookup fails" in {
-      val appConfig          = mock[FrontendAppConfig]
-      val cisTaxpayerService = mock[CisTaxpayerService]
-      val action             = new MultiTabAction(appConfig, cisTaxpayerService)
-      val flowId             = UUID.randomUUID()
-
-      val userAnswers = emptyUserAnswers
-        .set(CisIdPage(flowId.toString), cisId)
-        .get
-
-      val request = dataRequest(userAnswers)
-
-      when(appConfig.multiTabEnabled).thenReturn(true)
-      when(cisTaxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
-        .thenReturn(Future.failed(new RuntimeException("Lookup failed")))
-
-      val result = action
-        .forJourney(flowId)
-        .invokeBlock(
-          request,
-          _ => Future.successful(Results.Ok)
-        )
-        .futureValue
-
-      result.header.status mustBe SEE_OTHER
-      result.header.headers.get("Location") mustBe
-        Some(controllers.routes.JourneyRecoveryController.onPageLoad().url)
     }
   }
 }

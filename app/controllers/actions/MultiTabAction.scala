@@ -29,52 +29,24 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
-class MultiTabAction @Inject() (
-  appConfig: FrontendAppConfig,
-  cisTaxpayerService: CisTaxpayerService
-)(using ec: ExecutionContext)
-    extends Logging {
+class MultiTabAction @Inject() (appConfig: FrontendAppConfig)(using ec: ExecutionContext) {
 
   def forJourney(flowId: UUID): ActionFilter[DataRequest] =
     new ActionFilter[DataRequest] {
       override protected def executionContext: ExecutionContext = ec
 
-      override protected def filter[A](request: DataRequest[A]): Future[Option[Result]] = {
-        val journeyRecovery: Option[Result] =
-          Some(Results.Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      override protected def filter[A](request: DataRequest[A]): Future[Option[Result]] =
+        Future.successful {
+          request.userAnswers.get(CisIdPage(flowId.toString)) match {
+            case Some(cisId) if !cisId.isBlank && !appConfig.multiTabEnabled =>
+              Some(Results.Redirect(appConfig.returnsLandingPageUrl(cisId, None)))
 
-        request.userAnswers.get(CisIdPage(flowId.toString)) match {
-          case Some(cisId) if !cisId.isBlank =>
-            given IdentifierRequest[A] = IdentifierRequest(
-              request.request,
-              request.userId,
-              request.employerReference,
-              request.agentReference,
-              request.isAgent,
-              request.agentCode
-            )
+            case Some(cisId) if !cisId.isBlank =>
+              None
 
-            val authorised =
-              if request.isAgent then cisTaxpayerService.findForAgent(cisId).map(_.exists(_.uniqueId == cisId))
-              else cisTaxpayerService.findForOrganisation.map(_.uniqueId == cisId)
-
-            authorised
-              .map {
-                case false                              =>
-                  journeyRecovery
-                case true if !appConfig.multiTabEnabled =>
-                  Some(Results.Redirect(appConfig.returnsLandingPageUrl(cisId, None)))
-                case true                               =>
-                  None
-              }
-              .recover { case NonFatal(ex) =>
-                logger.error(s"[MultiTabAction] Failed to validate CIS client: ${ex.getMessage}", ex)
-                journeyRecovery
-              }
-
-          case _ =>
-            Future.successful(journeyRecovery)
+            case _ =>
+              Some(Results.Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
         }
-      }
     }
 }
