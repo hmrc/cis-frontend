@@ -22,7 +22,7 @@ import play.api.libs.json.JsPath
 
 case class AreYouSureYouWantToAmendYesNoPage(id: String) extends QuestionPage[AreYouSureYouWantToAmendYesNo] {
 
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
 
   override def toString: String = "areYouSureYouWantToAmendYesNo"
 }

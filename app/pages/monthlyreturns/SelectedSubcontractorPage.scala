@@ -72,7 +72,7 @@ object SelectedSubcontractorPage {
 
   def basePath(id: Option[String]): JsPath =
     id match {
-      case Some(value) => JsPath \ value
+      case Some(value) => JsPath \ "monthlyReturn" \ value
       case None        => JsPath
     }
 

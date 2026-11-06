@@ -21,7 +21,7 @@ import play.api.libs.json.JsPath
 
 case class ConfirmCancelAmendmentYesNoPage(id: String) extends QuestionPage[Boolean] {
 
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
 
   override def toString: String = "confirmCancelAmendmentYesNo"
 }
