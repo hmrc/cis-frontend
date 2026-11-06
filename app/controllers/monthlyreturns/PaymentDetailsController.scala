@@ -130,7 +130,7 @@ class PaymentDetailsController @Inject() (
 
   def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = flowId.toString
+      val subJourneyId = Some(flowId.toString)
       val formAction   =
         Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
 
@@ -152,7 +152,7 @@ class PaymentDetailsController @Inject() (
                 for {
                   updatedAnswers <-
                     Future.fromTry(
-                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index, Some(subJourneyId)), value)
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), value)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
