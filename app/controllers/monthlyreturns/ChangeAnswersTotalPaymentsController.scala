@@ -68,7 +68,7 @@ class ChangeAnswersTotalPaymentsController @Inject() (
       val formAction   =
         Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorPage(index, Some(subJourneyId))) match {
         case None                =>
           logger.error(
             s"[ChangeAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorPage Index: $index, SubJourneyId: $subJourneyId"
