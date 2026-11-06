@@ -108,6 +108,14 @@ POST       /monthly-return/payment-details                              controll
 GET        /monthly-return/change-payment-details                       controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 POST       /monthly-return/change-payment-details                       controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
+GET        /monthly-return/payment-details/:flowId/:index                       controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/payment-details/:flowId/:index                       controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/change-payment-details/:flowId/:index                controllers.monthlyreturns.PaymentDetailsController.onPageLoad(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/change-payment-details/:flowId/:index                controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/payment-details/:flowId                              controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/payment-details/:flowId                              controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+GET        /monthly-return/change-payment-details/:flowId                       controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/change-payment-details/:flowId                       controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
 GET        /monthly-return/materials-cost/:index                        controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
 POST       /monthly-return/materials-cost/:index                        controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode, index: Int, returnTo: Option[String])

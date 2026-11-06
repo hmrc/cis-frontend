@@ -20,6 +20,7 @@ import controllers.actions.*
 import forms.PaymentDetailsFormProvider
 
 import javax.inject.Inject
+import java.util.UUID
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
@@ -39,6 +40,7 @@ class PaymentDetailsController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: PaymentDetailsFormProvider,
@@ -70,6 +72,28 @@ class PaymentDetailsController @Inject() (
       }
     }
 
+  def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None =>
+          logger.error(
+            s"[PaymentDetailsController][onPageLoadWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+          )
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
+        case Some(subcontractor) =>
+          val preparedForm = subcontractor.totalPaymentsMade match {
+            case None        => form
+            case Some(value) => form.fill(value)
+          }
+
+          val formAction = Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
+
+          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo, formAction))
+      }
+    }
+
   def onSubmit(mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       request.userAnswers.get(SelectedSubcontractorPage(index)) match {
@@ -97,6 +121,41 @@ class PaymentDetailsController @Inject() (
                     Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index))
                   case _                     =>
                     Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index), mode, updatedAnswers))
+                }
+            )
+      }
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction = Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
+
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None =>
+          logger.error(
+            s"[PaymentDetailsController][onSubmitWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case Some(subcontractor) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors =>
+                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo, formAction))),
+              value =>
+                for {
+                  updatedAnswers <-
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), value)
+                    )
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield returnTo match {
+                  case Some("changeAnswers") =>
+                    Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)) // TODO DTR-9474: Update to use flowId
+                  case _                     =>
+                    Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), mode, updatedAnswers))
                 }
             )
       }
