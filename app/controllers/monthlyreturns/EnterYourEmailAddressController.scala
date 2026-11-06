@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
-import models.requests.{CisIdDataRequest, CisPath}
+import models.requests.CisIdDataRequest
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.Logging
@@ -45,8 +45,7 @@ class EnterYourEmailAddressController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: EnterYourEmailAddressFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -110,22 +109,23 @@ class EnterYourEmailAddressController @Inject() (
     }
 
   // Multi-tab
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
-      val id         = request.subJourneyId
-      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(cisPath, flowId, mode))
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id         = flowId.toString
+      val cisId      = request.userAnswers
+        .get(CisIdPage(id))
+        .getOrElse(throw new IllegalStateException("CisId missing after MultiTabAction validation"))
+      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
 
       if (!request.userAnswers.get(ConfirmationByEmailPage(id)).contains(true)) {
-        Future.successful(Redirect(routes.ConfirmationByEmailController.onPageLoadWithId(cisPath, flowId, mode)))
+        Future.successful(Redirect(routes.ConfirmationByEmailController.onPageLoadWithId(flowId, mode)))
       } else {
         request.userAnswers.get(EnterYourEmailAddressPage(id)) match {
           case Some(value) =>
             Future.successful(Ok(view(form.fill(value), mode, formAction)))
           case None        =>
             monthlyReturnService
-              .getSchemeEmail(request.cisId)
+              .getSchemeEmail(cisId)
               .recover { case NonFatal(ex) =>
                 logger.warn("[EnterYourEmailAddressController][onPageLoadWithId] - email lookup failed", ex)
                 None
@@ -138,10 +138,10 @@ class EnterYourEmailAddressController @Inject() (
       }
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val id         = request.subJourneyId
-      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(cisPath, flowId, mode))
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id         = flowId.toString
+      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
 
       form
         .bindFromRequest()
@@ -151,7 +151,7 @@ class EnterYourEmailAddressController @Inject() (
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(cisPath, flowId, EnterYourEmailAddressPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(flowId, EnterYourEmailAddressPage, mode, updatedAnswers))
         )
     }
 }

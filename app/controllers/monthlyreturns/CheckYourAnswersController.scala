@@ -20,7 +20,7 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.{CheckMode, ReturnType}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.{CisIdDataRequest, CisPath}
+import models.requests.CisIdDataRequest
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
@@ -44,8 +44,7 @@ class CheckYourAnswersController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   monthlyReturnService: MonthlyReturnService,
   submissionService: SubmissionService,
   requireCisId: CisIdRequiredAction,
@@ -167,10 +166,10 @@ class CheckYourAnswersController @Inject() (
     }
 
   // Multi-tab: Display answers for the ID-scoped return journey.
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val userAnswers = request.userAnswers
-      val id          = request.subJourneyId
+      val id          = flowId.toString
 
       ReturnTypeSummary.returnType(userAnswers, id) match {
         case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
@@ -182,7 +181,7 @@ class CheckYourAnswersController @Inject() (
               SubmitInactivityRequestSummary.row(
                 userAnswers,
                 id,
-                routes.SubmitInactivityRequestController.onPageLoadWithId(cisPath, flowId, CheckMode)
+                routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode)
               )
             ).flatten
           )
@@ -192,17 +191,17 @@ class CheckYourAnswersController @Inject() (
               ConfirmationByEmailSummary.row(
                 userAnswers,
                 id,
-                routes.ConfirmationByEmailController.onPageLoadWithId(cisPath, flowId, CheckMode)
+                routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode)
               ),
               EnterYourEmailAddressSummary.row(
                 userAnswers,
                 id,
-                routes.EnterYourEmailAddressController.onPageLoadWithId(cisPath, flowId, CheckMode)
+                routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
               )
             ).flatten
           )
 
-          val formAction = Some(routes.CheckYourAnswersController.onSubmitWithId(cisPath, flowId))
+          val formAction = Some(routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
           Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
 
@@ -213,8 +212,8 @@ class CheckYourAnswersController @Inject() (
     }
 
   // Multi-tab: Placeholder until ChRIS submission is implemented.
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       NotImplemented("Multi-tab ChRIS submission is not implemented yet")
     }
 }

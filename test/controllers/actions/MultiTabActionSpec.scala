@@ -19,16 +19,14 @@ package controllers.actions
 import base.SpecBase
 import config.FrontendAppConfig
 import org.mockito.Mockito.*
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.ArgumentMatchers.eq as eqTo
 import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.http.Status.{OK, SEE_OTHER}
 import play.api.mvc.{AnyContent, Request, Results}
 import models.requests.{DataRequest, IdentifierRequest}
-import models.monthlyreturns.CisTaxpayer
 import models.EmployerReference
 import pages.monthlyreturns.CisIdPage
 import java.util.UUID
-import services.CisTaxpayerService
 
 import scala.concurrent.{ExecutionContext, Future}
 

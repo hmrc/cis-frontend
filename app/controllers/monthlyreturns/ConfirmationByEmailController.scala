@@ -19,7 +19,6 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
 import models.Mode
-import models.requests.CisPath
 import navigation.Navigator
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -40,8 +39,7 @@ class ConfirmationByEmailController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: ConfirmationByEmailFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmationByEmailView
@@ -78,21 +76,23 @@ class ConfirmationByEmailController @Inject() (
 
   // Multi-tab: New ID-scoped journey.
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val preparedForm = request.userAnswers.get(ConfirmationByEmailPage(request.subJourneyId)) match {
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val id           = flowId.toString
+      val preparedForm = request.userAnswers.get(ConfirmationByEmailPage(id)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
-      val formAction = Some(routes.ConfirmationByEmailController.onSubmitWithId(cisPath, flowId, mode))
+      val formAction = Some(routes.ConfirmationByEmailController.onSubmitWithId(flowId, mode))
 
       Ok(view(preparedForm, mode, formAction))
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
-      val formAction = Some(routes.ConfirmationByEmailController.onSubmitWithId(cisPath, flowId, mode))
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id         = flowId.toString
+      val formAction = Some(routes.ConfirmationByEmailController.onSubmitWithId(flowId, mode))
 
       form
         .bindFromRequest()
@@ -100,10 +100,9 @@ class ConfirmationByEmailController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
           value =>
             for {
-              updatedAnswers <-
-                Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage(request.subJourneyId), value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(cisPath, flowId, ConfirmationByEmailPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(flowId, ConfirmationByEmailPage, mode, updatedAnswers))
         )
     }
 }

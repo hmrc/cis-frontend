@@ -17,8 +17,9 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import models.monthlyreturns.Declaration.Confirmed
-import models.{ReturnType, UserAnswers}
+import models.{CheckMode, ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
@@ -34,6 +35,7 @@ import views.html.monthlyreturns.CheckYourAnswersView
 import pages.submission.SubmissionJourneyCompletedPage
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.concurrent.Future
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
@@ -45,6 +47,18 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     .setOrException(SubmitInactivityRequestPage, true)
     .setOrException(ConfirmationByEmailPage, false)
     .setOrException(DeclarationPage, Set(Confirmed))
+
+  private def completeScopedAnswers(flowId: UUID, returnType: ReturnType = ReturnType.MonthlyNilReturn) = {
+    val id = flowId.toString
+
+    emptyUserAnswers
+      .setOrException(CisIdPage(id), "test-cis-id")
+      .setOrException(ReturnTypePage(id), returnType)
+      .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 1))
+      .setOrException(SubmitInactivityRequestPage(id), true)
+      .setOrException(ConfirmationByEmailPage(id), false)
+      .setOrException(DeclarationPage(id), Set(Confirmed))
+  }
 
   "Check Your Answers Controller" - {
 
@@ -498,6 +512,323 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "UUID-scoped journey" - {
+
+      "must return OK and the correct view for a nil return GET" in {
+
+        val flowId      = UUID.randomUUID()
+        val id          = flowId.toString
+        val userAnswers = completeScopedAnswers(flowId)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          val view = application.injector.instanceOf[CheckYourAnswersView]
+
+          val returnDetailsList = SummaryListViewModel(
+            rows = Seq(
+              ReturnTypeSummary.row(userAnswers, id)(messages(application)),
+              DateConfirmNilPaymentsSummary.row(userAnswers, id)(messages(application)),
+              PaymentsToSubcontractorsSummary.row(messages(application)),
+              SubmitInactivityRequestSummary.row(
+                userAnswers,
+                id,
+                controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode)
+              )(messages(application))
+            ).flatten
+          )
+
+          val emailList = SummaryListViewModel(
+            rows = Seq(
+              ConfirmationByEmailSummary.row(
+                userAnswers,
+                id,
+                controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode)
+              )(messages(application)),
+              EnterYourEmailAddressSummary.row(
+                userAnswers,
+                id,
+                controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
+              )(messages(application))
+            ).flatten
+          )
+
+          val formAction = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
+
+          status(result) mustEqual OK
+          val rendered = view(returnDetailsList, emailList, formAction)(request, messages(application)).toString
+          contentAsString(result) mustEqual rendered
+        }
+      }
+
+      "must return OK for an amended nil return GET" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeScopedAnswers(flowId, ReturnType.MonthlyAmendedNilReturn)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsString(result) must include(
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+        }
+      }
+
+      "must include Email address row when confirmation by email is Yes and email is entered" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = completeScopedAnswers(flowId)
+          .setOrException(ConfirmationByEmailPage(id), true)
+          .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsString(result) must include("test@example.com")
+          contentAsString(result) must include(
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode).url
+          )
+        }
+      }
+
+      "must display answers from the correct UUID-scoped journey" in {
+
+        val firstFlowId  = UUID.randomUUID()
+        val secondFlowId = UUID.randomUUID()
+        val firstId      = firstFlowId.toString
+        val secondId     = secondFlowId.toString
+
+        val userAnswers = completeScopedAnswers(firstFlowId)
+          .setOrException(ConfirmationByEmailPage(firstId), true)
+          .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
+          .setOrException(CisIdPage(secondId), "second-cis-id")
+          .setOrException(ReturnTypePage(secondId), ReturnType.MonthlyNilReturn)
+          .setOrException(DateConfirmPaymentsPage(secondId), LocalDate.of(2025, 4, 1))
+          .setOrException(SubmitInactivityRequestPage(secondId), false)
+          .setOrException(ConfirmationByEmailPage(secondId), true)
+          .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
+          .setOrException(DeclarationPage(secondId), Set(Confirmed))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val firstRequest = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(firstFlowId).url
+          )
+
+          val secondRequest = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(secondFlowId).url
+          )
+
+          val firstResult  = route(application, firstRequest).value
+          val secondResult = route(application, secondRequest).value
+
+          status(firstResult) mustEqual OK
+          status(secondResult) mustEqual OK
+
+          contentAsString(firstResult) must include("first@example.com")
+          contentAsString(firstResult).contains("second@example.com") mustEqual false
+
+          contentAsString(secondResult) must include("second@example.com")
+          contentAsString(secondResult).contains("first@example.com") mustEqual false
+        }
+      }
+
+      "must redirect to Journey Recovery when the flowId is not found" in {
+
+        val existingFlowId = UUID.randomUUID()
+        val missingFlowId  = UUID.randomUUID()
+
+        val application = applicationBuilder(userAnswers = Some(completeScopedAnswers(existingFlowId)))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(missingFlowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must not use legacy answers when the UUID-scoped journey is missing" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeAnswers
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to Journey Recovery when the scoped ReturnTypePage is missing" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = emptyUserAnswers
+          .setOrException(CisIdPage(id), "test-cis-id")
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to Journey Recovery when the scoped return type is not a nil return" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeScopedAnswers(flowId, ReturnType.MonthlyStandardReturn)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to the returns landing page when multi-tab is disabled" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeScopedAnswers(flowId)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> false)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          val appConfig = application.injector.instanceOf[FrontendAppConfig]
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual appConfig.returnsLandingPageUrl("test-cis-id", None)
+        }
+      }
+
+      "must return Not Implemented for a POST until ChRIS submission is implemented" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeScopedAnswers(flowId)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual NOT_IMPLEMENTED
+        }
+      }
+
+      "must redirect to Journey Recovery for a POST when the flowId is not found" in {
+
+        val existingFlowId = UUID.randomUUID()
+        val missingFlowId  = UUID.randomUUID()
+
+        val application = applicationBuilder(userAnswers = Some(completeScopedAnswers(existingFlowId)))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(missingFlowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
       }
     }
   }

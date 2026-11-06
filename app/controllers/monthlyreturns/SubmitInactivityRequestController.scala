@@ -18,8 +18,7 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import forms.monthlyreturns.SubmitInactivityRequestFormProvider
-import models.{JourneyScope, Mode}
-import models.requests.CisPath
+import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -40,8 +39,7 @@ class SubmitInactivityRequestController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: SubmitInactivityRequestFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: SubmitInactivityRequestView
@@ -77,10 +75,10 @@ class SubmitInactivityRequestController @Inject() (
     }
 
   // DTR-9431: GET for UUID-scoped nil return journey
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
 
-      val id = JourneyScope.subJourneyId(cisPath, flowId)
+      val id = flowId.toString
 
       val preparedForm = request.userAnswers.get(SubmitInactivityRequestPage(id)) match {
         case Some(value) => form.fill(value)
@@ -91,16 +89,16 @@ class SubmitInactivityRequestController @Inject() (
         view(
           preparedForm,
           mode,
-          Some(routes.SubmitInactivityRequestController.onSubmitWithId(cisPath, flowId, mode))
+          Some(routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
         )
       )
     }
 
   // DTR-9431: POST for UUID-scoped nil return journey
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
 
-      val id = JourneyScope.subJourneyId(cisPath, flowId)
+      val id = flowId.toString
 
       form
         .bindFromRequest()
@@ -111,18 +109,16 @@ class SubmitInactivityRequestController @Inject() (
                 view(
                   formWithErrors,
                   mode,
-                  Some(routes.SubmitInactivityRequestController.onSubmitWithId(cisPath, flowId, mode))
+                  Some(routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
                 )
               )
             ),
           value =>
             for {
-              updatedAnswers <- Future.fromTry(
-                                  request.userAnswers.set(SubmitInactivityRequestPage(id), value)
-                                )
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(
-              navigator.nextPage(cisPath, flowId, SubmitInactivityRequestPage, mode, updatedAnswers)
+              navigator.nextPage(flowId, SubmitInactivityRequestPage, mode, updatedAnswers)
             )
         )
     }

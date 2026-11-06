@@ -19,7 +19,6 @@ package navigation
 import models.*
 import models.ReturnType.*
 import models.amend.*
-import models.requests.CisPath
 import pages.*
 import pages.amend.*
 import pages.monthlyreturns.*
@@ -200,7 +199,6 @@ class Navigator @Inject() () extends Logging {
 
   // Multi-tab: Navigate within a UUID-scoped monthly return journey
   def nextPage(
-    cisPath: CisPath,
     flowId: UUID,
     page: Page,
     mode: Mode,
@@ -209,47 +207,46 @@ class Navigator @Inject() () extends Logging {
     (page, mode) match {
       case (DateConfirmPaymentsPage, NormalMode) =>
         controllers.monthlyreturns.routes.SubmitInactivityRequestController
-          .onPageLoadWithId(cisPath, flowId, NormalMode)
+          .onPageLoadWithId(flowId, NormalMode)
 
       case (DateConfirmPaymentsPage, CheckMode) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
       case (SubmitInactivityRequestPage, _) =>
-        navigatorFromSubmitInactivityRequestPage(cisPath, flowId, mode, userAnswers)
+        navigatorFromSubmitInactivityRequestPage(flowId, mode, userAnswers)
 
       case (ConfirmationByEmailPage, _) =>
-        navigatorFromConfirmationByEmailPage(cisPath, flowId, mode, userAnswers)
+        navigatorFromConfirmationByEmailPage(flowId, mode, userAnswers)
 
       case (EnterYourEmailAddressPage, _) =>
-        navigatorFromEnterYourEmailAddressPage(cisPath, flowId, mode)
+        navigatorFromEnterYourEmailAddressPage(flowId, mode)
 
       case (DeclarationPage, _) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
       case _ =>
         controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
   private def navigatorFromSubmitInactivityRequestPage(
-    cisPath: CisPath,
     flowId: UUID,
     mode: Mode,
     userAnswers: UserAnswers
   ): Call = {
 
-    val id = JourneyScope.subJourneyId(cisPath, flowId)
+    val id = flowId.toString
 
     (userAnswers.get(SubmitInactivityRequestPage(id)), mode) match {
       case (Some(true), NormalMode)  =>
         controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoadWithId(cisPath, flowId, NormalMode)
+          .onPageLoadWithId(flowId, NormalMode)
       case (Some(true), CheckMode)   =>
         controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoadWithId(cisPath, flowId, CheckMode)
+          .onPageLoadWithId(flowId, CheckMode)
       case (Some(false), NormalMode) =>
-        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(cisPath, flowId, NormalMode)
+        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode)
       case (Some(false), CheckMode)  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
       case (None, _)                 =>
         logger.error("[Navigator][navigatorFromSubmitInactivityRequestPage] - Scoped answer not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -257,20 +254,19 @@ class Navigator @Inject() () extends Logging {
   }
 
   private def navigatorFromConfirmationByEmailPage(
-    cisPath: CisPath,
     flowId: UUID,
     mode: Mode,
     userAnswers: UserAnswers
   ): Call = {
-    val id = JourneyScope.subJourneyId(cisPath, flowId)
+    val id = flowId.toString
 
     (userAnswers.get(ConfirmationByEmailPage(id)), mode) match {
       case (Some(true), mode)        =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(cisPath, flowId, mode)
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, mode)
       case (Some(false), NormalMode) =>
-        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
       case (Some(false), CheckMode)  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
       case (None, _)                 =>
         logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ID-scoped ConfirmationByEmailPage not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -278,14 +274,13 @@ class Navigator @Inject() () extends Logging {
   }
 
   private def navigatorFromEnterYourEmailAddressPage(
-    cisPath: CisPath,
     flowId: UUID,
     mode: Mode
   ): Call =
     mode match {
       case NormalMode =>
-        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
       case CheckMode  =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId)
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
     }
 }

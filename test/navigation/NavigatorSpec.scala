@@ -26,6 +26,8 @@ import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn,
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
 import pages.amend.{AreYouSureYouWantToAmendYesNoPage, WhichSubcontractorsToAddPage}
 
+import java.util.UUID
+
 class NavigatorSpec extends SpecBase {
 
   val navigator = new Navigator
@@ -526,6 +528,341 @@ class NavigatorSpec extends SpecBase {
           CheckMode,
           ua
         ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode)
+      }
+    }
+
+    "in UUID-scoped journey" - {
+
+      "in Normal mode" - {
+
+        "must go from DateConfirmPaymentsPage to SubmitInactivityRequestController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            DateConfirmPaymentsPage,
+            NormalMode,
+            UserAnswers("id")
+          ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from SubmitInactivityRequestPage to InactivityRequestWarningController when answer is true" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            SubmitInactivityRequestPage,
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from SubmitInactivityRequestPage to ConfirmationByEmailController when answer is false" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), false)
+
+          navigator.nextPage(
+            flowId,
+            SubmitInactivityRequestPage,
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from SubmitInactivityRequestPage to JourneyRecovery when answer is missing" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SubmitInactivityRequestPage,
+            NormalMode,
+            UserAnswers("id")
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+
+        "must go from ConfirmationByEmailPage to EnterYourEmailAddressController when answer is true" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage,
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from ConfirmationByEmailPage to DeclarationController when answer is false" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), false)
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage,
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
+        }
+
+        "must go from ConfirmationByEmailPage to JourneyRecovery when answer is missing" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage,
+            NormalMode,
+            UserAnswers("id")
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+
+        "must go from EnterYourEmailAddressPage to DeclarationController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            EnterYourEmailAddressPage,
+            NormalMode,
+            UserAnswers("id")
+          ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
+        }
+
+        "must go from DeclarationPage to CheckYourAnswersController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            DeclarationPage,
+            NormalMode,
+            UserAnswers("id")
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+      }
+
+      "in Check mode" - {
+
+        "must go from DateConfirmPaymentsPage to CheckYourAnswersController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            DateConfirmPaymentsPage,
+            CheckMode,
+            UserAnswers("id")
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from SubmitInactivityRequestPage to InactivityRequestWarningController when answer is true" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            SubmitInactivityRequestPage,
+            CheckMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController
+            .onPageLoadWithId(flowId, CheckMode)
+        }
+
+        "must go from SubmitInactivityRequestPage to CheckYourAnswersController when answer is false" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), false)
+
+          navigator.nextPage(
+            flowId,
+            SubmitInactivityRequestPage,
+            CheckMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from SubmitInactivityRequestPage to JourneyRecovery when answer is missing" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SubmitInactivityRequestPage,
+            CheckMode,
+            UserAnswers("id")
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+
+        "must go from ConfirmationByEmailPage to EnterYourEmailAddressController when answer is true" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage,
+            CheckMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
+        }
+
+        "must go from ConfirmationByEmailPage to CheckYourAnswersController when answer is false" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), false)
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage,
+            CheckMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from ConfirmationByEmailPage to JourneyRecovery when answer is missing" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage,
+            CheckMode,
+            UserAnswers("id")
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+
+        "must go from EnterYourEmailAddressPage to CheckYourAnswersController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            EnterYourEmailAddressPage,
+            CheckMode,
+            UserAnswers("id")
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from DeclarationPage to CheckYourAnswersController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            DeclarationPage,
+            CheckMode,
+            UserAnswers("id")
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+      }
+
+      "must go to JourneyRecovery when the page does not exist in the UUID-scoped route map" in {
+        val flowId = UUID.randomUUID()
+
+        case object UnknownPage extends Page
+
+        navigator.nextPage(
+          flowId,
+          UnknownPage,
+          NormalMode,
+          UserAnswers("id")
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+
+        navigator.nextPage(
+          flowId,
+          UnknownPage,
+          CheckMode,
+          UserAnswers("id")
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+      }
+
+      "must not use legacy SubmitInactivityRequestPage when the scoped answer is missing" in {
+        val flowId = UUID.randomUUID()
+        val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
+
+        navigator.nextPage(
+          flowId,
+          SubmitInactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+      }
+
+      "must not use legacy ConfirmationByEmailPage when the scoped answer is missing" in {
+        val flowId = UUID.randomUUID()
+        val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage, true)
+
+        navigator.nextPage(
+          flowId,
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+      }
+
+      "must navigate using the SubmitInactivityRequestPage answer for the correct flowId" in {
+        val firstFlowId  = UUID.randomUUID()
+        val secondFlowId = UUID.randomUUID()
+
+        val ua = UserAnswers("id")
+          .setOrException(SubmitInactivityRequestPage(firstFlowId.toString), true)
+          .setOrException(SubmitInactivityRequestPage(secondFlowId.toString), false)
+
+        navigator.nextPage(
+          firstFlowId,
+          SubmitInactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController
+          .onPageLoadWithId(firstFlowId, NormalMode)
+
+        navigator.nextPage(
+          secondFlowId,
+          SubmitInactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController
+          .onPageLoadWithId(secondFlowId, NormalMode)
+      }
+
+      "must navigate using the ConfirmationByEmailPage answer for the correct flowId" in {
+        val firstFlowId  = UUID.randomUUID()
+        val secondFlowId = UUID.randomUUID()
+
+        val ua = UserAnswers("id")
+          .setOrException(ConfirmationByEmailPage(firstFlowId.toString), true)
+          .setOrException(ConfirmationByEmailPage(secondFlowId.toString), false)
+
+        navigator.nextPage(
+          firstFlowId,
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController
+          .onPageLoadWithId(firstFlowId, NormalMode)
+
+        navigator.nextPage(
+          secondFlowId,
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(secondFlowId)
+      }
+
+      "must go to JourneyRecovery when the answer exists only for another flowId" in {
+        val firstFlowId  = UUID.randomUUID()
+        val secondFlowId = UUID.randomUUID()
+
+        val ua = UserAnswers("id")
+          .setOrException(SubmitInactivityRequestPage(firstFlowId.toString), true)
+          .setOrException(ConfirmationByEmailPage(firstFlowId.toString), true)
+
+        navigator.nextPage(
+          secondFlowId,
+          SubmitInactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+
+        navigator.nextPage(
+          secondFlowId,
+          ConfirmationByEmailPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
       }
     }
   }

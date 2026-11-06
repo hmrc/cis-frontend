@@ -17,8 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
-import models.requests.CisPath
-import models.{CheckMode, JourneyScope, Mode, NormalMode}
+import models.{CheckMode, Mode, NormalMode}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -35,8 +34,7 @@ class InactivityRequestWarningController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
@@ -61,10 +59,9 @@ class InactivityRequestWarningController @Inject() (
   }
 
   // Multi-tab: UUID-scoped inactivity request warning
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val id = JourneyScope.subJourneyId(cisPath, flowId)
-
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val id                  = flowId.toString
       val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage(id)).contains(true)
 
       if (!inactivityRequested) {
@@ -75,11 +72,9 @@ class InactivityRequestWarningController @Inject() (
       } else {
         val nextUrl = mode match {
           case CheckMode  =>
-            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(cisPath, flowId).url
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
           case NormalMode =>
-            controllers.monthlyreturns.routes.ConfirmationByEmailController
-              .onPageLoadWithId(cisPath, flowId, NormalMode)
-              .url
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
         }
         Ok(view(nextUrl))
       }

@@ -29,7 +29,6 @@ import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeclarationView
 import models.monthlyreturns.Declaration.Confirmed
-import models.requests.CisPath
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,8 +41,7 @@ class DeclarationController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: DeclarationView
 )(implicit ec: ExecutionContext)
@@ -65,18 +63,18 @@ class DeclarationController @Inject() (
 
   // Multi-tab: New ID-scoped journey.
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val continueUrl = Some(routes.DeclarationController.onSubmitWithId(cisPath, flowId).url)
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val continueUrl = Some(routes.DeclarationController.onSubmitWithId(flowId).url)
 
       Ok(view(mode, continueUrl))
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       for {
-        updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage(request.subJourneyId), Set(Confirmed)))
+        updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage(flowId.toString), Set(Confirmed)))
         _              <- sessionRepository.set(updatedAnswers)
-      } yield Redirect(navigator.nextPage(cisPath, flowId, DeclarationPage, mode, updatedAnswers))
+      } yield Redirect(navigator.nextPage(flowId, DeclarationPage, mode, updatedAnswers))
     }
 }
