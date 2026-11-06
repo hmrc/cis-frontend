@@ -20,17 +20,17 @@ import base.SpecBase
 import config.FrontendAppConfig
 import models.agent.AgentClientData
 import models.monthlyreturns.CisTaxpayer
-import models.requests.CisPath.{CisId, CisOrg}
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.requests.IdentifierRequest
-import models.{JourneyScope, NormalMode, ReturnType, UserAnswers}
+import models.{NormalMode, ReturnType, UserAnswers}
 import org.mockito.Mockito.*
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 
 import scala.concurrent.Future
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.ReturnTypePage
+import pages.monthlyreturns.*
+import pages.agent.AgentClientDataPage
 import play.api.Application
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -56,6 +56,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
     when(taxpayer.uniqueId).thenReturn(cisId)
     when(taxpayer.taxOfficeNumber).thenReturn("123")
     when(taxpayer.taxOfficeRef).thenReturn("AB456")
+    when(taxpayer.schemeName).thenReturn(Some("ABC Construction Ltd"))
 
     val taxpayerService = mock[CisTaxpayerService]
 
@@ -1012,7 +1013,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .startMonthlyReturnWithCisPath(CisOrg)
+            .startMonthlyReturnWithCisId(cisId)
             .url
         )
 
@@ -1020,7 +1021,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val expectedPostRoute =
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
             .url
 
         status(result) mustBe OK
@@ -1046,7 +1047,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .startNilReturnWithCisPath(CisOrg)
+            .startNilReturnWithCisId(cisId)
             .url
         )
 
@@ -1054,7 +1055,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val expectedPostRoute =
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisOrg, MonthlyNilReturn)
+            .onSubmitWithCisId(cisId, MonthlyNilReturn)
             .url
 
         status(result) mustBe OK
@@ -1077,7 +1078,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .startMonthlyReturnWithCisPath(CisOrg)
+            .startMonthlyReturnWithCisId(cisId)
             .url
         )
 
@@ -1104,7 +1105,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .startNilReturnWithCisPath(CisOrg)
+            .startNilReturnWithCisId(cisId)
             .url
         )
 
@@ -1137,7 +1138,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           POST,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
             .url
         )
 
@@ -1147,11 +1148,11 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val redirectUrl = redirectLocation(result).value
         val flowId      = UUID.fromString(redirectUrl.split("/").last)
-        val id          = JourneyScope.subJourneyId(CisOrg, flowId)
+        val id          = flowId.toString
 
         redirectUrl mustBe
           controllers.monthlyreturns.routes.DateConfirmPaymentsController
-            .onPageLoadWithId(CisOrg, flowId, NormalMode)
+            .onPageLoadWithId(flowId, NormalMode)
             .url
 
         val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -1160,9 +1161,17 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val savedAnswers = captor.getValue
 
-        savedAnswers.hasSubJourney(id) mustBe true
+        savedAnswers.get(CisIdPage(id)) mustBe Some(cisId)
+        savedAnswers.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
         savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+        savedAnswers.get(AgentClientDataPage(id)) mustBe None
+
+        savedAnswers.get(CisIdPage) mustBe None
+        savedAnswers.get(ContractorNamePage) mustBe None
         savedAnswers.get(ReturnTypePage) mustBe None
+        savedAnswers.get(AgentClientDataPage) mustBe None
+
+        verifyNoInteractions(mockReconcile)
       }
     }
 
@@ -1182,7 +1191,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           POST,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisOrg, MonthlyNilReturn)
+            .onSubmitWithCisId(cisId, MonthlyNilReturn)
             .url
         )
 
@@ -1192,11 +1201,11 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val redirectUrl = redirectLocation(result).value
         val flowId      = UUID.fromString(redirectUrl.split("/").last)
-        val id          = JourneyScope.subJourneyId(CisOrg, flowId)
+        val id          = flowId.toString
 
         redirectUrl mustBe
           controllers.monthlyreturns.routes.DateConfirmPaymentsController
-            .onPageLoadWithId(CisOrg, flowId, NormalMode)
+            .onPageLoadWithId(flowId, NormalMode)
             .url
 
         val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
@@ -1205,9 +1214,17 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val savedAnswers = captor.getValue
 
-        savedAnswers.hasSubJourney(id) mustBe true
+        savedAnswers.get(CisIdPage(id)) mustBe Some(cisId)
+        savedAnswers.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
         savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyNilReturn)
+        savedAnswers.get(AgentClientDataPage(id)) mustBe None
+
+        savedAnswers.get(CisIdPage) mustBe None
+        savedAnswers.get(ContractorNamePage) mustBe None
         savedAnswers.get(ReturnTypePage) mustBe None
+        savedAnswers.get(AgentClientDataPage) mustBe None
+
+        verifyNoInteractions(mockReconcile)
       }
     }
 
@@ -1221,7 +1238,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           POST,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
             .url
         )
 
@@ -1251,7 +1268,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           POST,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisOrg, MonthlyStandardReturn)
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
             .url
         )
 
@@ -1282,7 +1299,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
         val request = FakeRequest(
           GET,
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .startMonthlyReturnWithCisPath(CisId(cisId))
+            .startMonthlyReturnWithCisId(cisId)
             .url
         )
 
@@ -1290,7 +1307,7 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         val expectedPostRoute =
           controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
-            .onSubmitWithCisPath(CisId(cisId), MonthlyStandardReturn)
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
             .url
 
         status(result) mustBe OK
@@ -1298,6 +1315,172 @@ class FileYourMonthlyCisReturnControllerSpec extends SpecBase with MockitoSugar 
 
         verify(mockReconcile)
           .reconcile(eqTo(cisId), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
+
+        verifyNoInteractions(mockRepo)
+      }
+    }
+
+    "create a UUID-scoped journey with agent client data on submission" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockRepo.get(any[String]))
+        .thenReturn(Future.successful(Some(emptyUserAnswers)))
+
+      when(mockRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val app = scopedApplication(
+        mockRepo,
+        mockReconcile,
+        isAgent = true
+      )
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        val redirectUrl = redirectLocation(result).value
+        val flowId      = UUID.fromString(redirectUrl.split("/").last)
+        val id          = flowId.toString
+
+        redirectUrl mustBe
+          controllers.monthlyreturns.routes.DateConfirmPaymentsController
+            .onPageLoadWithId(flowId, NormalMode)
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(mockRepo).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.get(CisIdPage(id)) mustBe Some(cisId)
+        savedAnswers.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
+        savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+        savedAnswers.get(AgentClientDataPage(id)) mustBe
+          Some(AgentClientData(cisId, "123", "AB456", Some("ABC Construction Ltd")))
+
+        savedAnswers.get(CisIdPage) mustBe None
+        savedAnswers.get(ContractorNamePage) mustBe None
+        savedAnswers.get(ReturnTypePage) mustBe None
+        savedAnswers.get(AgentClientDataPage) mustBe None
+
+        verifyNoInteractions(mockReconcile)
+      }
+    }
+
+    "redirect to Journey Recovery when the requested CIS ID is not authorised" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startMonthlyReturnWithCisId("UNAUTHORISED")
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verifyNoInteractions(mockRepo, mockReconcile)
+      }
+    }
+
+    "redirect to Journey Recovery when FormP/RDS reconciliation fails" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Reconciliation error")))
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .startMonthlyReturnWithCisId(cisId)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockReconcile)
+          .reconcile(eqTo(cisId), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
+
+        verifyNoInteractions(mockRepo)
+      }
+    }
+
+    "preserve existing UUID-scoped answers when creating another journey" in {
+      val mockRepo      = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      val existingId = UUID.randomUUID().toString
+
+      val existingAnswers = for {
+        withCisId <- emptyUserAnswers.set(CisIdPage(existingId), "EXISTING-CLIENT")
+        updated   <- withCisId.set(ReturnTypePage(existingId), MonthlyNilReturn)
+      } yield updated
+
+      when(mockRepo.get(any[String]))
+        .thenReturn(Future.successful(Some(existingAnswers.get)))
+
+      when(mockRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val app = scopedApplication(mockRepo, mockReconcile)
+
+      running(app) {
+        val request = FakeRequest(
+          POST,
+          controllers.monthlyreturns.routes.FileYourMonthlyCisReturnController
+            .onSubmitWithCisId(cisId, MonthlyStandardReturn)
+            .url
+        )
+
+        val result = route(app, request).value
+
+        status(result) mustBe SEE_OTHER
+
+        val redirectUrl = redirectLocation(result).value
+        val flowId      = UUID.fromString(redirectUrl.split("/").last)
+        val id          = flowId.toString
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+        verify(mockRepo).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.get(CisIdPage(existingId)) mustBe Some("EXISTING-CLIENT")
+        savedAnswers.get(ReturnTypePage(existingId)) mustBe Some(MonthlyNilReturn)
+
+        savedAnswers.get(CisIdPage(id)) mustBe Some(cisId)
+        savedAnswers.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
+        savedAnswers.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+
+        id must not be existingId
       }
     }
   }

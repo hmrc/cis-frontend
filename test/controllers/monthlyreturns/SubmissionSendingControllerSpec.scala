@@ -310,6 +310,52 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       redirectLocation(result).value mustBe unsuccessfulResubmitRoute
     }
 
+    "resumes polling without refreshing, creating or submitting when the submission was already sent to ChRIS" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+
+      val sentAnswers = completeAnswers
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails("sub-123", "PENDING", "irmark", LocalDateTime.now(), None, None)
+        )
+        .success
+        .value
+
+      val app        = buildAppWith(Some(sentAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe pollingRoute
+
+      verifyNoInteractions(mockService)
+    }
+
+    "allows a retry when the stored submission status is STARTED" in {
+      val mockService = mock[SubmissionService]
+      val mockMongoDb = mock[SessionRepository]
+      stubSubmissionFlow(mockService, status = "STARTED")
+
+      val startedAnswers = completeAnswers
+        .set(
+          SubmissionDetailsPage,
+          SubmissionDetails("sub-123", "STARTED", "irmark", LocalDateTime.now(), None, None)
+        )
+        .success
+        .value
+
+      val app        = buildAppWith(Some(startedAnswers), mockService, mockMongoDb).build()
+      val controller = app.injector.instanceOf[SubmissionSendingController]
+
+      val result = controller.onPageLoad()(mkRequest)
+
+      status(result) mustBe SEE_OTHER
+      redirectLocation(result).value mustBe unsuccessfulResubmitRoute
+      verify(mockService).getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+    }
+
     "redirects to AlreadySubmitted when submission journey is already completed" in {
       val mockService = mock[SubmissionService]
       val mockMongoDb = mock[SessionRepository]
