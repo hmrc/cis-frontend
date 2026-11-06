@@ -102,7 +102,9 @@ class ReviewSubcontractorDetailsController @Inject() (
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
 
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
@@ -210,7 +212,9 @@ class ReviewSubcontractorDetailsController @Inject() (
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
       val draftIdOpt   = request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId))
       val sourceOpt    = request.userAnswers.get(MonthlyFinalValidationSourcePage(subJourneyId))
 

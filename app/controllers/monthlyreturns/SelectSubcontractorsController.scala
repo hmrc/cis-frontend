@@ -174,7 +174,9 @@ class SelectSubcontractorsController @Inject() (
   def onPageLoadWithId(flowId: UUID, defaultSelection: Option[Boolean] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId    = flowId.toString
-      val cisId           = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId           = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
       val requiredAnswers = for {
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)
@@ -232,7 +234,9 @@ class SelectSubcontractorsController @Inject() (
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId    = flowId.toString
-      val cisId           = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId           = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
       val requiredAnswers = for {
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)

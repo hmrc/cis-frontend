@@ -194,7 +194,9 @@ class WhatDoYouWantToAmendStandardController @Inject() (
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
       val formAction   =
         Some(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
 

@@ -119,7 +119,9 @@ class WhichSubcontractorsToAddController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
 
       val requiredAnswers = for {
         taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
@@ -290,7 +292,9 @@ class WhichSubcontractorsToAddController @Inject() (
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
 
       val requiredAnswers = for {
         taxDate    <- request.userAnswers.get(DateConfirmPaymentsPage)

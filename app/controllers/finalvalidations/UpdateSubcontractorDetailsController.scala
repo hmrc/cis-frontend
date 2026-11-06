@@ -108,7 +108,9 @@ class UpdateSubcontractorDetailsController @Inject() (
   def onPageLoadWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
 
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
@@ -209,7 +211,9 @@ class UpdateSubcontractorDetailsController @Inject() (
   def onSubmitWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
 
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
@@ -281,7 +285,9 @@ class UpdateSubcontractorDetailsController @Inject() (
   def onCancelWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
 
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
