@@ -111,17 +111,19 @@
                                             classes = "govuk-checkboxes--small",
                                             items = Seq(
                                                 CheckboxItem(
-                                                value = subcontractor.id.toString,
-                                                content = HtmlContent(
-                                                s"""<span class="govuk-visually-hidden">${messages(
-                                                    "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
-                                                    index + 1,
-                                                    subcontractor.name
-                                                  )}</span>"""
-                                                ),
-                                                checked = form.value.toList
-                                                .flatMap(_.subcontractorsToInclude)
-                                                .contains(subcontractor.id)
+                                                    value = subcontractor.id.toString,
+                                                    content = HtmlContent(
+                                                        "<span class=\"govuk-visually-hidden\">" +
+                                                            messages(
+                                                              "monthlyreturns.selectSubcontractors.includeThisMonth.accessibleLabel",
+                                                              index + 1,
+                                                              subcontractor.name
+                                                            ) +
+                                                        "</span>"
+                                                    ),
+                                                    checked = form.value.toList
+                                                    .flatMap(_.subcontractorsToInclude)
+                                                    .contains(subcontractor.id)
                                                 )
                                             )
                                         )

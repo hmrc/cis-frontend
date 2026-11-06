@@ -95,7 +95,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
       getMonthYearWithId(subJourneyId, request.userAnswers) match {
         case Some(monthYear) =>
-          hasCancellableMonthlyReturnStatus(request.cisId, request.userAnswers).flatMap {
+          hasCancellableMonthlyReturnStatusWithId(request.cisId, request.userAnswers).flatMap {
             case true =>
               for {
                 clearedAnswers <-
