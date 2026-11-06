@@ -21,7 +21,7 @@ import controllers.actions.*
 import forms.amend.ConfirmCancelAmendmentYesNoFormProvider
 import models.{NormalMode, UserAnswers}
 import models.amend.DeleteUnsubmittedMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import pages.agent.AgentClientDataPage
 import pages.amend.ConfirmCancelAmendmentYesNoPage
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmPaymentsPage}
@@ -170,7 +170,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
                           request.userAnswers.set(ConfirmCancelAmendmentYesNoPage(subJourneyId), value)
                         )
                       _              <- sessionRepository.set(updatedAnswers)
-                      result         <- if (value) handleYesWithId(subJourneyId, flowId, updatedAnswers, cisId)
+                      result         <- if (value) handleYesWithId(subJourneyId, updatedAnswers, cisId)
                                         else handleNoWithId(flowId)
                     } yield result
                 )
@@ -263,11 +263,10 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   private def handleYesWithId(
     subJourneyId: String,
-    flowId: UUID,
     ua: UserAnswers,
     instanceId: String
   )(implicit
-    request: CisIdDataRequest[_]
+    request: DataRequest[_]
   ): Future[Result] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
@@ -312,7 +311,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
     }
 
   private def reconcileFormpRdsWithId(subJourneyId: String, instanceId: String, ua: UserAnswers)(implicit
-    request: CisIdDataRequest[_],
+    request: DataRequest[_],
     hc: HeaderCarrier
   ): Future[Option[Result]] =
     resolveTaxOfficeWithId(subJourneyId, request, ua) match {
@@ -346,7 +345,7 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   private def resolveTaxOfficeWithId(
     subJourneyId: String,
-    request: CisIdDataRequest[_],
+    request: DataRequest[_],
     ua: UserAnswers
   ): Option[(String, String)] =
     if (request.isAgent)
