@@ -24,7 +24,7 @@ import models.amend.DeleteUnsubmittedMonthlyReturnRequest
 import models.requests.CisIdDataRequest
 import pages.agent.AgentClientDataPage
 import pages.amend.ConfirmCancelAmendmentYesNoPage
-import pages.monthlyreturns.{ContractorNamePage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage, DateConfirmPaymentsPage}
 import play.api.Logging
 import play.api.data.Form
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
@@ -90,12 +90,13 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
       val formAction   =
         Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(flowId))
 
       getMonthYearWithId(subJourneyId, request.userAnswers) match {
         case Some(monthYear) =>
-          hasCancellableMonthlyReturnStatusWithId(subJourneyId, request.cisId, request.userAnswers).flatMap {
+          hasCancellableMonthlyReturnStatusWithId(subJourneyId, cisId, request.userAnswers).flatMap {
             case true =>
               for {
                 clearedAnswers <-
@@ -145,8 +146,8 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
 
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val cisId        = request.cisId
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
       val formAction   =
         Some(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmitWithId(flowId))
 
@@ -354,11 +355,11 @@ class ConfirmCancelAmendmentYesNoController @Inject() (
       Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode))
     )
 
-  private def handleNoWithId(cisPath: CisPath, flowId: UUID): Future[Result] =
+  private def handleNoWithId(flowId: UUID): Future[Result] =
     Future.successful(
       Redirect(
         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-          .onPageLoadWithId(cisPath, flowId, NormalMode)
+          .onPageLoadWithId(flowId, NormalMode)
       )
     )
 

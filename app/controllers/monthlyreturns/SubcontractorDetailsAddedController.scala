@@ -115,8 +115,8 @@ class SubcontractorDetailsAddedController @Inject() (
   def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
-      val cisId        = request.cisId
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
 
       val requiredAnswers = for {
         taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))
@@ -213,8 +213,8 @@ class SubcontractorDetailsAddedController @Inject() (
   def onPageLoadAfterFinalValidationWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
-      val cisId        = request.cisId
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
 
       val requiredAnswers = for {
         taxDate    <- ua.get(DateConfirmPaymentsPage(subJourneyId))

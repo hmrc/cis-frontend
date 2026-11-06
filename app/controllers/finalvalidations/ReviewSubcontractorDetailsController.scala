@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import models.finalvalidation.*
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{CisIdPage, SelectedSubcontractorPage}
 
 import javax.inject.Inject
 import java.util.UUID
@@ -102,11 +102,12 @@ class ReviewSubcontractorDetailsController @Inject() (
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
 
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
           finalValidationDraftService // TODO DTR-9474: Need to investigate this
-            .get(request.cisId, draftId)
+            .get(cisId, draftId)
             .map { draft =>
               val rows =
                 draft.subcontractors.map { subcontractor =>
@@ -209,13 +210,14 @@ class ReviewSubcontractorDetailsController @Inject() (
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
       val draftIdOpt   = request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId))
       val sourceOpt    = request.userAnswers.get(MonthlyFinalValidationSourcePage(subJourneyId))
 
       (draftIdOpt, sourceOpt.flatMap(modeFromSource)) match {
         case (Some(draftId), Some(mode)) =>
           finalValidationDraftService
-            .get(request.cisId, draftId)
+            .get(cisId, draftId)
             .flatMap { draft =>
               if (!draft.allComplete) {
                 Future.successful(
@@ -225,7 +227,7 @@ class ReviewSubcontractorDetailsController @Inject() (
                 for {
                   _                <-
                     finalValidationDraftService
-                      .commit(request.cisId, draftId) // TODO DTR-9474: Final validation out of scope
+                      .commit(cisId, draftId) // TODO DTR-9474: Final validation out of scope
                   updatedAnswers   <- Future.fromTry(
                                         updateSelectedSubcontractorNamesWithId(subJourneyId, request.userAnswers, draft)
                                       )

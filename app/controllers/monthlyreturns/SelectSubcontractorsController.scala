@@ -174,6 +174,7 @@ class SelectSubcontractorsController @Inject() (
   def onPageLoadWithId(flowId: UUID, defaultSelection: Option[Boolean] = None): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId    = flowId.toString
+      val cisId           = request.userAnswers.get(CisIdPage(subJourneyId))
       val requiredAnswers = for {
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)
@@ -182,7 +183,7 @@ class SelectSubcontractorsController @Inject() (
         .map { (taxMonth, taxYear) =>
           subcontractorService
             .buildSelectSubcontractorPage(
-              cisId = request.cisId,
+              cisId = cisId,
               taxMonth = taxMonth,
               taxYear = taxYear,
               defaultSelection = defaultSelection,
@@ -231,6 +232,7 @@ class SelectSubcontractorsController @Inject() (
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId    = flowId.toString
+      val cisId           = request.userAnswers.get(CisIdPage(subJourneyId))
       val requiredAnswers = for {
         taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(subJourneyId))
       } yield (taxDate.getMonthValue, taxDate.getYear)
@@ -238,7 +240,7 @@ class SelectSubcontractorsController @Inject() (
         .map { (taxMonth, taxYear) =>
           subcontractorService
             .buildSelectSubcontractorPage(
-              cisId = request.cisId,
+              cisId = cisId,
               taxMonth = taxMonth,
               taxYear = taxYear,
               defaultSelection = None,
@@ -271,7 +273,7 @@ class SelectSubcontractorsController @Inject() (
                         ua = request.userAnswers,
                         selected = selectedSubcontractors,
                         originalSubcontractorCount = model.subcontractors.size,
-                        cisId = request.cisId,
+                        cisId = cisId,
                         id = subJourneyId
                       )
                       .flatMap { updatedAnswers =>

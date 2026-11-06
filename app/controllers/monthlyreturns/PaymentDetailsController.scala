@@ -75,7 +75,7 @@ class PaymentDetailsController @Inject() (
   def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val subJourneyId = flowId.toString
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorPage(index, Some(subJourneyId))) match {
         case None =>
           logger.error(
             s"[PaymentDetailsController][onPageLoadWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
@@ -152,14 +152,15 @@ class PaymentDetailsController @Inject() (
                 for {
                   updatedAnswers <-
                     Future.fromTry(
-                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), value)
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index, Some(subJourneyId)), value)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
                   case Some("changeAnswers") =>
                     Redirect(
-                      controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
-                    ) // TODO DTR-9474: Update to use flowId
+                      controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                        .onPageLoadWithId(flowId, index)
+                    )
                   case _                     =>
                     Redirect(
                       navigator

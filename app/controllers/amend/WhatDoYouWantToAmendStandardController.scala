@@ -193,8 +193,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-      val cisId        = request.cisId
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
       val formAction   =
         Some(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
 

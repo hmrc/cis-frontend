@@ -19,6 +19,7 @@ package controllers.finalvalidations
 import controllers.actions.*
 import models.finalvalidation.{FinalValidationReadiness, UpdateSubcontractorDetailsPageModel, UpdateSubcontractorDetailsPageModelBuilder}
 import pages.finalvalidations.FinalValidationDraftIdPage
+import pages.monthlyreturns.CisIdPage
 import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
 
 import javax.inject.{Inject, Singleton}
@@ -107,10 +108,12 @@ class UpdateSubcontractorDetailsController @Inject() (
   def onPageLoadWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
           finalValidationDraftService // TODO DTR-9474: Need to investigate this
-            .get(request.cisId, draftId)
+            .get(cisId, draftId)
             .map { draft =>
               draft.subcontractor(subcontractorId) match {
                 case Some(subcontractor)
@@ -206,10 +209,12 @@ class UpdateSubcontractorDetailsController @Inject() (
   def onSubmitWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
           finalValidationDraftService // TODO DTR-9474: Need to investigate this
-            .get(request.cisId, draftId)
+            .get(cisId, draftId)
             .flatMap { draft =>
               draft.subcontractor(subcontractorId) match {
                 case Some(subcontractor)
@@ -224,7 +229,7 @@ class UpdateSubcontractorDetailsController @Inject() (
                     issues <- Future.fromTry(
                                 finalValidationService.validateDraftSubcontractor(draft, subcontractorId)
                               ) // TODO DTR-9474: Final validation out of scope
-                    _      <- finalValidationDraftService.updateReadiness(request.cisId, draftId, subcontractorId, issues)
+                    _      <- finalValidationDraftService.updateReadiness(cisId, draftId, subcontractorId, issues)
                   } yield Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId))
 
                 case None =>
@@ -276,11 +281,13 @@ class UpdateSubcontractorDetailsController @Inject() (
   def onCancelWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId))
+
       request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
         case Some(draftId) =>
           finalValidationDraftService // TODO DTR-9474: Need to investigate this
             .resetSubcontractor(
-              request.cisId,
+              cisId,
               draftId,
               subcontractorId
             )

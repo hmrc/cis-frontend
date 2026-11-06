@@ -65,18 +65,19 @@ class ChangeAnswersTotalPaymentsController @Inject() (
   def onPageLoadWithId(flowId: UUID, index: Int): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val subJourneyId = flowId.toString
-      val formAction = Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
       request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
-      case None                =>
-        logger.error(
-          s"[ChangeAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorPage Index: $index, SubJourneyId: $subJourneyId"
-        )
-        Redirect(controllers.routes.SystemErrorController.onPageLoad())
-      case Some(subcontractor) =>
-        Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index, formAction))
+        case None                =>
+          logger.error(
+            s"[ChangeAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorPage Index: $index, SubJourneyId: $subJourneyId"
+          )
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        case Some(subcontractor) =>
+          Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index, formAction))
+      }
     }
-  }
 
   def onSubmit(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
@@ -122,9 +123,10 @@ class ChangeAnswersTotalPaymentsController @Inject() (
 
   def onSubmitWithId(flowId: UUID, index: Int): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val ua = request.userAnswers
+      val ua           = request.userAnswers
       val subJourneyId = flowId.toString
-      val formAction = Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
       payloadBuilder.build(ua, index) match {
         case None =>
@@ -138,7 +140,10 @@ class ChangeAnswersTotalPaymentsController @Inject() (
             .updateMonthlyReturnItem(payload)
             .flatMap { _ =>
               sessionRepository.set(ua).map { _ =>
-                Redirect(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode))
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoadWithId(flowId, NormalMode)
+                )
               }
             }
             .recover {
@@ -162,5 +167,5 @@ class ChangeAnswersTotalPaymentsController @Inject() (
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
             }
       }
-  }
+    }
 }
