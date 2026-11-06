@@ -31,7 +31,7 @@ import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.{CorrelationIdPage, CreatedSubmissionIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.AnyContent
@@ -182,6 +182,47 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verifyNoInteractions(sessionRepository)
     }
 
+    "reuse the stored submission id without refreshing items or creating again when the submission already exists" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      val ua = uaWithSelectedSubcontractors(2)
+        .set(SubmissionCreatedPage("2026-03"), true)
+        .success
+        .value
+        .set(CreatedSubmissionIdPage("2026-03"), "sub-123")
+        .success
+        .value
+
+      service.getOrCreateSubmissionForChris(ua).futureValue mustBe ("sub-123", ua, false)
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "refresh and create when the created flag is set but no submission id is stored" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-456")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val ua = uaBase.set(SubmissionCreatedPage("2025-10"), true).success.value
+
+      service.getOrCreateSubmissionForChris(ua).futureValue._1 mustBe "sub-456"
+
+      verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+    }
+
     "not refresh any item on a resubmission" in {
       val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
       val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
@@ -322,6 +363,25 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
       cap.getValue mustBe expectedReq
       verify(sessionRepository).set(any[UserAnswers])
+    }
+
+    "store the created submission id and the created flag in the session" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val (_, updated) = service.create(uaBase).futureValue
+
+      updated.get(SubmissionCreatedPage("2025-10")) mustBe Some(true)
+      updated.get(CreatedSubmissionIdPage("2025-10")) mustBe Some("sub-123")
+      verify(sessionRepository).set(updated)
     }
 
     "fail when CIS ID is missing" in {

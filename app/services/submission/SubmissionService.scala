@@ -63,12 +63,27 @@ class SubmissionService @Inject() (
       case Some(resubmissionId) =>
         Future.successful((resubmissionId.toString, ua, true))
       case None                 =>
-        refreshMonthlyReturnItems(ua)
-          .flatMap(_ => create(ua))
-          .map { case (created, updatedUa) =>
-            (created.submissionId, updatedUa, false)
-          }
+        existingCreatedSubmissionId(ua) match {
+          case Some(submissionId) =>
+            // The submission was already created, so this is a revisit or a retry. The return has left STARTED, so
+            // item updates would be rejected, and a second create would break the unique submission key. Reuse it.
+            logger.warn(
+              s"[SubmissionService][getOrCreateSubmissionForChris] - Submission already created, reusing submissionId: $submissionId"
+            )
+            Future.successful((submissionId, ua, false))
+          case None               =>
+            refreshMonthlyReturnItems(ua)
+              .flatMap(_ => create(ua))
+              .map { case (created, updatedUa) =>
+                (created.submissionId, updatedUa, false)
+              }
+        }
     }
+
+  private def existingCreatedSubmissionId(ua: UserAnswers): Option[String] = {
+    val period = selectedYearMonth(ua).toString
+    if (ua.get(SubmissionCreatedPage(period)).contains(true)) ua.get(CreatedSubmissionIdPage(period)) else None
+  }
 
   /** Writes the subcontractor name and verification number onto every stored monthly return item before the return is
     * submitted.
@@ -124,7 +139,9 @@ class SubmissionService @Inject() (
     for {
       req            <- buildCreateRequest(ua)
       response       <- cisConnector.createSubmission(req)
-      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
+      period          = selectedYearMonth(ua).toString
+      withCreated    <- Future.fromTry(ua.set(SubmissionCreatedPage(period), true))
+      updatedAnswers <- Future.fromTry(withCreated.set(CreatedSubmissionIdPage(period), response.submissionId))
       _              <- sessionRepository.set(updatedAnswers)
     } yield (response, updatedAnswers)
 
