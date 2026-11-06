@@ -17,21 +17,36 @@
 package controllers.actions
 
 import config.FrontendAppConfig
-import models.requests.SchemeRequest
+import models.requests.{DataRequest, IdentifierRequest}
+import pages.monthlyreturns.CisIdPage
+import play.api.Logging
 import play.api.mvc.{ActionFilter, Result, Results}
+import services.CisTaxpayerService
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 @Singleton
-class MultiTabAction @Inject() (appConfig: FrontendAppConfig)(using ec: ExecutionContext)
-    extends ActionFilter[SchemeRequest] {
+class MultiTabAction @Inject() (appConfig: FrontendAppConfig)(using ec: ExecutionContext) {
 
-  override protected def executionContext: ExecutionContext = ec
+  def forJourney(flowId: UUID): ActionFilter[DataRequest] =
+    new ActionFilter[DataRequest] {
+      override protected def executionContext: ExecutionContext = ec
 
-  override protected def filter[A](request: SchemeRequest[A]): Future[Option[Result]] =
-    Future.successful {
-      if (appConfig.multiTabEnabled) None
-      else Some(Results.Redirect(appConfig.returnsLandingPageUrl(request.cisId, None)))
+      override protected def filter[A](request: DataRequest[A]): Future[Option[Result]] =
+        Future.successful {
+          request.userAnswers.get(CisIdPage(flowId.toString)) match {
+            case Some(cisId) if !cisId.isBlank && !appConfig.multiTabEnabled =>
+              Some(Results.Redirect(appConfig.returnsLandingPageUrl(cisId, None)))
+
+            case Some(cisId) if !cisId.isBlank =>
+              None
+
+            case _ =>
+              Some(Results.Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          }
+        }
     }
 }

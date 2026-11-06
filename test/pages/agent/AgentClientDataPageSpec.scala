@@ -30,5 +30,21 @@ class AgentClientDataPageSpec extends SpecBase {
     "have the correct toString" in {
       AgentClientDataPage.toString mustBe "agentClientData"
     }
+
+    "have the correct scoped path" in {
+      AgentClientDataPage("org_flow-1").path mustBe
+        (JsPath \ "monthlyReturn" \ "org_flow-1" \ "agent")
+    }
+
+    "use different paths for different journeys" in {
+      val firstPage  = AgentClientDataPage("org_flow-1")
+      val secondPage = AgentClientDataPage("org_flow-2")
+
+      firstPage.path must not be secondPage.path
+    }
+
+    "have the correct scoped toString" in {
+      AgentClientDataPage("org_flow-1").toString mustBe "agentClientData"
+    }
   }
 }

@@ -33,7 +33,7 @@ class SubmitInactivityRequestPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       SubmitInactivityRequestPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "submitInactivityRequest")
+        (JsPath \ "monthlyReturn" \ "org_flow-1" \ "submitInactivityRequest")
     }
 
     "have the correct scoped toString" in {
