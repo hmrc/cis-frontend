@@ -41,6 +41,7 @@
                 field = form("value"),
                 label = LabelViewModel(messages("monthlyreturns.enterYourEmailAddress.heading")).asPageHeading(LabelSize.Large)
             )
+            .asEmail()
             .withWidth(Full)
             .withHint(HintViewModel(content = Text(messages("monthlyreturns.enterYourEmailAddress.hint"))))
         )
