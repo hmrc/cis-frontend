@@ -88,7 +88,9 @@ class PaymentDetailsController @Inject() (
             case Some(value) => form.fill(value)
           }
 
-          val formAction = Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
+          val formAction = Some(
+            controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo)
+          )
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo, formAction))
       }
@@ -129,7 +131,8 @@ class PaymentDetailsController @Inject() (
   def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val formAction = Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
 
       request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
         case None =>
@@ -143,7 +146,8 @@ class PaymentDetailsController @Inject() (
             .bindFromRequest()
             .fold(
               formWithErrors =>
-                Future.successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo, formAction))),
+                Future
+                  .successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo, formAction))),
               value =>
                 for {
                   updatedAnswers <-
@@ -153,9 +157,14 @@ class PaymentDetailsController @Inject() (
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
                   case Some("changeAnswers") =>
-                    Redirect(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)) // TODO DTR-9474: Update to use flowId
+                    Redirect(
+                      controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
+                    ) // TODO DTR-9474: Update to use flowId
                   case _                     =>
-                    Redirect(navigator.nextPage(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), mode, updatedAnswers))
+                    Redirect(
+                      navigator
+                        .nextPage(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), mode, updatedAnswers)
+                    )
                 }
             )
       }
