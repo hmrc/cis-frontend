@@ -31,12 +31,13 @@ import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.{CorrelationIdPage, CreatedSubmissionIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.AnyContent
 import play.api.test.FakeRequest
 import repositories.SessionRepository
+import services.{MonthlyReturnItemPayloadBuilder, MonthlyReturnItemPayloadBuilderImpl}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.{Clock, Instant, LocalDate, LocalDateTime, YearMonth, ZoneOffset}
@@ -51,6 +52,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
   private val utcClock: Clock = Clock.systemUTC()
 
+  private val itemPayloadBuilder: MonthlyReturnItemPayloadBuilder = new MonthlyReturnItemPayloadBuilderImpl()
+
   private def mkService(
     connector: ConstructionIndustrySchemeConnector,
     sessionRepository: SessionRepository,
@@ -58,7 +61,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     chrisRequestBuilder: ChrisSubmissionRequestBuilder,
     clock: Clock = utcClock
   ): SubmissionService =
-    new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, clock)
+    new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, itemPayloadBuilder, clock)
 
   private val taxpayer =
     CisTaxpayer(
@@ -131,6 +134,199 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(sessionRepository).set(any[UserAnswers])
       verifyNoInteractions(chrisRequestBuilder)
     }
+
+    "refresh every selected subcontractor's item before creating the submission" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val result = service.getOrCreateSubmissionForChris(uaWithSelectedSubcontractors(7)).futureValue
+
+      result._1 mustBe "sub-123"
+
+      val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
+      verify(connector, times(7)).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
+      import scala.jdk.CollectionConverters.*
+      captor.getAllValues.asScala.map(_.subcontractorId).toSet mustBe (1L to 7L).toSet
+
+      val order = org.mockito.Mockito.inOrder(connector)
+      order.verify(connector, times(7)).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+      order.verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "not create the submission when an item cannot be refreshed" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      service.getOrCreateSubmissionForChris(uaWithSelectedSubcontractors(2)).failed.futureValue mustBe an[
+        IllegalStateException
+      ]
+
+      verify(connector, never()).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "reuse the stored submission id without refreshing items or creating again when the submission already exists" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      val ua = uaWithSelectedSubcontractors(2)
+        .set(SubmissionCreatedPage("2026-03"), true)
+        .success
+        .value
+        .set(CreatedSubmissionIdPage("2026-03"), "sub-123")
+        .success
+        .value
+
+      service.getOrCreateSubmissionForChris(ua).futureValue mustBe ("sub-123", ua, false)
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "refresh and create when the created flag is set but no submission id is stored" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-456")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val ua = uaBase.set(SubmissionCreatedPage("2025-10"), true).success.value
+
+      service.getOrCreateSubmissionForChris(ua).futureValue._1 mustBe "sub-456"
+
+      verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+    }
+
+    "not refresh any item on a resubmission" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      val ua = uaWithSelectedSubcontractors(2).set(ResubmissionIdPage, 13180L).success.value
+
+      service.getOrCreateSubmissionForChris(ua).futureValue mustBe ("13180", ua, true)
+
+      verifyNoInteractions(connector)
+    }
+  }
+
+  "refreshMonthlyReturnItems" - {
+
+    "not call the connector when no subcontractors are selected" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        =
+        mkService(connector, mock(classOf[SessionRepository]), appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      service.refreshMonthlyReturnItems(uaBase).futureValue mustBe (())
+
+      verifyNoInteractions(connector)
+    }
+
+    "refresh the items one at a time, never in parallel" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        =
+        mkService(connector, mock(classOf[SessionRepository]), appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      val inFlight    = new java.util.concurrent.atomic.AtomicInteger(0)
+      val maxInFlight = new java.util.concurrent.atomic.AtomicInteger(0)
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenAnswer { _ =>
+          val now = inFlight.incrementAndGet()
+          maxInFlight.updateAndGet(m => math.max(m, now))
+          Future {
+            Thread.sleep(25)
+            inFlight.decrementAndGet()
+            ()
+          }
+        }
+
+      service.refreshMonthlyReturnItems(uaWithSelectedSubcontractors(6)).futureValue mustBe (())
+
+      verify(connector, times(6)).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+      maxInFlight.get() mustBe 1
+    }
+
+    "retry a failed item update once and succeed when the retry works" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        =
+        mkService(connector, mock(classOf[SessionRepository]), appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("transient")))
+        .thenReturn(Future.unit)
+
+      service.refreshMonthlyReturnItems(uaWithSelectedSubcontractors(1)).futureValue mustBe (())
+
+      verify(connector, times(2)).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+    }
+
+    "fail, without refreshing later items, when an item update still fails after the retry" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        =
+        mkService(connector, mock(classOf[SessionRepository]), appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      val result = service.refreshMonthlyReturnItems(uaWithSelectedSubcontractors(6)).failed.futureValue
+
+      result mustBe an[IllegalStateException]
+      result.getMessage must include("boom")
+      verify(connector, times(2)).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+    }
+
+    "fail, without calling the connector for it, when an item payload cannot be built" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(Configuration("submission-poll-timeout-seconds" -> "60"))
+      val service                                        =
+        mkService(connector, mock(classOf[SessionRepository]), appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      val incomplete = SelectedSubcontractor(id = 9L, name = "Incomplete", None, None, None)
+      val ua         = uaWithSelectedSubcontractors(1).set(SelectedSubcontractorPage(2), incomplete).success.value
+
+      val result = service.refreshMonthlyReturnItems(ua).failed.futureValue
+
+      result mustBe an[IllegalStateException]
+      result.getMessage must include("index: 2")
+      verify(connector, times(1)).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+    }
   }
 
   "create" - {
@@ -167,6 +363,25 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).createSubmission(cap.capture())(any[HeaderCarrier]())
       cap.getValue mustBe expectedReq
       verify(sessionRepository).set(any[UserAnswers])
+    }
+
+    "store the created submission id and the created flag in the session" in {
+      val connector: ConstructionIndustrySchemeConnector = mock(classOf[ConstructionIndustrySchemeConnector])
+      val sessionRepository: SessionRepository           = mock(classOf[SessionRepository])
+      val appConfig: FrontendAppConfig                   = new FrontendAppConfig(
+        Configuration("submission-poll-timeout-seconds" -> "60")
+      )
+      val service                                        = mkService(connector, sessionRepository, appConfig, mock(classOf[ChrisSubmissionRequestBuilder]))
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val (_, updated) = service.create(uaBase).futureValue
+
+      updated.get(SubmissionCreatedPage("2025-10")) mustBe Some(true)
+      updated.get(CreatedSubmissionIdPage("2025-10")) mustBe Some("sub-123")
+      verify(sessionRepository).set(updated)
     }
 
     "fail when CIS ID is missing" in {
@@ -470,7 +685,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           Configuration("submission-poll-timeout-seconds" -> "60")
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+        val service                                        = new SubmissionService(
+          connector,
+          appConfig,
+          sessionRepository,
+          chrisRequestBuilder,
+          itemPayloadBuilder,
+          utcClock
+        )
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -516,7 +738,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
           Configuration("submission-poll-timeout-seconds" -> "60")
         )
         val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-        val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+        val service                                        = new SubmissionService(
+          connector,
+          appConfig,
+          sessionRepository,
+          chrisRequestBuilder,
+          itemPayloadBuilder,
+          utcClock
+        )
 
         when(connector.getCisTaxpayer()(any[HeaderCarrier]))
           .thenReturn(Future.successful(taxpayer))
@@ -1446,7 +1675,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+      val service                                        = new SubmissionService(
+        connector,
+        appConfig,
+        sessionRepository,
+        chrisRequestBuilder,
+        itemPayloadBuilder,
+        utcClock
+      )
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -1494,7 +1730,14 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       )
       val chrisRequestBuilder                            = mock(classOf[ChrisSubmissionRequestBuilder])
-      val service                                        = new SubmissionService(connector, appConfig, sessionRepository, chrisRequestBuilder, utcClock)
+      val service                                        = new SubmissionService(
+        connector,
+        appConfig,
+        sessionRepository,
+        chrisRequestBuilder,
+        itemPayloadBuilder,
+        utcClock
+      )
 
       val submittedAt       = LocalDateTime.now().minusSeconds(60)
       val submissionDetails = SubmissionDetails(
@@ -2143,6 +2386,32 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       result mustBe false
     }
   }
+
+  private def uaWithSelectedSubcontractors(count: Int): UserAnswers =
+    (1 to count).foldLeft(
+      uaBase
+        .set(CisIdPage, "instance-1")
+        .success
+        .value
+        .set(DateConfirmPaymentsPage, LocalDate.of(2026, 3, 1))
+        .success
+        .value
+        .set(ReturnTypePage, MonthlyStandardReturn)
+        .success
+        .value
+    ) { (ua, i) =>
+      ua.set(
+        SelectedSubcontractorPage(i),
+        SelectedSubcontractor(
+          id = i.toLong,
+          name = s"Subcontractor $i",
+          totalPaymentsMade = Some(BigDecimal("100")),
+          costOfMaterials = Some(BigDecimal("10")),
+          totalTaxDeducted = Some(BigDecimal("5"))
+        )
+      ).success
+        .value
+    }
 
   private def uaBase: UserAnswers =
     emptyUserAnswers

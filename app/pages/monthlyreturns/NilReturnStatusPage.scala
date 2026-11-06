@@ -21,7 +21,7 @@ import pages.QuestionPage
 
 case class NilReturnStatusPage(id: String) extends QuestionPage[String] {
 
-  override def path: JsPath = JsPath \ id \ "nilReturnStatus"
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ "nilReturnStatus"
 
   override def toString: String = "nil-return-status"
 }

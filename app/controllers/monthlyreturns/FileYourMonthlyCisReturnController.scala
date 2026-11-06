@@ -16,11 +16,13 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import models.{EmployerReference, NormalMode, ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import models.requests.{CisPath, OptionalDataRequest}
+import models.monthlyreturns.CisTaxpayer
+import models.requests.{IdentifierRequest, OptionalDataRequest}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.{CisIdPage, ContractorNamePage, ReturnTypePage}
 import play.api.Logging
@@ -29,7 +31,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import play.twirl.api.Html
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, JourneyService, MonthlyReturnService}
+import services.{CisTaxpayerService, FormpRdsReconcileService, MonthlyReturnService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import utils.TypeUtils.toFuture
@@ -37,8 +39,10 @@ import views.html.monthlyreturns.FileYourMonthlyCisReturnView
 import views.html.monthlyreturns.FileYourNilReturnView
 import utils.UserAnswerUtils.*
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 import scala.util.control.NonFatal
 
 class FileYourMonthlyCisReturnController @Inject() (
@@ -49,12 +53,11 @@ class FileYourMonthlyCisReturnController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  resolveScheme: SchemeAction,
-  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
   sessionRepository: SessionRepository,
   monthlyReturnService: MonthlyReturnService,
   formpRdsReconcileService: FormpRdsReconcileService,
-  journeyService: JourneyService
+  cisTaxpayerService: CisTaxpayerService,
+  appConfig: FrontendAppConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
     with I18nSupport
@@ -227,41 +230,120 @@ class FileYourMonthlyCisReturnController @Inject() (
       _                     <- sessionRepository.set(uaWithAgentClientData)
     } yield uaWithAgentClientData
 
-  // DTR-9431: New CisPath-scoped entry points.
+  // Multi-tab: Resolve the CIS taxpayer for the selected CIS ID.
+  private def resolveTaxpayer[A](cisId: String)(using request: IdentifierRequest[A]): Future[Option[CisTaxpayer]] =
+    if request.isAgent then
+      cisTaxpayerService
+        .findForAgent(cisId)
+        .map(_.filter(_.uniqueId == cisId))
+    else
+      cisTaxpayerService.findForOrganisation
+        .map(taxpayer => Option.when(taxpayer.uniqueId == cisId)(taxpayer))
 
-  def startNilReturnWithCisPath(cisPath: CisPath): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds) { implicit request =>
-      Ok(
-        nilReturnView(
-          Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath, MonthlyNilReturn))
-        )
-      )
+  // Multi-tab: Resolve and authorise the selected CIS taxpayer.
+  private def withResolvedTaxpayer[A](cisId: String)(
+    handle: CisTaxpayer => Future[Result]
+  )(using request: IdentifierRequest[A]): Future[Result] =
+    resolveTaxpayer(cisId).flatMap {
+      case Some(taxpayer) if !appConfig.multiTabEnabled =>
+        Future.successful(Redirect(appConfig.returnsLandingPageUrl(taxpayer.uniqueId, None)))
+
+      case Some(taxpayer) =>
+        handle(taxpayer)
+
+      case None =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
     }
 
-  def startMonthlyReturnWithCisPath(cisPath: CisPath): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds) { implicit request =>
-      Ok(
-        monthlyReturnView(
-          Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisPath(cisPath, MonthlyStandardReturn))
-        )
-      )
-    }
+  // Multi-tab: Reconcile FormP/RDS before rendering the entry page.
+  private def reconcileScopedReturn(taxpayer: CisTaxpayer, render: => Result)(using HeaderCarrier): Future[Result] =
+    formpRdsReconcileService
+      .reconcile(taxpayer.uniqueId, taxpayer.taxOfficeNumber, taxpayer.taxOfficeRef)
+      .map(_ => render)
+      .recover {
+        case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+          logger.warn(s"Contractor known facts missing in RDS (status ${e.statusCode})")
+          Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+        case NonFatal(e)                                                                                  =>
+          logger.error(s"FormP/RDS reconciliation failed: ${e.getMessage}", e)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
 
-  // DTR-9431: Create a new randomId journey on submission.
-  def onSubmitWithCisPath(cisPath: CisPath, returnType: ReturnType): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath)).async { implicit request =>
-      journeyService
-        .create(
-          request,
-          (ua, id) => ua.set(ReturnTypePage(id), returnType)
+  // Multi-tab: New CIS ID-scoped entry points.
+  def startNilReturnWithCisId(cisId: String): Action[AnyContent] =
+    identify.async { implicit request =>
+      withResolvedTaxpayer(cisId) { taxpayer =>
+        reconcileScopedReturn(
+          taxpayer,
+          Ok(nilReturnView(Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisId(cisId, MonthlyNilReturn))))
         )
-        .map { flowId =>
-          Redirect(
-            routes.DateConfirmPaymentsController.onPageLoadWithId(cisPath, flowId, NormalMode)
-          )
-        }
+      }
         .recover { case NonFatal(ex) =>
-          logger.error(s"[FileYourMonthlyCisReturnController][onSubmitWithCisPath] Failed to create journey", ex)
+          logger.error(s"[FileYourMonthlyCisReturnController][startNilReturnWithCisId] Failed to start journey", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+    }
+
+  def startMonthlyReturnWithCisId(cisId: String): Action[AnyContent] =
+    identify.async { implicit request =>
+      withResolvedTaxpayer(cisId) { taxpayer =>
+        reconcileScopedReturn(
+          taxpayer,
+          Ok(
+            monthlyReturnView(
+              Some(routes.FileYourMonthlyCisReturnController.onSubmitWithCisId(cisId, MonthlyStandardReturn))
+            )
+          )
+        )
+      }
+        .recover { case NonFatal(ex) =>
+          logger.error(s"[FileYourMonthlyCisReturnController][startMonthlyReturnWithCisId] Failed to start journey", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+    }
+
+  // Multi-tab: Create a new UUID-scoped journey on submission.
+  def onSubmitWithCisId(cisId: String, returnType: ReturnType): Action[AnyContent] =
+    identify.async { implicit request =>
+      withResolvedTaxpayer(cisId) { taxpayer =>
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        sessionRepository
+          .get(request.userId)
+          .flatMap { existing =>
+            val userAnswers = existing.getOrElse(UserAnswers(request.userId))
+
+            val updatedAnswers = for {
+              withCisId      <- userAnswers.set(CisIdPage(id), taxpayer.uniqueId)
+              withContractor <- withCisId.set(ContractorNamePage(id), taxpayer.schemeName.getOrElse(""))
+              withAgent      <- if request.isAgent then
+                                  withContractor.set(
+                                    AgentClientDataPage(id),
+                                    AgentClientData(
+                                      taxpayer.uniqueId,
+                                      taxpayer.taxOfficeNumber,
+                                      taxpayer.taxOfficeRef,
+                                      taxpayer.schemeName
+                                    )
+                                  )
+                                else Success(withContractor)
+              updated        <- withAgent.set(ReturnTypePage(id), returnType)
+            } yield updated
+
+            Future
+              .fromTry(updatedAnswers)
+              .flatMap { updated =>
+                sessionRepository
+                  .set(updated)
+                  .map { _ =>
+                    Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
+                  }
+              }
+          }
+      }
+        .recover { case NonFatal(ex) =>
+          logger.error(s"[FileYourMonthlyCisReturnController][onSubmitWithCisId] Failed to create journey", ex)
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         }
     }

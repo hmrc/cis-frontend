@@ -19,6 +19,16 @@ package pages.monthlyreturns
 import play.api.libs.json._
 import pages.QuestionPage
 
+case class CisIdPage(id: String) extends QuestionPage[String] {
+
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
+
+  override def toString: String = "cisId"
+}
+
 object CisIdPage extends QuestionPage[String] {
-  override def path: JsPath = JsPath \ "cisId"
+
+  override def path: JsPath = JsPath \ toString
+
+  override def toString: String = "cisId"
 }
