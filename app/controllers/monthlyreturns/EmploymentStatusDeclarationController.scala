@@ -19,6 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions._
 import forms.monthlyreturns.EmploymentStatusDeclarationFormProvider
 import javax.inject.Inject
+import java.util.UUID
 import models.Mode
 import navigation.Navigator
 import pages.monthlyreturns.EmploymentStatusDeclarationPage
@@ -36,6 +37,7 @@ class EmploymentStatusDeclarationController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: EmploymentStatusDeclarationFormProvider,
@@ -58,6 +60,19 @@ class EmploymentStatusDeclarationController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onSubmitWithId(flowId, mode))
+      val preparedForm = request.userAnswers.get(EmploymentStatusDeclarationPage(subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(view(preparedForm, mode, formAction))
+    }
+
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -69,6 +84,25 @@ class EmploymentStatusDeclarationController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(EmploymentStatusDeclarationPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(EmploymentStatusDeclarationPage, mode, updatedAnswers))
+        )
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onSubmitWithId(flowId, mode))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          value =>
+            for {
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(EmploymentStatusDeclarationPage(subJourneyId), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(EmploymentStatusDeclarationPage(subJourneyId), mode, updatedAnswers))
         )
     }
 }
