@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.VerifiedStatusDeclarationView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class VerifiedStatusDeclarationController @Inject() (
@@ -36,6 +37,7 @@ class VerifiedStatusDeclarationController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: VerifiedStatusDeclarationFormProvider,
@@ -58,6 +60,19 @@ class VerifiedStatusDeclarationController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onSubmitWithId(flowId, mode))
+      val preparedForm = request.userAnswers.get(VerifiedStatusDeclarationPage(subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(view(preparedForm, mode, formAction))
+    }
+
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -69,6 +84,24 @@ class VerifiedStatusDeclarationController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifiedStatusDeclarationPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(VerifiedStatusDeclarationPage, mode, updatedAnswers))
+        )
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onSubmitWithId(flowId, mode))
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          value =>
+            for {
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(VerifiedStatusDeclarationPage(subJourneyId), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(VerifiedStatusDeclarationPage(subJourneyId), mode, updatedAnswers))
         )
     }
 }
