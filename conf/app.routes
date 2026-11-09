@@ -126,6 +126,15 @@ POST       /monthly-return/materials-cost                               controll
 GET        /monthly-return/change-materials-cost                        controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 POST       /monthly-return/change-materials-cost                        controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
+GET        /monthly-return/materials-cost/:flowId/:index                controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/materials-cost/:flowId/:index                controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/change-materials-cost/:flowId/:index         controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/change-materials-cost/:flowId/:index         controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/materials-cost/:flowId                       controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/materials-cost/:flowId                       controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+GET        /monthly-return/change-materials-cost/:flowId                controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/change-materials-cost/:flowId                controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+
 
 GET        /monthly-return/tax-deducted/:index                          controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
 POST       /monthly-return/tax-deducted/:index                          controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
