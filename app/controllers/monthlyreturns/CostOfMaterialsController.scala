@@ -72,7 +72,7 @@ class CostOfMaterialsController @Inject() (
 
   def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      val subJourneyId = flowId.toString
+      val subJourneyId = Some(flowId.toString)
       val formAction   =
         Some(controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, mode, index, returnTo))
       request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
@@ -132,7 +132,7 @@ class CostOfMaterialsController @Inject() (
 
   def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = flowId.toString
+      val subJourneyId = Some(flowId.toString)
       val formAction   =
         Some(controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, mode, index, returnTo))
 

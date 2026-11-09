@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.TotalTaxDeductedView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class TotalTaxDeductedController @Inject() (
@@ -38,6 +39,7 @@ class TotalTaxDeductedController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: TotalTaxDeductedFormProvider,
@@ -65,6 +67,28 @@ class TotalTaxDeductedController @Inject() (
           }
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
+      }
+    }
+
+  def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = Some(flowId.toString)
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmitWithId(flowId, mode, index, returnTo))
+
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None                =>
+          logger.error(
+            s"[TotalTaxDeductedController][onPageLoadWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+          )
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case Some(subcontractor) =>
+          val preparedForm = request.userAnswers.get(SelectedSubcontractorTaxDeductedPage(index, subJourneyId)) match {
+            case None        => form
+            case Some(value) => form.fill(Some(value))
+          }
+
+          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo, formAction))
       }
     }
 
@@ -98,6 +122,53 @@ class TotalTaxDeductedController @Inject() (
                   updatedAnswers <-
                     Future.fromTry(
                       request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index), valueToPersist)
+                    )
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield redirect(updatedAnswers)
+              }
+            )
+      }
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = Some(flowId.toString)
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmitWithId(flowId, mode, index, returnTo))
+
+      def redirect(updatedAnswers: UserAnswers): Result =
+        returnTo match {
+          case Some("changeAnswers") =>
+            Redirect(
+              controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
+            )
+          case _                     =>
+            Redirect(
+              navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index, subJourneyId), mode, updatedAnswers)
+            )
+        }
+
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None =>
+          logger.error(
+            s"[TotalTaxDeductedController][onSubmitWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case Some(subcontractor) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors =>
+                Future
+                  .successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo, formAction))),
+              valueOpt => {
+                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
+
+                for {
+                  updatedAnswers <-
+                    Future.fromTry(
+                      request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index, subJourneyId), valueToPersist)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield redirect(updatedAnswers)
