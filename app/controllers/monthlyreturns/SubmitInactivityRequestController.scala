@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmitInactivityRequestView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class SubmitInactivityRequestController @Inject() (
@@ -36,6 +37,7 @@ class SubmitInactivityRequestController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: SubmitInactivityRequestFormProvider,
@@ -58,6 +60,19 @@ class SubmitInactivityRequestController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
+      val preparedForm = request.userAnswers.get(SubmitInactivityRequestPage(subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(view(preparedForm, mode, formAction))
+    }
+
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -69,6 +84,25 @@ class SubmitInactivityRequestController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage, value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(navigator.nextPage(SubmitInactivityRequestPage, mode, updatedAnswers))
+        )
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          value =>
+            for {
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage(subJourneyId), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(navigator.nextPage(SubmitInactivityRequestPage(subJourneyId), mode, updatedAnswers))
         )
     }
 }
