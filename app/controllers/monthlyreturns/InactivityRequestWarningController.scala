@@ -75,8 +75,8 @@ class InactivityRequestWarningController @Inject() (
               .url // TODO DTR-9474: Change to use subJourneyId
           case NormalMode =>
             controllers.monthlyreturns.routes.ConfirmationByEmailController
-              .onPageLoad(NormalMode)
-              .url // TODO DTR-9474: Change to use subJourneyId
+              .onPageLoadWithId(flowId, NormalMode)
+              .url
         }
         Ok(view(nextUrl))
       }
