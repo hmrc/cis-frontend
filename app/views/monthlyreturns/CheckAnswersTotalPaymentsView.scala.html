@@ -24,10 +24,13 @@
     govukButton: GovukButton,
     govukSummaryList: GovukSummaryList,
     h1: components.H1
-
 )
 
-@(subcontractor: CheckAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
+@(
+    subcontractor: CheckAnswersTotalPaymentsViewModel,
+    index: Integer,
+    formAction: Option[Call] = None
+)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.checkAnswersTotalPayments.title"))) {
 
@@ -39,7 +42,9 @@
         )
     )
 
-    @formHelper(action = controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index)) {
+    @formHelper(
+        action = formAction.getOrElse(controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index))
+    ) {
         @govukButton(ButtonViewModel(messages("site.continue")))
     }
 }

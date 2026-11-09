@@ -29,6 +29,7 @@ import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.CheckAnswersTotalPaymentsView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import pages.monthlyreturns.SelectedSubcontractorPage
@@ -39,6 +40,7 @@ class CheckAnswersTotalPaymentsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   monthlyReturnService: MonthlyReturnService,
   payloadBuilder: MonthlyReturnItemPayloadBuilder,
   val controllerComponents: MessagesControllerComponents,
@@ -60,6 +62,23 @@ class CheckAnswersTotalPaymentsController @Inject() (
           Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
       }
   }
+
+  def onPageLoadWithId(flowId: UUID, index: Int): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = Some(flowId.toString)
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
+
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None                =>
+          logger.error(
+            s"[CheckAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorPage for index: $index, subJourneyId=$subJourneyId"
+          )
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case Some(subcontractor) =>
+          Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index, formAction))
+      }
+    }
 
   def onSubmit(index: Int): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
@@ -107,6 +126,61 @@ class CheckAnswersTotalPaymentsController @Inject() (
                   s"[CheckAnswersTotalPaymentsController][onSubmit] UpdateMonthlyReturnItem failed," +
                     s" instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}," +
                     s" amendment: ${payload.amendment}, index: $index subcontractorId: ${payload.subcontractorId}",
+                  e
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+      }
+    }
+
+  def onSubmitWithId(flowId: UUID, index: Int): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val ua           = request.userAnswers
+      val subJourneyId = flowId.toString
+
+      payloadBuilder.build(ua, index) match {
+        case None =>
+          logger.error(
+            s"[CheckAnswersTotalPaymentsController][onSubmitWithId] - Failed to build monthly return item payload, index: $index, subJourneyId=$subJourneyId"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case Some(payload) =>
+          monthlyReturnService // TODO DTR-9474: Check if need to update monthlyReturnService to use Id
+            .updateMonthlyReturnItem(payload)
+            .map { _ =>
+              val hasCompletedFinalValidation =
+                ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(NormalMode.toString) &&
+                  ua.get(FinalValidationDraftIdPage(subJourneyId)).isEmpty
+
+              if (hasCompletedFinalValidation) {
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoadAfterFinalValidationWithId(flowId, NormalMode)
+                )
+              } else {
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoadWithId(flowId, NormalMode)
+                )
+              }
+            }
+            .recover {
+              case u: UpstreamErrorResponse =>
+                logger.error(
+                  s"[CheckAnswersTotalPaymentsController][onSubmitWithId] UpdateMonthlyReturnItem failed, status: ${u.statusCode}," +
+                    s" instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}," +
+                    s" amendment: ${payload.amendment}, index: $index subcontractorId: ${payload.subcontractorId}," +
+                    s" message: ${u.message}, subJourneyId: $subJourneyId",
+                  u
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+              case NonFatal(e)              =>
+                logger.error(
+                  s"[CheckAnswersTotalPaymentsController][onSubmitWithId] UpdateMonthlyReturnItem failed," +
+                    s" instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}," +
+                    s" amendment: ${payload.amendment}, index: $index subcontractorId: ${payload.subcontractorId}," +
+                    s" subJourneyId: $subJourneyId",
                   e
                 )
                 Redirect(controllers.routes.SystemErrorController.onPageLoad())
