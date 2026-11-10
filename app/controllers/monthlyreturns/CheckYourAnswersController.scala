@@ -36,6 +36,7 @@ import utils.UserAnswerUtils.isJourneyComplete
 
 import java.time.YearMonth
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class CheckYourAnswersController @Inject() (
@@ -43,6 +44,7 @@ class CheckYourAnswersController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  multiTabAction: MultiTabAction,
   monthlyReturnService: MonthlyReturnService,
   submissionService: SubmissionService,
   requireCisId: CisIdRequiredAction,
@@ -96,6 +98,51 @@ class CheckYourAnswersController @Inject() (
       }
   }
 
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val flowIdOpt    = Some(flowId)
+
+      guardCompletedJourney {
+        ReturnTypeSummary.returnType(request.userAnswers) match {
+          case Some(returnType) =>
+            val returnTypeRows = returnType match {
+              case ReturnType.MonthlyStandardReturn | ReturnType.MonthlyAmendedStandardReturn =>
+                Seq(
+                  DateConfirmPaymentsSummary.row(request.userAnswers, flowIdOpt),
+                  NumberOfSubcontractorPaymentsMadeSummary.row(request.userAnswers, flowIdOpt),
+                  EmploymentStatusDeclarationSummary.row(request.userAnswers, flowIdOpt),
+                  VerifiedStatusDeclarationSummary.row(request.userAnswers, flowIdOpt),
+                  SubmitInactivityRequestSummary.row(request.userAnswers, flowIdOpt)
+                )
+              case ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn           =>
+                Seq(
+                  DateConfirmNilPaymentsSummary.row(request.userAnswers),
+                  PaymentsToSubcontractorsSummary.row,
+                  SubmitInactivityRequestSummary.row(request.userAnswers, flowIdOpt)
+                )
+            }
+
+            val returnDetailsList = SummaryListViewModel(
+              rows = (Seq(ReturnTypeSummary.row(request.userAnswers)) ++ returnTypeRows).flatten
+            )
+
+            val emailRows = Seq(
+              ConfirmationByEmailSummary.row(request.userAnswers, flowIdOpt),
+              EnterYourEmailAddressSummary.row(request.userAnswers, flowIdOpt)
+            )
+
+            val emailList = SummaryListViewModel(rows = emailRows.flatten)
+
+            Future.successful(Ok(view(returnDetailsList, emailList)))
+
+          case None =>
+            logger.error("[CheckYourAnswersController][onPageLoad] - Missing ReturnTypePage")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
+      }
+    }
+
   def onSubmit(): Action[AnyContent] = (identify andThen getData andThen requireData andThen requireCisId).async {
     implicit request =>
       guardCompletedJourney {
@@ -145,6 +192,63 @@ class CheckYourAnswersController @Inject() (
       }
   }
 
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+
+      guardCompletedJourney {
+        request.userAnswers.get(ReturnTypePage(subJourneyId)) match {
+          case None =>
+            logger.error(
+              "[CheckYourAnswersController] C6 submit without FormP record (missing ReturnTypePage); redirecting to journey recovery"
+            )
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Some(returnType) if !request.userAnswers.isJourneyComplete =>
+            logger.error(
+              "[CheckYourAnswersController][onSubmitWithId] - journey not complete (isJourneyComplete check failed)"
+            )
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Some(returnType) =>
+            if (submissionService.isAlreadySubmitted(request.userAnswers)) { // TODO DTR-9474: Check if this needs updated to use id
+              logger.info(
+                "[CheckYourAnswersController] Submission is already created; redirecting to journey recovery"
+              )
+              Future.successful(
+                Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad())
+              ) // TODO DTR-9474: Check if this needs updated to use id
+            } else {
+              val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(
+                request.userAnswers
+              ) // TODO DTR-9474: Check if this needs updated to use id
+
+              updateRequest match {
+                case Left(error) =>
+                  logger.error(s"[CheckYourAnswersController] Failed to build update request: $error")
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+                case Right(req) =>
+                  monthlyReturnService // TODO DTR-9474: Check if this needs updated to use id
+                    .updateMonthlyReturn(req)
+                    .map { _ =>
+                      logger.info(
+                        s"[CheckYourAnswersController] Successfully updated monthly return ($returnType), redirecting to submission"
+                      )
+                      Redirect(
+                        controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoad()
+                      ) // TODO DTR-9474: Check if this needs updated to use id
+                    }
+                    .recover { case t =>
+                      logger.error(s"[CheckYourAnswersController] Failed to update monthly return ($returnType)", t)
+                      Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                    }
+              }
+            }
+        }
+      }
+    }
+
   private def guardCompletedJourney(block: => Future[Result])(implicit request: CisIdDataRequest[_]): Future[Result] =
     periodEndFromUserAnswers(request.userAnswers) match {
       case None =>
@@ -156,8 +260,10 @@ class CheckYourAnswersController @Inject() (
 
       case Some(periodEnd) =>
         val yearMonthPeriod = YearMonth.from(periodEnd).toString
-        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
-          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) { // TODO DTR-9474: Check if this needs updated to use id
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad())
+          ) // TODO DTR-9474: Check if this needs updated to use id
         } else {
           block
         }

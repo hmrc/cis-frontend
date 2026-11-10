@@ -71,8 +71,8 @@ class InactivityRequestWarningController @Inject() (
         val nextUrl = mode match {
           case CheckMode  =>
             controllers.monthlyreturns.routes.CheckYourAnswersController
-              .onPageLoad()
-              .url // TODO DTR-9474: Change to use subJourneyId
+              .onPageLoadWithId(flowId)
+              .url
           case NormalMode =>
             controllers.monthlyreturns.routes.ConfirmationByEmailController
               .onPageLoadWithId(flowId, NormalMode)

@@ -22,21 +22,32 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
+import java.util.UUID
+
 object NumberOfSubcontractorPaymentsMadeSummary {
 
-  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
-    SubcontractorDetailsAddedBuilder.build(answers).map { addedSubcontractors =>
+  def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId match {
+      case Some(id) => id.toString
+      case None     => None
+    }
+    val url          = flowId match {
+      case Some(id) =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(id, CheckMode).url
+      case None     =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+    }
+
+    SubcontractorDetailsAddedBuilder.build(answers, subJourneyId).map { addedSubcontractors =>
       SummaryListRowViewModel(
         key = "monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel",
         value = ValueViewModel(addedSubcontractors.rows.size.toString),
         actions = Seq(
-          ActionItemViewModel(
-            "site.change",
-            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
-          )
+          ActionItemViewModel("site.change", url)
             .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden"))
             .withAttribute("id" -> "change-number-subcontractor-payments-made")
         )
       )
     }
+  }
 }

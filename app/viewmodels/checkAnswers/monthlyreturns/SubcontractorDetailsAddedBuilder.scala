@@ -38,12 +38,11 @@ object SubcontractorDetailsAddedBuilder {
 
   def build(ua: UserAnswers, id: Option[String] = None): Option[SubcontractorDetailsAddedViewModel] = {
     val isAmendment                =
-      ua.get(AmendmentDetailsPage(id.toString))
-        .isDefined // TODO DTR-9474: Investigate compilation error when not cast to String
+      ua.get(AmendmentDetailsPage(id)).isDefined
     val subcontractorByIndex       = selectedSubcontractors(id, ua)
     val originalSubcontractorCount = ua.get(
-      OriginalSubcontractorCountPage(id.toString)
-    ) // TODO DTR-9474: Investigate compilation error when not cast to String
+      OriginalSubcontractorCountPage(id)
+    )
     val indexes                    = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {
