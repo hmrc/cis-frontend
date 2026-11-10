@@ -196,8 +196,16 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controll
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
+# Multi-tab
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments/:flowId   controllers.amend.ConfirmAmendmentController.onPageLoadWithId(flowId: UUID)
+POST       /manage-cis-return/amend-monthly-return/confirm-amendments/:flowId   controllers.amend.ConfirmAmendmentController.onSubmitWithId(flowId: UUID)
+
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
+
+# Multi-tab
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId: UUID)
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)

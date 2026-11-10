@@ -40,6 +40,7 @@ import utils.TypeUtils.toFuture
 import utils.Utils.toBigDecimal
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class WhatDoYouWantToAmendStandardController @Inject() (
@@ -50,6 +51,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  multiTabAction: MultiTabAction,
   formProvider: WhatDoYouWantToAmendStandardFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendStandardView
@@ -172,4 +174,126 @@ class WhatDoYouWantToAmendStandardController @Inject() (
           } yield result
       )
   }
+
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+
+      val id           = flowId.toString
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(id)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      val formAction = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
+
+      Ok(view(preparedForm, formAction))
+    }
+
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      val id                         = flowId.toString
+      val formAction                 = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
+          value =>
+            val requiredAnswers = for {
+              cisId   <- request.userAnswers.get(CisIdPage(id))
+              taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(id))
+            } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+            for {
+              (cisId, month, year)     <- requiredAnswers.toFuture
+              monthlyReturn            <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+                                            GetMonthlyReturnForEditRequest(
+                                              cisId,
+                                              taxMonth = month,
+                                              taxYear = year,
+                                              isAmendment = true
+                                            )
+                                          )
+              itemsAndSubcontractors    = monthlyReturn.subcontractors
+                                            .map { subcontractor =>
+                                              val item = monthlyReturn.monthlyReturnItems
+                                                .find(_.itemResourceReference == subcontractor.subbieResourceRef)
+                                              (subcontractor, item)
+                                            }
+                                            .collect { case (subcontractor, Some(item)) =>
+                                              (subcontractor, item)
+                                            }
+              preselectedSubcontractors = itemsAndSubcontractors
+                                            .map((sub, item) =>
+                                              SelectedSubcontractor(
+                                                id = sub.subcontractorId,
+                                                name = sub.displayName.getOrElse("No name provided"),
+                                                totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                                costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                                totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                              )
+                                            )
+                                            .zipWithIndex
+                                            .map(x => (x._2 + 1, x._1))
+                                            .toMap
+
+              ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(id), value).toFuture
+              ua2    <- ua1.set(SelectedSubcontractorPage.all(Some(id)), preselectedSubcontractors).toFuture
+              _      <- sessionRepository.set(ua2)
+              result <-
+                value match {
+                  case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
+                    Future
+                      .successful(
+                        Redirect(controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoad())
+                      )
+
+                  case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
+                      if preselectedSubcontractors.isEmpty =>
+                    Future.successful(
+                      Redirect(controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoad(NormalMode))
+                    )
+
+                  case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
+                    amendMonthlyReturnService.startStandardAmendment(ua2).flatMap {
+                      case Left(error) =>
+                        logger.error(
+                          s"[WhatDoYouWantToAmendStandard] Failed to start standard amendment: $error"
+                        )
+                        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+                      case Right(_) =>
+                        val subcontractorIds = ua2
+                          .get(SelectedSubcontractorPage.all(Some(id)))
+                          .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
+
+                        for {
+                          ua3 <- Future.fromTry(
+                                   ua2.set(WhichSubcontractorsToAddPage(id), subcontractorIds)
+                                 )
+
+                          ua4 <- Future.fromTry(
+                                   ua3
+                                     .remove(FinalValidationDraftIdPage)
+                                     .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
+                                     .flatMap(
+                                       _.set(
+                                         MonthlyFinalValidationSourcePage,
+                                         MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                                           NormalMode.toString
+                                         )
+                                       )
+                                     )
+                                 )
+
+                          _ <- sessionRepository.set(ua4)
+                        } yield Redirect(
+                          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+                        )
+                    }
+                }
+            } yield result
+        )
+    }
 }

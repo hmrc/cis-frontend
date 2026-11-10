@@ -18,24 +18,27 @@ package controllers.amend
 
 import base.SpecBase
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
-import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
+import models.monthlyreturns.*
+import models.{NormalMode, UserAnswers}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendStandardPage
 import pages.finalvalidations.*
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import play.api.Application
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.{AmendMonthlyReturnService, MonthlyReturnService}
+import services.{AmendMonthlyReturnService, CisTaxpayerService, MonthlyReturnService}
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.concurrent.Future
 
 class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSugar {
@@ -115,6 +118,70 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
     ),
     submission = Nil
   )
+
+  private def scopedAnswers(flowId: UUID): UserAnswers =
+    emptyUserAnswers
+      .set(CisIdPage(flowId.toString), cisId)
+      .success
+      .value
+      .set(DateConfirmPaymentsPage(flowId.toString), taxDate)
+      .success
+      .value
+
+  private def scopedId(flowId: UUID): String =
+    flowId.toString
+
+  private def scopedGetUrl(flowId: UUID): String =
+    routes.WhatDoYouWantToAmendStandardController
+      .onPageLoadWithId(flowId)
+      .url
+
+  private def scopedPostUrl(flowId: UUID): String =
+    routes.WhatDoYouWantToAmendStandardController
+      .onSubmitWithId(flowId)
+      .url
+
+  private def scopedFormAction(flowId: UUID) =
+    Some(
+      routes.WhatDoYouWantToAmendStandardController
+        .onSubmitWithId(flowId)
+    )
+
+  private def scopedApplication(
+    userAnswers: Option[UserAnswers],
+    amendService: AmendMonthlyReturnService = mock[AmendMonthlyReturnService],
+    monthlyReturnService: MonthlyReturnService = mock[MonthlyReturnService],
+    enabled: Boolean = true
+  ): (Application, SessionRepository) = {
+
+    val repository = mockSessionRepository(userAnswers)
+
+    when(repository.set(any[UserAnswers]()))
+      .thenReturn(Future.successful(true))
+
+    val taxpayer = mock[CisTaxpayer]
+
+    when(taxpayer.uniqueId)
+      .thenReturn("1")
+
+    val taxpayerService = mock[CisTaxpayerService]
+
+    when(taxpayerService.findForOrganisation(using any()))
+      .thenReturn(Future.successful(taxpayer))
+
+    val application =
+      applicationBuilder()
+        .configure("features.multi-tab-enabled" -> enabled)
+        .overrides(
+          bind[SessionRepository].toInstance(repository),
+          bind[CisTaxpayerService].toInstance(taxpayerService),
+          bind[AmendMonthlyReturnService].toInstance(amendService),
+          bind[MonthlyReturnService].toInstance(monthlyReturnService)
+        )
+        .build()
+
+    (application, repository)
+  }
 
   "WhatDoYouWantToAmendStandard Controller" - {
 
@@ -379,6 +446,249 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
+      }
+    }
+  }
+
+  "UUID-scoped WhatDoYouWantToAmendStandardController Controller" - {
+
+    "onPageLoadWithId" - {
+      "must return OK and the correct view for a GET" in {
+
+        val flowId = UUID.randomUUID()
+
+        val (application, _) =
+          scopedApplication(
+            userAnswers = Some(scopedAnswers(flowId))
+          )
+
+        running(application) {
+          val request = FakeRequest(GET, scopedGetUrl(flowId))
+
+          val result = route(application, request).value
+
+          val view =
+            application.injector.instanceOf[WhatDoYouWantToAmendStandardView]
+
+          val formAction = Some(
+            routes.WhatDoYouWantToAmendStandardController
+              .onSubmitWithId(flowId)
+          )
+
+          status(result) mustEqual OK
+
+          contentAsString(result) mustEqual
+            view(form, formAction)(
+              request,
+              messages(application)
+            ).toString
+        }
+      }
+
+      "must populate the view correctly on a GET when the scoped question has previously been answered" in {
+
+        val flowId = UUID.randomUUID()
+
+        val userAnswers =
+          scopedAnswers(flowId)
+            .set(
+              WhatDoYouWantToAmendStandardPage(scopedId(flowId)),
+              WhatDoYouWantToAmendStandard.values.head
+            )
+            .success
+            .value
+
+        val (application, _) =
+          scopedApplication(userAnswers = Some(userAnswers))
+
+        running(application) {
+          val request = FakeRequest(GET, scopedGetUrl(flowId))
+
+          val view =
+            application.injector.instanceOf[WhatDoYouWantToAmendStandardView]
+
+          val result = route(application, request).value
+
+          val formAction = Some(
+            routes.WhatDoYouWantToAmendStandardController
+              .onSubmitWithId(flowId)
+          )
+
+          status(result) mustEqual OK
+
+          contentAsString(result) mustEqual
+            view(
+              form.fill(WhatDoYouWantToAmendStandard.values.head),
+              formAction
+            )(
+              request,
+              messages(application)
+            ).toString
+        }
+      }
+    }
+
+    "onSubmitWithId" - {
+
+      "must redirect to Are You Sure You Want To Amend when 'Amend to Nil Return' is submitted" in {
+
+        val flowId = UUID.randomUUID()
+
+        val mockMonthlyReturnService =
+          mock[MonthlyReturnService]
+
+        when(
+          mockMonthlyReturnService
+            .retrieveMonthlyReturnForEditDetails(any())(any())
+        ) thenReturn Future.successful(mockMonthlyReturn)
+
+        val (application, repository) =
+          scopedApplication(
+            userAnswers = Some(scopedAnswers(flowId)),
+            monthlyReturnService = mockMonthlyReturnService
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(POST, scopedPostUrl(flowId))
+              .withFormUrlEncodedBody(
+                (
+                  "value",
+                  WhatDoYouWantToAmendStandard.AmendToNilReturn.toString
+                )
+              )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+
+          redirectLocation(result).value mustEqual
+            routes.AreYouSureYouWantToAmendYesNoController
+              .onPageLoad()
+              .url
+
+          verify(mockMonthlyReturnService)
+            .retrieveMonthlyReturnForEditDetails(any())(any())
+
+          val userAnswersCaptor =
+            ArgumentCaptor.forClass(classOf[UserAnswers])
+
+          verify(repository)
+            .set(userAnswersCaptor.capture())
+
+          val savedAnswers =
+            userAnswersCaptor.getValue
+
+          savedAnswers.get(
+            WhatDoYouWantToAmendStandardPage(scopedId(flowId))
+          ) mustEqual Some(
+            WhatDoYouWantToAmendStandard.AmendToNilReturn
+          )
+        }
+      }
+
+      "must return a Bad Request and errors when invalid data is submitted" in {
+
+        val flowId = UUID.randomUUID()
+
+        val (application, _) =
+          scopedApplication(
+            userAnswers = Some(scopedAnswers(flowId))
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(POST, scopedPostUrl(flowId))
+              .withFormUrlEncodedBody(
+                ("value", "invalid value")
+              )
+
+          val boundForm =
+            form.bind(
+              Map("value" -> "invalid value")
+            )
+
+          val view =
+            application.injector
+              .instanceOf[WhatDoYouWantToAmendStandardView]
+
+          val formAction = Some(
+            routes.WhatDoYouWantToAmendStandardController
+              .onSubmitWithId(flowId)
+          )
+
+          val result =
+            route(application, request).value
+
+          status(result) mustEqual BAD_REQUEST
+
+          contentAsString(result) mustEqual
+            view(
+              boundForm,
+              formAction
+            )(
+              request,
+              messages(application)
+            ).toString
+        }
+      }
+
+      "must redirect to Journey Recovery for a POST if service failed" in {
+
+        val flowId = UUID.randomUUID()
+
+        val mockMonthlyReturnService =
+          mock[MonthlyReturnService]
+
+        val mockAmendMonthlyReturnService =
+          mock[AmendMonthlyReturnService]
+
+        when(
+          mockMonthlyReturnService
+            .retrieveMonthlyReturnForEditDetails(any())(any())
+        ) thenReturn Future.successful(mockMonthlyReturn)
+
+        when(
+          mockAmendMonthlyReturnService
+            .startStandardAmendment(any[UserAnswers]())(any())
+        ) thenReturn Future.successful(
+          Left("Missing amendment details")
+        )
+
+        val (application, _) =
+          scopedApplication(
+            userAnswers = Some(scopedAnswers(flowId)),
+            amendService = mockAmendMonthlyReturnService,
+            monthlyReturnService = mockMonthlyReturnService
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(POST, scopedPostUrl(flowId))
+              .withFormUrlEncodedBody(
+                (
+                  "value",
+                  WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString
+                )
+              )
+
+          val result =
+            route(application, request).value
+
+          println(s"STATUS: ${status(result)}")
+          println(s"REDIRECT: ${redirectLocation(result)}")
+          println(s"BODY: ${contentAsString(result)}")
+
+          status(result) mustEqual SEE_OTHER
+
+          redirectLocation(result).value mustEqual
+            controllers.routes.JourneyRecoveryController
+              .onPageLoad()
+              .url
+
+          verify(mockMonthlyReturnService)
+            .retrieveMonthlyReturnForEditDetails(any())(any())
+        }
       }
     }
   }
