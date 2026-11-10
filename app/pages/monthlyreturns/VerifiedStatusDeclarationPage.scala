@@ -21,7 +21,7 @@ import play.api.libs.json.JsPath
 
 case class VerifiedStatusDeclarationPage(id: String) extends QuestionPage[Boolean] {
 
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath = JsPath \ "amend" \ id \ toString
 
   override def toString: String = "verifiedStatusDeclaration"
 }

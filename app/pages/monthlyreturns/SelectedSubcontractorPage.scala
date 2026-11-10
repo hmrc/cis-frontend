@@ -76,14 +76,14 @@ object SelectedSubcontractorPage {
 }
 
 case class ScopedSelectedSubcontractorPage(id: String, index: Int) extends QuestionPage[SelectedSubcontractor] {
-  override def path: JsPath     = JsPath \ id \ "subcontractors" \ index.toString
+  override def path: JsPath     = JsPath \ "amend" \ id \ "subcontractors" \ index.toString
   override def toString: String = s"subcontractor-$index"
 }
 
 object ScopedSelectedSubcontractorPage {
   def all(id: String): IndexedQuestionPage[SelectedSubcontractor] =
     new IndexedQuestionPage[SelectedSubcontractor] {
-      override def path: JsPath     = JsPath \ id \ "subcontractors"
+      override def path: JsPath     = JsPath \ "amend" \ id \ "subcontractors"
       override def toString: String = "subcontractors"
     }
 

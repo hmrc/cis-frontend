@@ -24,7 +24,7 @@ import scala.util.Try
 
 case class ConfirmationByEmailPage(id: String) extends QuestionPage[Boolean] {
 
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath = JsPath \ "amend" \ id \ toString
 
   override def toString: String = "confirmationByEmail"
 
