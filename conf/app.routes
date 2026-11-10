@@ -17,6 +17,9 @@ GET         /there-is-a-problem                                         controll
 GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
 POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
+GET        /monthly-return/check-your-answers/:flowId                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoadWithId(flowId: UUID)
+POST       /monthly-return/check-your-answers/:flowId                           controllers.monthlyreturns.CheckYourAnswersController.onSubmitWithId(flowId: UUID)
+
 GET         /account/sign-out-survey                                    controllers.auth.AuthController.signOut()
 GET         /account/sign-out                                           controllers.auth.AuthController.signOutNoSurvey()
 GET         /account/signed-out                                         controllers.auth.SignedOutController.onPageLoad()

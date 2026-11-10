@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.Logging
@@ -79,7 +79,8 @@ class EnterYourEmailAddressController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
       val subJourneyId               = flowId.toString
-      val formAction                 = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode)
+      val formAction                 =
+        Some(controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
 
       if (!request.userAnswers.get(ConfirmationByEmailPage(subJourneyId)).contains(true)) {
         Future.successful(
@@ -99,7 +100,7 @@ class EnterYourEmailAddressController @Inject() (
     }
 
   private def getPrepopulationEmailAddress( // TODO DTR-9474: Check if this needs updated with id
-    request: CisIdDataRequest[AnyContent]
+    request: DataRequest[AnyContent]
   )(implicit hc: HeaderCarrier): Future[Option[String]] =
     request.userAnswers.get(CisIdPage) match {
       case Some(cisId) =>
@@ -133,7 +134,8 @@ class EnterYourEmailAddressController @Inject() (
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val formAction   = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode)
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
 
       form
         .bindFromRequest()

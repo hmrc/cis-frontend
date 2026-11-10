@@ -102,6 +102,7 @@ class CheckYourAnswersController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
       val flowIdOpt    = Some(flowId)
+      val formAction = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
       guardCompletedJourney {
         ReturnTypeSummary.returnType(request.userAnswers) match {
@@ -134,7 +135,7 @@ class CheckYourAnswersController @Inject() (
 
             val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
-            Future.successful(Ok(view(returnDetailsList, emailList)))
+            Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
 
           case None =>
             logger.error("[CheckYourAnswersController][onPageLoad] - Missing ReturnTypePage")
