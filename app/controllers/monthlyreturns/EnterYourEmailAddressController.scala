@@ -78,11 +78,13 @@ class EnterYourEmailAddressController @Inject() (
   def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val subJourneyId = flowId.toString
-      val formAction = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode)
+      val subJourneyId               = flowId.toString
+      val formAction                 = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode)
 
       if (!request.userAnswers.get(ConfirmationByEmailPage(subJourneyId)).contains(true)) {
-        Future.successful(Redirect(controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, mode)))
+        Future.successful(
+          Redirect(controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, mode))
+        )
       } else {
         request.userAnswers.get(EnterYourEmailAddressPage(subJourneyId)) match {
           case Some(value) =>
@@ -131,7 +133,7 @@ class EnterYourEmailAddressController @Inject() (
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
-      val formAction = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode)
+      val formAction   = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode)
 
       form
         .bindFromRequest()
