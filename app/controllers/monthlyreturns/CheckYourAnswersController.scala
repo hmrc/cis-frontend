@@ -20,7 +20,7 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.ReturnType
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.SubmissionJourneyCompletedPage
 import play.api.Logging
@@ -104,7 +104,7 @@ class CheckYourAnswersController @Inject() (
       val flowIdOpt    = Some(flowId)
       val formAction   = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
-      guardCompletedJourney {
+      guardCompletedJourneyWithId {
         ReturnTypeSummary.returnType(request.userAnswers) match {
           case Some(returnType) =>
             val returnTypeRows = returnType match {
@@ -138,7 +138,7 @@ class CheckYourAnswersController @Inject() (
             Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
 
           case None =>
-            logger.error("[CheckYourAnswersController][onPageLoad] - Missing ReturnTypePage")
+            logger.error("[CheckYourAnswersController][onPageLoadWithId] - Missing ReturnTypePage")
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
       }
@@ -197,7 +197,7 @@ class CheckYourAnswersController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
 
-      guardCompletedJourney {
+      guardCompletedJourneyWithId {
         request.userAnswers.get(ReturnTypePage(subJourneyId)) match {
           case None =>
             logger.error(
@@ -255,6 +255,28 @@ class CheckYourAnswersController @Inject() (
       case None =>
         logger.error(
           "[CheckYourAnswersController][guardCompletedJourney] - " +
+            "Unable to determine period end from user answers"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case Some(periodEnd) =>
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad())
+          )
+        } else {
+          block
+        }
+    }
+
+  private def guardCompletedJourneyWithId(block: => Future[Result])(implicit
+    request: DataRequest[_]
+  ): Future[Result] =
+    periodEndFromUserAnswers(request.userAnswers) match {
+      case None =>
+        logger.error(
+          "[CheckYourAnswersController][guardCompletedJourneyWithId] - " +
             "Unable to determine period end from user answers"
         )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
