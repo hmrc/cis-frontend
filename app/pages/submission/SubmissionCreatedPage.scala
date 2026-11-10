@@ -22,3 +22,7 @@ import play.api.libs.json.JsPath
 case class SubmissionCreatedPage(period: String) extends QuestionPage[Boolean] {
   override def path: JsPath = JsPath \ "submissionCreated" \ period \ "created"
 }
+
+case class SubmissionCreatedForFlowPage(id: String, period: String) extends QuestionPage[Boolean] {
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ "submissionCreated" \ period \ "created"
+}

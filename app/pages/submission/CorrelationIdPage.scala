@@ -19,6 +19,11 @@ package pages.submission
 import play.api.libs.json.JsPath
 import pages.QuestionPage
 
+case class CorrelationIdPage(id: String) extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "submission" \ "correlationId"
+  override def toString: String = "correlationId"
+}
+
 object CorrelationIdPage extends QuestionPage[String] {
   override def path: JsPath     = JsPath \ "submission" \ "correlationId"
   override def toString: String = "correlationId"

@@ -19,6 +19,11 @@ package pages.submission
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class PollIntervalPage(id: String) extends QuestionPage[Int] {
+  override val path: JsPath     = JsPath \ "monthlyReturn" \ id \ "submission" \ "poll" \ "intervalSeconds"
+  override val toString: String = "submissionPollIntervalSeconds"
+}
+
 object PollIntervalPage extends QuestionPage[Int] {
   override val path: JsPath     = JsPath \ "submission" \ "poll" \ "intervalSeconds"
   override val toString: String = "submissionPollIntervalSeconds"

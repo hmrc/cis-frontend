@@ -28,14 +28,26 @@ class PollIntervalPageSpec extends AnyWordSpec with Matchers {
     "have the correct path" in {
       PollIntervalPage.path mustBe (JsPath \ "submission" \ "poll" \ "intervalSeconds")
     }
+
     "have the correct toString" in {
       PollIntervalPage.toString mustBe "submissionPollIntervalSeconds"
     }
+
     "set, get, and remove a value in UserAnswers" in {
       val ua1 = UserAnswers("test").set(PollIntervalPage, 15).success.value
       ua1.get(PollIntervalPage).value mustBe 15
       val ua2 = ua1.remove(PollIntervalPage).success.value
       ua2.get(PollIntervalPage) mustBe None
+    }
+
+    "have the correct path with id" in {
+      PollIntervalPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submission" \ "poll" \ "intervalSeconds")
+    }
+
+    "have the correct toString with id" in {
+      PollIntervalPage("test-id").toString mustBe "submissionPollIntervalSeconds"
     }
   }
 }

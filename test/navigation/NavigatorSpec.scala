@@ -32,6 +32,9 @@ class NavigatorSpec extends SpecBase {
 
   val navigator = new Navigator
 
+  private def scopedUserAnswers(flowId: UUID): UserAnswers =
+    UserAnswers("id").setOrException(ReturnTypePage(flowId.toString), MonthlyNilReturn)
+
   "Navigator" - {
 
     "in Normal mode" - {
@@ -542,14 +545,14 @@ class NavigatorSpec extends SpecBase {
             flowId,
             DateConfirmPaymentsPage,
             NormalMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController
             .onPageLoadWithId(flowId, NormalMode)
         }
 
         "must go from SubmitInactivityRequestPage to InactivityRequestWarningController when answer is true" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), true)
+          val ua     = scopedUserAnswers(flowId).setOrException(SubmitInactivityRequestPage(flowId.toString), true)
 
           navigator.nextPage(
             flowId,
@@ -562,7 +565,7 @@ class NavigatorSpec extends SpecBase {
 
         "must go from SubmitInactivityRequestPage to ConfirmationByEmailController when answer is false" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), false)
+          val ua     = scopedUserAnswers(flowId).setOrException(SubmitInactivityRequestPage(flowId.toString), false)
 
           navigator.nextPage(
             flowId,
@@ -579,13 +582,13 @@ class NavigatorSpec extends SpecBase {
             flowId,
             SubmitInactivityRequestPage,
             NormalMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
         }
 
         "must go from ConfirmationByEmailPage to EnterYourEmailAddressController when answer is true" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), true)
+          val ua     = scopedUserAnswers(flowId).setOrException(ConfirmationByEmailPage(flowId.toString), true)
 
           navigator.nextPage(
             flowId,
@@ -598,7 +601,7 @@ class NavigatorSpec extends SpecBase {
 
         "must go from ConfirmationByEmailPage to DeclarationController when answer is false" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), false)
+          val ua     = scopedUserAnswers(flowId).setOrException(ConfirmationByEmailPage(flowId.toString), false)
 
           navigator.nextPage(
             flowId,
@@ -615,7 +618,7 @@ class NavigatorSpec extends SpecBase {
             flowId,
             ConfirmationByEmailPage,
             NormalMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
         }
 
@@ -626,7 +629,7 @@ class NavigatorSpec extends SpecBase {
             flowId,
             EnterYourEmailAddressPage,
             NormalMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
         }
 
@@ -637,7 +640,7 @@ class NavigatorSpec extends SpecBase {
             flowId,
             DeclarationPage,
             NormalMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
       }
@@ -651,13 +654,13 @@ class NavigatorSpec extends SpecBase {
             flowId,
             DateConfirmPaymentsPage,
             CheckMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
 
         "must go from SubmitInactivityRequestPage to InactivityRequestWarningController when answer is true" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), true)
+          val ua     = scopedUserAnswers(flowId).setOrException(SubmitInactivityRequestPage(flowId.toString), true)
 
           navigator.nextPage(
             flowId,
@@ -670,7 +673,7 @@ class NavigatorSpec extends SpecBase {
 
         "must go from SubmitInactivityRequestPage to CheckYourAnswersController when answer is false" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage(flowId.toString), false)
+          val ua     = scopedUserAnswers(flowId).setOrException(SubmitInactivityRequestPage(flowId.toString), false)
 
           navigator.nextPage(
             flowId,
@@ -687,13 +690,13 @@ class NavigatorSpec extends SpecBase {
             flowId,
             SubmitInactivityRequestPage,
             CheckMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
         }
 
         "must go from ConfirmationByEmailPage to EnterYourEmailAddressController when answer is true" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), true)
+          val ua     = scopedUserAnswers(flowId).setOrException(ConfirmationByEmailPage(flowId.toString), true)
 
           navigator.nextPage(
             flowId,
@@ -705,7 +708,7 @@ class NavigatorSpec extends SpecBase {
 
         "must go from ConfirmationByEmailPage to CheckYourAnswersController when answer is false" in {
           val flowId = UUID.randomUUID()
-          val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage(flowId.toString), false)
+          val ua     = scopedUserAnswers(flowId).setOrException(ConfirmationByEmailPage(flowId.toString), false)
 
           navigator.nextPage(
             flowId,
@@ -722,7 +725,7 @@ class NavigatorSpec extends SpecBase {
             flowId,
             ConfirmationByEmailPage,
             CheckMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
         }
 
@@ -733,7 +736,7 @@ class NavigatorSpec extends SpecBase {
             flowId,
             EnterYourEmailAddressPage,
             CheckMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
 
@@ -744,12 +747,26 @@ class NavigatorSpec extends SpecBase {
             flowId,
             DeclarationPage,
             CheckMode,
-            UserAnswers("id")
+            scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
       }
 
-      "must go to JourneyRecovery when the page does not exist in the UUID-scoped route map" in {
+      "must go to JourneyRecovery when the UUID-scoped return type is missing" in {
+        val flowId = UUID.randomUUID()
+        val ua     = UserAnswers("id")
+          .setOrException(ReturnTypePage, MonthlyNilReturn)
+          .setOrException(SubmitInactivityRequestPage(flowId.toString), true)
+
+        navigator.nextPage(
+          flowId,
+          SubmitInactivityRequestPage,
+          NormalMode,
+          ua
+        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+      }
+
+      "must use the correct fallback when the page does not exist in the UUID-scoped route map" in {
         val flowId = UUID.randomUUID()
 
         case object UnknownPage extends Page
@@ -758,20 +775,20 @@ class NavigatorSpec extends SpecBase {
           flowId,
           UnknownPage,
           NormalMode,
-          UserAnswers("id")
+          scopedUserAnswers(flowId)
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
 
         navigator.nextPage(
           flowId,
           UnknownPage,
           CheckMode,
-          UserAnswers("id")
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+          scopedUserAnswers(flowId)
+        ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
       }
 
       "must not use legacy SubmitInactivityRequestPage when the scoped answer is missing" in {
         val flowId = UUID.randomUUID()
-        val ua     = UserAnswers("id").setOrException(SubmitInactivityRequestPage, true)
+        val ua     = scopedUserAnswers(flowId).setOrException(SubmitInactivityRequestPage, true)
 
         navigator.nextPage(
           flowId,
@@ -783,7 +800,7 @@ class NavigatorSpec extends SpecBase {
 
       "must not use legacy ConfirmationByEmailPage when the scoped answer is missing" in {
         val flowId = UUID.randomUUID()
-        val ua     = UserAnswers("id").setOrException(ConfirmationByEmailPage, true)
+        val ua     = scopedUserAnswers(flowId).setOrException(ConfirmationByEmailPage, true)
 
         navigator.nextPage(
           flowId,
@@ -797,7 +814,8 @@ class NavigatorSpec extends SpecBase {
         val firstFlowId  = UUID.randomUUID()
         val secondFlowId = UUID.randomUUID()
 
-        val ua = UserAnswers("id")
+        val ua = scopedUserAnswers(firstFlowId)
+          .setOrException(ReturnTypePage(secondFlowId.toString), MonthlyNilReturn)
           .setOrException(SubmitInactivityRequestPage(firstFlowId.toString), true)
           .setOrException(SubmitInactivityRequestPage(secondFlowId.toString), false)
 
@@ -822,7 +840,8 @@ class NavigatorSpec extends SpecBase {
         val firstFlowId  = UUID.randomUUID()
         val secondFlowId = UUID.randomUUID()
 
-        val ua = UserAnswers("id")
+        val ua = scopedUserAnswers(firstFlowId)
+          .setOrException(ReturnTypePage(secondFlowId.toString), MonthlyNilReturn)
           .setOrException(ConfirmationByEmailPage(firstFlowId.toString), true)
           .setOrException(ConfirmationByEmailPage(secondFlowId.toString), false)
 
@@ -846,7 +865,7 @@ class NavigatorSpec extends SpecBase {
         val firstFlowId  = UUID.randomUUID()
         val secondFlowId = UUID.randomUUID()
 
-        val ua = UserAnswers("id")
+        val ua = scopedUserAnswers(secondFlowId)
           .setOrException(SubmitInactivityRequestPage(firstFlowId.toString), true)
           .setOrException(ConfirmationByEmailPage(firstFlowId.toString), true)
 

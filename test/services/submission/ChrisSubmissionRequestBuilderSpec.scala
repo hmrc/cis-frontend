@@ -436,4 +436,122 @@ class ChrisSubmissionRequestBuilderSpec
       req.isResubmission mustBe true
     }
   }
+
+  "ChrisSubmissionRequestBuilder.build with id" should {
+
+    "build MonthlyNilReturn request using ID-scoped answers" in {
+      val builder = new ChrisSubmissionRequestBuilder()
+      val id      = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), ReturnType.MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2025, 9, 1))
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), true)
+        .setOrException(EnterYourEmailAddressPage(id), "  test@test.com  ")
+
+      val req = builder.build(ua, id, mkTaxpayer(), isAgent = false, monthlyReturn, isResubmission = true)
+
+      req.returnType mustBe MonthlyNilReturn
+      req.standard mustBe None
+      req.utr mustBe "3111111125"
+      req.aoReference mustBe "754PT000002240"
+      req.monthYear mustBe "2025-09"
+      req.email mustBe Some("test@test.com")
+      req.informationCorrect mustBe "yes"
+      req.inactivity mustBe "yes"
+      req.isAgent mustBe false
+      req.isResubmission mustBe true
+    }
+
+    "build MonthlyStandardReturn request using ID-scoped answers" in {
+      val builder = new ChrisSubmissionRequestBuilder()
+      val id      = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), ReturnType.MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2025, 9, 1))
+        .setOrException(SubmitInactivityRequestPage(id), false)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(CisIdPage(id), "instance-1")
+        .setOrException(
+          SelectedSubcontractorForFlowPage(id, 0),
+          SelectedSubcontractor(
+            id = subId,
+            name = "A B",
+            totalPaymentsMade = Some(BigDecimal(100)),
+            costOfMaterials = Some(BigDecimal(10)),
+            totalTaxDeducted = Some(BigDecimal(20))
+          )
+        )
+
+      val req = builder.build(ua, id, mkTaxpayer(), isAgent = true, monthlyReturn, isResubmission = false)
+
+      req.returnType mustBe MonthlyStandardReturn
+      req.standard.isDefined mustBe true
+      req.monthYear mustBe "2025-09"
+      req.informationCorrect mustBe "yes"
+      req.inactivity mustBe "no"
+      req.isAgent mustBe true
+    }
+
+    "fail when ID-scoped ReturnTypePage is missing" in {
+      val builder = new ChrisSubmissionRequestBuilder()
+      val id      = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, id, mkTaxpayer(), isAgent = false, monthlyReturn, isResubmission = false)
+      }
+
+      ex.getMessage mustBe "ReturnType missing"
+    }
+
+    "fail when ID-scoped DateConfirmPaymentsPage is missing" in {
+      val builder = new ChrisSubmissionRequestBuilder()
+      val id      = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), ReturnType.MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 9, 1))
+
+      val ex = intercept[RuntimeException] {
+        builder.build(ua, id, mkTaxpayer(), isAgent = false, monthlyReturn, isResubmission = false)
+      }
+
+      ex.getMessage mustBe "Month and year of return missing"
+    }
+
+    "use answers from the correct ID-scoped journey" in {
+      val builder = new ChrisSubmissionRequestBuilder()
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage("first-id"), ReturnType.MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage("first-id"), LocalDate.of(2025, 9, 1))
+        .setOrException(SubmitInactivityRequestPage("first-id"), true)
+        .setOrException(EnterYourEmailAddressPage("first-id"), "first@test.com")
+        .setOrException(ReturnTypePage("second-id"), ReturnType.MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage("second-id"), LocalDate.of(2025, 10, 1))
+        .setOrException(SubmitInactivityRequestPage("second-id"), false)
+        .setOrException(EnterYourEmailAddressPage("second-id"), "second@test.com")
+
+      val firstReq =
+        builder.build(ua, "first-id", mkTaxpayer(), isAgent = false, monthlyReturn, isResubmission = false)
+
+      val secondReq =
+        builder.build(ua, "second-id", mkTaxpayer(), isAgent = false, monthlyReturn, isResubmission = false)
+
+      firstReq.monthYear mustBe "2025-09"
+      firstReq.inactivity mustBe "yes"
+      firstReq.email mustBe Some("first@test.com")
+
+      secondReq.monthYear mustBe "2025-10"
+      secondReq.inactivity mustBe "no"
+      secondReq.email mustBe Some("second@test.com")
+    }
+  }
 }

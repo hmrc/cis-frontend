@@ -19,8 +19,8 @@ package services.submission
 import base.SpecBase
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.UserAnswers
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyNilReturn, MonthlyStandardReturn}
+import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
 import models.monthlyreturns.*
 import models.requests.*
@@ -31,7 +31,7 @@ import org.mockito.Mockito.*
 import org.scalatest.TryValues
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
-import pages.submission.{CorrelationIdPage, CreatedSubmissionIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
+import pages.submission.{CorrelationIdPage, CreatedSubmissionIdForFlowPage, CreatedSubmissionIdPage, LastMessageDatePage, PollIntervalPage, PollUrlPage, ResubmissionIdPage, SubmissionCreatedForFlowPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionStatusTimedOutPage}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.AnyContent
@@ -49,6 +49,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
   implicit val hc: HeaderCarrier     = HeaderCarrier()
   implicit val ec: ExecutionContext  = scala.concurrent.ExecutionContext.global
   given CisIdDataRequest[AnyContent] = CisIdDataRequest(FakeRequest(), userAnswersId, emptyUserAnswers, "123")
+  given DataRequest[AnyContent]      = DataRequest(FakeRequest(), userAnswersId, emptyUserAnswers)
 
   private val utcClock: Clock = Clock.systemUTC()
 
@@ -2387,6 +2388,385 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
     }
   }
 
+  // UUID-scoped submission tests
+  "getOrCreateSubmissionForChris with id" - {
+
+    "reuse the ID-scoped resubmission id without calling the connector" in {
+      val (service, connector, sessionRepository, chrisRequestBuilder) = newScopedService()
+      val id                                                           = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ResubmissionIdPage(id), 13180L)
+        .setOrException(ResubmissionIdPage, 999L)
+
+      service.getOrCreateSubmissionForChris(ua, id).futureValue mustBe ("13180", ua, true)
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+      verifyNoInteractions(chrisRequestBuilder)
+    }
+
+    "reuse only the created submission id for the correct journey" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val ua = scopedUa(id)
+        .setOrException(SubmissionCreatedPage("2025-10"), true)
+        .setOrException(CreatedSubmissionIdPage("2025-10"), "legacy-submission")
+        .setOrException(SubmissionCreatedForFlowPage(id, "2025-10"), true)
+        .setOrException(CreatedSubmissionIdForFlowPage(id, "2025-10"), "scoped-submission")
+
+      service.getOrCreateSubmissionForChris(ua, id).futureValue mustBe ("scoped-submission", ua, false)
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "create a submission when no ID-scoped submission exists" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val ua = scopedUa(id)
+        .setOrException(SubmissionCreatedPage("2025-10"), true)
+        .setOrException(CreatedSubmissionIdPage("2025-10"), "legacy-submission")
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("scoped-submission")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val (submissionId, updated, isResubmission) = service.getOrCreateSubmissionForChris(ua, id).futureValue
+
+      submissionId mustBe "scoped-submission"
+      isResubmission mustBe false
+      updated.get(SubmissionCreatedForFlowPage(id, "2025-10")) mustBe Some(true)
+      updated.get(CreatedSubmissionIdForFlowPage(id, "2025-10")) mustBe Some("scoped-submission")
+      updated.get(CreatedSubmissionIdPage("2025-10")) mustBe Some("legacy-submission")
+
+      verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      verify(sessionRepository).set(updated)
+    }
+  }
+
+  "refreshMonthlyReturnItems with id" - {
+
+    "refresh only the ID-scoped subcontractor items" in {
+      val (service, connector, _, _) = newScopedService()
+      val id                         = "test-id"
+
+      val selected = SelectedSubcontractor(
+        id = 99L,
+        name = "Scoped Subcontractor",
+        totalPaymentsMade = Some(BigDecimal("100")),
+        costOfMaterials = Some(BigDecimal("10")),
+        totalTaxDeducted = Some(BigDecimal("5"))
+      )
+
+      val ua = scopedUa(id, MonthlyStandardReturn)
+        .setOrException(SelectedSubcontractorPage.all(id), Map(1 -> selected))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), selected)
+        .setOrException(SelectedSubcontractorPage(1), selected.copy(id = 123L))
+
+      when(connector.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      service.refreshMonthlyReturnItems(ua, id).futureValue mustBe (())
+
+      val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
+      verify(connector).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
+      captor.getValue.subcontractorId mustBe 99L
+      captor.getValue.instanceId mustBe "CIS-123"
+    }
+
+    "fail without updating the backend when an ID-scoped item cannot be built" in {
+      val (service, connector, _, _) = newScopedService()
+      val id                         = "test-id"
+
+      val incomplete = SelectedSubcontractor(99L, "Incomplete", None, None, None)
+      val ua         = scopedUa(id, MonthlyStandardReturn)
+        .setOrException(SelectedSubcontractorPage.all(id), Map(1 -> incomplete))
+
+      val exception = service.refreshMonthlyReturnItems(ua, id).failed.futureValue
+
+      exception mustBe an[IllegalStateException]
+      exception.getMessage must include("index: 1")
+      verifyNoInteractions(connector)
+    }
+  }
+
+  "create with id" - {
+
+    "build the create request from ID-scoped answers and persist the created submission" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val ua = scopedUa(id, MonthlyAmendedNilReturn)
+        .setOrException(EnterYourEmailAddressPage(id), "scoped@test.com")
+        .setOrException(EnterYourEmailAddressPage, "legacy@test.com")
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val (_, updated) = service.create(ua, id).futureValue
+
+      val captor = ArgumentCaptor.forClass(classOf[CreateSubmissionRequest])
+      verify(connector).createSubmission(captor.capture())(any[HeaderCarrier])
+
+      captor.getValue mustBe CreateSubmissionRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 10,
+        amendment = "Y",
+        emailRecipient = Some("scoped@test.com")
+      )
+      updated.get(SubmissionCreatedForFlowPage(id, "2025-10")) mustBe Some(true)
+      updated.get(CreatedSubmissionIdForFlowPage(id, "2025-10")) mustBe Some("sub-123")
+      updated.get(SubmissionCreatedPage("2025-10")) mustBe None
+    }
+
+    "fail rather than use legacy answers when required scoped details are missing" in {
+      val (service, connector, _, _) = newScopedService()
+
+      val exception = service.create(uaBase, "test-id").failed.futureValue
+
+      exception.getMessage mustBe "Monthly return details missing"
+      verifyNoInteractions(connector)
+    }
+  }
+
+  "submitToChrisAndPersist with id" - {
+
+    "submit the ID-scoped return and persist its submission details" in {
+      val (service, connector, sessionRepository, chrisRequestBuilder) = newScopedService()
+      val id                                                           = "test-id"
+      val ua                                                           = scopedUa(id, MonthlyAmendedNilReturn)
+
+      when(connector.getCisTaxpayer()(any[HeaderCarrier])).thenReturn(Future.successful(taxpayer))
+      stubRetrieveMonthlyReturnForEditDetails(connector)
+
+      val builtRequest = mock(classOf[ChrisSubmissionRequest])
+      when(
+        chrisRequestBuilder.build(
+          any[UserAnswers],
+          eqTo(id),
+          any[CisTaxpayer],
+          eqTo(false),
+          any[GetAllMonthlyReturnDetailsResponse],
+          eqTo(false)
+        )
+      ).thenReturn(builtRequest)
+
+      when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(mkChrisResp()))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      service.submitToChrisAndPersist("sub-123", ua, id, false, false).futureValue mustBe mkChrisResp()
+
+      val editCaptor = ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
+      verify(connector).retrieveMonthlyReturnForEditDetails(editCaptor.capture())(any[HeaderCarrier])
+      editCaptor.getValue mustBe GetMonthlyReturnForEditRequest("CIS-123", 10, 2025, true)
+      verify(connector).submitToChris(eqTo("sub-123"), eqTo(builtRequest))(any[HeaderCarrier])
+
+      val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(uaCaptor.capture())
+      uaCaptor.getValue.get(SubmissionDetailsPage(id)).value.status mustBe "SUBMITTED"
+      uaCaptor.getValue.get(CorrelationIdPage(id)) mustBe Some("CID123")
+      uaCaptor.getValue.get(SubmissionDetailsPage) mustBe None
+    }
+
+    "fail when ID-scoped return details are missing even if legacy answers exist" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      when(connector.getCisTaxpayer()(any[HeaderCarrier])).thenReturn(Future.successful(taxpayer))
+
+      val exception = service.submitToChrisAndPersist("sub-123", uaBase, "test-id", false, false).failed.futureValue
+
+      exception.getMessage mustBe "CIS ID, month or year of return missing"
+      verify(connector, never()).retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+        any[HeaderCarrier]
+      )
+      verifyNoInteractions(sessionRepository)
+    }
+  }
+
+  "updateSubmissionFromChrisResponse with id" - {
+
+    "send an update request using ID-scoped answers" in {
+      val (service, connector, _, _) = newScopedService()
+      val id                         = "test-id"
+
+      val ua = scopedUa(id, MonthlyAmendedNilReturn)
+        .setOrException(EnterYourEmailAddressPage(id), "scoped@test.com")
+        .setOrException(CisIdPage, "legacy-CIS")
+
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+
+      service.updateSubmissionFromChrisResponse("sub-123", ua, id, mkChrisResp()).futureValue mustBe (())
+
+      val captor = ArgumentCaptor.forClass(classOf[UpdateSubmissionRequest])
+      verify(connector).updateSubmission(eqTo("sub-123"), captor.capture())(any[HeaderCarrier])
+
+      captor.getValue.instanceId mustBe "CIS-123"
+      captor.getValue.taxYear mustBe 2025
+      captor.getValue.taxMonth mustBe 10
+      captor.getValue.amendment mustBe "Y"
+      captor.getValue.emailRecipient mustBe Some("scoped@test.com")
+      captor.getValue.submittableStatus mustBe "SUBMITTED"
+    }
+  }
+
+  "getPollInterval with id" - {
+
+    "use the ID-scoped interval or the configured default, never the legacy interval" in {
+      val (service, _, _, _) = newScopedService()
+      val ua                 = UserAnswers("id")
+        .setOrException(PollIntervalPage, 25)
+        .setOrException(PollIntervalPage("first-id"), 5)
+        .setOrException(PollIntervalPage("second-id"), 15)
+
+      service.getPollInterval(ua, "first-id") mustBe 5
+      service.getPollInterval(ua, "second-id") mustBe 15
+      service.getPollInterval(ua, "missing-id") mustBe 10
+    }
+  }
+
+  "checkAndUpdateSubmissionStatusIfAllowed with id" - {
+
+    "skip polling when the ID-scoped last message is too recent" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      val ua = scopedUa("test-id")
+        .setOrException(LastMessageDatePage("test-id"), Instant.now())
+        .setOrException(PollIntervalPage("test-id"), 10)
+        .setOrException(LastMessageDatePage, Instant.now().minusSeconds(60))
+
+      service.checkAndUpdateSubmissionStatusIfAllowed(ua, "test-id").futureValue mustBe PollDecision.Skip
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+  }
+
+  "checkAndUpdateSubmissionStatus with id" - {
+
+    "fail when ID-scoped submission details are missing" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val ua                                         = scopedUa("test-id")
+        .setOrException(
+          SubmissionDetailsPage,
+          SubmissionDetails(
+            id = "legacy-submission",
+            status = "PENDING",
+            irMark = "legacy-ir-mark",
+            submittedAt = LocalDateTime.now()
+          )
+        )
+
+      service.checkAndUpdateSubmissionStatus(ua, "test-id").failed.futureValue.getMessage mustBe
+        "No submission details present"
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "poll and persist only the ID-scoped response details" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val details = SubmissionDetails(
+        id = "sub-123",
+        status = "PENDING",
+        irMark = "IR-MARK-123",
+        submittedAt = LocalDateTime.now().minusSeconds(5)
+      )
+      val ua      = scopedUa(id)
+        .setOrException(SubmissionDetailsPage(id), details)
+        .setOrException(PollUrlPage(id), "old-url")
+
+      when(connector.getSubmissionStatus(any[String], any[String])(any[HeaderCarrier]))
+        .thenReturn(
+          Future.successful(
+            ChrisPollResponse("ACCEPTED", Some("new-url"), Some(30), None, None, None, None)
+          )
+        )
+      when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.unit)
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      service.checkAndUpdateSubmissionStatus(ua, id).futureValue mustBe "ACCEPTED"
+
+      verify(connector).getSubmissionStatus(eqTo("old-url"), eqTo("sub-123"))(any[HeaderCarrier])
+      verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
+
+      val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(uaCaptor.capture())
+
+      uaCaptor.getValue.get(SubmissionDetailsPage(id)).value.status mustBe "ACCEPTED"
+      uaCaptor.getValue.get(PollUrlPage(id)) mustBe Some("new-url")
+      uaCaptor.getValue.get(PollIntervalPage(id)) mustBe Some(30)
+      uaCaptor.getValue.get(SubmissionDetailsPage) mustBe None
+    }
+  }
+
+  "sendSuccessEmail with id" - {
+
+    "send to the ID-scoped email address and persist the sent marker" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val ua = scopedUa(id)
+        .setOrException(
+          SubmissionDetailsPage(id),
+          SubmissionDetails(
+            id = "sub-123",
+            status = "SUBMITTED",
+            irMark = "IR-MARK-123",
+            submittedAt = LocalDateTime.now()
+          )
+        )
+        .setOrException(EnterYourEmailAddressPage(id), "scoped@test.com")
+        .setOrException(EnterYourEmailAddressPage, "legacy@test.com")
+
+      when(
+        connector.sendSuccessfulEmail(any[String], any[SendSuccessEmailRequest])(
+          any[HeaderCarrier],
+          any[ExecutionContext]
+        )
+      ).thenReturn(Future.unit)
+      when(sessionRepository.get(any[String])).thenReturn(Future.successful(Some(ua)))
+      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      val updated = service.sendSuccessEmail(ua, id, "en").futureValue
+
+      val captor = ArgumentCaptor.forClass(classOf[SendSuccessEmailRequest])
+      verify(connector).sendSuccessfulEmail(eqTo("sub-123"), captor.capture())(
+        any[HeaderCarrier],
+        any[ExecutionContext]
+      )
+
+      captor.getValue.email mustBe "scoped@test.com"
+      captor.getValue.year mustBe "2025"
+      captor.getValue.language mustBe "en"
+      updated.get(SuccessEmailSentPage("sub-123")) mustBe Some(true)
+      updated.get(EnterYourEmailAddressPage) mustBe Some("legacy@test.com")
+    }
+  }
+
+  "isAlreadySubmitted with id" - {
+
+    "check the created flag for the requested ID-scoped journey" in {
+      val (service, _, _, _) = newScopedService()
+
+      val ua = scopedUa("first-id")
+        .setOrException(DateConfirmPaymentsPage("second-id"), LocalDate.of(2025, 10, 5))
+        .setOrException(SubmissionCreatedPage("2025-10"), true)
+        .setOrException(SubmissionCreatedForFlowPage("first-id", "2025-10"), true)
+
+      service.isAlreadySubmitted(ua, "first-id") mustBe true
+      service.isAlreadySubmitted(ua, "second-id") mustBe false
+    }
+  }
+
   private def uaWithSelectedSubcontractors(count: Int): UserAnswers =
     (1 to count).foldLeft(
       uaBase
@@ -2412,6 +2792,36 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       ).success
         .value
     }
+
+  private def newScopedService(): (
+    SubmissionService,
+    ConstructionIndustrySchemeConnector,
+    SessionRepository,
+    ChrisSubmissionRequestBuilder
+  ) = {
+    val connector           = mock(classOf[ConstructionIndustrySchemeConnector])
+    val sessionRepository   = mock(classOf[SessionRepository])
+    val chrisRequestBuilder = mock(classOf[ChrisSubmissionRequestBuilder])
+    val appConfig           = new FrontendAppConfig(
+      Configuration(
+        "submission-poll-timeout-seconds"          -> "60",
+        "submission-poll-default-interval-seconds" -> "10"
+      )
+    )
+
+    (
+      mkService(connector, sessionRepository, appConfig, chrisRequestBuilder),
+      connector,
+      sessionRepository,
+      chrisRequestBuilder
+    )
+  }
+
+  private def scopedUa(id: String, returnType: ReturnType = MonthlyNilReturn): UserAnswers =
+    UserAnswers("id")
+      .setOrException(ReturnTypePage(id), returnType)
+      .setOrException(CisIdPage(id), "CIS-123")
+      .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2025, 10, 5))
 
   private def uaBase: UserAnswers =
     emptyUserAnswers

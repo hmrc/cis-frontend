@@ -53,9 +53,21 @@ case class SelectedSubcontractorPage(index: Int) extends QuestionPage[SelectedSu
   override def toString: String = s"subcontractor-$index"
 }
 
+// Multi-tab: Store a selected subcontractor for the ID-scoped journey.
+case class SelectedSubcontractorForFlowPage(id: String, index: Int) extends QuestionPage[SelectedSubcontractor] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString
+  override def toString: String = s"subcontractor-$index"
+}
+
 object SelectedSubcontractorPage {
   def all: IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
     override def path: JsPath     = JsPath \ toString
+    override def toString: String = "subcontractors"
+  }
+
+  // Multi-tab: Retrieve selected subcontractors for the ID-scoped journey.
+  def all(id: String): IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
+    override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ toString
     override def toString: String = "subcontractors"
   }
 

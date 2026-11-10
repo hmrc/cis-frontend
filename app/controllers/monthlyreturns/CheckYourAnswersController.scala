@@ -18,11 +18,11 @@ package controllers.monthlyreturns
 
 import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
-import models.{CheckMode, ReturnType}
+import models.{CheckMode, ReturnType, UserAnswers}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.requests.CisIdDataRequest
 import pages.monthlyreturns.ReturnTypePage
-import pages.submission.SubmissionJourneyCompletedPage
+import pages.submission.*
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
@@ -165,55 +165,131 @@ class CheckYourAnswersController @Inject() (
         }
     }
 
+  // Multi-tab: Guard against submitting an already completed ID-scoped journey.
+  private def guardCompletedJourney(
+    userAnswers: UserAnswers,
+    id: String
+  )(block: => Future[Result]): Future[Result] =
+    periodEndFromUserAnswers(userAnswers, id) match {
+      case None =>
+        logger.error(
+          "[CheckYourAnswersController][guardCompletedJourneyWithId] - " +
+            "Unable to determine period end from ID-scoped user answers"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case Some(periodEnd) =>
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (userAnswers.get(SubmissionJourneyCompletedForFlowPage(id, yearMonthPeriod)).contains(true)) {
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoadWithId(UUID.fromString(id)))
+          )
+        } else {
+          block
+        }
+    }
+
   // Multi-tab: Display answers for the ID-scoped return journey.
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val userAnswers = request.userAnswers
       val id          = flowId.toString
 
-      ReturnTypeSummary.returnType(userAnswers, id) match {
-        case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
-          val returnDetailsList = SummaryListViewModel(
-            rows = Seq(
-              ReturnTypeSummary.row(userAnswers, id),
-              DateConfirmNilPaymentsSummary.row(userAnswers, id),
-              PaymentsToSubcontractorsSummary.row,
-              SubmitInactivityRequestSummary.row(
-                userAnswers,
-                id,
-                routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode)
-              )
-            ).flatten
-          )
+      guardCompletedJourney(userAnswers, id) {
+        ReturnTypeSummary.returnType(userAnswers, id) match {
+          case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
+            val returnDetailsList = SummaryListViewModel(
+              rows = Seq(
+                ReturnTypeSummary.row(userAnswers, id),
+                DateConfirmNilPaymentsSummary.row(userAnswers, id),
+                PaymentsToSubcontractorsSummary.row,
+                SubmitInactivityRequestSummary.row(
+                  userAnswers,
+                  id,
+                  routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode)
+                )
+              ).flatten
+            )
 
-          val emailList = SummaryListViewModel(
-            rows = Seq(
-              ConfirmationByEmailSummary.row(
-                userAnswers,
-                id,
-                routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode)
-              ),
-              EnterYourEmailAddressSummary.row(
-                userAnswers,
-                id,
-                routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
-              )
-            ).flatten
-          )
+            val emailList = SummaryListViewModel(
+              rows = Seq(
+                ConfirmationByEmailSummary.row(
+                  userAnswers,
+                  id,
+                  routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode)
+                ),
+                EnterYourEmailAddressSummary.row(
+                  userAnswers,
+                  id,
+                  routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
+                )
+              ).flatten
+            )
 
-          val formAction = Some(routes.CheckYourAnswersController.onSubmitWithId(flowId))
+            val formAction = Some(routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
-          Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
+            Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
 
-        case _ =>
-          logger.error("[CheckYourAnswersController][onPageLoadWithId] - Missing or unsupported return type")
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          case _ =>
+            logger.error("[CheckYourAnswersController][onPageLoadWithId] - Missing or unsupported return type")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        }
       }
     }
 
-  // Multi-tab: Placeholder until ChRIS submission is implemented.
+  // Multi-tab: Submit the ID-scoped nil return journey.
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      NotImplemented("Multi-tab ChRIS submission is not implemented yet")
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val userAnswers = request.userAnswers
+      val id          = flowId.toString
+
+      guardCompletedJourney(userAnswers, id) {
+        userAnswers.get(ReturnTypePage(id)) match {
+          case None =>
+            logger.error("[CheckYourAnswersController][onSubmitWithId] Missing ReturnTypePage")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Some(_) if !userAnswers.isJourneyComplete(id) =>
+            logger.error(
+              "[CheckYourAnswersController][onSubmitWithId] - journey not complete (isJourneyComplete check failed)"
+            )
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Some(returnType) =>
+            if (submissionService.isAlreadySubmitted(userAnswers, id)) {
+              logger.info("[CheckYourAnswersController][onSubmitWithId] Submission already created")
+              Future.successful(
+                Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoadWithId(flowId))
+              )
+            } else {
+              val updateRequest = UpdateMonthlyReturnRequest.fromUserAnswers(userAnswers, id)
+
+              updateRequest match {
+                case Left(error) =>
+                  logger.error(s"[CheckYourAnswersController][onSubmitWithId] Failed to build update request: $error")
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+                case Right(req) =>
+                  monthlyReturnService
+                    .updateMonthlyReturn(req)
+                    .map { _ =>
+                      logger.info(
+                        s"[CheckYourAnswersController][onSubmitWithId] Successfully updated " +
+                          s"monthly return ($returnType), redirecting to submission"
+                      )
+                      Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId))
+                    }
+                    .recover { case t =>
+                      logger.error(
+                        s"[CheckYourAnswersController][onSubmitWithId] Failed to update " +
+                          s"monthly return ($returnType)",
+                        t
+                      )
+                      Redirect(controllers.routes.SystemErrorController.onPageLoad())
+                    }
+              }
+            }
+        }
+      }
     }
 }

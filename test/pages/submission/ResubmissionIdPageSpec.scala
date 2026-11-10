@@ -47,5 +47,13 @@ class ResubmissionIdPageSpec extends SpecBase {
 
       ua2.get(ResubmissionIdPage) mustBe None
     }
+
+    "have the correct path with id" in {
+      ResubmissionIdPage("test-id").path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submission" \ "resubmissionId")
+    }
+
+    "have the correct toString with id" in {
+      ResubmissionIdPage("test-id").toString mustBe "resubmissionId"
+    }
   }
 }

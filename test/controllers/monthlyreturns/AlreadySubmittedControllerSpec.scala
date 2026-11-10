@@ -17,11 +17,13 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import pages.monthlyreturns.ReturnTypePage
+import pages.monthlyreturns.{CisIdPage, ReturnTypePage}
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import views.html.monthlyreturns.AlreadySubmittedView
+
+import java.util.UUID
 
 class AlreadySubmittedControllerSpec extends SpecBase {
 
@@ -91,6 +93,123 @@ class AlreadySubmittedControllerSpec extends SpecBase {
             val controller = application.injector.instanceOf[AlreadySubmittedController]
 
             val exception = controller.onPageLoad()(request).failed.futureValue
+
+            exception mustBe a[IllegalStateException]
+            exception.getMessage mustBe "ReturnTypePage missing from userAnswers"
+          }
+        }
+
+        // Multi-tab: UUID-scoped journey tests
+        "must return OK and the correct view for a GET for ID-scoped nil return" in {
+          val flowId = UUID.randomUUID()
+          val id     = flowId.toString
+
+          val userAnswer = userAnswersWithCisId
+            .set(CisIdPage(id), "2")
+            .success
+            .value
+            .set(ReturnTypePage, MonthlyStandardReturn)
+            .success
+            .value
+            .set(ReturnTypePage(id), MonthlyNilReturn)
+            .success
+            .value
+
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
+
+          running(application) {
+            val request =
+              FakeRequest(
+                GET,
+                controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoadWithId(flowId).url
+              )
+
+            val result = route(application, request).value
+
+            val view = application.injector.instanceOf[AlreadySubmittedView]
+
+            val expectedCisAccountUrl =
+              if (isAgent) applicationConfig.constructionIndustryAgentAccountUrl + "2"
+              else applicationConfig.constructionIndustryOrgAccountUrl
+
+            status(result) mustEqual OK
+            contentAsString(result) mustEqual view(
+              "monthlyreturns.alreadySubmitted.nilreturn",
+              expectedCisAccountUrl
+            )(
+              request,
+              messages(application)
+            ).toString
+          }
+        }
+
+        "must return OK and the correct view for a GET for ID-scoped standard return" in {
+          val flowId = UUID.randomUUID()
+          val id     = flowId.toString
+
+          val userAnswer = userAnswersWithCisId
+            .set(CisIdPage(id), "2")
+            .success
+            .value
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+            .set(ReturnTypePage(id), MonthlyStandardReturn)
+            .success
+            .value
+
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
+
+          running(application) {
+            val request =
+              FakeRequest(
+                GET,
+                controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoadWithId(flowId).url
+              )
+
+            val result = route(application, request).value
+
+            val view = application.injector.instanceOf[AlreadySubmittedView]
+
+            val expectedCisAccountUrl =
+              if isAgent then applicationConfig.constructionIndustryAgentAccountUrl + "2"
+              else applicationConfig.constructionIndustryOrgAccountUrl
+
+            status(result) mustEqual OK
+            contentAsString(result) mustEqual view(
+              "monthlyreturns.alreadySubmitted",
+              expectedCisAccountUrl
+            )(
+              request,
+              messages(application)
+            ).toString
+          }
+        }
+
+        "throw IllegalStateException when ID-scoped ReturnType is missing" in {
+          val flowId = UUID.randomUUID()
+          val id     = flowId.toString
+
+          val userAnswer = userAnswersWithCisId
+            .set(CisIdPage(id), "2")
+            .success
+            .value
+            .set(ReturnTypePage, MonthlyNilReturn)
+            .success
+            .value
+
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
+
+          running(application) {
+            val request =
+              FakeRequest(
+                GET,
+                controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoadWithId(flowId).url
+              )
+
+            val controller = application.injector.instanceOf[AlreadySubmittedController]
+
+            val exception = controller.onPageLoadWithId(flowId)(request).failed.futureValue
 
             exception mustBe a[IllegalStateException]
             exception.getMessage mustBe "ReturnTypePage missing from userAnswers"

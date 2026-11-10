@@ -16,7 +16,7 @@
 
 package controllers.helpers
 
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import models.{EmployerReference, UserAnswers}
 import pages.agent.AgentClientDataPage
 import pages.monthlyreturns.*
@@ -39,8 +39,16 @@ trait SubmissionViewDataSupport extends Logging {
   protected def emailfromUserAnswers(ua: UserAnswers): Option[String] =
     ua.get(EnterYourEmailAddressPage).map(_.trim).filter(_.nonEmpty)
 
+  // Multi-tab: Retrieve the email address from ID-scoped answers.
+  protected def emailfromUserAnswers(ua: UserAnswers, id: String): Option[String] =
+    ua.get(EnterYourEmailAddressPage(id)).map(_.trim).filter(_.nonEmpty)
+
   protected def periodEndFromUserAnswers(ua: UserAnswers): Option[LocalDate] =
     ua.get(DateConfirmPaymentsPage)
+
+  // Multi-tab: Retrieve the period end from ID-scoped answers.
+  protected def periodEndFromUserAnswers(ua: UserAnswers, id: String): Option[LocalDate] =
+    ua.get(DateConfirmPaymentsPage(id))
 
   protected def employerRefFrom(request: CisIdDataRequest[_]): String = {
     val msg = s"[SubmissionViewDataSupport] employerReference missing for userId=${request.userId}"
@@ -49,6 +57,20 @@ trait SubmissionViewDataSupport extends Logging {
     } else {
       request.userAnswers
         .get(AgentClientDataPage)
+        .filter(_.taxOfficeNumber.nonEmpty)
+        .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
+        .getOrElse(fail(msg))
+    }
+  }
+
+  // Multi-tab: Resolve the employer reference from ID-scoped answers.
+  protected def employerRefFrom(request: DataRequest[_], id: String): String = {
+    val msg = s"[SubmissionViewDataSupport] employerReference missing for userId=${request.userId}"
+    if (!request.isAgent) {
+      request.employerReference.map(formatEmployerRef).getOrElse(fail(msg))
+    } else {
+      request.userAnswers
+        .get(AgentClientDataPage(id))
         .filter(_.taxOfficeNumber.nonEmpty)
         .map(data => formatEmployerRef(EmployerReference(data.taxOfficeNumber, data.taxOfficeReference)))
         .getOrElse(fail(msg))

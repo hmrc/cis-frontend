@@ -33,4 +33,17 @@ class SubmissionJourneyCompletedPageSpec extends SpecBase {
       SubmissionJourneyCompletedPage("2026-08").toString mustBe "submissionJourneyCompleted"
     }
   }
+
+  "SubmissionJourneyCompletedForFlowPage" - {
+
+    "must have the correct path" in {
+      val page = SubmissionJourneyCompletedForFlowPage("test-id", "2026-08")
+
+      page.path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submissionJourneyCompleted" \ "2026-08" \ "completed")
+    }
+
+    "must have the correct toString value" in {
+      SubmissionJourneyCompletedForFlowPage("test-id", "2026-08").toString mustBe "submissionJourneyCompleted"
+    }
+  }
 }

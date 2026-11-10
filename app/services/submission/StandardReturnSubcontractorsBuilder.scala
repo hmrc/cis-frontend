@@ -64,6 +64,61 @@ object StandardReturnSubcontractorsBuilder {
     }
   }
 
+  // Multi-tab: Build subcontractors using ID-scoped answers.
+  def build(
+    ua: UserAnswers,
+    id: String,
+    allSubs: Seq[Subcontractor]
+  ): Seq[ChrisStandardSubcontractor] = {
+
+    val selected: Seq[SelectedSubcontractor] =
+      ua.get(SelectedSubcontractorPage.all(id))
+        .toSeq
+        .flatMap(_.toSeq)
+        .sortBy(_._1)
+        .map(_._2)
+
+    build(selected, allSubs)
+  }
+
+  // Multi-tab: Build standard return subcontractors from the selected journey's answers.
+  def build(
+    selected: Seq[SelectedSubcontractor],
+    allSubs: Seq[Subcontractor]
+  ): Seq[ChrisStandardSubcontractor] = {
+
+    if (selected.isEmpty) throw new RuntimeException("No subcontractors selected for standard return submission")
+
+    val subsById: Map[Long, Subcontractor] = allSubs.map(sub => sub.subcontractorId -> sub).toMap
+
+    selected.map { selectedSub =>
+      val sub = subsById.getOrElse(
+        selectedSub.id,
+        throw new RuntimeException(
+          s"No subcontractor found with id ${selectedSub.id} (selected name='${selectedSub.name}')"
+        )
+      )
+
+      val subType = SubcontractorType.fromString(
+        sub.subcontractorType.getOrElse(throw new RuntimeException("Missing subcontractor type"))
+      )
+
+      ChrisStandardSubcontractor(
+        subcontractorType = subType,
+        name = buildPersonName(sub, subType),
+        tradingName = nonBlank(sub.tradingName),
+        partnershipTradingName = nonBlank(sub.partnershipTradingName),
+        utr = nonBlank(sub.utr),
+        crn = nonBlank(sub.crn),
+        nino = nonBlank(sub.nino),
+        verificationNumber = nonBlank(sub.verificationNumber),
+        totalPayments = selectedSub.totalPaymentsMade,
+        costOfMaterials = selectedSub.costOfMaterials,
+        totalDeducted = selectedSub.totalTaxDeducted
+      )
+    }
+  }
+
   private def buildPersonName(
     sub: Subcontractor,
     subType: SubcontractorType

@@ -197,52 +197,89 @@ class Navigator @Inject() () extends Logging {
         controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 
+  // Multi-tab: Normal mode navigation
+  private def normalRoutesWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+    // common
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, NormalMode, userAnswers)
+
+    // nil return
+    case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
+      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode)
+
+    case (DeclarationPage, _) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    case (ConfirmationByEmailPage, _) =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, NormalMode, userAnswers)
+
+    case (EnterYourEmailAddressPage, _) =>
+      _ => navigatorFromEnterYourEmailAddressPage(flowId, NormalMode)
+
+    // TODO: Add UUID-scoped standard monthly return navigation.
+
+    // TODO: Add UUID-scoped amended monthly return navigation.
+
+    case _ =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad()
+  }
+
+  // Multi-tab: Check mode navigation
+  private def checkRouteMapWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, CheckMode, userAnswers)
+
+    case (ConfirmationByEmailPage, _) =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, CheckMode, userAnswers)
+
+    case (EnterYourEmailAddressPage, _) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    // nil return
+    case (_, MonthlyNilReturn) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    // TODO: Add UUID-scoped standard monthly return check navigation.
+
+    // TODO: Add UUID-scoped amended monthly return check navigation.
+
+    case _ =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad()
+  }
+
   // Multi-tab: Navigate within a UUID-scoped monthly return journey
   def nextPage(
     flowId: UUID,
     page: Page,
     mode: Mode,
     userAnswers: UserAnswers
-  ): Call =
-    (page, mode) match {
-      case (DateConfirmPaymentsPage, NormalMode) =>
-        controllers.monthlyreturns.routes.SubmitInactivityRequestController
-          .onPageLoadWithId(flowId, NormalMode)
+  ): Call = {
+    val id = flowId.toString
 
-      case (DateConfirmPaymentsPage, CheckMode) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
-
-      case (SubmitInactivityRequestPage, _) =>
-        navigatorFromSubmitInactivityRequestPage(flowId, mode, userAnswers)
-
-      case (ConfirmationByEmailPage, _) =>
-        navigatorFromConfirmationByEmailPage(flowId, mode, userAnswers)
-
-      case (EnterYourEmailAddressPage, _) =>
-        navigatorFromEnterYourEmailAddressPage(flowId, mode)
-
-      case (DeclarationPage, _) =>
-        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
-
-      case _ =>
+    userAnswers.get(ReturnTypePage(id)) match {
+      case Some(returnType) =>
+        mode match {
+          case NormalMode => normalRoutesWithId(flowId)(page, returnType)(userAnswers)
+          case CheckMode  => checkRouteMapWithId(flowId)(page, returnType)(userAnswers)
+        }
+      case None             =>
+        logger.error("[Navigator][nextPage] - UUID-scoped ReturnTypePage missing")
         controllers.routes.JourneyRecoveryController.onPageLoad()
     }
+  }
 
   private def navigatorFromSubmitInactivityRequestPage(
     flowId: UUID,
     mode: Mode,
     userAnswers: UserAnswers
   ): Call = {
-
     val id = flowId.toString
 
     (userAnswers.get(SubmitInactivityRequestPage(id)), mode) match {
       case (Some(true), NormalMode)  =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoadWithId(flowId, NormalMode)
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoadWithId(flowId, NormalMode)
       case (Some(true), CheckMode)   =>
-        controllers.monthlyreturns.routes.InactivityRequestWarningController
-          .onPageLoadWithId(flowId, CheckMode)
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoadWithId(flowId, CheckMode)
       case (Some(false), NormalMode) =>
         controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode)
       case (Some(false), CheckMode)  =>

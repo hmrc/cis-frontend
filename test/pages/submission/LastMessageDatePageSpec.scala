@@ -31,5 +31,15 @@ class LastMessageDatePageSpec extends AnyWordSpec with Matchers {
     "have the expected toString value" in {
       LastMessageDatePage.toString mustBe "lastMessageDate"
     }
+
+    "have the expected path with id" in {
+      LastMessageDatePage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submission" \ "poll" \ "lastMessageDate")
+    }
+
+    "have the expected toString value with id" in {
+      LastMessageDatePage("test-id").toString mustBe "lastMessageDate"
+    }
   }
 }

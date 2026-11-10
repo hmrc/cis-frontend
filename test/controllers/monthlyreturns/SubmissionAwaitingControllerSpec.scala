@@ -19,9 +19,11 @@ package controllers.monthlyreturns
 import base.SpecBase
 import config.FrontendAppConfig
 import models.UserAnswers
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.any
 import org.scalatestplus.mockito.MockitoSugar
+import pages.monthlyreturns.CisIdPage
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -29,6 +31,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 import views.html.monthlyreturns.SubmissionAwaitingView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class SubmissionAwaitingControllerSpec extends SpecBase with MockitoSugar {
@@ -147,6 +150,75 @@ class SubmissionAwaitingControllerSpec extends SpecBase with MockitoSugar {
 
           verify(mockMonthlyReturnService, never())
             .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+        }
+      }
+    }
+
+    "UUID-scoped journey" - {
+
+      "must return OK and complete the ID-scoped submission journey" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = userAnswersWithCisId
+          .setOrException(CisIdPage(id), "1")
+
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+        when(mockMonthlyReturnService.completeSubmissionJourney(any[UserAnswers], any[String])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(GET, routes.SubmissionAwaitingController.onPageLoadWithId(flowId).url)
+          val result  = route(application, request).value
+          val view    = application.injector.instanceOf[SubmissionAwaitingView]
+
+          val returnUrl = controllers.monthlyreturns.routes.ManageCisReturnController
+            .onExitWithId(flowId)
+            .url
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(returnUrl)(request, messages(application)).toString
+
+          val idCaptor = ArgumentCaptor.forClass(classOf[String])
+
+          verify(mockMonthlyReturnService)
+            .completeSubmissionJourney(any[UserAnswers], idCaptor.capture())(any[HeaderCarrier])
+
+          idCaptor.getValue mustBe id
+        }
+      }
+
+      "must redirect to Journey Recovery when the flowId is missing" in {
+
+        val flowId = UUID.randomUUID()
+
+        val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(GET, routes.SubmissionAwaitingController.onPageLoadWithId(flowId).url)
+          val result  = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any[UserAnswers], any[String])(any[HeaderCarrier])
         }
       }
     }

@@ -41,5 +41,13 @@ class CorrelationIdPageSpec extends AnyWordSpec with Matchers {
       val ua2 = ua1.remove(CorrelationIdPage).success.value
       ua2.get(CorrelationIdPage) mustBe None
     }
+
+    "have the correct path with id" in {
+      CorrelationIdPage("test-id").path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submission" \ "correlationId")
+    }
+
+    "have the correct toString with id" in {
+      CorrelationIdPage("test-id").toString mustBe "correlationId"
+    }
   }
 }

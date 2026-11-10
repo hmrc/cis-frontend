@@ -46,18 +46,33 @@ GET        /monthly-return/declaration-no-payments-made/continue/:flowId    cont
 GET        /monthly-return/submission-send                              controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
 GET        /monthly-return/submission-send/polling                      controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect
 
+# Multi-tab: Submission sending
+GET        /monthly-return/submission-send/:flowId             controllers.monthlyreturns.SubmissionSendingController.onPageLoadWithId(flowId: UUID)
+GET        /monthly-return/submission-send/polling/:flowId     controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirectWithId(flowId: UUID)
+
 GET        /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onPageLoad
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
 
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit/from-manage  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId: String)
 
+# Multi-tab
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit/:flowId  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadWithId(flowId: UUID)
+
 GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 GET        /monthly-return/submission-in-progress/from-manage           controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadFromManage(cisId: String)
+
+# Multi-tab: Submission awaiting
+GET        /monthly-return/submission-in-progress/:flowId               controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadWithId(flowId: UUID)
 
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
 GET        /monthly-return/already-submitted                            controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
+
+# Multi-tab
+GET        /monthly-return/confirmation/:flowId                         controllers.monthlyreturns.SubmissionSuccessController.onPageLoadWithId(flowId: UUID)
+GET        /monthly-return/confirmation-no-receipt/:flowId              controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoadWithId(flowId: UUID)
+GET        /monthly-return/already-submitted/:flowId                    controllers.monthlyreturns.AlreadySubmittedController.onPageLoadWithId(flowId: UUID)
 
 GET        /page-not-found                                              controllers.PageNotFoundController.onPageLoad()
 GET        /access-denied                                               controllers.AccessDeniedController.onPageLoad()
@@ -209,9 +224,15 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
+# Multi-tab
+GET        /monthly-return/submission-unsuccessful-resubmit/:flowId     controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoadWithId(flowId: UUID)
+
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
+
+# Multi-tab
+GET        /monthly-return/manage-cis-return/:flowId                    controllers.monthlyreturns.ManageCisReturnController.onExitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)
