@@ -18,12 +18,14 @@ package controllers.amend
 
 import base.SpecBase
 import models.{NormalMode, UserAnswers}
+import models.agent.AgentClientData
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.requests.GetMonthlyReturnForEditRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
+import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
@@ -398,6 +400,79 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    "must populate agent client data and reconcile with the client's reference when user is an agent" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+      val mockReconcile   = mock[FormpRdsReconcileService]
+
+      val agentData = AgentClientData("uniqueId", "120", "NF05844", None)
+      val agentUa   = populatedAnswers.setOrException(AgentClientDataPage, agentData)
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(
+        Future.successful(
+          Right(ContinueAmendJourneyResult(populatedAnswers, hasSubcontractors = false, isNilReturn = false))
+        )
+      )
+      when(mockService.populateAgentClientDataIfRequired(any[UserAnswers], any[String], eqTo(true))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(agentUa))
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.successful(()))
+
+      val application = applicationBuilder(isAgent = true, formpRdsReconcileService = mockReconcile)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val res = route(application, FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), eqTo("120"), eqTo("NF05844"))(any[HeaderCarrier])
+        verify(mockSessionRepo).set(agentUa)
+      }
+    }
+
+    "must redirect to JourneyRecovery when agent client data population fails" in {
+      val mockService     = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(
+        Future.successful(
+          Right(ContinueAmendJourneyResult(populatedAnswers, hasSubcontractors = false, isNilReturn = false))
+        )
+      )
+      when(mockService.populateAgentClientDataIfRequired(any[UserAnswers], any[String], eqTo(true))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Agent no longer authorised for client")))
+
+      val application = applicationBuilder(isAgent = true)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val res = route(application, FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        verify(mockSessionRepo, never()).set(any[UserAnswers])
       }
     }
   }
