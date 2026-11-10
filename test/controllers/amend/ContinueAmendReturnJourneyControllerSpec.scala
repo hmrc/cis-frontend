@@ -414,12 +414,12 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
     }
 
     "must populate agent client data and reconcile with the client's reference when user is an agent" in {
-      val mockService = mock[MonthlyReturnService]
+      val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
-      val mockReconcile = mock[FormpRdsReconcileService]
+      val mockReconcile   = mock[FormpRdsReconcileService]
 
       val agentData = AgentClientData("uniqueId", "120", "NF05844", None)
-      val agentUa = populatedAnswers.setOrException(AgentClientDataPage, agentData)
+      val agentUa   = populatedAnswers.setOrException(AgentClientDataPage, agentData)
 
       when(
         mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
@@ -455,7 +455,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
     }
 
     "must redirect to JourneyRecovery when agent client data population fails" in {
-      val mockService = mock[MonthlyReturnService]
+      val mockService     = mock[MonthlyReturnService]
       val mockSessionRepo = mock[SessionRepository]
 
       when(
