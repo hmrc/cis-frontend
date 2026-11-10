@@ -27,7 +27,7 @@ import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.WhatDoYouWantToAmendStandardPage
 import pages.finalvalidations.*
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -251,6 +251,94 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         savedAnswers.get(MonthlyFinalValidationSourcePage) mustEqual Some(
           MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
         )
+      }
+    }
+
+    "must preselect an existing item using its own subcontractorId when its resource reference matches no subcontractor" in {
+
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn
+        Future.successful(
+          mockMonthlyReturn.copy(
+            monthlyReturnItems = mockMonthlyReturn.monthlyReturnItems.map(_.copy(itemResourceReference = Some(999L)))
+          )
+        )
+      when(mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers]())(any())) thenReturn
+        Future.successful(Right(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(baseAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+          .onPageLoad(NormalMode)
+          .url
+
+        val userAnswersCaptor = org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository, times(2)).set(userAnswersCaptor.capture())
+
+        val selected = userAnswersCaptor.getAllValues.get(0).get(SelectedSubcontractorPage.all).value
+        selected.values.map(_.id).toSeq mustEqual Seq(1L)
+        selected.values.head.totalPaymentsMade mustEqual Some(BigDecimal("100.00"))
+      }
+    }
+
+    "must not match a subcontractor without a resource reference to an item without one" in {
+
+      val mockSessionRepository    = mock[SessionRepository]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn
+        Future.successful(
+          mockMonthlyReturn.copy(
+            subcontractors = mockMonthlyReturn.subcontractors.map(_.copy(subbieResourceRef = None)),
+            monthlyReturnItems = mockMonthlyReturn.monthlyReturnItems
+              .map(_.copy(itemResourceReference = None, subcontractorId = None))
+          )
+        )
+
+      val application =
+        applicationBuilder(userAnswers = Some(baseAnswers))
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, whatDoYouWantToAmendStandardRoute)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.amend.routes.WhichSubcontractorsToAddController
+          .onPageLoad(NormalMode)
+          .url
+
+        val userAnswersCaptor = org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(userAnswersCaptor.capture())
+
+        userAnswersCaptor.getValue.get(SelectedSubcontractorPage.all).value mustBe empty
       }
     }
 

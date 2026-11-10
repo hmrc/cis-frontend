@@ -93,28 +93,44 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                             isAmendment = true
                                           )
                                         )
-            itemsAndSubcontractors    = monthlyReturn.subcontractors
-                                          .map { subcontractor =>
-                                            val item = monthlyReturn.monthlyReturnItems
-                                              .find(_.itemResourceReference == subcontractor.subbieResourceRef)
-                                            (subcontractor, item)
+            // Preselect from the items already on the return, so no existing item can silently drop out of the selection
+            subcontractorsByRef       = monthlyReturn.subcontractors
+                                          .flatMap(sub => sub.subbieResourceRef.map(_ -> sub))
+                                          .toMap
+            subcontractorsById        = monthlyReturn.subcontractors.map(sub => sub.subcontractorId -> sub).toMap
+            itemsWithSubcontractor    = monthlyReturn.monthlyReturnItems.map { item =>
+                                          val sub = item.itemResourceReference
+                                            .flatMap(subcontractorsByRef.get)
+                                            .orElse(item.subcontractorId.flatMap(subcontractorsById.get))
+                                          (item, sub)
+                                        }
+            preselectedSubcontractors = itemsWithSubcontractor
+                                          .flatMap { case (item, sub) =>
+                                            sub.map(_.subcontractorId).orElse(item.subcontractorId).map { id =>
+                                              SelectedSubcontractor(
+                                                id = id,
+                                                name = sub
+                                                  .flatMap(_.displayName)
+                                                  .orElse(item.subcontractorName)
+                                                  .getOrElse("No name provided"),
+                                                totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                                costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                                totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                              )
+                                            }
                                           }
-                                          .collect { case (subcontractor, Some(item)) =>
-                                            (subcontractor, item)
-                                          }
-            preselectedSubcontractors = itemsAndSubcontractors
-                                          .map((sub, item) =>
-                                            SelectedSubcontractor(
-                                              id = sub.subcontractorId,
-                                              name = sub.displayName.getOrElse("No name provided"),
-                                              totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
-                                              costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
-                                              totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
-                                            )
-                                          )
+                                          .distinctBy(_.id)
                                           .zipWithIndex
                                           .map(x => (x._2 + 1, x._1))
                                           .toMap
+            _                         = {
+              val unresolved = monthlyReturn.monthlyReturnItems.size - preselectedSubcontractors.size
+              if (unresolved > 0)
+                logger.warn(
+                  s"[WhatDoYouWantToAmendStandard] cisId=$cisId, taxYear=$year, taxMonth=$month: " +
+                    s"$unresolved of ${monthlyReturn.monthlyReturnItems.size} existing items could not be matched to a subcontractor for preselection"
+                )
+            }
 
             ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage, value).toFuture
             ua2    <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
