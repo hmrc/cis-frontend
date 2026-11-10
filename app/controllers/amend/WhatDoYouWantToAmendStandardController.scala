@@ -93,7 +93,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                             isAmendment = true
                                           )
                                         )
-            // Preselect from the items already on the return, so no existing item can silently drop out of the selection
+            // Preselect from the items already on the return. An item is only preselected when it resolves to a
+            // subcontractor that still exists; the backend rejects unknown subcontractor ids (e.g. deleted ones)
             subcontractorsByRef       = monthlyReturn.subcontractors
                                           .flatMap(sub => sub.subbieResourceRef.map(_ -> sub))
                                           .toMap
@@ -105,19 +106,16 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                           (item, sub)
                                         }
             preselectedSubcontractors = itemsWithSubcontractor
-                                          .flatMap { case (item, sub) =>
-                                            sub.map(_.subcontractorId).orElse(item.subcontractorId).map { id =>
-                                              SelectedSubcontractor(
-                                                id = id,
-                                                name = sub
-                                                  .flatMap(_.displayName)
-                                                  .orElse(item.subcontractorName)
-                                                  .getOrElse("No name provided"),
-                                                totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
-                                                costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
-                                                totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
-                                              )
-                                            }
+                                          .collect { case (item, Some(sub)) =>
+                                            SelectedSubcontractor(
+                                              id = sub.subcontractorId,
+                                              name = sub.displayName
+                                                .orElse(item.subcontractorName)
+                                                .getOrElse("No name provided"),
+                                              totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                              costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                              totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                            )
                                           }
                                           .distinctBy(_.id)
                                           .zipWithIndex
