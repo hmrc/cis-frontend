@@ -20,13 +20,14 @@ import base.SpecBase
 import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
+import models.ReturnType.MonthlyNilReturn
 import models.{NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -55,6 +56,7 @@ class EnterYourEmailAddressControllerSpec extends SpecBase with MockitoSugar {
 
     emptyUserAnswers
       .setOrException(CisIdPage(id), "test-cis-id")
+      .setOrException(ReturnTypePage(id), MonthlyNilReturn)
       .setOrException(ConfirmationByEmailPage(id), true)
   }
 

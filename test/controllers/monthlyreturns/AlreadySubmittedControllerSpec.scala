@@ -115,7 +115,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
             .success
             .value
 
-          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent)
+            .configure("features.multi-tab-enabled" -> true)
+            .build()
 
           running(application) {
             val request =
@@ -158,7 +160,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
             .success
             .value
 
-          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent)
+            .configure("features.multi-tab-enabled" -> true)
+            .build()
 
           running(application) {
             val request =
@@ -198,7 +202,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
             .success
             .value
 
-          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent).build()
+          val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent)
+            .configure("features.multi-tab-enabled" -> true)
+            .build()
 
           running(application) {
             val request =

@@ -20,13 +20,14 @@ import base.SpecBase
 import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
+import models.ReturnType.MonthlyNilReturn
 import models.{CheckMode, NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage, ReturnTypePage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -48,7 +49,9 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
     controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
 
   private def scopedUserAnswers(flowId: UUID): UserAnswers =
-    emptyUserAnswers.setOrException(CisIdPage(flowId.toString), "test-cis-id")
+    emptyUserAnswers
+      .setOrException(CisIdPage(flowId.toString), "test-cis-id")
+      .setOrException(ReturnTypePage(flowId.toString), MonthlyNilReturn)
 
   "ConfirmationByEmail Controller" - {
 

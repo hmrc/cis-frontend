@@ -20,12 +20,13 @@ import base.SpecBase
 import config.FrontendAppConfig
 import models.monthlyreturns.Declaration
 import models.{NormalMode, UserAnswers}
+import models.ReturnType.MonthlyNilReturn
 import navigation.Navigator
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, DeclarationPage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -45,7 +46,9 @@ class DeclarationControllerSpec extends SpecBase with MockitoSugar {
   lazy val submitRoute: String      = routes.DeclarationController.onSubmit().url
 
   private def scopedUserAnswers(flowId: UUID): UserAnswers =
-    emptyUserAnswers.setOrException(CisIdPage(flowId.toString), "test-cis-id")
+    emptyUserAnswers
+      .setOrException(CisIdPage(flowId.toString), "test-cis-id")
+      .setOrException(ReturnTypePage(flowId.toString), MonthlyNilReturn)
 
   "Declaration Controller" - {
 
