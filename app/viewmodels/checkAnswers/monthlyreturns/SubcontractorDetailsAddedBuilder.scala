@@ -23,7 +23,7 @@ import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontract
 
 object SubcontractorDetailsAddedBuilder {
 
-  private def selectedSubcontractors(id: Option[String], ua: UserAnswers): Map[Int, SelectedSubcontractor] =
+  private def selectedSubcontractors(ua: UserAnswers, id: Option[String]): Map[Int, SelectedSubcontractor] =
     ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
 
   private def detailsAdded(sub: SelectedSubcontractor): Boolean =
@@ -37,12 +37,15 @@ object SubcontractorDetailsAddedBuilder {
     }
 
   def build(ua: UserAnswers, id: Option[String] = None): Option[SubcontractorDetailsAddedViewModel] = {
-    val isAmendment                =
-      ua.get(AmendmentDetailsPage(id)).isDefined
-    val subcontractorByIndex       = selectedSubcontractors(id, ua)
-    val originalSubcontractorCount = ua.get(
-      OriginalSubcontractorCountPage(id)
-    )
+    val isAmendment                = id match {
+      case Some(value) => ua.get(AmendmentDetailsPage(value)).isDefined
+      case None        => ua.get(AmendmentDetailsPage).isDefined
+    }
+    val subcontractorByIndex       = selectedSubcontractors(ua, id)
+    val originalSubcontractorCount = id match {
+      case Some(value) => ua.get(OriginalSubcontractorCountPage(value))
+      case None        => ua.get(OriginalSubcontractorCountPage)
+    }
     val indexes                    = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {

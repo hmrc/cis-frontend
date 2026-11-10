@@ -91,7 +91,7 @@ class EnterYourEmailAddressController @Inject() (
           case Some(value) =>
             Future.successful(Ok(view(form.fill(value), mode, formAction)))
           case None        =>
-            getPrepopulationEmailAddress(request).map {
+            getPrepopulationEmailAddressWithId(flowId, request).map {
               case Some(email) => Ok(view(form.fill(email), mode, formAction))
               case None        => Ok(view(form, mode, formAction))
             }
@@ -99,8 +99,8 @@ class EnterYourEmailAddressController @Inject() (
       }
     }
 
-  private def getPrepopulationEmailAddress( // TODO DTR-9474: Check if this needs updated with id
-    request: DataRequest[AnyContent]
+  private def getPrepopulationEmailAddress(
+    request: CisIdDataRequest[AnyContent]
   )(implicit hc: HeaderCarrier): Future[Option[String]] =
     request.userAnswers.get(CisIdPage) match {
       case Some(cisId) =>
@@ -116,6 +116,26 @@ class EnterYourEmailAddressController @Inject() (
       case None        =>
         Future.successful(None)
     }
+
+  private def getPrepopulationEmailAddressWithId(flowId: UUID, request: DataRequest[AnyContent])(implicit
+    hc: HeaderCarrier
+  ): Future[Option[String]] = {
+    val subJourneyId = flowId.toString
+    request.userAnswers.get(CisIdPage(subJourneyId)) match {
+      case Some(cisId) =>
+        monthlyReturnService
+          .getSchemeEmail(cisId)
+          .recover { case ex =>
+            logger.warn(
+              s"[EnterYourEmailAddressController][getPrepopulationEmailAddressWithId] - email lookup failed, cisId: $cisId",
+              ex
+            )
+            None
+          }
+      case None        =>
+        Future.successful(None)
+    }
+  }
 
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>

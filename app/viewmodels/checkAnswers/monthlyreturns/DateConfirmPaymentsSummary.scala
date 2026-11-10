@@ -29,10 +29,7 @@ import java.util.UUID
 object DateConfirmPaymentsSummary {
 
   def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId match {
-      case Some(id) => id.toString
-      case None     => None
-    }
+    val subJourneyId = flowId.toString
 
     answers.get(DateConfirmPaymentsPage(subJourneyId)).map { answer =>
       val returnPeriodText = answer.format(DateTimeFormats.dateTimeFormat()(messages.lang))

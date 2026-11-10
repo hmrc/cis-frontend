@@ -102,7 +102,7 @@ class CheckYourAnswersController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
       val flowIdOpt    = Some(flowId)
-      val formAction = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
+      val formAction   = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
       guardCompletedJourney {
         ReturnTypeSummary.returnType(request.userAnswers) match {

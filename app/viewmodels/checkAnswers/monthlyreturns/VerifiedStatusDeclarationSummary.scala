@@ -28,10 +28,7 @@ import java.util.UUID
 object VerifiedStatusDeclarationSummary {
 
   def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId match {
-      case Some(id) => id.toString
-      case None     => None
-    }
+    val subJourneyId = flowId.toString
     val url          = flowId match {
       case Some(id) =>
         controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoadWithId(id, CheckMode).url

@@ -27,10 +27,7 @@ import java.util.UUID
 object NumberOfSubcontractorPaymentsMadeSummary {
 
   def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId match {
-      case Some(id) => id.toString
-      case None     => None
-    }
+    val subJourneyId = flowId.toString
     val url          = flowId match {
       case Some(id) =>
         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(id, CheckMode).url
@@ -38,7 +35,7 @@ object NumberOfSubcontractorPaymentsMadeSummary {
         controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
     }
 
-    SubcontractorDetailsAddedBuilder.build(answers, subJourneyId).map { addedSubcontractors =>
+    SubcontractorDetailsAddedBuilder.build(answers, Some(subJourneyId)).map { addedSubcontractors =>
       SummaryListRowViewModel(
         key = "monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel",
         value = ValueViewModel(addedSubcontractors.rows.size.toString),
