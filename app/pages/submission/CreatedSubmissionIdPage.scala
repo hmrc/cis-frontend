@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package models
+package pages.submission
 
-import models.requests.CisPath
+import pages.QuestionPage
+import play.api.libs.json.JsPath
 
-import java.util.UUID
-
-object JourneyScope {
-  def subJourneyId(cisPath: CisPath, flowId: UUID): String =
-    s"${cisPath.toUrl}_$flowId"
+/** The id of the submission created for a period, kept so a retry reuses it rather than creating a second one. */
+case class CreatedSubmissionIdPage(period: String) extends QuestionPage[String] {
+  override def path: JsPath = JsPath \ "submissionCreated" \ period \ "submissionId"
 }

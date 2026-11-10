@@ -21,12 +21,12 @@ import pages.QuestionPage
 
 case class CisIdPage(id: String) extends QuestionPage[String] {
 
-  override def path: JsPath = JsPath \ id \ toString
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
 
   override def toString: String = "cisId"
 }
 
-case object CisIdPage extends QuestionPage[String] {
+object CisIdPage extends QuestionPage[String] {
 
   override def path: JsPath = JsPath \ toString
 

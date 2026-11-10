@@ -392,6 +392,7 @@ class UserAnswerUtilsSpec extends SpecBase {
         .set(SubmissionJourneyCompletedPage("2025-01"), true)
         .get
         .set(SubmissionCreatedPage("2025-01"), true)
+        .flatMap(_.set(CreatedSubmissionIdPage("2025-01"), "sub-123"))
         .get
 
       val result = ua.clearMonthlyReturnJourney
@@ -432,6 +433,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(SuccessEmailSentPage(submissionId)) mustBe None
       cleared.get(SubmissionJourneyCompletedPage("2025-01")) mustBe None
       cleared.get(SubmissionCreatedPage("2025-01")) mustBe None
+      cleared.get(CreatedSubmissionIdPage("2025-01")) mustBe None
       cleared.get(SubmissionConfirmationCachePage) mustBe None
     }
 

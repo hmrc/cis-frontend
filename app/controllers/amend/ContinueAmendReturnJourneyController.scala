@@ -75,7 +75,7 @@ class ContinueAmendReturnJourneyController @Inject() (
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
           case Right(result) =>
-            val redirect    =
+            val redirect      =
               (queryParams.isOriginalNilReturn.getOrElse(false), result.isNilReturn, result.hasSubcontractors) match {
                 case (_, false, true)  =>
                   Redirect(
@@ -88,32 +88,44 @@ class ContinueAmendReturnJourneyController @Inject() (
                 case _                 =>
                   Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad())
               }
-            val employerRef =
+            val withAgentData =
               if (request.isAgent)
-                result.userAnswers
-                  .get(AgentClientDataPage)
-                  .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
-              else
-                request.employerReference
-
-            val answersWithSource =
-              if (!result.isNilReturn && result.hasSubcontractors) {
-                result.userAnswers.set(
-                  MonthlyFinalValidationSourcePage,
-                  MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
-                    NormalMode.toString
-                  )
+                monthlyReturnService.populateAgentClientDataIfRequired(
+                  ua = result.userAnswers,
+                  userId = request.userId,
+                  isAgent = true
                 )
-              } else {
-                Success(result.userAnswers)
-              }
+              else Future.successful(result.userAnswers)
 
-            Future
-              .fromTry(answersWithSource)
-              .flatMap { withSource =>
-                sessionRepository.set(withSource).flatMap { _ =>
-                  reconcileFormpRds(queryParams.instanceId, employerRef, redirect)
-                }
+            withAgentData
+              .flatMap { uaWithAgentData =>
+                val employerRef =
+                  if (request.isAgent)
+                    uaWithAgentData
+                      .get(AgentClientDataPage)
+                      .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
+                  else
+                    request.employerReference
+
+                val answersWithSource =
+                  if (!result.isNilReturn && result.hasSubcontractors) {
+                    uaWithAgentData.set(
+                      MonthlyFinalValidationSourcePage,
+                      MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
+                        NormalMode.toString
+                      )
+                    )
+                  } else {
+                    Success(uaWithAgentData)
+                  }
+
+                Future
+                  .fromTry(answersWithSource)
+                  .flatMap { withSource =>
+                    sessionRepository.set(withSource).flatMap { _ =>
+                      reconcileFormpRds(queryParams.instanceId, employerRef, redirect)
+                    }
+                  }
               }
               .recover { case NonFatal(ex) =>
                 logger.error("[ContinueAmendReturnJourneyController] Failed to save resumed amendment journey", ex)
@@ -147,7 +159,12 @@ class ContinueAmendReturnJourneyController @Inject() (
           }
       case None      =>
         logger.warn("[ContinueAmendReturnJourneyController] Missing employer reference for FormP/RDS reconciliation")
-        Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+        Future.successful(
+          Redirect(
+            if (request.isAgent) controllers.routes.UnauthorisedAgentAffinityController.onPageLoad()
+            else controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()
+          )
+        )
     }
 
   def continueAmendReturnJourneyWithCisPath(

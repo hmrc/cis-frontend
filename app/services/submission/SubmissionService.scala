@@ -18,7 +18,7 @@ package services.submission
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import models.monthlyreturns.CisTaxpayer
+import models.monthlyreturns.{CisTaxpayer, UpdateMonthlyReturnItemRequest}
 import models.requests.*
 import models.submission.*
 import models.UserAnswers
@@ -31,6 +31,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.mvc.AnyContent
 import repositories.SessionRepository
+import services.MonthlyReturnItemPayloadBuilder
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.DateTimeFormats
 import utils.TypeUtils.*
@@ -39,6 +40,7 @@ import java.time.{Clock, Instant, LocalDateTime, YearMonth, ZoneId, ZoneOffset, 
 import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Success, Try}
 
 @Singleton
@@ -47,6 +49,7 @@ class SubmissionService @Inject() (
   appConfig: FrontendAppConfig,
   sessionRepository: SessionRepository,
   chrisRequestBuilder: ChrisSubmissionRequestBuilder,
+  itemPayloadBuilder: MonthlyReturnItemPayloadBuilder,
   clock: Clock
 )(implicit ec: ExecutionContext)
     extends Logging {
@@ -60,16 +63,85 @@ class SubmissionService @Inject() (
       case Some(resubmissionId) =>
         Future.successful((resubmissionId.toString, ua, true))
       case None                 =>
-        create(ua).map { case (created, updatedUa) =>
-          (created.submissionId, updatedUa, false)
+        existingCreatedSubmissionId(ua) match {
+          case Some(submissionId) =>
+            // The submission was already created, so this is a revisit or a retry. The return has left STARTED, so
+            // item updates would be rejected, and a second create would break the unique submission key. Reuse it.
+            logger.warn(
+              s"[SubmissionService][getOrCreateSubmissionForChris] - Submission already created, reusing submissionId: $submissionId"
+            )
+            Future.successful((submissionId, ua, false))
+          case None               =>
+            refreshMonthlyReturnItems(ua)
+              .flatMap(_ => create(ua))
+              .map { case (created, updatedUa) =>
+                (created.submissionId, updatedUa, false)
+              }
         }
     }
+
+  private def existingCreatedSubmissionId(ua: UserAnswers): Option[String] = {
+    val period = selectedYearMonth(ua).toString
+    if (ua.get(SubmissionCreatedPage(period)).contains(true)) ua.get(CreatedSubmissionIdPage(period)) else None
+  }
+
+  /** Writes the subcontractor name and verification number onto every stored monthly return item before the return is
+    * submitted.
+    *
+    * A return started in the legacy service stores payment details on its items but not the name or verification
+    * number, which the legacy service only adds at submission. When such a return is continued in this service, the
+    * check/change answers pages (the only places the item update is called) can be skipped, so the stored items would
+    * stay blank. The submission sent to ChRIS is built from the user's answers and is not affected, but the stored
+    * items feed the submitted return details page. Rewriting each item here, using the same payload as those pages,
+    * covers every route to submission.
+    *
+    * Items are refreshed one at a time, not in parallel. Each backend item update also bumps a version counter on the
+    * scheme and fails with a lost-update error if another update to the same scheme overlaps it, which would roll back
+    * the item's name. Running the updates concurrently would therefore lose all but one of them.
+    *
+    * Every item must be refreshed. A failed update is retried once; if it fails again, or the payload cannot be built,
+    * the returned future fails and no submission is created, so a return is never submitted with blank item names.
+    * Stopping at the first such item also avoids making hundreds of calls that would all fail when the backend rejects
+    * the return (its stored procedure only accepts a STARTED return).
+    */
+  def refreshMonthlyReturnItems(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val indexes: Seq[Int] =
+      ua.get(SelectedSubcontractorPage.all).map(_.keys.toSeq.sorted).getOrElse(Seq.empty)
+
+    indexes.foldLeft(Future.unit)((previous, index) => previous.flatMap(_ => refreshMonthlyReturnItem(ua, index)))
+  }
+
+  private def refreshMonthlyReturnItem(ua: UserAnswers, index: Int)(implicit hc: HeaderCarrier): Future[Unit] =
+    itemPayloadBuilder.build(ua, index) match {
+      case None          =>
+        val message = s"Could not build item payload, so the item was not refreshed, index: $index"
+        logger.error(s"[SubmissionService][refreshMonthlyReturnItem] - $message")
+        Future.failed(new IllegalStateException(message))
+      case Some(payload) =>
+        cisConnector.updateMonthlyReturnItem(payload).recoverWith { case NonFatal(first) =>
+          logger.warn(
+            s"[SubmissionService][refreshMonthlyReturnItem] - Item update failed, retrying once. ${describe(payload, index)}, message: ${first.getMessage}"
+          )
+          cisConnector.updateMonthlyReturnItem(payload).recoverWith { case NonFatal(second) =>
+            val message =
+              s"Failed to refresh monthly return item. ${describe(payload, index)}, message: ${second.getMessage}"
+            logger.error(s"[SubmissionService][refreshMonthlyReturnItem] - $message")
+            Future.failed(new IllegalStateException(message, second))
+          }
+        }
+    }
+
+  private def describe(payload: UpdateMonthlyReturnItemRequest, index: Int): String =
+    s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
+      s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}"
 
   def create(ua: UserAnswers)(implicit hc: HeaderCarrier): Future[(CreateSubmissionResponse, UserAnswers)] =
     for {
       req            <- buildCreateRequest(ua)
       response       <- cisConnector.createSubmission(req)
-      updatedAnswers <- Future.fromTry(ua.set(SubmissionCreatedPage(selectedYearMonth(ua).toString), true))
+      period          = selectedYearMonth(ua).toString
+      withCreated    <- Future.fromTry(ua.set(SubmissionCreatedPage(period), true))
+      updatedAnswers <- Future.fromTry(withCreated.set(CreatedSubmissionIdPage(period), response.submissionId))
       _              <- sessionRepository.set(updatedAnswers)
     } yield (response, updatedAnswers)
 

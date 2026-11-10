@@ -899,9 +899,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val date  = LocalDate.of(2026, 7, 5)
 
       val ua = UserAnswers("test")
-        .initialiseSubJourney(id)
-        .success
-        .value
         .set(DateConfirmPaymentsPage(id), date)
         .success
         .value
@@ -953,9 +950,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val date  = LocalDate.of(2026, 7, 5)
 
       val ua = UserAnswers("test")
-        .initialiseSubJourney(id)
-        .success
-        .value
         .set(DateConfirmPaymentsPage(id), date)
         .success
         .value
@@ -987,9 +981,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val id    = "org_flow-1"
 
       val ua = UserAnswers("test")
-        .initialiseSubJourney(id)
-        .success
-        .value
 
       val exception = service
         .createNilMonthlyReturn(ua, cisId, id)
@@ -1011,9 +1002,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val date  = LocalDate.of(2026, 7, 5)
 
       val ua = UserAnswers("test")
-        .initialiseSubJourney(id)
-        .success
-        .value
         .set(DateConfirmPaymentsPage(id), date)
         .success
         .value

@@ -26,7 +26,7 @@ class DateConfirmPaymentsPageSpec extends SpecBase {
     "use the scoped JSON path for a journey" in {
       val page = DateConfirmPaymentsPage("org_flow-1")
 
-      page.path mustBe (JsPath \ "org_flow-1" \ "dateConfirmPayments")
+      page.path mustBe (JsPath \ "monthlyReturn" \ "org_flow-1" \ "dateConfirmPayments")
     }
 
     "use different paths for different journeys" in {

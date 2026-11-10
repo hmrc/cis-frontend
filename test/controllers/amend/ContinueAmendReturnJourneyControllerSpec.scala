@@ -17,6 +17,8 @@
 package controllers.amend
 
 import base.SpecBase
+import models.{NormalMode, UserAnswers}
+import models.agent.AgentClientData
 import models.{JourneyScope, NormalMode, UserAnswers}
 import services.{CisTaxpayerService, ContinueAmendJourneyResult, FormpRdsReconcileService, MonthlyReturnService}
 import models.finalvalidation.MonthlyFinalValidationSource
@@ -25,6 +27,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
+import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
@@ -55,92 +58,6 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
     MonthlyFinalValidationSourcePage,
     MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
   )
-
-  private def scopedUrl(
-    cisPath: CisPath = CisOrg,
-    isOriginalNilReturn: Boolean = false,
-    instanceId: String = "CIS-123"
-  ): String =
-    controllers.amend.routes.ContinueAmendReturnJourneyController
-      .continueAmendReturnJourneyWithCisPath(
-        cisPath,
-        ContinueReturnJourneyQueryParams(instanceId, 2025, 1, Some(isOriginalNilReturn))
-      )
-      .url
-
-  private def flowIdFrom(res: Future[play.api.mvc.Result]): UUID =
-    UUID.fromString(redirectLocation(res).value.split("/").last)
-
-  private def tempRedirect(cisPath: CisPath, flowId: UUID): String =
-    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(cisPath, flowId).url
-
-  private def reconcileOk: FormpRdsReconcileService = {
-    val reconcile = mock[FormpRdsReconcileService]
-    when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.unit)
-    reconcile
-  }
-
-  private final class InMemorySession(initial: UserAnswers, failSaveNumber: Option[Int] = None) {
-    val repo: SessionRepository        = mock[SessionRepository]
-    val saves: ListBuffer[UserAnswers] = ListBuffer.empty
-    private var current: UserAnswers   = initial
-    private var attempts: Int          = 0
-
-    when(repo.get(any[String])).thenAnswer((_: InvocationOnMock) => Future.successful(Some(current)))
-    when(repo.set(any[UserAnswers])).thenAnswer { (inv: InvocationOnMock) =>
-      attempts += 1
-      if (failSaveNumber.contains(attempts)) Future.failed(new RuntimeException("Session error"))
-      else {
-        current = inv.getArgument[UserAnswers](0)
-        saves += current
-        Future.successful(true)
-      }
-    }
-
-    def latest: UserAnswers = current
-  }
-
-  private def stubPopulate(service: MonthlyReturnService, hasSubcontractors: Boolean, isNilReturn: Boolean): Unit =
-    when(
-      service.populateUserAnswersForContinueAmendJourney(
-        any[UserAnswers],
-        any[String],
-        any[GetMonthlyReturnForEditRequest]
-      )(any[HeaderCarrier])
-    ).thenAnswer { (inv: InvocationOnMock) =>
-      Future.successful[Either[String, ContinueAmendJourneyResult]](
-        Right(ContinueAmendJourneyResult(inv.getArgument[UserAnswers](0), hasSubcontractors, isNilReturn))
-      )
-    }
-
-  private def scopedApplication(
-    service: MonthlyReturnService,
-    repo: SessionRepository,
-    reconcile: FormpRdsReconcileService = reconcileOk,
-    enabled: Boolean = true,
-    isAgent: Boolean = false,
-    cisId: String = "CIS-123"
-  ): Application = {
-    val taxpayer = mock[CisTaxpayer]
-    when(taxpayer.uniqueId).thenReturn(cisId)
-    when(taxpayer.taxOfficeNumber).thenReturn("123")
-    when(taxpayer.taxOfficeRef).thenReturn("AB456")
-
-    val taxpayerService = mock[CisTaxpayerService]
-    when(taxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
-      .thenReturn(Future.successful(taxpayer))
-    when(taxpayerService.findForAgent(eqTo(cisId))(using any[IdentifierRequest[?]]))
-      .thenReturn(Future.successful(Some(taxpayer)))
-
-    applicationBuilder(isAgent = isAgent, formpRdsReconcileService = reconcile)
-      .configure("features.multi-tab-enabled" -> enabled)
-      .overrides(
-        bind[MonthlyReturnService].toInstance(service),
-        bind[SessionRepository].toInstance(repo),
-        bind[CisTaxpayerService].toInstance(taxpayerService)
-      )
-      .build()
-  }
 
   "ContinueAmendReturnJourneyController" - {
 
@@ -493,6 +410,79 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
         redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    "must populate agent client data and reconcile with the client's reference when user is an agent" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+      val mockReconcile = mock[FormpRdsReconcileService]
+
+      val agentData = AgentClientData("uniqueId", "120", "NF05844", None)
+      val agentUa = populatedAnswers.setOrException(AgentClientDataPage, agentData)
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(
+        Future.successful(
+          Right(ContinueAmendJourneyResult(populatedAnswers, hasSubcontractors = false, isNilReturn = false))
+        )
+      )
+      when(mockService.populateAgentClientDataIfRequired(any[UserAnswers], any[String], eqTo(true))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(agentUa))
+      when(mockSessionRepo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+      when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.successful(()))
+
+      val application = applicationBuilder(isAgent = true, formpRdsReconcileService = mockReconcile)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val res = route(application, FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad().url
+
+        verify(mockReconcile).reconcile(eqTo("CIS-123"), eqTo("120"), eqTo("NF05844"))(any[HeaderCarrier])
+        verify(mockSessionRepo).set(agentUa)
+      }
+    }
+
+    "must redirect to JourneyRecovery when agent client data population fails" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockSessionRepo = mock[SessionRepository]
+
+      when(
+        mockService.populateUserAnswersForContinueAmendJourney(any[UserAnswers], any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(
+        Future.successful(
+          Right(ContinueAmendJourneyResult(populatedAnswers, hasSubcontractors = false, isNilReturn = false))
+        )
+      )
+      when(mockService.populateAgentClientDataIfRequired(any[UserAnswers], any[String], eqTo(true))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Agent no longer authorised for client")))
+
+      val application = applicationBuilder(isAgent = true)
+        .overrides(
+          bind[MonthlyReturnService].toInstance(mockService),
+          bind[SessionRepository].toInstance(mockSessionRepo)
+        )
+        .build()
+
+      running(application) {
+        val res = route(application, FakeRequest(GET, continueAmendReturnJourneyUrl).withBody(AnyContentAsEmpty)).value
+
+        status(res) mustBe SEE_OTHER
+        redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        verify(mockSessionRepo, never()).set(any[UserAnswers])
       }
     }
 

@@ -67,6 +67,11 @@ class SubmissionSendingController @Inject() (
         if (!request.userAnswers.isJourneyComplete) {
           logger.error("[SubmissionSendingController][onPageLoad] - isJourneyComplete check failed")
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+        } else if (alreadySentToChris(request.userAnswers)) {
+          // A reload, back-button return or retry link after the submission was sent. Resume polling rather than
+          // refreshing the items, creating a second submission or sending to ChRIS again.
+          logger.info("[SubmissionSendingController][onPageLoad] - submission already sent to ChRIS, resuming polling")
+          Future.successful(Redirect(controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirect))
         } else
           reconcileFormpRdsBeforeChris.flatMap {
             case Some(redirect) => Future.successful(redirect)
@@ -105,6 +110,10 @@ class SubmissionSendingController @Inject() (
           }
       }
     }
+
+  /** A STARTED status means the attempt did not reach ChRIS, so a retry is allowed. */
+  private def alreadySentToChris(ua: UserAnswers): Boolean =
+    ua.get(SubmissionDetailsPage).exists(details => SubmissionStatus.fromString(details.status) != Started)
 
   private def reconcileFormpRdsBeforeChris(implicit
     request: CisIdDataRequest[_],
