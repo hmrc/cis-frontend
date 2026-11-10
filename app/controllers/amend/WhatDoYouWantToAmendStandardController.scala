@@ -24,7 +24,7 @@ import models.NormalMode
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectedSubcontractor
-import models.requests.{CisPath, GetMonthlyReturnForEditRequest}
+import models.requests.GetMonthlyReturnForEditRequest
 import pages.amend.{WhatDoYouWantToAmendStandardPage, WhichSubcontractorsToAddPage}
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
@@ -51,8 +51,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: WhatDoYouWantToAmendStandardFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendStandardView
@@ -176,31 +175,34 @@ class WhatDoYouWantToAmendStandardController @Inject() (
       )
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
 
-      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(request.subJourneyId)) match {
+      val id           = flowId.toString
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(id)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
-      val formAction = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath, flowId))
+      val formAction = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
 
       Ok(view(preparedForm, formAction))
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val formAction                 = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath, flowId))
+      val id                         = flowId.toString
+      val formAction                 = Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
+
       form
         .bindFromRequest()
         .fold(
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
           value =>
             val requiredAnswers = for {
-              cisId   <- request.userAnswers.get(CisIdPage)
-              taxDate <- request.userAnswers.get(DateConfirmPaymentsPage)
+              cisId   <- request.userAnswers.get(CisIdPage(id))
+              taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(id))
             } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
 
             for {
@@ -236,8 +238,8 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                             .map(x => (x._2 + 1, x._1))
                                             .toMap
 
-              ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(request.subJourneyId), value).toFuture
-              ua2    <- ua1.set(SelectedSubcontractorPage.all, preselectedSubcontractors).toFuture
+              ua1    <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(id), value).toFuture
+              ua2    <- ua1.set(SelectedSubcontractorPage.all(Some(id)), preselectedSubcontractors).toFuture
               _      <- sessionRepository.set(ua2)
               result <-
                 value match {
@@ -263,12 +265,12 @@ class WhatDoYouWantToAmendStandardController @Inject() (
 
                       case Right(_) =>
                         val subcontractorIds = ua2
-                          .get(SelectedSubcontractorPage.all)
+                          .get(SelectedSubcontractorPage.all(Some(id)))
                           .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
 
                         for {
                           ua3 <- Future.fromTry(
-                                   ua2.set(WhichSubcontractorsToAddPage, subcontractorIds)
+                                   ua2.set(WhichSubcontractorsToAddPage(id), subcontractorIds)
                                  )
 
                           ua4 <- Future.fromTry(
@@ -287,7 +289,6 @@ class WhatDoYouWantToAmendStandardController @Inject() (
 
                           _ <- sessionRepository.set(ua4)
                         } yield Redirect(
-                          // TODO: DO I NEED TO CREATE NEW ON PAGE LOAD FOR SubcontractorDetailsAddedController OR SOMEONE ELSE IS DOING IT ALREADY?
                           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
                         )
                     }

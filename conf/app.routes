@@ -195,15 +195,17 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controll
 
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
-# GET        /manage-cis-return/amend-monthly-return/confirm-amendments/:cisPath   controllers.amend.ConfirmAmendmentController.onPageLoadWithId(cisPath: CisPath, handoffId: String)
-# POST       /manage-cis-return/amend-monthly-return/confirm-amendments/:cisPath   controllers.amend.ConfirmAmendmentController.onSubmitWithId(cisPath: CisPath)
+
+# Multi-tab
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments/:flowId   controllers.amend.ConfirmAmendmentController.onPageLoadWithId(flowId: UUID)
+POST       /manage-cis-return/amend-monthly-return/confirm-amendments/:flowId   controllers.amend.ConfirmAmendmentController.onSubmitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
-# DTR-9476
-GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:cisPath/:flowId      controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(cisPath: CisPath, flowId: UUID)
-POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:cisPath/:flowId      controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(cisPath: CisPath, flowId: UUID)
+# Multi-tab
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId: UUID)
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)

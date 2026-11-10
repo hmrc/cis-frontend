@@ -21,8 +21,7 @@ import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.*
-import models.requests.CisPath.CisOrg
-import models.{JourneyScope, NormalMode, UserAnswers}
+import models.{NormalMode, UserAnswers}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
@@ -120,29 +119,32 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
     submission = Nil
   )
 
-  private def scopedId(flowId: UUID): String =
-    JourneyScope.subJourneyId(CisOrg, flowId)
+  private def scopedAnswers(flowId: UUID): UserAnswers =
+    emptyUserAnswers
+      .set(CisIdPage(flowId.toString), cisId)
+      .success
+      .value
+      .set(DateConfirmPaymentsPage(flowId.toString), taxDate)
+      .success
+      .value
 
-  private def withSubJourney(
-    base: UserAnswers,
-    flowId: UUID
-  ): UserAnswers =
-    base.initialiseSubJourney(scopedId(flowId)).success.value
+  private def scopedId(flowId: UUID): String =
+    flowId.toString
 
   private def scopedGetUrl(flowId: UUID): String =
     routes.WhatDoYouWantToAmendStandardController
-      .onPageLoadWithId(CisOrg, flowId)
+      .onPageLoadWithId(flowId)
       .url
 
   private def scopedPostUrl(flowId: UUID): String =
     routes.WhatDoYouWantToAmendStandardController
-      .onSubmitWithId(CisOrg, flowId)
+      .onSubmitWithId(flowId)
       .url
 
   private def scopedFormAction(flowId: UUID) =
     Some(
       routes.WhatDoYouWantToAmendStandardController
-        .onSubmitWithId(CisOrg, flowId)
+        .onSubmitWithId(flowId)
     )
 
   private def scopedApplication(
@@ -453,11 +455,12 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
     "onPageLoadWithId" - {
       "must return OK and the correct view for a GET" in {
 
-        val flowId      = UUID.randomUUID()
-        val userAnswers = withSubJourney(baseAnswers, flowId)
+        val flowId = UUID.randomUUID()
 
         val (application, _) =
-          scopedApplication(userAnswers = Some(userAnswers))
+          scopedApplication(
+            userAnswers = Some(scopedAnswers(flowId))
+          )
 
         running(application) {
           val request = FakeRequest(GET, scopedGetUrl(flowId))
@@ -469,7 +472,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
           val formAction = Some(
             routes.WhatDoYouWantToAmendStandardController
-              .onSubmitWithId(CisOrg, flowId)
+              .onSubmitWithId(flowId)
           )
 
           status(result) mustEqual OK
@@ -487,7 +490,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         val flowId = UUID.randomUUID()
 
         val userAnswers =
-          withSubJourney(baseAnswers, flowId)
+          scopedAnswers(flowId)
             .set(
               WhatDoYouWantToAmendStandardPage(scopedId(flowId)),
               WhatDoYouWantToAmendStandard.values.head
@@ -508,7 +511,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
           val formAction = Some(
             routes.WhatDoYouWantToAmendStandardController
-              .onSubmitWithId(CisOrg, flowId)
+              .onSubmitWithId(flowId)
           )
 
           status(result) mustEqual OK
@@ -527,51 +530,21 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
     "onSubmitWithId" - {
 
-      "must redirect to Subcontractor Details Added when 'Amend Payment or Subcontractor Details' is submitted" in {
+      "must redirect to Are You Sure You Want To Amend when 'Amend to Nil Return' is submitted" in {
 
         val flowId = UUID.randomUUID()
 
         val mockMonthlyReturnService =
           mock[MonthlyReturnService]
 
-        val mockAmendMonthlyReturnService =
-          mock[AmendMonthlyReturnService]
-
-        val answersWithFinalValidationState =
-          baseAnswers
-            .setOrException(
-              FinalValidationDraftIdPage,
-              "previous-draft"
-            )
-            .setOrException(
-              MonthlyFinalValidationContinuationPage,
-              "CheckMode"
-            )
-            .setOrException(
-              MonthlyFinalValidationSourcePage,
-              MonthlyFinalValidationSource.SelectSubcontractors
-            )
-
-        val userAnswers =
-          withSubJourney(
-            answersWithFinalValidationState,
-            flowId
-          )
-
         when(
           mockMonthlyReturnService
             .retrieveMonthlyReturnForEditDetails(any())(any())
         ) thenReturn Future.successful(mockMonthlyReturn)
 
-        when(
-          mockAmendMonthlyReturnService
-            .startStandardAmendment(any[UserAnswers]())(any())
-        ) thenReturn Future.successful(Right(()))
-
         val (application, repository) =
           scopedApplication(
-            userAnswers = Some(userAnswers),
-            amendService = mockAmendMonthlyReturnService,
+            userAnswers = Some(scopedAnswers(flowId)),
             monthlyReturnService = mockMonthlyReturnService
           )
 
@@ -581,7 +554,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
               .withFormUrlEncodedBody(
                 (
                   "value",
-                  WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString
+                  WhatDoYouWantToAmendStandard.AmendToNilReturn.toString
                 )
               )
 
@@ -590,8 +563,8 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
           status(result) mustEqual SEE_OTHER
 
           redirectLocation(result).value mustEqual
-            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
-              .onPageLoad(NormalMode)
+            routes.AreYouSureYouWantToAmendYesNoController
+              .onPageLoad()
               .url
 
           verify(mockMonthlyReturnService)
@@ -600,38 +573,27 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
           val userAnswersCaptor =
             ArgumentCaptor.forClass(classOf[UserAnswers])
 
-          verify(repository, times(2))
+          verify(repository)
             .set(userAnswersCaptor.capture())
 
           val savedAnswers =
-            userAnswersCaptor.getAllValues.get(1)
+            userAnswersCaptor.getValue
 
           savedAnswers.get(
-            FinalValidationDraftIdPage
-          ) mustEqual None
-
-          savedAnswers.get(
-            MonthlyFinalValidationContinuationPage
-          ) mustEqual None
-
-          savedAnswers.get(
-            MonthlyFinalValidationSourcePage
+            WhatDoYouWantToAmendStandardPage(scopedId(flowId))
           ) mustEqual Some(
-            MonthlyFinalValidationSource
-              .WhichSubcontractorsToAdd(NormalMode.toString)
+            WhatDoYouWantToAmendStandard.AmendToNilReturn
           )
         }
       }
+
       "must return a Bad Request and errors when invalid data is submitted" in {
 
         val flowId = UUID.randomUUID()
 
-        val userAnswers =
-          withSubJourney(baseAnswers, flowId)
-
         val (application, _) =
           scopedApplication(
-            userAnswers = Some(userAnswers)
+            userAnswers = Some(scopedAnswers(flowId))
           )
 
         running(application) {
@@ -652,7 +614,7 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
           val formAction = Some(
             routes.WhatDoYouWantToAmendStandardController
-              .onSubmitWithId(CisOrg, flowId)
+              .onSubmitWithId(flowId)
           )
 
           val result =
@@ -672,10 +634,8 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
       }
 
       "must redirect to Journey Recovery for a POST if service failed" in {
-        val flowId = UUID.randomUUID()
 
-        val userAnswers =
-          withSubJourney(baseAnswers, flowId)
+        val flowId = UUID.randomUUID()
 
         val mockMonthlyReturnService =
           mock[MonthlyReturnService]
@@ -697,10 +657,11 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
         val (application, _) =
           scopedApplication(
-            userAnswers = Some(userAnswers),
+            userAnswers = Some(scopedAnswers(flowId)),
             amendService = mockAmendMonthlyReturnService,
             monthlyReturnService = mockMonthlyReturnService
           )
+
         running(application) {
           val request =
             FakeRequest(POST, scopedPostUrl(flowId))
@@ -713,6 +674,10 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
 
           val result =
             route(application, request).value
+
+          println(s"STATUS: ${status(result)}")
+          println(s"REDIRECT: ${redirectLocation(result)}")
+          println(s"BODY: ${contentAsString(result)}")
 
           status(result) mustEqual SEE_OTHER
 

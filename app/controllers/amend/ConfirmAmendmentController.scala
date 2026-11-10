@@ -19,7 +19,6 @@ package controllers.amend
 import controllers.actions.*
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
-import models.requests.CisPath
 import pages.agent.AgentClientDataPage
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
 import pages.monthlyreturns.*
@@ -34,6 +33,7 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.amend.ConfirmAmendmentView
 
 import java.time.*
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -44,9 +44,9 @@ class ConfirmAmendmentController @Inject() (
   getData: DataRetrievalAction,
   sessionRepository: SessionRepository,
   amendMonthlyReturnService: AmendMonthlyReturnService,
-  // TODO: NEED TO USE THE JOURNEY SERVICE HERE?
+  requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
-  resolveScheme: SchemeAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: ConfirmAmendmentView
 )(implicit ec: ExecutionContext)
@@ -134,7 +134,7 @@ class ConfirmAmendmentController @Inject() (
       }
   }
 
-  def onSubmit: Action[AnyContent]                                              =
+  def onSubmit: Action[AnyContent] =
     (identify andThen getData).async { implicit request =>
       request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
         case Some(amendmentDetails) =>
@@ -184,16 +184,11 @@ class ConfirmAmendmentController @Inject() (
       }
     }
 
-    /** TODO: Modify all the pages that are used in these 2 methods to take an id = String e.g: case class
-      * ConfirmAmendmentPage(id:String) extends QuestionPage[LocalDate] {}
-      */
-
-    // TODO: IN PROGRES NOT WORKING ATM.
-  def onPageLoadWithId(cisPath: CisPath, handoffId: String): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath)).async { implicit request =>
+  def onPageLoadWithId(flowId: UUID, handoffId: String): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
       // TODO: CREATE VARIABLES OR PASS DIRECTLY request.identifier... when needed?
-      val userId                     = request.identifier.userId
+      val id                         = flowId.toString
 
       amendMonthlyReturnService
         .getAmendmentHandoff(handoffId)
@@ -214,7 +209,7 @@ class ConfirmAmendmentController @Inject() (
             ReturnType.amendedFrom(handoff.originalReturnType) match {
               case Some(amendedReturnType) =>
                 val updatedUserAnswers =
-                  UserAnswers(userId)
+                  UserAnswers(request.userId)
                     .set(CisIdPage, handoff.instanceId)
                     // TODO: ContractorNamePage TAKES AN ID + ReturnTypePage TAKES AN ID, AmendmentDetailsPage TAKES AN ID?
                     // DateConfirmPaymentsPage TAKES AN ID (HAS ONE ALREADY USE THAT PAGE)
@@ -231,8 +226,8 @@ class ConfirmAmendmentController @Inject() (
 
                 val showWarning = isInWarningPeriod(handoff.acceptedTime)
 
-                if (request.identifier.isAgent) {
-                  monthlyReturnService.getAgentClient(userId).flatMap {
+                if (request.isAgent) {
+                  monthlyReturnService.getAgentClient(request.userId).flatMap {
                     case Some(agentData) =>
                       for {
                         // Todo: does AgentClientDataPage need an ID as well?
@@ -267,58 +262,58 @@ class ConfirmAmendmentController @Inject() (
         }
     }
 
-  def onSubmitWithId(cisPath: CisPath): Action[AnyContent] =
-    (identify andThen getData).async { implicit request =>
-      // TODO: AmendmentDetailsPage needs an ID?
-      request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
-        case Some(amendmentDetails) =>
-          implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
-          val createRequest  = CreateAmendedMonthlyReturnRequest(
-            instanceId = amendmentDetails.instanceId,
-            taxYear = amendmentDetails.taxYear,
-            taxMonth = amendmentDetails.taxMonth,
-            version = 0
-          )
-          // TODO: ConfirmAmendmentPage needs an ID?
-          // A repeat POST (double click, back then resubmit) must not amend the same return again
-          val alreadyAmended = request.userAnswers.flatMap(_.get(ConfirmAmendmentPage)).contains(true)
-
-          (
-            for {
-              _             <- if (alreadyAmended) Future.unit
-                               else amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
-              updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
-              _             <- sessionRepository.set(updatedAnswers)
-            } yield amendmentDetails.originalReturnType match {
-              case ReturnType.MonthlyStandardReturn =>
-                Redirect(
-                  // TODO: INSTEAD OF onPageLoad USE onPageLoadWithId?
-                  controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
-                )
-              case ReturnType.MonthlyNilReturn      =>
-                Redirect(
-                  // TODO: WhatDoYouWantToAmendNilController -> Jesses PR? to use onPageLoadWithId?
-                  controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
-                )
-              case unexpected                       =>
-                logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-            }
-          ).recover { case ex =>
-            logger.error(
-              s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
-              ex
-            )
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          }
-
-        case None =>
-          logger.warn(
-            s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers"
-          )
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      }
-    }
+//  def onSubmitWithId(cisPath: CisPath): Action[AnyContent] =
+//    (identify andThen getData).async { implicit request =>
+//      // TODO: AmendmentDetailsPage needs an ID?
+//      request.userAnswers.flatMap(_.get(AmendmentDetailsPage)) match {
+//        case Some(amendmentDetails) =>
+//          implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+//
+//          val createRequest  = CreateAmendedMonthlyReturnRequest(
+//            instanceId = amendmentDetails.instanceId,
+//            taxYear = amendmentDetails.taxYear,
+//            taxMonth = amendmentDetails.taxMonth,
+//            version = 0
+//          )
+//          // TODO: ConfirmAmendmentPage needs an ID?
+//          // A repeat POST (double click, back then resubmit) must not amend the same return again
+//          val alreadyAmended = request.userAnswers.flatMap(_.get(ConfirmAmendmentPage)).contains(true)
+//
+//          (
+//            for {
+//              _             <- if (alreadyAmended) Future.unit
+//                               else amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
+//              updatedAnswers = request.userAnswers.get.set(ConfirmAmendmentPage, true).get
+//              _             <- sessionRepository.set(updatedAnswers)
+//            } yield amendmentDetails.originalReturnType match {
+//              case ReturnType.MonthlyStandardReturn =>
+//                Redirect(
+//                  // TODO: INSTEAD OF onPageLoad USE onPageLoadWithId?
+//                  controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+//                )
+//              case ReturnType.MonthlyNilReturn      =>
+//                Redirect(
+//                  // TODO: WhatDoYouWantToAmendNilController -> Jesses PR? to use onPageLoadWithId?
+//                  controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoad()
+//                )
+//              case unexpected                       =>
+//                logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")
+//                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+//            }
+//          ).recover { case ex =>
+//            logger.error(
+//              s"[ConfirmAmendmentController] Failed to create amended monthly return for instanceId ${amendmentDetails.instanceId}",
+//              ex
+//            )
+//            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+//          }
+//
+//        case None =>
+//          logger.warn(
+//            s"[ConfirmAmendmentController] AmendmentDetails missing from userAnswers"
+//          )
+//          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+//      }
+//    }
 
 }
