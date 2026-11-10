@@ -16,12 +16,14 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import models.ReturnType.MonthlyStandardReturn
+import models.agent.AgentClientData
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.monthlyreturns.ContinueReturnJourneyQueryParams
-import models.{EmployerReference, JourneyScope, NormalMode, UserAnswers}
-import models.requests.{CisPath, GetMonthlyReturnForEditRequest, IdentifierRequest}
+import models.monthlyreturns.{CisTaxpayer, ContinueReturnJourneyQueryParams}
+import models.{EmployerReference, NormalMode, UserAnswers}
+import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 
 import javax.inject.Inject
 import navigation.Navigator
@@ -33,10 +35,11 @@ import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, JourneyService, MonthlyReturnService}
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import services.{CisTaxpayerService, FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 import scala.util.control.NonFatal
@@ -48,9 +51,8 @@ class ContinueReturnJourneyController @Inject() (
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
   formpRdsReconcileService: FormpRdsReconcileService,
-  reconcileFormPAndRds: ReconcileFormPAndRdsAction,
-  resolveScheme: SchemeAction,
-  journeyService: JourneyService,
+  cisTaxpayerService: CisTaxpayerService,
+  appConfig: FrontendAppConfig,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -158,11 +160,48 @@ class ContinueReturnJourneyController @Inject() (
         Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
     }
 
-  def continueReturnJourneyWithCisPath(
-    cisPath: CisPath,
-    queryParams: ContinueReturnJourneyQueryParams
-  ): Action[AnyContent] = (identify andThen resolveScheme(cisPath) andThen reconcileFormPAndRds).async {
-    implicit request =>
+  // Multi-tab: Resolve the CIS taxpayer for the selected CIS ID.
+  private def resolveTaxpayer[A](cisId: String)(using request: IdentifierRequest[A]): Future[Option[CisTaxpayer]] =
+    if request.isAgent then
+      cisTaxpayerService
+        .findForAgent(cisId)
+        .map(_.filter(_.uniqueId == cisId))
+    else
+      cisTaxpayerService.findForOrganisation
+        .map(taxpayer => Option.when(taxpayer.uniqueId == cisId)(taxpayer))
+
+  // Multi-tab: Resolve and authorise the selected CIS taxpayer.
+  private def withResolvedTaxpayer[A](cisId: String)(
+    handle: CisTaxpayer => Future[Result]
+  )(using request: IdentifierRequest[A]): Future[Result] =
+    resolveTaxpayer(cisId).flatMap {
+      case Some(taxpayer) if !appConfig.multiTabEnabled =>
+        Future.successful(Redirect(appConfig.returnsLandingPageUrl(taxpayer.uniqueId, None)))
+
+      case Some(taxpayer) =>
+        handle(taxpayer)
+
+      case None =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+    }
+
+  // Multi-tab: Reconcile FormP/RDS before rendering the entry page.
+  private def reconcileScopedReturn(taxpayer: CisTaxpayer, render: => Result)(using HeaderCarrier): Future[Result] =
+    formpRdsReconcileService
+      .reconcile(taxpayer.uniqueId, taxpayer.taxOfficeNumber, taxpayer.taxOfficeRef)
+      .map(_ => render)
+      .recover {
+        case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+          logger.warn(s"Contractor known facts missing in RDS (status ${e.statusCode})")
+          Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+        case NonFatal(e)                                                                                  =>
+          logger.error(s"FormP/RDS reconciliation failed: ${e.getMessage}", e)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
+
+  // Multi-tab: CIS ID-scoped copy of continueReturnJourney.
+  def continueReturnJourneyWithCisId(cisId: String, queryParams: ContinueReturnJourneyQueryParams): Action[AnyContent] =
+    identify.async { implicit request =>
       val editRequest = GetMonthlyReturnForEditRequest(
         instanceId = queryParams.instanceId,
         taxYear = queryParams.taxYear,
@@ -170,69 +209,70 @@ class ContinueReturnJourneyController @Inject() (
         isAmendment = false
       )
 
-      journeyService.create(request).flatMap { flowId =>
-        val id     = JourneyScope.subJourneyId(request.cisPath, flowId)
-        val userId = request.identifier.userId
+      withResolvedTaxpayer(queryParams.instanceId) { taxpayer =>
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
 
-        sessionRepository.get(userId).flatMap { existing =>
+        sessionRepository.get(request.userId).flatMap { existing =>
           monthlyReturnService
             .populateUserAnswersForContinueJourney(
-              existing.getOrElse(UserAnswers(userId)),
+              existing.getOrElse(UserAnswers(request.userId)),
               id,
               editRequest
             )
             .flatMap {
               case Left(error) =>
                 logger.error(
-                  s"[continueReturnJourneyWithCisPath] Failed to populate user answers: $error for request: $editRequest"
+                  s"[continueReturnJourneyWithCisId] Failed to populate user answers: $error for request: $editRequest"
                 )
                 Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
               case Right(updatedUserAnswers) =>
-                monthlyReturnService
-                  .populateAgentClientDataIfRequired(
-                    ua = updatedUserAnswers,
-                    userId = userId,
-                    isAgent = request.identifier.isAgent
-                  )
-                  .flatMap { finalUserAnswers =>
-                    val answersWithSource =
-                      if (
-                        finalUserAnswers
-                          .get(ReturnTypePage(id))
-                          .getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
-                        finalUserAnswers.get(ScopedSelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
-                      ) {
-                        finalUserAnswers.set(
-                          MonthlyFinalValidationSourcePage(id),
-                          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
-                        )
-                      } else {
-                        Success(finalUserAnswers)
-                      }
+                val withAgentData =
+                  if request.isAgent then
+                    updatedUserAnswers.set(
+                      AgentClientDataPage(id),
+                      AgentClientData(
+                        taxpayer.uniqueId,
+                        taxpayer.taxOfficeNumber,
+                        taxpayer.taxOfficeRef,
+                        taxpayer.schemeName
+                      )
+                    )
+                  else Success(updatedUserAnswers)
 
-                    val answersWithOrigin =
-                      answersWithSource.flatMap(_.set(IsResumedMonthlyReturnPage(id), true))
-
-                    Future.fromTry(answersWithOrigin).flatMap { withSource =>
-                      sessionRepository.set(withSource).map { _ =>
-                        // TODO: Temp redirect until the page after DateConfirmPayments has an ID-scoped route.
-                        Redirect(
-                          routes.DateConfirmPaymentsController.onPageLoadWithId(request.cisPath, flowId, NormalMode)
-                        )
-                      }
+                val answersWithSource =
+                  withAgentData.flatMap { ua =>
+                    if (
+                      ua.get(ReturnTypePage(id)).getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
+                      ua.get(ScopedSelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
+                    ) {
+                      ua.set(
+                        MonthlyFinalValidationSourcePage(id),
+                        MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+                      )
+                    } else {
+                      Success(ua)
                     }
                   }
-                  .recover { case ex =>
-                    logger.error(
-                      s"[continueReturnJourneyWithCisPath] Failed to populate agent client data or save user answers, " +
-                        s"request: $editRequest",
-                      ex
+
+                val answersWithOrigin = answersWithSource.flatMap(_.set(IsResumedMonthlyReturnPage(id), true))
+
+                Future.fromTry(answersWithOrigin).flatMap { withSource =>
+                  sessionRepository.set(withSource).flatMap { _ =>
+                    reconcileScopedReturn(
+                      taxpayer,
+                      // TODO: Temp redirect until the page after DateConfirmPayments has an ID-scoped route.
+                      Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
                     )
-                    Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
                   }
+                }
             }
         }
       }
-  }
+        .recover { case NonFatal(ex) =>
+          logger.error(s"[continueReturnJourneyWithCisId] Failed to start journey for request: $editRequest", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+    }
 }

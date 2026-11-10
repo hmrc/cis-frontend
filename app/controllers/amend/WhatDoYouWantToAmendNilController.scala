@@ -18,7 +18,6 @@ package controllers.amend
 
 import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
-import models.requests.CisPath
 import models.NormalMode
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn}
 import models.amend.WhatDoYouWantToAmendNil
@@ -52,8 +51,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
-  resolveScheme: SchemeAction,
-  getJourney: JourneyAction,
+  multiTabAction: MultiTabAction,
   formProvider: WhatDoYouWantToAmendNilFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendNilView
@@ -133,22 +131,25 @@ class WhatDoYouWantToAmendNilController @Inject() (
         )
   }
 
-  def onPageLoadWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)) { implicit request =>
-      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage(request.subJourneyId)) match {
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val id = flowId.toString
+
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage(id)) match {
         case None        => form
         case Some(value) => form.fill(value)
       }
 
-      val formAction = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(cisPath, flowId))
+      val formAction = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId))
 
       Ok(view(preparedForm, formAction))
     }
 
-  def onSubmitWithId(cisPath: CisPath, flowId: UUID): Action[AnyContent] =
-    (identify andThen resolveScheme(cisPath) andThen getJourney(flowId)).async { implicit request =>
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val formAction                 = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(cisPath, flowId))
+      val id                         = flowId.toString
+      val formAction                 = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId))
 
       form
         .bindFromRequest()
@@ -156,7 +157,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
           value =>
             for {
-              ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage(request.subJourneyId), value))
+              ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage(id), value))
               _      <- sessionRepository.set(ua1)
               result <-
                 value match {
@@ -174,12 +175,12 @@ class WhatDoYouWantToAmendNilController @Inject() (
                         case Right(_)    =>
                           for {
                             ua2 <- Future.fromTry(
-                                     ua1.set(ReturnTypePage(request.subJourneyId), MonthlyAmendedStandardReturn)
+                                     ua1.set(ReturnTypePage(id), MonthlyAmendedStandardReturn)
                                    )
                             _   <- sessionRepository.set(ua2)
                           } yield Redirect(
                             // TODO: Temp Redirect
-                            controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(cisPath, flowId)
+                            controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
                             // controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(cisPath,
                             // flowId,
                             // NormalMode)
@@ -190,7 +191,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                     for {
                       ua3           <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
                       ua4           <- Future.fromTry(
-                                         ua3.set(ReturnTypePage(request.subJourneyId), MonthlyAmendedNilReturn)
+                                         ua3.set(ReturnTypePage(id), MonthlyAmendedNilReturn)
                                        )
                       _             <- sessionRepository.set(ua4)
                       updateRequest <- UpdateMonthlyReturnRequest
@@ -202,7 +203,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                       _             <- monthlyReturnService.updateMonthlyReturn(updateRequest)
                     } yield Redirect(
                       // TODO: Temp Redirect
-                      controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(cisPath, flowId)
+                      controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
                       // controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(cisPath,
                       // flowId,
                       // NormalMode)
