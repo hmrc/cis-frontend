@@ -32,7 +32,7 @@ import pages.monthlyreturns.*
 import pages.submission.{ResubmissionIdPage, SubmissionCreatedForFlowPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionJourneyCompletedForFlowPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import viewmodels.SelectSubcontractorsViewModel
 
 import java.time.LocalDate
@@ -634,6 +634,22 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
       stubConnector(connector, emptyResponse)
       service.isEditable("CIS-1", 10, 2025, isAmendment = false).futureValue mustBe false
+    }
+
+    "returns false when the backend responds 404 (monthly return not found)" in {
+      val (service, connector, _) = newService()
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(UpstreamErrorResponse("Monthly return not found", 404, 404)))
+      service.isEditable("CIS-1", 11, 2026, isAmendment = false).futureValue mustBe false
+    }
+
+    "propagates other upstream errors such as 500" in {
+      val (service, connector, _) = newService()
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(UpstreamErrorResponse("boom", 500, 500)))
+      val ex                      = service.isEditable("CIS-1", 11, 2026, isAmendment = false).failed.futureValue
+      ex mustBe a[UpstreamErrorResponse]
+      ex.asInstanceOf[UpstreamErrorResponse].statusCode mustBe 500
     }
 
     "propagates connector failure" in {
