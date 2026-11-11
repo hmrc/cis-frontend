@@ -290,7 +290,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       val mockView = mock[SubcontractorDetailsAddedView]
 
       when(
-        mockView.apply(any(), any(), any())(any(), any())
+        mockView.apply(any(), any(), any(), any(), any())(any(), any())
       ).thenReturn(Html(""))
 
       val application = buildApp(
@@ -307,6 +307,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         verify(mockView).apply(
           argThat[Form[Boolean]](_.value.contains(true)),
+          any(),
+          any(),
           any(),
           any()
         )(any(), any())
@@ -327,7 +329,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       val mockView = mock[SubcontractorDetailsAddedView]
 
       when(
-        mockView.apply(any(), any(), any())(any(), any())
+        mockView.apply(any(), any(), any(), any(), any())(any(), any())
       ).thenReturn(Html(""))
 
       val application = buildApp(
@@ -344,6 +346,8 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         verify(mockView).apply(
           argThat[Form[Boolean]](_.value.contains(false)),
+          any(),
+          any(),
           any(),
           any()
         )(any(), any())
