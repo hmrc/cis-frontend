@@ -72,6 +72,16 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val exitSurveyUrl: String             = s"$exitSurveyBaseUrl/feedback/construction-industry-scheme"
   lazy val cisFeedbackSurveyUrl: String      = s"$exitSurveyBaseUrl/feedback/construction-industry-scheme"
 
+  private lazy val agentFrontendBaseUrl: String =
+    configuration.get[Service]("microservice.services.agent-frontend").baseUrl
+  lazy val hmrcServicesAgentUrl: String         =
+    s"$agentFrontendBaseUrl${configuration.get[String]("urls.hmrcServicesAgentPath")}"
+
+  private lazy val businessTaxAccountBaseUrl: String =
+    configuration.get[Service]("microservice.services.business-tax-account").baseUrl
+  lazy val hmrcServicesOrgUrl: String                =
+    s"$businessTaxAccountBaseUrl${configuration.get[String]("urls.hmrcServicesOrgPath")}"
+
   lazy val userResearchUrl: String                = configuration.get[String]("urls.userResearchUrl")
   lazy val showUserResearchBannerEnabled: Boolean = configuration.get[Boolean]("features.user-research-banner-enabled")
   lazy val multiTabEnabled: Boolean               = configuration.get[Boolean]("features.multi-tab-enabled")
