@@ -27,21 +27,34 @@ import java.util.UUID
 
 object EnterYourEmailAddressSummary {
 
-  def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId.toString
-    val url          = flowId match {
-      case Some(id) =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(id, CheckMode).url
-      case None     =>
-        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode).url
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(EnterYourEmailAddressPage).map { answer =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel",
+        value = ValueViewModel(answer),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
+            .withAttribute("id" -> "change-enter-your-email-address")
+        )
+      )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
 
     answers.get(EnterYourEmailAddressPage(subJourneyId)).map { answer =>
       SummaryListRowViewModel(
         key = "monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel",
         value = ValueViewModel(answer),
         actions = Seq(
-          ActionItemViewModel("site.change", url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
             .withAttribute("id" -> "change-enter-your-email-address")
         )

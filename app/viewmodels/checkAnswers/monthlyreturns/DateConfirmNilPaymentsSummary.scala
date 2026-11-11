@@ -28,7 +28,17 @@ import java.util.UUID
 
 object DateConfirmNilPaymentsSummary {
 
-  def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(DateConfirmPaymentsPage).map { answer =>
+      val returnPeriodText = answer.format(DateTimeFormats.dateTimeFormat()(messages.lang))
+
+      SummaryListRowViewModel(
+        key = messages("monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel"),
+        value = ValueViewModel(returnPeriodText)
+      )
+    }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
     val subJourneyId = flowId.toString
 
     answers.get(DateConfirmPaymentsPage(subJourneyId)).map { answer =>

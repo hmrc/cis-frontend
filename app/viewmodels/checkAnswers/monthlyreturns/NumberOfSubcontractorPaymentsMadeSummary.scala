@@ -26,21 +26,36 @@ import java.util.UUID
 
 object NumberOfSubcontractorPaymentsMadeSummary {
 
-  def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId.toString
-    val url          = flowId match {
-      case Some(id) =>
-        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(id, CheckMode).url
-      case None     =>
-        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    SubcontractorDetailsAddedBuilder.build(answers).map { addedSubcontractors =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel",
+        value = ValueViewModel(addedSubcontractors.rows.size.toString),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden"))
+            .withAttribute("id" -> "change-number-subcontractor-payments-made")
+        )
+      )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
 
     SubcontractorDetailsAddedBuilder.build(answers, Some(subJourneyId)).map { addedSubcontractors =>
       SummaryListRowViewModel(
         key = "monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel",
         value = ValueViewModel(addedSubcontractors.rows.size.toString),
         actions = Seq(
-          ActionItemViewModel("site.change", url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+              .onPageLoadWithId(flowId, CheckMode)
+              .url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden"))
             .withAttribute("id" -> "change-number-subcontractor-payments-made")
         )

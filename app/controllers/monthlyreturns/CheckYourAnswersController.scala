@@ -100,9 +100,7 @@ class CheckYourAnswersController @Inject() (
 
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = flowId.toString
-      val flowIdOpt    = Some(flowId)
-      val formAction   = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
+      val formAction = Some(controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
       guardCompletedJourneyWithId {
         ReturnTypeSummary.returnType(request.userAnswers) match {
@@ -110,17 +108,17 @@ class CheckYourAnswersController @Inject() (
             val returnTypeRows = returnType match {
               case ReturnType.MonthlyStandardReturn | ReturnType.MonthlyAmendedStandardReturn =>
                 Seq(
-                  DateConfirmPaymentsSummary.row(request.userAnswers, flowIdOpt),
-                  NumberOfSubcontractorPaymentsMadeSummary.row(request.userAnswers, flowIdOpt),
-                  EmploymentStatusDeclarationSummary.row(request.userAnswers, flowIdOpt),
-                  VerifiedStatusDeclarationSummary.row(request.userAnswers, flowIdOpt),
-                  SubmitInactivityRequestSummary.row(request.userAnswers, flowIdOpt)
+                  DateConfirmPaymentsSummary.rowWithId(request.userAnswers, flowId),
+                  NumberOfSubcontractorPaymentsMadeSummary.rowWithId(request.userAnswers, flowId),
+                  EmploymentStatusDeclarationSummary.rowWithId(request.userAnswers, flowId),
+                  VerifiedStatusDeclarationSummary.rowWithId(request.userAnswers, flowId),
+                  SubmitInactivityRequestSummary.rowWithId(request.userAnswers, flowId)
                 )
               case ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn           =>
                 Seq(
-                  DateConfirmNilPaymentsSummary.row(request.userAnswers),
+                  DateConfirmNilPaymentsSummary.rowWithId(request.userAnswers, flowId),
                   PaymentsToSubcontractorsSummary.row,
-                  SubmitInactivityRequestSummary.row(request.userAnswers, flowIdOpt)
+                  SubmitInactivityRequestSummary.rowWithId(request.userAnswers, flowId)
                 )
             }
 
@@ -129,8 +127,8 @@ class CheckYourAnswersController @Inject() (
             )
 
             val emailRows = Seq(
-              ConfirmationByEmailSummary.row(request.userAnswers, flowIdOpt),
-              EnterYourEmailAddressSummary.row(request.userAnswers, flowIdOpt)
+              ConfirmationByEmailSummary.rowWithId(request.userAnswers, flowId),
+              EnterYourEmailAddressSummary.rowWithId(request.userAnswers, flowId)
             )
 
             val emailList = SummaryListViewModel(rows = emailRows.flatten)

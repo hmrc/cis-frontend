@@ -27,18 +27,26 @@ import java.util.UUID
 
 object ConfirmationByEmailSummary {
 
-  def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-//    val subJourneyId = flowId match {
-//      case Some(id) => id.toString
-//      case None     => None
-//    }
-    val subJourneyId = flowId.toString
-    val url          = flowId match {
-      case Some(id) =>
-        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(id, CheckMode).url
-      case None     =>
-        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(ConfirmationByEmailPage).map { answer =>
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.confirmationByEmail.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
+            .withAttribute("id" -> "change-confirmation-by-email")
+        )
+      )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
 
     answers.get(ConfirmationByEmailPage(subJourneyId)).map { answer =>
       val value = if (answer) "site.yes" else "site.no"
@@ -47,7 +55,10 @@ object ConfirmationByEmailSummary {
         key = "monthlyreturns.confirmationByEmail.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
-          ActionItemViewModel("site.change", url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
             .withAttribute("id" -> "change-confirmation-by-email")
         )

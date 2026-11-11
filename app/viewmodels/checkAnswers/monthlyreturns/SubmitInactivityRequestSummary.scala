@@ -27,14 +27,26 @@ import java.util.UUID
 
 object SubmitInactivityRequestSummary {
 
-  def row(answers: UserAnswers, flowId: Option[UUID] = None)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId.toString
-    val url          = flowId match {
-      case Some(id) =>
-        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(id, CheckMode).url
-      case None     =>
-        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+  def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(SubmitInactivityRequestPage).map { answer =>
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
+            .withAttribute("id" -> "change-submit-inactivity-request")
+        )
+      )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
 
     answers.get(SubmitInactivityRequestPage(subJourneyId)).map { answer =>
       val value = if (answer) "site.yes" else "site.no"
@@ -43,7 +55,10 @@ object SubmitInactivityRequestSummary {
         key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
         value = ValueViewModel(value),
         actions = Seq(
-          ActionItemViewModel("site.change", url)
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode).url
+          )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
             .withAttribute("id" -> "change-submit-inactivity-request")
         )
