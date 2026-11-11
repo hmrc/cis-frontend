@@ -18,6 +18,7 @@ package controllers.amend
 
 import config.FrontendAppConfig
 import controllers.actions.*
+import models.agent.AgentClientData
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.{EmployerReference, NormalMode, UserAnswers}
 import models.monthlyreturns.{CisTaxpayer, ContinueReturnJourneyQueryParams}
@@ -259,47 +260,40 @@ class ContinueAmendReturnJourneyController @Inject() (
 
                   val withAgentData =
                     if (request.isAgent)
-                      monthlyReturnService.populateAgentClientDataIfRequired(
-                        ua = result.userAnswers,
-                        userId = request.userId,
-                        isAgent = true
+                      result.userAnswers.set(
+                        AgentClientDataPage(id),
+                        AgentClientData(
+                          taxpayer.uniqueId,
+                          taxpayer.taxOfficeNumber,
+                          taxpayer.taxOfficeRef,
+                          taxpayer.schemeName
+                        )
                       )
-                    else Future.successful(result.userAnswers)
+                    else Success(result.userAnswers)
 
-                  withAgentData
-                    .flatMap { uaWithAgentData =>
-                      val employerRef =
-                        if (request.isAgent)
-                          uaWithAgentData
-                            .get(AgentClientDataPage)
-                            .map(d => EmployerReference(d.taxOfficeNumber, d.taxOfficeReference))
-                        else
-                          request.employerReference
-
-                      val answersWithSource =
-                        if (!result.isNilReturn && result.hasSubcontractors) {
-                          uaWithAgentData.set(
-                            MonthlyFinalValidationSourcePage,
-                            MonthlyFinalValidationSource.WhichSubcontractorsToAdd(
-                              NormalMode.toString
-                            )
-                          )
-                        } else {
-                          Success(uaWithAgentData)
-                        }
-
-                      Future.fromTry(answersWithSource).flatMap { withSource =>
-                        sessionRepository.set(withSource).flatMap { _ =>
-                          reconcileScopedReturn(taxpayer, redirect)
-                        }
+                  val answersWithSource =
+                    withAgentData.flatMap { ua =>
+                      if (!result.isNilReturn && result.hasSubcontractors) {
+                        ua.set(
+                          MonthlyFinalValidationSourcePage(id),
+                          MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+                        )
+                      } else {
+                        Success(ua)
                       }
                     }
+
+                  Future.fromTry(answersWithSource).flatMap { withSource =>
+                    sessionRepository.set(withSource).flatMap { _ =>
+                      reconcileScopedReturn(taxpayer, redirect)
+                    }
+                  }
               }
           }
-          .recover { case NonFatal(ex) =>
-            logger.error(s"[continueAmendReturnJourneyWithCisId] Failed to start journey for request: $editRequest", ex)
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          }
       }
+        .recover { case NonFatal(ex) =>
+          logger.error(s"[continueAmendReturnJourneyWithCisId] Failed to start journey for request: $editRequest", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
     }
 }
