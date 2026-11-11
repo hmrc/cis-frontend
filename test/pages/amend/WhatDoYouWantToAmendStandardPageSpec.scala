@@ -28,7 +28,9 @@ class WhatDoYouWantToAmendStandardPageSpec extends SpecBase {
 
     "must use WhatDoYouWantToAmendStandardPage path with id" in {
       val testId = "testId"
-      WhatDoYouWantToAmendStandardPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "whatDoYouWantToAmendStandard")
+      WhatDoYouWantToAmendStandardPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "whatDoYouWantToAmendStandard")
       WhatDoYouWantToAmendStandardPage(testId).toString mustBe "whatDoYouWantToAmendStandard"
     }
   }

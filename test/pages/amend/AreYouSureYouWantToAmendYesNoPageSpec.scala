@@ -31,7 +31,9 @@ class AreYouSureYouWantToAmendYesNoPageSpec extends SpecBase {
     "must use amendmentDetails path with id" in {
       val testId = "testId"
 
-      AreYouSureYouWantToAmendYesNoPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "areYouSureYouWantToAmendYesNo")
+      AreYouSureYouWantToAmendYesNoPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "areYouSureYouWantToAmendYesNo")
       AreYouSureYouWantToAmendYesNoPage(testId).toString mustBe "areYouSureYouWantToAmendYesNo"
     }
   }

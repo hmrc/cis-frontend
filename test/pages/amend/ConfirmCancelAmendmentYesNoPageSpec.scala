@@ -30,7 +30,9 @@ class ConfirmCancelAmendmentYesNoPageSpec extends SpecBase {
 
     "must use ConfirmCancelAmendmentYesNo path with id" in {
       val testId = "testId"
-      ConfirmCancelAmendmentYesNoPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "confirmCancelAmendmentYesNo")
+      ConfirmCancelAmendmentYesNoPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "confirmCancelAmendmentYesNo")
       ConfirmCancelAmendmentYesNoPage(testId).toString mustBe "confirmCancelAmendmentYesNo"
     }
   }
