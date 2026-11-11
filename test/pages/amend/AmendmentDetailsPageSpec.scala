@@ -27,5 +27,12 @@ class AmendmentDetailsPageSpec extends SpecBase {
       AmendmentDetailsPage.path mustBe JsPath \ "amendmentDetails"
       AmendmentDetailsPage.toString mustBe "amendmentDetails"
     }
+
+    "must use amendmentDetails path with id" in {
+      val testId = "testId"
+
+      AmendmentDetailsPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "amendmentDetails")
+      AmendmentDetailsPage(testId).toString mustBe "amendmentDetails"
+    }
   }
 }
