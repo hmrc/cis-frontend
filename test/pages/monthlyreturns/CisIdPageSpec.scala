@@ -33,7 +33,7 @@ class CisIdPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       CisIdPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "cisId")
+        (JsPath \ "monthlyReturn" \ "org_flow-1" \ "cisId")
     }
 
     "have the correct scoped toString" in {

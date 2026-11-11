@@ -32,7 +32,7 @@ class OriginalSubcontractorCountPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       OriginalSubcontractorCountPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "originalSubcontractorCount")
+        (JsPath \ "amend" \ "org_flow-1" \ "originalSubcontractorCount")
     }
 
     "have the correct scoped toString" in {

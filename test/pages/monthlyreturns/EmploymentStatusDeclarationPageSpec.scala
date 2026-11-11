@@ -32,7 +32,7 @@ class EmploymentStatusDeclarationPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       EmploymentStatusDeclarationPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "employmentStatusDeclaration")
+        (JsPath \ "amend" \ "org_flow-1" \ "employmentStatusDeclaration")
     }
 
     "have the correct scoped toString" in {

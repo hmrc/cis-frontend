@@ -66,7 +66,7 @@ class ConfirmationByEmailPageSpec extends SpecBase {
 
     "id scoped" - {
       "have the correct path" in {
-        ConfirmationByEmailPage("CIS-ORG-1").path mustBe (JsPath \ "CIS-ORG-1" \ "confirmationByEmail")
+        ConfirmationByEmailPage("CIS-ORG-1").path mustBe (JsPath \ "amend" \ "CIS-ORG-1" \ "confirmationByEmail")
       }
 
       "have the correct toString" in {

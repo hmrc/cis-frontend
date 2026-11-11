@@ -19,10 +19,9 @@ package controllers.amend
 import base.SpecBase
 import models.{NormalMode, UserAnswers}
 import models.agent.AgentClientData
-import models.{JourneyScope, NormalMode, UserAnswers}
 import services.{CisTaxpayerService, ContinueAmendJourneyResult, FormpRdsReconcileService, MonthlyReturnService}
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.requests.GetMonthlyReturnForEditRequest
+import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -37,14 +36,11 @@ import repositories.SessionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import config.FrontendAppConfig
 import models.monthlyreturns.{CisTaxpayer, ContinueReturnJourneyQueryParams}
-import models.requests.{CisPath, IdentifierRequest}
-import models.requests.CisPath.{CisId, CisOrg}
 import org.mockito.invocation.InvocationOnMock
 import pages.monthlyreturns.CisIdPage
 import play.api.Application
 
 import java.util.UUID
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
@@ -58,6 +54,87 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
     MonthlyFinalValidationSourcePage,
     MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
   )
+
+  // --- Multi-tab helpers for continueAmendReturnJourneyWithCisId ---
+
+  private val scopedInstanceId = "CIS-123"
+
+  private def scopedUrl(isOriginalNilReturn: Boolean = false, instanceId: String = scopedInstanceId): String =
+    controllers.amend.routes.ContinueAmendReturnJourneyController
+      .continueAmendReturnJourneyWithCisId(
+        instanceId,
+        ContinueReturnJourneyQueryParams(instanceId, 2025, 1, Some(isOriginalNilReturn))
+      )
+      .url
+
+  private def flowIdFrom(res: Future[play.api.mvc.Result]): UUID =
+    UUID.fromString(redirectLocation(res).value.split("/").last)
+
+  private def tempRedirect(flowId: UUID): String =
+    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId).url
+
+  private def reconcileOk: FormpRdsReconcileService = {
+    val reconcile = mock[FormpRdsReconcileService]
+    when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.unit)
+    reconcile
+  }
+
+  private def scopedSessionRepo(initial: Option[UserAnswers] = Some(emptyUserAnswers)): SessionRepository = {
+    val repo = mock[SessionRepository]
+    when(repo.get(any[String])).thenReturn(Future.successful(initial))
+    when(repo.set(any[UserAnswers])).thenReturn(Future.successful(true))
+    repo
+  }
+
+  private def lastSaved(repo: SessionRepository): UserAnswers = {
+    val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+    verify(repo).set(captor.capture())
+    captor.getValue
+  }
+
+  private def stubPopulate(service: MonthlyReturnService, hasSubcontractors: Boolean, isNilReturn: Boolean): Unit =
+    when(
+      service.populateUserAnswersForContinueAmendJourney(
+        any[UserAnswers],
+        any[String],
+        any[GetMonthlyReturnForEditRequest]
+      )(any[HeaderCarrier])
+    ).thenAnswer { (inv: InvocationOnMock) =>
+      Future.successful[Either[String, ContinueAmendJourneyResult]](
+        Right(ContinueAmendJourneyResult(inv.getArgument[UserAnswers](0), hasSubcontractors, isNilReturn))
+      )
+    }
+
+  private def scopedApplication(
+    service: MonthlyReturnService,
+    repo: SessionRepository,
+    reconcile: FormpRdsReconcileService = reconcileOk,
+    enabled: Boolean = true,
+    isAgent: Boolean = false,
+    taxpayerCisId: String = scopedInstanceId,
+    clientFound: Boolean = true
+  ): Application = {
+    val taxpayer = mock[CisTaxpayer]
+    when(taxpayer.uniqueId).thenReturn(taxpayerCisId)
+    when(taxpayer.taxOfficeNumber).thenReturn("123")
+    when(taxpayer.taxOfficeRef).thenReturn("AB456")
+    when(taxpayer.schemeName).thenReturn(Some("ABC Construction Ltd"))
+
+    val taxpayerService = mock[CisTaxpayerService]
+    when(taxpayerService.findForOrganisation(using any[IdentifierRequest[?]]))
+      .thenReturn(Future.successful(taxpayer))
+    when(taxpayerService.findForAgent(any[String])(using any[IdentifierRequest[?]]))
+      .thenReturn(Future.successful(Option.when(clientFound)(taxpayer)))
+
+    applicationBuilder(isAgent = isAgent, formpRdsReconcileService = reconcile)
+      .configure("features.multi-tab-enabled" -> enabled)
+      .overrides(
+        bind[MonthlyReturnService].toInstance(service),
+        bind[SessionRepository].toInstance(repo),
+        bind[CisTaxpayerService].toInstance(taxpayerService)
+      )
+      .build()
+  }
 
   "ContinueAmendReturnJourneyController" - {
 
@@ -486,34 +563,37 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
       }
     }
 
-    "continueAmendReturnJourneyWithCisPath" - {
+    "continueAmendReturnJourneyWithCisId" - {
 
       "must redirect to the scoped WhatDoYouWantToAmendNil page when original is nil and in-progress is nil" in {
         val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers)
+        val repo    = scopedSessionRepo()
         stubPopulate(service, hasSubcontractors = false, isNilReturn = true)
 
-        val application = scopedApplication(service, session.repo)
+        val application = scopedApplication(service, repo)
 
         running(application) {
           val request = FakeRequest(GET, scopedUrl(isOriginalNilReturn = true)).withBody(AnyContentAsEmpty)
           val res     = route(application, request).value
 
           status(res) mustBe SEE_OTHER
+
+          val flowId = flowIdFrom(res)
           redirectLocation(res).value mustBe
-            controllers.amend.routes.WhatDoYouWantToAmendNilController
-              .onPageLoadWithId(CisOrg, flowIdFrom(res))
-              .url
+            controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId).url
+
+          // an organisation user gets no agent client data
+          lastSaved(repo).get(AgentClientDataPage(flowId.toString)) mustBe None
         }
       }
 
       Seq(true, false).foreach { originalIsNil =>
         s"must set the scoped final validation source when in-progress is standard with subcontractors (original nil = $originalIsNil)" in {
           val service = mock[MonthlyReturnService]
-          val session = new InMemorySession(emptyUserAnswers)
+          val repo    = scopedSessionRepo()
           stubPopulate(service, hasSubcontractors = true, isNilReturn = false)
 
-          val application = scopedApplication(service, session.repo)
+          val application = scopedApplication(service, repo)
 
           running(application) {
             val request = FakeRequest(GET, scopedUrl(isOriginalNilReturn = originalIsNil)).withBody(AnyContentAsEmpty)
@@ -522,25 +602,26 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
             status(res) mustBe SEE_OTHER
 
             val flowId = flowIdFrom(res)
-            val id     = JourneyScope.subJourneyId(CisOrg, flowId)
+            val id     = flowId.toString
 
             // TODO: update to SubcontractorDetailsAddedController.onPageLoadWithId once it exists
-            redirectLocation(res).value mustBe tempRedirect(CisOrg, flowId)
+            redirectLocation(res).value mustBe tempRedirect(flowId)
 
-            session.latest.get(MonthlyFinalValidationSourcePage(id)) mustBe Some(
+            val saved = lastSaved(repo)
+            saved.get(MonthlyFinalValidationSourcePage(id)) mustBe Some(
               MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
             )
-            session.latest.get(MonthlyFinalValidationSourcePage) mustBe None
+            saved.get(MonthlyFinalValidationSourcePage) mustBe None
           }
         }
       }
 
       "must not set the final validation source when in-progress is standard with no subcontractors" in {
         val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers)
+        val repo    = scopedSessionRepo()
         stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
 
-        val application = scopedApplication(service, session.repo)
+        val application = scopedApplication(service, repo)
 
         running(application) {
           val request = FakeRequest(GET, scopedUrl(isOriginalNilReturn = true)).withBody(AnyContentAsEmpty)
@@ -549,22 +630,22 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           status(res) mustBe SEE_OTHER
 
           val flowId = flowIdFrom(res)
-          val id     = JourneyScope.subJourneyId(CisOrg, flowId)
 
           // TODO: update to WhatDoYouWantToAmendStandardController.onPageLoadWithId once it exists
-          redirectLocation(res).value mustBe tempRedirect(CisOrg, flowId)
+          redirectLocation(res).value mustBe tempRedirect(flowId)
 
-          session.latest.get(MonthlyFinalValidationSourcePage(id)) mustBe None
-          session.latest.get(MonthlyFinalValidationSourcePage) mustBe None
+          val saved = lastSaved(repo)
+          saved.get(MonthlyFinalValidationSourcePage(flowId.toString)) mustBe None
+          saved.get(MonthlyFinalValidationSourcePage) mustBe None
         }
       }
 
       "must redirect to the standard amend route when original return is standard and in-progress return is nil" in {
         val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers)
+        val repo    = scopedSessionRepo()
         stubPopulate(service, hasSubcontractors = false, isNilReturn = true)
 
-        val application = scopedApplication(service, session.repo)
+        val application = scopedApplication(service, repo)
 
         running(application) {
           val request = FakeRequest(GET, scopedUrl(isOriginalNilReturn = false)).withBody(AnyContentAsEmpty)
@@ -573,16 +654,24 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           status(res) mustBe SEE_OTHER
 
           // TODO: update to WhatDoYouWantToAmendStandardController.onPageLoadWithId once it exists
-          redirectLocation(res).value mustBe tempRedirect(CisOrg, flowIdFrom(res))
+          redirectLocation(res).value mustBe tempRedirect(flowIdFrom(res))
         }
       }
 
-      "must create a sub-journey, keep existing answers and pass the scoped id and isAmendment = true to the service" in {
-        val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers.set(CisIdPage, "LEGACY-CIS").success.value)
+      "must pass the flow id and isAmendment = true to the service and keep existing answers" in {
+        val service  = mock[MonthlyReturnService]
+        val otherId  = UUID.randomUUID().toString
+        val existing = emptyUserAnswers
+          .set(CisIdPage, "LEGACY-CIS")
+          .success
+          .value
+          .set(CisIdPage(otherId), "OTHER-CIS")
+          .success
+          .value
+        val repo     = scopedSessionRepo(Some(existing))
         stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
 
-        val application = scopedApplication(service, session.repo)
+        val application = scopedApplication(service, repo)
 
         running(application) {
           val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
@@ -591,7 +680,6 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           status(res) mustBe SEE_OTHER
 
           val flowId = flowIdFrom(res)
-          val id     = JourneyScope.subJourneyId(CisOrg, flowId)
 
           val idCaptor  = ArgumentCaptor.forClass(classOf[String])
           val reqCaptor = ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
@@ -602,7 +690,7 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
             reqCaptor.capture()
           )(any[HeaderCarrier])
 
-          idCaptor.getValue mustBe id
+          idCaptor.getValue mustBe flowId.toString
           reqCaptor.getValue mustBe GetMonthlyReturnForEditRequest(
             instanceId = "CIS-123",
             taxYear = 2025,
@@ -610,14 +698,39 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
             isAmendment = true
           )
 
-          session.latest.hasSubJourney(id) mustBe true
-          session.latest.get(CisIdPage) mustBe Some("LEGACY-CIS") // other answers survive
+          val saved = lastSaved(repo)
+          saved.get(CisIdPage) mustBe Some("LEGACY-CIS")
+          saved.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
         }
       }
 
-      "must redirect to JourneyRecovery when service returns Left" in {
+      "must start from empty answers when there is no session yet" in {
         val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers)
+        val repo    = scopedSessionRepo(None)
+        stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
+
+        val application = scopedApplication(service, repo)
+
+        running(application) {
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
+
+          status(res) mustBe SEE_OTHER
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(service).populateUserAnswersForContinueAmendJourney(
+            captor.capture(),
+            any[String],
+            any[GetMonthlyReturnForEditRequest]
+          )(any[HeaderCarrier])
+
+          captor.getValue.data.value mustBe empty
+        }
+      }
+
+      "must redirect to JourneyRecovery and not save when service returns Left" in {
+        val service   = mock[MonthlyReturnService]
+        val repo      = scopedSessionRepo()
+        val reconcile = mock[FormpRdsReconcileService]
 
         when(
           service.populateUserAnswersForContinueAmendJourney(
@@ -627,152 +740,179 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           )(any[HeaderCarrier])
         ).thenReturn(Future.successful(Left("error")))
 
-        val application = scopedApplication(service, session.repo)
+        val application = scopedApplication(service, repo, reconcile)
 
         running(application) {
-          val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
-          val res     = route(application, request).value
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
 
           status(res) mustBe SEE_OTHER
           redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
-          // only the empty sub-journey created by JourneyService is saved
-          session.saves.size mustBe 1
+          verify(repo, never()).set(any[UserAnswers])
+          verifyNoInteractions(reconcile)
         }
       }
 
       "must redirect to JourneyRecovery when saving the populated answers fails" in {
-        val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers, failSaveNumber = Some(2))
+        val service   = mock[MonthlyReturnService]
+        val repo      = scopedSessionRepo()
+        val reconcile = mock[FormpRdsReconcileService]
         stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
 
-        val application = scopedApplication(service, session.repo)
+        when(repo.set(any[UserAnswers])).thenReturn(Future.failed(new RuntimeException("Session error")))
+
+        val application = scopedApplication(service, repo, reconcile)
 
         running(application) {
-          val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
-          val res     = route(application, request).value
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
 
           status(res) mustBe SEE_OTHER
           redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verifyNoInteractions(reconcile)
         }
       }
 
-      "must redirect to JourneyRecovery when the journey cannot be created" in {
+      "must redirect to JourneyRecovery when the session cannot be read" in {
         val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers, failSaveNumber = Some(1))
+        val repo    = scopedSessionRepo()
 
-        val application = scopedApplication(service, session.repo)
+        when(repo.get(any[String])).thenReturn(Future.failed(new RuntimeException("Database error")))
+
+        val application = scopedApplication(service, repo)
 
         running(application) {
-          val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
-          val res     = route(application, request).value
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
 
           status(res) mustBe SEE_OTHER
           redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
           verifyNoInteractions(service)
+          verify(repo, never()).set(any[UserAnswers])
         }
       }
 
-      "must redirect to the landing page and not touch the session when multi-tab is disabled" in {
+      "must redirect to the landing page and not touch the service or session when multi-tab is disabled" in {
         val service = mock[MonthlyReturnService]
-        val session = new InMemorySession(emptyUserAnswers)
+        val repo    = scopedSessionRepo()
 
-        val application = scopedApplication(service, session.repo, enabled = false)
+        val application = scopedApplication(service, repo, enabled = false)
 
         running(application) {
-          val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
-          val res     = route(application, request).value
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
 
           status(res) mustBe SEE_OTHER
           redirectLocation(res).value mustBe
             application.injector.instanceOf[FrontendAppConfig].returnsLandingPageUrl("CIS-123", None)
 
           verifyNoInteractions(service)
-          verifyNoInteractions(session.repo)
+          verifyNoInteractions(repo)
         }
       }
 
-      "must redirect to UnauthorisedOrganisationAffinity before saving anything when reconcile returns PRECONDITION_FAILED" in {
-        val service   = mock[MonthlyReturnService]
-        val session   = new InMemorySession(emptyUserAnswers)
-        val reconcile = mock[FormpRdsReconcileService]
+      "must redirect to JourneyRecovery when the instanceId does not belong to the organisation" in {
+        val service = mock[MonthlyReturnService]
+        val repo    = scopedSessionRepo()
 
-        when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
-          .thenReturn(Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED)))
-
-        val application = scopedApplication(service, session.repo, reconcile)
+        val application = scopedApplication(service, repo)
 
         running(application) {
-          val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
-          val res     = route(application, request).value
-
-          status(res) mustBe SEE_OTHER
-          redirectLocation(res).value mustBe
-            controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
-
-          verify(reconcile).reconcile(eqTo("CIS-123"), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
-          verifyNoInteractions(service)
-          verifyNoInteractions(session.repo)
-        }
-      }
-
-      "must redirect to JourneyRecovery before saving anything when reconcile returns a general error" in {
-        val service   = mock[MonthlyReturnService]
-        val session   = new InMemorySession(emptyUserAnswers)
-        val reconcile = mock[FormpRdsReconcileService]
-
-        when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
-          .thenReturn(Future.failed(new RuntimeException("boom")))
-
-        val application = scopedApplication(service, session.repo, reconcile)
-
-        running(application) {
-          val request = FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)
+          val request = FakeRequest(GET, scopedUrl(instanceId = "SOMEONE-ELSE")).withBody(AnyContentAsEmpty)
           val res     = route(application, request).value
 
           status(res) mustBe SEE_OTHER
           redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
           verifyNoInteractions(service)
-          verifyNoInteractions(session.repo)
+          verifyNoInteractions(repo)
         }
       }
 
-      "must scope the journey to the client for an authorised agent" in {
-        val agentCisId = "CIS123" // CisPath only accepts letters and digits
-        val service    = mock[MonthlyReturnService]
-        val session    = new InMemorySession(emptyUserAnswers)
-        stubPopulate(service, hasSubcontractors = false, isNilReturn = true)
+      "must redirect to UnauthorisedOrganisationAffinity after saving when reconcile returns PRECONDITION_FAILED" in {
+        val service   = mock[MonthlyReturnService]
+        val repo      = scopedSessionRepo()
+        val reconcile = mock[FormpRdsReconcileService]
+        stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
 
-        val application = scopedApplication(service, session.repo, isAgent = true, cisId = agentCisId)
+        when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+          .thenReturn(Future.failed(UpstreamErrorResponse("missing", PRECONDITION_FAILED, PRECONDITION_FAILED)))
+
+        val application = scopedApplication(service, repo, reconcile)
 
         running(application) {
-          val request = FakeRequest(
-            GET,
-            scopedUrl(CisId(agentCisId), isOriginalNilReturn = true, instanceId = agentCisId)
-          ).withBody(AnyContentAsEmpty)
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
+
+          status(res) mustBe SEE_OTHER
+          redirectLocation(res).value mustBe
+            controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad().url
+
+          verify(reconcile).reconcile(eqTo("CIS-123"), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
+          verify(repo).set(any[UserAnswers])
+        }
+      }
+
+      "must redirect to JourneyRecovery when reconcile returns a general error" in {
+        val service   = mock[MonthlyReturnService]
+        val repo      = scopedSessionRepo()
+        val reconcile = mock[FormpRdsReconcileService]
+        stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
+
+        when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("boom")))
+
+        val application = scopedApplication(service, repo, reconcile)
+
+        running(application) {
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
+
+          status(res) mustBe SEE_OTHER
+          redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(reconcile).reconcile(eqTo("CIS-123"), eqTo("123"), eqTo("AB456"))(any[HeaderCarrier])
+          verify(repo).set(any[UserAnswers])
+        }
+      }
+
+      "must save the scoped agent client data for an authorised agent" in {
+        val service = mock[MonthlyReturnService]
+        val repo    = scopedSessionRepo()
+        stubPopulate(service, hasSubcontractors = false, isNilReturn = true)
+
+        val application = scopedApplication(service, repo, isAgent = true)
+
+        running(application) {
+          val request = FakeRequest(GET, scopedUrl(isOriginalNilReturn = true)).withBody(AnyContentAsEmpty)
           val res     = route(application, request).value
 
           status(res) mustBe SEE_OTHER
 
           val flowId = flowIdFrom(res)
-          val id     = JourneyScope.subJourneyId(CisId(agentCisId), flowId)
+          val id     = flowId.toString
 
           redirectLocation(res).value mustBe
-            controllers.amend.routes.WhatDoYouWantToAmendNilController
-              .onPageLoadWithId(CisId(agentCisId), flowId)
-              .url
+            controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId).url
 
-          val idCaptor = ArgumentCaptor.forClass(classOf[String])
-          verify(service).populateUserAnswersForContinueAmendJourney(
-            any[UserAnswers],
-            idCaptor.capture(),
-            any[GetMonthlyReturnForEditRequest]
-          )(any[HeaderCarrier])
+          val saved = lastSaved(repo)
+          saved.get(AgentClientDataPage(id)) mustBe
+            Some(AgentClientData("CIS-123", "123", "AB456", Some("ABC Construction Ltd")))
+          saved.get(AgentClientDataPage) mustBe None
+        }
+      }
 
-          idCaptor.getValue mustBe id
-          session.latest.hasSubJourney(id) mustBe true
+      "must redirect an agent to JourneyRecovery when the client is not authorised" in {
+        val service = mock[MonthlyReturnService]
+        val repo    = scopedSessionRepo()
+
+        val application = scopedApplication(service, repo, isAgent = true, clientFound = false)
+
+        running(application) {
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
+
+          status(res) mustBe SEE_OTHER
+          redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verifyNoInteractions(service)
+          verifyNoInteractions(repo)
         }
       }
     }

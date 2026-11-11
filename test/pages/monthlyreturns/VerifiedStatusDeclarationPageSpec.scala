@@ -33,7 +33,7 @@ class VerifiedStatusDeclarationPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       VerifiedStatusDeclarationPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "verifiedStatusDeclaration")
+        (JsPath \ "amend" \ "org_flow-1" \ "verifiedStatusDeclaration")
     }
 
     "have the correct scoped toString" in {

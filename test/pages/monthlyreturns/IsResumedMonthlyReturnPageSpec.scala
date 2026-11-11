@@ -30,7 +30,7 @@ class IsResumedMonthlyReturnPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       IsResumedMonthlyReturnPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "isResumedMonthlyReturn")
+        (JsPath \ "amend" \ "org_flow-1" \ "isResumedMonthlyReturn")
     }
 
     "have the correct scoped toString" in {

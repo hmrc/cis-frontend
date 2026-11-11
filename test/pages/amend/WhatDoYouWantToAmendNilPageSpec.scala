@@ -30,7 +30,7 @@ class WhatDoYouWantToAmendNilPageSpec extends SpecBase {
 
   "have the correct scoped path" in {
     WhatDoYouWantToAmendNilPage("org_flow-1").path mustBe
-      (JsPath \ "org_flow-1" \ "whatDoYouWantToAmendNil")
+      (JsPath \ "amendNil" \ "org_flow-1" \ "whatDoYouWantToAmendNil")
   }
 
   "have the correct scoped toString" in {

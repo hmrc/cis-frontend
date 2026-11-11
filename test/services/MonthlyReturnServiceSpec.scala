@@ -2009,7 +2009,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
     )
 
     def scopedAnswers: UserAnswers =
-      UserAnswers("id").initialiseSubJourney(id).success.value
+      UserAnswers("id")
 
     def submission(submissionId: Long = 1L): Submission =
       Submission(
@@ -2125,7 +2125,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(DeclarationPage(id)) mustBe Some(Set(Declaration.Confirmed))
       ua.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage(id)) mustBe Some(1L)
-      ua.hasSubJourney(id) mustBe true
+      ua.get(CisIdPage(id)) mustBe Some("CIS-123")
 
       verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(editRequest))(any[HeaderCarrier])
       verifyNoInteractions(sessionRepo)
@@ -2400,9 +2400,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val existing = scopedAnswers
-        .initialiseSubJourney(otherId)
-        .success
-        .value
         .set(CisIdPage(otherId), "OTHER-CIS")
         .success
         .value
@@ -2827,7 +2824,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
     )
 
     def scopedAnswers: UserAnswers =
-      UserAnswers("id").initialiseSubJourney(id).success.value
+      UserAnswers("id")
 
     def submission(
       submissionId: Long = 1L,
@@ -2964,7 +2961,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ConfirmationByEmailPage(id)) mustBe Some(true)
       ua.get(EnterYourEmailAddressPage(id)) mustBe Some("test@example.com")
       ua.get(OriginalSubcontractorCountPage(id)) mustBe None
-      ua.hasSubJourney(id) mustBe true
+      ua.get(CisIdPage(id)) mustBe Some("CIS-123")
 
       val details = ua.get(AmendmentDetailsPage(id)).value
       details.instanceId mustBe "CIS-123"
@@ -3213,9 +3210,6 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val existing = scopedAnswers
-        .initialiseSubJourney(otherId)
-        .success
-        .value
         .set(CisIdPage(otherId), "OTHER-CIS")
         .success
         .value

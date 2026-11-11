@@ -20,9 +20,9 @@ import base.SpecBase
 import controllers.routes
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyStandardReturn}
-import models.{JourneyScope, NormalMode, UserAnswers}
+import models.{NormalMode, UserAnswers}
 import org.mockito.Mockito.{atLeastOnce, never, times, verify, verifyNoInteractions, when}
-import services.{AmendMonthlyReturnService, CisTaxpayerService, MonthlyReturnService}
+import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import models.amend.WhatDoYouWantToAmendNil
 import models.monthlyreturns.UpdateMonthlyReturnRequest
 import models.amend.WhatDoYouWantToAmendNil.AmendNilReturn
@@ -40,8 +40,6 @@ import java.time.LocalDate
 import scala.concurrent.Future
 
 import config.FrontendAppConfig
-import models.monthlyreturns.CisTaxpayer
-import models.requests.CisPath.CisOrg
 import org.mockito.ArgumentCaptor
 import play.api.Application
 
@@ -68,16 +66,16 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       .success
       .value
 
-  private def scopedId(flowId: UUID): String = JourneyScope.subJourneyId(CisOrg, flowId)
+  private def scopedId(flowId: UUID): String = flowId.toString
 
-  private def withSubJourney(base: UserAnswers, flowId: UUID): UserAnswers =
-    base.initialiseSubJourney(scopedId(flowId)).success.value
+  private def withScopedCisId(base: UserAnswers, flowId: UUID): UserAnswers =
+    base.set(CisIdPage(scopedId(flowId)), "1").success.value
 
   private def scopedGetUrl(flowId: UUID): String =
-    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(CisOrg, flowId).url
+    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId).url
 
   private def scopedPostUrl(flowId: UUID): String =
-    controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(CisOrg, flowId).url
+    controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId).url
 
   private def scopedApplication(
     userAnswers: Option[UserAnswers],
@@ -88,17 +86,10 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
     val repository = mockSessionRepository(userAnswers)
     when(repository.set(any())).thenReturn(Future.successful(true))
 
-    val taxpayer = mock[CisTaxpayer]
-    when(taxpayer.uniqueId).thenReturn("1")
-
-    val taxpayerService = mock[CisTaxpayerService]
-    when(taxpayerService.findForOrganisation(using any())).thenReturn(Future.successful(taxpayer))
-
-    val application = applicationBuilder()
+    val application = applicationBuilder(userAnswers = userAnswers) // getData/requireData read from here
       .configure("features.multi-tab-enabled" -> enabled)
       .overrides(
         bind[SessionRepository].toInstance(repository),
-        bind[CisTaxpayerService].toInstance(taxpayerService),
         bind[AmendMonthlyReturnService].toInstance(amendService),
         bind[MonthlyReturnService].toInstance(monthlyReturnService)
       )
@@ -348,14 +339,14 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       "must return OK and the correct view for a valid flowId" in {
         val flowId           = UUID.randomUUID()
-        val (application, _) = scopedApplication(Some(withSubJourney(completeUserAnswers, flowId)))
+        val (application, _) = scopedApplication(Some(withScopedCisId(completeUserAnswers, flowId)))
 
         running(application) {
           val request = FakeRequest(GET, scopedGetUrl(flowId))
           val result  = route(application, request).value
           val view    = application.injector.instanceOf[WhatDoYouWantToAmendNilView]
           val action  = Some(
-            controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(CisOrg, flowId)
+            controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId)
           )
 
           status(result) mustEqual OK
@@ -365,7 +356,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
       "must populate the view when the question has previously been answered" in {
         val flowId  = UUID.randomUUID()
-        val answers = withSubJourney(completeUserAnswers, flowId)
+        val answers = withScopedCisId(completeUserAnswers, flowId)
           .set(WhatDoYouWantToAmendNilPage(scopedId(flowId)), AmendNilReturn)
           .success
           .value
@@ -377,7 +368,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           val result  = route(application, request).value
           val view    = application.injector.instanceOf[WhatDoYouWantToAmendNilView]
           val action  = Some(
-            controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(CisOrg, flowId)
+            controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId)
           )
 
           status(result) mustEqual OK
@@ -411,7 +402,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       "must redirect to the landing page when multi-tab is disabled" in {
         val flowId           = UUID.randomUUID()
         val (application, _) =
-          scopedApplication(Some(withSubJourney(completeUserAnswers, flowId)), enabled = false)
+          scopedApplication(Some(withScopedCisId(completeUserAnswers, flowId)), enabled = false)
 
         running(application) {
           val result = route(application, FakeRequest(GET, scopedGetUrl(flowId))).value
@@ -433,7 +424,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val amendService              = mock[AmendMonthlyReturnService]
         val monthlyReturnService      = mock[MonthlyReturnService]
         val (application, repository) = scopedApplication(
-          Some(withSubJourney(completeUserAnswers, flowId)),
+          Some(withScopedCisId(completeUserAnswers, flowId)),
           amendService,
           monthlyReturnService
         )
@@ -442,7 +433,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           val request = post(flowId, "invalid value")
           val result  = route(application, request).value
           val view    = application.injector.instanceOf[WhatDoYouWantToAmendNilView]
-          val action  = Some(controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(CisOrg, flowId))
+          val action  = Some(controllers.amend.routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId))
 
           status(result) mustEqual BAD_REQUEST
           contentAsString(result) mustEqual
@@ -461,7 +452,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           .thenReturn(Future.successful(Right(())))
 
         val (application, repository) =
-          scopedApplication(Some(withSubJourney(completeUserAnswers, flowId)), amendService)
+          scopedApplication(Some(withScopedCisId(completeUserAnswers, flowId)), amendService)
 
         running(application) {
           val result =
@@ -479,7 +470,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
             WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails
           )
           saved.last.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedStandardReturn)
-          saved.last.hasSubJourney(id) mustBe true
+          saved.last.get(CisIdPage(id)) mustBe Some("1")
 
           saved.last.get(WhatDoYouWantToAmendNilPage) mustBe None
           saved.last.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
@@ -496,7 +487,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           .thenReturn(Future.successful(Left("Missing amendment details")))
 
         val (application, _) =
-          scopedApplication(Some(withSubJourney(completeUserAnswers, flowId)), amendService)
+          scopedApplication(Some(withScopedCisId(completeUserAnswers, flowId)), amendService)
 
         running(application) {
           val result =
@@ -516,7 +507,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           .thenReturn(Future.successful(()))
 
         val (application, repository) = scopedApplication(
-          Some(withSubJourney(completeUserAnswers, flowId)),
+          Some(withScopedCisId(completeUserAnswers, flowId)),
           monthlyReturnService = monthlyReturnService
         )
 
@@ -532,7 +523,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           val saved  = captor.getAllValues.asScala.toList.last
 
           saved.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedNilReturn)
-          saved.hasSubJourney(id) mustBe true
+          saved.get(CisIdPage(id)) mustBe Some("1")
 
           verify(monthlyReturnService).updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any())
         }
@@ -551,7 +542,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           .value
 
         val (application, _) = scopedApplication(
-          Some(withSubJourney(incompleteUserAnswers, flowId)),
+          Some(withScopedCisId(incompleteUserAnswers, flowId)),
           monthlyReturnService = monthlyReturnService
         )
 
@@ -584,7 +575,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       "must redirect to the landing page and not save when multi-tab is disabled" in {
         val flowId                    = UUID.randomUUID()
         val (application, repository) =
-          scopedApplication(Some(withSubJourney(completeUserAnswers, flowId)), enabled = false)
+          scopedApplication(Some(withScopedCisId(completeUserAnswers, flowId)), enabled = false)
 
         running(application) {
           val result = route(application, post(flowId, AmendNilReturn.toString)).value
@@ -593,6 +584,41 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           redirectLocation(result).value mustEqual
             application.injector.instanceOf[FrontendAppConfig].returnsLandingPageUrl("1", None)
           verify(repository, never()).set(any())
+        }
+      }
+
+      "must not change answers belonging to another journey" in {
+        val flowId      = UUID.randomUUID()
+        val otherFlowId = UUID.randomUUID()
+        val otherId     = scopedId(otherFlowId)
+
+        val answers = withScopedCisId(completeUserAnswers, flowId)
+          .set(CisIdPage(otherId), "OTHER-CIS")
+          .success
+          .value
+          .set(WhatDoYouWantToAmendNilPage(otherId), AmendNilReturn)
+          .success
+          .value
+
+        val amendService = mock[AmendMonthlyReturnService]
+        when(amendService.startStandardAmendment(any[UserAnswers]())(any()))
+          .thenReturn(Future.successful(Right(())))
+
+        val (application, repository) = scopedApplication(Some(answers), amendService)
+
+        running(application) {
+          val result =
+            route(application, post(flowId, WhatDoYouWantToAmendNil.AddPaymentOrSubcontractorDetails.toString)).value
+
+          status(result) mustEqual SEE_OTHER
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(repository, times(2)).set(captor.capture())
+          val saved  = captor.getAllValues.asScala.toList.last
+
+          saved.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
+          saved.get(WhatDoYouWantToAmendNilPage(otherId)) mustBe Some(AmendNilReturn)
+          saved.get(ReturnTypePage(scopedId(flowId))) mustBe Some(MonthlyAmendedStandardReturn)
         }
       }
     }

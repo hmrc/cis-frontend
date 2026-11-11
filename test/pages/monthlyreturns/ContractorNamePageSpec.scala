@@ -32,7 +32,7 @@ class ContractorNamePageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       ContractorNamePage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "contractorName")
+        (JsPath \ "monthlyReturn" \ "org_flow-1" \ "contractorName")
     }
 
     "have the correct scoped toString" in {

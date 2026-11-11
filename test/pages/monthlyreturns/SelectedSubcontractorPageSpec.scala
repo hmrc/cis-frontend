@@ -113,7 +113,7 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       ScopedSelectedSubcontractorPage(id, index).path mustBe
-        (JsPath \ id \ "subcontractors" \ index.toString)
+        (JsPath \ "amend" \ id \ "subcontractors" \ index.toString)
     }
 
     "use different paths for different journeys" in {
@@ -142,7 +142,7 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     val id = "org_flow-1"
 
     "have the correct scoped path" in {
-      ScopedSelectedSubcontractorPage.all(id).path mustBe (JsPath \ id \ "subcontractors")
+      ScopedSelectedSubcontractorPage.all(id).path mustBe (JsPath \ "amend" \ id \ "subcontractors")
     }
 
     "use different paths for different journeys" in {
@@ -170,9 +170,6 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "store and retrieve a subcontractor under the scoped path" in {
       val ua = emptyUserAnswers
-        .initialiseSubJourney(firstId)
-        .success
-        .value
         .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
         .success
         .value
@@ -183,9 +180,6 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "not write to the legacy unscoped keys" in {
       val ua = emptyUserAnswers
-        .initialiseSubJourney(firstId)
-        .success
-        .value
         .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
         .success
         .value
@@ -196,12 +190,6 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "not read answers belonging to another journey" in {
       val ua = emptyUserAnswers
-        .initialiseSubJourney(firstId)
-        .success
-        .value
-        .initialiseSubJourney(secondId)
-        .success
-        .value
         .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
         .success
         .value
@@ -212,12 +200,6 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "clear only the scoped subcontractors when removing all" in {
       val ua = emptyUserAnswers
-        .initialiseSubJourney(firstId)
-        .success
-        .value
-        .initialiseSubJourney(secondId)
-        .success
-        .value
         .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
         .success
         .value
