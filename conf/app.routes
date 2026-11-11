@@ -203,16 +203,14 @@ POST       /monthly-return/subcontractor-details-added                  controll
 GET        /monthly-return/change-subcontractor-details-added           controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-subcontractor-details-added           controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
 GET        /monthly-return/subcontractor-details-added/cancel           controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendment()
+GET        /monthly-return/subcontractor-details-added/final-validation-complete          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added/final-validation-complete   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = CheckMode)
 
 GET        /monthly-return/subcontractor-details-added/:flowId             controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
 POST       /monthly-return/subcontractor-details-added/:flowId             controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
 GET        /monthly-return/change-subcontractor-details-added/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
 POST       /monthly-return/change-subcontractor-details-added/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
 GET        /monthly-return/subcontractor-details-added/cancel/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendmentWithId(flowId: UUID)
-
-GET        /monthly-return/subcontractor-details-added/final-validation-complete          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = NormalMode)
-GET        /monthly-return/change-subcontractor-details-added/final-validation-complete   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = CheckMode)
-
 GET        /monthly-return/subcontractor-details-added/final-validation-complete/:flowId          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidationWithId(flowId: UUID, mode: Mode = NormalMode)
 GET        /monthly-return/change-subcontractor-details-added/final-validation-complete/:flowId   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidationWithId(flowId: UUID, mode: Mode = CheckMode)
 
