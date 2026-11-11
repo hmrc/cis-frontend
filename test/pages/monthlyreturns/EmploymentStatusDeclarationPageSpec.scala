@@ -22,12 +22,17 @@ import play.api.libs.json.JsPath
 class EmploymentStatusDeclarationPageSpec extends SpecBase {
 
   "EmploymentStatusDeclarationPage" - {
-    "have the correct path" in {
+    "must use the correct EmploymentStatusDeclarationPage path" in {
       EmploymentStatusDeclarationPage.path mustBe (JsPath \ "employmentStatusDeclaration")
+      EmploymentStatusDeclarationPage.toString mustBe "employmentStatusDeclaration"
     }
 
-    "have the correct toString" in {
-      EmploymentStatusDeclarationPage.toString mustBe "employmentStatusDeclaration"
+    "must use the correct EmploymentStatusDeclarationPage path with id" in {
+      val testId = "testId"
+      EmploymentStatusDeclarationPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "employmentStatusDeclaration")
+      EmploymentStatusDeclarationPage(testId).toString mustBe "employmentStatusDeclaration"
     }
   }
 }

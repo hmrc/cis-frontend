@@ -23,12 +23,17 @@ class VerifiedStatusDeclarationPageSpec extends SpecBase {
 
   "VerifiedStatusDeclarationPage" - {
 
-    "have the correct path" in {
+    "have the correct path and toString" in {
       VerifiedStatusDeclarationPage.path mustBe (JsPath \ "verifiedStatusDeclaration")
+      VerifiedStatusDeclarationPage.toString mustBe "verifiedStatusDeclaration"
     }
 
-    "have the correct toString" in {
-      VerifiedStatusDeclarationPage.toString mustBe "verifiedStatusDeclaration"
+    "have the correct path and toString with id" in {
+      val testId = "testId"
+      VerifiedStatusDeclarationPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "verifiedStatusDeclaration")
+      VerifiedStatusDeclarationPage(testId).toString mustBe "verifiedStatusDeclaration"
     }
   }
 }

@@ -22,12 +22,17 @@ import play.api.libs.json.JsPath
 class PaymentDetailsConfirmationPageSpec extends SpecBase {
 
   "PaymentDetailsConfirmationPage" - {
-    "have the correct path" in {
+    "have use the correct PaymentDetailsConfirmationPage path" in {
       PaymentDetailsConfirmationPage.path mustBe (JsPath \ "paymentDetailsConfirmation")
+      PaymentDetailsConfirmationPage.toString mustBe "paymentDetailsConfirmation"
     }
 
-    "have the correct toString" in {
-      PaymentDetailsConfirmationPage.toString mustBe "paymentDetailsConfirmation"
+    "have use the correct PaymentDetailsConfirmationPage path with id" in {
+      val testId = "testId"
+      PaymentDetailsConfirmationPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "paymentDetailsConfirmation")
+      PaymentDetailsConfirmationPage(testId).toString mustBe "paymentDetailsConfirmation"
     }
   }
 }

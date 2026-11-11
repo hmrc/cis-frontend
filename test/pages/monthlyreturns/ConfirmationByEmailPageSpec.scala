@@ -23,41 +23,76 @@ class ConfirmationByEmailPageSpec extends SpecBase {
 
   "ConfirmationByEmailPage" - {
 
-    "have the correct path" in {
+    "use correct ConfirmationByEmailPage path" in {
       ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
-    }
-
-    "have the correct toString" in {
       ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
     }
 
+    "use correct ConfirmationByEmailPage path with id" in {
+      val testId = "testId"
+      ConfirmationByEmailPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "confirmationByEmail")
+      ConfirmationByEmailPage(testId).toString mustBe "confirmationByEmail"
+    }
+
     "cleanup" - {
+      "without id" - {
+        "must remove EnterYourEmailAddressPage when answer is No" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage, "test@example.com")
 
-      "must remove EnterYourEmailAddressPage when answer is No" in {
-        val userAnswers = emptyUserAnswers
-          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+          val result = ConfirmationByEmailPage.cleanup(Some(false), userAnswers).success.value
 
-        val result = ConfirmationByEmailPage.cleanup(Some(false), userAnswers).success.value
+          result.get(EnterYourEmailAddressPage) mustBe None
+        }
 
-        result.get(EnterYourEmailAddressPage) mustBe None
+        "must remove EnterYourEmailAddressPage when answer is removed" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+          val result = ConfirmationByEmailPage.cleanup(None, userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage) mustBe None
+        }
+
+        "must retain EnterYourEmailAddressPage when answer is Yes" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage, "test@example.com")
+
+          val result = ConfirmationByEmailPage.cleanup(Some(true), userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+        }
       }
 
-      "must remove EnterYourEmailAddressPage when answer is removed" in {
-        val userAnswers = emptyUserAnswers
-          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+      "with id" - {
+        val testId = "testId"
 
-        val result = ConfirmationByEmailPage.cleanup(None, userAnswers).success.value
+        "must remove EnterYourEmailAddressPage when answer is No" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
 
-        result.get(EnterYourEmailAddressPage) mustBe None
-      }
+          val result = ConfirmationByEmailPage(testId).cleanup(Some(false), userAnswers).success.value
 
-      "must retain EnterYourEmailAddressPage when answer is Yes" in {
-        val userAnswers = emptyUserAnswers
-          .setOrException(EnterYourEmailAddressPage, "test@example.com")
+          result.get(EnterYourEmailAddressPage(testId)) mustBe None
+        }
 
-        val result = ConfirmationByEmailPage.cleanup(Some(true), userAnswers).success.value
+        "must remove EnterYourEmailAddressPage when answer is removed" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
 
-        result.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
+          val result = ConfirmationByEmailPage(testId).cleanup(None, userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage(testId)) mustBe None
+        }
+
+        "must retain EnterYourEmailAddressPage when answer is Yes" in {
+          val userAnswers = emptyUserAnswers
+            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
+
+          val result = ConfirmationByEmailPage(testId).cleanup(Some(true), userAnswers).success.value
+
+          result.get(EnterYourEmailAddressPage(testId)) mustBe Some("test@example.com")
+        }
       }
     }
   }
