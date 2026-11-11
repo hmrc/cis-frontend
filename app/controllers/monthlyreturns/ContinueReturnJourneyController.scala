@@ -262,7 +262,6 @@ class ContinueReturnJourneyController @Inject() (
                   sessionRepository.set(withSource).flatMap { _ =>
                     reconcileScopedReturn(
                       taxpayer,
-                      // TODO: Temp redirect until the page after DateConfirmPayments has an ID-scoped route.
                       Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
                     )
                   }
