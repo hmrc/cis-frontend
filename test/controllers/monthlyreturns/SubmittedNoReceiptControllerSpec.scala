@@ -714,7 +714,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                   submissionType = submissionType,
                   cisId = cisId
                 )
-              )(request, applicationConfig, messages(app)).toString
+              )(viewRequest(request, isAgent = true), applicationConfig, messages(app)).toString
 
             running(app) {
               val result = route(app, request).value
@@ -783,7 +783,7 @@ class SubmittedNoReceiptControllerSpec extends SpecBase {
                   submissionType = submissionType,
                   cisId = cisId
                 )
-              )(request, applicationConfig, messages(app)).toString
+              )(viewRequest(request, isAgent = true), applicationConfig, messages(app)).toString
 
             running(app) {
               val result = route(app, request).value

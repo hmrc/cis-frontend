@@ -626,7 +626,10 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
         val view   = application.injector.instanceOf[ConfirmAmendmentView]
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(showWarning = false)(request, messages(application)).toString
+        contentAsString(result) mustEqual view(showWarning = false)(
+          viewRequest(request, isAgent = true),
+          messages(application)
+        ).toString
 
         verify(mockAmendMonthlyReturnService).getAmendmentHandoff(eqTo(handoffId))(
           any[HeaderCarrier]()

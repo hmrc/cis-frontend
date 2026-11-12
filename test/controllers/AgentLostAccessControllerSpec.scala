@@ -57,7 +57,7 @@ class AgentLostAccessControllerSpec extends SpecBase with MockitoSugar {
 
           val expectedView =
             view(appConfig.authoriseClientRequestUrl(agentCode))(
-              request,
+              viewRequest(request, isAgent = true),
               appConfig,
               messages(application)
             )
