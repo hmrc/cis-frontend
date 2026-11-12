@@ -242,15 +242,9 @@ class Navigator @Inject() () extends Logging {
 
     // amend monthly return
     case (AreYouSureYouWantToAmendYesNoPage, _) =>
-      userAnswers =>
-        userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
-          case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
-            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
-          case _                                                         =>
-            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
-        }
+      userAnswers => navigatorFromAreYouSureYouWantToAmendYesNoPage(flowId, userAnswers)
     case (WhichSubcontractorsToAddPage, _)      =>
-      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
 
     case _ =>
       _ => controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -397,5 +391,17 @@ class Navigator @Inject() () extends Logging {
       case (None, _)             =>
         logger.error("[Navigator][navigatorFromVerifiedStatusDeclarationPage] - VerifiedStatusDeclarationPage not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  private def navigatorFromAreYouSureYouWantToAmendYesNoPage(
+    flowId: UUID,
+    userAnswers: UserAnswers
+  ): Call =
+    val id = flowId.toString
+    userAnswers.get(AreYouSureYouWantToAmendYesNoPage(id)) match {
+      case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode)
+      case _                                                         =>
+        controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
     }
 }
