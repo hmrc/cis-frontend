@@ -301,7 +301,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
                                    ua3
                                      .remove(
                                        FinalValidationDraftIdPage(subJourneyId)
-                                     ) // TODO DTR-9474: Final validation out of scope
+                                     )
                                      .flatMap(_.remove(MonthlyFinalValidationContinuationPage(subJourneyId)))
                                      .flatMap(
                                        _.set(

@@ -21,6 +21,8 @@ import models.{CheckMode, NormalMode, UserAnswers}
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 
+import java.util.UUID
+
 object SubcontractorDetailsAddedBuilder {
 
   private def selectedSubcontractors(ua: UserAnswers, id: Option[String]): Map[Int, SelectedSubcontractor] =
@@ -58,11 +60,20 @@ object SubcontractorDetailsAddedBuilder {
             val added      = detailsAdded(sub)
             val changeCall =
               if (added) {
-                controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController // TODO DTR-9474: Update with future id scope
-                  .onPageLoad(index)
+                id match {
+                  case Some(value) =>
+                    controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                      .onPageLoadWithId(UUID.fromString(value), index)
+                  case None        => controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
+                }
               } else {
-                controllers.monthlyreturns.routes.PaymentDetailsController // TODO DTR-9474: Update with future id scope
-                  .onPageLoad(NormalMode, index, None)
+                id match {
+                  case Some(value) =>
+                    controllers.monthlyreturns.routes.PaymentDetailsController
+                      .onPageLoadWithId(UUID.fromString(value), NormalMode, index, None)
+                  case None        =>
+                    controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, index, None)
+                }
               }
 
             SubcontractorDetailsAddedRow(

@@ -106,11 +106,11 @@ class VerifySubcontractorsController @Inject() (
                 Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield value match {
-              case true  => Redirect(appConfig.verifySubcontractorsUrl) // TODO DTR-9474: Update to use future id scope
+              case true  => Redirect(appConfig.verifySubcontractorsUrl)
               case false =>
                 Redirect(
                   navigator.nextPage(VerifySubcontractorsPage(subJourneyId), mode, request.userAnswers)
-                ) // TODO DTR-9474: Update Navigator to use future id scope
+                )
             }
         )
     }

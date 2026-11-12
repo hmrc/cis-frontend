@@ -412,7 +412,7 @@ class SubcontractorDetailsAddedController @Inject() (
             logger.error("[SubcontractorDetailsAddedController][onSubmit] - view model build returned None")
             Future.successful(
               Redirect(controllers.routes.SystemErrorController.onPageLoad())
-            ) // TODO DTR-9474: Do we need to update to use id scope?
+            )
 
           case Some(viewModel) =>
             if (!viewModel.showYesNo) {
@@ -607,7 +607,7 @@ class SubcontractorDetailsAddedController @Inject() (
     )
 
     subcontractorService
-      .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua) // TODO DTR-9474: Update with future id scope
+      .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua)
       .flatMap { selectedFullSubcontractors =>
         val validation = finalValidationService.validate(subcontractors = selectedFullSubcontractors)
         logger.info(
@@ -619,7 +619,7 @@ class SubcontractorDetailsAddedController @Inject() (
         if (validation.hasErrors) {
           for {
             createRequest <- Future.fromTry(
-                               finalValidationDraftRequestBuilder.build( // TODO DTR-9474: Update with future id scope
+                               finalValidationDraftRequestBuilder.build(
                                  instanceId = cisId,
                                  selectedSubcontractors = selectedFullSubcontractors,
                                  validation = validation
