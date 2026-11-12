@@ -56,11 +56,11 @@ class Navigator @Inject() () extends Logging {
         } else {
           controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
         }
-    case (SelectedSubcontractorPaymentsMadePage(index, _), _)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorMaterialCostsPage(index, _), _) =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorTaxDeductedPage(index, _), _)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case (PaymentDetailsConfirmationPage, _)                   =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
