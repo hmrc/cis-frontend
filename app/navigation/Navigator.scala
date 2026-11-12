@@ -198,7 +198,7 @@ class Navigator @Inject() () extends Logging {
     }
 
   // Multi-tab: Normal mode navigation
-  private def normalRoutesWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+  private def normalRoutesWithId(flowId: UUID, id: String): (Page, ReturnType) => UserAnswers => Call = {
     // common
     case (SubmitInactivityRequestPage, _) =>
       userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, NormalMode, userAnswers)
@@ -265,7 +265,27 @@ class Navigator @Inject() () extends Logging {
     case (_, MonthlyNilReturn) =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
-    // TODO: Add UUID-scoped standard monthly return check navigation.
+    // standard return
+    case (SelectedSubcontractorPaymentsMadePage(index, id), _)  =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
+    case (SelectedSubcontractorMaterialCostsPage(index, id), _) =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
+    case (SelectedSubcontractorTaxDeductedPage(index, id), _)   =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
+    case (EmploymentStatusDeclarationPage(id), _)               =>
+      userAnswers => navigatorFromEmploymentStatusDeclarationPage(flowId, CheckMode, userAnswers)
+    case (VerifiedStatusDeclarationPage(id), _)                 =>
+      userAnswers => navigatorFromVerifiedStatusDeclarationPage(flowId, CheckMode, userAnswers)
+    case (SubmitInactivityRequestPage(id), _)                   =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, CheckMode, userAnswers)
+    case (ConfirmationByEmailPage(id), _)                       =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, CheckMode, userAnswers)
+    case (EnterYourEmailAddressPage(id), _)                     =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+    // amend monthly return
+    case (WhichSubcontractorsToAddPage(id), _)                  =>
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, CheckMode)
+    case (_, _)                                                 => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
     // TODO: Add UUID-scoped amended monthly return check navigation.
 
@@ -285,7 +305,7 @@ class Navigator @Inject() () extends Logging {
     userAnswers.get(ReturnTypePage(id)) match {
       case Some(returnType) =>
         mode match {
-          case NormalMode => normalRoutesWithId(flowId)(page, returnType)(userAnswers)
+          case NormalMode => normalRoutesWithId(flowId, id)(page, returnType)(userAnswers)
           case CheckMode  => checkRouteMapWithId(flowId)(page, returnType)(userAnswers)
         }
       case None             =>
