@@ -1625,6 +1625,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .setOrException(SubmissionCreatedForFlowPage(id, "2025-01"), true)
         .setOrException(DateConfirmPaymentsPage, returnDate)
 
+      when(sessionRepo.get("test-user"))
+        .thenReturn(Future.successful(Some(ua)))
+
       when(sessionRepo.set(any[UserAnswers]))
         .thenReturn(Future.successful(true))
 
@@ -1633,6 +1636,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       val uaCaptor: ArgumentCaptor[UserAnswers] =
         ArgumentCaptor.forClass(classOf[UserAnswers])
 
+      verify(sessionRepo).get("test-user")
       verify(sessionRepo).set(uaCaptor.capture())
 
       val savedUa = uaCaptor.getValue
@@ -1645,15 +1649,22 @@ class MonthlyReturnServiceSpec extends SpecBase {
       savedUa.get(SubmissionJourneyCompletedPage("2025-01")) mustBe None
     }
 
-    "return unit and not persist when the ID-scoped payment date is missing" in {
+    "fail and not persist when the ID-scoped payment date is missing" in {
       val (service, _, sessionRepo) = newService()
 
       val ua = UserAnswers("test-user")
         .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
 
-      service.completeSubmissionJourney(ua, "test-id").futureValue mustBe ()
+      when(sessionRepo.get("test-user"))
+        .thenReturn(Future.successful(Some(ua)))
 
-      verifyNoInteractions(sessionRepo)
+      val exception =
+        service.completeSubmissionJourney(ua, "test-id").failed.futureValue
+
+      exception.getMessage mustBe "dateConfirmPayments missing"
+
+      verify(sessionRepo).get("test-user")
+      verify(sessionRepo, never()).set(any[UserAnswers])
     }
   }
 

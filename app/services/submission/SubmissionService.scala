@@ -601,10 +601,13 @@ class SubmissionService @Inject() (
         val now             = LocalDateTime.now()
 
         if (now.isAfter(timeoutDateTime)) {
-          for {
-            ua1 <- Future.fromTry(userAnswers.set(SubmissionStatusTimedOutPage(submissionDetails.id), true))
-            _   <- sessionRepository.set(ua1)
-          } yield "TIMED_OUT"
+          // Reload latest session before saving the timeout flag.
+          saveLatestUserAnswers(userAnswers) { latestUa =>
+            latestUa.set(
+              SubmissionStatusTimedOutPage(submissionDetails.id),
+              true
+            )
+          }.map(_ => "TIMED_OUT")
         } else {
           for {
             pollUrl      <- userAnswers.get(PollUrlPage(id)).toFuture
@@ -626,15 +629,23 @@ class SubmissionService @Inject() (
               LocalDateTime.now().isAfter(timeoutDateTime) && (newStatus == "ACCEPTED" || newStatus == "PENDING")
             finalStatus   = if (timedOut) "TIMED_OUT" else newStatus
             newDetails    = submissionDetails.copy(status = newStatus, hmrcMarkGgis = result.irMarkReceived)
-            ua1          <- Future.fromTry(userAnswers.set(SubmissionDetailsPage(id), newDetails))
-            ua2          <- Future.fromTry(ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut))
-            ua3          <- result.pollUrl.map(url => ua2.set(PollUrlPage(id), url)).getOrElse(Try(ua2)).toFuture
-            ua4          <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage(id), i)).getOrElse(Try(ua3)).toFuture
-            ua5          <- result.lastMessageDate match {
-                              case Some(ts) => Future.fromTry(ua4.set(LastMessageDatePage(id), Instant.parse(ts)))
-                              case None     => Future.successful(ua4)
+            // Apply polling updates to the latest session.
+            _            <- saveLatestUserAnswers(userAnswers) { latestUa =>
+                              for {
+                                ua1 <- latestUa.set(SubmissionDetailsPage(id), newDetails)
+                                ua2 <- ua1.set(SubmissionStatusTimedOutPage(submissionDetails.id), timedOut)
+                                ua3 <- result.pollUrl.map(url => ua2.set(PollUrlPage(id), url)).getOrElse(Try(ua2))
+                                ua4 <- result.intervalSeconds.map(i => ua3.set(PollIntervalPage(id), i)).getOrElse(Try(ua3))
+                                ua5 <- result.lastMessageDate match {
+                                         case Some(ts) =>
+                                           Try(Instant.parse(ts)).flatMap { instant =>
+                                             ua4.set(LastMessageDatePage(id), instant)
+                                           }
+                                         case None     =>
+                                           Success(ua4)
+                                       }
+                              } yield ua5
                             }
-            _            <- sessionRepository.set(ua5)
           } yield finalStatus
         }
     }
@@ -879,48 +890,59 @@ class SubmissionService @Inject() (
     submissionId: String,
     response: ChrisSubmissionResponse,
     amendment: Option[String]
-  ): Future[Boolean] = {
-
-    val updatedUa: Try[UserAnswers] = for {
-      ua1 <- ua.set(
-               SubmissionDetailsPage(id),
-               SubmissionDetails(
-                 id = submissionId,
-                 status = response.status,
-                 irMark = response.hmrcMarkGenerated,
-                 submittedAt = LocalDateTime.now(),
-                 amendment = amendment,
-                 hmrcMarkGgis = None
+  ): Future[Boolean] =
+    // CHANGED: Reload latest UserAnswers before updating submission details.
+    saveLatestUserAnswers(ua) { latestUa =>
+      for {
+        ua1 <- latestUa.set(
+                 SubmissionDetailsPage(id),
+                 SubmissionDetails(
+                   id = submissionId,
+                   status = response.status,
+                   irMark = response.hmrcMarkGenerated,
+                   submittedAt = LocalDateTime.now(),
+                   amendment = amendment,
+                   hmrcMarkGgis = None
+                 )
                )
-             )
 
-      ua2 <- response.responseEndPoint match {
-               case Some(endpoint) =>
-                 for {
-                   u1 <- ua1.set(PollUrlPage(id), endpoint.url)
-                   u2 <- u1.set(PollIntervalPage(id), endpoint.pollIntervalSeconds)
-                 } yield u2
+        ua2 <- response.responseEndPoint match {
+                 case Some(endpoint) =>
+                   for {
+                     u1 <- ua1.set(PollUrlPage(id), endpoint.url)
+                     u2 <- u1.set(PollIntervalPage(id), endpoint.pollIntervalSeconds)
+                   } yield u2
 
-               case None =>
-                 Success(ua1)
-             }
+                 case None =>
+                   Success(ua1)
+               }
 
-      ua3 <- response.correlationId.toTry.flatMap { correlationId =>
-               ua2.set(CorrelationIdPage(id), correlationId)
-             }
+        ua3 <- response.correlationId.toTry.flatMap { correlationId =>
+                 ua2.set(CorrelationIdPage(id), correlationId)
+               }
 
-    } yield ua3
-
-    updatedUa.fold(
-      { err =>
-        logger.error(
-          "[SubmissionService][writeToFeMongo] Failed to update scoped UserAnswers",
-          err
-        )
+      } yield ua3
+    }
+      .map(_ => true)
+      .recoverWith { case NonFatal(err) =>
+        logger.error("[SubmissionService][writeToFeMongo] Failed to update scoped UserAnswers", err)
         Future.failed(err)
-      },
-      sessionRepository.set
-    )
-  }
+      }
+
+  // Multi-tab: Apply updates to the latest UserAnswers before saving.
+  private def saveLatestUserAnswers(userAnswers: UserAnswers)(
+    update: UserAnswers => Try[UserAnswers]
+  ): Future[UserAnswers] =
+    sessionRepository.get(userAnswers.id).flatMap {
+      case Some(latestUa) =>
+        Future.fromTry(update(latestUa)).flatMap { updatedUa =>
+          sessionRepository.set(updatedUa).flatMap {
+            case true  => Future.successful(updatedUa)
+            case false => Future.failed(new IllegalStateException("Failed to persist updated UserAnswers"))
+          }
+        }
+      case None           =>
+        Future.failed(new IllegalStateException("UserAnswers not found in session"))
+    }
 
 }

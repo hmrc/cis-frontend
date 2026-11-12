@@ -262,30 +262,27 @@ class MonthlyReturnService @Inject() (
   }
 
   // Multi-tab: Complete the ID-scoped submission journey.
-  def completeSubmissionJourney(userAnswers: UserAnswers, id: String)(implicit hc: HeaderCarrier): Future[Unit] = {
-    val updatedTry =
-      userAnswers.get(DateConfirmPaymentsPage(id)) match {
-        case Some(periodEnd) =>
-          userAnswers.set(
-            SubmissionJourneyCompletedForFlowPage(id, YearMonth.from(periodEnd).toString),
-            true
+  def completeSubmissionJourney(userAnswers: UserAnswers, id: String)(implicit hc: HeaderCarrier): Future[Unit] =
+    // Reload latest UserAnswers before marking the journey complete.
+    saveLatestUserAnswers(userAnswers) { latestUa =>
+      val updatedTry =
+        latestUa.get(DateConfirmPaymentsPage(id)) match {
+          case Some(periodEnd) =>
+            latestUa.set(SubmissionJourneyCompletedForFlowPage(id, YearMonth.from(periodEnd).toString), true)
+          case None            =>
+            Failure(new RuntimeException("dateConfirmPayments missing"))
+        }
+
+      updatedTry match {
+        case Success(updatedAnswers) =>
+          Success(updatedAnswers)
+        case Failure(exception)      =>
+          logger.warn(
+            s"[MonthlyReturnService][completeSubmissionJourney] Failed to complete submission journey: ${exception.getMessage}"
           )
-
-        case None =>
-          Failure(new RuntimeException("dateConfirmPayments missing"))
+          Failure(exception)
       }
-
-    updatedTry match {
-      case Success(updatedAnswers) =>
-        sessionRepository.set(updatedAnswers).map(_ => ())
-
-      case Failure(exception) =>
-        logger.warn(
-          s"[MonthlyReturnService][completeSubmissionJourney] Failed to complete submission journey: ${exception.getMessage}"
-        )
-        Future.successful(())
-    }
-  }
+    }.map(_ => ())
 
   def clearSubmissionJourney(userAnswers: UserAnswers): Future[Unit] =
     Future
@@ -353,6 +350,22 @@ class MonthlyReturnService @Inject() (
                            monthlyReturn = monthlyReturn
                          )
       } yield updatedUa
+    }
+
+  // Multi-tab: Apply updates to the latest UserAnswers before saving.
+  private def saveLatestUserAnswers(userAnswers: UserAnswers)(
+    update: UserAnswers => Try[UserAnswers]
+  ): Future[UserAnswers] =
+    sessionRepository.get(userAnswers.id).flatMap {
+      case Some(latestUa) =>
+        Future.fromTry(update(latestUa)).flatMap { updatedUa =>
+          sessionRepository.set(updatedUa).flatMap {
+            case true  => Future.successful(updatedUa)
+            case false => Future.failed(new IllegalStateException("Failed to persist updated UserAnswers"))
+          }
+        }
+      case None           =>
+        Future.failed(new IllegalStateException("UserAnswers not found in session"))
     }
 
   private def populateContinueAmendJourneyAnswers(

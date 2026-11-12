@@ -2558,6 +2558,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.submitToChris(eqTo("sub-123"), any[ChrisSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(mkChrisResp()))
+
+      when(sessionRepository.get(ua.id)).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
       service.submitToChrisAndPersist("sub-123", ua, id, false, false).futureValue mustBe mkChrisResp()
@@ -2568,6 +2570,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).submitToChris(eqTo("sub-123"), eqTo(builtRequest))(any[HeaderCarrier])
 
       val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).get(ua.id)
       verify(sessionRepository).set(uaCaptor.capture())
       uaCaptor.getValue.get(SubmissionDetailsPage(id)).value.status mustBe "SUBMITTED"
       uaCaptor.getValue.get(CorrelationIdPage(id)) mustBe Some("CID123")
@@ -2691,6 +2694,8 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         )
       when(connector.updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.unit)
+
+      when(sessionRepository.get(ua.id)).thenReturn(Future.successful(Some(ua)))
       when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
 
       service.checkAndUpdateSubmissionStatus(ua, id).futureValue mustBe "ACCEPTED"
@@ -2699,6 +2704,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       verify(connector).updateSubmission(any[String], any[UpdateSubmissionRequest])(any[HeaderCarrier])
 
       val uaCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).get(ua.id)
       verify(sessionRepository).set(uaCaptor.capture())
 
       uaCaptor.getValue.get(SubmissionDetailsPage(id)).value.status mustBe "ACCEPTED"
