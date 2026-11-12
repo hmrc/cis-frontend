@@ -55,6 +55,13 @@ class LayoutSpec extends SpecBase {
         appConfig.hmrcServicesOrgUrl
     }
 
+    "must still show the language toggle alongside the account link" in new Setup {
+      private val doc = render(viewRequest(FakeRequest(), isAgent = true))
+
+      doc.select(".hmrc-service-navigation-language-select").size mustBe 1
+      doc.select(".govuk-service-navigation a:contains(Back to agent services)").size mustBe 1
+    }
+
     "must still show the service name in the service navigation" in new Setup {
       private val doc = render(FakeRequest())
 
