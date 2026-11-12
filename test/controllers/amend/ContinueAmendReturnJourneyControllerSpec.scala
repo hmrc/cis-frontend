@@ -62,7 +62,6 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
   private def scopedUrl(isOriginalNilReturn: Boolean = false, instanceId: String = scopedInstanceId): String =
     controllers.amend.routes.ContinueAmendReturnJourneyController
       .continueAmendReturnJourneyWithCisId(
-        instanceId,
         ContinueReturnJourneyQueryParams(instanceId, 2025, 1, Some(isOriginalNilReturn))
       )
       .url
