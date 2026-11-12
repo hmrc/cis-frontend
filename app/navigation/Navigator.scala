@@ -56,11 +56,11 @@ class Navigator @Inject() () extends Logging {
         } else {
           controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
         }
-    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index, _), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
+    case (SelectedSubcontractorMaterialCostsPage(index, _), _) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index, _), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case (PaymentDetailsConfirmationPage, _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
@@ -92,11 +92,11 @@ class Navigator @Inject() () extends Logging {
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
-    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index, _), _)  =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
+    case (SelectedSubcontractorMaterialCostsPage(index, _), _) =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index, _), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
     case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(CheckMode)(userAnswers)
@@ -240,7 +240,18 @@ class Navigator @Inject() () extends Logging {
     case (VerifiedStatusDeclarationPage, _)                    =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(flowId, NormalMode, userAnswers)
 
-    // TODO: Add UUID-scoped amended monthly return navigation.
+    // amend monthly return
+    case (AreYouSureYouWantToAmendYesNoPage, _)             =>
+      userAnswers =>
+        userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
+          case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(NormalMode)
+          case _                                                         =>
+            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
+        }
+    case (WhichSubcontractorsToAddPage, _)                  =>
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
+    case (_, _)
 
     case _ =>
       _ => controllers.routes.JourneyRecoveryController.onPageLoad()
