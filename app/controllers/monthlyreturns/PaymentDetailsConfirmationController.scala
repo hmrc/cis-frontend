@@ -78,7 +78,7 @@ class PaymentDetailsConfirmationController @Inject() (
         view(
           preparedForm,
           mode,
-          isAmendment(request.userAnswers),
+          isAmendmentWithId(flowId, request.userAnswers),
           formAction,
           cancelAction
         )
@@ -116,7 +116,7 @@ class PaymentDetailsConfirmationController @Inject() (
                 view(
                   formWithErrors,
                   mode,
-                  isAmendment(request.userAnswers),
+                  isAmendmentWithId(flowId, request.userAnswers),
                   formAction,
                   cancelAction
                 )

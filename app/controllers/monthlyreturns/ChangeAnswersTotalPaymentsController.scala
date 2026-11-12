@@ -125,8 +125,6 @@ class ChangeAnswersTotalPaymentsController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val ua           = request.userAnswers
       val subJourneyId = flowId.toString
-      val formAction   =
-        Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
       payloadBuilder.build(ua, index) match {
         case None =>
