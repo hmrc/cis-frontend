@@ -282,12 +282,10 @@ class Navigator @Inject() () extends Logging {
       userAnswers => navigatorFromConfirmationByEmailPage(flowId, CheckMode, userAnswers)
     case (EnterYourEmailAddressPage(id), _)                     =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
     // amend monthly return
     case (WhichSubcontractorsToAddPage(id), _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, CheckMode)
-    case (_, _)                                                 => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
-
-    // TODO: Add UUID-scoped amended monthly return check navigation.
 
     case _ =>
       _ => controllers.routes.JourneyRecoveryController.onPageLoad()
