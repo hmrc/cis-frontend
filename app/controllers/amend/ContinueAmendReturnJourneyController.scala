@@ -209,10 +209,7 @@ class ContinueAmendReturnJourneyController @Inject() (
       }
 
   // Multi-tab: CIS ID-scoped copy of continueAmendReturnJourney.
-  def continueAmendReturnJourneyWithCisId(
-    cisId: String,
-    queryParams: ContinueReturnJourneyQueryParams
-  ): Action[AnyContent] =
+  def continueAmendReturnJourneyWithCisId(queryParams: ContinueReturnJourneyQueryParams): Action[AnyContent] =
     identify.async { implicit request =>
       val editRequest = GetMonthlyReturnForEditRequest(
         instanceId = queryParams.instanceId,

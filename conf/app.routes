@@ -181,9 +181,9 @@ GET        /monthly-return/submission-unsuccessful-resubmit             controll
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 
-# DTR-9475
-GET        /monthly-return/continue-return-journey/:cisId                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourneyWithCisId(cisId: String, queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
-GET        /monthly-return/continue-amend-return-journey/:cisId                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourneyWithCisId(cisId: String, queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+# DTR-9475 - TODO remove trailing '/multi-tab' when legacy url no longer needed
+GET        /monthly-return/continue-return-journey/multi-tab                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourneyWithCisId(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+GET        /monthly-return/continue-amend-return-journey/multi-tab                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourneyWithCisId(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
