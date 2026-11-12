@@ -27,7 +27,6 @@ case class SubmissionConfirmationCachePage(id: String) extends QuestionPage[Subm
   override def toString: String = "submissionConfirmationCache"
 }
 
-
 case object SubmissionConfirmationCachePage extends QuestionPage[SubmissionConfirmationCache] {
 
   override def path: JsPath = JsPath \ toString

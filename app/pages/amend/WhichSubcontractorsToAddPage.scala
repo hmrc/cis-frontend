@@ -26,7 +26,6 @@ case class WhichSubcontractorsToAddPage(id: String) extends QuestionPage[Set[Str
   override def toString: String = "whichSubcontractorsToAdd"
 }
 
-
 case object WhichSubcontractorsToAddPage extends QuestionPage[Set[String]] {
 
   override def path: JsPath = JsPath \ toString

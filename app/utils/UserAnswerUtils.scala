@@ -175,7 +175,7 @@ object UserAnswerUtils {
 
         // monthly return journey origin
         .flatMap(_.remove(IsResumedMonthlyReturnPage(id)))
-    
+
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
         case Some(MonthlyNilReturn) | Some(MonthlyAmendedNilReturn) =>

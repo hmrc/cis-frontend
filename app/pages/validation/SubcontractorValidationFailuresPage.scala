@@ -29,7 +29,6 @@ case class SubcontractorValidationFailuresPage(id: String) extends QuestionPage[
     "subcontractorValidationFailures"
 }
 
-
 case object SubcontractorValidationFailuresPage extends QuestionPage[List[SubcontractorValidationFailure]] {
 
   override def path: JsPath =
