@@ -50,7 +50,7 @@ class ResubmissionIdPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       ResubmissionIdPage("org_flow-1").path mustBe
-        (JsPath \ "org_flow-1" \ "submission" \ "resubmissionId")
+        (JsPath \ "submission" \ "org_flow-1" \ "resubmissionId")
     }
 
     "have the correct scoped toString" in {

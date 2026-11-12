@@ -32,7 +32,7 @@ class PaymentDetailsConfirmationPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       PaymentDetailsConfirmationPage("org_flow-1").path mustBe
-        (JsPath \ "amend" \ "org_flow-1" \ "paymentDetailsConfirmation")
+        (JsPath \ "monthlyReturn" \ "org_flow-1" \ "paymentDetailsConfirmation")
     }
 
     "have the correct scoped toString" in {

@@ -113,7 +113,7 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       ScopedSelectedSubcontractorPage(id, index).path mustBe
-        (JsPath \ "amend" \ id \ "subcontractors" \ index.toString)
+        (JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString)
     }
 
     "use different paths for different journeys" in {
@@ -142,7 +142,7 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     val id = "org_flow-1"
 
     "have the correct scoped path" in {
-      ScopedSelectedSubcontractorPage.all(id).path mustBe (JsPath \ "amend" \ id \ "subcontractors")
+      ScopedSelectedSubcontractorPage.all(id).path mustBe (JsPath \ "monthlyReturn" \ id \ "subcontractors")
     }
 
     "use different paths for different journeys" in {

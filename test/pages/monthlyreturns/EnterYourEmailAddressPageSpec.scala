@@ -32,7 +32,7 @@ class EnterYourEmailAddressPageSpec extends SpecBase {
     }
 
     "have the correct scoped path" in {
-      EnterYourEmailAddressPage("CIS-ORG-1").path mustBe (JsPath \ "CIS-ORG-1" \ "enterYourEmailAddress")
+      EnterYourEmailAddressPage("CIS-ORG-1").path mustBe (JsPath  \ "monthlyReturn" \ "CIS-ORG-1" \ "enterYourEmailAddress")
     }
 
     "have the correct scoped toString" in {

@@ -20,7 +20,7 @@ import pages.QuestionPage
 import play.api.libs.json.JsPath
 
 case class ResubmissionIdPage(id: String) extends QuestionPage[Long] {
-  override def path: JsPath     = JsPath \ id \ "submission" \ "resubmissionId"
+  override def path: JsPath     = JsPath \ "submission" \ id \ "resubmissionId"
   override def toString: String = "resubmissionId"
 }
 
