@@ -32,7 +32,7 @@ import play.api.libs.json.*
 import models.requests.{GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest}
 import pages.QuestionPage
 import pages.agent.AgentClientDataPage
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import utils.UserAnswerUtils.clearMonthlyReturnJourney
 import utils.Utils.toBigDecimal
 import viewmodels.SelectSubcontractorsViewModel
@@ -109,6 +109,14 @@ class MonthlyReturnService @Inject() (
         case Some("STARTED" | "VALIDATED") => true
         case _                             => false
       })
+      .recover {
+        // No monthly return exists for this cisId/month/year/amendment (stale session, already deleted or submitted)
+        case e: UpstreamErrorResponse if e.statusCode == 404 =>
+          logger.warn(
+            s"[MonthlyReturnService][isEditable] monthly return not found, cisId=$cisId, taxMonth=$taxMonth, taxYear=$taxYear, isAmendment=$isAmendment; treating as not editable"
+          )
+          false
+      }
 
   def getSchemeEmail(cisId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
     cisConnector.getSchemeEmail(cisId)
