@@ -25,6 +25,7 @@ import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.mvc.Call
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -46,30 +47,30 @@ class Navigator @Inject() () extends Logging {
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
 
     // monthly return
-    case (VerifySubcontractorsPage, _)                         =>
+    case (VerifySubcontractorsPage, _)                      =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-    case (DateConfirmPaymentsPage, MonthlyStandardReturn)      =>
+    case (DateConfirmPaymentsPage, MonthlyStandardReturn)   =>
       userAnswers =>
         if (userAnswers.get(SelectedSubcontractorPage.all).exists(_.nonEmpty)) {
           controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
         } else {
           controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None)
         }
-    case (SelectedSubcontractorPaymentsMadePage(index, _), _)  =>
+    case (SelectedSubcontractorPaymentsMadePage(index), _)  =>
       _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorMaterialCostsPage(index, _), _) =>
+    case (SelectedSubcontractorMaterialCostsPage(index), _) =>
       _ => controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, index, None)
-    case (SelectedSubcontractorTaxDeductedPage(index, _), _)   =>
+    case (SelectedSubcontractorTaxDeductedPage(index), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoad(index)
-    case (PaymentDetailsConfirmationPage, _)                   =>
+    case (PaymentDetailsConfirmationPage, _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage()(userAnswers)
-    case (EmploymentStatusDeclarationPage, _)                  =>
+    case (EmploymentStatusDeclarationPage, _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(NormalMode)(userAnswers)
-    case (VerifiedStatusDeclarationPage, _)                    =>
+    case (VerifiedStatusDeclarationPage, _)                 =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(NormalMode)(userAnswers)
-    case (ConfirmationByEmailPage, _)                          =>
+    case (ConfirmationByEmailPage, _)                       =>
       userAnswers => navigatorFromConfirmationByEmailPage(NormalMode)(userAnswers)
-    case (EnterYourEmailAddressPage, _)                        =>
+    case (EnterYourEmailAddressPage, _)                     =>
       userAnswers =>
         if (userAnswers.get(EmploymentStatusDeclarationPage).isDefined) {
           controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
@@ -77,7 +78,7 @@ class Navigator @Inject() () extends Logging {
           controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
         }
     // amend monthly return
-    case (AreYouSureYouWantToAmendYesNoPage, _)                =>
+    case (AreYouSureYouWantToAmendYesNoPage, _)             =>
       userAnswers =>
         userAnswers.get(AreYouSureYouWantToAmendYesNoPage) match {
           case Some(value) if value == AreYouSureYouWantToAmendYesNo.Yes =>
@@ -85,9 +86,9 @@ class Navigator @Inject() () extends Logging {
           case _                                                         =>
             controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
         }
-    case (WhichSubcontractorsToAddPage, _)                     =>
+    case (WhichSubcontractorsToAddPage, _)                  =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(NormalMode)
-    case (_, _)                                                => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
+    case (_, _)                                             => _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
   }
 
   private val checkRouteMap: (Page, ReturnType) => UserAnswers => Call = {
@@ -193,6 +194,198 @@ class Navigator @Inject() () extends Logging {
       case (Some(false), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoad()
       case (None, _)                 =>
         logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ConfirmationByEmailPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  // Multi-tab: Normal mode navigation
+  private def normalRoutesWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+    // common
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, NormalMode, userAnswers)
+
+    // nil return
+    case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
+      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode)
+
+    case (DeclarationPage, _) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    case (ConfirmationByEmailPage, _) =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, NormalMode, userAnswers)
+
+    case (EnterYourEmailAddressPage, _) =>
+      _ => navigatorFromEnterYourEmailAddressPage(flowId, NormalMode)
+
+    // monthly return
+    case (VerifySubcontractorsPage, _)                         =>
+      _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
+    case (DateConfirmPaymentsPage, MonthlyStandardReturn)      =>
+      userAnswers =>
+        if (userAnswers.get(SelectedSubcontractorPage.all).exists(_.nonEmpty)) {
+          controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
+        } else {
+          controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, None)
+        }
+    case (SelectedSubcontractorPaymentsMadePage(index, _), _)  =>
+      _ => controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoadWithId(flowId, NormalMode, index, None)
+    case (SelectedSubcontractorMaterialCostsPage(index, _), _) =>
+      _ =>
+        controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoadWithId(flowId, NormalMode, index, None)
+    case (SelectedSubcontractorTaxDeductedPage(index, _), _)   =>
+      _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
+    case (PaymentDetailsConfirmationPage, _)                   =>
+      userAnswers => navigatorFromPaymentDetailsConfirmationPage(flowId, userAnswers)
+    case (EmploymentStatusDeclarationPage, _)                  =>
+      userAnswers => navigatorFromEmploymentStatusDeclarationPage(flowId, NormalMode, userAnswers)
+    case (VerifiedStatusDeclarationPage, _)                    =>
+      userAnswers => navigatorFromVerifiedStatusDeclarationPage(flowId, NormalMode, userAnswers)
+
+    // TODO: Add UUID-scoped amended monthly return navigation.
+
+    case _ =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad()
+  }
+
+  // Multi-tab: Check mode navigation
+  private def checkRouteMapWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, CheckMode, userAnswers)
+
+    case (ConfirmationByEmailPage, _) =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, CheckMode, userAnswers)
+
+    case (EnterYourEmailAddressPage, _) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    // nil return
+    case (_, MonthlyNilReturn) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    // TODO: Add UUID-scoped standard monthly return check navigation.
+
+    // TODO: Add UUID-scoped amended monthly return check navigation.
+
+    case _ =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad()
+  }
+
+  // Multi-tab: Navigate within a UUID-scoped monthly return journey
+  def nextPage(
+    flowId: UUID,
+    page: Page,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = flowId.toString
+
+    userAnswers.get(ReturnTypePage(id)) match {
+      case Some(returnType) =>
+        mode match {
+          case NormalMode => normalRoutesWithId(flowId)(page, returnType)(userAnswers)
+          case CheckMode  => checkRouteMapWithId(flowId)(page, returnType)(userAnswers)
+        }
+      case None             =>
+        logger.error("[Navigator][nextPage] - UUID-scoped ReturnTypePage missing")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromSubmitInactivityRequestPage(
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = flowId.toString
+
+    (userAnswers.get(SubmitInactivityRequestPage(id)), mode) match {
+      case (Some(true), NormalMode)  =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoadWithId(flowId, NormalMode)
+      case (Some(true), CheckMode)   =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoadWithId(flowId, CheckMode)
+      case (Some(false), NormalMode) =>
+        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode)
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromSubmitInactivityRequestPage] - Scoped answer not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromConfirmationByEmailPage(
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = flowId.toString
+
+    (userAnswers.get(ConfirmationByEmailPage(id)), mode) match {
+      case (Some(true), mode)        =>
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, mode)
+      case (Some(false), NormalMode) =>
+//        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId) // TODO DTR-9474: Removed due to not existing on this branch. Reinstate during merge.
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ID-scoped ConfirmationByEmailPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromEnterYourEmailAddressPage(
+    flowId: UUID,
+    mode: Mode
+  ): Call =
+    mode match {
+      case NormalMode =>
+//        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId) // TODO DTR-9474: Removed due to not existing on this branch. Reinstate during merge.
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoad()
+      case CheckMode  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+    }
+
+  private def navigatorFromPaymentDetailsConfirmationPage(flowId: UUID, userAnswers: UserAnswers): Call = {
+    val id = flowId.toString
+    userAnswers.get(PaymentDetailsConfirmationPage(id)) match {
+      case Some(true)  =>
+        controllers.monthlyreturns.routes.EmploymentStatusDeclarationController.onPageLoadWithId(flowId, NormalMode)
+      case Some(false) =>
+        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
+      case _           =>
+        logger.error(
+          "[Navigator][navigatorFromPaymentDetailsConfirmationPage] - PaymentDetailsConfirmationPage not set"
+        )
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromEmploymentStatusDeclarationPage(flowId: UUID, mode: Mode, userAnswers: UserAnswers): Call = {
+    val id = flowId.toString
+    (userAnswers.get(EmploymentStatusDeclarationPage(id)), mode) match {
+      case (Some(_), NormalMode) =>
+        controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoadWithId(flowId, NormalMode)
+      case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+      case (None, _)             =>
+        logger.error(
+          "[Navigator][navigatorFromEmploymentStatusDeclarationPage] - EmploymentStatusDeclarationPage not set"
+        )
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromVerifiedStatusDeclarationPage(
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call =
+    val id = flowId.toString
+    (userAnswers.get(VerifiedStatusDeclarationPage(id)), mode) match {
+      case (Some(_), NormalMode) =>
+        controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode)
+      case (Some(_), CheckMode)  => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+      case (None, _)             =>
+        logger.error("[Navigator][navigatorFromVerifiedStatusDeclarationPage] - VerifiedStatusDeclarationPage not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
     }
 }
