@@ -133,9 +133,9 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
                 ua2            <- ua1.clearAmendedMonthlyStandardReturnJourney(id).toFuture
                 updatedAnswers <- Future.fromTry(ua2.set(AreYouSureYouWantToAmendYesNoPage(id), Yes))
                 _              <- sessionRepository.set(updatedAnswers)
-                deleteRequest  <- toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers))
+                deleteRequest  <- toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers)) // TODO id scope
                 _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
-                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers))
+                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers)) // TODO id scope
                 _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
               } yield Redirect(
                 controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId)
