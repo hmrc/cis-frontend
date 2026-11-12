@@ -30,5 +30,13 @@ class WhichSubcontractorsToAddPageSpec extends SpecBase {
     "have the correct toString" in {
       WhichSubcontractorsToAddPage.toString mustBe "whichSubcontractorsToAdd"
     }
+
+    "have the correct Scoped path" in {
+      WhichSubcontractorsToAddPage("CIS-ORG-1").path mustBe (JsPath \ "monthlyReturn" \ "CIS-ORG-1" \ "whichSubcontractorsToAdd")
+    }
+
+    "have the correct Scoped toString" in {
+      WhichSubcontractorsToAddPage("CIS-ORG-1").toString mustBe "whichSubcontractorsToAdd"
+    }
   }
 }

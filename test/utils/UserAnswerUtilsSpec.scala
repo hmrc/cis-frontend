@@ -560,6 +560,101 @@ class UserAnswerUtilsSpec extends SpecBase {
     }
   }
 
+  "ID Scoped - UserAnswerUtils.clearAmendedMonthlyStandardReturnJourney" - {
+
+    "removes all monthly return journey pages from UserAnswers" in {
+      val ua = UserAnswers("id")
+        .set(EmploymentStatusDeclarationPage("CIS-ORG-1"), true)
+        .get
+        .set(ScopedSelectedSubcontractorPage("CIS-ORG-1", 1), completeSub(1))
+        .get
+        .set(VerifySubcontractorsPage("CIS-ORG-1"), true)
+        .get
+        .set(AllSubcontractorDetailsAdded("CIS-ORG-1"), true)
+        .get
+        .set(PaymentDetailsConfirmationPage("CIS-ORG-1"), true)
+        .get
+        .set(VerifiedStatusDeclarationPage("CIS-ORG-1"), true)
+        .get
+        .set(SubmitInactivityRequestPage("CIS-ORG-1"), true)
+        .get
+        .set(WhichSubcontractorsToAddPage("CIS-ORG-1"), Set("10"))
+        .get
+        .set(SubcontractorValidationFailuresPage("CIS-ORG-1"), validationFailures)
+        .get
+        .set(FinalValidationDraftIdPage("CIS-ORG-1"), "draft-456")
+        .get
+        .set(MonthlyFinalValidationContinuationPage("CIS-ORG-1"), "CheckMode")
+        .get
+        .set(
+          MonthlyFinalValidationSourcePage("CIS-ORG-1"),
+          MonthlyFinalValidationSource.WhichSubcontractorsToAdd("CheckMode")
+        )
+        .get
+        .set(pages.monthlyreturns.IsResumedMonthlyReturnPage("CIS-ORG-1"), true)
+        .get
+        .set(
+          SubmissionConfirmationCachePage("CIS-ORG-1"),
+          SubmissionConfirmationCache(
+            periodEnd = "January 2025",
+            contractorName = Some("Test Contractor Ltd"),
+            email = "test@test.com",
+            submittedTime = "12:00pm",
+            submittedDate = "1 January 2025",
+            submittedDateTimeIso = Some("2025-01-01T12:00:00Z")
+          )
+        )
+        .get
+
+      val result = ua.clearAmendedMonthlyStandardReturnJourney("CIS-ORG-1")
+
+      result.isSuccess mustBe true
+      val cleared = result.get
+
+      cleared.get(EmploymentStatusDeclarationPage("CIS-ORG-1")) mustBe None
+      cleared.get(ScopedSelectedSubcontractorPage("CIS-ORG-1", 1)) mustBe None
+      cleared.get(VerifySubcontractorsPage("CIS-ORG-1")) mustBe None
+      cleared.get(AllSubcontractorDetailsAdded("CIS-ORG-1")) mustBe None
+      cleared.get(PaymentDetailsConfirmationPage("CIS-ORG-1")) mustBe None
+      cleared.get(VerifiedStatusDeclarationPage("CIS-ORG-1")) mustBe None
+      cleared.get(SubmitInactivityRequestPage("CIS-ORG-1")) mustBe None
+      cleared.get(WhichSubcontractorsToAddPage("CIS-ORG-1")) mustBe None
+      cleared.get(SubcontractorValidationFailuresPage("CIS-ORG-1")) mustBe None
+      cleared.get(SubmissionConfirmationCachePage("CIS-ORG-1")) mustBe None
+      cleared.get(FinalValidationDraftIdPage("CIS-ORG-1")) mustBe None
+      cleared.get(MonthlyFinalValidationContinuationPage("CIS-ORG-1")) mustBe None
+      cleared.get(MonthlyFinalValidationSourcePage("CIS-ORG-1")) mustBe None
+      cleared.get(pages.monthlyreturns.IsResumedMonthlyReturnPage("CIS-ORG-1")) mustBe None
+    }
+
+    "retains non-journey pages such as CisIdPage and ReturnTypePage" in {
+      val ua = UserAnswers("id")
+        .set(CisIdPage("CIS-ORG-1"), "CIS-ORG-1")
+        .get
+        .set(ReturnTypePage("CIS-ORG-1"), ReturnType.MonthlyAmendedNilReturn)
+        .get
+        .set(EmploymentStatusDeclarationPage("CIS-ORG-1"), true)
+        .get
+        .set(VerifySubcontractorsPage("CIS-ORG-1"), true)
+        .get
+
+      val result = ua.clearAmendedMonthlyStandardReturnJourney("CIS-ORG-1")
+
+      result.isSuccess mustBe true
+      val cleared = result.get
+
+      cleared.get(CisIdPage("CIS-ORG-1")) mustBe Some("CIS-ORG-1")
+      cleared.get(ReturnTypePage("CIS-ORG-1")) mustBe Some(ReturnType.MonthlyAmendedNilReturn)
+      cleared.get(EmploymentStatusDeclarationPage("CIS-ORG-1")) mustBe None
+      cleared.get(VerifySubcontractorsPage("CIS-ORG-1")) mustBe None
+    }
+
+    "succeeds on empty UserAnswers" in {
+      val result = UserAnswers("id").clearAmendedMonthlyStandardReturnJourney("CIS-ORG-1")
+      result.isSuccess mustBe true
+    }
+  }
+
   private def completeSub(index: Int) = SelectedSubcontractor(
     id = index.toLong,
     name = s"Sub $index",

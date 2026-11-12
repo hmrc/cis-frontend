@@ -26,61 +26,122 @@ class SubcontractorValidationFailuresPageSpec extends SpecBase {
 
   "SubcontractorValidationFailuresPage" - {
 
-    "have the correct path" in {
-      SubcontractorValidationFailuresPage.path mustBe
-        JsPath \ "validation" \ "subcontractorValidationFailures"
-    }
+    "Legacy/Unscoped" - {
+      "have the correct path" in {
+        SubcontractorValidationFailuresPage.path mustBe
+          JsPath \ "validation" \ "subcontractorValidationFailures"
+      }
 
-    "have the correct toString value" in {
-      SubcontractorValidationFailuresPage.toString mustBe
-        "subcontractorValidationFailures"
-    }
+      "have the correct toString value" in {
+        SubcontractorValidationFailuresPage.toString mustBe
+          "subcontractorValidationFailures"
+      }
 
-    "store and retrieve every subcontractor validation failure" in {
-      val failures =
-        List(
-          SubcontractorValidationFailure(
-            subcontractorId = 101L,
-            failedFields = List(
-              FieldValidationFailure(
-                field = EmailAddress,
-                value = Some("invalid-email")
-              ),
-              FieldValidationFailure(
-                field = AddressLine1,
-                value = None
+      "store and retrieve every subcontractor validation failure" in {
+        val failures =
+          List(
+            SubcontractorValidationFailure(
+              subcontractorId = 101L,
+              failedFields = List(
+                FieldValidationFailure(
+                  field = EmailAddress,
+                  value = Some("invalid-email")
+                ),
+                FieldValidationFailure(
+                  field = AddressLine1,
+                  value = None
+                )
               )
             )
           )
-        )
 
-      val userAnswers =
-        UserAnswers("test-user")
-          .set(
-            SubcontractorValidationFailuresPage,
-            failures
-          )
-          .get
+        val userAnswers =
+          UserAnswers("test-user")
+            .set(
+              SubcontractorValidationFailuresPage,
+              failures
+            )
+            .get
 
-      userAnswers
-        .get(SubcontractorValidationFailuresPage) mustBe
-        Some(failures)
+        userAnswers
+          .get(SubcontractorValidationFailuresPage) mustBe
+          Some(failures)
+      }
+
+      "store an empty list so previous failures can be cleared" in {
+        val userAnswers =
+          UserAnswers("test-user")
+            .set(
+              SubcontractorValidationFailuresPage,
+              List.empty[
+                SubcontractorValidationFailure
+              ]
+            )
+            .get
+
+        userAnswers
+          .get(SubcontractorValidationFailuresPage) mustBe
+          Some(Nil)
+      }
     }
 
-    "store an empty list so previous failures can be cleared" in {
-      val userAnswers =
-        UserAnswers("test-user")
-          .set(
-            SubcontractorValidationFailuresPage,
-            List.empty[
-              SubcontractorValidationFailure
-            ]
-          )
-          .get
+    "Multi-Tab/Scoped" - {
+      "have the correct path" in {
+        SubcontractorValidationFailuresPage("CIS-ORG-1").path mustBe
+          JsPath \ "validation" \ "CIS-ORG-1" \ "subcontractorValidationFailures"
+      }
 
-      userAnswers
-        .get(SubcontractorValidationFailuresPage) mustBe
-        Some(Nil)
+      "have the correct toString value" in {
+        SubcontractorValidationFailuresPage("CIS-ORG-1").toString mustBe
+          "subcontractorValidationFailures"
+      }
+
+      "store and retrieve every subcontractor validation failure" in {
+        val failures =
+          List(
+            SubcontractorValidationFailure(
+              subcontractorId = 101L,
+              failedFields = List(
+                FieldValidationFailure(
+                  field = EmailAddress,
+                  value = Some("invalid-email")
+                ),
+                FieldValidationFailure(
+                  field = AddressLine1,
+                  value = None
+                )
+              )
+            )
+          )
+
+        val userAnswers =
+          UserAnswers("test-user")
+            .set(
+              SubcontractorValidationFailuresPage("CIS-ORG-1"),
+              failures
+            )
+            .get
+
+        userAnswers
+          .get(SubcontractorValidationFailuresPage("CIS-ORG-1")) mustBe
+          Some(failures)
+      }
+
+      "store an empty list so previous failures can be cleared" in {
+        val userAnswers =
+          UserAnswers("test-user")
+            .set(
+              SubcontractorValidationFailuresPage("CIS-ORG-1"),
+              List.empty[
+                SubcontractorValidationFailure
+              ]
+            )
+            .get
+
+        userAnswers
+          .get(SubcontractorValidationFailuresPage("CIS-ORG-1")) mustBe
+          Some(Nil)
+      }
     }
   }
 }

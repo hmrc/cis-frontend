@@ -27,5 +27,10 @@ class AllSubcontractorDetailsAddedSpec extends SpecBase {
       AllSubcontractorDetailsAdded.toString mustBe "subcontractorDetailsAdded"
       AllSubcontractorDetailsAdded.path mustBe (JsPath \ "subcontractorDetailsAdded")
     }
+
+    "must have the correct Scoped toString and path" in {
+      AllSubcontractorDetailsAdded("CIS-ORG-1").toString mustBe "subcontractorDetailsAdded"
+      AllSubcontractorDetailsAdded("CIS-ORG-1").path mustBe (JsPath \ "monthlyReturn" \ "CIS-ORG-1" \ "subcontractorDetailsAdded")
+    }
   }
 }

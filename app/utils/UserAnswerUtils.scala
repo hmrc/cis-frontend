@@ -154,6 +154,28 @@ object UserAnswerUtils {
         // monthly return journey origin
         .flatMap(_.remove(IsResumedMonthlyReturnPage))
 
+    def clearAmendedMonthlyStandardReturnJourney(id: String): Try[UserAnswers] =
+      userAnswers
+        // amended monthly standard return
+        .remove(EmploymentStatusDeclarationPage(id))
+        .flatMap(_.remove(ScopedSelectedSubcontractorPage.all(id)))
+        .flatMap(_.remove(VerifySubcontractorsPage(id)))
+        .flatMap(_.remove(AllSubcontractorDetailsAdded(id)))
+        .flatMap(_.remove(PaymentDetailsConfirmationPage(id)))
+        .flatMap(_.remove(VerifiedStatusDeclarationPage(id)))
+        .flatMap(_.remove(SubmitInactivityRequestPage(id)))
+        .flatMap(_.remove(WhichSubcontractorsToAddPage(id)))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage(id)))
+        .flatMap(_.remove(SubmissionConfirmationCachePage(id)))
+
+        // final validation state
+        .flatMap(_.remove(FinalValidationDraftIdPage(id)))
+        .flatMap(_.remove(MonthlyFinalValidationContinuationPage(id)))
+        .flatMap(_.remove(MonthlyFinalValidationSourcePage(id)))
+
+        // monthly return journey origin
+        .flatMap(_.remove(IsResumedMonthlyReturnPage(id)))
+    
     def isJourneyComplete: Boolean =
       userAnswers.get(ReturnTypePage) match {
         case Some(MonthlyNilReturn) | Some(MonthlyAmendedNilReturn) =>

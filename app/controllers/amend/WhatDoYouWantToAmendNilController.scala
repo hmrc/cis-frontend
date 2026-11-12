@@ -189,7 +189,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
 
                   case AmendNilReturn =>
                     for {
-                      ua3           <- ua1.clearAmendedMonthlyStandardReturnJourney.toFuture
+                      ua3           <- ua1.clearAmendedMonthlyStandardReturnJourney(id).toFuture
                       ua4           <- Future.fromTry(
                                          ua3.set(ReturnTypePage(id), MonthlyAmendedNilReturn)
                                        )
