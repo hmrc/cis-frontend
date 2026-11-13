@@ -463,7 +463,7 @@ class SubcontractorDetailsAddedController @Inject() (
 
                     val updatedUa =
                       request.userAnswers
-                        .set(AllSubcontractorDetailsAdded, allSubcontractorDetailsAdded)
+                        .set(AllSubcontractorDetailsAdded(subJourneyId), allSubcontractorDetailsAdded)
                         .flatMap { answers =>
                           if (isAddingMoreSubcontractors) {
                             answers.remove(MonthlyFinalValidationContinuationPage(subJourneyId))

@@ -127,7 +127,9 @@ class PaymentDetailsConfirmationController @Inject() (
               updatedAnswers <-
                 Future.fromTry(request.userAnswers.set(PaymentDetailsConfirmationPage(subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(PaymentDetailsConfirmationPage(subJourneyId), mode, updatedAnswers))
+            } yield Redirect(
+              navigator.nextPage(flowId, PaymentDetailsConfirmationPage(subJourneyId), mode, updatedAnswers)
+            )
         )
     }
 

@@ -20,13 +20,14 @@ import base.SpecBase
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import models.amend.AmendmentDetails
 import models.{NormalMode, UserAnswers}
+import models.monthlyreturns.SelectedSubcontractor
 import org.mockito.ArgumentMatchers.{any, argThat}
 import org.mockito.Mockito.{verify, when}
 import org.mockito.ArgumentCaptor
 import org.scalatestplus.mockito.MockitoSugar
 import pages.amend.AmendmentDetailsPage
 import pages.finalvalidations.*
-import pages.monthlyreturns.{AllSubcontractorDetailsAdded, CisIdPage, ReturnTypePage}
+import pages.monthlyreturns.*
 import play.api.data.Form
 import play.twirl.api.Html
 import views.html.monthlyreturns.SubcontractorDetailsAddedView
@@ -38,13 +39,16 @@ import repositories.SessionRepository
 import services.MonthlyReturnService
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.Instant
+import java.util.UUID
+import java.time.{Instant, LocalDate}
 import scala.concurrent.Future
 import pages.monthlyreturns.OriginalSubcontractorCountPage
 
 class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar {
 
   private val now: Instant = Instant.now
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
 
   private def uaWithSubcontractors(subs: (Int, JsObject)*): UserAnswers =
     UserAnswers(
@@ -58,6 +62,24 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     )
       .setOrException(ReturnTypePage, MonthlyStandardReturn)
       .setOrException(MonthlyFinalValidationContinuationPage, NormalMode.toString)
+
+  private def uaWithScopedSubcontractor: UserAnswers =
+    UserAnswers(userAnswersId)
+      .setOrException(CisIdPage(subJourneyId), "1")
+      .setOrException(DateConfirmPaymentsPage(subJourneyId), LocalDate.of(2025, 10, 1))
+      .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
+      .setOrException(MonthlyFinalValidationContinuationPage(subJourneyId), NormalMode.toString)
+      .setOrException(OriginalSubcontractorCountPage(subJourneyId), 3)
+      .setOrException(
+        SelectedSubcontractorPage(1, Some(subJourneyId)),
+        SelectedSubcontractor(
+          1001L,
+          "TyneWear Ltd",
+          Some(BigDecimal(1000)),
+          Some(BigDecimal(200)),
+          Some(BigDecimal(200))
+        )
+      )
 
   private def completeSub(id: Long, name: String): JsObject =
     Json.obj(
@@ -82,11 +104,13 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
     ua: UserAnswers,
     monthlyReturnService: Option[MonthlyReturnService] = None,
     view: Option[SubcontractorDetailsAddedView] = None,
-    sessionRepository: Option[SessionRepository] = None
+    sessionRepository: Option[SessionRepository] = None,
+    multiTabEnabled: Boolean = false
   ) = {
     val base = applicationBuilder(userAnswers = Some(ua))
       .configure(
         "features.welsh-translation" -> false,
+        "features.multi-tab-enabled" -> multiTabEnabled,
         "timeout-dialog.timeout"     -> 900,
         "timeout-dialog.countdown"   -> 120,
         "contact-frontend.serviceId" -> "cis-frontend",
@@ -114,6 +138,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
   private def cancelUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url
+
+  private def getUrlWithId: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode).url
+
+  private def postUrlWithId: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmitWithId(flowId, NormalMode).url
 
   "SubcontractorDetailsAddedController" - {
 
@@ -658,6 +688,154 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
           controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad().url
+      }
+    }
+
+    "must return OK on GET with ID when scoped Final Validation continuation exists" in {
+      val ua  = uaWithScopedSubcontractor
+      val svc = mock[MonthlyReturnService]
+
+      stubIsEditable(svc)
+
+      val application = buildApp(
+        ua,
+        monthlyReturnService = Some(svc),
+        multiTabEnabled = true
+      )
+
+      running(application) {
+        val request = FakeRequest(GET, getUrlWithId)
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+        contentAsString(result) must include(postUrlWithId)
+      }
+    }
+
+    "must redirect to legacy ReviewSubcontractorDetails when a scoped Final Validation draft exists" in {
+      val ua = uaWithScopedSubcontractor
+        .setOrException(FinalValidationDraftIdPage(subJourneyId), "draft-123")
+
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(
+        ua,
+        monthlyReturnService = Some(svc),
+        multiTabEnabled = true
+      )
+
+      running(application) {
+        val request = FakeRequest(GET, getUrlWithId)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad().url
+      }
+    }
+
+    "must redirect to scoped onPageLoad when submitting before Final Validation completes with ID" in {
+      val ua = uaWithScopedSubcontractor
+        .remove(MonthlyFinalValidationContinuationPage(subJourneyId))
+        .get
+        .setOrException(MonthlyFinalValidationContinuationPage, NormalMode.toString)
+
+      val application = buildApp(
+        ua,
+        multiTabEnabled = true
+      )
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrlWithId)
+            .withFormUrlEncodedBody("value" -> "false")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe getUrlWithId
+      }
+    }
+
+    "must save scoped AllSubcontractorDetailsAdded and redirect to scoped summary on POST No" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val ua = uaWithScopedSubcontractor
+        .setOrException(AllSubcontractorDetailsAdded, false)
+
+      val application = buildApp(
+        ua,
+        sessionRepository = Some(mockSessionRepository),
+        multiTabEnabled = true
+      )
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrlWithId)
+            .withFormUrlEncodedBody("value" -> "false")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
+            .onPageLoadWithId(flowId)
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.get(AllSubcontractorDetailsAdded(subJourneyId)) mustBe Some(true)
+        savedAnswers.get(AllSubcontractorDetailsAdded) mustBe Some(false)
+        savedAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)) mustBe Some(NormalMode.toString)
+      }
+    }
+
+    "must clear scoped Final Validation continuation and redirect to scoped SelectSubcontractors on POST Yes" in {
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val ua = uaWithScopedSubcontractor
+        .setOrException(IsResumedMonthlyReturnPage(subJourneyId), false)
+        .setOrException(MonthlyFinalValidationContinuationPage, "CheckMode")
+        .setOrException(AllSubcontractorDetailsAdded, true)
+
+      val application = buildApp(
+        ua,
+        sessionRepository = Some(mockSessionRepository),
+        multiTabEnabled = true
+      )
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postUrlWithId)
+            .withFormUrlEncodedBody("value" -> "true")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SelectSubcontractorsController
+            .onPageLoadWithId(flowId, None)
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)) mustBe None
+        savedAnswers.get(AllSubcontractorDetailsAdded(subJourneyId)) mustBe Some(false)
+        savedAnswers.get(IsResumedMonthlyReturnPage(subJourneyId)) mustBe Some(false)
+
+        savedAnswers.get(MonthlyFinalValidationContinuationPage) mustBe Some("CheckMode")
+        savedAnswers.get(AllSubcontractorDetailsAdded) mustBe Some(true)
       }
     }
   }

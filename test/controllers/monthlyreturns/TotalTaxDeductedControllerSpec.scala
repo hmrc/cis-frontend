@@ -21,12 +21,13 @@ import controllers.routes
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.monthlyreturns.SelectedSubcontractor
 import models.{NormalMode, UserAnswers}
+import models.ReturnType.MonthlyStandardReturn
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
+import pages.monthlyreturns.*
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -35,9 +36,12 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.TotalTaxDeductedView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
 
   val formProvider                   = new TotalTaxDeductedFormProvider()
   val form: Form[Option[BigDecimal]] = formProvider()
@@ -52,8 +56,18 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     .success
     .value
 
-  lazy val totalTaxDeductedRoute: String =
+  val userAnswersWithId: UserAnswers = userAnswers
+    .setOrException(CisIdPage(subJourneyId), "i-123")
+    .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
+    .setOrException(
+      SelectedSubcontractorPage(1, Some(subJourneyId)),
+      SelectedSubcontractor(123, companyName, None, None, None)
+    )
+
+  lazy val totalTaxDeductedRoute: String       =
     controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoad(NormalMode, 1, None).url
+  lazy val totalTaxDeductedRouteWithId: String =
+    controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoadWithId(flowId, NormalMode, 1, None).url
 
   "TotalTaxDeducted Controller" - {
 
@@ -321,6 +335,174 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         verify(mockSessionRepository).set(captor.capture())
 
         captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal(0))
+      }
+    }
+
+    "must populate the view correctly on a GET with ID when the question has previously been answered" in {
+
+      val updatedAnswers = userAnswersWithId
+        .setOrException(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("999"))
+        .setOrException(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId)), validAnswer)
+
+      val application = applicationBuilder(userAnswers = Some(updatedAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, totalTaxDeductedRouteWithId)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[TotalTaxDeductedView]
+
+        val formAction = Some(
+          controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmitWithId(flowId, NormalMode, 1, None)
+        )
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form.fill(Some(validAnswer)), NormalMode, companyName, 1, None, formAction)(
+            request,
+            messages(application)
+          ).toString
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET with ID if no scoped subcontractor is found" in {
+
+      val ua = userAnswers
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+        .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, totalTaxDeductedRouteWithId)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to the next scoped page when valid data is submitted with ID" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val updatedAnswers = userAnswersWithId
+        .setOrException(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("999"))
+
+      val application =
+        applicationBuilder(userAnswers = Some(updatedAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.TotalTaxDeductedController
+              .onSubmitWithId(flowId, NormalMode, 1, None)
+              .url
+          )
+            .withFormUrlEncodedBody(("value", validAnswer.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController
+            .onPageLoadWithId(flowId, 1)
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal("999"))
+      }
+    }
+
+    "must redirect to scoped Change Answers when returnTo is changeAnswers and save a default value of 0" in {
+
+      val existingAnswerUa = userAnswersWithId
+        .setOrException(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67"))
+        .setOrException(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId)), BigDecimal("123"))
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(existingAnswerUa))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.TotalTaxDeductedController
+              .onSubmitWithId(flowId, NormalMode, 1, Some("changeAnswers"))
+              .url
+          )
+            .withFormUrlEncodedBody(("value", ""))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1).url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId))) mustBe Some(BigDecimal(0))
+        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal("45.67"))
+      }
+    }
+
+    "must return a Bad Request and errors when invalid data is submitted with ID" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithId))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.TotalTaxDeductedController
+              .onSubmitWithId(flowId, NormalMode, 1, None)
+              .url
+          )
+            .withFormUrlEncodedBody(("value", "invalid value"))
+
+        val boundForm = form.bind(Map("value" -> "invalid value"))
+
+        val view = application.injector.instanceOf[TotalTaxDeductedView]
+
+        val formAction = Some(
+          controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmitWithId(flowId, NormalMode, 1, None)
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual
+          view(boundForm, NormalMode, companyName, 1, None, formAction)(
+            request,
+            messages(application)
+          ).toString
       }
     }
   }

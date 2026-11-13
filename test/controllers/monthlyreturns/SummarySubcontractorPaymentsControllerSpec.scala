@@ -17,11 +17,12 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import models.NormalMode
 import models.monthlyreturns.SelectedSubcontractor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -29,10 +30,14 @@ import repositories.SessionRepository
 import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewModel
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.math.BigDecimal.RoundingMode
 
 class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSugar {
+
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
 
   private val mockSessionRepository = mock[SessionRepository]
 
@@ -41,8 +46,10 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
       ua.set(SelectedSubcontractorPage(index), sub).success.value
     }
 
-  lazy val summaryRoute =
+  lazy val summaryRoute               =
     controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoad().url
+  lazy val summaryRouteWithId: String =
+    controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController.onPageLoadWithId(flowId).url
 
   "SummarySubcontractorPayments Controller" - {
 
@@ -161,6 +168,133 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must return OK and render only scoped subcontractor totals on a GET with ID" in {
+
+      val legacySubcontractors = Map(
+        1 -> SelectedSubcontractor(
+          101,
+          "Legacy Ltd",
+          Some(BigDecimal(9000)),
+          Some(BigDecimal(4500)),
+          Some(BigDecimal(850))
+        )
+      )
+
+      val userAnswers = buildUserAnswers(legacySubcontractors)
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+        .setOrException(
+          SelectedSubcontractorPage(1, Some(subJourneyId)),
+          SelectedSubcontractor(
+            201,
+            "Scoped Alpha Ltd",
+            Some(BigDecimal(1000)),
+            Some(BigDecimal(200)),
+            Some(BigDecimal(160))
+          )
+        )
+        .setOrException(
+          SelectedSubcontractorPage(2, Some(subJourneyId)),
+          SelectedSubcontractor(
+            202,
+            "Scoped Incomplete Ltd",
+            Some(BigDecimal(5000)),
+            None,
+            Some(BigDecimal(500))
+          )
+        )
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, summaryRouteWithId)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[SummarySubcontractorPaymentsView]
+
+        val viewModel = SummarySubcontractorPaymentsViewModel(
+          subcontractorCount = 1,
+          totalPayments = BigDecimal(1000).setScale(2, RoundingMode.HALF_DOWN),
+          totalMaterialsCost = BigDecimal(200).setScale(2, RoundingMode.HALF_DOWN),
+          totalCisDeductions = BigDecimal(160).setScale(2, RoundingMode.HALF_DOWN)
+        )(messages(application))
+
+        val buttonAction = Some(
+          controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoadWithId(flowId, NormalMode)
+        )
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(viewModel, buttonAction)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must return OK with zero totals when no scoped subcontractors exist" in {
+
+      val legacySubcontractors = Map(
+        1 -> SelectedSubcontractor(
+          101,
+          "Legacy Ltd",
+          Some(BigDecimal(9000)),
+          Some(BigDecimal(4500)),
+          Some(BigDecimal(850))
+        )
+      )
+
+      val userAnswers = buildUserAnswers(legacySubcontractors)
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, summaryRouteWithId)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[SummarySubcontractorPaymentsView]
+
+        val viewModel = SummarySubcontractorPaymentsViewModel(
+          subcontractorCount = 0,
+          totalPayments = BigDecimal(0).setScale(2, RoundingMode.HALF_DOWN),
+          totalMaterialsCost = BigDecimal(0).setScale(2, RoundingMode.HALF_DOWN),
+          totalCisDeductions = BigDecimal(0).setScale(2, RoundingMode.HALF_DOWN)
+        )(messages(application))
+
+        val buttonAction = Some(
+          controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoadWithId(flowId, NormalMode)
+        )
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(viewModel, buttonAction)(
+          request,
+          messages(application)
+        ).toString
+      }
+    }
+
+    "must redirect to Journey Recovery when no scoped CIS ID exists" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, summaryRouteWithId)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }

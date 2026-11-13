@@ -144,7 +144,8 @@ class TotalTaxDeductedController @Inject() (
             )
           case _                     =>
             Redirect(
-              navigator.nextPage(SelectedSubcontractorTaxDeductedPage(index, subJourneyId), mode, updatedAnswers)
+              navigator
+                .nextPage(flowId, SelectedSubcontractorTaxDeductedPage(index, subJourneyId), mode, updatedAnswers)
             )
         }
 

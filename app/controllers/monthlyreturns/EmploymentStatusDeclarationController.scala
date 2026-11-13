@@ -102,7 +102,9 @@ class EmploymentStatusDeclarationController @Inject() (
               updatedAnswers <-
                 Future.fromTry(request.userAnswers.set(EmploymentStatusDeclarationPage(subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(EmploymentStatusDeclarationPage(subJourneyId), mode, updatedAnswers))
+            } yield Redirect(
+              navigator.nextPage(flowId, EmploymentStatusDeclarationPage(subJourneyId), mode, updatedAnswers)
+            )
         )
     }
 }

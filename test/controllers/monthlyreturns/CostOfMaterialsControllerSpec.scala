@@ -26,7 +26,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import play.api.data.Form
 import play.api.inject.bind
 import play.api.mvc.Call
@@ -35,9 +35,13 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.CostOfMaterialsView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
+
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
 
   val formProvider                   = new CostOfMaterialsFormProvider()
   val form: Form[Option[BigDecimal]] = formProvider()
@@ -52,8 +56,18 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
     .success
     .value
 
+  val userAnswersWithId: UserAnswers = userAnswers
+    .setOrException(CisIdPage(subJourneyId), "i-123")
+    .setOrException(
+      SelectedSubcontractorPage(1, Some(subJourneyId)),
+      SelectedSubcontractor(123, companyName, None, None, None)
+    )
+
   lazy val costOfMaterialsRoute: String =
     controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(NormalMode, 1, None).url
+
+  lazy val costOfMaterialsRouteWithId: String =
+    controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoadWithId(flowId, NormalMode, 1, None).url
 
   "CostOfMaterials Controller" - {
 
@@ -294,6 +308,166 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         verify(mockSessionRepository).set(captor.capture())
 
         captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe Some(BigDecimal(0))
+      }
+    }
+
+    "must return OK and the correct view for a GET with ID" in {
+
+      val updatedAnswers =
+        userAnswersWithId.set(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId)), validAnswer).success.value
+
+      val application = applicationBuilder(userAnswers = Some(updatedAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, costOfMaterialsRouteWithId)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[CostOfMaterialsView]
+
+        val formAction = Some(
+          controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, NormalMode, 1, None)
+        )
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form.fill(Some(validAnswer)), NormalMode, companyName, 1, None, formAction)(
+            request,
+            messages(application)
+          ).toString
+      }
+    }
+
+    "must redirect to Journey Recovery for a GET with ID if no scoped subcontractor is found" in {
+
+      val ua = userAnswers.set(CisIdPage(subJourneyId), "i-123").success.value
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, costOfMaterialsRouteWithId)
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must redirect to the next page when valid data is submitted with ID" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswersWithId))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CostOfMaterialsController
+              .onSubmitWithId(flowId, NormalMode, 1, None)
+              .url
+          )
+            .withFormUrlEncodedBody(("value", validAnswer.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual onwardRoute.url
+
+        val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+      }
+    }
+
+    "must redirect to scoped Change Answers when returnTo is changeAnswers and save a default value of 0" in {
+
+      val existingAnswerUa =
+        userAnswersWithId
+          .set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal("123"))
+          .flatMap(_.set(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId)), BigDecimal("456")))
+          .success
+          .value
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(existingAnswerUa))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(bind[SessionRepository].toInstance(mockSessionRepository))
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CostOfMaterialsController
+              .onSubmitWithId(flowId, NormalMode, 1, Some("changeAnswers"))
+              .url
+          )
+            .withFormUrlEncodedBody(("value", ""))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1).url
+
+        val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId))) mustBe Some(BigDecimal(0))
+        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe Some(BigDecimal("123"))
+      }
+    }
+
+    "must return a Bad Request and errors when invalid data is submitted with ID" in {
+
+      val application = applicationBuilder(userAnswers = Some(userAnswersWithId))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CostOfMaterialsController
+              .onSubmitWithId(flowId, NormalMode, 1, None)
+              .url
+          )
+            .withFormUrlEncodedBody(("value", "invalid value"))
+
+        val boundForm = form.bind(Map("value" -> "invalid value"))
+
+        val view = application.injector.instanceOf[CostOfMaterialsView]
+
+        val formAction = Some(
+          controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, NormalMode, 1, None)
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual
+          view(boundForm, NormalMode, companyName, 1, None, formAction)(
+            request,
+            messages(application)
+          ).toString
       }
     }
   }
