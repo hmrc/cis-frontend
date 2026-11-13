@@ -38,6 +38,7 @@ import utils.TypeUtils.toFuture
 import utils.UserAnswerUtils.*
 import views.html.amend.WhatDoYouWantToAmendNilView
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,6 +51,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   formProvider: WhatDoYouWantToAmendNilFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendNilView
@@ -128,4 +130,87 @@ class WhatDoYouWantToAmendNilController @Inject() (
             } yield result
         )
   }
+
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val id = flowId.toString
+
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendNilPage(id)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      val formAction = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId))
+
+      Ok(view(preparedForm, formAction))
+    }
+
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+      val id                         = flowId.toString
+      val formAction                 = Some(routes.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, formAction))),
+          value =>
+            for {
+              ua1    <- Future.fromTry(request.userAnswers.set(WhatDoYouWantToAmendNilPage(id), value))
+              _      <- sessionRepository.set(ua1)
+              result <-
+                value match {
+                  case AddPaymentOrSubcontractorDetails =>
+                    amendMonthlyReturnService
+                      .startStandardAmendment(ua1)
+                      .flatMap {
+                        case Left(error) =>
+                          logger.error(
+                            s"[WhatDoYouWantToAmendNil] Failed to start nil amendment: $error"
+                          )
+                          Future.successful(
+                            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                          )
+                        case Right(_)    =>
+                          for {
+                            ua2 <- Future.fromTry(
+                                     ua1.set(ReturnTypePage(id), MonthlyAmendedStandardReturn)
+                                   )
+                            _   <- sessionRepository.set(ua2)
+                          } yield Redirect(
+                            // TODO: Temp Redirect
+                            controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
+                            // controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(cisPath,
+                            // flowId,
+                            // NormalMode)
+                          )
+                      }
+
+                  case AmendNilReturn =>
+                    for {
+                      ua3           <- ua1.clearAmendedMonthlyStandardReturnJourney(id).toFuture
+                      ua4           <- Future.fromTry(
+                                         ua3.set(ReturnTypePage(id), MonthlyAmendedNilReturn)
+                                       )
+                      _             <- sessionRepository.set(ua4)
+                      updateRequest <- UpdateMonthlyReturnRequest
+                                         .fromUserAnswers(ua4)
+                                         .fold(
+                                           error => Future.failed(new RuntimeException(error)),
+                                           request => Future.successful(request)
+                                         )
+                      _             <- monthlyReturnService.updateMonthlyReturn(updateRequest)
+                    } yield Redirect(
+                      // TODO: Temp Redirect
+                      controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
+                      // controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(cisPath,
+                      // flowId,
+                      // NormalMode)
+                    )
+                }
+            } yield result
+        )
+    }
+
 }

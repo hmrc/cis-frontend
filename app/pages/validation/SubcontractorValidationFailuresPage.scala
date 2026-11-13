@@ -20,6 +20,15 @@ import models.validation.SubcontractorValidationFailure
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class SubcontractorValidationFailuresPage(id: String) extends QuestionPage[List[SubcontractorValidationFailure]] {
+
+  override def path: JsPath =
+    JsPath \ "validation" \ id \ toString
+
+  override def toString: String =
+    "subcontractorValidationFailures"
+}
+
 case object SubcontractorValidationFailuresPage extends QuestionPage[List[SubcontractorValidationFailure]] {
 
   override def path: JsPath =

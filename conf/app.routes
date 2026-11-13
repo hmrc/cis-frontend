@@ -180,6 +180,10 @@ GET        /monthly-return/submission-unsuccessful-resubmit             controll
 
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+
+# DTR-9475 - TODO remove trailing '/multi-tab' when legacy url no longer needed
+GET        /monthly-return/continue-return-journey/multi-tab                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourneyWithCisId(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+GET        /monthly-return/continue-amend-return-journey/multi-tab                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourneyWithCisId(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
@@ -193,6 +197,10 @@ POST       /monthly-return/cancel-amended-monthly-return                controll
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
 
+#DTR-9475
+GET        /amend-monthly-return/what-do-you-want-to-amend-nil/:flowId          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId: UUID)
+POST       /amend-monthly-return/what-do-you-want-to-amend-nil/:flowId          controllers.amend.WhatDoYouWantToAmendNilController.onSubmitWithId(flowId: UUID)
+
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
@@ -201,6 +209,10 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controll
 
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
+
+# DTR-9475
+GET        /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
 
 GET        /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)

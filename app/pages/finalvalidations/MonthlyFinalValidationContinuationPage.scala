@@ -19,6 +19,13 @@ package pages.finalvalidations
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class MonthlyFinalValidationContinuationPage(id: String) extends QuestionPage[String] {
+
+  override def path: JsPath = JsPath \ "finalvalidation" \ id \ toString
+
+  override def toString: String = "monthlyFinalValidationContinuation"
+}
+
 case object MonthlyFinalValidationContinuationPage extends QuestionPage[String] {
 
   override def path: JsPath = JsPath \ "finalvalidation" \ toString

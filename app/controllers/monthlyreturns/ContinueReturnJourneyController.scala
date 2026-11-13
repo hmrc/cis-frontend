@@ -16,10 +16,12 @@
 
 package controllers.monthlyreturns
 
+import config.FrontendAppConfig
 import controllers.actions.*
 import models.ReturnType.MonthlyStandardReturn
+import models.agent.AgentClientData
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.monthlyreturns.ContinueReturnJourneyQueryParams
+import models.monthlyreturns.{CisTaxpayer, ContinueReturnJourneyQueryParams}
 import models.{EmployerReference, NormalMode, UserAnswers}
 import models.requests.{GetMonthlyReturnForEditRequest, IdentifierRequest}
 
@@ -27,16 +29,17 @@ import javax.inject.Inject
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
-import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, ScopedSelectedSubcontractorPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import services.{CisTaxpayerService, FormpRdsReconcileService, MonthlyReturnService}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 import scala.util.control.NonFatal
@@ -48,6 +51,8 @@ class ContinueReturnJourneyController @Inject() (
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
   formpRdsReconcileService: FormpRdsReconcileService,
+  cisTaxpayerService: CisTaxpayerService,
+  appConfig: FrontendAppConfig,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -153,5 +158,120 @@ class ContinueReturnJourneyController @Inject() (
       case None      =>
         logger.warn("[ContinueReturnJourneyController] Missing employer reference for FormP/RDS reconciliation")
         Future.successful(Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad()))
+    }
+
+  // Multi-tab: Resolve the CIS taxpayer for the selected CIS ID.
+  private def resolveTaxpayer[A](cisId: String)(using request: IdentifierRequest[A]): Future[Option[CisTaxpayer]] =
+    if request.isAgent then
+      cisTaxpayerService
+        .findForAgent(cisId)
+        .map(_.filter(_.uniqueId == cisId))
+    else
+      cisTaxpayerService.findForOrganisation
+        .map(taxpayer => Option.when(taxpayer.uniqueId == cisId)(taxpayer))
+
+  // Multi-tab: Resolve and authorise the selected CIS taxpayer.
+  private def withResolvedTaxpayer[A](cisId: String)(
+    handle: CisTaxpayer => Future[Result]
+  )(using request: IdentifierRequest[A]): Future[Result] =
+    resolveTaxpayer(cisId).flatMap {
+      case Some(taxpayer) if !appConfig.multiTabEnabled =>
+        Future.successful(Redirect(appConfig.returnsLandingPageUrl(taxpayer.uniqueId, None)))
+
+      case Some(taxpayer) =>
+        handle(taxpayer)
+
+      case None =>
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+    }
+
+  // Multi-tab: Reconcile FormP/RDS before rendering the entry page.
+  private def reconcileScopedReturn(taxpayer: CisTaxpayer, render: => Result)(using HeaderCarrier): Future[Result] =
+    formpRdsReconcileService
+      .reconcile(taxpayer.uniqueId, taxpayer.taxOfficeNumber, taxpayer.taxOfficeRef)
+      .map(_ => render)
+      .recover {
+        case e: UpstreamErrorResponse if e.statusCode == PRECONDITION_FAILED || e.statusCode == NOT_FOUND =>
+          logger.warn(s"Contractor known facts missing in RDS (status ${e.statusCode})")
+          Redirect(controllers.routes.UnauthorisedOrganisationAffinityController.onPageLoad())
+        case NonFatal(e)                                                                                  =>
+          logger.error(s"FormP/RDS reconciliation failed: ${e.getMessage}", e)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      }
+
+  // Multi-tab: CIS ID-scoped copy of continueReturnJourney.
+  def continueReturnJourneyWithCisId(queryParams: ContinueReturnJourneyQueryParams): Action[AnyContent] =
+    identify.async { implicit request =>
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = queryParams.instanceId,
+        taxYear = queryParams.taxYear,
+        taxMonth = queryParams.taxMonth,
+        isAmendment = false
+      )
+
+      withResolvedTaxpayer(queryParams.instanceId) { taxpayer =>
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        sessionRepository.get(request.userId).flatMap { existing =>
+          monthlyReturnService
+            .populateUserAnswersForContinueJourney(
+              existing.getOrElse(UserAnswers(request.userId)),
+              id,
+              editRequest
+            )
+            .flatMap {
+              case Left(error) =>
+                logger.error(
+                  s"[continueReturnJourneyWithCisId] Failed to populate user answers: $error for request: $editRequest"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+              case Right(updatedUserAnswers) =>
+                val withAgentData =
+                  if request.isAgent then
+                    updatedUserAnswers.set(
+                      AgentClientDataPage(id),
+                      AgentClientData(
+                        taxpayer.uniqueId,
+                        taxpayer.taxOfficeNumber,
+                        taxpayer.taxOfficeRef,
+                        taxpayer.schemeName
+                      )
+                    )
+                  else Success(updatedUserAnswers)
+
+                val answersWithSource =
+                  withAgentData.flatMap { ua =>
+                    if (
+                      ua.get(ReturnTypePage(id)).getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
+                      ua.get(ScopedSelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
+                    ) {
+                      ua.set(
+                        MonthlyFinalValidationSourcePage(id),
+                        MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+                      )
+                    } else {
+                      Success(ua)
+                    }
+                  }
+
+                val answersWithOrigin = answersWithSource.flatMap(_.set(IsResumedMonthlyReturnPage(id), true))
+
+                Future.fromTry(answersWithOrigin).flatMap { withSource =>
+                  sessionRepository.set(withSource).flatMap { _ =>
+                    reconcileScopedReturn(
+                      taxpayer,
+                      Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
+                    )
+                  }
+                }
+            }
+        }
+      }
+        .recover { case NonFatal(ex) =>
+          logger.error(s"[continueReturnJourneyWithCisId] Failed to start journey for request: $editRequest", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
     }
 }
