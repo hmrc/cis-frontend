@@ -17,6 +17,7 @@
 package controllers.monthlyreturns
 
 import controllers.actions.*
+import models.NormalMode
 import pages.monthlyreturns.SelectedSubcontractorPage
 import pages.monthlyreturns.SelectedSubcontractorPage.*
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -26,11 +27,13 @@ import viewmodels.checkAnswers.monthlyreturns.SummarySubcontractorPaymentsViewMo
 import views.html.monthlyreturns.SummarySubcontractorPaymentsView
 
 import javax.inject.Inject
+import java.util.UUID
 
 class SummarySubcontractorPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
@@ -60,4 +63,33 @@ class SummarySubcontractorPaymentsController @Inject() (
 
       Ok(view(viewModel))
   }
+
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId   = flowId.toString
+      val subcontractors = request.userAnswers
+        .get(SelectedSubcontractorPage.all(Some(subJourneyId)))
+        .getOrElse(Map.empty)
+        .values
+        .filter(_.isComplete)
+        .toSeq
+
+      val totalPayments      = request.userAnswers.summaryTotalPayments(subJourneyId).getOrElse(BigDecimal(0))
+      val totalMaterialsCost = request.userAnswers.summaryTotalMaterialsCost(subJourneyId).getOrElse(BigDecimal(0))
+      val totalCisDeductions = request.userAnswers.summaryTotalCisDeductions(subJourneyId).getOrElse(BigDecimal(0))
+
+      val viewModel = SummarySubcontractorPaymentsViewModel(
+        subcontractorCount = subcontractors.size,
+        totalPayments = totalPayments,
+        totalMaterialsCost = totalMaterialsCost,
+        totalCisDeductions = totalCisDeductions
+      )
+
+      val buttonAction =
+        Some(
+          controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoadWithId(flowId, NormalMode)
+        )
+
+      Ok(view(viewModel, buttonAction))
+    }
 }

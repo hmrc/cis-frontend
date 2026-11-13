@@ -17,6 +17,9 @@ GET         /there-is-a-problem                                         controll
 GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
 POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
+GET        /monthly-return/check-your-answers/:flowId                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoadWithId(flowId: UUID)
+POST       /monthly-return/check-your-answers/:flowId                           controllers.monthlyreturns.CheckYourAnswersController.onSubmitWithId(flowId: UUID)
+
 GET         /account/sign-out-survey                                    controllers.auth.AuthController.signOut()
 GET         /account/sign-out                                           controllers.auth.AuthController.signOutNoSurvey()
 GET         /account/signed-out                                         controllers.auth.SignedOutController.onPageLoad()
@@ -58,6 +61,9 @@ GET        /system-error/there-is-a-problem                             controll
 GET        /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onPageLoad(defaultSelection: Option[Boolean])
 POST       /monthly-return/select-subcontractors                        controllers.monthlyreturns.SelectSubcontractorsController.onSubmit()
 
+GET        /monthly-return/select-subcontractors/:flowId       controllers.monthlyreturns.SelectSubcontractorsController.onPageLoadWithId(flowId: UUID, defaultSelection: Option[Boolean])
+POST       /monthly-return/select-subcontractors/:flowId       controllers.monthlyreturns.SelectSubcontractorsController.onSubmitWithId(flowId: UUID)
+
 GET        /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.startMonthlyReturn()
 POST       /monthly-return/file-your-monthly-return                     controllers.monthlyreturns.FileYourMonthlyCisReturnController.onSubmit(returnType: ReturnType = MonthlyStandardReturn)
 GET        /monthly-return/file-your-nil-return                         controllers.monthlyreturns.FileYourMonthlyCisReturnController.startNilReturn()
@@ -86,10 +92,15 @@ POST       /monthly-return/date-confirm-payments/:flowId                controll
 GET        /monthly-return/change-date-confirm-payments/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
 POST       /monthly-return/change-date-confirm-payments/:flowId         controllers.monthlyreturns.DateConfirmPaymentsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
 
-GET        /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
-POST       /monthly-return/unverified-subcontractors                    controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
-GET        /monthly-return/change-unverified-subcontractors             controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
-POST       /monthly-return/change-unverified-subcontractors             controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
+GET        /monthly-return/unverified-subcontractors                            controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = NormalMode)
+POST       /monthly-return/unverified-subcontractors                            controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = NormalMode)
+GET        /monthly-return/change-unverified-subcontractors                     controllers.monthlyreturns.VerifySubcontractorsController.onPageLoad(mode: Mode = CheckMode)
+POST       /monthly-return/change-unverified-subcontractors                     controllers.monthlyreturns.VerifySubcontractorsController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/unverified-subcontractors/:flowId           controllers.monthlyreturns.VerifySubcontractorsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/unverified-subcontractors/:flowId           controllers.monthlyreturns.VerifySubcontractorsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-unverified-subcontractors/:flowId    controllers.monthlyreturns.VerifySubcontractorsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-unverified-subcontractors/:flowId    controllers.monthlyreturns.VerifySubcontractorsController.onSubmitWithId( flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/payment-details/:index                       controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
 POST       /monthly-return/payment-details/:index                       controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
@@ -100,6 +111,14 @@ POST       /monthly-return/payment-details                              controll
 GET        /monthly-return/change-payment-details                       controllers.monthlyreturns.PaymentDetailsController.onPageLoad(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 POST       /monthly-return/change-payment-details                       controllers.monthlyreturns.PaymentDetailsController.onSubmit(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
+GET        /monthly-return/payment-details/:flowId/:index               controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/payment-details/:flowId/:index               controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/change-payment-details/:flowId/:index        controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/change-payment-details/:flowId/:index        controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/payment-details/:flowId                      controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/payment-details/:flowId                      controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+GET        /monthly-return/change-payment-details/:flowId               controllers.monthlyreturns.PaymentDetailsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/change-payment-details/:flowId               controllers.monthlyreturns.PaymentDetailsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
 GET        /monthly-return/materials-cost/:index                        controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
 POST       /monthly-return/materials-cost/:index                        controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
@@ -109,6 +128,15 @@ GET        /monthly-return/materials-cost                               controll
 POST       /monthly-return/materials-cost                               controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
 GET        /monthly-return/change-materials-cost                        controllers.monthlyreturns.CostOfMaterialsController.onPageLoad(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 POST       /monthly-return/change-materials-cost                        controllers.monthlyreturns.CostOfMaterialsController.onSubmit(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+
+GET        /monthly-return/materials-cost/:flowId/:index                controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/materials-cost/:flowId/:index                controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/change-materials-cost/:flowId/:index         controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/change-materials-cost/:flowId/:index         controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/materials-cost/:flowId                       controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/materials-cost/:flowId                       controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+GET        /monthly-return/change-materials-cost/:flowId                controllers.monthlyreturns.CostOfMaterialsController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/change-materials-cost/:flowId                controllers.monthlyreturns.CostOfMaterialsController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
 
 GET        /monthly-return/tax-deducted/:index                          controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = NormalMode, index: Int, returnTo: Option[String])
@@ -120,10 +148,24 @@ POST       /monthly-return/tax-deducted                                 controll
 GET        /monthly-return/change-tax-deducted                          controllers.monthlyreturns.TotalTaxDeductedController.onPageLoad(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 POST       /monthly-return/change-tax-deducted                          controllers.monthlyreturns.TotalTaxDeductedController.onSubmit(mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
 
+GET        /monthly-return/tax-deducted/:flowId/:index                  controllers.monthlyreturns.TotalTaxDeductedController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/tax-deducted/:flowId/:index                  controllers.monthlyreturns.TotalTaxDeductedController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/change-tax-deducted/:flowId/:index           controllers.monthlyreturns.TotalTaxDeductedController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+POST       /monthly-return/change-tax-deducted/:flowId/:index           controllers.monthlyreturns.TotalTaxDeductedController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int, returnTo: Option[String])
+GET        /monthly-return/tax-deducted/:flowId                         controllers.monthlyreturns.TotalTaxDeductedController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/tax-deducted/:flowId                         controllers.monthlyreturns.TotalTaxDeductedController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode, index: Int = 1, returnTo: Option[String] = None)
+GET        /monthly-return/change-tax-deducted/:flowId                  controllers.monthlyreturns.TotalTaxDeductedController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+POST       /monthly-return/change-tax-deducted/:flowId                  controllers.monthlyreturns.TotalTaxDeductedController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode, index: Int = 1, returnTo: Option[String] = None)
+
 GET        /monthly-return/submit-inactivity-request                    controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/submit-inactivity-request                    controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/submit-inactivity-request/:flowId                    controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/submit-inactivity-request/:flowId                    controllers.monthlyreturns.SubmitInactivityRequestController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-submit-inactivity-request/:flowId             controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-submit-inactivity-request/:flowId             controllers.monthlyreturns.SubmitInactivityRequestController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/remove-subcontractor/:index            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = NormalMode, index: Int)
 POST       /monthly-return/remove-subcontractor/:index            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = NormalMode, index: Int)
@@ -131,26 +173,46 @@ GET        /monthly-return/change-remove-subcontractor/:index     controllers.mo
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
 GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
-GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
+GET        /monthly-return/change-inactivity-request-warning            controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
+
+GET        /monthly-return/inactivity-request-warning/:flowId                    controllers.monthlyreturns.InactivityRequestWarningController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-inactivity-request-warning/:flowId             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/enter-email-address/:flowId                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/enter-email-address/:flowId                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-enter-email-address/:flowId                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-enter-email-address/:flowId                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+
 GET        /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+
+GET        /monthly-return/do-you-want-email-confirmation/:flowId               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/do-you-want-email-confirmation/:flowId               controllers.monthlyreturns.ConfirmationByEmailController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-do-you-want-email-confirmation/:flowId        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-do-you-want-email-confirmation/:flowId        controllers.monthlyreturns.ConfirmationByEmailController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-subcontractor-details-added           controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-subcontractor-details-added           controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = CheckMode)
 GET        /monthly-return/subcontractor-details-added/cancel           controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendment()
-
 GET        /monthly-return/subcontractor-details-added/final-validation-complete          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = NormalMode)
 GET        /monthly-return/change-subcontractor-details-added/final-validation-complete   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidation(mode: Mode = CheckMode)
+
+GET        /monthly-return/subcontractor-details-added/:flowId             controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/subcontractor-details-added/:flowId             controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-subcontractor-details-added/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+GET        /monthly-return/subcontractor-details-added/cancel/:flowId      controllers.monthlyreturns.SubcontractorDetailsAddedController.onCancelAmendmentWithId(flowId: UUID)
+GET        /monthly-return/subcontractor-details-added/final-validation-complete/:flowId          controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidationWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-subcontractor-details-added/final-validation-complete/:flowId   controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoadAfterFinalValidationWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/payment-details-confirmation                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/payment-details-confirmation                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = NormalMode)
@@ -158,23 +220,47 @@ GET        /monthly-return/change-payment-details-confirmation          controll
 POST       /monthly-return/change-payment-details-confirmation          controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmit(mode: Mode = CheckMode)
 GET        /monthly-return/payment-details-confirmation/cancel          controllers.monthlyreturns.PaymentDetailsConfirmationController.onCancelAmendment()
 
+GET        /monthly-return/payment-details-confirmation/:flowId                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/payment-details-confirmation/:flowId                 controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-payment-details-confirmation/:flowId          controllers.monthlyreturns.PaymentDetailsConfirmationController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-payment-details-confirmation/:flowId          controllers.monthlyreturns.PaymentDetailsConfirmationController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+GET        /monthly-return/payment-details-confirmation/cancel/:flowId          controllers.monthlyreturns.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId: UUID)
+
 GET        /monthly-return/employment-status-declaration                controllers.monthlyreturns.EmploymentStatusDeclarationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/employment-status-declaration                controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-employment-status-declaration         controllers.monthlyreturns.EmploymentStatusDeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-employment-status-declaration         controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/employment-status-declaration/:flowId                controllers.monthlyreturns.EmploymentStatusDeclarationController.onPageLoadWithId(flowId: UUID,mode: Mode = NormalMode)
+POST       /monthly-return/employment-status-declaration/:flowId                controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmitWithId(flowId: UUID,mode: Mode = NormalMode)
+GET        /monthly-return/change-employment-status-declaration/:flowId         controllers.monthlyreturns.EmploymentStatusDeclarationController.onPageLoadWithId(flowId: UUID,mode: Mode = CheckMode)
+POST       /monthly-return/change-employment-status-declaration/:flowId         controllers.monthlyreturns.EmploymentStatusDeclarationController.onSubmitWithId(flowId: UUID,mode: Mode = CheckMode)
+
 GET        /monthly-return/check-answers-total-payments/:index          controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoad(index: Int)
 POST       /monthly-return/check-answers-total-payments/:index          controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onSubmit(index: Int)
 
+GET        /monthly-return/check-answers-total-payments/:flowId/:index          controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId:UUID, index: Int)
+POST       /monthly-return/check-answers-total-payments/:flowId/:index          controllers.monthlyreturns.CheckAnswersTotalPaymentsController.onSubmitWithId(flowId:UUID, index: Int)
+
 GET        /monthly-return/change-subcontractor/:index                  controllers.monthlyreturns.ChangeAnswersTotalPaymentsController.onPageLoad(index: Int)
 POST       /monthly-return/change-subcontractor/:index                  controllers.monthlyreturns.ChangeAnswersTotalPaymentsController.onSubmit(index: Int)
+
+GET        /monthly-return/change-subcontractor/:flowId/:index          controllers.monthlyreturns.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId: UUID, index: Int)
+POST       /monthly-return/change-subcontractor/:flowId/:index          controllers.monthlyreturns.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId: UUID, index: Int)
 
 GET        /monthly-return/verified-status-declaration                  controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/verified-status-declaration                  controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-verified-status-declaration           controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmit(mode: Mode = CheckMode)
 
+GET        /monthly-return/verified-status-declaration/:flowId                  controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/verified-status-declaration/:flowId                  controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-verified-status-declaration/:flowId           controllers.monthlyreturns.VerifiedStatusDeclarationController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-verified-status-declaration/:flowId           controllers.monthlyreturns.VerifiedStatusDeclarationController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+
 GET        /monthly-return/summary-subcontractor-payments               controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoad()
+
+GET        /monthly-return/summary-subcontractor-payments/:flowId       controllers.monthlyreturns.SummarySubcontractorPaymentsController.onPageLoadWithId(flowId: UUID)
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
@@ -187,8 +273,16 @@ POST       /amend-monthly-return/which-subcontractors-to-add            controll
 GET        /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = CheckMode)
 POST       /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
 
+GET        /amend-monthly-return/which-subcontractors-to-add/:flowId             controllers.amend.WhichSubcontractorsToAddController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /amend-monthly-return/which-subcontractors-to-add/:flowId             controllers.amend.WhichSubcontractorsToAddController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /amend-monthly-return/change-which-subcontractors-to-add/:flowId      controllers.amend.WhichSubcontractorsToAddController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /amend-monthly-return/change-which-subcontractors-to-add/:flowId      controllers.amend.WhichSubcontractorsToAddController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+
 GET        /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
 POST       /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
+
+GET        /monthly-return/cancel-amended-monthly-return/:flowId                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId: UUID)
+POST       /monthly-return/cancel-amended-monthly-return/:flowId                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
@@ -199,8 +293,14 @@ POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controll
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
-GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
-POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId: UUID)
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId    controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId: UUID)
+
+GET        /amend-monthly-return/are-you-sure-you-want-to-amend                 controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
+POST       /amend-monthly-return/are-you-sure-you-want-to-amend                 controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
+
+GET        /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(flowId: UUID,mode: Mode = NormalMode)
 
 GET        /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
@@ -221,5 +321,8 @@ GET        /monthly-return/final-validations/review-subcontractor-details       
 POST       /monthly-return/final-validations/review-subcontractor-details                      controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmit()
 GET        /monthly-return/final-validations/change/:subcontractorId/:fieldKey/:targetKey      controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
 GET        /monthly-return/final-validations/return/:handoffId                                 controllers.finalvalidations.FinalValidationReturnController.onPageLoad(handoffId: String)
+
+GET        /monthly-return/final-validations/review-subcontractor-details/:flowId     controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId: UUID)
+POST       /monthly-return/final-validations/review-subcontractor-details/:flowId     controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmitWithId(flowId: UUID)
 
 GET        /agent/no-longer-authorised                                                         controllers.AgentLostAccessController.onPageLoad()

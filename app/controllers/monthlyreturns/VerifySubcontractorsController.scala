@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.VerifySubcontractorsView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class VerifySubcontractorsController @Inject() (
@@ -41,6 +42,7 @@ class VerifySubcontractorsController @Inject() (
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: VerifySubcontractorsFormProvider,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: VerifySubcontractorsView
 )(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
@@ -59,6 +61,19 @@ class VerifySubcontractorsController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val preparedForm = request.userAnswers.get(VerifySubcontractorsPage(subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, mode))
+
+      Ok(view(preparedForm, mode, formAction))
+    }
+
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -72,6 +87,30 @@ class VerifySubcontractorsController @Inject() (
             } yield value match {
               case true  => Redirect(appConfig.verifySubcontractorsUrl)
               case false => Redirect(navigator.nextPage(VerifySubcontractorsPage, mode, request.userAnswers))
+            }
+        )
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, mode))
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          value =>
+            for {
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(subJourneyId), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield value match {
+              case true  => Redirect(appConfig.verifySubcontractorsUrl) // TODO DTR-9474: Update to use future id scope
+              case false =>
+                Redirect(
+                  navigator.nextPage(VerifySubcontractorsPage(subJourneyId), mode, request.userAnswers)
+                ) // TODO DTR-9474: Update Navigator to use future id scope
             }
         )
     }

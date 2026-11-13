@@ -27,5 +27,11 @@ class AllSubcontractorDetailsAddedSpec extends SpecBase {
       AllSubcontractorDetailsAdded.toString mustBe "subcontractorDetailsAdded"
       AllSubcontractorDetailsAdded.path mustBe (JsPath \ "subcontractorDetailsAdded")
     }
+
+    "must have the correct toString and path with id" in {
+      val testId = "testId"
+      AllSubcontractorDetailsAdded(testId).toString mustBe "subcontractorDetailsAdded"
+      AllSubcontractorDetailsAdded(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractorDetailsAdded")
+    }
   }
 }

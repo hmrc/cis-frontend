@@ -18,13 +18,14 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{PaymentDetailsConfirmationPage, ReturnTypePage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -32,16 +33,26 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.PaymentDetailsConfirmationView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSugar {
+
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
+
+  private val userAnswersWithId: UserAnswers = userAnswersWithCisId
+    .setOrException(CisIdPage(subJourneyId), "i-123")
+    .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
 
   def onwardRoute = Call("GET", "/foo")
 
   val formProvider = new PaymentDetailsConfirmationFormProvider()
   val form         = formProvider()
 
-  lazy val paymentDetailsConfirmationRoute = routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url
+  lazy val paymentDetailsConfirmationRoute       = routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode).url
+  lazy val paymentDetailsConfirmationRouteWithId =
+    routes.PaymentDetailsConfirmationController.onPageLoadWithId(flowId, NormalMode).url
 
   "PaymentDetailsConfirmation Controller" - {
 
@@ -244,6 +255,217 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
           ex mustBe a[RuntimeException]
           ex.getMessage mustBe "ReturnTypePage not found in user answers"
         }
+      }
+    }
+
+    "must return OK and the amendment view for a GET with ID when the question has previously been answered" in {
+
+      val userAnswers = userAnswersWithId
+        .setOrException(ReturnTypePage, MonthlyStandardReturn)
+        .setOrException(ReturnTypePage(subJourneyId), MonthlyAmendedStandardReturn)
+        .setOrException(PaymentDetailsConfirmationPage, false)
+        .setOrException(PaymentDetailsConfirmationPage(subJourneyId), true)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRouteWithId)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
+
+        val formAction = Some(
+          routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode)
+        )
+
+        val cancelAction = Some(
+          routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId)
+        )
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form.fill(true), NormalMode, true, formAction, cancelAction)(
+            request,
+            messages(application)
+          ).toString
+      }
+    }
+
+    "must return OK and the non-amendment view for a GET with ID when return type is not amended" in {
+
+      val userAnswers = userAnswersWithId
+        .setOrException(ReturnTypePage, MonthlyAmendedStandardReturn)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, paymentDetailsConfirmationRouteWithId)
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
+
+        val formAction = Some(
+          routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode)
+        )
+
+        val cancelAction = Some(
+          routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId)
+        )
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form, NormalMode, false, formAction, cancelAction)(
+            request,
+            messages(application)
+          ).toString
+      }
+    }
+
+    "must redirect to scoped Employment Status Declaration when true is submitted with ID" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val userAnswers = userAnswersWithId
+        .setOrException(PaymentDetailsConfirmationPage, false)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode).url
+          )
+            .withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          routes.EmploymentStatusDeclarationController.onPageLoadWithId(flowId, NormalMode).url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(PaymentDetailsConfirmationPage(subJourneyId)) mustBe Some(true)
+        captor.getValue.get(PaymentDetailsConfirmationPage) mustBe Some(false)
+      }
+    }
+
+    "must redirect to scoped Subcontractor Details Added when false is submitted with ID" in {
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val userAnswers = userAnswersWithId
+        .setOrException(PaymentDetailsConfirmationPage, true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode).url
+          )
+            .withFormUrlEncodedBody(("value", "false"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode).url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        captor.getValue.get(PaymentDetailsConfirmationPage(subJourneyId)) mustBe Some(false)
+        captor.getValue.get(PaymentDetailsConfirmationPage) mustBe Some(true)
+      }
+    }
+
+    "must return a Bad Request and errors when invalid data is submitted with ID" in {
+
+      val userAnswers = userAnswersWithId
+        .setOrException(ReturnTypePage(subJourneyId), MonthlyAmendedStandardReturn)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode).url
+          )
+            .withFormUrlEncodedBody(("value", ""))
+
+        val boundForm = form.bind(Map("value" -> ""))
+
+        val view = application.injector.instanceOf[PaymentDetailsConfirmationView]
+
+        val formAction = Some(
+          routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode)
+        )
+
+        val cancelAction = Some(
+          routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId)
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual
+          view(boundForm, NormalMode, true, formAction, cancelAction)(
+            request,
+            messages(application)
+          ).toString
+      }
+    }
+
+    "must redirect to scoped Confirm Cancel Amendment page when cancelling amendment with ID" in {
+
+      val userAnswers = userAnswersWithId
+        .setOrException(ReturnTypePage(subJourneyId), MonthlyAmendedStandardReturn)
+
+      val application = applicationBuilder(userAnswers = Some(userAnswers))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            GET,
+            routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId).url
+          )
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId).url
       }
     }
   }

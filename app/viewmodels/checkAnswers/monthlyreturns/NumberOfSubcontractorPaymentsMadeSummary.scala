@@ -22,6 +22,8 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
+import java.util.UUID
+
 object NumberOfSubcontractorPaymentsMadeSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
@@ -39,4 +41,25 @@ object NumberOfSubcontractorPaymentsMadeSummary {
         )
       )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
+
+    SubcontractorDetailsAddedBuilder.build(answers, Some(subJourneyId)).map { addedSubcontractors =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.numberOfSubcontractorPaymentsMade.checkYourAnswersLabel",
+        value = ValueViewModel(addedSubcontractors.rows.size.toString),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+              .onPageLoadWithId(flowId, CheckMode)
+              .url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.numberOfSubcontractorPaymentsMade.hidden"))
+            .withAttribute("id" -> "change-number-subcontractor-payments-made")
+        )
+      )
+    }
+  }
 }

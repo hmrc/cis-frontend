@@ -29,11 +29,20 @@
     fieldSet: FieldSet
 )
 
-    @(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+    @(
+        form: Form[_],
+        mode: Mode,
+        formAction: Option[Call] = None,
+    )(implicit request: Request[_], messages: Messages)
 
     @layout(pageTitle = title(form, messages("verifySubcontractors.title"))) {
 
-        @formHelper(action = controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode), Symbol("autoComplete") -> "off") {
+        @formHelper(
+            action = formAction.getOrElse(
+                controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmit(mode)
+            ),
+            Symbol("autoComplete") -> "off"
+        ) {
 
             @if(form.errors.nonEmpty) {
                 @govukErrorSummary(ErrorSummaryViewModel(form,  errorLinkOverrides = Map("value" -> firstRadioId)))

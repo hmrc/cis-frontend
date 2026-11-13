@@ -23,6 +23,8 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
+import java.util.UUID
+
 object EnterYourEmailAddressSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
@@ -40,4 +42,23 @@ object EnterYourEmailAddressSummary {
         )
       )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
+
+    answers.get(EnterYourEmailAddressPage(subJourneyId)).map { answer =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel",
+        value = ValueViewModel(answer),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
+            .withAttribute("id" -> "change-enter-your-email-address")
+        )
+      )
+    }
+  }
 }

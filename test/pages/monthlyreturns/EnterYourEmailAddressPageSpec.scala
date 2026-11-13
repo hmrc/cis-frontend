@@ -23,12 +23,15 @@ class EnterYourEmailAddressPageSpec extends SpecBase {
 
   "EnterYourEmailAddressPage" - {
 
-    "have the correct path" in {
+    "must use the correct EnterYourEmailAddressPage path" in {
       EnterYourEmailAddressPage.path mustBe (JsPath \ "enterYourEmailAddress")
+      EnterYourEmailAddressPage.toString mustBe "enterYourEmailAddress"
     }
 
-    "have the correct toString" in {
-      EnterYourEmailAddressPage.toString mustBe "enterYourEmailAddress"
+    "must use the correct EnterYourEmailAddressPage path with id" in {
+      val testId = "testId"
+      EnterYourEmailAddressPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "enterYourEmailAddress")
+      EnterYourEmailAddressPage(testId).toString mustBe "enterYourEmailAddress"
     }
   }
 }

@@ -23,11 +23,12 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist._
 import viewmodels.implicits._
 
+import java.util.UUID
+
 object EmploymentStatusDeclarationSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(EmploymentStatusDeclarationPage).map { answer =>
-
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -43,4 +44,27 @@ object EmploymentStatusDeclarationSummary {
         )
       )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
+
+    answers.get(EmploymentStatusDeclarationPage(subJourneyId)).map { answer =>
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.employmentStatusDeclaration.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.EmploymentStatusDeclarationController
+              .onPageLoadWithId(flowId, CheckMode)
+              .url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.employmentStatusDeclaration.change.hidden"))
+            .withAttribute("id" -> "change-employment-status-declaration")
+        )
+      )
+    }
+  }
 }

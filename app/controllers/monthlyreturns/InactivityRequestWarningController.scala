@@ -26,11 +26,13 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.InactivityRequestWarningView
 
 import javax.inject.Inject
+import java.util.UUID
 
 class InactivityRequestWarningController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   val controllerComponents: MessagesControllerComponents,
@@ -55,4 +57,28 @@ class InactivityRequestWarningController @Inject() (
         Ok(view(nextUrl))
       }
   }
+
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId        = flowId.toString
+      val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage(subJourneyId)).contains(true)
+      if (!inactivityRequested) {
+        logger.error(
+          s"[InactivityRequestWarningController][onPageLoadWithId] - SubmitInactivityRequestPage not true, mode=$mode, subJourneyId=$subJourneyId"
+        )
+        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+      } else {
+        val nextUrl = mode match {
+          case CheckMode  =>
+            controllers.monthlyreturns.routes.CheckYourAnswersController
+              .onPageLoadWithId(flowId)
+              .url
+          case NormalMode =>
+            controllers.monthlyreturns.routes.ConfirmationByEmailController
+              .onPageLoadWithId(flowId, NormalMode)
+              .url
+        }
+        Ok(view(nextUrl))
+      }
+    }
 }

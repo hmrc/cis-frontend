@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.CostOfMaterialsView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class CostOfMaterialsController @Inject() (
@@ -38,6 +39,7 @@ class CostOfMaterialsController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireCisId: CisIdRequiredAction,
   requireData: DataRequiredAction,
   formProvider: CostOfMaterialsFormProvider,
@@ -65,6 +67,28 @@ class CostOfMaterialsController @Inject() (
           }
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo))
+      }
+    }
+
+  def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = Some(flowId.toString)
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, mode, index, returnTo))
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None                =>
+          logger.error(
+            s"[CostOfMaterialsController][onPageLoadWithId] - SelectedSubcontractorPage missing, index: $index, subJourneyId=$subJourneyId"
+          )
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        case Some(subcontractor) =>
+          val preparedForm =
+            request.userAnswers.get(SelectedSubcontractorMaterialCostsPage(index, subJourneyId)) match {
+              case None        => form
+              case Some(value) => form.fill(Some(value))
+            }
+
+          Ok(view(preparedForm, mode, subcontractor.name, index, returnTo, formAction))
       }
     }
 
@@ -98,6 +122,54 @@ class CostOfMaterialsController @Inject() (
                   updatedAnswers <-
                     Future.fromTry(
                       request.userAnswers.set(SelectedSubcontractorMaterialCostsPage(index), valueToPersist)
+                    )
+                  _              <- sessionRepository.set(updatedAnswers)
+                } yield redirect(updatedAnswers)
+              }
+            )
+      }
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = Some(flowId.toString)
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, mode, index, returnTo))
+
+      def redirect(updatedAnswers: models.UserAnswers): Result =
+        returnTo match {
+          case Some("changeAnswers") =>
+            Redirect(
+              controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
+            )
+          case _                     =>
+            Redirect(
+              navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index, subJourneyId), mode, updatedAnswers)
+            )
+        }
+
+      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+        case None =>
+          logger.error(
+            s"[CostOfMaterialsController][onSubmit] - SelectedSubcontractorPage missing, index: $index"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        case Some(subcontractor) =>
+          form
+            .bindFromRequest()
+            .fold(
+              formWithErrors =>
+                Future
+                  .successful(BadRequest(view(formWithErrors, mode, subcontractor.name, index, returnTo, formAction))),
+              valueOpt => {
+                val valueToPersist = valueOpt.getOrElse(BigDecimal(0))
+
+                for {
+                  updatedAnswers <-
+                    Future.fromTry(
+                      request.userAnswers
+                        .set(SelectedSubcontractorMaterialCostsPage(index, subJourneyId), valueToPersist)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield redirect(updatedAnswers)

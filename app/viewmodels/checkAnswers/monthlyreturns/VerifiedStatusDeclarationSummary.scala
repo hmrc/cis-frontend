@@ -23,11 +23,12 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
+import java.util.UUID
+
 object VerifiedStatusDeclarationSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(VerifiedStatusDeclarationPage).map { answer =>
-
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -37,6 +38,28 @@ object VerifiedStatusDeclarationSummary {
           ActionItemViewModel(
             "site.change",
             controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
+            .withAttribute("id" -> "change-verified-status-declaration")
+        )
+      )
+    }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit
+    messages: Messages
+  ): Option[SummaryListRow] =
+    answers.get(VerifiedStatusDeclarationPage(flowId.toString)).map { answer =>
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.verifiedStatusDeclaration.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController
+              .onPageLoadWithId(flowId, CheckMode)
+              .url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.verifiedStatusDeclaration.change.hidden"))
             .withAttribute("id" -> "change-verified-status-declaration")

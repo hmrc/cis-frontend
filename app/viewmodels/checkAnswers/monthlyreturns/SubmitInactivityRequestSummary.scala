@@ -23,11 +23,12 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
+import java.util.UUID
+
 object SubmitInactivityRequestSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(SubmitInactivityRequestPage).map { answer =>
-
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -43,4 +44,25 @@ object SubmitInactivityRequestSummary {
         )
       )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
+
+    answers.get(SubmitInactivityRequestPage(subJourneyId)).map { answer =>
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
+            .withAttribute("id" -> "change-submit-inactivity-request")
+        )
+      )
+    }
+  }
 }

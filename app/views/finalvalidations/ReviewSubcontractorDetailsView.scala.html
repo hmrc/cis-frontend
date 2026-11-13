@@ -26,7 +26,11 @@
     link: Link
 )
 
-@(model: ReviewSubcontractorDetailsPageModel)(implicit request: Request[_], messages: Messages)
+@(
+    model: ReviewSubcontractorDetailsPageModel,
+    formAction: Option[Call] = None,
+    taskListAction: Option[Call] = None
+)(implicit request: Request[_], messages: Messages)
 
 @reviewSubcontractorTitle(name: String) = {
     <span class="govuk-visually-hidden">
@@ -37,7 +41,9 @@
 
 @fileAReturnSubmitLink() = {
     @helper.form(
-        action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+        action = formAction.getOrElse(
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
+        )
     ) {
         @helper.CSRF.formField
 
@@ -68,6 +74,8 @@
 
         @p("finalValidations.reviewSubcontractorDetails.intro")
 
+        <!--TODO DTR-9474: Implement taskListAction.getOrElse for href-->
+        val rowId = "test"
         @govukTaskList(TaskList(
             idPrefix = "review-subcontractor-details",
             items = model.subcontractors.map { row =>

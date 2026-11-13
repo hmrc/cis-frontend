@@ -30,6 +30,7 @@ import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewMode
 import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -38,6 +39,7 @@ class ChangeAnswersTotalPaymentsController @Inject() (
   sessionRepository: SessionRepository,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   monthlyReturnService: MonthlyReturnService,
   payloadBuilder: MonthlyReturnItemPayloadBuilder,
@@ -59,6 +61,23 @@ class ChangeAnswersTotalPaymentsController @Inject() (
         Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index))
     }
   }
+
+  def onPageLoadWithId(flowId: UUID, index: Int): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
+
+      request.userAnswers.get(SelectedSubcontractorPage(index, Some(subJourneyId))) match {
+        case None                =>
+          logger.error(
+            s"[ChangeAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorPage Index: $index, SubJourneyId: $subJourneyId"
+          )
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        case Some(subcontractor) =>
+          Ok(view(ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor), index, formAction))
+      }
+    }
 
   def onSubmit(index: Int): Action[AnyContent] = (identify andThen getData andThen requireData).async {
     implicit request =>
@@ -101,4 +120,50 @@ class ChangeAnswersTotalPaymentsController @Inject() (
             }
       }
   }
+
+  def onSubmitWithId(flowId: UUID, index: Int): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val ua           = request.userAnswers
+      val subJourneyId = flowId.toString
+
+      payloadBuilder.build(ua, index) match {
+        case None =>
+          logger.error(
+            s"[ChangeAnswersTotalPaymentsController][onSubmitWithId] - Failed to build monthly return item payload, index: $index, SubJourneyId: $subJourneyId"
+          )
+          Future.successful(Redirect(controllers.routes.SystemErrorController.onPageLoad()))
+
+        case Some(payload) =>
+          monthlyReturnService
+            .updateMonthlyReturnItem(payload)
+            .flatMap { _ =>
+              sessionRepository.set(ua).map { _ =>
+                Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoadWithId(flowId, NormalMode)
+                )
+              }
+            }
+            .recover {
+              case u: UpstreamErrorResponse =>
+                logger.error(
+                  s"[ChangeAnswersTotalPaymentsController][onSubmitWithId] - updateMonthlyReturnItems failed: status: ${u.statusCode}, " +
+                    s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
+                    s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}, " +
+                    s"message: ${u.message}",
+                  u
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+
+              case NonFatal(e) =>
+                logger.error(
+                  s"[ChangeAnswersTotalPaymentsController][onSubmitWithId] - updateMonthlyReturnItems failed: " +
+                    s"instanceId: ${payload.instanceId}, taxYear: ${payload.taxYear}, taxMonth: ${payload.taxMonth}, " +
+                    s"amendment: ${payload.amendment}, index: $index, subcontractorId: ${payload.subcontractorId}",
+                  e
+                )
+                Redirect(controllers.routes.SystemErrorController.onPageLoad())
+            }
+      }
+    }
 }

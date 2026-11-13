@@ -20,6 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.PaymentDetailsConfirmationFormProvider
 
 import javax.inject.Inject
+import java.util.UUID
 import models.{Mode, UserAnswers}
 import models.ReturnType.*
 import navigation.Navigator
@@ -38,6 +39,7 @@ class PaymentDetailsConfirmationController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
+  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
   formProvider: PaymentDetailsConfirmationFormProvider,
@@ -60,6 +62,29 @@ class PaymentDetailsConfirmationController @Inject() (
       Ok(view(preparedForm, mode, isAmendment(request.userAnswers)))
   }
 
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, mode))
+      val cancelAction =
+        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId))
+      val preparedForm = request.userAnswers.get(PaymentDetailsConfirmationPage(subJourneyId)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(
+        view(
+          preparedForm,
+          mode,
+          isAmendmentWithId(flowId, request.userAnswers),
+          formAction,
+          cancelAction
+        )
+      )
+    }
+
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -74,9 +99,48 @@ class PaymentDetailsConfirmationController @Inject() (
         )
     }
 
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val formAction   =
+        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, mode))
+      val cancelAction =
+        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId))
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors =>
+            Future.successful(
+              BadRequest(
+                view(
+                  formWithErrors,
+                  mode,
+                  isAmendmentWithId(flowId, request.userAnswers),
+                  formAction,
+                  cancelAction
+                )
+              )
+            ),
+          value =>
+            for {
+              updatedAnswers <-
+                Future.fromTry(request.userAnswers.set(PaymentDetailsConfirmationPage(subJourneyId), value))
+              _              <- sessionRepository.set(updatedAnswers)
+            } yield Redirect(
+              navigator.nextPage(flowId, PaymentDetailsConfirmationPage(subJourneyId), mode, updatedAnswers)
+            )
+        )
+    }
+
   def onCancelAmendment(): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad())
+    }
+
+  def onCancelAmendmentWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId))
     }
 
   private def isAmendment(ua: UserAnswers): Boolean =
@@ -86,4 +150,14 @@ class PaymentDetailsConfirmationController @Inject() (
       case MonthlyAmendedNilReturn | MonthlyAmendedStandardReturn => true
       case _                                                      => false
     }
+
+  private def isAmendmentWithId(flowId: UUID, ua: UserAnswers): Boolean = {
+    val subJourneyId = flowId.toString
+    ua
+      .get(ReturnTypePage(subJourneyId))
+      .getOrElse(throw new RuntimeException("ReturnTypePage not found in user answers")) match {
+      case MonthlyAmendedNilReturn | MonthlyAmendedStandardReturn => true
+      case _                                                      => false
+    }
+  }
 }

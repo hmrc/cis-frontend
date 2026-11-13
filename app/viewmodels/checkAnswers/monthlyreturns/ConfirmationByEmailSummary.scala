@@ -23,11 +23,12 @@ import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
+import java.util.UUID
+
 object ConfirmationByEmailSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(ConfirmationByEmailPage).map { answer =>
-
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -43,4 +44,25 @@ object ConfirmationByEmailSummary {
         )
       )
     }
+
+  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+    val subJourneyId = flowId.toString
+
+    answers.get(ConfirmationByEmailPage(subJourneyId)).map { answer =>
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.confirmationByEmail.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
+            .withAttribute("id" -> "change-confirmation-by-email")
+        )
+      )
+    }
+  }
 }
