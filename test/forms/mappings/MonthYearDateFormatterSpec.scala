@@ -116,9 +116,9 @@ class MonthYearDateFormatterSpec
 
     forAll(validDates -> "valid date") { date =>
 
-      val month: String      = date.getMonthValue.toString
+      val month: String      = date.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK)
       val year: String       = date.getYear.toString
-      val parseMonth: String = if (month.length == 1) s"0$month" else month
+      val parseMonth: String = f"${date.getMonthValue}%02d"
 
       val data = Map(
         "value.month" -> month,
@@ -137,9 +137,9 @@ class MonthYearDateFormatterSpec
       if today.getDayOfMonth <= 5 then today.plusMonths(3)
       else today.plusMonths(4)
 
-    val month: String      = date.getMonthValue.toString
+    val month: String      = date.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK)
     val year: String       = date.getYear.toString
-    val parseMonth: String = if (month.length == 1) s"0$month" else month
+    val parseMonth: String = f"${date.getMonthValue}%02d"
 
     val data = Map(
       "value.month" -> month,
@@ -156,7 +156,7 @@ class MonthYearDateFormatterSpec
     val result = monthYearDateFormatter.bind(
       "value",
       Map(
-        "value.month" -> "12",
+        "value.month" -> "December",
         "value.year"  -> earliestSupportedYear.toString
       )
     )
@@ -175,7 +175,7 @@ class MonthYearDateFormatterSpec
       formatterAt(LocalDate.of(2026, 11, 20))
 
     val data = Map(
-      "value.month" -> "12",
+      "value.month" -> "December",
       "value.year"  -> "2017"
     )
 
@@ -229,7 +229,7 @@ class MonthYearDateFormatterSpec
     val result = monthYearDateFormatter.bind(
       "value",
       Map(
-        "value.month" -> "6",
+        "value.month" -> "June",
         "value.year"  -> ""
       )
     )
@@ -281,7 +281,7 @@ class MonthYearDateFormatterSpec
     val result = monthYearDateFormatter.bind(
       "value",
       Map(
-        "value.month" -> "12",
+        "value.month" -> "December",
         "value.year"  -> "2$12"
       )
     )
@@ -314,7 +314,7 @@ class MonthYearDateFormatterSpec
     val result = formatter.bind(
       "value",
       Map(
-        "value.month" -> "12",
+        "value.month" -> "December",
         "value.year"  -> "2000"
       )
     )
@@ -335,7 +335,7 @@ class MonthYearDateFormatterSpec
     val futureDate = today.plusMonths(5)
 
     val data = Map(
-      "value.month" -> futureDate.getMonthValue.toString,
+      "value.month" -> futureDate.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK),
       "value.year"  -> futureDate.getYear.toString
     )
 
@@ -359,7 +359,7 @@ class MonthYearDateFormatterSpec
     val result = monthYearDateFormatter.bind(
       "value",
       Map(
-        "value.month" -> futureDate.getMonthValue.toString,
+        "value.month" -> futureDate.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK),
         "value.year"  -> futureDate.getYear.toString
       )
     )
@@ -380,7 +380,7 @@ class MonthYearDateFormatterSpec
     val result = monthYearDateFormatter.bind(
       "value",
       Map(
-        "value.month" -> "12",
+        "value.month" -> "December",
         "value.year"  -> (earliestSupportedYear - 1).toString
       )
     )

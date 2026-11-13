@@ -20,6 +20,7 @@
 @import uk.gov.hmrc.hmrcfrontend.views.html.components.implicits._
 @import config.FrontendAppConfig
 @import play.api.mvc.Call
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.hint.Hint
 
 @this(
     layout: templates.Layout,
@@ -50,7 +51,7 @@
         @paragraph(s"monthlyreturns.dateConfirmPayments.paragraph")
 
 
-        @govukDateInput(
+        @defining(
             WithMonthYearViewModel(
                 field  = form("value"),
                 legend = LegendViewModel(
@@ -70,7 +71,15 @@
                 )
             )
             .withMonthYearFormField(form("value"))
-        )
+            .withHint(Hint(content = Text(messages("monthlyreturns.dateConfirmPayments.hint"))))
+        ) { dateInput =>
+            @govukDateInput(
+                dateInput.copy(items = dateInput.items.map { item =>
+                    if (item.id.endsWith("month")) item.copy(classes = item.classes.replace("govuk-input--width-2", "govuk-input--width-10"))
+                    else item
+                })
+            )
+        }
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))

@@ -62,11 +62,23 @@ class MonthYearDateFormatter(
 
   private def checkInput(key: String, fields: Map[String, Option[String]], dateFormat: DateFormat): Option[FormError] =
     fields.get(dateFormat.dateType).flatten match {
-      case Some(dateType) if !dateType.matches(dateFormat.regex) =>
+      case Some(dateType) if dateFormat.dateType == "month" && parseMonth(dateType).isEmpty        =>
         Some(FormError(s"$key.${dateFormat.dateType}", dateFormat.errorKey, args))
-      case _                                                     =>
+      case Some(dateType) if dateFormat.dateType != "month" && !dateType.matches(dateFormat.regex) =>
+        Some(FormError(s"$key.${dateFormat.dateType}", dateFormat.errorKey, args))
+      case _                                                                                       =>
         None
     }
+
+  override def unbind(key: String, value: LocalDate): Map[String, String] =
+    Map(
+      s"$key.month" -> MonthParser.displayName(value.getMonthValue, isWelsh),
+      s"$key.year"  -> value.getYear.toString
+    )
+
+  private def isWelsh: Boolean = messages.lang.code.startsWith("cy")
+
+  private def parseMonth(month: String): Option[Int] = MonthParser.parse(month, isWelsh)
 
   private def earliestMonthYearDateCheck(key: String, fields: Map[String, Option[String]]): Option[FormError] = {
 
@@ -80,7 +92,7 @@ class MonthYearDateFormatter(
           if !TaxPeriodEndDateRules.isOnOrAfterEarliest(
             earliestTaxPeriodEndDate,
             year.toInt,
-            month.toInt
+            parseMonth(month).get
           ) =>
         Some(
           FormError(
@@ -151,7 +163,7 @@ class MonthYearDateFormatter(
           if !TaxPeriodEndDateRules.isWithinMaxFuturePeriod(
             maxAllowedEndDate,
             year.toInt,
-            month.toInt
+            parseMonth(month).get
           ) =>
         Some(
           FormError(s"$key.month", "monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod")
@@ -171,10 +183,11 @@ class MonthYearDateFormatter(
       args
     )
 
-    val month = new MonthFormatter(invalidKey, args)
-
     for {
-      month <- month.bind(s"$key.month", data)
+      month <- data
+                 .get(s"$key.month")
+                 .flatMap(parseMonth)
+                 .toRight(Seq(FormError(s"$key.month", invalidKey, args)))
       year  <- int.bind(s"$key.year", data)
       date  <- toDate(key, month, year)
     } yield date

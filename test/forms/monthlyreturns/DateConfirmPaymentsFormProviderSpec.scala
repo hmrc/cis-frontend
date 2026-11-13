@@ -25,6 +25,7 @@ import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
 
 import java.time.*
+import java.time.format
 
 class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase with MockitoSugar {
 
@@ -65,7 +66,32 @@ class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase w
       )
     )
 
-    behave like dateField(form, "value", validData)
+    "bind valid data using a month name" in {
+      forAll(validData -> "valid date") { (date: LocalDate) =>
+        val data = Map(
+          "value.month" -> date.getMonth.getDisplayName(format.TextStyle.FULL, java.util.Locale.UK),
+          "value.year"  -> date.getYear.toString
+        )
+        form.bind(data).value.value mustEqual date.withDayOfMonth(5)
+      }
+    }
+
+    "bind valid data using a short month name" in {
+      form.bind(Map("value.month" -> "Nov", "value.year" -> "2025")).value.value mustEqual LocalDate.of(2025, 11, 5)
+    }
+
+    "remove all spaces from the month before validating" in {
+      form.bind(Map("value.month" -> " N o v    ", "value.year" -> "2025")).value.value mustEqual LocalDate.of(
+        2025,
+        11,
+        5
+      )
+    }
+
+    "not bind a numeric month" in {
+      val result = form.bind(Map("value.month" -> "11", "value.year" -> "2025"))
+      result.errors.map(_.message) mustEqual Seq("monthlyreturns.dateConfirmNilPayments.error.invalid.month")
+    }
 
     behave like mandatoryMonthYearDateField(
       form,
