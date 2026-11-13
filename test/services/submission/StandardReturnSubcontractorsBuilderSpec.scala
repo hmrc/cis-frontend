@@ -164,4 +164,111 @@ class StandardReturnSubcontractorsBuilderSpec extends AnyWordSpec with Matchers 
       ex.getMessage must include("No subcontractor found with id 999")
     }
   }
+
+  "StandardReturnSubcontractorsBuilder.build with id" should {
+
+    "build subcontractors using ID-scoped answers" in {
+      val id = "test-id"
+
+      val selected = SelectedSubcontractor(
+        id = 1L,
+        name = "A B",
+        totalPaymentsMade = Some(BigDecimal(100)),
+        costOfMaterials = Some(BigDecimal(10)),
+        totalTaxDeducted = Some(BigDecimal(20))
+      )
+
+      val ua = UserAnswers("id", Json.obj())
+        .setOrException(SelectedSubcontractorPage.all(id), Map(0 -> selected))
+
+      val allSubs = Seq(mkSub(1L, Some("soletrader")))
+
+      val out = StandardReturnSubcontractorsBuilder.build(ua, id, allSubs)
+
+      out.length mustBe 1
+      out.head.subcontractorType mustBe SubcontractorType.SoleTrader
+      out.head.totalPayments mustBe Some(BigDecimal(100))
+      out.head.costOfMaterials mustBe Some(BigDecimal(10))
+      out.head.totalDeducted mustBe Some(BigDecimal(20))
+    }
+
+    "throw when ID-scoped subcontractors are missing" in {
+      val id = "test-id"
+
+      val selected = SelectedSubcontractor(
+        id = 1L,
+        name = "A B",
+        totalPaymentsMade = Some(BigDecimal(100)),
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+
+      val ua = uaWithSelected(0, selected)
+
+      val ex = intercept[RuntimeException] {
+        StandardReturnSubcontractorsBuilder.build(ua, id, Seq(mkSub(1L, Some("soletrader"))))
+      }
+
+      ex.getMessage must include("No subcontractors selected")
+    }
+
+    "use subcontractors from the correct ID-scoped journey" in {
+      val firstSelected = SelectedSubcontractor(
+        id = 1L,
+        name = "First",
+        totalPaymentsMade = Some(BigDecimal(100)),
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+
+      val secondSelected = SelectedSubcontractor(
+        id = 2L,
+        name = "Second",
+        totalPaymentsMade = Some(BigDecimal(200)),
+        costOfMaterials = None,
+        totalTaxDeducted = None
+      )
+
+      val ua = UserAnswers("id", Json.obj())
+        .setOrException(SelectedSubcontractorPage.all("first-id"), Map(0 -> firstSelected))
+        .setOrException(SelectedSubcontractorPage.all("second-id"), Map(0 -> secondSelected))
+
+      val allSubs = Seq(
+        mkSub(1L, Some("soletrader")),
+        mkSub(2L, Some("soletrader"))
+      )
+
+      val firstResult  = StandardReturnSubcontractorsBuilder.build(ua, "first-id", allSubs)
+      val secondResult = StandardReturnSubcontractorsBuilder.build(ua, "second-id", allSubs)
+
+      firstResult.length mustBe 1
+      firstResult.head.totalPayments mustBe Some(BigDecimal(100))
+
+      secondResult.length mustBe 1
+      secondResult.head.totalPayments mustBe Some(BigDecimal(200))
+    }
+  }
+
+  "StandardReturnSubcontractorsBuilder.build with selected subcontractors" should {
+
+    "build subcontractors directly from the selected sequence" in {
+      val selected = SelectedSubcontractor(
+        id = 1L,
+        name = "A B",
+        totalPaymentsMade = Some(BigDecimal(100)),
+        costOfMaterials = Some(BigDecimal(10)),
+        totalTaxDeducted = Some(BigDecimal(20))
+      )
+
+      val allSubs = Seq(mkSub(1L, Some("soletrader")))
+
+      val out = StandardReturnSubcontractorsBuilder.build(Seq(selected), allSubs)
+
+      out.length mustBe 1
+      out.head.subcontractorType mustBe SubcontractorType.SoleTrader
+      out.head.totalPayments mustBe Some(BigDecimal(100))
+      out.head.costOfMaterials mustBe Some(BigDecimal(10))
+      out.head.totalDeducted mustBe Some(BigDecimal(20))
+    }
+  }
 }

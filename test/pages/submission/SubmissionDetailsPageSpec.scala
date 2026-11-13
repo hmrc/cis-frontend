@@ -29,6 +29,7 @@ import java.time.LocalDateTime
 class SubmissionDetailsPageSpec extends AnyWordSpec with Matchers {
 
   "SubmissionDetailsPage" should {
+
     "have the correct path" in {
       SubmissionDetailsPage.path mustBe (JsPath \ "submission" \ "submissionDetails")
     }
@@ -50,6 +51,16 @@ class SubmissionDetailsPageSpec extends AnyWordSpec with Matchers {
 
       val ua2 = ua1.remove(SubmissionDetailsPage).success.value
       ua2.get(SubmissionDetailsPage) mustBe None
+    }
+
+    "have the correct path with id" in {
+      SubmissionDetailsPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submission" \ "submissionDetails")
+    }
+
+    "have the correct toString with id" in {
+      SubmissionDetailsPage("test-id").toString mustBe "submissionDetails"
     }
   }
 }

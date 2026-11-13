@@ -19,6 +19,7 @@ package viewmodels.checkAnswers.monthlyreturns
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.EnterYourEmailAddressPage
 import play.api.i18n.Messages
+import play.api.mvc.Call
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
@@ -34,6 +35,23 @@ object EnterYourEmailAddressSummary {
           ActionItemViewModel(
             "site.change",
             controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
+            .withAttribute("id" -> "change-enter-your-email-address")
+        )
+      )
+    }
+
+  // Multi-tab: Summary for the ID-scoped journey.
+  def row(answers: UserAnswers, id: String, changeAction: Call)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(EnterYourEmailAddressPage(id)).map { answer =>
+      SummaryListRowViewModel(
+        key = "monthlyreturns.enterYourEmailAddress.checkYourAnswersLabel",
+        value = ValueViewModel(answer),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            changeAction.url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.enterYourEmailAddress.change.hidden"))
             .withAttribute("id" -> "change-enter-your-email-address")

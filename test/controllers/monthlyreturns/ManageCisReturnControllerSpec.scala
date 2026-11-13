@@ -22,11 +22,13 @@ import models.UserAnswers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import services.MonthlyReturnService
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class ManageCisReturnControllerSpec extends SpecBase with MockitoSugar {
@@ -89,6 +91,85 @@ class ManageCisReturnControllerSpec extends SpecBase with MockitoSugar {
 
         verify(mockMonthlyReturnService)
           .clearSubmissionJourney(any[UserAnswers])
+      }
+    }
+  }
+
+  "UUID-scoped journey" - {
+
+    "clear the ID-scoped monthly return journey and redirect to Manage CIS Return" in {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val userAnswers = userAnswersWithCisId
+        .setOrException(CisIdPage(id), "2")
+        .setOrException(ContractorNamePage(id), "Scoped Contractor")
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnService.clearSubmissionJourney(any[UserAnswers], any[String]))
+        .thenReturn(Future.unit)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(GET, routes.ManageCisReturnController.onExitWithId(flowId).url)
+
+        val result = route(application, request).value
+
+        val appConfig =
+          application.injector.instanceOf[FrontendAppConfig]
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          appConfig.returnsLandingPageUrl("2", Some("Scoped Contractor"))
+
+        verify(mockMonthlyReturnService)
+          .clearSubmissionJourney(any[UserAnswers], any[String])
+      }
+    }
+
+    "redirect to the system error page when the ID-scoped journey cannot be cleared" in {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val userAnswers = userAnswersWithCisId
+        .setOrException(CisIdPage(id), "1")
+
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      when(mockMonthlyReturnService.clearSubmissionJourney(any[UserAnswers], any[String]))
+        .thenReturn(Future.failed(new RuntimeException("clear failed")))
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(GET, routes.ManageCisReturnController.onExitWithId(flowId).url)
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.SystemErrorController.onPageLoad().url
+
+        verify(mockMonthlyReturnService)
+          .clearSubmissionJourney(any[UserAnswers], any[String])
       }
     }
   }

@@ -19,6 +19,7 @@ package viewmodels.checkAnswers.monthlyreturns
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
+import play.api.mvc.Call
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
@@ -37,6 +38,26 @@ object SubmitInactivityRequestSummary {
           ActionItemViewModel(
             "site.change",
             controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoad(CheckMode).url
+          )
+            .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
+            .withAttribute("id" -> "change-submit-inactivity-request")
+        )
+      )
+    }
+
+  // Multi-tab: Summary for the ID-scoped return journey.
+  def row(answers: UserAnswers, id: String, changeAction: Call)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(SubmitInactivityRequestPage(id)).map { answer =>
+
+      val value = if (answer) "site.yes" else "site.no"
+
+      SummaryListRowViewModel(
+        key = "monthlyreturns.submitInactivityRequest.checkYourAnswersLabel",
+        value = ValueViewModel(value),
+        actions = Seq(
+          ActionItemViewModel(
+            "site.change",
+            changeAction.url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
             .withAttribute("id" -> "change-submit-inactivity-request")

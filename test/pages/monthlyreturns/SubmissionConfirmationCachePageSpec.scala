@@ -29,5 +29,15 @@ class SubmissionConfirmationCachePageSpec extends SpecBase {
     "have the correct toString" in {
       SubmissionConfirmationCachePage.toString mustBe "submissionConfirmationCache"
     }
+
+    "have the correct path with id" in {
+      SubmissionConfirmationCachePage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submissionConfirmationCache")
+    }
+
+    "have the correct toString with id" in {
+      SubmissionConfirmationCachePage("test-id").toString mustBe "submissionConfirmationCache"
+    }
   }
 }

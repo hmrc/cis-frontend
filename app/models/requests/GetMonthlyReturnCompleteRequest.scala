@@ -56,4 +56,20 @@ object GetMonthlyReturnCompleteRequest {
         if (userAnswers.get(AmendmentDetailsPage).isDefined) "Y"
         else "N"
     )
+
+  // Multi-tab: Build the completed monthly return request from ID-scoped answers.
+  def fromUserAnswers(
+    userAnswers: UserAnswers,
+    id: String
+  ): Either[String, GetMonthlyReturnCompleteRequest] =
+    for {
+      instanceId <- userAnswers.get(CisIdPage(id)).toRight("Missing CisIdPage")
+      taxDate    <- userAnswers.get(DateConfirmPaymentsPage(id)).toRight("Missing DateConfirmPaymentsPage")
+      returnType <- userAnswers.get(ReturnTypePage(id)).toRight("Missing ReturnTypePage")
+    } yield GetMonthlyReturnCompleteRequest(
+      instanceId = instanceId,
+      taxYear = taxDate.getYear,
+      taxMonth = taxDate.getMonthValue,
+      amendment = returnType.amendmentFlag
+    )
 }

@@ -17,8 +17,9 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import models.monthlyreturns.Declaration.Confirmed
-import models.{ReturnType, UserAnswers}
+import models.{CheckMode, ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
@@ -34,6 +35,7 @@ import views.html.monthlyreturns.CheckYourAnswersView
 import pages.submission.SubmissionJourneyCompletedPage
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.concurrent.Future
 
 class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency with MockitoSugar {
@@ -45,6 +47,18 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
     .setOrException(SubmitInactivityRequestPage, true)
     .setOrException(ConfirmationByEmailPage, false)
     .setOrException(DeclarationPage, Set(Confirmed))
+
+  private def completeScopedAnswers(flowId: UUID, returnType: ReturnType = ReturnType.MonthlyNilReturn) = {
+    val id = flowId.toString
+
+    emptyUserAnswers
+      .setOrException(CisIdPage(id), "test-cis-id")
+      .setOrException(ReturnTypePage(id), returnType)
+      .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 1))
+      .setOrException(SubmitInactivityRequestPage(id), true)
+      .setOrException(ConfirmationByEmailPage(id), false)
+      .setOrException(DeclarationPage(id), Set(Confirmed))
+  }
 
   "Check Your Answers Controller" - {
 
@@ -498,6 +512,273 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "UUID-scoped journey" - {
+
+      "must return OK and display the correct ID-scoped nil return answers" in {
+
+        val flowId      = UUID.randomUUID()
+        val id          = flowId.toString
+        val userAnswers = completeScopedAnswers(flowId)
+          .setOrException(ConfirmationByEmailPage(id), true)
+          .setOrException(EnterYourEmailAddressPage(id), "scoped@example.com")
+          .setOrException(EnterYourEmailAddressPage, "legacy@example.com")
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsString(result) must include("scoped@example.com")
+          contentAsString(result).contains("legacy@example.com") mustEqual false
+          contentAsString(result) must include(
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+        }
+      }
+
+      "must redirect to Journey Recovery when the ID-scoped return type is missing or unsupported" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val missingReturnType = completeScopedAnswers(flowId)
+          .remove(ReturnTypePage(id))
+          .get
+          .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
+
+        val unsupportedReturnType = completeScopedAnswers(flowId, ReturnType.MonthlyStandardReturn)
+
+        Seq(missingReturnType, unsupportedReturnType).foreach { userAnswers =>
+
+          val application = applicationBuilder(userAnswers = Some(userAnswers))
+            .configure("features.multi-tab-enabled" -> true)
+            .build()
+
+          running(application) {
+            val request = FakeRequest(
+              GET,
+              controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+            )
+
+            val result = route(application, request).value
+
+            status(result) mustEqual SEE_OTHER
+            redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+          }
+        }
+      }
+
+      "must redirect to ID-scoped Already Submitted when the journey is completed" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = completeScopedAnswers(flowId)
+          .setOrException(pages.submission.SubmissionJourneyCompletedForFlowPage(id, "2024-03"), true)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          Seq(
+            (GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url),
+            (POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url)
+          ).foreach { case (method, url) =>
+            val request = FakeRequest(method, url)
+
+            val result = route(application, request).value
+
+            status(result) mustEqual SEE_OTHER
+            redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.AlreadySubmittedController
+              .onPageLoadWithId(flowId)
+              .url
+          }
+        }
+      }
+
+      "must redirect to Journey Recovery when ID-scoped payment date is missing" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = completeScopedAnswers(flowId)
+          .remove(DateConfirmPaymentsPage(id))
+          .get
+          .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          Seq(
+            (GET, controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url),
+            (POST, controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url)
+          ).foreach { case (method, url) =>
+            val request = FakeRequest(method, url)
+
+            val result = route(application, request).value
+
+            status(result) mustEqual SEE_OTHER
+            redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+          }
+        }
+      }
+
+      "must update the ID-scoped monthly return and redirect to submission sending" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = completeScopedAnswers(flowId)
+          .setOrException(CisIdPage, "legacy-cis-id")
+          .setOrException(ReturnTypePage, ReturnType.MonthlyStandardReturn)
+
+        val expectedRequest = models.monthlyreturns.UpdateMonthlyReturnRequest
+          .fromUserAnswers(userAnswers, id)
+          .toOption
+          .get
+
+        val mockService = mock[MonthlyReturnService]
+        when(mockService.updateMonthlyReturn(any())(any()))
+          .thenReturn(Future.successful(()))
+
+        val mockSubmissionService = mock[SubmissionService]
+        when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers], any[String]))
+          .thenReturn(false)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[SubmissionService].toInstance(mockSubmissionService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmissionSendingController
+            .onPageLoadWithId(flowId)
+            .url
+
+          verify(mockService).updateMonthlyReturn(org.mockito.ArgumentMatchers.eq(expectedRequest))(any())
+          verify(mockSubmissionService).isAlreadySubmitted(any[UserAnswers], org.mockito.ArgumentMatchers.eq(id))
+        }
+      }
+
+      "must redirect to Journey Recovery when the ID-scoped journey is incomplete" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = completeScopedAnswers(flowId)
+          .remove(SubmitInactivityRequestPage(id))
+          .get
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to ID-scoped Already Submitted when a submission already exists" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeScopedAnswers(flowId)
+
+        val mockService           = mock[MonthlyReturnService]
+        val mockSubmissionService = mock[SubmissionService]
+
+        when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers], any[String]))
+          .thenReturn(true)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[SubmissionService].toInstance(mockSubmissionService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.AlreadySubmittedController
+            .onPageLoadWithId(flowId)
+            .url
+
+          verify(mockService, never()).updateMonthlyReturn(any())(any())
+        }
+      }
+
+      "must redirect to System Error when the ID-scoped monthly return update fails" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = completeScopedAnswers(flowId)
+
+        val mockService = mock[MonthlyReturnService]
+        when(mockService.updateMonthlyReturn(any())(any()))
+          .thenReturn(Future.failed(new RuntimeException("service error")))
+
+        val mockSubmissionService = mock[SubmissionService]
+        when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers], any[String]))
+          .thenReturn(false)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[SubmissionService].toInstance(mockSubmissionService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+        }
       }
     }
   }

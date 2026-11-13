@@ -25,6 +25,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionUnsuccessfulResubmitView
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
@@ -33,6 +34,7 @@ class SubmissionUnsuccessfulResubmitController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionUnsuccessfulResubmitView,
   monthlyReturnService: MonthlyReturnService
@@ -51,4 +53,20 @@ class SubmissionUnsuccessfulResubmitController @Inject() (
       .completeSubmissionJourney(request.userAnswers)
       .map(_ => Ok(view(cisId)))
   }
+
+  // Multi-tab: Display the unsuccessful resubmission page for the ID-scoped journey.
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id      = flowId.toString
+      val exitUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExitWithId(flowId).url
+
+      val cisId = required(
+        request.userAnswers.get(CisIdPage(id)),
+        "[SubmissionUnsuccessfulResubmit] cisId missing from userAnswers"
+      )
+
+      monthlyReturnService
+        .completeSubmissionJourney(request.userAnswers, id)
+        .map(_ => Ok(view(cisId, exitUrl)))
+    }
 }

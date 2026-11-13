@@ -27,5 +27,12 @@ class IsResumedMonthlyReturnPageSpec extends SpecBase {
       IsResumedMonthlyReturnPage.path mustBe (JsPath \ "isResumedMonthlyReturn")
       IsResumedMonthlyReturnPage.toString mustBe "isResumedMonthlyReturn"
     }
+
+    "must have the correct path and string representation with id" in {
+      IsResumedMonthlyReturnPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "isResumedMonthlyReturn")
+      IsResumedMonthlyReturnPage("test-id").toString mustBe "isResumedMonthlyReturn"
+    }
   }
 }

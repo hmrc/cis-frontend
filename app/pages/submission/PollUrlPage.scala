@@ -19,6 +19,11 @@ package pages.submission
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class PollUrlPage(id: String) extends QuestionPage[String] {
+  override val path: JsPath     = JsPath \ "monthlyReturn" \ id \ "submission" \ "poll" \ "url"
+  override val toString: String = "submissionPollUrl"
+}
+
 object PollUrlPage extends QuestionPage[String] {
   override val path: JsPath     = JsPath \ "submission" \ "poll" \ "url"
   override val toString: String = "submissionPollUrl"

@@ -120,4 +120,71 @@ class SubmissionSuccessfulServiceGuardSpec extends AnyWordSpec with Matchers {
       guard.check mustBe false
     }
   }
+
+  "SubmissionSuccessfulServiceGuardImpl.check with id" should {
+
+    "return false when ID-scoped SubmissionDetailsPage is absent" in {
+      val id = "test-id"
+
+      val ua = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage, submissionDetails())
+
+      guard.check(ua, id) mustBe false
+    }
+
+    "return true when ID-scoped status is SUBMITTED and IRMarks match" in {
+      val id = "test-id"
+
+      val ua = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage(id), submissionDetails())
+
+      guard.check(ua, id) mustBe true
+    }
+
+    "return true when ID-scoped amendment is Y and IRMarks match" in {
+      val id = "test-id"
+
+      val details = submissionDetails(status = "PENDING", amendment = Some("Y"))
+
+      val ua = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage(id), details)
+
+      guard.check(ua, id) mustBe true
+    }
+
+    "return false when ID-scoped submission details are invalid" in {
+      val id = "test-id"
+
+      val invalidStatus = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage(id), submissionDetails(status = "PENDING", amendment = Some("N")))
+
+      guard.check(invalidStatus, id) mustBe false
+
+      val emptyIrMark = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage(id), submissionDetails(irMark = "", hmrcMarkGgis = Some("")))
+
+      guard.check(emptyIrMark, id) mustBe false
+
+      val missingHmrcMark = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage(id), submissionDetails(hmrcMarkGgis = None))
+
+      guard.check(missingHmrcMark, id) mustBe false
+
+      val mismatchedHmrcMark = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage(id), submissionDetails(hmrcMarkGgis = Some("differentMark")))
+
+      guard.check(mismatchedHmrcMark, id) mustBe false
+    }
+
+    "use submission details from the correct ID-scoped journey" in {
+      val ua = emptyUserAnswers()
+        .setOrException(SubmissionDetailsPage("first-id"), submissionDetails())
+        .setOrException(SubmissionDetailsPage("second-id"), submissionDetails(status = "PENDING"))
+        .setOrException(SubmissionDetailsPage, submissionDetails())
+
+      guard.check(ua, "first-id") mustBe true
+      guard.check(ua, "second-id") mustBe false
+      guard.check(ua, "third-id") mustBe false
+    }
+  }
 }

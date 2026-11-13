@@ -25,6 +25,7 @@ import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.mvc.Call
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -194,5 +195,129 @@ class Navigator @Inject() () extends Logging {
       case (None, _)                 =>
         logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ConfirmationByEmailPage not set")
         controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+
+  // Multi-tab: Normal mode navigation
+  private def normalRoutesWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+    // common
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, NormalMode, userAnswers)
+
+    // nil return
+    case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
+      _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode)
+
+    case (DeclarationPage, _) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    case (ConfirmationByEmailPage, _) =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, NormalMode, userAnswers)
+
+    case (EnterYourEmailAddressPage, _) =>
+      _ => navigatorFromEnterYourEmailAddressPage(flowId, NormalMode)
+
+    // TODO: Add UUID-scoped standard monthly return navigation.
+
+    // TODO: Add UUID-scoped amended monthly return navigation.
+
+    case _ =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad()
+  }
+
+  // Multi-tab: Check mode navigation
+  private def checkRouteMapWithId(flowId: UUID): (Page, ReturnType) => UserAnswers => Call = {
+    case (SubmitInactivityRequestPage, _) =>
+      userAnswers => navigatorFromSubmitInactivityRequestPage(flowId, CheckMode, userAnswers)
+
+    case (ConfirmationByEmailPage, _) =>
+      userAnswers => navigatorFromConfirmationByEmailPage(flowId, CheckMode, userAnswers)
+
+    case (EnterYourEmailAddressPage, _) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    // nil return
+    case (_, MonthlyNilReturn) =>
+      _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+
+    // TODO: Add UUID-scoped standard monthly return check navigation.
+
+    // TODO: Add UUID-scoped amended monthly return check navigation.
+
+    case _ =>
+      _ => controllers.routes.JourneyRecoveryController.onPageLoad()
+  }
+
+  // Multi-tab: Navigate within a UUID-scoped monthly return journey
+  def nextPage(
+    flowId: UUID,
+    page: Page,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = flowId.toString
+
+    userAnswers.get(ReturnTypePage(id)) match {
+      case Some(returnType) =>
+        mode match {
+          case NormalMode => normalRoutesWithId(flowId)(page, returnType)(userAnswers)
+          case CheckMode  => checkRouteMapWithId(flowId)(page, returnType)(userAnswers)
+        }
+      case None             =>
+        logger.error("[Navigator][nextPage] - UUID-scoped ReturnTypePage missing")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromSubmitInactivityRequestPage(
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = flowId.toString
+
+    (userAnswers.get(SubmitInactivityRequestPage(id)), mode) match {
+      case (Some(true), NormalMode)  =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoadWithId(flowId, NormalMode)
+      case (Some(true), CheckMode)   =>
+        controllers.monthlyreturns.routes.InactivityRequestWarningController.onPageLoadWithId(flowId, CheckMode)
+      case (Some(false), NormalMode) =>
+        controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode)
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromSubmitInactivityRequestPage] - Scoped answer not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromConfirmationByEmailPage(
+    flowId: UUID,
+    mode: Mode,
+    userAnswers: UserAnswers
+  ): Call = {
+    val id = flowId.toString
+
+    (userAnswers.get(ConfirmationByEmailPage(id)), mode) match {
+      case (Some(true), mode)        =>
+        controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, mode)
+      case (Some(false), NormalMode) =>
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
+      case (Some(false), CheckMode)  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+      case (None, _)                 =>
+        logger.error("[Navigator][navigatorFromConfirmationByEmailPage] - ID-scoped ConfirmationByEmailPage not set")
+        controllers.routes.JourneyRecoveryController.onPageLoad()
+    }
+  }
+
+  private def navigatorFromEnterYourEmailAddressPage(
+    flowId: UUID,
+    mode: Mode
+  ): Call =
+    mode match {
+      case NormalMode =>
+        controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
+      case CheckMode  =>
+        controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
     }
 }

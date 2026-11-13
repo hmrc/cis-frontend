@@ -27,7 +27,7 @@ import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
 import models.{ReturnType, UserAnswers}
 import models.agent.AgentClientData
-import pages.submission.{ResubmissionIdPage, SubmissionJourneyCompletedPage}
+import pages.submission.*
 import play.api.libs.json.*
 import models.requests.{GetMonthlyReturnCompleteRequest, GetMonthlyReturnForEditRequest}
 import pages.QuestionPage
@@ -40,7 +40,7 @@ import viewmodels.SelectSubcontractorsViewModel
 import java.time.{LocalDate, YearMonth}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 final case class ContinueAmendJourneyResult(
   userAnswers: UserAnswers,
@@ -261,9 +261,48 @@ class MonthlyReturnService @Inject() (
     }
   }
 
+  // Multi-tab: Complete the ID-scoped submission journey.
+  def completeSubmissionJourney(userAnswers: UserAnswers, id: String)(implicit hc: HeaderCarrier): Future[Unit] =
+    // Reload latest UserAnswers before marking the journey complete.
+    saveLatestUserAnswers(userAnswers) { latestUa =>
+      val updatedTry =
+        latestUa.get(DateConfirmPaymentsPage(id)) match {
+          case Some(periodEnd) =>
+            latestUa.set(SubmissionJourneyCompletedForFlowPage(id, YearMonth.from(periodEnd).toString), true)
+          case None            =>
+            Failure(new RuntimeException("dateConfirmPayments missing"))
+        }
+
+      updatedTry match {
+        case Success(updatedAnswers) =>
+          Success(updatedAnswers)
+        case Failure(exception)      =>
+          logger.warn(
+            s"[MonthlyReturnService][completeSubmissionJourney] Failed to complete submission journey: ${exception.getMessage}"
+          )
+          Failure(exception)
+      }
+    }.map(_ => ())
+
   def clearSubmissionJourney(userAnswers: UserAnswers): Future[Unit] =
     Future
       .fromTry(userAnswers.clearMonthlyReturnJourney)
+      .flatMap { clearedAnswers =>
+        sessionRepository.set(clearedAnswers).flatMap {
+          case true =>
+            Future.unit
+
+          case false =>
+            Future.failed(
+              new RuntimeException("Failed to persist cleared monthly return journey")
+            )
+        }
+      }
+
+  // Multi-tab: Clear the ID-scoped monthly return journey.
+  def clearSubmissionJourney(userAnswers: UserAnswers, id: String): Future[Unit] =
+    Future
+      .fromTry(userAnswers.clearMonthlyReturnJourney(id))
       .flatMap { clearedAnswers =>
         sessionRepository.set(clearedAnswers).flatMap {
           case true =>
@@ -311,6 +350,22 @@ class MonthlyReturnService @Inject() (
                            monthlyReturn = monthlyReturn
                          )
       } yield updatedUa
+    }
+
+  // Multi-tab: Apply updates to the latest UserAnswers before saving.
+  private def saveLatestUserAnswers(userAnswers: UserAnswers)(
+    update: UserAnswers => Try[UserAnswers]
+  ): Future[UserAnswers] =
+    sessionRepository.get(userAnswers.id).flatMap {
+      case Some(latestUa) =>
+        Future.fromTry(update(latestUa)).flatMap { updatedUa =>
+          sessionRepository.set(updatedUa).flatMap {
+            case true  => Future.successful(updatedUa)
+            case false => Future.failed(new IllegalStateException("Failed to persist updated UserAnswers"))
+          }
+        }
+      case None           =>
+        Future.failed(new IllegalStateException("UserAnswers not found in session"))
     }
 
   private def populateContinueAmendJourneyAnswers(

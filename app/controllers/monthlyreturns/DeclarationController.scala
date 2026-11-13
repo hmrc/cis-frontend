@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.DeclarationView
 import models.monthlyreturns.Declaration.Confirmed
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class DeclarationController @Inject() (
@@ -40,6 +41,7 @@ class DeclarationController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: DeclarationView
 )(implicit ec: ExecutionContext)
@@ -58,4 +60,21 @@ class DeclarationController @Inject() (
         _              <- sessionRepository.set(updatedAnswers)
       } yield Redirect(navigator.nextPage(DeclarationPage, mode, updatedAnswers))
   }
+
+  // Multi-tab: New ID-scoped journey.
+
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+      val continueUrl = Some(routes.DeclarationController.onSubmitWithId(flowId).url)
+
+      Ok(view(mode, continueUrl))
+    }
+
+  def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      for {
+        updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage(flowId.toString), Set(Confirmed)))
+        _              <- sessionRepository.set(updatedAnswers)
+      } yield Redirect(navigator.nextPage(flowId, DeclarationPage, mode, updatedAnswers))
+    }
 }

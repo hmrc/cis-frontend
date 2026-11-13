@@ -15,6 +15,7 @@
  *@
 
 @import viewmodels.govuk.button.ButtonViewModel
+@import play.api.mvc.Call
 
 @this(
     layout: templates.Layout,
@@ -25,12 +26,15 @@
     h2: components.H2
 )
 
-@(returnDetailsList: SummaryList, emailList: SummaryList)(implicit request: Request[_], messages: Messages)
+@(returnDetailsList: SummaryList, emailList: SummaryList, formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.checkYourAnswers.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit()) {
-
+    @formHelper(
+        action = formAction.getOrElse(
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmit()
+        )
+    ) {
         @h1("monthlyreturns.checkYourAnswers.heading")
 
         @h2("monthlyreturns.checkYourAnswers.returnDetails.heading")

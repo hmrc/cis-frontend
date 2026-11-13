@@ -26,12 +26,13 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.enterYourEmailAddress.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmit(mode)) {
-
+    @formHelper(
+        action = formAction.getOrElse(controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmit(mode))
+    ) {
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))
         }

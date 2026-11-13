@@ -17,6 +17,10 @@ GET         /there-is-a-problem                                         controll
 GET        /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onPageLoad()
 POST       /monthly-return/check-your-answers                           controllers.monthlyreturns.CheckYourAnswersController.onSubmit()
 
+# Multi-tab: Check Your Answers
+GET        /monthly-return/check-your-answers/:flowId          controllers.monthlyreturns.CheckYourAnswersController.onPageLoadWithId(flowId: UUID)
+POST       /monthly-return/check-your-answers/:flowId          controllers.monthlyreturns.CheckYourAnswersController.onSubmitWithId(flowId: UUID)
+
 GET         /account/sign-out-survey                                    controllers.auth.AuthController.signOut()
 GET         /account/sign-out                                           controllers.auth.AuthController.signOutNoSurvey()
 GET         /account/signed-out                                         controllers.auth.SignedOutController.onPageLoad()
@@ -35,8 +39,16 @@ POST       /monthly-return/change-confirm-email-address                 controll
 GET        /monthly-return/declaration-no-payments-made                 controllers.monthlyreturns.DeclarationController.onPageLoad(mode: Mode = NormalMode)
 GET        /monthly-return/declaration-no-payments-made/continue        controllers.monthlyreturns.DeclarationController.onSubmit(mode: Mode = NormalMode)
 
+# Multi-tab: ID-scoped declaration.
+GET        /monthly-return/declaration-no-payments-made/:flowId             controllers.monthlyreturns.DeclarationController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/declaration-no-payments-made/continue/:flowId    controllers.monthlyreturns.DeclarationController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+
 GET        /monthly-return/submission-send                              controllers.monthlyreturns.SubmissionSendingController.onPageLoad()
 GET        /monthly-return/submission-send/polling                      controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirect
+
+# Multi-tab: Submission sending
+GET        /monthly-return/submission-send/:flowId             controllers.monthlyreturns.SubmissionSendingController.onPageLoadWithId(flowId: UUID)
+GET        /monthly-return/submission-send/polling/:flowId     controllers.monthlyreturns.SubmissionSendingController.onPollAndRedirectWithId(flowId: UUID)
 
 GET        /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onPageLoad
 POST       /monthly-return/nil-month-return-inactive                    controllers.monthlyreturns.InactivityWarningController.onSubmit
@@ -44,12 +56,23 @@ POST       /monthly-return/nil-month-return-inactive                    controll
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit      controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoad
 GET        /monthly-return/submission-unsuccessful-cannot-resubmit/from-manage  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadFromManage(cisId: String)
 
+# Multi-tab
+GET        /monthly-return/submission-unsuccessful-cannot-resubmit/:flowId  controllers.monthlyreturns.SubmissionUnsuccessfulController.onPageLoadWithId(flowId: UUID)
+
 GET        /monthly-return/submission-in-progress                       controllers.monthlyreturns.SubmissionAwaitingController.onPageLoad
 GET        /monthly-return/submission-in-progress/from-manage           controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadFromManage(cisId: String)
+
+# Multi-tab: Submission awaiting
+GET        /monthly-return/submission-in-progress/:flowId               controllers.monthlyreturns.SubmissionAwaitingController.onPageLoadWithId(flowId: UUID)
 
 GET        /monthly-return/confirmation                                 controllers.monthlyreturns.SubmissionSuccessController.onPageLoad
 GET        /monthly-return/confirmation-no-receipt                      controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoad
 GET        /monthly-return/already-submitted                            controllers.monthlyreturns.AlreadySubmittedController.onPageLoad()
+
+# Multi-tab
+GET        /monthly-return/confirmation/:flowId                         controllers.monthlyreturns.SubmissionSuccessController.onPageLoadWithId(flowId: UUID)
+GET        /monthly-return/confirmation-no-receipt/:flowId              controllers.monthlyreturns.SubmittedNoReceiptController.onPageLoadWithId(flowId: UUID)
+GET        /monthly-return/already-submitted/:flowId                    controllers.monthlyreturns.AlreadySubmittedController.onPageLoadWithId(flowId: UUID)
 
 GET        /page-not-found                                              controllers.PageNotFoundController.onPageLoad()
 GET        /access-denied                                               controllers.AccessDeniedController.onPageLoad()
@@ -125,23 +148,46 @@ POST       /monthly-return/submit-inactivity-request                    controll
 GET        /monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-submit-inactivity-request             controllers.monthlyreturns.SubmitInactivityRequestController.onSubmit(mode: Mode = CheckMode)
 
+# Multi-tab: UUID-scoped Submit Inactivity Request
+GET        /monthly-return/submit-inactivity-request/:flowId     controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/submit-inactivity-request/:flowId     controllers.monthlyreturns.SubmitInactivityRequestController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-submit-inactivity-request/:flowId  controllers.monthlyreturns.SubmitInactivityRequestController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-submit-inactivity-request/:flowId  controllers.monthlyreturns.SubmitInactivityRequestController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+
 GET        /monthly-return/remove-subcontractor/:index            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = NormalMode, index: Int)
 POST       /monthly-return/remove-subcontractor/:index            controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = NormalMode, index: Int)
 GET        /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onPageLoad(mode: Mode = CheckMode, index: Int)
 POST       /monthly-return/change-remove-subcontractor/:index     controllers.monthlyreturns.ConfirmSubcontractorRemovalController.onSubmit(mode: Mode = CheckMode, index: Int)
 
 GET        /monthly-return/inactivity-request-warning                   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = NormalMode)
-GET        /monthly-return/change-inactivity-request-warning             controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
+GET        /monthly-return/change-inactivity-request-warning            controllers.monthlyreturns.InactivityRequestWarningController.onPageLoad(mode: Mode = CheckMode)
+
+# Multi-tab: UUID-scoped inactivity request warning
+GET        /monthly-return/inactivity-request-warning/:flowId          controllers.monthlyreturns.InactivityRequestWarningController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-inactivity-request-warning/:flowId   controllers.monthlyreturns.InactivityRequestWarningController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/enter-email-address                          controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-enter-email-address                   controllers.monthlyreturns.EnterYourEmailAddressController.onSubmit(mode: Mode = CheckMode)
 
+# Multi-tab: ID-scoped email address.
+
+GET        /monthly-return/enter-email-address/:flowId           controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/enter-email-address/:flowId           controllers.monthlyreturns.EnterYourEmailAddressController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-enter-email-address/:flowId    controllers.monthlyreturns.EnterYourEmailAddressController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-enter-email-address/:flowId    controllers.monthlyreturns.EnterYourEmailAddressController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
+
 GET        /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/do-you-want-email-confirmation               controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = NormalMode)
 GET        /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onPageLoad(mode: Mode = CheckMode)
 POST       /monthly-return/change-do-you-want-email-confirmation        controllers.monthlyreturns.ConfirmationByEmailController.onSubmit(mode: Mode = CheckMode)
+
+# Multi-tab: ID-scoped confirmation by email.
+GET        /monthly-return/do-you-want-email-confirmation/:flowId          controllers.monthlyreturns.ConfirmationByEmailController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
+POST       /monthly-return/do-you-want-email-confirmation/:flowId          controllers.monthlyreturns.ConfirmationByEmailController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
+GET        /monthly-return/change-do-you-want-email-confirmation/:flowId   controllers.monthlyreturns.ConfirmationByEmailController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
+POST       /monthly-return/change-do-you-want-email-confirmation/:flowId   controllers.monthlyreturns.ConfirmationByEmailController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
 
 GET        /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onPageLoad(mode: Mode = NormalMode)
 POST       /monthly-return/subcontractor-details-added                  controllers.monthlyreturns.SubcontractorDetailsAddedController.onSubmit(mode: Mode = NormalMode)
@@ -178,9 +224,15 @@ GET        /monthly-return/summary-subcontractor-payments               controll
 
 GET        /monthly-return/submission-unsuccessful-resubmit             controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoad()
 
+# Multi-tab
+GET        /monthly-return/submission-unsuccessful-resubmit/:flowId     controllers.monthlyreturns.SubmissionUnsuccessfulResubmitController.onPageLoadWithId(flowId: UUID)
+
 GET        /monthly-return/continue-return-journey                      controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/continue-amend-return-journey                controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourney(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
+
+# Multi-tab
+GET        /monthly-return/manage-cis-return/:flowId                    controllers.monthlyreturns.ManageCisReturnController.onExitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = NormalMode)
