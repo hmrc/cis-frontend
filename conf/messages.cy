@@ -102,9 +102,9 @@ monthlyreturns.paymentsToSubcontractors.checkYourAnswersLabel = Taliadau i is-go
 monthlyreturns.paymentsToSubcontractors.value = Dim
 
 monthlyreturns.dateConfirmNilPayments.checkYourAnswersLabel = Cyfnod dod i ben y datganiad
-monthlyreturns.dateConfirmNilPayments.error.required.month = Nodwch fis rhwng 1 a 12
+monthlyreturns.dateConfirmNilPayments.error.required.month = Nodwch fis, er enghraifft Tach neu Tachwedd
 monthlyreturns.dateConfirmNilPayments.error.required.year = Nodwch flwyddyn
-monthlyreturns.dateConfirmNilPayments.error.invalid.month = Nodwch fis rhwng 1 a 12
+monthlyreturns.dateConfirmNilPayments.error.invalid.month = Nodwch fis, er enghraifft Tach neu Tachwedd
 monthlyreturns.dateConfirmNilPayments.error.invalid.year = Nodwch flwyddyn ddilys, fel 2025
 monthlyreturns.dateConfirmNilPayments.error.invalid.earliestTaxPeriodEndDate = Mae’n rhaid i chi nodi mis; ni all y dyddiad fod cyn {0} {1} {2}
 monthlyreturns.dateConfirmNilPayments.error.invalid.maxAllowedFutureReturnPeriod = Mae’n rhaid i chi nodi blwyddyn, ni all y dyddiad fod yn fwy na 3 chyfnod datganiad o flaen y dyddiad presennol
@@ -239,11 +239,12 @@ monthlyreturns.dateConfirmPayments.heading = Ar gyfer pa gyfnod datganiad rydych
 monthlyreturns.dateConfirmPayments.nilreturn.title = Ar gyfer pa gyfnod datganiad ‘dim’ rydych yn cyflwyno'r datganiad?
 monthlyreturns.dateConfirmPayments.nilreturn.heading = Ar gyfer pa gyfnod datganiad ‘dim’ rydych yn cyflwyno'r datganiad?
 monthlyreturns.dateConfirmPayments.error.duplicate = Mae datganiad misol ar gyfer y dyddiad hwn yn bodoli eisoes
-monthlyreturns.dateConfirmPayments.paragraph = Mae ‘cyfnod datganiad’ yn rhedeg o 6ed y mis hyd at 5ed y mis nesaf. Er enghraifft, ar gyfer y cyfnod o 6 Rhagfyr i 5 Ionawr 2025, nodwch 1 2025.
+monthlyreturns.dateConfirmPayments.paragraph = Mae ‘cyfnod datganiad’ yn rhedeg o 6ed y mis hyd at 5ed y mis nesaf. Er enghraifft, ar gyfer y cyfnod datganiad 6 Hydref i 5 Tachwedd 2025, nodwch Tach 2025 neu Tachwedd 2025.
 monthlyreturns.dateConfirmPayments.warning = Mae’n ofynnol yn ôl y gyfraith i chi gyflwyno’r datganiad hwn erbyn y dyddiad cau (sef y 19eg o bob mis). Mae’n bosibl y codir cosb am ddatganiadau hwyr.
 monthlyreturns.dateConfirmPayments.p1.prefix = Ni allwch newid cyfnod datganiad ar ôl i chi ddechrau. Mae’n rhaid i chi
 monthlyreturns.dateConfirmPayments.p1.link = ddileu'r datganiad bresennol
 monthlyreturns.dateConfirmPayments.legendText = Nodwch fis a blwyddyn
+monthlyreturns.dateConfirmPayments.hint = Er enghraifft, Tach 2025 neu Tachwedd 2025
 monthlyreturns.dateConfirmPayments.checkYourAnswersLabel = Cyfnod dod i ben y datganiad
 
 monthlyreturns.selectSubcontractors.title = Pa is-gontractwyr ydych chi am eu cynnwys?
