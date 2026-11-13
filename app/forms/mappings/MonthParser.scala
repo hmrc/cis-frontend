@@ -55,17 +55,20 @@ object MonthParser {
 
   private val englishMonths: Seq[String] = Month.values.toSeq.map(_.toString.toLowerCase(Locale.UK))
 
-  /** Parses a month entered as an English name/abbreviation (e.g. Jan, January,
-    * Sept) and, when isWelsh, a Welsh name/abbreviation (e.g. Ion, Ionawr).
+  /** Parses a month entered as an English name/abbreviation (e.g. Jan, January, Sept) and, when isWelsh, a Welsh
+    * name/abbreviation (e.g. Ion, Ionawr).
     */
   def parse(input: String, isWelsh: Boolean): Option[Int] = {
     val value = input.replaceAll("[\\s\\u00A0]+", "").toLowerCase(Locale.UK).stripSuffix(".")
 
     if (value.isEmpty) None
     else {
-      val english = englishMonths.indexWhere(m => m == value || (value.length == 3 && m.take(3) == value) || (value == "sept" && m == "september"))
+      val english = englishMonths.indexWhere(m =>
+        m == value || (value.length == 3 && m.take(3) == value) || (value == "sept" && m == "september")
+      )
       val welsh   =
-        if (isWelsh) welshMonths.indices.find(i => welshMonths(i) == value || welshShort(i).contains(value)).getOrElse(-1)
+        if (isWelsh)
+          welshMonths.indices.find(i => welshMonths(i) == value || welshShort(i).contains(value)).getOrElse(-1)
         else -1
       Seq(english, welsh).find(_ >= 0).map(_ + 1)
     }
