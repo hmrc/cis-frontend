@@ -74,9 +74,9 @@ class SummarySubcontractorPaymentsController @Inject() (
         .filter(_.isComplete)
         .toSeq
 
-      val totalPayments      = request.userAnswers.summaryTotalPayments.getOrElse(BigDecimal(0))
-      val totalMaterialsCost = request.userAnswers.summaryTotalMaterialsCost.getOrElse(BigDecimal(0))
-      val totalCisDeductions = request.userAnswers.summaryTotalCisDeductions.getOrElse(BigDecimal(0))
+      val totalPayments      = request.userAnswers.summaryTotalPayments(subJourneyId).getOrElse(BigDecimal(0))
+      val totalMaterialsCost = request.userAnswers.summaryTotalMaterialsCost(subJourneyId).getOrElse(BigDecimal(0))
+      val totalCisDeductions = request.userAnswers.summaryTotalCisDeductions(subJourneyId).getOrElse(BigDecimal(0))
 
       val viewModel = SummarySubcontractorPaymentsViewModel(
         subcontractorCount = subcontractors.size,
@@ -86,7 +86,9 @@ class SummarySubcontractorPaymentsController @Inject() (
       )
 
       val buttonAction =
-        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoad(NormalMode))
+        Some(
+          controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onPageLoadWithId(flowId, NormalMode)
+        )
 
       Ok(view(viewModel, buttonAction))
     }

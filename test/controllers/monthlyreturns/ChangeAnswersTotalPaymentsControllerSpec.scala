@@ -23,7 +23,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{CisIdPage, SelectedSubcontractorPage}
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -33,13 +33,16 @@ import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 import views.html.monthlyreturns.ChangeAnswersTotalPaymentsView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar {
 
   given HeaderCarrier = HeaderCarrier()
 
-  private val index = 1
+  private val index        = 1
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
 
   private val subcontractor = SelectedSubcontractor(
     id = 1,
@@ -233,6 +236,130 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
 
         verify(mockSession, never).set(any())
+      }
+    }
+
+    "GET with ID must return OK and the correct view" in {
+      val ua = emptyUserAnswers
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+        .setOrException(SelectedSubcontractorPage(index, Some(subJourneyId)), subcontractor)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, index).url)
+
+        val result = route(application, request).value
+        val view   = application.injector.instanceOf[ChangeAnswersTotalPaymentsView]
+
+        val expectedVm = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
+        val formAction = Some(routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(expectedVm, index, formAction)(request, messages(application)).toString
+      }
+    }
+
+    "GET with ID must redirect to SystemError if scoped subcontractor data is missing" in {
+      val ua = emptyUserAnswers
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+        .setOrException(SelectedSubcontractorPage(index), subcontractor)
+
+      val application = applicationBuilder(userAnswers = Some(ua))
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+      }
+    }
+
+    "POST with ID must redirect to SystemError when payloadBuilder returns None" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+      val mockSession = mock[SessionRepository]
+
+      val ua = emptyUserAnswers
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn None
+
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder),
+            bind[SessionRepository].toInstance(mockSession)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.SystemErrorController.onPageLoad().url
+
+        verify(mockService, never).updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier])
+        verify(mockSession, never).set(any())
+      }
+    }
+
+    "POST with ID must call MonthlyReturnService, persist session, and redirect to scoped SubcontractorDetailsAdded on success" in {
+      val mockService = mock[MonthlyReturnService]
+      val mockBuilder = mock[MonthlyReturnItemPayloadBuilder]
+      val mockSession = mock[SessionRepository]
+
+      val ua = emptyUserAnswers
+        .setOrException(CisIdPage(subJourneyId), "i-123")
+        .setOrException(SelectedSubcontractorPage(index, Some(subJourneyId)), subcontractor)
+
+      val payload = UpdateMonthlyReturnItemRequest(
+        instanceId = "i-123",
+        taxYear = 2026,
+        taxMonth = 3,
+        subcontractorId = 1,
+        subcontractorName = "Tyne Test Ltd",
+        totalPayments = "1,200.00",
+        costOfMaterials = "500.00",
+        totalDeducted = "240.00",
+        amendment = "N"
+      )
+
+      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(()))
+      when(mockSession.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(ua))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[MonthlyReturnItemPayloadBuilder].toInstance(mockBuilder),
+            bind[SessionRepository].toInstance(mockSession)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(POST, routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index).url)
+        val result  = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode).url
+
+        val captor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnItemRequest])
+        verify(mockService).updateMonthlyReturnItem(captor.capture())(any[HeaderCarrier])
+        captor.getValue mustBe payload
+        verify(mockSession, times(1)).set(any())
       }
     }
   }

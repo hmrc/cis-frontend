@@ -164,7 +164,12 @@ class PaymentDetailsController @Inject() (
                   case _                     =>
                     Redirect(
                       navigator
-                        .nextPage(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), mode, updatedAnswers)
+                        .nextPage(
+                          flowId,
+                          SelectedSubcontractorPaymentsMadePage(index, subJourneyId),
+                          mode,
+                          updatedAnswers
+                        )
                     )
                 }
             )

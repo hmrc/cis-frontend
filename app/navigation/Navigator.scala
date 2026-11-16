@@ -233,9 +233,9 @@ class Navigator @Inject() () extends Logging {
         controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoadWithId(flowId, NormalMode, index, None)
     case (SelectedSubcontractorTaxDeductedPage(index, _), _)   =>
       _ => controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, index)
-    case (PaymentDetailsConfirmationPage, _)                   =>
+    case (PaymentDetailsConfirmationPage(_), _)                =>
       userAnswers => navigatorFromPaymentDetailsConfirmationPage(flowId, userAnswers)
-    case (EmploymentStatusDeclarationPage, _)                  =>
+    case (EmploymentStatusDeclarationPage(_), _)               =>
       userAnswers => navigatorFromEmploymentStatusDeclarationPage(flowId, NormalMode, userAnswers)
     case (VerifiedStatusDeclarationPage, _)                    =>
       userAnswers => navigatorFromVerifiedStatusDeclarationPage(flowId, NormalMode, userAnswers)
