@@ -27,8 +27,8 @@ import repositories.SessionRepository
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmitInactivityRequestView
 
-import javax.inject.Inject
 import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SubmitInactivityRequestController @Inject() (
@@ -37,9 +37,9 @@ class SubmitInactivityRequestController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   formProvider: SubmitInactivityRequestFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: SubmitInactivityRequestView
@@ -60,19 +60,6 @@ class SubmitInactivityRequestController @Inject() (
       Ok(view(preparedForm, mode))
   }
 
-  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      val subJourneyId = flowId.toString
-      val formAction   =
-        Some(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
-      val preparedForm = request.userAnswers.get(SubmitInactivityRequestPage(subJourneyId)) match {
-        case None        => form
-        case Some(value) => form.fill(value)
-      }
-
-      Ok(view(preparedForm, mode, formAction))
-    }
-
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -87,22 +74,52 @@ class SubmitInactivityRequestController @Inject() (
         )
     }
 
+  // DTR-9431: GET for UUID-scoped nil return journey
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+
+      val id = flowId.toString
+
+      val preparedForm = request.userAnswers.get(SubmitInactivityRequestPage(id)) match {
+        case Some(value) => form.fill(value)
+        case None        => form
+      }
+
+      Ok(
+        view(
+          preparedForm,
+          mode,
+          Some(routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
+        )
+      )
+    }
+
+  // DTR-9431: POST for UUID-scoped nil return journey
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = flowId.toString
-      val formAction   =
-        Some(controllers.monthlyreturns.routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
+
+      val id = flowId.toString
 
       form
         .bindFromRequest()
         .fold(
-          formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
+          formWithErrors =>
+            Future.successful(
+              BadRequest(
+                view(
+                  formWithErrors,
+                  mode,
+                  Some(routes.SubmitInactivityRequestController.onSubmitWithId(flowId, mode))
+                )
+              )
+            ),
           value =>
             for {
-              updatedAnswers <-
-                Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage(subJourneyId), value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(SubmitInactivityRequestPage(subJourneyId), mode, updatedAnswers))
+            } yield Redirect(
+              navigator.nextPage(flowId, SubmitInactivityRequestPage, mode, updatedAnswers)
+            )
         )
     }
 }

@@ -16,7 +16,7 @@
 
 package models.requests
 
-import models.ReturnType.MonthlyStandardReturn
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyNilReturn, MonthlyStandardReturn}
 import models.UserAnswers
 import models.amend.AmendmentDetails
 import org.scalatest.TryValues
@@ -24,7 +24,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
 import pages.amend.AmendmentDetailsPage
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import play.api.libs.json.*
 
 import java.time.LocalDate
@@ -143,6 +143,89 @@ class GetMonthlyReturnForEditRequestSpec extends AnyWordSpec with Matchers with 
       val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua)
 
       result shouldBe Left("Missing DateConfirmPayments")
+    }
+  }
+
+  "GetMonthlyReturnForEditRequest.fromUserAnswers with id" should {
+
+    "build a request for an ID-scoped nil return" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("test-user")
+        .setOrException(CisIdPage(id), "CIS-123")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 1))
+        .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua, id)
+
+      result shouldBe Right(
+        GetMonthlyReturnForEditRequest(
+          instanceId = "CIS-123",
+          taxYear = 2024,
+          taxMonth = 3,
+          isAmendment = false
+        )
+      )
+    }
+
+    "build a request for an ID-scoped amended nil return" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("test-user")
+        .setOrException(CisIdPage(id), "CIS-456")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 4, 1))
+        .setOrException(ReturnTypePage(id), MonthlyAmendedNilReturn)
+
+      val result = GetMonthlyReturnForEditRequest.fromUserAnswers(ua, id)
+
+      result shouldBe Right(
+        GetMonthlyReturnForEditRequest(
+          instanceId = "CIS-456",
+          taxYear = 2024,
+          taxMonth = 4,
+          isAmendment = true
+        )
+      )
+    }
+
+    "return an error when required ID-scoped answers are missing" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("test-user")
+        .setOrException(CisIdPage, "CIS-123")
+        .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
+        .setOrException(ReturnTypePage, MonthlyNilReturn)
+
+      GetMonthlyReturnForEditRequest.fromUserAnswers(ua, id) shouldBe Left("Missing CisIdPage")
+
+      val withCisId = ua.setOrException(CisIdPage(id), "CIS-123")
+
+      GetMonthlyReturnForEditRequest.fromUserAnswers(withCisId, id) shouldBe Left("Missing DateConfirmPayments")
+
+      val withDate = withCisId.setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 1))
+
+      GetMonthlyReturnForEditRequest.fromUserAnswers(withDate, id) shouldBe Left("Missing ReturnTypePage")
+    }
+
+    "use answers from the correct ID-scoped journey" in {
+      val ua = UserAnswers("test-user")
+        .setOrException(CisIdPage("first-id"), "CIS-123")
+        .setOrException(DateConfirmPaymentsPage("first-id"), LocalDate.of(2024, 3, 1))
+        .setOrException(ReturnTypePage("first-id"), MonthlyNilReturn)
+        .setOrException(CisIdPage("second-id"), "CIS-456")
+        .setOrException(DateConfirmPaymentsPage("second-id"), LocalDate.of(2024, 4, 1))
+        .setOrException(ReturnTypePage("second-id"), MonthlyAmendedNilReturn)
+
+      val firstResult  = GetMonthlyReturnForEditRequest.fromUserAnswers(ua, "first-id").toOption.get
+      val secondResult = GetMonthlyReturnForEditRequest.fromUserAnswers(ua, "second-id").toOption.get
+
+      firstResult.instanceId  shouldBe "CIS-123"
+      firstResult.taxMonth    shouldBe 3
+      firstResult.isAmendment shouldBe false
+
+      secondResult.instanceId  shouldBe "CIS-456"
+      secondResult.taxMonth    shouldBe 4
+      secondResult.isAmendment shouldBe true
     }
   }
 }

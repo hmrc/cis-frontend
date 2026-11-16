@@ -24,18 +24,30 @@ import play.api.libs.json.JsPath
 import models.UserAnswers
 
 class PollUrlPageSpec extends AnyWordSpec with Matchers {
+
   "PollUrlPage" should {
+
     "have the correct path" in {
       PollUrlPage.path mustBe (JsPath \ "submission" \ "poll" \ "url")
     }
+
     "have the correct toString" in {
       PollUrlPage.toString mustBe "submissionPollUrl"
     }
+
     "set, get, and remove a value in UserAnswers" in {
       val ua1 = UserAnswers("test").set(PollUrlPage, "https://poll.example/CID").success.value
       ua1.get(PollUrlPage).value mustBe "https://poll.example/CID"
       val ua2 = ua1.remove(PollUrlPage).success.value
       ua2.get(PollUrlPage) mustBe None
+    }
+
+    "have the correct path with id" in {
+      PollUrlPage("test-id").path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submission" \ "poll" \ "url")
+    }
+
+    "have the correct toString with id" in {
+      PollUrlPage("test-id").toString mustBe "submissionPollUrl"
     }
   }
 }

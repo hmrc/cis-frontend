@@ -34,5 +34,15 @@ class EmploymentStatusDeclarationPageSpec extends SpecBase {
       ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "employmentStatusDeclaration")
       EmploymentStatusDeclarationPage(testId).toString mustBe "employmentStatusDeclaration"
     }
+
+    "have the correct path with id" in {
+      EmploymentStatusDeclarationPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "employmentStatusDeclaration")
+    }
+
+    "have the correct toString with id" in {
+      EmploymentStatusDeclarationPage("test-id").toString mustBe "employmentStatusDeclaration"
+    }
   }
 }

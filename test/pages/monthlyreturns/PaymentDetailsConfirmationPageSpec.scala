@@ -34,5 +34,15 @@ class PaymentDetailsConfirmationPageSpec extends SpecBase {
       ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "paymentDetailsConfirmation")
       PaymentDetailsConfirmationPage(testId).toString mustBe "paymentDetailsConfirmation"
     }
+
+    "have the correct path with id" in {
+      PaymentDetailsConfirmationPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "paymentDetailsConfirmation")
+    }
+
+    "have the correct toString with id" in {
+      PaymentDetailsConfirmationPage("test-id").toString mustBe "paymentDetailsConfirmation"
+    }
   }
 }

@@ -19,11 +19,10 @@ package viewmodels.checkAnswers.monthlyreturns
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.SubmitInactivityRequestPage
 import play.api.i18n.Messages
+import play.api.mvc.Call
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
-
-import java.util.UUID
 
 object SubmitInactivityRequestSummary {
 
@@ -45,10 +44,10 @@ object SubmitInactivityRequestSummary {
       )
     }
 
-  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId.toString
+  // Multi-tab: Summary for the ID-scoped return journey.
+  def row(answers: UserAnswers, id: String, changeAction: Call)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(SubmitInactivityRequestPage(id)).map { answer =>
 
-    answers.get(SubmitInactivityRequestPage(subJourneyId)).map { answer =>
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -57,12 +56,11 @@ object SubmitInactivityRequestSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode).url
+            changeAction.url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.submitInactivityRequest.change.hidden"))
             .withAttribute("id" -> "change-submit-inactivity-request")
         )
       )
     }
-  }
 }

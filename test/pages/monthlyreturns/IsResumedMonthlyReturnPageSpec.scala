@@ -29,9 +29,10 @@ class IsResumedMonthlyReturnPageSpec extends SpecBase {
     }
 
     "must have the correct path and string representation with id" in {
-      val testId = "testId"
-      IsResumedMonthlyReturnPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "isResumedMonthlyReturn")
-      IsResumedMonthlyReturnPage(testId).toString mustBe "isResumedMonthlyReturn"
+      IsResumedMonthlyReturnPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "isResumedMonthlyReturn")
+      IsResumedMonthlyReturnPage("test-id").toString mustBe "isResumedMonthlyReturn"
     }
   }
 }

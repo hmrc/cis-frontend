@@ -608,8 +608,7 @@ class NavigatorSpec extends SpecBase {
             ConfirmationByEmailPage,
             NormalMode,
             ua
-          ) mustBe controllers.monthlyreturns.routes.DeclarationController
-            .onPageLoad() // onPageLoadWithId(flowId) // TODO DTR-9474: Replace withId once DTR-9430 is merged
+          ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
         }
 
         "must go from ConfirmationByEmailPage to JourneyRecovery when answer is missing" in {
@@ -631,8 +630,7 @@ class NavigatorSpec extends SpecBase {
             EnterYourEmailAddressPage,
             NormalMode,
             scopedUserAnswers(flowId)
-          ) mustBe controllers.monthlyreturns.routes.DeclarationController
-            .onPageLoad() // .onPageLoadWithId(flowId) // TODO DTR-9474: Replace withId once DTR-9430 is merged
+          ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
         }
 
         "must go from DeclarationPage to CheckYourAnswersController" in {
@@ -860,8 +858,7 @@ class NavigatorSpec extends SpecBase {
           ConfirmationByEmailPage,
           NormalMode,
           ua
-        ) mustBe controllers.monthlyreturns.routes.DeclarationController
-          .onPageLoad() // .onPageLoadWithId(secondFlowId) // TODO DTR-9474: Replace withId once DTR-9430 is merged
+        ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(secondFlowId)
       }
 
       "must go to JourneyRecovery when the answer exists only for another flowId" in {

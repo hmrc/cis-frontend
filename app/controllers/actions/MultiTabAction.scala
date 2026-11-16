@@ -17,16 +17,13 @@
 package controllers.actions
 
 import config.FrontendAppConfig
-import models.requests.{DataRequest, IdentifierRequest}
+import models.requests.DataRequest
 import pages.monthlyreturns.CisIdPage
-import play.api.Logging
 import play.api.mvc.{ActionFilter, Result, Results}
-import services.CisTaxpayerService
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 @Singleton
 class MultiTabAction @Inject() (appConfig: FrontendAppConfig)(using ec: ExecutionContext) {

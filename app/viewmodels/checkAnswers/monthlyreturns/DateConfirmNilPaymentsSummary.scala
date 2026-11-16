@@ -24,12 +24,11 @@ import utils.DateTimeFormats
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
 
-import java.util.UUID
-
 object DateConfirmNilPaymentsSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(DateConfirmPaymentsPage).map { answer =>
+
       val returnPeriodText = answer.format(DateTimeFormats.dateTimeFormat()(messages.lang))
 
       SummaryListRowViewModel(
@@ -38,10 +37,10 @@ object DateConfirmNilPaymentsSummary {
       )
     }
 
-  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId.toString
+  // Multi-tab: Summary for the ID-scoped return journey.
+  def row(answers: UserAnswers, id: String)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(DateConfirmPaymentsPage(id)).map { answer =>
 
-    answers.get(DateConfirmPaymentsPage(subJourneyId)).map { answer =>
       val returnPeriodText = answer.format(DateTimeFormats.dateTimeFormat()(messages.lang))
 
       SummaryListRowViewModel(
@@ -49,5 +48,4 @@ object DateConfirmNilPaymentsSummary {
         value = ValueViewModel(returnPeriodText)
       )
     }
-  }
 }

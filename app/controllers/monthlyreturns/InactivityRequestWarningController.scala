@@ -25,16 +25,16 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.InactivityRequestWarningView
 
-import javax.inject.Inject
 import java.util.UUID
+import javax.inject.Inject
 
 class InactivityRequestWarningController @Inject() (
   override val messagesApi: MessagesApi,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: InactivityRequestWarningView
 ) extends FrontendBaseController
@@ -58,25 +58,23 @@ class InactivityRequestWarningController @Inject() (
       }
   }
 
+  // Multi-tab: UUID-scoped inactivity request warning
   def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      val subJourneyId        = flowId.toString
-      val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage(subJourneyId)).contains(true)
+      val id                  = flowId.toString
+      val inactivityRequested = request.userAnswers.get(SubmitInactivityRequestPage(id)).contains(true)
+
       if (!inactivityRequested) {
         logger.error(
-          s"[InactivityRequestWarningController][onPageLoadWithId] - SubmitInactivityRequestPage not true, mode=$mode, subJourneyId=$subJourneyId"
+          s"[InactivityRequestWarningController][onPageLoadWithId] - SubmitInactivityRequestPage not true, mode=$mode"
         )
         Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
       } else {
         val nextUrl = mode match {
           case CheckMode  =>
-            controllers.monthlyreturns.routes.CheckYourAnswersController
-              .onPageLoadWithId(flowId)
-              .url
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
           case NormalMode =>
-            controllers.monthlyreturns.routes.ConfirmationByEmailController
-              .onPageLoadWithId(flowId, NormalMode)
-              .url
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
         }
         Ok(view(nextUrl))
       }

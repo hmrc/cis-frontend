@@ -126,6 +126,20 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     }
   }
 
+  "SelectedSubcontractorForFlowPage" - {
+
+    "have the correct path" in {
+      SelectedSubcontractorForFlowPage(
+        "test-id",
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "subcontractors" \ index.toString)
+    }
+
+    "have the correct toString" in {
+      SelectedSubcontractorForFlowPage("test-id", index).toString mustBe "subcontractor-0"
+    }
+  }
+
   "SelectedSubcontractorPage.all" - {
 
     "have the correct path and toString" in {
@@ -136,6 +150,14 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     "have the correct path and toString with id" in {
       SelectedSubcontractorPage.all(Some(testId)).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors")
       SelectedSubcontractorPage.all(Some(testId)).toString mustBe "subcontractors"
+    }
+
+    "have the correct path with id" in {
+      SelectedSubcontractorPage.all("test-id").path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "subcontractors")
+    }
+
+    "have the correct toString with id" in {
+      SelectedSubcontractorPage.all("test-id").toString mustBe "subcontractors"
     }
   }
 }

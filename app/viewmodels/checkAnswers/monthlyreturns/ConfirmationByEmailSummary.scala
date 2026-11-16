@@ -19,6 +19,7 @@ package viewmodels.checkAnswers.monthlyreturns
 import models.{CheckMode, UserAnswers}
 import pages.monthlyreturns.ConfirmationByEmailPage
 import play.api.i18n.Messages
+import play.api.mvc.Call
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
 import viewmodels.implicits.*
@@ -29,6 +30,7 @@ object ConfirmationByEmailSummary {
 
   def row(answers: UserAnswers)(implicit messages: Messages): Option[SummaryListRow] =
     answers.get(ConfirmationByEmailPage).map { answer =>
+
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -45,10 +47,10 @@ object ConfirmationByEmailSummary {
       )
     }
 
-  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
-    val subJourneyId = flowId.toString
+  // Multi-tab: Summary for the ID-scoped journey.
+  def row(answers: UserAnswers, id: String, changeAction: Call)(implicit messages: Messages): Option[SummaryListRow] =
+    answers.get(ConfirmationByEmailPage(id)).map { answer =>
 
-    answers.get(ConfirmationByEmailPage(subJourneyId)).map { answer =>
       val value = if (answer) "site.yes" else "site.no"
 
       SummaryListRowViewModel(
@@ -57,12 +59,11 @@ object ConfirmationByEmailSummary {
         actions = Seq(
           ActionItemViewModel(
             "site.change",
-            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode).url
+            changeAction.url
           )
             .withVisuallyHiddenText(messages("monthlyreturns.confirmationByEmail.change.hidden"))
             .withAttribute("id" -> "change-confirmation-by-email")
         )
       )
     }
-  }
 }

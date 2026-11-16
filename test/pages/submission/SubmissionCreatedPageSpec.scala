@@ -30,4 +30,13 @@ class SubmissionCreatedPageSpec extends AnyWordSpec with Matchers {
       page.path mustBe (JsPath \ "submissionCreated" \ "2026-04" \ "created")
     }
   }
+
+  "SubmissionCreatedForFlowPage" should {
+
+    "return the correct JsPath" in {
+      val page = SubmissionCreatedForFlowPage("test-id", "2026-04")
+
+      page.path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submissionCreated" \ "2026-04" \ "created")
+    }
+  }
 }

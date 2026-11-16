@@ -18,9 +18,10 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import models.submission.*
 import models.{ReturnType, UserAnswers}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
@@ -38,6 +39,7 @@ import services.submission.SubmissionService
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{LocalDate, LocalDateTime}
+import java.util.UUID
 import scala.concurrent.Future
 
 final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
@@ -1219,6 +1221,318 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
         any[HeaderCarrier],
         any[CisIdDataRequest[AnyContent]]
       )
+    }
+  }
+
+  "UUID-scoped journey" - {
+
+    val flowId = UUID.randomUUID()
+    val id     = flowId.toString
+
+    val scopedAnswers = completeAnswers
+      .setOrException(CisIdPage(id), "test-cis-id")
+      .setOrException(ReturnTypePage(id), ReturnType.MonthlyNilReturn)
+      .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 1))
+      .setOrException(SubmitInactivityRequestPage(id), true)
+      .setOrException(ConfirmationByEmailPage(id), false)
+      .setOrException(DeclarationPage(id), Set(Confirmed))
+
+    val submissionDetails = SubmissionDetails(
+      id = "sub-123",
+      status = "PENDING",
+      irMark = "IR-MARK-123",
+      submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
+    )
+
+    "must submit the ID-scoped return to ChRIS and redirect to polling" in {
+
+      val mockService = mock[SubmissionService]
+
+      val reconcileService = new FormpRdsReconcileService {
+        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+          hc: HeaderCarrier
+        ): Future[Unit] =
+          Future.unit
+      }
+
+      val submitted = ChrisSubmissionResponse(
+        submissionId = "sub-123",
+        status = "ACCEPTED",
+        hmrcMarkGenerated = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
+        correlationId = Some("CID123"),
+        responseEndPoint = None,
+        gatewayTimestamp = Some("2025-01-01T00:00:00"),
+        error = None
+      )
+
+      when(mockService.getOrCreateSubmissionForChris(any[UserAnswers], any[String])(using any[HeaderCarrier]))
+        .thenReturn(Future.successful(("sub-123", scopedAnswers, false)))
+
+      when(
+        mockService.submitToChrisAndPersist(
+          any[String],
+          any[UserAnswers],
+          any[String],
+          any[Boolean],
+          any[Boolean]
+        )(using any[HeaderCarrier])
+      ).thenReturn(Future.successful(submitted))
+
+      when(
+        mockService.updateSubmissionFromChrisResponse(
+          any[String],
+          any[UserAnswers],
+          any[String],
+          any[ChrisSubmissionResponse]
+        )(any[DataRequest[AnyContent]], any[HeaderCarrier])
+      ).thenReturn(Future.unit)
+
+      val application = applicationBuilder(
+        userAnswers = Some(scopedAnswers),
+        formpRdsReconcileService = reconcileService
+      )
+        .configure("features.multi-tab-enabled" -> true)
+        .overrides(bind[SubmissionService].toInstance(mockService))
+        .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId).url
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+
+        val idCaptor = ArgumentCaptor.forClass(classOf[String])
+
+        verify(mockService)
+          .getOrCreateSubmissionForChris(any[UserAnswers], idCaptor.capture())(using any[HeaderCarrier])
+
+        idCaptor.getValue mustBe id
+
+        verify(mockService)
+          .submitToChrisAndPersist(
+            any[String],
+            any[UserAnswers],
+            idCaptor.capture(),
+            any[Boolean],
+            any[Boolean]
+          )(using any[HeaderCarrier])
+
+        idCaptor.getValue mustBe id
+
+        verify(mockService)
+          .updateSubmissionFromChrisResponse(
+            any[String],
+            any[UserAnswers],
+            idCaptor.capture(),
+            any[ChrisSubmissionResponse]
+          )(any[DataRequest[AnyContent]], any[HeaderCarrier])
+
+        idCaptor.getValue mustBe id
+      }
+    }
+
+    "must resume ID-scoped polling without submitting again" in {
+
+      val userAnswers = scopedAnswers
+        .setOrException(SubmissionDetailsPage(id), submissionDetails)
+
+      val mockService = mock[SubmissionService]
+
+      val application = buildAppWith(Some(userAnswers), mockService, mock[SessionRepository])
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId).url
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "must redirect to ID-scoped Already Submitted when the journey is completed" in {
+
+      val userAnswers = scopedAnswers
+        .setOrException(SubmissionJourneyCompletedForFlowPage(id, "2024-03"), true)
+
+      val mockService = mock[SubmissionService]
+
+      val application = buildAppWith(Some(userAnswers), mockService, mock[SessionRepository])
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        Seq(
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId).url,
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+        ).foreach { url =>
+
+          val result = route(application, FakeRequest(GET, url)).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoadWithId(flowId).url
+        }
+
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "must redirect to Journey Recovery when the ID-scoped payment date is missing" in {
+
+      val userAnswers = scopedAnswers
+        .remove(DateConfirmPaymentsPage(id))
+        .success
+        .value
+
+      val mockService = mock[SubmissionService]
+
+      val application = buildAppWith(Some(userAnswers), mockService, mock[SessionRepository])
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        Seq(
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId).url,
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+        ).foreach { url =>
+
+          val result = route(application, FakeRequest(GET, url)).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe recoveryRoute
+        }
+
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "must redirect to Journey Recovery when ID-scoped submission details are missing" in {
+
+      val userAnswers = scopedAnswers
+        .setOrException(SubmissionDetailsPage, submissionDetails)
+
+      val mockService = mock[SubmissionService]
+
+      val application = buildAppWith(Some(userAnswers), mockService, mock[SessionRepository])
+        .configure("features.multi-tab-enabled" -> true)
+        .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+        )
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe recoveryRoute
+
+        verifyNoInteractions(mockService)
+      }
+    }
+
+    "must handle ID-scoped polling decisions and redirect to the correct pages" in {
+
+      val userAnswers = scopedAnswers
+        .setOrException(SubmissionDetailsPage(id), submissionDetails)
+
+      val cases = Seq(
+        (PollDecision.Skip, None),
+        (PollDecision.Polled("PENDING"), None),
+        (
+          PollDecision.Polled("STARTED"),
+          Some(controllers.monthlyreturns.routes.SubmissionUnsuccessfulResubmitController.onPageLoadWithId(flowId).url)
+        ),
+        (
+          PollDecision.Polled("TIMED_OUT"),
+          Some(controllers.monthlyreturns.routes.SubmissionAwaitingController.onPageLoadWithId(flowId).url)
+        ),
+        (
+          PollDecision.Polled("SUBMITTED"),
+          Some(controllers.monthlyreturns.routes.SubmissionSuccessController.onPageLoadWithId(flowId).url)
+        ),
+        (
+          PollDecision.Polled("SUBMITTED_NO_RECEIPT"),
+          Some(controllers.monthlyreturns.routes.SubmittedNoReceiptController.onPageLoadWithId(flowId).url)
+        ),
+        (
+          PollDecision.Polled("DEPARTMENTAL_ERROR"),
+          Some(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoadWithId(flowId).url)
+        ),
+        (
+          PollDecision.Polled("FATAL_ERROR"),
+          Some(controllers.monthlyreturns.routes.SubmissionUnsuccessfulController.onPageLoadWithId(flowId).url)
+        )
+      )
+
+      cases.foreach { case (decision, expectedUrl) =>
+        val mockService = mock[SubmissionService]
+
+        when(mockService.getRefreshInterval)
+          .thenReturn(10)
+
+        when(
+          mockService.checkAndUpdateSubmissionStatusIfAllowed(any[UserAnswers], any[String])(using
+            any[HeaderCarrier],
+            any[DataRequest[AnyContent]]
+          )
+        ).thenReturn(Future.successful(decision))
+
+        when(mockService.sendSuccessEmail(any[UserAnswers], any[String], any[String])(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(userAnswers))
+
+        val application = buildAppWith(Some(userAnswers), mockService, mock[SessionRepository])
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          expectedUrl match {
+            case None =>
+              status(result) mustBe OK
+              headers(result).get("Refresh").value mustBe "10"
+
+            case Some(url) =>
+              status(result) mustBe SEE_OTHER
+              redirectLocation(result).value mustBe url
+          }
+
+          val idCaptor = ArgumentCaptor.forClass(classOf[String])
+
+          verify(mockService)
+            .checkAndUpdateSubmissionStatusIfAllowed(
+              any[UserAnswers],
+              idCaptor.capture()
+            )(using
+              any[HeaderCarrier],
+              any[DataRequest[AnyContent]]
+            )
+
+          idCaptor.getValue mustBe id
+        }
+      }
     }
   }
 }

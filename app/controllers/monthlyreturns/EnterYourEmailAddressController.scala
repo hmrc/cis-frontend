@@ -32,9 +32,10 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import views.html.monthlyreturns.EnterYourEmailAddressView
 
-import javax.inject.Inject
 import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class EnterYourEmailAddressController @Inject() (
   override val messagesApi: MessagesApi,
@@ -42,9 +43,9 @@ class EnterYourEmailAddressController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   getData: DataRetrievalAction,
-  multiTabAction: MultiTabAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   formProvider: EnterYourEmailAddressFormProvider,
   monthlyReturnService: MonthlyReturnService,
   val controllerComponents: MessagesControllerComponents,
@@ -70,30 +71,6 @@ class EnterYourEmailAddressController @Inject() (
             getPrepopulationEmailAddress(request).map {
               case Some(email) => Ok(view(form.fill(email), mode))
               case None        => Ok(view(form, mode))
-            }
-        }
-      }
-    }
-
-  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
-    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      val subJourneyId               = flowId.toString
-      val formAction                 =
-        Some(controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
-
-      if (!request.userAnswers.get(ConfirmationByEmailPage(subJourneyId)).contains(true)) {
-        Future.successful(
-          Redirect(controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, mode))
-        )
-      } else {
-        request.userAnswers.get(EnterYourEmailAddressPage(subJourneyId)) match {
-          case Some(value) =>
-            Future.successful(Ok(view(form.fill(value), mode, formAction)))
-          case None        =>
-            getPrepopulationEmailAddressWithId(flowId, request).map {
-              case Some(email) => Ok(view(form.fill(email), mode, formAction))
-              case None        => Ok(view(form, mode, formAction))
             }
         }
       }
@@ -151,11 +128,40 @@ class EnterYourEmailAddressController @Inject() (
         )
     }
 
+  // Multi-tab
+  def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id         = flowId.toString
+      val cisId      = request.userAnswers
+        .get(CisIdPage(id))
+        .getOrElse(throw new IllegalStateException("CisId missing after MultiTabAction validation"))
+      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
+
+      if (!request.userAnswers.get(ConfirmationByEmailPage(id)).contains(true)) {
+        Future.successful(Redirect(routes.ConfirmationByEmailController.onPageLoadWithId(flowId, mode)))
+      } else {
+        request.userAnswers.get(EnterYourEmailAddressPage(id)) match {
+          case Some(value) =>
+            Future.successful(Ok(view(form.fill(value), mode, formAction)))
+          case None        =>
+            monthlyReturnService
+              .getSchemeEmail(cisId)
+              .recover { case NonFatal(ex) =>
+                logger.warn("[EnterYourEmailAddressController][onPageLoadWithId] - email lookup failed", ex)
+                None
+              }
+              .map {
+                case Some(email) => Ok(view(form.fill(email), mode, formAction))
+                case None        => Ok(view(form, mode, formAction))
+              }
+        }
+      }
+    }
+
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = flowId.toString
-      val formAction   =
-        Some(controllers.monthlyreturns.routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
+      val id         = flowId.toString
+      val formAction = Some(routes.EnterYourEmailAddressController.onSubmitWithId(flowId, mode))
 
       form
         .bindFromRequest()
@@ -163,9 +169,9 @@ class EnterYourEmailAddressController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
           value =>
             for {
-              updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage(subJourneyId), value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(EnterYourEmailAddressPage(subJourneyId), mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(flowId, EnterYourEmailAddressPage, mode, updatedAnswers))
         )
     }
 }
