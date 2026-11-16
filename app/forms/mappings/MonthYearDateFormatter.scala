@@ -53,7 +53,8 @@ class MonthYearDateFormatter(
     lazy val earliestMonthYearDateErrors = earliestMonthYearDateCheck(key, fields)
     lazy val maxMonthYearDateErrors      = maxMonthYearDateCheck(key, fields)
 
-    if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then Left(missingFieldErrors ++ regexErrors)
+    if missingFieldErrors.nonEmpty || regexErrors.nonEmpty then
+      Left((missingFieldErrors ++ regexErrors).sortBy(error => fieldKeys.indexOf(error.key.stripPrefix(s"$key."))))
     else if earliestSupportedYearErrors.nonEmpty then Left(earliestSupportedYearErrors.toSeq)
     else if earliestMonthYearDateErrors.nonEmpty then Left(earliestMonthYearDateErrors.toSeq)
     else if maxMonthYearDateErrors.nonEmpty then Left(maxMonthYearDateErrors.toSeq)

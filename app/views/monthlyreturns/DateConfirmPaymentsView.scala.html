@@ -44,7 +44,7 @@
     @formHelper(action = formAction.getOrElse(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType)), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))
+            @govukErrorSummary(ErrorSummaryViewModel(form.copy(errors = form.errors.take(1)), errorLinkOverrides = Map("value" -> "value.month")))
         }
 
         @h1(s"$messagePrefix.heading")
@@ -66,12 +66,13 @@
                         linkUrl = appConfig.incompleteReturnsUrl,
                         hasFullStop = true,
                         prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix") +
-                        h2("monthlyreturns.dateConfirmPayments.legendText").toString
+                        h2("monthlyreturns.dateConfirmPayments.legendText", "govuk-heading-m govuk-!-margin-bottom-1").toString
                     )
                 )
             )
             .withMonthYearFormField(form("value"))
             .withHint(Hint(content = Text(messages("monthlyreturns.dateConfirmPayments.hint"))))
+            .withErrorMessageFor(form.errors.headOption)
         ) { dateInput =>
             @govukDateInput(
                 dateInput.copy(items = dateInput.items.map { item =>
