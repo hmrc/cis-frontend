@@ -284,7 +284,7 @@ class Navigator @Inject() () extends Logging {
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
     // amend monthly return
-    case (WhichSubcontractorsToAddPage(id), _)                  =>
+    case (WhichSubcontractorsToAddPage(id), _) =>
       _ => controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId, CheckMode)
 
     case _ =>
