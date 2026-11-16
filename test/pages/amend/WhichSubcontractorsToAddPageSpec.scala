@@ -30,5 +30,12 @@ class WhichSubcontractorsToAddPageSpec extends SpecBase {
     "have the correct toString" in {
       WhichSubcontractorsToAddPage.toString mustBe "whichSubcontractorsToAdd"
     }
+
+    "have the correct path for a given id" in {
+      val id = "test-id"
+
+      WhichSubcontractorsToAddPage(id).path mustBe (JsPath \ "monthlyReturn" \ id \ "whichSubcontractorsToAdd")
+    }
+
   }
 }

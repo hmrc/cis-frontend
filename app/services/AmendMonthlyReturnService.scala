@@ -61,4 +61,18 @@ class AmendMonthlyReturnService @Inject() (
         Future.successful(Left("Missing amendment details"))
     }
 
+  // Multi-tab: Start a standard amendment using the ID-scoped amendment details.
+  def startStandardAmendment(
+    userAnswers: UserAnswers,
+    id: String
+  )(implicit hc: HeaderCarrier): Future[Either[String, Unit]] =
+    userAnswers.get(AmendmentDetailsPage(id)) match {
+      case Some(amendmentDetails) =>
+        monthlyReturnService
+          .updateMonthlyReturn(UpdateMonthlyReturnRequest.forStartedStandardAmendment(amendmentDetails))
+          .map(_ => Right(()))
+
+      case None =>
+        Future.successful(Left("Missing amendment details"))
+    }
 }

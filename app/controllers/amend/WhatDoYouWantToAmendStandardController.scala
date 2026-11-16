@@ -20,7 +20,7 @@ import controllers.actions.*
 import forms.amend.WhatDoYouWantToAmendStandardFormProvider
 
 import javax.inject.Inject
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.SelectedSubcontractor
@@ -30,7 +30,7 @@ import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidatio
 import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesControllerComponents, Result}
 import repositories.SessionRepository
 import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -40,6 +40,7 @@ import utils.TypeUtils.toFuture
 import utils.Utils.toBigDecimal
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class WhatDoYouWantToAmendStandardController @Inject() (
@@ -50,6 +51,7 @@ class WhatDoYouWantToAmendStandardController @Inject() (
   identify: IdentifierAction,
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
+  multiTabAction: MultiTabAction,
   formProvider: WhatDoYouWantToAmendStandardFormProvider,
   val controllerComponents: MessagesControllerComponents,
   view: WhatDoYouWantToAmendStandardView
@@ -185,5 +187,162 @@ class WhatDoYouWantToAmendStandardController @Inject() (
               }
           } yield result
       )
+  }
+
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
+
+      val id = flowId.toString
+
+      val preparedForm = request.userAnswers.get(WhatDoYouWantToAmendStandardPage(id)) match {
+        case None        => form
+        case Some(value) => form.fill(value)
+      }
+
+      Ok(view(preparedForm, Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))))
+    }
+
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id = flowId.toString
+
+      form
+        .bindFromRequest()
+        .fold(
+          formWithErrors =>
+            Future.successful(
+              BadRequest(
+                view(formWithErrors, Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId)))
+              )
+            ),
+          value => {
+            val requiredAnswers = for {
+              cisId   <- request.userAnswers.get(CisIdPage(id))
+              taxDate <- request.userAnswers.get(DateConfirmPaymentsPage(id))
+            } yield (cisId, taxDate.getMonthValue, taxDate.getYear)
+
+            for {
+              (cisId, month, year)     <- requiredAnswers.toFuture
+              monthlyReturn            <- monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+                                            GetMonthlyReturnForEditRequest(
+                                              cisId,
+                                              taxMonth = month,
+                                              taxYear = year,
+                                              isAmendment = true
+                                            )
+                                          )
+              // Preselect from the items already on the return. An item is only preselected when it resolves to a
+              // subcontractor that still exists; the backend rejects unknown subcontractor ids (e.g. deleted ones)
+              subcontractorsByRef       = monthlyReturn.subcontractors
+                                            .flatMap(sub => sub.subbieResourceRef.map(_ -> sub))
+                                            .toMap
+              subcontractorsById        = monthlyReturn.subcontractors.map(sub => sub.subcontractorId -> sub).toMap
+              itemsWithSubcontractor    = monthlyReturn.monthlyReturnItems.map { item =>
+                                            val sub = item.itemResourceReference
+                                              .flatMap(subcontractorsByRef.get)
+                                              .orElse(item.subcontractorId.flatMap(subcontractorsById.get))
+                                            (item, sub)
+                                          }
+              preselectedSubcontractors = itemsWithSubcontractor
+                                            .collect { case (item, Some(sub)) =>
+                                              SelectedSubcontractor(
+                                                id = sub.subcontractorId,
+                                                name = sub.displayName
+                                                  .orElse(item.subcontractorName)
+                                                  .getOrElse("No name provided"),
+                                                totalPaymentsMade = item.totalPayments.flatMap(toBigDecimal),
+                                                costOfMaterials = item.costOfMaterials.flatMap(toBigDecimal),
+                                                totalTaxDeducted = item.totalDeducted.flatMap(toBigDecimal)
+                                              )
+                                            }
+                                            .distinctBy(_.id)
+                                            .zipWithIndex
+                                            .map(x => (x._2 + 1, x._1))
+                                            .toMap
+              _                         = {
+                val unresolved = monthlyReturn.monthlyReturnItems.size - preselectedSubcontractors.size
+                if (unresolved > 0) {
+                  logger.warn(
+                    s"[WhatDoYouWantToAmendStandard] cisId=$cisId, taxYear=$year, taxMonth=$month: " +
+                      s"$unresolved of ${monthlyReturn.monthlyReturnItems.size} existing items could not be matched to a subcontractor for preselection"
+                  )
+                }
+              }
+              ua1                      <- request.userAnswers.set(WhatDoYouWantToAmendStandardPage(id), value).toFuture
+              ua2                      <- ua1.set(SelectedSubcontractorPage.all(id), preselectedSubcontractors).toFuture
+              saved                    <- sessionRepository.set(ua2)
+              result                   <- if (saved) {
+                                            continueAmendmentWithId(flowId, value, ua2, preselectedSubcontractors)
+                                          } else {
+                                            logger.error("[WhatDoYouWantToAmendStandard] Failed to save multi-tab user answers")
+                                            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                                          }
+            } yield result
+          }
+        )
+    }
+
+  private def continueAmendmentWithId(
+    flowId: UUID,
+    value: WhatDoYouWantToAmendStandard,
+    userAnswers: UserAnswers,
+    preselectedSubcontractors: Map[Int, SelectedSubcontractor]
+  )(implicit hc: HeaderCarrier): Future[Result] = {
+    val id = flowId.toString
+
+    value match {
+      case WhatDoYouWantToAmendStandard.AmendToNilReturn =>
+        // TODO: Replace with AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId) when available.
+        logger.warn(
+          "[WhatDoYouWantToAmendStandardController] Temporary redirect to JourneyRecovery: multi-tab standard-to-nil amendment endpoint not yet implemented"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails if preselectedSubcontractors.isEmpty =>
+        // TODO: Replace with WhichSubcontractorsToAddController.onPageLoadWithId(flowId, NormalMode) when available.
+        logger.warn(
+          "[WhatDoYouWantToAmendStandardController] Temporary redirect to JourneyRecovery: multi-tab subcontractor selection endpoint not yet implemented"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails =>
+        amendMonthlyReturnService.startStandardAmendment(userAnswers, id).flatMap {
+          case Left(error) =>
+            logger.error(s"[WhatDoYouWantToAmendStandard] Failed to start standard amendment: $error")
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+          case Right(_) =>
+            val subcontractorIds = userAnswers
+              .get(SelectedSubcontractorPage.all(id))
+              .fold(Set.empty[String])(_.values.map(_.id.toString).toSet)
+
+            for {
+              ua3   <- Future.fromTry(userAnswers.set(WhichSubcontractorsToAddPage(id), subcontractorIds))
+              // TODO: Add UUID-scoped Final Validation support when multi-tab Final Validation is implemented.
+              ua4   <- Future.fromTry(
+                         ua3
+                           .remove(FinalValidationDraftIdPage)
+                           .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
+                           .flatMap(
+                             _.set(
+                               MonthlyFinalValidationSourcePage,
+                               MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
+                             )
+                           )
+                       )
+              saved <- sessionRepository.set(ua4)
+            } yield
+              if (saved) {
+                // TODO: Replace with SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode) when available.
+                logger.warn(
+                  "[WhatDoYouWantToAmendStandardController] Temporary redirect to JourneyRecovery: multi-tab subcontractor details added endpoint not yet implemented"
+                )
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              } else {
+                logger.error("[WhatDoYouWantToAmendStandard] Failed to save multi-tab amendment details")
+                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+              }
+        }
+    }
   }
 }
