@@ -18,13 +18,12 @@ package utils
 
 import base.SpecBase
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
+import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn, MonthlyStandardReturn}
 import models.monthlyreturns.{Declaration, SelectedSubcontractor, SubmissionConfirmationCache}
 import models.submission.SubmissionDetails
 import models.validation.SubcontractorValidationField.EmailAddress
 import models.validation.{FieldValidationFailure, SubcontractorValidationFailure}
 import models.{ReturnType, UserAnswers}
-import models.ReturnType.MonthlyAmendedStandardReturn
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.finalvalidations.*
 import pages.monthlyreturns.*
@@ -556,6 +555,150 @@ class UserAnswerUtilsSpec extends SpecBase {
 
     "succeeds on empty UserAnswers" in {
       val result = UserAnswers("id").clearAmendedMonthlyStandardReturnJourney
+      result.isSuccess mustBe true
+    }
+  }
+
+  "returns true when all ID-scoped nil return pages are answered (email not requested)" in {
+    val id = "test-id"
+
+    val ua = UserAnswers("id")
+      .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+      .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+      .setOrException(SubmitInactivityRequestPage(id), true)
+      .setOrException(ConfirmationByEmailPage(id), false)
+      .setOrException(DeclarationPage(id), Set(Declaration.Confirmed))
+
+    ua.isJourneyComplete(id) mustBe true
+    ua.setOrException(ReturnTypePage(id), MonthlyAmendedNilReturn).isJourneyComplete(id) mustBe true
+  }
+
+  "returns true when email is requested and provided" in {
+    val id = "test-id"
+
+    val ua = UserAnswers("id")
+      .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+      .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+      .setOrException(SubmitInactivityRequestPage(id), true)
+      .setOrException(ConfirmationByEmailPage(id), true)
+      .setOrException(DeclarationPage(id), Set(Declaration.Confirmed))
+
+    ua.isJourneyComplete(id) mustBe false
+
+    val withEmail = ua.setOrException(EnterYourEmailAddressPage(id), "test@test.com")
+
+    withEmail.isJourneyComplete(id) mustBe true
+
+    val withoutEmail = withEmail.setOrException(ConfirmationByEmailPage(id), false)
+
+    withoutEmail.get(EnterYourEmailAddressPage(id)) mustBe None
+    withoutEmail.isJourneyComplete(id) mustBe true
+  }
+
+  "returns false when required ID-scoped answers are missing" in {
+    val id = "test-id"
+
+    val ua = UserAnswers("id")
+      .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+      .setOrException(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
+      .setOrException(SubmitInactivityRequestPage(id), true)
+      .setOrException(ConfirmationByEmailPage(id), false)
+
+    ua.isJourneyComplete(id) mustBe false
+    UserAnswers("id").isJourneyComplete(id) mustBe false
+  }
+
+  "uses answers from the correct ID-scoped journey" in {
+    val ua = UserAnswers("id")
+      .setOrException(ReturnTypePage("first-id"), MonthlyNilReturn)
+      .setOrException(DateConfirmPaymentsPage("first-id"), java.time.LocalDate.of(2025, 1, 1))
+      .setOrException(SubmitInactivityRequestPage("first-id"), true)
+      .setOrException(ConfirmationByEmailPage("first-id"), false)
+      .setOrException(DeclarationPage("first-id"), Set(Declaration.Confirmed))
+      .setOrException(ReturnTypePage("second-id"), MonthlyNilReturn)
+      .setOrException(ReturnTypePage, MonthlyNilReturn)
+      .setOrException(DeclarationPage, Set(Declaration.Confirmed))
+
+    ua.isJourneyComplete("first-id") mustBe true
+    ua.isJourneyComplete("second-id") mustBe false
+  }
+
+  "UserAnswerUtils.clearMonthlyReturnJourney with id" - {
+
+    "removes ID-scoped nil return and submission pages" in {
+      val id     = "test-id"
+      val period = "2025-01"
+
+      val ua = UserAnswers("id")
+        .setOrException(CisIdPage(id), "CIS-123")
+        .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), false)
+        .setOrException(DeclarationPage(id), Set(Declaration.Confirmed))
+        .setOrException(ResubmissionIdPage(id), 123L)
+        .setOrException(IsResumedMonthlyReturnPage(id), true)
+        .setOrException(PollUrlPage(id), "https://poll.example.com")
+        .setOrException(PollIntervalPage(id), 10)
+        .setOrException(CorrelationIdPage(id), "correlation-id")
+        .setOrException(SubmissionCreatedForFlowPage(id, period), true)
+        .setOrException(CreatedSubmissionIdForFlowPage(id, period), "sub-123")
+        .setOrException(SubmissionJourneyCompletedForFlowPage(id, period), true)
+
+      val cleared = ua.clearMonthlyReturnJourney(id).get
+
+      cleared.get(CisIdPage(id)) mustBe None
+      cleared.get(ReturnTypePage(id)) mustBe None
+      cleared.get(DateConfirmPaymentsPage(id)) mustBe None
+      cleared.get(SubmitInactivityRequestPage(id)) mustBe None
+      cleared.get(ConfirmationByEmailPage(id)) mustBe None
+      cleared.get(DeclarationPage(id)) mustBe None
+      cleared.get(ResubmissionIdPage(id)) mustBe None
+      cleared.get(IsResumedMonthlyReturnPage(id)) mustBe None
+      cleared.get(PollUrlPage(id)) mustBe None
+      cleared.get(PollIntervalPage(id)) mustBe None
+      cleared.get(CorrelationIdPage(id)) mustBe None
+      cleared.get(SubmissionCreatedForFlowPage(id, period)) mustBe None
+      cleared.get(CreatedSubmissionIdForFlowPage(id, period)) mustBe None
+      cleared.get(SubmissionJourneyCompletedForFlowPage(id, period)) mustBe None
+    }
+
+    "retains legacy and other ID-scoped journey answers" in {
+      val ua = UserAnswers("id")
+        .setOrException(CisIdPage, "CIS-legacy")
+        .setOrException(ReturnTypePage, MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage, java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(CisIdPage("first-id"), "CIS-123")
+        .setOrException(ReturnTypePage("first-id"), MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage("first-id"), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(CisIdPage("second-id"), "CIS-456")
+        .setOrException(ReturnTypePage("second-id"), MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage("second-id"), java.time.LocalDate.of(2025, 2, 1))
+        .setOrException(SubmissionCreatedPage("2025-01"), true)
+        .setOrException(SubmissionCreatedForFlowPage("first-id", "2025-01"), true)
+        .setOrException(SubmissionCreatedForFlowPage("second-id", "2025-02"), true)
+
+      val cleared = ua.clearMonthlyReturnJourney("first-id").get
+
+      cleared.get(CisIdPage("first-id")) mustBe None
+      cleared.get(ReturnTypePage("first-id")) mustBe None
+      cleared.get(DateConfirmPaymentsPage("first-id")) mustBe None
+      cleared.get(SubmissionCreatedForFlowPage("first-id", "2025-01")) mustBe None
+
+      cleared.get(CisIdPage("second-id")) mustBe Some("CIS-456")
+      cleared.get(ReturnTypePage("second-id")) mustBe Some(MonthlyNilReturn)
+      cleared.get(DateConfirmPaymentsPage("second-id")) mustBe Some(java.time.LocalDate.of(2025, 2, 1))
+      cleared.get(SubmissionCreatedForFlowPage("second-id", "2025-02")) mustBe Some(true)
+
+      cleared.get(CisIdPage) mustBe Some("CIS-legacy")
+      cleared.get(ReturnTypePage) mustBe Some(MonthlyNilReturn)
+      cleared.get(DateConfirmPaymentsPage) mustBe Some(java.time.LocalDate.of(2025, 1, 1))
+      cleared.get(SubmissionCreatedPage("2025-01")) mustBe Some(true)
+    }
+
+    "succeeds on empty UserAnswers" in {
+      val result = UserAnswers("id").clearMonthlyReturnJourney("test-id")
+
       result.isSuccess mustBe true
     }
   }

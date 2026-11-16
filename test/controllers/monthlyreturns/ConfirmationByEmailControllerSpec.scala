@@ -17,14 +17,17 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
+import config.FrontendAppConfig
 import controllers.routes
 import forms.monthlyreturns.ConfirmationByEmailFormProvider
-import models.NormalMode
+import models.ReturnType.MonthlyNilReturn
+import models.{CheckMode, NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.ConfirmationByEmailPage
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage, ReturnTypePage}
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -32,6 +35,7 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.ConfirmationByEmailView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
@@ -43,6 +47,11 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
 
   lazy val confirmationByEmailRoute =
     controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoad(NormalMode).url
+
+  private def scopedUserAnswers(flowId: UUID): UserAnswers =
+    emptyUserAnswers
+      .setOrException(CisIdPage(flowId.toString), "test-cis-id")
+      .setOrException(ReturnTypePage(flowId.toString), MonthlyNilReturn)
 
   "ConfirmationByEmail Controller" - {
 
@@ -153,6 +162,453 @@ class ConfirmationByEmailControllerSpec extends SpecBase with MockitoSugar {
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "UUID-scoped journey" - {
+
+      "must return OK and the correct view for a GET with a valid flowId" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = scopedUserAnswers(flowId)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
+          )
+
+          val result = route(application, request).value
+
+          val view = application.injector.instanceOf[ConfirmationByEmailView]
+
+          val formAction = Some(
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode)
+          )
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(form, NormalMode, formAction)(
+            request,
+            messages(application)
+          ).toString
+        }
+      }
+
+      "must populate the view correctly on a GET when the scoped question has previously been answered" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = scopedUserAnswers(flowId)
+          .setOrException(ConfirmationByEmailPage(id), true)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
+          )
+
+          val view = application.injector.instanceOf[ConfirmationByEmailView]
+
+          val result = route(application, request).value
+
+          val formAction = Some(
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode)
+          )
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(form.fill(true), NormalMode, formAction)(
+            request,
+            messages(application)
+          ).toString
+        }
+      }
+
+      "must return OK and the correct view for a GET in CheckMode" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = scopedUserAnswers(flowId)
+          .setOrException(ConfirmationByEmailPage(id), false)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode).url
+          )
+
+          val view = application.injector.instanceOf[ConfirmationByEmailView]
+
+          val result = route(application, request).value
+
+          val formAction = Some(
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, CheckMode)
+          )
+
+          status(result) mustEqual OK
+          contentAsString(result) mustEqual view(form.fill(false), CheckMode, formAction)(
+            request,
+            messages(application)
+          ).toString
+        }
+      }
+
+      "must populate the view from the correct UUID-scoped journey" in {
+
+        val firstFlowId  = UUID.randomUUID()
+        val secondFlowId = UUID.randomUUID()
+
+        val userAnswers = scopedUserAnswers(firstFlowId)
+          .setOrException(ConfirmationByEmailPage(firstFlowId.toString), true)
+          .setOrException(CisIdPage(secondFlowId.toString), "second-cis-id")
+          .setOrException(ConfirmationByEmailPage(secondFlowId.toString), false)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val firstRequest = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController
+              .onPageLoadWithId(firstFlowId, NormalMode)
+              .url
+          )
+
+          val secondRequest = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController
+              .onPageLoadWithId(secondFlowId, NormalMode)
+              .url
+          )
+
+          val firstResult  = route(application, firstRequest).value
+          val secondResult = route(application, secondRequest).value
+
+          val view = application.injector.instanceOf[ConfirmationByEmailView]
+
+          val firstFormAction = Some(
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(firstFlowId, NormalMode)
+          )
+
+          val secondFormAction = Some(
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(secondFlowId, NormalMode)
+          )
+
+          status(firstResult) mustEqual OK
+          contentAsString(firstResult) mustEqual view(form.fill(true), NormalMode, firstFormAction)(
+            firstRequest,
+            messages(application)
+          ).toString
+
+          status(secondResult) mustEqual OK
+          contentAsString(secondResult) mustEqual view(form.fill(false), NormalMode, secondFormAction)(
+            secondRequest,
+            messages(application)
+          ).toString
+        }
+      }
+
+      "must save the scoped answer and redirect to Enter Your Email Address when Yes is submitted" in {
+
+        val flowId      = UUID.randomUUID()
+        val id          = flowId.toString
+        val userAnswers = scopedUserAnswers(flowId)
+
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application =
+          applicationBuilder(userAnswers = Some(userAnswers))
+            .configure("features.multi-tab-enabled" -> true)
+            .overrides(
+              bind[SessionRepository].toInstance(mockSessionRepository)
+            )
+            .build()
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode).url
+            )
+              .withFormUrlEncodedBody(("value", "true"))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual
+            controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, NormalMode).url
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(mockSessionRepository).set(captor.capture())
+
+          captor.getValue.get(ConfirmationByEmailPage(id)) mustEqual Some(true)
+          captor.getValue.get(ConfirmationByEmailPage) mustEqual None
+        }
+      }
+
+      "must save the scoped answer and redirect to Declaration when No is submitted" in {
+
+        val flowId      = UUID.randomUUID()
+        val id          = flowId.toString
+        val userAnswers = scopedUserAnswers(flowId)
+
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application =
+          applicationBuilder(userAnswers = Some(userAnswers))
+            .configure("features.multi-tab-enabled" -> true)
+            .overrides(
+              bind[SessionRepository].toInstance(mockSessionRepository)
+            )
+            .build()
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode).url
+            )
+              .withFormUrlEncodedBody(("value", "false"))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual
+            controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId).url
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(mockSessionRepository).set(captor.capture())
+
+          captor.getValue.get(ConfirmationByEmailPage(id)) mustEqual Some(false)
+          captor.getValue.get(ConfirmationByEmailPage) mustEqual None
+        }
+      }
+
+      "must redirect to Check Your Answers when No is submitted in CheckMode" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = scopedUserAnswers(flowId)
+
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application =
+          applicationBuilder(userAnswers = Some(userAnswers))
+            .configure("features.multi-tab-enabled" -> true)
+            .overrides(
+              bind[SessionRepository].toInstance(mockSessionRepository)
+            )
+            .build()
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, CheckMode).url
+            )
+              .withFormUrlEncodedBody(("value", "false"))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+        }
+      }
+
+      "must remove only the current journey email address when the answer changes to No" in {
+
+        val firstFlowId  = UUID.randomUUID()
+        val secondFlowId = UUID.randomUUID()
+        val firstId      = firstFlowId.toString
+        val secondId     = secondFlowId.toString
+
+        val userAnswers = scopedUserAnswers(firstFlowId)
+          .setOrException(ConfirmationByEmailPage(firstId), true)
+          .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
+          .setOrException(CisIdPage(secondId), "second-cis-id")
+          .setOrException(ConfirmationByEmailPage(secondId), true)
+          .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
+
+        val mockSessionRepository = mock[SessionRepository]
+
+        when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+        val application =
+          applicationBuilder(userAnswers = Some(userAnswers))
+            .configure("features.multi-tab-enabled" -> true)
+            .overrides(
+              bind[SessionRepository].toInstance(mockSessionRepository)
+            )
+            .build()
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.ConfirmationByEmailController
+                .onSubmitWithId(firstFlowId, NormalMode)
+                .url
+            )
+              .withFormUrlEncodedBody(("value", "false"))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+
+          val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(mockSessionRepository).set(captor.capture())
+
+          val savedAnswers = captor.getValue
+
+          savedAnswers.get(ConfirmationByEmailPage(firstId)) mustEqual Some(false)
+          savedAnswers.get(EnterYourEmailAddressPage(firstId)) mustEqual None
+          savedAnswers.get(ConfirmationByEmailPage(secondId)) mustEqual Some(true)
+          savedAnswers.get(EnterYourEmailAddressPage(secondId)) mustEqual Some("second@example.com")
+        }
+      }
+
+      "must return a Bad Request and errors when invalid scoped data is submitted" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = scopedUserAnswers(flowId)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode).url
+            )
+              .withFormUrlEncodedBody(("value", ""))
+
+          val boundForm = form.bind(Map("value" -> ""))
+
+          val view = application.injector.instanceOf[ConfirmationByEmailView]
+
+          val result = route(application, request).value
+
+          val formAction = Some(
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode)
+          )
+
+          status(result) mustEqual BAD_REQUEST
+          contentAsString(result) mustEqual view(boundForm, NormalMode, formAction)(
+            request,
+            messages(application)
+          ).toString
+        }
+      }
+
+      "must redirect to Journey Recovery for a GET when no existing data is found" in {
+
+        val flowId = UUID.randomUUID()
+
+        val application = applicationBuilder(userAnswers = None)
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to Journey Recovery for a POST when no existing data is found" in {
+
+        val flowId = UUID.randomUUID()
+
+        val application = applicationBuilder(userAnswers = None)
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmitWithId(flowId, NormalMode).url
+            )
+              .withFormUrlEncodedBody(("value", "true"))
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to Journey Recovery when the scoped CisIdPage is missing" in {
+
+        val flowId = UUID.randomUUID()
+
+        val application = applicationBuilder(userAnswers = Some(userAnswersWithCisId))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "must redirect to the returns landing page when multi-tab is disabled" in {
+
+        val flowId      = UUID.randomUUID()
+        val userAnswers = scopedUserAnswers(flowId)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> false)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode).url
+          )
+
+          val result = route(application, request).value
+
+          val appConfig = application.injector.instanceOf[FrontendAppConfig]
+
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual appConfig.returnsLandingPageUrl("test-cis-id", None)
+        }
       }
     }
   }

@@ -27,5 +27,10 @@ class AmendmentDetailsPageSpec extends SpecBase {
       AmendmentDetailsPage.path mustBe JsPath \ "amendmentDetails"
       AmendmentDetailsPage.toString mustBe "amendmentDetails"
     }
+
+    "must use amendmentDetails path with id" in {
+      AmendmentDetailsPage("test-id").path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "amendmentDetails")
+      AmendmentDetailsPage("test-id").toString mustBe "amendmentDetails"
+    }
   }
 }

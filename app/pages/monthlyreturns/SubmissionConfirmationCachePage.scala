@@ -20,6 +20,13 @@ import models.monthlyreturns.SubmissionConfirmationCache
 import pages.QuestionPage
 import play.api.libs.json.JsPath
 
+case class SubmissionConfirmationCachePage(id: String) extends QuestionPage[SubmissionConfirmationCache] {
+
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
+
+  override def toString: String = "submissionConfirmationCache"
+}
+
 case object SubmissionConfirmationCachePage extends QuestionPage[SubmissionConfirmationCache] {
 
   override def path: JsPath = JsPath \ toString
