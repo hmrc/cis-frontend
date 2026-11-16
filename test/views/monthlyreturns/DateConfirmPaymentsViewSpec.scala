@@ -35,6 +35,13 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
   "DateConfirmPaymentsView" - {
 
+    "must render the month input with a text keyboard and the day and year inputs as numeric" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select("input[name$=month]").attr("inputmode") mustBe "text"
+      doc.select("input[name$=year]").attr("inputmode") mustBe "numeric"
+    }
+
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
