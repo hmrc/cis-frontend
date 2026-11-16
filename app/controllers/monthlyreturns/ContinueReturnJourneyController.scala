@@ -29,7 +29,7 @@ import javax.inject.Inject
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
-import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, ScopedSelectedSubcontractorPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, SelectedSubcontractorForFlowPage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -245,7 +245,7 @@ class ContinueReturnJourneyController @Inject() (
                   withAgentData.flatMap { ua =>
                     if (
                       ua.get(ReturnTypePage(id)).getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
-                      ua.get(ScopedSelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
+                      ua.get(SelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
                     ) {
                       ua.set(
                         MonthlyFinalValidationSourcePage(id),

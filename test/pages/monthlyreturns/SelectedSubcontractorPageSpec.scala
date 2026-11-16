@@ -107,28 +107,28 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     }
   }
 
-  "ScopedSelectedSubcontractorPage" - {
+  "SelectedSubcontractorForFlowPage" - {
 
     val id = "org_flow-1"
 
     "have the correct scoped path" in {
-      ScopedSelectedSubcontractorPage(id, index).path mustBe
+      SelectedSubcontractorForFlowPage(id, index).path mustBe
         (JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString)
     }
 
     "use different paths for different journeys" in {
-      ScopedSelectedSubcontractorPage("org_flow-1", index).path must not be
-        ScopedSelectedSubcontractorPage("org_flow-2", index).path
+      SelectedSubcontractorForFlowPage("org_flow-1", index).path must not be
+        SelectedSubcontractorForFlowPage("org_flow-2", index).path
     }
 
     "use different paths for different indexes" in {
-      ScopedSelectedSubcontractorPage(id, 1).path must not be
-        ScopedSelectedSubcontractorPage(id, 2).path
+      SelectedSubcontractorForFlowPage(id, 1).path must not be
+        SelectedSubcontractorForFlowPage(id, 2).path
     }
 
     "have the same toString as the legacy page" in {
-      ScopedSelectedSubcontractorPage(id, index).toString mustBe "subcontractor-0"
-      ScopedSelectedSubcontractorPage(id, 3).toString mustBe SelectedSubcontractorPage(3).toString
+      SelectedSubcontractorForFlowPage(id, index).toString mustBe "subcontractor-0"
+      SelectedSubcontractorForFlowPage(id, 3).toString mustBe SelectedSubcontractorPage(3).toString
     }
 
     "retain the legacy unscoped paths" in {
@@ -137,25 +137,25 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     }
   }
 
-  "ScopedSelectedSubcontractorPage.all" - {
+  "SelectedSubcontractorForFlowPage.all" - {
 
     val id = "org_flow-1"
 
     "have the correct scoped path" in {
-      ScopedSelectedSubcontractorPage.all(id).path mustBe (JsPath \ "monthlyReturn" \ id \ "subcontractors")
+      SelectedSubcontractorPage.all(id).path mustBe (JsPath \ "monthlyReturn" \ id \ "subcontractors")
     }
 
     "use different paths for different journeys" in {
-      ScopedSelectedSubcontractorPage.all("org_flow-1").path must not be
-        ScopedSelectedSubcontractorPage.all("org_flow-2").path
+      SelectedSubcontractorPage.all("org_flow-1").path must not be
+        SelectedSubcontractorPage.all("org_flow-2").path
     }
 
     "have the correct toString" in {
-      ScopedSelectedSubcontractorPage.all(id).toString mustBe "subcontractors"
+      SelectedSubcontractorPage.all(id).toString mustBe "subcontractors"
     }
   }
 
-  "ScopedSelectedSubcontractorPage with UserAnswers" - {
+  "SelectedSubcontractorForFlowPage with UserAnswers" - {
 
     val firstId       = "org_flow-1"
     val secondId      = "org_flow-2"
@@ -170,17 +170,17 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "store and retrieve a subcontractor under the scoped path" in {
       val ua = emptyUserAnswers
-        .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
+        .set(SelectedSubcontractorForFlowPage(firstId, 1), subcontractor)
         .success
         .value
 
-      ua.get(ScopedSelectedSubcontractorPage(firstId, 1)) mustBe Some(subcontractor)
-      ua.get(ScopedSelectedSubcontractorPage.all(firstId)).exists(_.nonEmpty) mustBe true
+      ua.get(SelectedSubcontractorForFlowPage(firstId, 1)) mustBe Some(subcontractor)
+      ua.get(SelectedSubcontractorPage.all(firstId)).exists(_.nonEmpty) mustBe true
     }
 
     "not write to the legacy unscoped keys" in {
       val ua = emptyUserAnswers
-        .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
+        .set(SelectedSubcontractorForFlowPage(firstId, 1), subcontractor)
         .success
         .value
 
@@ -190,28 +190,28 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "not read answers belonging to another journey" in {
       val ua = emptyUserAnswers
-        .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
+        .set(SelectedSubcontractorForFlowPage(firstId, 1), subcontractor)
         .success
         .value
 
-      ua.get(ScopedSelectedSubcontractorPage(secondId, 1)) mustBe None
-      ua.get(ScopedSelectedSubcontractorPage.all(secondId)).exists(_.nonEmpty) mustBe false
+      ua.get(SelectedSubcontractorForFlowPage(secondId, 1)) mustBe None
+      ua.get(SelectedSubcontractorPage.all(secondId)).exists(_.nonEmpty) mustBe false
     }
 
     "clear only the scoped subcontractors when removing all" in {
       val ua = emptyUserAnswers
-        .set(ScopedSelectedSubcontractorPage(firstId, 1), subcontractor)
+        .set(SelectedSubcontractorForFlowPage(firstId, 1), subcontractor)
         .success
         .value
-        .set(ScopedSelectedSubcontractorPage(secondId, 1), subcontractor)
+        .set(SelectedSubcontractorForFlowPage(secondId, 1), subcontractor)
         .success
         .value
-        .remove(ScopedSelectedSubcontractorPage.all(firstId))
+        .remove(SelectedSubcontractorPage.all(firstId))
         .success
         .value
 
-      ua.get(ScopedSelectedSubcontractorPage(firstId, 1)) mustBe None
-      ua.get(ScopedSelectedSubcontractorPage(secondId, 1)) mustBe Some(subcontractor)
+      ua.get(SelectedSubcontractorForFlowPage(firstId, 1)) mustBe None
+      ua.get(SelectedSubcontractorForFlowPage(secondId, 1)) mustBe Some(subcontractor)
     }
   }
 }

@@ -522,7 +522,7 @@ class MonthlyReturnService @Inject() (
                 LocalDate.of(editRequest.taxYear, editRequest.taxMonth, 5)
               )
       ua5  <- setOrError(ua4, AmendmentDetailsPage(id), amendmentDetails)
-      ua6  <- setOrError(ua5, ScopedSelectedSubcontractorPage.all(id), preselectedSubcontractors)
+      ua6  <- setOrError(ua5, SelectedSubcontractorPage.all(id), preselectedSubcontractors)
       ua7  <- existingSubId match {
                 case Some(subId) => setOrError(ua6, ResubmissionIdPage(id), subId) // renamed from `id`: see below
                 case None        => Right(ua6)
@@ -867,7 +867,7 @@ class MonthlyReturnService @Inject() (
     subcontractors: Seq[Subcontractor]
   ): Either[String, UserAnswers] =
     for {
-      cleared <- ua.remove(ScopedSelectedSubcontractorPage.all(id)).toEither.left.map(_.getMessage)
+      cleared <- ua.remove(SelectedSubcontractorPage.all(id)).toEither.left.map(_.getMessage)
       updated <- items.zipWithIndex.foldLeft[Either[String, UserAnswers]](Right(cleared)) {
                    case (accEither, (item, index)) =>
                      val matchedSubcontractor =
@@ -884,7 +884,7 @@ class MonthlyReturnService @Inject() (
                        pageIndex = index + 1
                        next     <- acc
                                      .set(
-                                       ScopedSelectedSubcontractorPage(id, index + 1),
+                                       SelectedSubcontractorForFlowPage(id, index + 1),
                                        SelectedSubcontractor(
                                          id = item.subcontractorId.getOrElse(0L),
                                          name = resolvedName,

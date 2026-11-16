@@ -53,9 +53,22 @@ case class SelectedSubcontractorPage(index: Int) extends QuestionPage[SelectedSu
   override def toString: String = s"subcontractor-$index"
 }
 
+// Multi-tab: Store a selected subcontractor for the ID-scoped journey.
+case class SelectedSubcontractorForFlowPage(id: String, index: Int) extends QuestionPage[SelectedSubcontractor] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString
+  override def toString: String = s"subcontractor-$index"
+}
+
 object SelectedSubcontractorPage {
   def all: IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
     override def path: JsPath     = JsPath \ toString
+    override def toString: String = "subcontractors"
+  }
+
+  // Multi-tab: Retrieve selected subcontractors for the ID-scoped journey.
+  def all(id: String): IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
+    override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
+
     override def toString: String = "subcontractors"
   }
 
@@ -72,35 +85,5 @@ object SelectedSubcontractorPage {
     def summaryTotalPayments: Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade)
     def summaryTotalMaterialsCost: Option[BigDecimal] = sumPaymentsField(_.costOfMaterials)
     def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted)
-  }
-}
-
-case class ScopedSelectedSubcontractorPage(id: String, index: Int) extends QuestionPage[SelectedSubcontractor] {
-  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString
-  override def toString: String = s"subcontractor-$index"
-}
-
-object ScopedSelectedSubcontractorPage {
-  def all(id: String): IndexedQuestionPage[SelectedSubcontractor] =
-    new IndexedQuestionPage[SelectedSubcontractor] {
-      override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors"
-      override def toString: String = "subcontractors"
-    }
-
-  extension (ua: UserAnswers) {
-    private def sumPaymentsField(id: String)(
-      getField: SelectedSubcontractor => Option[BigDecimal]
-    ): Option[BigDecimal] =
-      ua.get(all(id)).map { subcontractors =>
-        subcontractors.values
-          .filter(_.isComplete)
-          .flatMap(x => getField(x).toList)
-          .sum
-          .setScale(2, RoundingMode.HALF_DOWN)
-      }
-
-    def summaryTotalPayments(id: String): Option[BigDecimal]      = sumPaymentsField(id)(_.totalPaymentsMade)
-    def summaryTotalMaterialsCost(id: String): Option[BigDecimal] = sumPaymentsField(id)(_.costOfMaterials)
-    def summaryTotalCisDeductions(id: String): Option[BigDecimal] = sumPaymentsField(id)(_.totalTaxDeducted)
   }
 }

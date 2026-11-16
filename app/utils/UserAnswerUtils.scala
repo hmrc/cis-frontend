@@ -158,7 +158,7 @@ object UserAnswerUtils {
       userAnswers
         // amended monthly standard return
         .remove(EmploymentStatusDeclarationPage(id))
-        .flatMap(_.remove(ScopedSelectedSubcontractorPage.all(id)))
+        .flatMap(_.remove(SelectedSubcontractorPage.all(id)))
         .flatMap(_.remove(VerifySubcontractorsPage(id)))
         .flatMap(_.remove(AllSubcontractorDetailsAdded(id)))
         .flatMap(_.remove(PaymentDetailsConfirmationPage(id)))

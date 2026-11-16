@@ -2242,7 +2242,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ContractorNamePage(id)) mustBe Some("ABC Construction Ltd")
       ua.get(ResubmissionIdPage(id)) mustBe Some(1L)
 
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).value mustBe SelectedSubcontractor(
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).value mustBe SelectedSubcontractor(
         id = 1001L,
         name = "A Ltd",
         totalPaymentsMade = Some(BigDecimal("1000.00")),
@@ -2341,9 +2341,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .toOption
         .value
 
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(s => (s.id, s.name)) mustBe
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).map(s => (s.id, s.name)) mustBe
         Some((9999L, "No name provided"))
-      ua.get(ScopedSelectedSubcontractorPage(id, 2)).map(s => (s.id, s.name)) mustBe
+      ua.get(SelectedSubcontractorForFlowPage(id, 2)).map(s => (s.id, s.name)) mustBe
         Some((0L, "No name provided"))
       ua.get(OriginalSubcontractorCountPage(id)) mustBe Some(1)
     }
@@ -2360,7 +2360,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val existing = scopedAnswers
-        .set(ScopedSelectedSubcontractorPage(id, 2), stale)
+        .set(SelectedSubcontractorForFlowPage(id, 2), stale)
         .success
         .value
 
@@ -2383,8 +2383,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .toOption
         .value
 
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(_.id) mustBe Some(1001L)
-      ua.get(ScopedSelectedSubcontractorPage(id, 2)) mustBe None
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).map(_.id) mustBe Some(1001L)
+      ua.get(SelectedSubcontractorForFlowPage(id, 2)) mustBe None
     }
 
     "must not change answers belonging to another journey or the legacy keys" in {
@@ -2406,7 +2406,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .set(ReturnTypePage(otherId), MonthlyStandardReturn)
         .success
         .value
-        .set(ScopedSelectedSubcontractorPage(otherId, 1), otherSubcontractor)
+        .set(SelectedSubcontractorForFlowPage(otherId, 1), otherSubcontractor)
         .success
         .value
         .set(CisIdPage, "LEGACY-CIS")
@@ -2441,7 +2441,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       ua.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
       ua.get(ReturnTypePage(otherId)) mustBe Some(MonthlyStandardReturn)
-      ua.get(ScopedSelectedSubcontractorPage(otherId, 1)) mustBe Some(otherSubcontractor)
+      ua.get(SelectedSubcontractorForFlowPage(otherId, 1)) mustBe Some(otherSubcontractor)
       ua.get(CisIdPage) mustBe Some("LEGACY-CIS")
     }
 
@@ -3017,7 +3017,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       ua.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedStandardReturn)
       ua.get(AmendmentDetailsPage(id)).value.originalReturnType mustBe MonthlyAmendedStandardReturn
       ua.get(OriginalSubcontractorCountPage(id)) mustBe Some(1)
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).value mustBe SelectedSubcontractor(
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).value mustBe SelectedSubcontractor(
         id = 1001L,
         name = "A Ltd",
         totalPaymentsMade = Some(BigDecimal("1000.00")),
@@ -3055,9 +3055,9 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .value
         .userAnswers
 
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(s => (s.id, s.name)) mustBe Some((1001L, "A Ltd"))
-      ua.get(ScopedSelectedSubcontractorPage(id, 2)).map(s => (s.id, s.name)) mustBe Some((1002L, "B Ltd"))
-      ua.get(ScopedSelectedSubcontractorPage(id, 3)) mustBe None
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).map(s => (s.id, s.name)) mustBe Some((1001L, "A Ltd"))
+      ua.get(SelectedSubcontractorForFlowPage(id, 2)).map(s => (s.id, s.name)) mustBe Some((1002L, "B Ltd"))
+      ua.get(SelectedSubcontractorForFlowPage(id, 3)) mustBe None
       ua.get(OriginalSubcontractorCountPage(id)) mustBe Some(2)
     }
 
@@ -3078,7 +3078,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .value
         .userAnswers
 
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(_.name) mustBe Some("No name provided")
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).map(_.name) mustBe Some("No name provided")
     }
 
     "report no subcontractors when none of them match a monthly return item" in {
@@ -3098,7 +3098,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .value
 
       amendResult.hasSubcontractors mustBe false
-      amendResult.userAnswers.get(ScopedSelectedSubcontractorPage(id, 1)) mustBe None
+      amendResult.userAnswers.get(SelectedSubcontractorForFlowPage(id, 1)) mustBe None
       // the original count still reflects every subcontractor returned by the backend
       amendResult.userAnswers.get(OriginalSubcontractorCountPage(id)) mustBe Some(1)
     }
@@ -3115,7 +3115,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
       )
 
       val existing = scopedAnswers
-        .set(ScopedSelectedSubcontractorPage(id, 2), stale)
+        .set(SelectedSubcontractorForFlowPage(id, 2), stale)
         .success
         .value
 
@@ -3128,8 +3128,8 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .value
         .userAnswers
 
-      ua.get(ScopedSelectedSubcontractorPage(id, 1)).map(_.id) mustBe Some(1001L)
-      ua.get(ScopedSelectedSubcontractorPage(id, 2)) mustBe None
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).map(_.id) mustBe Some(1001L)
+      ua.get(SelectedSubcontractorForFlowPage(id, 2)) mustBe None
     }
 
     "save an existing submission ID as the scoped resubmission ID" in {
@@ -3216,7 +3216,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
         .set(ReturnTypePage(otherId), MonthlyStandardReturn)
         .success
         .value
-        .set(ScopedSelectedSubcontractorPage(otherId, 1), otherSubcontractor)
+        .set(SelectedSubcontractorForFlowPage(otherId, 1), otherSubcontractor)
         .success
         .value
         .set(CisIdPage, "LEGACY-CIS")
@@ -3237,7 +3237,7 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       ua.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
       ua.get(ReturnTypePage(otherId)) mustBe Some(MonthlyStandardReturn)
-      ua.get(ScopedSelectedSubcontractorPage(otherId, 1)) mustBe Some(otherSubcontractor)
+      ua.get(SelectedSubcontractorForFlowPage(otherId, 1)) mustBe Some(otherSubcontractor)
       ua.get(CisIdPage) mustBe Some("LEGACY-CIS")
     }
 

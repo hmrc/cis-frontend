@@ -566,7 +566,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .set(EmploymentStatusDeclarationPage("CIS-ORG-1"), true)
         .get
-        .set(ScopedSelectedSubcontractorPage("CIS-ORG-1", 1), completeSub(1))
+        .set(SelectedSubcontractorForFlowPage("CIS-ORG-1", 1), completeSub(1))
         .get
         .set(VerifySubcontractorsPage("CIS-ORG-1"), true)
         .get
@@ -612,7 +612,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val cleared = result.get
 
       cleared.get(EmploymentStatusDeclarationPage("CIS-ORG-1")) mustBe None
-      cleared.get(ScopedSelectedSubcontractorPage("CIS-ORG-1", 1)) mustBe None
+      cleared.get(SelectedSubcontractorForFlowPage("CIS-ORG-1", 1)) mustBe None
       cleared.get(VerifySubcontractorsPage("CIS-ORG-1")) mustBe None
       cleared.get(AllSubcontractorDetailsAdded("CIS-ORG-1")) mustBe None
       cleared.get(PaymentDetailsConfirmationPage("CIS-ORG-1")) mustBe None
