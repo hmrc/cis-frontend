@@ -41,4 +41,17 @@ object DeleteAllMonthlyReturnItemsRequest {
       taxMonth = monthYear.getMonthValue,
       amendment = returnType.amendmentFlag
     )
+
+  // Multi-tab: copy of fromUserAnswers reading the answers scoped to a journey id.
+  def fromUserAnswers(ua: UserAnswers, id: String): Either[String, DeleteAllMonthlyReturnItemsRequest] =
+    for {
+      instanceId <- ua.get(CisIdPage(id)).toRight("Missing CisId")
+      monthYear <- ua.get(DateConfirmPaymentsPage(id)).toRight("Missing DateConfirmPayments")
+      returnType <- ua.get(ReturnTypePage(id)).toRight("Missing ReturnType")
+    } yield DeleteAllMonthlyReturnItemsRequest(
+      instanceId = instanceId,
+      taxYear = monthYear.getYear,
+      taxMonth = monthYear.getMonthValue,
+      amendment = returnType.amendmentFlag
+    )
 }

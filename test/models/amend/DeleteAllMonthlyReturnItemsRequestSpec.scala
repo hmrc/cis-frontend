@@ -17,6 +17,7 @@
 package models.amend
 
 import base.SpecBase
+import models.ReturnType.MonthlyAmendedNilReturn
 import models.{ReturnType, UserAnswers}
 import pages.monthlyreturns.*
 import play.api.libs.json.Json
@@ -73,6 +74,43 @@ class DeleteAllMonthlyReturnItemsRequestSpec extends SpecBase {
     "must return Left when required answers are missing" in {
       DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(UserAnswers("id")) mustBe
         Left("Missing CisId")
+    }
+
+    "fromUserAnswers with a journey id" - {
+
+      val id = "5f0c1a2e-0000-4000-8000-000000000001"
+
+      def scoped: UserAnswers =
+        emptyUserAnswers
+          .set(CisIdPage(id), "CIS-123").success.value
+          .set(DateConfirmPaymentsPage(id), LocalDate.of(2025, 3, 5)).success.value
+          .set(ReturnTypePage(id), MonthlyAmendedNilReturn).success.value
+
+      "build the request from the scoped answers" in {
+        DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(scoped, id) mustBe
+          Right(DeleteAllMonthlyReturnItemsRequest("CIS-123", 2025, 3, MonthlyAmendedNilReturn.amendmentFlag))
+      }
+
+      "ignore the legacy unscoped answers" in {
+        val legacyOnly = emptyUserAnswers
+          .set(CisIdPage, "CIS-123").success.value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 3, 5)).success.value
+          .set(ReturnTypePage, MonthlyAmendedNilReturn).success.value
+
+        DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(legacyOnly, id) mustBe Left("Missing CisId")
+      }
+
+      "not read another journey's answers" in {
+        DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(scoped, "another-flow-id") mustBe Left("Missing CisId")
+      }
+
+      "report each missing scoped answer" in {
+        val noDate = emptyUserAnswers.set(CisIdPage(id), "CIS-123").success.value
+        DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(noDate, id) mustBe Left("Missing DateConfirmPayments")
+
+        val noType = noDate.set(DateConfirmPaymentsPage(id), LocalDate.of(2025, 3, 5)).success.value
+        DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(noType, id) mustBe Left("Missing ReturnType")
+      }
     }
   }
 }

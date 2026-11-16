@@ -134,7 +134,7 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
                 updatedAnswers <- Future.fromTry(ua2.set(AreYouSureYouWantToAmendYesNoPage(id), Yes))
                 _              <- sessionRepository.set(updatedAnswers)
                 deleteRequest  <-
-                  toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers)) // TODO id scope
+                  toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers, id))
                 _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
                 updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers)) // TODO id scope
                 _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
