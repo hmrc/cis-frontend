@@ -17,7 +17,7 @@
 package models.requests
 
 import models.UserAnswers
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage}
+import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage}
 import pages.amend.AmendmentDetailsPage
 import play.api.libs.json.{Json, OFormat}
 
@@ -42,5 +42,18 @@ object GetMonthlyReturnForEditRequest {
       taxYear = taxDate.getYear,
       taxMonth = taxDate.getMonthValue,
       isAmendment = isAmendment
+    )
+
+  // Multi-tab: Build the monthly return for edit request from ID-scoped answers.
+  def fromUserAnswers(ua: UserAnswers, id: String): Either[String, GetMonthlyReturnForEditRequest] =
+    for {
+      instanceId <- ua.get(CisIdPage(id)).toRight("Missing CisIdPage")
+      taxDate    <- ua.get(DateConfirmPaymentsPage(id)).toRight("Missing DateConfirmPayments")
+      returnType <- ua.get(ReturnTypePage(id)).toRight("Missing ReturnTypePage")
+    } yield GetMonthlyReturnForEditRequest(
+      instanceId = instanceId,
+      taxYear = taxDate.getYear,
+      taxMonth = taxDate.getMonthValue,
+      isAmendment = returnType.amendmentFlag == "Y"
     )
 }

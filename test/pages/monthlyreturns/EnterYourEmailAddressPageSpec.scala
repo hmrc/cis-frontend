@@ -30,5 +30,65 @@ class EnterYourEmailAddressPageSpec extends SpecBase {
     "have the correct toString" in {
       EnterYourEmailAddressPage.toString mustBe "enterYourEmailAddress"
     }
+
+    "UUID-scoped journey" - {
+
+      "have the correct path under monthlyReturn" in {
+        val id = "test-flow-id"
+
+        EnterYourEmailAddressPage(id).path mustBe
+          (JsPath \ "monthlyReturn" \ id \ "enterYourEmailAddress")
+      }
+
+      "have the correct toString" in {
+        val id = "test-flow-id"
+
+        EnterYourEmailAddressPage(id).toString mustBe "enterYourEmailAddress"
+      }
+
+      "must use different paths for different flowIds" in {
+        val firstId  = "first-flow-id"
+        val secondId = "second-flow-id"
+
+        EnterYourEmailAddressPage(firstId).path mustBe
+          (JsPath \ "monthlyReturn" \ firstId \ "enterYourEmailAddress")
+
+        EnterYourEmailAddressPage(secondId).path mustBe
+          (JsPath \ "monthlyReturn" \ secondId \ "enterYourEmailAddress")
+      }
+
+      "must store and retrieve the email address for the correct flowId" in {
+        val firstId  = "first-flow-id"
+        val secondId = "second-flow-id"
+
+        val userAnswers = emptyUserAnswers
+          .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
+          .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
+
+        userAnswers.get(EnterYourEmailAddressPage(firstId)) mustBe Some("first@example.com")
+        userAnswers.get(EnterYourEmailAddressPage(secondId)) mustBe Some("second@example.com")
+      }
+
+      "must not use the legacy email address when the scoped answer is missing" in {
+        val id = "test-flow-id"
+
+        val userAnswers = emptyUserAnswers
+          .setOrException(EnterYourEmailAddressPage, "legacy@example.com")
+
+        userAnswers.get(EnterYourEmailAddressPage(id)) mustBe None
+        userAnswers.get(EnterYourEmailAddressPage) mustBe Some("legacy@example.com")
+      }
+
+      "must not overwrite the legacy email address when setting a scoped answer" in {
+        val id = "test-flow-id"
+
+        val userAnswers = emptyUserAnswers
+          .setOrException(EnterYourEmailAddressPage, "legacy@example.com")
+          .setOrException(EnterYourEmailAddressPage(id), "scoped@example.com")
+
+        userAnswers.get(EnterYourEmailAddressPage) mustBe Some("legacy@example.com")
+        userAnswers.get(EnterYourEmailAddressPage(id)) mustBe Some("scoped@example.com")
+      }
+    }
   }
 }

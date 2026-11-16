@@ -29,7 +29,7 @@
     h1: components.H1
 )
 
-@(mode: Mode)(implicit request: Request[_], messages: Messages)
+@(mode: Mode, continueUrl: Option[String] = None)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.declaration.title"))) {
 
@@ -48,6 +48,6 @@
 
     @govukButton(
         ButtonViewModel(messages("monthlyreturns.declaration.submit"))
-            .asLink(controllers.monthlyreturns.routes.DeclarationController.onSubmit().url)
+            .asLink(continueUrl.getOrElse(controllers.monthlyreturns.routes.DeclarationController.onSubmit().url))
     )
 }

@@ -30,5 +30,15 @@ class VerifiedStatusDeclarationPageSpec extends SpecBase {
     "have the correct toString" in {
       VerifiedStatusDeclarationPage.toString mustBe "verifiedStatusDeclaration"
     }
+
+    "have the correct path with id" in {
+      VerifiedStatusDeclarationPage(
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "verifiedStatusDeclaration")
+    }
+
+    "have the correct toString with id" in {
+      VerifiedStatusDeclarationPage("test-id").toString mustBe "verifiedStatusDeclaration"
+    }
   }
 }

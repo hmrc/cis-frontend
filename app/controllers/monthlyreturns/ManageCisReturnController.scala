@@ -18,13 +18,14 @@ package controllers.monthlyreturns
 
 import config.FrontendAppConfig
 import controllers.actions.*
-import pages.monthlyreturns.ContractorNamePage
+import pages.monthlyreturns.{CisIdPage, ContractorNamePage}
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -34,6 +35,7 @@ class ManageCisReturnController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   monthlyReturnService: MonthlyReturnService,
   appConfig: FrontendAppConfig,
   val controllerComponents: MessagesControllerComponents
@@ -57,6 +59,29 @@ class ManageCisReturnController @Inject() (
             "[ManageCisReturnController] Failed to clear monthly return journey",
             exception
           )
+          Redirect(controllers.routes.SystemErrorController.onPageLoad())
+        }
+    }
+
+  // Multi-tab: Exit and clear the ID-scoped monthly return journey.
+  def onExitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id = flowId.toString
+
+      val cisId = request.userAnswers.get(CisIdPage(id)).getOrElse {
+        throw new IllegalStateException("CisIdPage missing from ID-scoped userAnswers")
+      }
+
+      val redirectUrl = appConfig.returnsLandingPageUrl(
+        cisId,
+        request.userAnswers.get(ContractorNamePage(id))
+      )
+
+      monthlyReturnService
+        .clearSubmissionJourney(request.userAnswers, id)
+        .map(_ => Redirect(redirectUrl))
+        .recover { case NonFatal(ex) =>
+          logger.error("[ManageCisReturnController] Failed to clear multi-tab monthly return journey", ex)
           Redirect(controllers.routes.SystemErrorController.onPageLoad())
         }
     }
