@@ -17,9 +17,8 @@
 package controllers.monthlyreturns
 
 import base.SpecBase
-import config.FrontendAppConfig
 import models.monthlyreturns.Declaration.Confirmed
-import models.{CheckMode, ReturnType, UserAnswers}
+import models.{ReturnType, UserAnswers}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar

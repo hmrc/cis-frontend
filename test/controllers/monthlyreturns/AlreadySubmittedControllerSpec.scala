@@ -105,15 +105,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
           val id     = flowId.toString
 
           val userAnswer = userAnswersWithCisId
-            .set(CisIdPage(id), "2")
-            .success
-            .value
-            .set(ReturnTypePage, MonthlyStandardReturn)
-            .success
-            .value
-            .set(ReturnTypePage(id), MonthlyNilReturn)
-            .success
-            .value
+            .setOrException(CisIdPage(id), "2")
+            .setOrException(ReturnTypePage, MonthlyStandardReturn)
+            .setOrException(ReturnTypePage(id), MonthlyNilReturn)
 
           val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent)
             .configure("features.multi-tab-enabled" -> true)
@@ -139,7 +133,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
               "monthlyreturns.alreadySubmitted.nilreturn",
               expectedCisAccountUrl
             )(
-              request,
+              viewRequest(request, isAgent),
               messages(application)
             ).toString
           }
@@ -150,15 +144,9 @@ class AlreadySubmittedControllerSpec extends SpecBase {
           val id     = flowId.toString
 
           val userAnswer = userAnswersWithCisId
-            .set(CisIdPage(id), "2")
-            .success
-            .value
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
-            .set(ReturnTypePage(id), MonthlyStandardReturn)
-            .success
-            .value
+            .setOrException(CisIdPage(id), "2")
+            .setOrException(ReturnTypePage, MonthlyNilReturn)
+            .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
 
           val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent)
             .configure("features.multi-tab-enabled" -> true)
@@ -184,7 +172,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
               "monthlyreturns.alreadySubmitted",
               expectedCisAccountUrl
             )(
-              request,
+              viewRequest(request, isAgent),
               messages(application)
             ).toString
           }
@@ -195,12 +183,8 @@ class AlreadySubmittedControllerSpec extends SpecBase {
           val id     = flowId.toString
 
           val userAnswer = userAnswersWithCisId
-            .set(CisIdPage(id), "2")
-            .success
-            .value
-            .set(ReturnTypePage, MonthlyNilReturn)
-            .success
-            .value
+            .setOrException(CisIdPage(id), "2")
+            .setOrException(ReturnTypePage, MonthlyNilReturn)
 
           val application = applicationBuilder(userAnswers = Some(userAnswer), isAgent = isAgent)
             .configure("features.multi-tab-enabled" -> true)
