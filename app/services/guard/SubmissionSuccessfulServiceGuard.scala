@@ -17,6 +17,7 @@
 package services.guard
 
 import models.requests.CisIdDataRequest
+import models.UserAnswers
 import pages.submission.SubmissionDetailsPage
 import play.api.Logging
 
@@ -24,6 +25,8 @@ import javax.inject.Singleton
 
 trait SubmissionSuccessfulServiceGuard {
   def check(implicit request: CisIdDataRequest[_]): Boolean
+
+  def check(userAnswers: UserAnswers, id: String): Boolean
 }
 
 @Singleton
@@ -40,6 +43,24 @@ class SubmissionSuccessfulServiceGuardImpl extends SubmissionSuccessfulServiceGu
           s"[SubmissionSuccessfulServiceGuard] Guard failed: status=${details.status}, amendment=${details.amendment}"
         )
       if (!irMarksValid)
+        logger.warn(s"[SubmissionSuccessfulServiceGuard] Guard failed: irMark empty or hmrcMarkGgis mismatch")
+
+      submittedOrAmendment && irMarksValid
+    }
+
+  // Multi-tab: Check the successful submission for the ID-scoped journey.
+  def check(userAnswers: UserAnswers, id: String): Boolean =
+    userAnswers.get(SubmissionDetailsPage(id)).exists { details =>
+      val submittedOrAmendment = details.status == "SUBMITTED" || details.amendment.contains("Y")
+      val irMarksValid         = details.irMark.nonEmpty &&
+        details.hmrcMarkGgis.exists(g => g.nonEmpty && g == details.irMark)
+
+      if !submittedOrAmendment then
+        logger.warn(
+          s"[SubmissionSuccessfulServiceGuard] Guard failed: status=${details.status}, amendment=${details.amendment}"
+        )
+
+      if !irMarksValid then
         logger.warn(s"[SubmissionSuccessfulServiceGuard] Guard failed: irMark empty or hmrcMarkGgis mismatch")
 
       submittedOrAmendment && irMarksValid

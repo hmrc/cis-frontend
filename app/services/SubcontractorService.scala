@@ -177,10 +177,12 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
           userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
             case Some(ids) => ids
             case None      =>
-              data.subcontractors
+              val knownIds     = data.subcontractors.map(_.subcontractorId).toSet
+              val idsFromRefs  = data.subcontractors
                 .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
-                .map(_.subcontractorId.toString)
-                .toSet
+                .map(_.subcontractorId)
+              val idsFromItems = data.monthlyReturnItems.flatMap(_.subcontractorId).filter(knownIds.contains)
+              (idsFromRefs ++ idsFromItems).map(_.toString).toSet
           }
 
         val submissionStatus = data.monthlyReturn.headOption.flatMap(_.status)

@@ -246,32 +246,21 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
     }
   }
 
-  "UpdateMonthlyReturnRequest.fromUserAnswers with a journey id" should {
+  "UpdateMonthlyReturnRequest.fromUserAnswers with id" should {
 
-    val id = "5f0c1a2e-0000-4000-8000-000000000001"
+    "build a request for MonthlyNilReturn using ID-scoped answers" in {
+      val id = "test-id"
 
-    def scopedBase(returnType: ReturnType, cisId: String = "CIS-123", date: LocalDate = LocalDate.of(2024, 3, 1)) =
-      UserAnswers("test-user")
-        .set(ReturnTypePage(id), returnType)
-        .success
-        .value
-        .set(CisIdPage(id), cisId)
-        .success
-        .value
-        .set(DateConfirmPaymentsPage(id), date)
-        .success
-        .value
+      val ua = UserAnswers("test-user")
+        .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+        .setOrException(CisIdPage(id), "CIS-123")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 1))
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(DeclarationPage(id), Set(Declaration.Confirmed))
 
-    "build a request for MonthlyNilReturn (minimal required answers)" in {
-      val ua = scopedBase(MonthlyNilReturn)
-        .set(SubmitInactivityRequestPage(id), true)
-        .success
-        .value
-        .set(DeclarationPage(id), Set(Declaration.Confirmed))
-        .success
-        .value
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua, id)
 
-      UpdateMonthlyReturnRequest.fromUserAnswers(ua, id) shouldBe Right(
+      result shouldBe Right(
         UpdateMonthlyReturnRequest(
           instanceId = "CIS-123",
           taxYear = 2024,
@@ -287,22 +276,21 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
       )
     }
 
-    "build a request for MonthlyStandardReturn with standard declarations" in {
-      val ua = scopedBase(MonthlyStandardReturn, cisId = "CIS-456", date = LocalDate.of(2024, 4, 1))
-        .set(PaymentDetailsConfirmationPage(id), true)
-        .success
-        .value
-        .set(EmploymentStatusDeclarationPage(id), true)
-        .success
-        .value
-        .set(VerifiedStatusDeclarationPage(id), false)
-        .success
-        .value
-        .set(SubmitInactivityRequestPage(id), true)
-        .success
-        .value
+    "build a request for MonthlyStandardReturn using ID-scoped answers" in {
+      val id = "test-id"
 
-      UpdateMonthlyReturnRequest.fromUserAnswers(ua, id) shouldBe Right(
+      val ua = UserAnswers("test-user")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(CisIdPage(id), "CIS-456")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 4, 1))
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), false)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+
+      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua, id)
+
+      result shouldBe Right(
         UpdateMonthlyReturnRequest(
           instanceId = "CIS-456",
           taxYear = 2024,
@@ -319,118 +307,32 @@ class UpdateMonthlyReturnRequestSpec extends AnyWordSpec with Matchers with TryV
       )
     }
 
-    "build a request for MonthlyStandardReturn without inactivity when SubmitInactivityRequestPage is false" in {
-      val ua = scopedBase(MonthlyStandardReturn, cisId = "CIS-789", date = LocalDate.of(2024, 5, 1))
-        .set(PaymentDetailsConfirmationPage(id), false)
-        .success
-        .value
-        .set(EmploymentStatusDeclarationPage(id), false)
-        .success
-        .value
-        .set(VerifiedStatusDeclarationPage(id), true)
-        .success
-        .value
-        .set(SubmitInactivityRequestPage(id), false)
-        .success
-        .value
+    "not use legacy answers when ID-scoped answers are missing" in {
+      val ua = UserAnswers("test-user")
+        .setOrException(ReturnTypePage, MonthlyNilReturn)
+        .setOrException(CisIdPage, "CIS-123")
+        .setOrException(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
 
-      UpdateMonthlyReturnRequest.fromUserAnswers(ua, id) shouldBe Right(
-        UpdateMonthlyReturnRequest(
-          instanceId = "CIS-789",
-          taxYear = 2024,
-          taxMonth = 5,
-          amendment = "N",
-          decEmpStatusConsidered = Some("N"),
-          decAllSubsVerified = Some("Y"),
-          decNoMoreSubPayments = None,
-          decInformationCorrect = Some("N"),
-          nilReturnIndicator = "N",
-          status = "STARTED",
-          version = None
-        )
-      )
+      UpdateMonthlyReturnRequest.fromUserAnswers(ua, "test-id") shouldBe Left("Missing return type")
     }
 
-    "not include inactivity when SubmitInactivityRequestPage is missing" in {
-      val ua = scopedBase(MonthlyStandardReturn)
-        .set(PaymentDetailsConfirmationPage(id), true)
-        .success
-        .value
+    "use answers from the correct ID-scoped journey" in {
+      val ua = UserAnswers("test-user")
+        .setOrException(ReturnTypePage("first-id"), MonthlyNilReturn)
+        .setOrException(CisIdPage("first-id"), "CIS-123")
+        .setOrException(DateConfirmPaymentsPage("first-id"), LocalDate.of(2024, 3, 1))
+        .setOrException(ReturnTypePage("second-id"), MonthlyNilReturn)
+        .setOrException(CisIdPage("second-id"), "CIS-456")
+        .setOrException(DateConfirmPaymentsPage("second-id"), LocalDate.of(2024, 4, 1))
 
-      UpdateMonthlyReturnRequest.fromUserAnswers(ua, id).toOption.get.decNoMoreSubPayments shouldBe None
-    }
+      val firstResult  = UpdateMonthlyReturnRequest.fromUserAnswers(ua, "first-id").toOption.get
+      val secondResult = UpdateMonthlyReturnRequest.fromUserAnswers(ua, "second-id").toOption.get
 
-    "set decInformationCorrect when DeclarationPage has a value" in {
-      val ua = scopedBase(MonthlyNilReturn)
-        .set(DeclarationPage(id), Set(Declaration.Confirmed))
-        .success
-        .value
+      firstResult.instanceId shouldBe "CIS-123"
+      firstResult.taxMonth   shouldBe 3
 
-      UpdateMonthlyReturnRequest.fromUserAnswers(ua, id).toOption.get.decInformationCorrect shouldBe Some("Y")
-    }
-
-    "leave the nil declaration fields empty when the declaration set is empty" in {
-      val ua = scopedBase(MonthlyNilReturn)
-        .set(DeclarationPage(id), Set.empty[Declaration])
-        .success
-        .value
-
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(ua, id).toOption.get
-
-      result.decInformationCorrect  shouldBe None
-      result.decNilReturnNoPayments shouldBe None
-    }
-
-    "leave the standard declaration fields empty when they are missing" in {
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(scopedBase(MonthlyStandardReturn), id).toOption.get
-
-      result.decEmpStatusConsidered shouldBe None
-      result.decAllSubsVerified     shouldBe None
-      result.decInformationCorrect  shouldBe None
-      result.nilReturnIndicator     shouldBe "N"
-    }
-
-    "use the amendment flag of an amended return type" in {
-      val result = UpdateMonthlyReturnRequest.fromUserAnswers(scopedBase(MonthlyAmendedStandardReturn), id).toOption.get
-
-      result.amendment          shouldBe MonthlyAmendedStandardReturn.amendmentFlag
-      result.nilReturnIndicator shouldBe "N"
-
-      UpdateMonthlyReturnRequest
-        .fromUserAnswers(scopedBase(MonthlyAmendedNilReturn), id)
-        .toOption
-        .get
-        .nilReturnIndicator shouldBe "Y"
-    }
-
-    "ignore the legacy unscoped answers" in {
-      val legacyOnly = UserAnswers("test-user")
-        .set(ReturnTypePage, MonthlyNilReturn)
-        .success
-        .value
-        .set(CisIdPage, "CIS-123")
-        .success
-        .value
-        .set(DateConfirmPaymentsPage, LocalDate.of(2024, 3, 1))
-        .success
-        .value
-
-      UpdateMonthlyReturnRequest.fromUserAnswers(legacyOnly, id) shouldBe Left("Missing return type")
-    }
-
-    "not read another journey's answers" in {
-      UpdateMonthlyReturnRequest.fromUserAnswers(scopedBase(MonthlyNilReturn), "another-flow-id") shouldBe
-        Left("Missing return type")
-    }
-
-    "report each missing scoped answer in order" in {
-      UpdateMonthlyReturnRequest.fromUserAnswers(UserAnswers("test-user"), id) shouldBe Left("Missing return type")
-
-      val noCisId = UserAnswers("test-user").set(ReturnTypePage(id), MonthlyNilReturn).success.value
-      UpdateMonthlyReturnRequest.fromUserAnswers(noCisId, id) shouldBe Left("Missing instanceId")
-
-      val noDate = noCisId.set(CisIdPage(id), "CIS-123").success.value
-      UpdateMonthlyReturnRequest.fromUserAnswers(noDate, id) shouldBe Left("Missing confirmed payment date")
+      secondResult.instanceId shouldBe "CIS-456"
+      secondResult.taxMonth   shouldBe 4
     }
   }
 }

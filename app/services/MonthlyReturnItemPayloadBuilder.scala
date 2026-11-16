@@ -18,13 +18,16 @@ package services
 
 import models.UserAnswers
 import models.monthlyreturns.UpdateMonthlyReturnItemRequest
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, ReturnTypePage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import utils.MoneyFormat
 
 import javax.inject.{Inject, Singleton}
 
 trait MonthlyReturnItemPayloadBuilder {
   def build(ua: UserAnswers, index: Int): Option[UpdateMonthlyReturnItemRequest]
+
+  // Multi-tab: Build the monthly return item payload using ID-scoped answers.
+  def build(ua: UserAnswers, id: String, index: Int): Option[UpdateMonthlyReturnItemRequest]
 }
 
 @Singleton
@@ -37,6 +40,31 @@ class MonthlyReturnItemPayloadBuilderImpl @Inject() () extends MonthlyReturnItem
       subcontractor <- ua.get(SelectedSubcontractorPage(index))
       totalPayments <- subcontractor.totalPaymentsMade
       returnType    <- ua.get(ReturnTypePage)
+    } yield {
+      val costOfMaterials  = subcontractor.costOfMaterials.getOrElse(BigDecimal(0))
+      val totalTaxDeducted = subcontractor.totalTaxDeducted.getOrElse(BigDecimal(0))
+
+      UpdateMonthlyReturnItemRequest(
+        instanceId = instanceId,
+        taxYear = monthDate.getYear,
+        taxMonth = monthDate.getMonthValue,
+        subcontractorId = subcontractor.id,
+        subcontractorName = subcontractor.name,
+        totalPayments = MoneyFormat.twoDp(totalPayments),
+        costOfMaterials = MoneyFormat.twoDp(costOfMaterials),
+        totalDeducted = MoneyFormat.twoDp(totalTaxDeducted),
+        amendment = returnType.amendmentFlag
+      )
+    }
+
+  // Multi-tab: Build the monthly return item payload using ID-scoped answers.
+  override def build(ua: UserAnswers, id: String, index: Int): Option[UpdateMonthlyReturnItemRequest] =
+    for {
+      instanceId    <- ua.get(CisIdPage(id))
+      monthDate     <- ua.get(DateConfirmPaymentsPage(id))
+      subcontractor <- ua.get(SelectedSubcontractorForFlowPage(id, index))
+      totalPayments <- subcontractor.totalPaymentsMade
+      returnType    <- ua.get(ReturnTypePage(id))
     } yield {
       val costOfMaterials  = subcontractor.costOfMaterials.getOrElse(BigDecimal(0))
       val totalTaxDeducted = subcontractor.totalTaxDeducted.getOrElse(BigDecimal(0))

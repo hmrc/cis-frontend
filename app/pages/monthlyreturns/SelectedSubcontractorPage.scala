@@ -67,8 +67,7 @@ object SelectedSubcontractorPage {
 
   // Multi-tab: Retrieve selected subcontractors for the ID-scoped journey.
   def all(id: String): IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
-    override def path: JsPath = JsPath \ "monthlyReturn" \ id \ toString
-
+    override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ toString
     override def toString: String = "subcontractors"
   }
 

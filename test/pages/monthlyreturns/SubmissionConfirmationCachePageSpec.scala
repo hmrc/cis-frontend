@@ -30,14 +30,14 @@ class SubmissionConfirmationCachePageSpec extends SpecBase {
       SubmissionConfirmationCachePage.toString mustBe "submissionConfirmationCache"
     }
 
-    "have the correct scoped path" in {
+    "have the correct path with id" in {
       SubmissionConfirmationCachePage(
-        "CIS-ORG-1"
-      ).path mustBe (JsPath \ "monthlyReturn" \ "CIS-ORG-1" \ "submissionConfirmationCache")
+        "test-id"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "submissionConfirmationCache")
     }
 
-    "have the correct scoped toString" in {
-      SubmissionConfirmationCachePage("CIS-ORG-1").toString mustBe "submissionConfirmationCache"
+    "have the correct toString with id" in {
+      SubmissionConfirmationCachePage("test-id").toString mustBe "submissionConfirmationCache"
     }
   }
 }

@@ -29,7 +29,7 @@ import org.mockito.Mockito.*
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.scalatest.BeforeAndAfterEach
 import pages.agent.AgentClientDataPage
-import pages.monthlyreturns.{ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage, SubmissionConfirmationCachePage}
+import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, ContractorNamePage, DateConfirmPaymentsPage, EnterYourEmailAddressPage, ReturnTypePage, SubmissionConfirmationCachePage}
 import pages.submission.SubmissionDetailsPage
 import play.api.Application
 import play.api.test.FakeRequest
@@ -43,7 +43,7 @@ import utils.IrMarkReferenceGenerator
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
-import java.util.Locale
+import java.util.{Locale, UUID}
 import scala.concurrent.Future
 
 class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
@@ -940,6 +940,187 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           status(result) mustBe OK
           contentAsString(result) must not include email
           verify(mockMonthlyReturnService, never()).getSchemeEmail(any())(any())
+        }
+      }
+    }
+
+    "UUID-scoped journey" - {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val scopedAnswers = ua
+        .setOrException(CisIdPage(id), "2")
+        .setOrException(ReturnTypePage(id), ReturnType.MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2024, 3, 5))
+        .setOrException(ContractorNamePage(id), "Scoped Contractor")
+        .setOrException(ConfirmationByEmailPage(id), true)
+        .setOrException(EnterYourEmailAddressPage(id), "scoped@example.com")
+        .setOrException(
+          SubmissionDetailsPage(id),
+          SubmissionDetails(
+            id = "scoped-sub-123",
+            status = "SUBMITTED",
+            irMark = irMarkBase64,
+            submittedAt = LocalDateTime.now
+          )
+        )
+
+      def scopedApp(userAnswers: UserAnswers): Application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[SubmissionSuccessfulServiceGuard].toInstance(mockGuard)
+          )
+          .build()
+
+      "must return OK using ID-scoped answers and complete the submission journey" in {
+
+        when(mockGuard.check(any[UserAnswers], any[String]))
+          .thenReturn(true)
+
+        when(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
+
+        when(
+          mockMonthlyReturnService.completeSubmissionJourney(
+            any[UserAnswers],
+            any[String]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.unit)
+
+        val app = scopedApp(scopedAnswers)
+
+        running(app) {
+          val request = FakeRequest(
+            GET,
+            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val body = contentAsString(result)
+
+          body must include("Scoped Contractor")
+          body must include("scoped@example.com")
+          body must not include email
+          body must include(
+            routes.ManageCisReturnController.onExitWithId(flowId).url
+          )
+
+          val requestCaptor =
+            org.mockito.ArgumentCaptor.forClass(classOf[GetMonthlyReturnCompleteRequest])
+
+          verify(mockMonthlyReturnService)
+            .getMonthlyReturnComplete(
+              requestCaptor.capture()
+            )(
+              any[HeaderCarrier]
+            )
+
+          requestCaptor.getValue.instanceId mustBe "2"
+          requestCaptor.getValue.taxYear mustBe 2024
+          requestCaptor.getValue.taxMonth mustBe 3
+          requestCaptor.getValue.amendment mustBe "N"
+
+          val answersCaptor =
+            org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+
+          val idCaptor =
+            org.mockito.ArgumentCaptor.forClass(classOf[String])
+
+          verify(mockMonthlyReturnService)
+            .completeSubmissionJourney(
+              answersCaptor.capture(),
+              idCaptor.capture()
+            )(
+              any[HeaderCarrier]
+            )
+
+          idCaptor.getValue mustBe id
+          answersCaptor.getValue.get(SubmissionConfirmationCachePage(id)).isDefined mustBe true
+          answersCaptor.getValue.get(SubmissionConfirmationCachePage) mustBe None
+
+          verify(mockMonthlyReturnService, never())
+            .getSchemeEmail(any[String])(any[HeaderCarrier])
+        }
+      }
+
+      "must use the ID-scoped confirmation cache without calling the monthly return service" in {
+
+        val cache = SubmissionConfirmationCache(
+          periodEnd = "March 2024",
+          contractorName = Some("Cached Scoped Contractor"),
+          email = "cached@example.com",
+          submittedTime = "8:46am",
+          submittedDate = "6 January 2017"
+        )
+
+        val userAnswers = scopedAnswers
+          .setOrException(SubmissionConfirmationCachePage(id), cache)
+
+        when(mockGuard.check(any[UserAnswers], any[String]))
+          .thenReturn(true)
+
+        val app = scopedApp(userAnswers)
+
+        running(app) {
+          val request = FakeRequest(
+            GET,
+            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val body = contentAsString(result)
+
+          body must include("Cached Scoped Contractor")
+          body must include("cached@example.com")
+          body must include(
+            routes.ManageCisReturnController.onExitWithId(flowId).url
+          )
+
+          verify(mockMonthlyReturnService, never())
+            .getMonthlyReturnComplete(any[GetMonthlyReturnCompleteRequest])(any[HeaderCarrier])
+
+          verify(mockMonthlyReturnService, never())
+            .completeSubmissionJourney(any[UserAnswers], any[String])(any[HeaderCarrier])
+        }
+      }
+
+      "must redirect to Journey Recovery when the ID-scoped submission guard fails" in {
+
+        when(mockGuard.check(any[UserAnswers], any[String]))
+          .thenReturn(false)
+
+        val app = scopedApp(scopedAnswers)
+
+        running(app) {
+          val request = FakeRequest(
+            GET,
+            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(app, request).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verifyNoInteractions(mockMonthlyReturnService)
         }
       }
     }

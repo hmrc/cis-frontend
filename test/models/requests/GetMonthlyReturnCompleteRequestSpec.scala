@@ -202,4 +202,89 @@ class GetMonthlyReturnCompleteRequestSpec extends SpecBase {
       result mustBe Left("Missing ReturnTypePage")
     }
   }
+
+  "GetMonthlyReturnCompleteRequest.fromUserAnswers with id" - {
+
+    "return a request with amendment N for an ID-scoped nil return" in {
+      val id = "test-id"
+
+      val userAnswers = emptyUserAnswers
+        .setOrException(CisIdPage(id), instanceId)
+        .setOrException(DateConfirmPaymentsPage(id), taxDate)
+        .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+
+      val result =
+        GetMonthlyReturnCompleteRequest.fromUserAnswers(userAnswers, id)
+
+      result mustBe Right(
+        GetMonthlyReturnCompleteRequest(
+          instanceId = instanceId,
+          taxYear = 2024,
+          taxMonth = 6,
+          amendment = "N"
+        )
+      )
+    }
+
+    "return a request with amendment Y for an ID-scoped amended nil return" in {
+      val id = "test-id"
+
+      val userAnswers = emptyUserAnswers
+        .setOrException(CisIdPage(id), instanceId)
+        .setOrException(DateConfirmPaymentsPage(id), taxDate)
+        .setOrException(ReturnTypePage(id), MonthlyAmendedNilReturn)
+
+      val result =
+        GetMonthlyReturnCompleteRequest.fromUserAnswers(userAnswers, id)
+
+      result mustBe Right(
+        GetMonthlyReturnCompleteRequest(
+          instanceId = instanceId,
+          taxYear = 2024,
+          taxMonth = 6,
+          amendment = "Y"
+        )
+      )
+    }
+
+    "return an error when required ID-scoped answers are missing" in {
+      val id = "test-id"
+
+      val userAnswers = emptyUserAnswers
+        .setOrException(CisIdPage, instanceId)
+        .setOrException(DateConfirmPaymentsPage, taxDate)
+        .setOrException(ReturnTypePage, MonthlyNilReturn)
+
+      GetMonthlyReturnCompleteRequest.fromUserAnswers(userAnswers, id) mustBe Left("Missing CisIdPage")
+
+      val withCisId = userAnswers.setOrException(CisIdPage(id), instanceId)
+
+      GetMonthlyReturnCompleteRequest.fromUserAnswers(withCisId, id) mustBe Left("Missing DateConfirmPaymentsPage")
+
+      val withDate = withCisId.setOrException(DateConfirmPaymentsPage(id), taxDate)
+
+      GetMonthlyReturnCompleteRequest.fromUserAnswers(withDate, id) mustBe Left("Missing ReturnTypePage")
+    }
+
+    "use answers from the correct ID-scoped journey" in {
+      val userAnswers = emptyUserAnswers
+        .setOrException(CisIdPage("first-id"), "CIS-123")
+        .setOrException(DateConfirmPaymentsPage("first-id"), LocalDate.of(2024, 3, 1))
+        .setOrException(ReturnTypePage("first-id"), MonthlyNilReturn)
+        .setOrException(CisIdPage("second-id"), "CIS-456")
+        .setOrException(DateConfirmPaymentsPage("second-id"), LocalDate.of(2024, 4, 1))
+        .setOrException(ReturnTypePage("second-id"), MonthlyAmendedNilReturn)
+
+      val firstResult  = GetMonthlyReturnCompleteRequest.fromUserAnswers(userAnswers, "first-id").toOption.get
+      val secondResult = GetMonthlyReturnCompleteRequest.fromUserAnswers(userAnswers, "second-id").toOption.get
+
+      firstResult.instanceId mustBe "CIS-123"
+      firstResult.taxMonth mustBe 3
+      firstResult.amendment mustBe "N"
+
+      secondResult.instanceId mustBe "CIS-456"
+      secondResult.taxMonth mustBe 4
+      secondResult.amendment mustBe "Y"
+    }
+  }
 }

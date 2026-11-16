@@ -59,6 +59,18 @@ object UpdateMonthlyReturnRequest {
       case None        => None
     }
 
+  // Multi-tab: Get the confirmed payment date for the UUID-scoped journey.
+  private def dateFor(ua: UserAnswers, id: String): Either[String, LocalDate] =
+    ua.get(DateConfirmPaymentsPage(id)).toRight("Missing confirmed payment date")
+
+  // Multi-tab: Get the inactivity request answer for the UUID-scoped journey.
+  private def inactivityY(ua: UserAnswers, id: String): Option[String] =
+    ua.get(SubmitInactivityRequestPage(id)) match {
+      case Some(true)  => Some("Y")
+      case Some(false) => None
+      case None        => None
+    }
+
   private def nilIndicator(returnType: ReturnType): String =
     returnType match {
       case MonthlyNilReturn | MonthlyAmendedNilReturn           => "Y"
@@ -117,18 +129,7 @@ object UpdateMonthlyReturnRequest {
       status = Started
     )
 
-  // Multi-tab: scoped copies of the private helpers.
-  private def dateFor(ua: UserAnswers, id: String): Either[String, LocalDate] =
-    ua.get(DateConfirmPaymentsPage(id)).toRight("Missing confirmed payment date")
-
-  private def inactivityY(ua: UserAnswers, id: String): Option[String] =
-    ua.get(SubmitInactivityRequestPage(id)) match {
-      case Some(true)  => Some("Y")
-      case Some(false) => None
-      case None        => None
-    }
-
-  // Multi-tab: copy of fromUserAnswers reading the answers scoped to a journey id.
+  // Multi-tab: Build the monthly return update request from UUID-scoped answers.
   def fromUserAnswers(ua: UserAnswers, id: String): Either[String, UpdateMonthlyReturnRequest] =
     for {
       returnType <- ua.get(ReturnTypePage(id)).toRight("Missing return type")

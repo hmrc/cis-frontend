@@ -567,6 +567,46 @@ class SubcontractorServiceSpec extends SpecBase {
       }
     }
 
+    "pre-selects a listed subcontractor using the item's own subcontractorId when the resource reference does not match" in {
+      val response = mkResponse(
+        items = Seq(mkItem(9999L).copy(subcontractorId = Some(2L)), mkItem(8888L).copy(subcontractorId = Some(77L))),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+          mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(response))
+
+      whenReady(service.buildAmendWhichSubcontractorsPage(cisId = "1", taxMonth = 1, taxYear = 2026)) { model =>
+        // id 77 is on an item but not in the subcontractor list, so it cannot be a checkbox
+        model.preSelectedIds mustBe Set("2")
+      }
+    }
+
+    "does not pre-select a subcontractor without a resource reference for an item without one" in {
+      val response = mkResponse(
+        items = Seq(mkItem(1L).copy(itemResourceReference = None)),
+        subs = Seq(
+          mkSubcontractor(id = 1L, ref = None, verified = Some("N"), verificationDate = None, lastMrDate = None)
+        )
+      )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(response))
+
+      whenReady(service.buildAmendWhichSubcontractorsPage(cisId = "1", taxMonth = 1, taxYear = 2026)) { model =>
+        model.preSelectedIds mustBe Set.empty
+      }
+    }
+
     "pre-selects none when no subcontractors match monthlyReturnItems" in {
       val response = mkResponse(
         items = Seq(mkItem(9999L)),
