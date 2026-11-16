@@ -136,7 +136,7 @@ class AreYouSureYouWantToAmendYesNoController @Inject() (
                 deleteRequest  <-
                   toFuture(DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(updatedAnswers, id))
                 _              <- amendMonthlyReturnService.deleteAllMonthlyReturnItems(deleteRequest)
-                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers)) // TODO id scope
+                updateRequest  <- toFuture(UpdateMonthlyReturnRequest.fromUserAnswers(updatedAnswers, id))
                 _              <- monthlyReturnService.updateMonthlyReturn(updateRequest)
               } yield Redirect(
                 controllers.amend.routes.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId)
