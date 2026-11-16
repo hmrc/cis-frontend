@@ -18,7 +18,7 @@ package controllers.amend
 
 import base.SpecBase
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyStandardReturn}
-import org.mockito.Mockito.{never, times, verify, verifyNoInteractions, when}
+import org.mockito.Mockito.{never, verify, verifyNoInteractions, when}
 import forms.amend.AreYouSureYouWantToAmendYesNoFormProvider
 import models.amend.AreYouSureYouWantToAmendYesNo.*
 import models.amend.{AreYouSureYouWantToAmendYesNo, DeleteAllMonthlyReturnItemsRequest}
@@ -41,7 +41,6 @@ import models.{ReturnType, UserAnswers}
 import play.api.Application
 
 import java.util.UUID
-import scala.jdk.CollectionConverters.*
 import java.time.LocalDate
 import scala.concurrent.Future
 

@@ -61,4 +61,19 @@ class AmendMonthlyReturnService @Inject() (
         Future.successful(Left("Missing amendment details"))
     }
 
+  // DTR-9475 Multitab overload
+  def startStandardAmendment(
+    userAnswers: UserAnswers,
+    id: String
+  )(implicit hc: HeaderCarrier): Future[Either[String, Unit]] =
+    userAnswers.get(AmendmentDetailsPage(id)) match {
+      case Some(amendmentDetails) =>
+        monthlyReturnService
+          .updateMonthlyReturn(UpdateMonthlyReturnRequest.forStartedStandardAmendment(amendmentDetails))
+          .map(_ => Right(()))
+
+      case None =>
+        Future.successful(Left("Missing amendment details"))
+    }
+
 }

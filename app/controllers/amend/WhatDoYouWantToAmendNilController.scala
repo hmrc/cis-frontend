@@ -163,7 +163,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                 value match {
                   case AddPaymentOrSubcontractorDetails =>
                     amendMonthlyReturnService
-                      .startStandardAmendment(ua1)
+                      .startStandardAmendment(ua1, id)
                       .flatMap {
                         case Left(error) =>
                           logger.error(
@@ -195,7 +195,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                                        )
                       _             <- sessionRepository.set(ua4)
                       updateRequest <- UpdateMonthlyReturnRequest
-                                         .fromUserAnswers(ua4)
+                                         .fromUserAnswers(ua4, id)
                                          .fold(
                                            error => Future.failed(new RuntimeException(error)),
                                            request => Future.successful(request)

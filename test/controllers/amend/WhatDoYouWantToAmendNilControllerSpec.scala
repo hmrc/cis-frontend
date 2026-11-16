@@ -20,7 +20,7 @@ import base.SpecBase
 import controllers.routes
 import forms.amend.WhatDoYouWantToAmendNilFormProvider
 import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyStandardReturn}
-import models.{NormalMode, UserAnswers}
+import models.{NormalMode, ReturnType, UserAnswers}
 import org.mockito.Mockito.{atLeastOnce, never, times, verify, verifyNoInteractions, when}
 import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import models.amend.WhatDoYouWantToAmendNil
@@ -35,10 +35,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.amend.WhatDoYouWantToAmendNilView
+import org.mockito.ArgumentMatchers.eq as eqTo
 
 import java.time.LocalDate
 import scala.concurrent.Future
-
 import config.FrontendAppConfig
 import org.mockito.ArgumentCaptor
 import play.api.Application
@@ -65,6 +65,21 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
       .set(ReturnTypePage, MonthlyStandardReturn)
       .success
       .value
+
+  private def scopedAnswers(flowId: UUID, returnType: ReturnType = MonthlyStandardReturn): UserAnswers = {
+    val id = scopedId(flowId)
+
+    emptyUserAnswers
+      .set(CisIdPage(id), "1")
+      .success
+      .value
+      .set(DateConfirmPaymentsPage(id), LocalDate.of(2025, 1, 1))
+      .success
+      .value
+      .set(ReturnTypePage(id), returnType)
+      .success
+      .value
+  }
 
   private def scopedId(flowId: UUID): String = flowId.toString
 
@@ -448,7 +463,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val id           = scopedId(flowId)
         val amendService = mock[AmendMonthlyReturnService]
 
-        when(amendService.startStandardAmendment(any[UserAnswers]())(any()))
+        when(amendService.startStandardAmendment(any[UserAnswers](), any[String]())(any()))
           .thenReturn(Future.successful(Right(())))
 
         val (application, repository) =
@@ -475,7 +490,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           saved.last.get(WhatDoYouWantToAmendNilPage) mustBe None
           saved.last.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
 
-          verify(amendService).startStandardAmendment(any[UserAnswers]())(any())
+          verify(amendService).startStandardAmendment(any[UserAnswers](), eqTo(id))(any())
         }
       }
 
@@ -483,7 +498,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
         val flowId       = UUID.randomUUID()
         val amendService = mock[AmendMonthlyReturnService]
 
-        when(amendService.startStandardAmendment(any[UserAnswers]())(any()))
+        when(amendService.startStandardAmendment(any[UserAnswers](), any[String]())(any()))
           .thenReturn(Future.successful(Left("Missing amendment details")))
 
         val (application, _) =
@@ -507,7 +522,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           .thenReturn(Future.successful(()))
 
         val (application, repository) = scopedApplication(
-          Some(withScopedCisId(completeUserAnswers, flowId)),
+          Some(scopedAnswers(flowId)),
           monthlyReturnService = monthlyReturnService
         )
 
@@ -525,7 +540,15 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           saved.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedNilReturn)
           saved.get(CisIdPage(id)) mustBe Some("1")
 
-          verify(monthlyReturnService).updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(any())
+          val updateCaptor = ArgumentCaptor.forClass(classOf[UpdateMonthlyReturnRequest])
+          verify(monthlyReturnService).updateMonthlyReturn(updateCaptor.capture())(any())
+
+          val sent = updateCaptor.getValue
+          sent.instanceId mustBe "1"
+          sent.taxYear mustBe 2025
+          sent.taxMonth mustBe 1
+          sent.amendment mustBe MonthlyAmendedNilReturn.amendmentFlag
+          sent.nilReturnIndicator mustBe "Y"
         }
       }
 
@@ -601,7 +624,7 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
           .value
 
         val amendService = mock[AmendMonthlyReturnService]
-        when(amendService.startStandardAmendment(any[UserAnswers]())(any()))
+        when(amendService.startStandardAmendment(any[UserAnswers](), any[String]())(any()))
           .thenReturn(Future.successful(Right(())))
 
         val (application, repository) = scopedApplication(Some(answers), amendService)

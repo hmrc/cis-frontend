@@ -29,7 +29,7 @@ import javax.inject.Inject
 import navigation.Navigator
 import pages.agent.AgentClientDataPage
 import pages.finalvalidations.MonthlyFinalValidationSourcePage
-import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, SelectedSubcontractorForFlowPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.{DateConfirmPaymentsPage, IsResumedMonthlyReturnPage, ReturnTypePage, SelectedSubcontractorPage}
 import play.api.Logging
 import play.api.http.Status.{NOT_FOUND, PRECONDITION_FAILED}
 import play.api.i18n.{I18nSupport, MessagesApi}
