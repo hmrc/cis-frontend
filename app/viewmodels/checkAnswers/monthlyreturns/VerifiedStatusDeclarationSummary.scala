@@ -45,7 +45,7 @@ object VerifiedStatusDeclarationSummary {
       )
     }
 
-  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit
+  def row(answers: UserAnswers, flowId: UUID)(implicit
     messages: Messages
   ): Option[SummaryListRow] =
     answers.get(VerifiedStatusDeclarationPage(flowId.toString)).map { answer =>

@@ -38,7 +38,7 @@ object DateConfirmPaymentsSummary {
       )
     }
 
-  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+  def row(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
     val subJourneyId = flowId.toString
 
     answers.get(DateConfirmPaymentsPage(subJourneyId)).map { answer =>

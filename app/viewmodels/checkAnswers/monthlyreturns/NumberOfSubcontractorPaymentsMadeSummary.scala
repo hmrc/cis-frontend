@@ -42,7 +42,7 @@ object NumberOfSubcontractorPaymentsMadeSummary {
       )
     }
 
-  def rowWithId(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
+  def row(answers: UserAnswers, flowId: UUID)(implicit messages: Messages): Option[SummaryListRow] = {
     val subJourneyId = flowId.toString
 
     SubcontractorDetailsAddedBuilder.build(answers, Some(subJourneyId)).map { addedSubcontractors =>
