@@ -46,7 +46,7 @@ object DeleteAllMonthlyReturnItemsRequest {
   def fromUserAnswers(ua: UserAnswers, id: String): Either[String, DeleteAllMonthlyReturnItemsRequest] =
     for {
       instanceId <- ua.get(CisIdPage(id)).toRight("Missing CisId")
-      monthYear <- ua.get(DateConfirmPaymentsPage(id)).toRight("Missing DateConfirmPayments")
+      monthYear  <- ua.get(DateConfirmPaymentsPage(id)).toRight("Missing DateConfirmPayments")
       returnType <- ua.get(ReturnTypePage(id)).toRight("Missing ReturnType")
     } yield DeleteAllMonthlyReturnItemsRequest(
       instanceId = instanceId,

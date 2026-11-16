@@ -82,9 +82,15 @@ class DeleteAllMonthlyReturnItemsRequestSpec extends SpecBase {
 
       def scoped: UserAnswers =
         emptyUserAnswers
-          .set(CisIdPage(id), "CIS-123").success.value
-          .set(DateConfirmPaymentsPage(id), LocalDate.of(2025, 3, 5)).success.value
-          .set(ReturnTypePage(id), MonthlyAmendedNilReturn).success.value
+          .set(CisIdPage(id), "CIS-123")
+          .success
+          .value
+          .set(DateConfirmPaymentsPage(id), LocalDate.of(2025, 3, 5))
+          .success
+          .value
+          .set(ReturnTypePage(id), MonthlyAmendedNilReturn)
+          .success
+          .value
 
       "build the request from the scoped answers" in {
         DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(scoped, id) mustBe
@@ -93,9 +99,15 @@ class DeleteAllMonthlyReturnItemsRequestSpec extends SpecBase {
 
       "ignore the legacy unscoped answers" in {
         val legacyOnly = emptyUserAnswers
-          .set(CisIdPage, "CIS-123").success.value
-          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 3, 5)).success.value
-          .set(ReturnTypePage, MonthlyAmendedNilReturn).success.value
+          .set(CisIdPage, "CIS-123")
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, LocalDate.of(2025, 3, 5))
+          .success
+          .value
+          .set(ReturnTypePage, MonthlyAmendedNilReturn)
+          .success
+          .value
 
         DeleteAllMonthlyReturnItemsRequest.fromUserAnswers(legacyOnly, id) mustBe Left("Missing CisId")
       }
