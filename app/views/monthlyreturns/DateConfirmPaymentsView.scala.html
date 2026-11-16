@@ -76,11 +76,12 @@
         ) { dateInput =>
             @govukDateInput(
                 dateInput.copy(items = dateInput.items.map { item =>
-                    if (item.id.endsWith("month")) item.copy(
+                    val withAutocomplete = item.copy(autocomplete = Some("off"))
+                    if (item.id.endsWith("month")) withAutocomplete.copy(
                         classes = item.classes.replace("govuk-input--width-2", "govuk-input--width-10"),
                         inputmode = Some("text")
                     )
-                    else item
+                    else withAutocomplete
                 })
             )
         }

@@ -110,6 +110,13 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
       legendHeading.hasClass("govuk-!-margin-bottom-1") mustBe true
     }
 
+    "must set autocomplete=off on the month and year inputs, as they do not hold personal data" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select("input[name$=month]").attr("autocomplete") mustBe "off"
+      doc.select("input[name$=year]").attr("autocomplete") mustBe "off"
+    }
+
     "must display error summary when form has errors" in new Setup {
       val formWithError = form.withError("value", "monthlyreturns.dateConfirmPayments.error.duplicate")
       val htmlWithError = view(
