@@ -59,7 +59,7 @@ class JourneyRecoveryControllerSpec extends SpecBase {
 
               status(result) mustEqual OK
               contentAsString(result) mustEqual continueView(continueUrl.unsafeValue)(
-                request,
+                viewRequest(request, isAgent),
                 applicationConfig,
                 messages(application)
               ).toString
@@ -86,7 +86,7 @@ class JourneyRecoveryControllerSpec extends SpecBase {
 
               status(result) mustEqual OK
               contentAsString(result) mustEqual startAgainView(cisAccountUrl)(
-                request,
+                viewRequest(request, isAgent),
                 applicationConfig,
                 messages(application)
               ).toString
@@ -112,7 +112,7 @@ class JourneyRecoveryControllerSpec extends SpecBase {
 
               status(result) mustEqual OK
               contentAsString(result) mustEqual startAgainView(cisAccountUrl)(
-                request,
+                viewRequest(request, isAgent),
                 applicationConfig,
                 messages(application)
               ).toString
@@ -137,7 +137,7 @@ class JourneyRecoveryControllerSpec extends SpecBase {
 
               status(result) mustEqual OK
               contentAsString(result) mustEqual startAgainView(applicationConfig.constructionIndustryAgentAccountUrl)(
-                request,
+                viewRequest(request, true),
                 applicationConfig,
                 messages(application)
               ).toString
@@ -172,7 +172,7 @@ class JourneyRecoveryControllerSpec extends SpecBase {
 
               status(result) mustEqual OK
               contentAsString(result) mustEqual startAgainView(expectedUrl)(
-                request,
+                viewRequest(request, isAgent),
                 applicationConfig,
                 messages(application)
               ).toString
