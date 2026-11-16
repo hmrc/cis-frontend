@@ -72,6 +72,9 @@ class FrontendAppConfig @Inject() (configuration: Configuration) {
   lazy val exitSurveyUrl: String             = s"$exitSurveyBaseUrl/feedback/construction-industry-scheme"
   lazy val cisFeedbackSurveyUrl: String      = s"$exitSurveyBaseUrl/feedback/construction-industry-scheme"
 
+  lazy val hmrcServicesAgentUrl: String = configuration.get[String]("urls.hmrcServicesAgent")
+  lazy val hmrcServicesOrgUrl: String   = configuration.get[String]("urls.hmrcServicesOrg")
+
   lazy val userResearchUrl: String                = configuration.get[String]("urls.userResearchUrl")
   lazy val showUserResearchBannerEnabled: Boolean = configuration.get[Boolean]("features.user-research-banner-enabled")
   lazy val multiTabEnabled: Boolean               = configuration.get[Boolean]("features.multi-tab-enabled")

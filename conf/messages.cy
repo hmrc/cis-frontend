@@ -1,5 +1,7 @@
 service.name = Cynllun y Diwydiant Adeiladu
 
+site.hmrcAccount.agent = Yn ôl i’r gwasanaethau asiant
+site.hmrcAccount.org = Yn ôl i’r cyfrif treth busnes
 site.back = Yn ôl
 site.remove = Dileu
 site.change = Newid

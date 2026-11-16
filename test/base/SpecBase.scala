@@ -64,6 +64,9 @@ trait SpecBase
 
   def messages(app: Application): Messages = app.injector.instanceOf[MessagesApi].preferred(FakeRequest())
 
+  protected def viewRequest[A](request: play.api.mvc.Request[A], isAgent: Boolean): play.api.mvc.Request[A] =
+    models.requests.IdentifierRequest(request, "id", None, None, isAgent = isAgent)
+
   protected def mockSessionRepository(userAnswers: Option[UserAnswers]): SessionRepository = {
     val repository = mock[SessionRepository]
     when(repository.get(any[String])).thenReturn(Future.successful(userAnswers))

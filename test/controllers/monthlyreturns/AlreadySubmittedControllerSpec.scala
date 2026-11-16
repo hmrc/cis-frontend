@@ -50,7 +50,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
               "monthlyreturns.alreadySubmitted.nilreturn",
               cisAccountUrl
             )(
-              request,
+              viewRequest(request, isAgent),
               messages(application)
             ).toString
           }
@@ -73,7 +73,7 @@ class AlreadySubmittedControllerSpec extends SpecBase {
               "monthlyreturns.alreadySubmitted",
               cisAccountUrl
             )(
-              request,
+              viewRequest(request, isAgent),
               messages(application)
             ).toString
           }
