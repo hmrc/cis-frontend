@@ -22,7 +22,7 @@ import controllers.helpers.SubmissionViewDataSupport
 import models.{ReturnType, UserAnswers}
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, SubmissionConfirmationCache}
 import models.ReturnType.reads
-import models.requests.{CisIdDataRequest, GetMonthlyReturnCompleteRequest}
+import models.requests.{CisIdDataRequest, DataRequest, GetMonthlyReturnCompleteRequest}
 import pages.monthlyreturns.*
 import pages.submission.{CorrelationIdPage, SubmissionDetailsPage}
 import play.api.Logging
@@ -40,7 +40,9 @@ import viewmodels.checkAnswers.monthlyreturns.SubmissionSuccessViewModel
 import java.time.{Clock, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class SubmissionSuccessController @Inject() (
   override val messagesApi: MessagesApi,
@@ -48,6 +50,7 @@ class SubmissionSuccessController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionSuccessView,
   clock: Clock,
@@ -247,6 +250,175 @@ class SubmissionSuccessController @Inject() (
             .recover { case ex =>
               logger.warn(
                 s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty, correlationId=${ua.get(CorrelationIdPage).getOrElse("unknown")}",
+                ex
+              )
+              ""
+            }
+        )
+    }
+
+  // Multi-tab: Display the successful submission for the ID-scoped journey.
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val ua      = request.userAnswers
+      val id      = flowId.toString
+      val exitUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExitWithId(flowId).url
+
+      if (!submissionSuccessGuard.check(ua, id)) {
+        logger.error(
+          s"[SubmissionSuccessController][onPageLoadWithId] - submissionSuccessGuard check failed correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+      } else {
+        ua.get(SubmissionConfirmationCachePage(id)) match {
+          case Some(cache) =>
+            Future.successful(Ok(view(buildViewModelFromCache(cache, ua, id), exitUrl)))
+
+          case None =>
+            GetMonthlyReturnCompleteRequest.fromUserAnswers(ua, id) match {
+              case Left(error) =>
+                logger.error(
+                  s"[SubmissionSuccessController][onPageLoadWithId] " +
+                    s"Failed to build GetMonthlyReturnCompleteRequest: $error " +
+                    s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
+                )
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+              case Right(req)  =>
+                logger.info(
+                  s"[SubmissionSuccessController][onPageLoadWithId] Calling getMonthlyReturnComplete " +
+                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment} " +
+                    s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
+                )
+
+                (for {
+                  monthlyReturn <- monthlyReturnService.getMonthlyReturnComplete(req)
+                  vm            <- buildViewModel(ua, monthlyReturn, id)
+                  uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage(id), cacheFrom(vm)))
+                  _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache, id)
+                } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
+                  logger.error(
+                    s"[SubmissionSuccessController][onPageLoadWithId] getMonthlyReturnComplete failed " +
+                      s"with status ${ex.statusCode} for instanceId=${req.instanceId} " +
+                      s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}",
+                    ex
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                }
+            }
+        }
+      }
+    }
+
+  // Multi-tab: Build the successful submission view model from the ID-scoped cache.
+  private def buildViewModelFromCache(cache: SubmissionConfirmationCache, ua: UserAnswers, id: String)(implicit
+    request: DataRequest[AnyContent]
+  ): SubmissionSuccessViewModel = {
+    val reference           = IrMarkReferenceGenerator.fromBase64(
+      required(
+        ua.get(SubmissionDetailsPage(id)),
+        "[SubmissionSuccess] submissionDetails missing from userAnswers"
+      ).irMark
+    )
+    val submissionType      =
+      required(ua.get(ReturnTypePage(id)), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+    val cisId               = required(ua.get(CisIdPage(id)), "[SubmissionSuccess] cisId missing from userAnswers")
+    val empRef              = employerRefFrom(request, id)
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+
+    val periodEnd = ua
+      .get(DateConfirmPaymentsPage(id))
+      .map(_.format(DateTimeFormats.dateTimeFormat()))
+      .getOrElse(cache.periodEnd)
+
+    val legacyDateFmt = DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.UK)
+    val submittedDate = cache.submittedDateTimeIso
+      .flatMap(iso => Try(ZonedDateTime.parse(iso)).toOption)
+      .map(_.withZoneSameInstant(ZoneId.of("Europe/London")).format(DateTimeFormats.fullDateFormat()))
+      .orElse(
+        Try(java.time.LocalDate.parse(cache.submittedDate, legacyDateFmt)).toOption
+          .map(_.format(DateTimeFormats.fullDateFormat()))
+      )
+      .getOrElse(cache.submittedDate)
+
+    SubmissionSuccessViewModel(
+      reference = reference,
+      periodEnd = periodEnd,
+      submittedTime = cache.submittedTime,
+      submittedDate = submittedDate,
+      contractorName = cache.contractorName,
+      empRef = empRef,
+      email = cache.email,
+      submissionType = submissionType,
+      cisId = cisId
+    )
+  }
+
+  // Multi-tab: Build the successful submission view model from ID-scoped answers.
+  private def buildViewModel(ua: UserAnswers, monthlyReturn: GetAllMonthlyReturnDetailsResponse, id: String)(implicit
+    request: DataRequest[AnyContent],
+    hc: HeaderCarrier
+  ): Future[SubmissionSuccessViewModel] = {
+    val cisId = required(ua.get(CisIdPage(id)), "[SubmissionSuccess] cisId missing from userAnswers")
+
+    val submissionType =
+      required(ua.get(ReturnTypePage(id)), "[SubmissionSuccess] ReturnTypePage missing from userAnswers")
+
+    val periodEnd = required(
+      periodEndFromUserAnswers(ua, id),
+      "[SubmissionSuccess] taxPeriodEnd missing from userAnswers"
+    )
+
+    val reference = IrMarkReferenceGenerator.fromBase64(
+      required(
+        ua.get(SubmissionDetailsPage(id)),
+        "[SubmissionSuccess] submissionDetails missing from userAnswers"
+      ).irMark
+    )
+
+    val contractorName = monthlyReturn.scheme.headOption
+      .flatMap(_.name)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .orElse(ua.get(ContractorNamePage(id)).map(_.trim).filter(_.nonEmpty))
+
+    val empRef = employerRefFrom(request, id)
+
+    implicit val lang: Lang = messagesApi.preferred(request).lang
+    val timeFmt             = DateTimeFormatter.ofPattern("h:mma")
+    val nowUk               = ZonedDateTime.now(clock).withZoneSameInstant(ZoneId.of("Europe/London"))
+
+    resolveEmail(ua, cisId, id).map { email =>
+      SubmissionSuccessViewModel(
+        reference = reference,
+        periodEnd = periodEnd.format(DateTimeFormats.dateTimeFormat()),
+        submittedTime = nowUk.format(timeFmt).toLowerCase,
+        submittedDate = nowUk.format(DateTimeFormats.fullDateFormat()),
+        contractorName = contractorName,
+        empRef = empRef,
+        email = email,
+        submissionType = submissionType,
+        cisId = cisId,
+        submittedDateTimeIso = Some(nowUk.toString)
+      )
+    }
+  }
+
+  // Multi-tab: Resolve the email address from ID-scoped answers.
+  private def resolveEmail(ua: UserAnswers, cisId: String, id: String)(implicit
+    hc: HeaderCarrier
+  ): Future[String] =
+    if (ua.get(ConfirmationByEmailPage(id)).contains(false)) {
+      Future.successful("")
+    } else {
+      emailfromUserAnswers(ua, id)
+        .map(Future.successful)
+        .getOrElse(
+          monthlyReturnService
+            .getSchemeEmail(cisId)
+            .map(_.getOrElse(""))
+            .recover { case ex =>
+              logger.warn(
+                s"[SubmissionSuccess] getSchemeEmail failed for cisId=$cisId, defaulting to empty, correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}",
                 ex
               )
               ""

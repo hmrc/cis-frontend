@@ -23,3 +23,8 @@ import play.api.libs.json.JsPath
 case class CreatedSubmissionIdPage(period: String) extends QuestionPage[String] {
   override def path: JsPath = JsPath \ "submissionCreated" \ period \ "submissionId"
 }
+
+// Multi-tab: Store a created submission ID for a period for the ID-scoped journey.
+case class CreatedSubmissionIdForFlowPage(id: String, period: String) extends QuestionPage[String] {
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ "submissionCreated" \ period \ "submissionId"
+}

@@ -29,7 +29,7 @@ import org.mockito.Mockito.*
 import pages.agent.AgentClientDataPage
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.*
-import pages.submission.{ResubmissionIdPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionJourneyCompletedPage}
+import pages.submission.{ResubmissionIdPage, SubmissionCreatedForFlowPage, SubmissionCreatedPage, SubmissionDetailsPage, SubmissionJourneyCompletedForFlowPage, SubmissionJourneyCompletedPage}
 import play.api.libs.json.{JsValue, Json}
 import repositories.SessionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
@@ -1449,6 +1449,110 @@ class MonthlyReturnServiceSpec extends SpecBase {
     }
   }
 
+  "createNilMonthlyReturn with id" - {
+
+    "create a nil return using ID-scoped answers and persist the scoped status" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val id    = "test-id"
+      val cisId = "CIS-123"
+
+      val ua = UserAnswers("test")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2026, 7, 5))
+        .setOrException(DeclarationPage(id), Set(Declaration.Confirmed))
+        .setOrException(SubmitInactivityRequestPage(id), true)
+
+      val backendResponse = mock(classOf[NilMonthlyReturnResponse])
+      when(backendResponse.status).thenReturn("STARTED")
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(backendResponse))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val result = service.createNilMonthlyReturn(ua, cisId, id).futureValue
+
+      val payloadCaptor = ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(payloadCaptor.capture())(any[HeaderCarrier])
+
+      val payload = payloadCaptor.getValue
+
+      payload.instanceId mustBe cisId
+      payload.taxYear mustBe 2026
+      payload.taxMonth mustBe 7
+      payload.decInformationCorrect mustBe "Y"
+      payload.decNilReturnNoPayments mustBe "Y"
+
+      result.get(NilReturnStatusPage(id)) mustBe Some("STARTED")
+      result.get(NilReturnStatusPage) mustBe None
+
+      verify(sessionRepo).set(any[UserAnswers])
+    }
+
+    "default declaration and inactivity flags to N when scoped answers are missing" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val id = "test-id"
+
+      val ua = UserAnswers("test")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2026, 7, 5))
+
+      val backendResponse = mock(classOf[NilMonthlyReturnResponse])
+      when(backendResponse.status).thenReturn("STARTED")
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(backendResponse))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.createNilMonthlyReturn(ua, "CIS-123", id).futureValue
+
+      val payloadCaptor = ArgumentCaptor.forClass(classOf[NilMonthlyReturnRequest])
+      verify(connector).createNilMonthlyReturn(payloadCaptor.capture())(any[HeaderCarrier])
+
+      payloadCaptor.getValue.decInformationCorrect mustBe "N"
+      payloadCaptor.getValue.decNilReturnNoPayments mustBe "N"
+    }
+
+    "fail when DateConfirmPaymentsPage is missing from the scoped journey" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val exception = service
+        .createNilMonthlyReturn(UserAnswers("test"), "CIS-123", "test-id")
+        .failed
+        .futureValue
+
+      exception.getMessage mustBe "Date confirm nil payments not found in subjourney"
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "fail when the backend cannot create the nil return" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val id = "test-id"
+
+      val ua = UserAnswers("test")
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2026, 7, 5))
+
+      when(connector.createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("Backend error")))
+
+      val exception = service
+        .createNilMonthlyReturn(ua, "CIS-123", id)
+        .failed
+        .futureValue
+
+      exception.getMessage mustBe "Backend error"
+
+      verify(connector).createNilMonthlyReturn(any[NilMonthlyReturnRequest])(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
   "completeSubmissionJourney" - {
 
     "mark the journey as completed without clearing monthly return data, and persist updated answers" in {
@@ -1505,6 +1609,62 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       verify(originalUa).set(SubmissionJourneyCompletedPage("2025-08"), true)
       verifyNoInteractions(sessionRepo)
+    }
+  }
+
+  "completeSubmissionJourney with id" - {
+
+    "mark the ID-scoped journey as completed and persist updated answers" in {
+      val (service, _, sessionRepo) = newService()
+
+      val id         = "test-id"
+      val returnDate = LocalDate.of(2025, 1, 1)
+
+      val ua = UserAnswers("test-user")
+        .setOrException(DateConfirmPaymentsPage(id), returnDate)
+        .setOrException(SubmissionCreatedForFlowPage(id, "2025-01"), true)
+        .setOrException(DateConfirmPaymentsPage, returnDate)
+
+      when(sessionRepo.get("test-user"))
+        .thenReturn(Future.successful(Some(ua)))
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.completeSubmissionJourney(ua, id).futureValue mustBe ()
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      verify(sessionRepo).get("test-user")
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedUa = uaCaptor.getValue
+
+      savedUa.get(SubmissionJourneyCompletedForFlowPage(id, "2025-01")) mustBe Some(true)
+      savedUa.get(DateConfirmPaymentsPage(id)) mustBe Some(returnDate)
+      savedUa.get(SubmissionCreatedForFlowPage(id, "2025-01")) mustBe Some(true)
+
+      savedUa.get(DateConfirmPaymentsPage) mustBe Some(returnDate)
+      savedUa.get(SubmissionJourneyCompletedPage("2025-01")) mustBe None
+    }
+
+    "fail and not persist when the ID-scoped payment date is missing" in {
+      val (service, _, sessionRepo) = newService()
+
+      val ua = UserAnswers("test-user")
+        .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
+
+      when(sessionRepo.get("test-user"))
+        .thenReturn(Future.successful(Some(ua)))
+
+      val exception =
+        service.completeSubmissionJourney(ua, "test-id").failed.futureValue
+
+      exception.getMessage mustBe "dateConfirmPayments missing"
+
+      verify(sessionRepo).get("test-user")
+      verify(sessionRepo, never()).set(any[UserAnswers])
     }
   }
 
@@ -1577,6 +1737,95 @@ class MonthlyReturnServiceSpec extends SpecBase {
 
       exception.getMessage mustBe
         "Failed to persist cleared monthly return journey"
+
+      verify(sessionRepo).set(any[UserAnswers])
+    }
+  }
+
+  "clearSubmissionJourney with id" - {
+
+    "clear ID-scoped monthly return journey data and persist updated answers" in {
+      val (service, _, sessionRepo) = newService()
+
+      val id = "test-id"
+
+      val ua = UserAnswers("test-user")
+        .setOrException(CisIdPage(id), "CIS-123")
+        .setOrException(ReturnTypePage(id), MonthlyNilReturn)
+        .setOrException(DateConfirmPaymentsPage(id), LocalDate.of(2025, 1, 1))
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(SubmissionCreatedForFlowPage(id, "2025-01"), true)
+        .setOrException(SubmissionJourneyCompletedForFlowPage(id, "2025-01"), true)
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.clearSubmissionJourney(ua, id).futureValue mustBe ()
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedUa = uaCaptor.getValue
+
+      savedUa.get(CisIdPage(id)) mustBe None
+      savedUa.get(ReturnTypePage(id)) mustBe None
+      savedUa.get(DateConfirmPaymentsPage(id)) mustBe None
+      savedUa.get(SubmitInactivityRequestPage(id)) mustBe None
+      savedUa.get(SubmissionCreatedForFlowPage(id, "2025-01")) mustBe None
+      savedUa.get(SubmissionJourneyCompletedForFlowPage(id, "2025-01")) mustBe None
+    }
+
+    "retain legacy and other ID-scoped journey answers" in {
+      val (service, _, sessionRepo) = newService()
+
+      val ua = UserAnswers("test-user")
+        .setOrException(CisIdPage, "CIS-legacy")
+        .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 1, 1))
+        .setOrException(CisIdPage("first-id"), "CIS-123")
+        .setOrException(DateConfirmPaymentsPage("first-id"), LocalDate.of(2025, 1, 1))
+        .setOrException(CisIdPage("second-id"), "CIS-456")
+        .setOrException(DateConfirmPaymentsPage("second-id"), LocalDate.of(2025, 2, 1))
+        .setOrException(SubmissionCreatedForFlowPage("first-id", "2025-01"), true)
+        .setOrException(SubmissionCreatedForFlowPage("second-id", "2025-02"), true)
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      service.clearSubmissionJourney(ua, "first-id").futureValue mustBe ()
+
+      val uaCaptor: ArgumentCaptor[UserAnswers] =
+        ArgumentCaptor.forClass(classOf[UserAnswers])
+
+      verify(sessionRepo).set(uaCaptor.capture())
+
+      val savedUa = uaCaptor.getValue
+
+      savedUa.get(CisIdPage("first-id")) mustBe None
+      savedUa.get(DateConfirmPaymentsPage("first-id")) mustBe None
+      savedUa.get(SubmissionCreatedForFlowPage("first-id", "2025-01")) mustBe None
+
+      savedUa.get(CisIdPage("second-id")) mustBe Some("CIS-456")
+      savedUa.get(DateConfirmPaymentsPage("second-id")) mustBe Some(LocalDate.of(2025, 2, 1))
+      savedUa.get(SubmissionCreatedForFlowPage("second-id", "2025-02")) mustBe Some(true)
+
+      savedUa.get(CisIdPage) mustBe Some("CIS-legacy")
+      savedUa.get(DateConfirmPaymentsPage) mustBe Some(LocalDate.of(2025, 1, 1))
+    }
+
+    "fail when cleared ID-scoped answers cannot be persisted" in {
+      val (service, _, sessionRepo) = newService()
+
+      when(sessionRepo.set(any[UserAnswers]))
+        .thenReturn(Future.successful(false))
+
+      val exception = service
+        .clearSubmissionJourney(UserAnswers("test-user"), "test-id")
+        .failed
+        .futureValue
+
+      exception.getMessage mustBe "Failed to persist cleared monthly return journey"
 
       verify(sessionRepo).set(any[UserAnswers])
     }

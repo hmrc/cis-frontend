@@ -21,6 +21,11 @@ import play.api.libs.json.JsPath
 
 import java.time.Instant
 
+case class LastMessageDatePage(id: String) extends QuestionPage[Instant] {
+  override val path: JsPath     = JsPath \ "monthlyReturn" \ id \ "submission" \ "poll" \ "lastMessageDate"
+  override val toString: String = "lastMessageDate"
+}
+
 object LastMessageDatePage extends QuestionPage[Instant] {
   override val path: JsPath     = JsPath \ "submission" \ "poll" \ "lastMessageDate"
   override val toString: String = "lastMessageDate"

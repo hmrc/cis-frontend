@@ -25,6 +25,7 @@ import services.MonthlyReturnService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.monthlyreturns.SubmissionAwaitingView
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
@@ -34,6 +35,7 @@ class SubmissionAwaitingController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents,
   view: SubmissionAwaitingView,
   monthlyReturnService: MonthlyReturnService,
@@ -66,5 +68,16 @@ class SubmissionAwaitingController @Inject() (
         )
 
       Ok(view(returnUrl))
+    }
+
+  // Multi-tab: Display the awaiting submission page for the ID-scoped journey.
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val id        = flowId.toString
+      val returnUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExitWithId(flowId).url
+
+      monthlyReturnService
+        .completeSubmissionJourney(request.userAnswers, id)
+        .map(_ => Ok(view(returnUrl)))
     }
 }

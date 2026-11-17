@@ -25,3 +25,11 @@ case class SubmissionJourneyCompletedPage(period: String) extends QuestionPage[B
 
   override def toString: String = "submissionJourneyCompleted"
 }
+
+// Multi-tab: Track completion for the ID-scoped submission journey.
+case class SubmissionJourneyCompletedForFlowPage(id: String, period: String) extends QuestionPage[Boolean] {
+
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ "submissionJourneyCompleted" \ period \ "completed"
+
+  override def toString: String = "submissionJourneyCompleted"
+}
