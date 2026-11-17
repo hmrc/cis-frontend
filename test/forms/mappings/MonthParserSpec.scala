@@ -52,7 +52,7 @@ class MonthParserSpec extends AnyWordSpec with Matchers {
       "Rhagfyr"
     )
   private val welshAbbrevs =
-    Seq("Ion", "Chwe", "Maw", "Ebr", "Mai", "Meh", "Gorff", "Awst", "Medi", "Hyd", "Tach", "Rhag")
+    Seq("Ion", "Chwef", "Maw", "Ebr", "Mai", "Meh", "Gorff", "Awst", "Medi", "Hyd", "Tach", "Rhag")
 
   "MonthParser.parse" should {
 

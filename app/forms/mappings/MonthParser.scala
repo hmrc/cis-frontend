@@ -40,7 +40,7 @@ object MonthParser {
   private val welshShort: Seq[Seq[String]] =
     Seq(
       Seq("ion"),
-      Seq("chwe"),
+      Seq("chwef"),
       Seq("maw"),
       Seq("ebr"),
       Seq("mai"),
