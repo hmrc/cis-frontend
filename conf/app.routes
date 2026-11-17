@@ -232,6 +232,8 @@ GET        /monthly-return/continue-amend-return-journey                controll
 GET        /monthly-return/manage-cis-return                            controllers.monthlyreturns.ManageCisReturnController.onExit()
 
 # Multi-tab
+GET        /monthly-return/continue-return-journey/multi-tab            controllers.monthlyreturns.ContinueReturnJourneyController.continueReturnJourneyWithCisId(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
+GET        /monthly-return/continue-amend-return-journey/multi-tab      controllers.amend.ContinueAmendReturnJourneyController.continueAmendReturnJourneyWithCisId(queryParams: models.monthlyreturns.ContinueReturnJourneyQueryParams)
 GET        /monthly-return/manage-cis-return/:flowId                    controllers.monthlyreturns.ManageCisReturnController.onExitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/which-subcontractors-to-add            controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = NormalMode)
