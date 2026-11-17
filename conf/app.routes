@@ -304,16 +304,8 @@ POST       /amend-monthly-return/which-subcontractors-to-add            controll
 GET        /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onPageLoad(mode: Mode = CheckMode)
 POST       /amend-monthly-return/change-which-subcontractors-to-add     controllers.amend.WhichSubcontractorsToAddController.onSubmit(mode: Mode = CheckMode)
 
-GET        /amend-monthly-return/which-subcontractors-to-add/:flowId             controllers.amend.WhichSubcontractorsToAddController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
-POST       /amend-monthly-return/which-subcontractors-to-add/:flowId             controllers.amend.WhichSubcontractorsToAddController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
-GET        /amend-monthly-return/change-which-subcontractors-to-add/:flowId      controllers.amend.WhichSubcontractorsToAddController.onPageLoadWithId(flowId: UUID, mode: Mode = CheckMode)
-POST       /amend-monthly-return/change-which-subcontractors-to-add/:flowId      controllers.amend.WhichSubcontractorsToAddController.onSubmitWithId(flowId: UUID, mode: Mode = CheckMode)
-
 GET        /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoad()
 POST       /monthly-return/cancel-amended-monthly-return                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmit()
-
-GET        /monthly-return/cancel-amended-monthly-return/:flowId                controllers.amend.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId: UUID)
-POST       /monthly-return/cancel-amended-monthly-return/:flowId                controllers.amend.ConfirmCancelAmendmentYesNoController.onSubmitWithId(flowId: UUID)
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-nil          controllers.amend.WhatDoYouWantToAmendNilController.onSubmit()
@@ -324,14 +316,8 @@ POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controll
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
-GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId: UUID)
-POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId    controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId: UUID)
-
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend                 controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend                 controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
-
-GET        /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
-POST       /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(flowId: UUID,mode: Mode = NormalMode)
 
 GET        /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /final-validations/add-contractor-email-address              controllers.finalvalidations.AddEmailAddressYesNoController.onSubmit(mode: Mode = NormalMode)
@@ -352,8 +338,4 @@ GET        /monthly-return/final-validations/review-subcontractor-details       
 POST       /monthly-return/final-validations/review-subcontractor-details                      controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmit()
 GET        /monthly-return/final-validations/change/:subcontractorId/:fieldKey/:targetKey      controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
 GET        /monthly-return/final-validations/return/:handoffId                                 controllers.finalvalidations.FinalValidationReturnController.onPageLoad(handoffId: String)
-
-GET        /monthly-return/final-validations/review-subcontractor-details/:flowId     controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId: UUID)
-POST       /monthly-return/final-validations/review-subcontractor-details/:flowId     controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmitWithId(flowId: UUID)
-
 GET        /agent/no-longer-authorised                                                         controllers.AgentLostAccessController.onPageLoad()

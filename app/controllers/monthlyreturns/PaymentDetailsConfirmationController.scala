@@ -67,8 +67,8 @@ class PaymentDetailsConfirmationController @Inject() (
       val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, mode))
-      val cancelAction =
-        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId))
+      // TODO DTR-9475/DTR-9476: Enable cancellation when UUID-scoped amendment journey is implemented.
+      val cancelAction = None
       val preparedForm = request.userAnswers.get(PaymentDetailsConfirmationPage(subJourneyId)) match {
         case None        => form
         case Some(value) => form.fill(value)
@@ -104,8 +104,8 @@ class PaymentDetailsConfirmationController @Inject() (
       val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, mode))
-      val cancelAction =
-        Some(controllers.monthlyreturns.routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId))
+      // TODO DTR-9475/DTR-9476: Enable cancellation when UUID-scoped amendment journey is implemented.
+      val cancelAction = None
 
       form
         .bindFromRequest()
@@ -140,7 +140,8 @@ class PaymentDetailsConfirmationController @Inject() (
 
   def onCancelAmendmentWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId))
+      // TODO DTR-9475/DTR-9476: Add UUID-scoped amendment cancellation navigation.
+      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
     }
 
   private def isAmendment(ua: UserAnswers): Boolean =

@@ -37,7 +37,6 @@ import utils.UserAnswerUtils.isJourneyComplete
 import java.time.YearMonth
 import java.util.UUID
 import javax.inject.Inject
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class CheckYourAnswersController @Inject() (

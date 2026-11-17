@@ -26,14 +26,13 @@
 
 @(
     form: Form[_],
-    monthYear: String,
-    formAction: Option[Call] = None
+    monthYear: String
 )(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("amend.confirmCancelAmendmentYesNo.title", monthYear))) {
 
     @formHelper(
-        action = formAction.getOrElse(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmit()),
+        action = controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onSubmit(),
         Symbol("autoComplete") -> "off"
     ) {
 

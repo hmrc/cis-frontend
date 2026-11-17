@@ -24,17 +24,12 @@
     govukButton: GovukButton
 )
 
-@(
-    form: Form[_],
-    formAction: Option[Call] = None
-)(implicit request: Request[_], messages: Messages)
+@(form: Form[_])(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("amend.whatDoYouWantToAmendStandard.title"))) {
 
     @formHelper(
-        action = formAction.getOrElse(
-            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmit()
-        ),
+        action = controllers.amend.routes.WhatDoYouWantToAmendStandardController.onSubmit(),
         Symbol("autoComplete") -> "off"
     ) {
 

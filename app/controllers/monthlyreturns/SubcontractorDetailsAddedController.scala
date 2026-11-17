@@ -130,11 +130,8 @@ class SubcontractorDetailsAddedController @Inject() (
           monthlyReturnService.isEditable(cisId, month, year, isAmendment).flatMap {
             case true =>
               if (ua.get(FinalValidationDraftIdPage(subJourneyId)).isDefined) {
-                Future.successful(
-                  Redirect(
-                    controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad()
-                  )
-                )
+                // TODO: Implement UUID-scoped final validation in a separate ticket.
+                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
               } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
                 Future.successful(
                   renderPageWithId(subJourneyId, flowId, mode, ua)
@@ -508,16 +505,12 @@ class SubcontractorDetailsAddedController @Inject() (
                             )
 
                           case (Some(MonthlyStandardReturn), Some(true)) =>
-                            Redirect(
-                              controllers.amend.routes.WhichSubcontractorsToAddController
-                                .onPageLoadWithId(flowId, mode)
-                            )
+                            // TODO DTR-9476: Add UUID-scoped subcontractor selection for resumed standard returns.
+                            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
                           case (Some(returnType), _) if returnType.amendmentFlag == "Y" =>
-                            Redirect(
-                              controllers.amend.routes.WhichSubcontractorsToAddController
-                                .onPageLoadWithId(flowId, mode)
-                            )
+                            // TODO DTR-9475/DTR-9476: Add UUID-scoped amended monthly return navigation.
+                            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
                           case _ =>
                             logger.error(
@@ -542,9 +535,8 @@ class SubcontractorDetailsAddedController @Inject() (
 
   def onCancelAmendmentWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      Redirect(
-        controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId)
-      )
+      // TODO DTR-9475/DTR-9476: Add UUID-scoped amendment cancellation navigation.
+      Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
     }
 
   private def runFinalValidation(
@@ -617,20 +609,8 @@ class SubcontractorDetailsAddedController @Inject() (
         )
 
         if (validation.hasErrors) {
-          for {
-            createRequest <- Future.fromTry(
-                               finalValidationDraftRequestBuilder.build(
-                                 instanceId = cisId,
-                                 selectedSubcontractors = selectedFullSubcontractors,
-                                 validation = validation
-                               )
-                             )
-            draftId       <- finalValidationDraftService.create(createRequest)
-            withDraftId   <- Future.fromTry(ua.set(FinalValidationDraftIdPage(subJourneyId), draftId))
-            _             <- sessionRepository.set(withDraftId)
-          } yield Redirect(
-            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId)
-          )
+          // TODO: Implement UUID-scoped final validation in a separate ticket.
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         } else {
           for {
             withContinuation <-
@@ -718,10 +698,8 @@ class SubcontractorDetailsAddedController @Inject() (
             )
 
           case None if returnType.amendmentFlag == "Y" =>
-            Redirect(
-              controllers.amend.routes.WhatDoYouWantToAmendStandardController
-                .onPageLoadWithId(flowId)
-            )
+            // TODO DTR-9475/DTR-9476: Add UUID-scoped amended standard return navigation.
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
           case None =>
             logger.error("[SubcontractorDetailsAddedController][renderPageWithId] - view model build returned None")
