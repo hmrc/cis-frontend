@@ -20,9 +20,10 @@ import forms.mappings.Mappings
 import org.scalatest.OptionValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
-import play.api.data.Form
+import play.api.data.{Form, FormError}
 import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
+import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import viewmodels.govuk.all._
 
 import java.time.LocalDate
@@ -162,6 +163,41 @@ class DateFluencySpec extends AnyFreeSpec with Matchers with Mappings with Optio
       val result = DateViewModel(boundForm("value"), fieldset)
 
       result.items.forall(_.classes.contains(errorClass)) mustEqual false
+    }
+  }
+
+  ".withErrorMessageFor" - {
+
+    implicit val messages: Messages = stubMessages()
+
+    val baseDate = WithMonthYearViewModel(
+      play.api.data.Form("value" -> play.api.data.Forms.text)("value"),
+      FieldsetViewModel(LegendViewModel("foo"))
+    )
+
+    "must show the given error inline, with the hidden error prefix" in {
+      val result = baseDate.withErrorMessageFor(Some(FormError("value.month", "month.error")))
+
+      val errorMessage = result.errorMessage.value
+      errorMessage.content mustEqual Text("month.error")
+      errorMessage.visuallyHiddenText.value mustEqual "error.prefix"
+    }
+
+    "must pass the error args to the message" in {
+      val result = baseDate.withErrorMessageFor(Some(FormError("value.month", "month.error", Seq("a", "b"))))
+
+      result.errorMessage.value.content mustEqual Text("month.error")
+    }
+
+    "must replace an existing error message" in {
+      val withExisting = baseDate.withErrorMessageFor(Some(FormError("value.year", "year.error")))
+      val result       = withExisting.withErrorMessageFor(Some(FormError("value.month", "month.error")))
+
+      result.errorMessage.value.content mustEqual Text("month.error")
+    }
+
+    "must leave the date input unchanged when there is no error" in {
+      baseDate.withErrorMessageFor(None) mustEqual baseDate
     }
   }
 }

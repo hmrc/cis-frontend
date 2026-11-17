@@ -20,7 +20,7 @@ import forms.mappings.DateFormat
 
 object DateFormats {
 
-  private val MonthRegex = "^(0?[1-9]|1[0-2])$"
+  private val MonthRegex = "^\\p{L}{3,10}\\.?$"
   private val YearRegex  = "^\\d{4}$"
 
   val monthYearFormats: Seq[DateFormat] = Seq(

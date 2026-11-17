@@ -20,6 +20,7 @@
 @import uk.gov.hmrc.hmrcfrontend.views.html.components.implicits._
 @import config.FrontendAppConfig
 @import play.api.mvc.Call
+@import uk.gov.hmrc.govukfrontend.views.viewmodels.hint.Hint
 
 @this(
     layout: templates.Layout,
@@ -43,14 +44,14 @@
     @formHelper(action = formAction.getOrElse(controllers.monthlyreturns.routes.DateConfirmPaymentsController.onSubmit(mode, returnType)), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
-            @govukErrorSummary(ErrorSummaryViewModel(form, errorLinkOverrides = Map("value" -> "value.month")))
+            @govukErrorSummary(ErrorSummaryViewModel(form.copy(errors = form.errors.take(1)), errorLinkOverrides = Map("value" -> "value.month")))
         }
 
         @h1(s"$messagePrefix.heading")
         @paragraph(s"monthlyreturns.dateConfirmPayments.paragraph")
 
 
-        @govukDateInput(
+        @defining(
             WithMonthYearViewModel(
                 field  = form("value"),
                 legend = LegendViewModel(
@@ -65,12 +66,25 @@
                         linkUrl = appConfig.incompleteReturnsUrl,
                         hasFullStop = true,
                         prefixTextKey = "monthlyreturns.dateConfirmPayments.p1.prefix") +
-                        h2("monthlyreturns.dateConfirmPayments.legendText").toString
+                        h2("monthlyreturns.dateConfirmPayments.legendText", "govuk-heading-m govuk-!-margin-bottom-1").toString
                     )
                 )
             )
             .withMonthYearFormField(form("value"))
-        )
+            .withHint(Hint(content = Text(messages("monthlyreturns.dateConfirmPayments.hint"))))
+            .withErrorMessageFor(form.errors.headOption)
+        ) { dateInput =>
+            @govukDateInput(
+                dateInput.copy(items = dateInput.items.map { item =>
+                    val withAutocomplete = item.copy(autocomplete = Some("off"))
+                    if (item.id.endsWith("month")) withAutocomplete.copy(
+                        classes = item.classes.replace("govuk-input--width-2", "govuk-input--width-10"),
+                        inputmode = Some("text")
+                    )
+                    else withAutocomplete
+                })
+            )
+        }
 
         @govukButton(
             ButtonViewModel(messages("site.continue"))

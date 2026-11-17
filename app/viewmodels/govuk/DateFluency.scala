@@ -16,10 +16,12 @@
 
 package viewmodels.govuk
 
-import play.api.data.Field
+import play.api.data.{Field, FormError}
 import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.FormGroup
+import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.dateinput.{DateInput, InputItem}
+import uk.gov.hmrc.govukfrontend.views.viewmodels.errormessage.ErrorMessage
 import uk.gov.hmrc.govukfrontend.views.viewmodels.fieldset.{Fieldset, Legend}
 import uk.gov.hmrc.govukfrontend.views.viewmodels.hint.Hint
 import viewmodels.ErrorMessageAwareness
@@ -112,6 +114,19 @@ trait DateFluency {
   }
 
   implicit class FluentDate(date: DateInput) {
+
+    /** Shows the given error inline, so it can be the same error the error summary links to. */
+    def withErrorMessageFor(error: Option[FormError])(implicit messages: Messages): DateInput =
+      error.fold(date) { e =>
+        date.copy(errorMessage =
+          Some(
+            ErrorMessage(
+              content = Text(messages(e.message, e.args*)),
+              visuallyHiddenText = Some(messages("error.prefix"))
+            )
+          )
+        )
+      }
 
     def withNamePrefix(prefix: String): DateInput =
       date.copy(namePrefix = Some(prefix))
