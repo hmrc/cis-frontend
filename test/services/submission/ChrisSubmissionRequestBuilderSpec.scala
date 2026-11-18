@@ -28,7 +28,14 @@ import org.scalatestplus.mockito.MockitoSugar
 import pages.monthlyreturns.*
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.{LocalDate, LocalDateTime}
+import config.FrontendAppConfig
+import forms.mappings.MonthYearDateFormatter
+import org.mockito.Mockito.when
+import play.api.i18n.{Lang, Messages, MessagesImpl}
+import play.api.test.Helpers.stubMessagesApi
+import utils.DateFormats
+
+import java.time.{Clock, Instant, LocalDate, LocalDateTime, ZoneId}
 import scala.concurrent.ExecutionContext
 
 class ChrisSubmissionRequestBuilderSpec
@@ -121,6 +128,57 @@ class ChrisSubmissionRequestBuilderSpec
   )
 
   "ChrisSubmissionRequestBuilder.build" should {
+
+    "send monthYear as yyyy-MM when the month is typed as a name (English and Welsh)" in {
+      val config = mock[FrontendAppConfig]
+      when(config.earliestTaxPeriodEndDate).thenReturn("2007-05-05")
+      when(config.monthlyReturnsTaxStartDay).thenReturn(20)
+      when(config.monthlyReturnsTaxStartMonth).thenReturn(11)
+      when(config.monthlyReturnsSupportedYears).thenReturn(10)
+      val clock  = Clock.fixed(Instant.parse("2025-12-01T12:00:00Z"), ZoneId.of("Europe/London"))
+
+      def formatter(lang: String) = {
+        implicit val messages: Messages = MessagesImpl(Lang(lang), stubMessagesApi())
+        new MonthYearDateFormatter(
+          "invalid",
+          "two",
+          "required",
+          Seq.empty,
+          DateFormats.monthYearFormats,
+          Seq("month", "year"),
+          config,
+          clock
+        )
+      }
+
+      val cases = Seq(
+        ("en", "Nov", "2025-11"),
+        ("en", "November", "2025-11"),
+        ("en", "jan", "2025-01"),
+        ("cy", "Tach", "2025-11"),
+        ("cy", "Tachwedd", "2025-11"),
+        ("cy", "Ionawr", "2025-01")
+      )
+
+      cases.foreach { case (lang, month, expected) =>
+        val date = formatter(lang).bind("value", Map("value.month" -> month, "value.year" -> "2025")).toOption.get
+        val ua   = UserAnswers("id")
+          .set(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .success
+          .value
+          .set(DateConfirmPaymentsPage, date)
+          .success
+          .value
+          .set(SubmitInactivityRequestPage, true)
+          .success
+          .value
+
+        val req = new ChrisSubmissionRequestBuilder()
+          .build(ua, mkTaxpayer(), isAgent = false, monthlyReturn, isResubmission = false)
+
+        withClue(s"$lang/$month: ")(req.monthYear mustBe expected)
+      }
+    }
 
     "build MonthlyNilReturn request (minimal)" in {
       val builder = new ChrisSubmissionRequestBuilder()

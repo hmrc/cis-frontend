@@ -87,7 +87,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
     FakeRequest(POST, dateConfirmPaymentsPostRoute)
       .withFormUrlEncodedBody(
         "value.day"   -> validAnswer.getDayOfMonth.toString,
-        "value.month" -> validAnswer.getMonthValue.toString,
+        "value.month" -> validAnswer.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK),
         "value.year"  -> validAnswer.getYear.toString
       )
 
@@ -95,7 +95,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
     FakeRequest(POST, dateConfirmNilPaymentsPostRoute)
       .withFormUrlEncodedBody(
         "value.day"   -> validAnswer.getDayOfMonth.toString,
-        "value.month" -> validAnswer.getMonthValue.toString,
+        "value.month" -> validAnswer.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK),
         "value.year"  -> validAnswer.getYear.toString
       )
 
@@ -128,7 +128,7 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
     FakeRequest(POST, scopedPostRoute(flowId))
       .withFormUrlEncodedBody(
         "value.day"   -> validAnswer.getDayOfMonth.toString,
-        "value.month" -> validAnswer.getMonthValue.toString,
+        "value.month" -> validAnswer.getMonth.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.UK),
         "value.year"  -> validAnswer.getYear.toString
       )
 
