@@ -21,7 +21,7 @@ import controllers.actions.*
 import models.agent.AgentClientData
 import models.{ReturnType, UserAnswers}
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
-import models.monthlyreturns.CisTaxpayer
+import models.monthlyreturns.{CisTaxpayer, ContinueReturnJourneyQueryParams}
 import models.requests.IdentifierRequest
 import pages.agent.AgentClientDataPage
 import pages.amend.{AmendmentDetailsPage, ConfirmAmendmentPage}
@@ -223,7 +223,7 @@ class ConfirmAmendmentController @Inject() (
           case Some(context) =>
             resolveTaxpayer(context.amendmentDetails.instanceId).flatMap {
               case Some(taxpayer) =>
-                createIdScopedAmendment(request.userId, request.isAgent, context, taxpayer)
+                createIdScopedAmendment(handoffId, request.userId, request.isAgent, context, taxpayer)
               case None           =>
                 logger.warn(
                   s"[ConfirmAmendmentController] CIS taxpayer not found for instanceId: ${context.amendmentDetails.instanceId}"
@@ -327,44 +327,68 @@ class ConfirmAmendmentController @Inject() (
     }
 
   private def createIdScopedAmendment(
+    handoffId: String,
     userId: String,
     isAgent: Boolean,
     context: AmendmentHandoffContext,
     taxpayer: CisTaxpayer
   )(implicit hc: HeaderCarrier): Future[Result] = {
-    val flowId           = UUID.randomUUID()
-    val id               = flowId.toString
     val amendmentDetails = context.amendmentDetails
 
-    val agentData =
-      if (isAgent) {
-        Some(AgentClientData(taxpayer.uniqueId, taxpayer.taxOfficeNumber, taxpayer.taxOfficeRef, taxpayer.schemeName))
-      } else {
-        None
-      }
-
-    val createRequest = CreateAmendedMonthlyReturnRequest(
-      instanceId = amendmentDetails.instanceId,
-      taxYear = amendmentDetails.taxYear,
-      taxMonth = amendmentDetails.taxMonth,
-      version = 0
-    )
-
     sessionRepository.get(userId).flatMap { existing =>
-      val userAnswers        = existing.getOrElse(UserAnswers(userId))
-      val updatedUserAnswers = buildIdScopedUserAnswers(userAnswers, id, context, agentData)
+      val userAnswers    = existing.getOrElse(UserAnswers(userId))
+      val alreadyAmended = userAnswers.get(ConfirmAmendmentPage(handoffId)).contains(true)
 
-      for {
-        updatedAnswers <- Future.fromTry(updatedUserAnswers)
-        _              <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
-        saved          <- sessionRepository.set(updatedAnswers)
-      } yield
-        if (saved) {
-          redirectToAmendment(flowId, amendmentDetails.originalReturnType)
-        } else {
-          logger.error("[ConfirmAmendmentController] Failed to save multi-tab amendment user answers")
-          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-        }
+      if (alreadyAmended) {
+        val queryParams = ContinueReturnJourneyQueryParams(
+          instanceId = amendmentDetails.instanceId,
+          taxYear = amendmentDetails.taxYear,
+          taxMonth = amendmentDetails.taxMonth,
+          isOriginalNilReturn = Some(amendmentDetails.originalReturnType == ReturnType.MonthlyNilReturn)
+        )
+
+        Future.successful(
+          Redirect(
+            controllers.amend.routes.ContinueAmendReturnJourneyController
+              .continueAmendReturnJourneyWithCisId(queryParams)
+          )
+        )
+      } else {
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val agentData =
+          if (isAgent) {
+            Some(
+              AgentClientData(taxpayer.uniqueId, taxpayer.taxOfficeNumber, taxpayer.taxOfficeRef, taxpayer.schemeName)
+            )
+          } else {
+            None
+          }
+
+        val createRequest = CreateAmendedMonthlyReturnRequest(
+          instanceId = amendmentDetails.instanceId,
+          taxYear = amendmentDetails.taxYear,
+          taxMonth = amendmentDetails.taxMonth,
+          version = 0
+        )
+
+        val updatedUserAnswers =
+          buildIdScopedUserAnswers(userAnswers, id, context, agentData)
+            .flatMap(_.set(ConfirmAmendmentPage(handoffId), true))
+
+        for {
+          updatedAnswers <- Future.fromTry(updatedUserAnswers)
+          _              <- amendMonthlyReturnService.createAmendedMonthlyReturn(createRequest)
+          saved          <- sessionRepository.set(updatedAnswers)
+        } yield
+          if (saved) {
+            redirectToAmendment(flowId, amendmentDetails.originalReturnType)
+          } else {
+            logger.error("[ConfirmAmendmentController] Failed to save multi-tab amendment user answers")
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          }
+      }
     }
   }
 }

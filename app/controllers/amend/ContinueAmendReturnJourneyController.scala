@@ -293,8 +293,14 @@ class ContinueAmendReturnJourneyController @Inject() (
                     }
 
                   Future.fromTry(answersWithSource).flatMap { withSource =>
-                    sessionRepository.set(withSource).flatMap { _ =>
-                      reconcileScopedReturn(taxpayer, redirect)
+                    sessionRepository.set(withSource).flatMap {
+                      case true  =>
+                        reconcileScopedReturn(taxpayer, redirect)
+                      case false =>
+                        logger.error(
+                          "[ContinueAmendReturnJourneyController] Failed to save multi-tab amendment user answers"
+                        )
+                        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
                     }
                   }
               }

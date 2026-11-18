@@ -21,7 +21,7 @@ import models.ReturnType.*
 import models.UserAnswers
 import models.agent.AgentClientData
 import models.amend.{AmendmentDetails, CreateAmendedMonthlyReturnRequest}
-import models.monthlyreturns.CisTaxpayer
+import models.monthlyreturns.{CisTaxpayer, ContinueReturnJourneyQueryParams}
 import models.requests.IdentifierRequest
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
@@ -795,6 +795,7 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
         captor.getValue.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedStandardReturn)
         captor.getValue.get(AmendmentDetailsPage(id)) mustBe Some(amendmentDetailsStandard)
         captor.getValue.get(DateConfirmPaymentsPage(id)).map(_.getMonthValue) mustBe Some(1)
+        captor.getValue.get(ConfirmAmendmentPage(handoffId)) mustBe Some(true)
 
         verify(mockAmendMonthlyReturnService).createAmendedMonthlyReturn(
           eqTo(
@@ -806,6 +807,126 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
             )
           )
         )(any[HeaderCarrier]())
+      }
+    }
+
+    "must not create another amendment when multi-tab POST is repeated" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+      val mockCisTaxpayerService        = mock[CisTaxpayerService]
+      val taxpayer                      = mock[CisTaxpayer]
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(ConfirmAmendmentPage(handoffId), true)
+          .success
+          .value
+
+      when(taxpayer.uniqueId) thenReturn "1"
+
+      when(mockCisTaxpayerService.findForOrganisation(using any[IdentifierRequest[?]])) thenReturn
+        Future.successful(taxpayer)
+
+      when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+        Some(amendmentDetailsStandard)
+      )
+
+      when(mockSessionRepository.get(any[String]())) thenReturn Future.successful(Some(userAnswers))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService),
+            bind[CisTaxpayerService].toInstance(mockCisTaxpayerService)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(
+          POST,
+          controllers.amend.routes.ConfirmAmendmentController.onSubmitMultiTab(handoffId).url
+        ).withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        val queryParams = ContinueReturnJourneyQueryParams(
+          instanceId = amendmentDetailsStandard.instanceId,
+          taxYear = amendmentDetailsStandard.taxYear,
+          taxMonth = amendmentDetailsStandard.taxMonth,
+          isOriginalNilReturn = Some(false)
+        )
+
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.ContinueAmendReturnJourneyController
+            .continueAmendReturnJourneyWithCisId(queryParams)
+            .url
+
+        verify(mockAmendMonthlyReturnService, never()).createAmendedMonthlyReturn(any())(any())
+        verify(mockSessionRepository, never()).set(any[UserAnswers]())
+      }
+    }
+
+    "must continue an existing nil amendment when multi-tab POST is repeated" in {
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+      val mockCisTaxpayerService        = mock[CisTaxpayerService]
+      val taxpayer                      = mock[CisTaxpayer]
+
+      val userAnswers =
+        emptyUserAnswers
+          .set(ConfirmAmendmentPage(handoffId), true)
+          .success
+          .value
+
+      when(taxpayer.uniqueId) thenReturn "1"
+
+      when(mockCisTaxpayerService.findForOrganisation(using any[IdentifierRequest[?]])) thenReturn
+        Future.successful(taxpayer)
+
+      when(mockAmendMonthlyReturnService.getAmendmentHandoff(any())(any())) thenReturn Future.successful(
+        Some(amendmentDetailsNil)
+      )
+
+      when(mockSessionRepository.get(any[String]())) thenReturn Future.successful(Some(userAnswers))
+
+      val application =
+        applicationBuilder(userAnswers = Some(emptyUserAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService),
+            bind[CisTaxpayerService].toInstance(mockCisTaxpayerService)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(
+          POST,
+          controllers.amend.routes.ConfirmAmendmentController.onSubmitMultiTab(handoffId).url
+        ).withFormUrlEncodedBody()
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+
+        val queryParams = ContinueReturnJourneyQueryParams(
+          instanceId = amendmentDetailsNil.instanceId,
+          taxYear = amendmentDetailsNil.taxYear,
+          taxMonth = amendmentDetailsNil.taxMonth,
+          isOriginalNilReturn = Some(true)
+        )
+
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.ContinueAmendReturnJourneyController
+            .continueAmendReturnJourneyWithCisId(queryParams)
+            .url
+
+        verify(mockAmendMonthlyReturnService, never()).createAmendedMonthlyReturn(any())(any())
+        verify(mockSessionRepository, never()).set(any[UserAnswers]())
       }
     }
   }
