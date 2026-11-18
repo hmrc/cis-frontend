@@ -90,6 +90,16 @@ class CustomSummaryListSpec extends SpecBase {
       }
     }
 
+    "must not render an id on key elements (avoids duplicate ids)" in new Setup {
+      val html = customSummaryListRows(rows = selectedRowsNoLinks)
+      val doc  = Jsoup.parse(html.body)
+
+      val keys = doc.select(".govuk-summary-list__key")
+
+      keys.size mustBe 3
+      keys.forEach(key => key.hasAttr("id") mustBe false)
+    }
+
     "must apply custom keyClasses to key elements when provided" in new Setup {
       val html = customSummaryListRows(rows = selectedRowsNoLinks, keyClasses = "govuk-body govuk-!-font-weight-bold")
       val doc  = Jsoup.parse(html.body)
