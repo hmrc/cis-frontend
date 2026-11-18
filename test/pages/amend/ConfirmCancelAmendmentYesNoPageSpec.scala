@@ -23,12 +23,17 @@ class ConfirmCancelAmendmentYesNoPageSpec extends SpecBase {
 
   "ConfirmCancelAmendmentYesNoPage" - {
 
-    "have the correct path" in {
+    "must use ConfirmCancelAmendmentYesNo path" in {
       ConfirmCancelAmendmentYesNoPage.path mustBe (JsPath \ "confirmCancelAmendmentYesNo")
+      ConfirmCancelAmendmentYesNoPage.toString mustBe "confirmCancelAmendmentYesNo"
     }
 
-    "have the correct toString" in {
-      ConfirmCancelAmendmentYesNoPage.toString mustBe "confirmCancelAmendmentYesNo"
+    "must use ConfirmCancelAmendmentYesNo path with id" in {
+      val testId = "testId"
+      ConfirmCancelAmendmentYesNoPage(
+        testId
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "confirmCancelAmendmentYesNo")
+      ConfirmCancelAmendmentYesNoPage(testId).toString mustBe "confirmCancelAmendmentYesNo"
     }
   }
 }

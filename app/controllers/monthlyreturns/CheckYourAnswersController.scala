@@ -20,7 +20,7 @@ import controllers.actions.*
 import controllers.helpers.SubmissionViewDataSupport
 import models.{CheckMode, ReturnType, UserAnswers}
 import models.monthlyreturns.UpdateMonthlyReturnRequest
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import pages.monthlyreturns.ReturnTypePage
 import pages.submission.*
 import play.api.Logging
@@ -159,7 +159,31 @@ class CheckYourAnswersController @Inject() (
       case Some(periodEnd) =>
         val yearMonthPeriod = YearMonth.from(periodEnd).toString
         if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) {
-          Future.successful(Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad()))
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad())
+          )
+        } else {
+          block
+        }
+    }
+
+  private def guardCompletedJourneyWithId(block: => Future[Result])(implicit
+    request: DataRequest[_]
+  ): Future[Result] =
+    periodEndFromUserAnswers(request.userAnswers) match {
+      case None =>
+        logger.error(
+          "[CheckYourAnswersController][guardCompletedJourneyWithId] - " +
+            "Unable to determine period end from user answers"
+        )
+        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      case Some(periodEnd) =>
+        val yearMonthPeriod = YearMonth.from(periodEnd).toString
+        if (request.userAnswers.get(SubmissionJourneyCompletedPage(yearMonthPeriod)).contains(true)) { // TODO DTR-9474: Check if this needs updated to use id
+          Future.successful(
+            Redirect(controllers.monthlyreturns.routes.AlreadySubmittedController.onPageLoad())
+          ) // TODO DTR-9474: Check if this needs updated to use id
         } else {
           block
         }
@@ -197,47 +221,52 @@ class CheckYourAnswersController @Inject() (
 
       guardCompletedJourney(userAnswers, id) {
         ReturnTypeSummary.returnType(userAnswers, id) match {
-          case Some(ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn) =>
-            val returnDetailsList = SummaryListViewModel(
-              rows = Seq(
-                ReturnTypeSummary.row(userAnswers, id),
-                DateConfirmNilPaymentsSummary.row(userAnswers, id),
-                PaymentsToSubcontractorsSummary.row,
-                SubmitInactivityRequestSummary.row(
-                  userAnswers,
-                  id,
-                  routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode)
+          case Some(returnType) =>
+            val returnTypeRows = returnType match {
+              case ReturnType.MonthlyStandardReturn | ReturnType.MonthlyAmendedStandardReturn =>
+                Seq(
+                  DateConfirmPaymentsSummary.row(userAnswers, flowId),
+                  NumberOfSubcontractorPaymentsMadeSummary.row(userAnswers, flowId),
+                  EmploymentStatusDeclarationSummary.row(userAnswers, flowId),
+                  VerifiedStatusDeclarationSummary.row(userAnswers, flowId),
+                  SubmitInactivityRequestSummary
+                    .row(userAnswers, id, routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode))
                 )
-              ).flatten
+
+              case ReturnType.MonthlyNilReturn | ReturnType.MonthlyAmendedNilReturn =>
+                Seq(
+                  DateConfirmNilPaymentsSummary.row(userAnswers, id),
+                  PaymentsToSubcontractorsSummary.row,
+                  SubmitInactivityRequestSummary
+                    .row(userAnswers, id, routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, CheckMode))
+                )
+            }
+
+            val returnDetailsList = SummaryListViewModel(
+              rows = (Seq(ReturnTypeSummary.row(userAnswers, id)) ++ returnTypeRows).flatten
             )
 
-            val emailList = SummaryListViewModel(
-              rows = Seq(
-                ConfirmationByEmailSummary.row(
-                  userAnswers,
-                  id,
-                  routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode)
-                ),
-                EnterYourEmailAddressSummary.row(
-                  userAnswers,
-                  id,
-                  routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
-                )
-              ).flatten
+            val emailRows = Seq(
+              ConfirmationByEmailSummary
+                .row(userAnswers, id, routes.ConfirmationByEmailController.onPageLoadWithId(flowId, CheckMode)),
+              EnterYourEmailAddressSummary
+                .row(userAnswers, id, routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode))
             )
+
+            val emailList = SummaryListViewModel(rows = emailRows.flatten)
 
             val formAction = Some(routes.CheckYourAnswersController.onSubmitWithId(flowId))
 
             Future.successful(Ok(view(returnDetailsList, emailList, formAction)))
 
-          case _ =>
-            logger.error("[CheckYourAnswersController][onPageLoadWithId] - Missing or unsupported return type")
+          case None =>
+            logger.error("[CheckYourAnswersController][onPageLoadWithId] - Missing ReturnTypePage")
             Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
         }
       }
     }
 
-  // Multi-tab: Submit the ID-scoped nil return journey.
+  // Multi-tab: Submit the ID-scoped monthly return journey.
   def onSubmitWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val userAnswers = request.userAnswers

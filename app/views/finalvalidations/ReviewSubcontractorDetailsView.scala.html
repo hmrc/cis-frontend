@@ -36,9 +36,7 @@
 }
 
 @fileAReturnSubmitLink() = {
-    @helper.form(
-        action = controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()
-    ) {
+    @helper.form(controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()) {
         @helper.CSRF.formField
 
         <button
@@ -68,6 +66,8 @@
 
         @p("finalValidations.reviewSubcontractorDetails.intro")
 
+        <!--TODO DTR-9474: Implement taskListAction.getOrElse for href-->
+        val rowId = "test"
         @govukTaskList(TaskList(
             idPrefix = "review-subcontractor-details",
             items = model.subcontractors.map { row =>

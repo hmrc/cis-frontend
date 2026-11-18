@@ -17,6 +17,7 @@
 @import viewmodels.checkAnswers.monthlyreturns.CheckAnswersTotalPaymentsViewModel
 @import viewmodels.checkAnswers.monthlyreturns.TotalPaymentsSummary
 @import models.CheckMode
+@import java.util.UUID
 
 @this(
     layout: templates.Layout,
@@ -24,10 +25,14 @@
     govukButton: GovukButton,
     govukSummaryList: GovukSummaryList,
     h1: components.H1
-
 )
 
-@(subcontractor: CheckAnswersTotalPaymentsViewModel, index: Integer)(implicit request: Request[_], messages: Messages)
+@(
+    subcontractor: CheckAnswersTotalPaymentsViewModel,
+    index: Integer,
+    formAction: Option[Call] = None,
+    flowId: Option[UUID] = None
+)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.checkAnswersTotalPayments.title"))) {
 
@@ -35,11 +40,13 @@
 
     @govukSummaryList(
         SummaryListViewModel(
-            TotalPaymentsSummary.rowsForCheckAnswers(subcontractor, index)
+            TotalPaymentsSummary.rowsForCheckAnswers(subcontractor, index, flowId)
         )
     )
 
-    @formHelper(action = controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index)) {
+    @formHelper(
+        action = formAction.getOrElse(controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmit(index))
+    ) {
         @govukButton(ButtonViewModel(messages("site.continue")))
     }
 }

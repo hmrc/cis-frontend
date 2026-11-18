@@ -44,4 +44,33 @@ object SelectedSubcontractorsRequest {
       amendment = returnType.amendmentFlag
     )
   }
+
+  // Multi-tab: Build the request for an ID-scoped monthly return.
+  def from(
+    ua: UserAnswers,
+    selectedSubcontractorIds: Seq[Long],
+    cisId: String,
+    id: String
+  ): SelectedSubcontractorsRequest = {
+
+    val monthYear =
+      ua.get(DateConfirmPaymentsPage(id))
+        .getOrElse(
+          throw new RuntimeException("Missing DateConfirmPayments")
+        )
+
+    val returnType =
+      ua.get(ReturnTypePage(id))
+        .getOrElse(
+          throw new RuntimeException("Missing ReturnType")
+        )
+
+    SelectedSubcontractorsRequest(
+      instanceId = cisId,
+      taxYear = monthYear.getYear,
+      taxMonth = monthYear.getMonthValue,
+      selectedSubcontractorIds = selectedSubcontractorIds,
+      amendment = returnType.amendmentFlag
+    )
+  }
 }

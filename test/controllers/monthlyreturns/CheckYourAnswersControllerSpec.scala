@@ -546,35 +546,57 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
         }
       }
 
-      "must redirect to Journey Recovery when the ID-scoped return type is missing or unsupported" in {
+      "must redirect to Journey Recovery when the ID-scoped return type is missing" in {
 
         val flowId = UUID.randomUUID()
         val id     = flowId.toString
 
-        val missingReturnType = completeScopedAnswers(flowId)
+        val userAnswers = completeScopedAnswers(flowId)
           .remove(ReturnTypePage(id))
           .get
           .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
 
-        val unsupportedReturnType = completeScopedAnswers(flowId, ReturnType.MonthlyStandardReturn)
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
 
-        Seq(missingReturnType, unsupportedReturnType).foreach { userAnswers =>
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
 
-          val application = applicationBuilder(userAnswers = Some(userAnswers))
-            .configure("features.multi-tab-enabled" -> true)
-            .build()
+          val result = route(application, request).value
 
-          running(application) {
-            val request = FakeRequest(
-              GET,
-              controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
-            )
+          status(result) mustEqual SEE_OTHER
+          redirectLocation(result).value mustEqual
+            controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
 
-            val result = route(application, request).value
+      "must render Check Your Answers for a supported ID-scoped standard return" in {
 
-            status(result) mustEqual SEE_OTHER
-            redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
-          }
+        val flowId = UUID.randomUUID()
+
+        val userAnswers =
+          completeScopedAnswers(flowId, ReturnType.MonthlyStandardReturn)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual OK
+          contentAsString(result) must include(
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
         }
       }
 
