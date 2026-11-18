@@ -22,11 +22,13 @@ import play.api.i18n.Messages
 import play.api.test.Helpers
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.checkAnswers.monthlyreturns.{ChangeAnswersTotalPaymentsViewModel, CheckAnswersTotalPaymentsViewModel, TotalPaymentsSummary}
+import java.util.UUID
 
 class TotalPaymentsSummarySpec extends AnyFreeSpec with Matchers {
 
   private implicit val messages: Messages = Helpers.stubMessages()
   private val index                       = 1
+  private val flowId                      = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
 
   private val checkVm =
     CheckAnswersTotalPaymentsViewModel(
@@ -54,5 +56,89 @@ class TotalPaymentsSummarySpec extends AnyFreeSpec with Matchers {
   "rowsForChangeAnswers" in {
     val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForChangeAnswers(changeVm, index)
     rows must have size 3
+  }
+
+  "rowsForCheckAnswers with ID must return UUID-scoped change links" in {
+    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForCheckAnswers(checkVm, index, Some(flowId))
+
+    rows must have size 3
+
+    rows(0).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.PaymentDetailsController
+        .onPageLoadWithId(flowId, models.CheckMode, index, None)
+        .url
+
+    rows(1).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.CostOfMaterialsController
+        .onPageLoadWithId(flowId, models.CheckMode, index, None)
+        .url
+
+    rows(2).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.TotalTaxDeductedController
+        .onPageLoadWithId(flowId, models.CheckMode, index, None)
+        .url
+  }
+
+  "rowsForCheckAnswers with no ID must return legacy change links" in {
+    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForCheckAnswers(checkVm, index, None)
+
+    rows must have size 3
+
+    rows(0).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.PaymentDetailsController
+        .onPageLoad(models.CheckMode, index, None)
+        .url
+
+    rows(1).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.CostOfMaterialsController
+        .onPageLoad(models.CheckMode, index, None)
+        .url
+
+    rows(2).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.TotalTaxDeductedController
+        .onPageLoad(models.CheckMode, index, None)
+        .url
+  }
+
+  "rowsForChangeAnswers with ID must return UUID-scoped change links" in {
+    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForChangeAnswers(changeVm, index, Some(flowId))
+
+    rows must have size 3
+
+    rows(0).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.PaymentDetailsController
+        .onPageLoadWithId(flowId, models.CheckMode, index, Some("changeAnswers"))
+        .url
+
+    rows(1).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.CostOfMaterialsController
+        .onPageLoadWithId(flowId, models.CheckMode, index, Some("changeAnswers"))
+        .url
+
+    rows(2).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.TotalTaxDeductedController
+        .onPageLoadWithId(flowId, models.CheckMode, index, Some("changeAnswers"))
+        .url
+  }
+
+  "rowsForChangeAnswers with no ID must return legacy change links" in {
+    val rows: Seq[SummaryListRow] = TotalPaymentsSummary.rowsForChangeAnswers(changeVm, index, None)
+
+    rows must have size 3
+
+    rows(0).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.PaymentDetailsController
+        .onPageLoad(models.CheckMode, index, Some("changeAnswers"))
+        .url
+
+    rows(1).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.CostOfMaterialsController
+        .onPageLoad(models.CheckMode, index, Some("changeAnswers"))
+        .url
+
+    rows(2).actions.get.items.head.href mustBe
+      controllers.monthlyreturns.routes.TotalTaxDeductedController
+        .onPageLoad(models.CheckMode, index, Some("changeAnswers"))
+        .url
   }
 }

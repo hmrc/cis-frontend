@@ -76,7 +76,7 @@ class CheckAnswersTotalPaymentsController @Inject() (
           )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
-          Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index, formAction))
+          Ok(view(CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor), index, formAction, Some(flowId)))
       }
     }
 
@@ -138,7 +138,7 @@ class CheckAnswersTotalPaymentsController @Inject() (
       val ua           = request.userAnswers
       val subJourneyId = flowId.toString
 
-      payloadBuilder.build(ua, index) match {
+      payloadBuilder.build(ua, subJourneyId, index) match {
         case None =>
           logger.error(
             s"[CheckAnswersTotalPaymentsController][onSubmitWithId] - Failed to build monthly return item payload, index: $index, subJourneyId=$subJourneyId"

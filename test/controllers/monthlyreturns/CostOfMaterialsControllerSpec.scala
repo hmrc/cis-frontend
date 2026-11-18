@@ -21,6 +21,7 @@ import controllers.routes
 import forms.monthlyreturns.CostOfMaterialsFormProvider
 import models.monthlyreturns.SelectedSubcontractor
 import models.{NormalMode, UserAnswers}
+import models.ReturnType.MonthlyStandardReturn
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
@@ -358,16 +359,18 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       }
     }
 
-    "must redirect to the next page when valid data is submitted with ID" in {
+    "must redirect to scoped Total Tax Deducted when valid data is submitted with ID" in {
+
+      val scopedAnswers = userAnswersWithId
+        .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
 
       val application =
-        applicationBuilder(userAnswers = Some(userAnswersWithId))
+        applicationBuilder(userAnswers = Some(scopedAnswers))
           .configure("features.multi-tab-enabled" -> true)
           .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
           )
           .build()
@@ -385,12 +388,14 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.TotalTaxDeductedController.onPageLoadWithId(flowId, NormalMode, 1, None).url
 
-        val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+        captor.getValue
+          .get(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId))) mustBe Some(validAnswer)
       }
     }
 

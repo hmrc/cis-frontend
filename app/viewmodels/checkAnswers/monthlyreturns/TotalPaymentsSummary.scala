@@ -21,6 +21,7 @@ import play.api.i18n.Messages
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import viewmodels.govuk.summarylist.*
+import java.util.UUID
 
 object TotalPaymentsSummary {
 
@@ -100,4 +101,77 @@ object TotalPaymentsSummary {
       value = ValueViewModel(Text(displayValue)),
       actions = Seq(action)
     )
+
+  // Multi-tab: Build payment summary rows with ID-scoped change links.
+  def rowsForCheckAnswers(subcontractor: CheckAnswersTotalPaymentsViewModel, index: Int, flowId: Option[UUID])(implicit
+    messages: Messages
+  ): Seq[SummaryListRow] =
+    flowId match {
+      case None =>
+        rowsForCheckAnswers(subcontractor, index)
+
+      case Some(id) =>
+        Seq(
+          row(
+            labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
+            displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
+            changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController
+              .onPageLoadWithId(id, CheckMode, index, None)
+              .url,
+            actionId = None
+          ),
+          row(
+            labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials",
+            displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
+            changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController
+              .onPageLoadWithId(id, CheckMode, index, None)
+              .url,
+            actionId = None
+          ),
+          row(
+            labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalCisDeductions",
+            displayValue = messages("currency.pounds", subcontractor.totalTaxDeducted),
+            changeUrl = controllers.monthlyreturns.routes.TotalTaxDeductedController
+              .onPageLoadWithId(id, CheckMode, index, None)
+              .url,
+            actionId = None
+          )
+        )
+    }
+
+  def rowsForChangeAnswers(subcontractor: ChangeAnswersTotalPaymentsViewModel, index: Int, flowId: Option[UUID])(
+    implicit messages: Messages
+  ): Seq[SummaryListRow] =
+    flowId match {
+      case None =>
+        rowsForChangeAnswers(subcontractor, index)
+
+      case Some(id) =>
+        Seq(
+          row(
+            labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
+            displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
+            changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController
+              .onPageLoadWithId(id, CheckMode, index, Some("changeAnswers"))
+              .url,
+            actionId = Some("total-payment-made")
+          ),
+          row(
+            labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials",
+            displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
+            changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController
+              .onPageLoadWithId(id, CheckMode, index, Some("changeAnswers"))
+              .url,
+            actionId = Some("total-cost-of-materials")
+          ),
+          row(
+            labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCisDeductions",
+            displayValue = messages("currency.pounds", subcontractor.totalTaxDeducted),
+            changeUrl = controllers.monthlyreturns.routes.TotalTaxDeductedController
+              .onPageLoadWithId(id, CheckMode, index, Some("changeAnswers"))
+              .url,
+            actionId = Some("total-tax-deductions")
+          )
+        )
+    }
 }

@@ -286,13 +286,17 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         val request = FakeRequest(GET, routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, index).url)
 
         val result = route(application, request).value
-        val view   = application.injector.instanceOf[CheckAnswersTotalPaymentsView]
-
-        val expectedVm = CheckAnswersTotalPaymentsViewModel.fromModel(subcontractor)
-        val formAction = Some(routes.CheckAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(expectedVm, index, formAction)(request, messages(application)).toString
+
+        val html = contentAsString(result)
+
+        html must include("£1,200.00")
+        html must include("£500.00")
+        html must include("£240.00")
+
+        html must include(s"/monthly-return/change-payment-details/$subJourneyId/$index")
+        html must include(s"/monthly-return/change-materials-cost/$subJourneyId/$index")
       }
     }
 
@@ -325,7 +329,8 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         .success
         .value
 
-      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn None
+      when(mockBuilder.build(any[UserAnswers], any[String], any[Int]))
+        .thenReturn(None)
 
       val application =
         applicationBuilder(userAnswers = Some(ua))
@@ -363,7 +368,9 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         amendment = "N"
       )
 
-      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockBuilder.build(any[UserAnswers], any[String], any[Int]))
+        .thenReturn(Some(payload))
+
       when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 
@@ -411,7 +418,9 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
         amendment = "N"
       )
 
-      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockBuilder.build(any[UserAnswers], any[String], any[Int]))
+        .thenReturn(Some(payload))
+
       when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
 

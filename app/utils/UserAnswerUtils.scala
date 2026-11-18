@@ -47,6 +47,14 @@ object UserAnswerUtils {
         .values
         .forall(_.isComplete)
 
+    // Multi-tab: Check completion of subcontractors belonging to this journey.
+    private def allSubcontractorsComplete(id: String): Boolean =
+      userAnswers
+        .get(SelectedSubcontractorPage.all(Some(id)))
+        .getOrElse(Map.empty)
+        .values
+        .forall(_.isComplete)
+
     private def emailSatisfied: Boolean =
       userAnswers.get(ConfirmationByEmailPage) match {
         case Some(true)  => answered(EnterYourEmailAddressPage)
@@ -115,7 +123,6 @@ object UserAnswerUtils {
         .flatMap(_.remove(PaymentDetailsConfirmationPage))
         .flatMap(_.remove(EmploymentStatusDeclarationPage))
         .flatMap(_.remove(VerifiedStatusDeclarationPage))
-        .flatMap(_.remove(SubcontractorValidationFailuresPage))
 
         // amendment-specific state
         .flatMap(_.remove(AmendmentDetailsPage))
@@ -126,6 +133,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(FinalValidationDraftIdPage))
         .flatMap(_.remove(MonthlyFinalValidationContinuationPage))
         .flatMap(_.remove(MonthlyFinalValidationSourcePage))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage))
 
         // monthly return journey origin
         .flatMap(_.remove(IsResumedMonthlyReturnPage))
@@ -170,26 +178,25 @@ object UserAnswerUtils {
         .flatMap(_.remove(DeclarationPage(id)))
 
         // monthly standard return
-        // TODO: Add UUID-scoped standard return cleanup when the standard return journey is implemented.
-        // .flatMap(_.remove(SelectedSubcontractorPage.all(id)))
-        // .flatMap(_.remove(VerifySubcontractorsPage(id)))
-        // .flatMap(_.remove(AllSubcontractorDetailsAdded(id)))
-        // .flatMap(_.remove(PaymentDetailsConfirmationPage(id)))
-        // .flatMap(_.remove(EmploymentStatusDeclarationPage(id)))
-        // .flatMap(_.remove(VerifiedStatusDeclarationPage(id)))
-        // .flatMap(_.remove(SubcontractorValidationFailuresPage(id)))
+        .flatMap(_.remove(SelectedSubcontractorPage.all(Some(id))))
+        .flatMap(_.remove(VerifySubcontractorsPage(id)))
+        .flatMap(_.remove(AllSubcontractorDetailsAdded(id)))
+        .flatMap(_.remove(PaymentDetailsConfirmationPage(id)))
+        .flatMap(_.remove(EmploymentStatusDeclarationPage(id)))
+        .flatMap(_.remove(VerifiedStatusDeclarationPage(id)))
+        .flatMap(_.remove(SubcontractorValidationFailuresPage(id)))
+        .flatMap(_.remove(OriginalSubcontractorCountPage(id)))
 
         // amendment-specific state
         // TODO: Add UUID-scoped amendment cleanup when the amendment journey is implemented.
         // .flatMap(_.remove(AmendmentDetailsPage(id)))
         // .flatMap(_.remove(WhichSubcontractorsToAddPage(id)))
-        // .flatMap(_.remove(OriginalSubcontractorCountPage(id)))
 
         // final validation state
         // TODO: Add UUID-scoped final validation cleanup when the standard return journey is implemented.
-        // .flatMap(_.remove(FinalValidationDraftIdPage(id)))
-        // .flatMap(_.remove(MonthlyFinalValidationContinuationPage(id)))
-        // .flatMap(_.remove(MonthlyFinalValidationSourcePage(id)))
+        .flatMap(_.remove(FinalValidationDraftIdPage(id)))
+        .flatMap(_.remove(MonthlyFinalValidationContinuationPage(id)))
+        .flatMap(_.remove(MonthlyFinalValidationSourcePage(id)))
 
         // monthly return journey origin
         .flatMap(_.remove(IsResumedMonthlyReturnPage(id)))
@@ -284,8 +291,20 @@ object UserAnswerUtils {
           )
 
           checks.forall(identity)
-        // TODO: Add support for multi-tab standard return journey completion check once implemented.
-        case _                                                      =>
+
+        case Some(MonthlyStandardReturn) | Some(MonthlyAmendedStandardReturn) =>
+          Seq(
+            answered(DateConfirmPaymentsPage(id)),
+            allSubcontractorsComplete(id),
+            isTrue(AllSubcontractorDetailsAdded(id)),
+            isTrue(PaymentDetailsConfirmationPage(id)),
+            answered(EmploymentStatusDeclarationPage(id)),
+            answered(VerifiedStatusDeclarationPage(id)),
+            answered(SubmitInactivityRequestPage(id)),
+            emailSatisfied(id)
+          ).forall(identity)
+
+        case None =>
           false
       }
   }

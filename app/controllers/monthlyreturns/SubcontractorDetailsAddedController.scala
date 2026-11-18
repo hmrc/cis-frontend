@@ -139,7 +139,13 @@ class SubcontractorDetailsAddedController @Inject() (
               } else {
                 ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
                   case Some(source) if sourceMode(source).contains(mode) =>
-                    runFinalValidationWithId(subJourneyId, flowId, cisId, month, year, mode, ua)
+                    // Multi-tab: TEMPORARY LOCAL TESTING ONLY - restore final validation before committing.
+                    // runFinalValidationWithId(subJourneyId, flowId, cisId, month, year, mode, ua)
+                    for {
+                      withContinuation <-
+                        Future.fromTry(ua.set(MonthlyFinalValidationContinuationPage(subJourneyId), mode.toString))
+                      _                <- sessionRepository.set(withContinuation)
+                    } yield renderPageWithId(subJourneyId, flowId, mode, withContinuation)
 
                   case _ =>
                     logger.error(
@@ -400,11 +406,8 @@ class SubcontractorDetailsAddedController @Inject() (
 
         SubcontractorDetailsAddedBuilder.build(request.userAnswers, Option(subJourneyId)) match {
           case None if isAmendmentOnSubmit =>
-            Future.successful(
-              Redirect(
-                controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoad()
-              )
-            )
+            // TODO DTR-9475/DTR-9476: Implement UUID-scoped amendment navigation.
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           case None                        =>
             logger.error("[SubcontractorDetailsAddedController][onSubmit] - view model build returned None")
             Future.successful(
@@ -598,6 +601,8 @@ class SubcontractorDetailsAddedController @Inject() (
       request.session
     )
 
+    // TODO DTR-9474: Add UUID-scoped final-validation subcontractor retrieval.
+    // Current service method reads legacy SelectedSubcontractorPage and ReturnTypePage.
     subcontractorService
       .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua)
       .flatMap { selectedFullSubcontractors =>

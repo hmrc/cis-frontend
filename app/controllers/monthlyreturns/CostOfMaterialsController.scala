@@ -144,7 +144,8 @@ class CostOfMaterialsController @Inject() (
             )
           case _                     =>
             Redirect(
-              navigator.nextPage(SelectedSubcontractorMaterialCostsPage(index, subJourneyId), mode, updatedAnswers)
+              navigator
+                .nextPage(flowId, SelectedSubcontractorMaterialCostsPage(index, subJourneyId), mode, updatedAnswers)
             )
         }
 

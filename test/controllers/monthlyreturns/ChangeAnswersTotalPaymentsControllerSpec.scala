@@ -252,13 +252,18 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         val request = FakeRequest(GET, routes.ChangeAnswersTotalPaymentsController.onPageLoadWithId(flowId, index).url)
 
         val result = route(application, request).value
-        val view   = application.injector.instanceOf[ChangeAnswersTotalPaymentsView]
-
-        val expectedVm = ChangeAnswersTotalPaymentsViewModel.fromModel(subcontractor)
-        val formAction = Some(routes.ChangeAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
         status(result) mustEqual OK
-        contentAsString(result) mustEqual view(expectedVm, index, formAction)(request, messages(application)).toString
+
+        val html = contentAsString(result)
+
+        html must include("£1,200.00")
+        html must include("£500.00")
+        html must include("£240.00")
+
+        html must include(s"/monthly-return/change-payment-details/$subJourneyId/$index?returnTo=changeAnswers")
+        html must include(s"/monthly-return/change-materials-cost/$subJourneyId/$index?returnTo=changeAnswers")
+        html must include(s"/monthly-return/change-tax-deducted/$subJourneyId/$index?returnTo=changeAnswers")
       }
     }
 
@@ -288,7 +293,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
       val ua = emptyUserAnswers
         .setOrException(CisIdPage(subJourneyId), "i-123")
 
-      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn None
+      when(mockBuilder.build(any[UserAnswers], any[String], any[Int])) thenReturn None
 
       val application =
         applicationBuilder(userAnswers = Some(ua))
@@ -333,7 +338,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
         amendment = "N"
       )
 
-      when(mockBuilder.build(any[UserAnswers], any[Int])) thenReturn Some(payload)
+      when(mockBuilder.build(any[UserAnswers], any[String], any[Int])) thenReturn Some(payload)
       when(mockService.updateMonthlyReturnItem(any[UpdateMonthlyReturnItemRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(()))
       when(mockSession.set(any())) thenReturn Future.successful(true)

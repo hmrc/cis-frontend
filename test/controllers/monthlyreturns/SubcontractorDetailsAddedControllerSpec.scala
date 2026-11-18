@@ -42,7 +42,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import java.util.UUID
 import java.time.{Instant, LocalDate}
 import scala.concurrent.Future
-import pages.monthlyreturns.OriginalSubcontractorCountPage
 
 class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar {
 
@@ -712,7 +711,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
-    "must redirect to legacy ReviewSubcontractorDetails when a scoped Final Validation draft exists" in {
+    "must redirect to Journey Recovery when a scoped Final Validation draft exists" in {
       val ua = uaWithScopedSubcontractor
         .setOrException(FinalValidationDraftIdPage(subJourneyId), "draft-123")
 
@@ -731,7 +730,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad().url
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
 

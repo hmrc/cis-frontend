@@ -623,6 +623,133 @@ class UserAnswerUtilsSpec extends SpecBase {
     ua.isJourneyComplete("second-id") mustBe false
   }
 
+  "UserAnswerUtils.isJourneyComplete with id for standard returns" - {
+
+    "returns true when all ID-scoped standard return pages are answered (email not requested)" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), false)
+
+      ua.isJourneyComplete(id) mustBe true
+      ua.setOrException(ReturnTypePage(id), MonthlyAmendedStandardReturn).isJourneyComplete(id) mustBe true
+    }
+
+    "returns true when all ID-scoped standard return pages are answered (email requested and provided)" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), true)
+        .setOrException(EnterYourEmailAddressPage(id), "test@test.com")
+
+      ua.isJourneyComplete(id) mustBe true
+    }
+
+    "returns false when a required ID-scoped standard return page is missing" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        // EmploymentStatusDeclarationPage missing
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), false)
+
+      ua.isJourneyComplete(id) mustBe false
+    }
+
+    "returns false when not all ID-scoped subcontractors are complete" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorPage(2, Some(id)), incompleteSub(2))
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), false)
+
+      ua.isJourneyComplete(id) mustBe false
+    }
+
+    "returns false when ID-scoped subcontractor details added is false" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded(id), false)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), false)
+
+      ua.isJourneyComplete(id) mustBe false
+    }
+
+    "returns false when ID-scoped email is requested but not provided" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), true)
+
+      ua.isJourneyComplete(id) mustBe false
+    }
+
+    "only checks subcontractors belonging to the correct ID-scoped journey" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorPage(2, Some("other-id")), incompleteSub(2))
+        .setOrException(SelectedSubcontractorPage(3), incompleteSub(3))
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubmitInactivityRequestPage(id), true)
+        .setOrException(ConfirmationByEmailPage(id), false)
+
+      ua.isJourneyComplete(id) mustBe true
+    }
+  }
+
   "UserAnswerUtils.clearMonthlyReturnJourney with id" - {
 
     "removes ID-scoped nil return and submission pages" in {
@@ -700,6 +827,73 @@ class UserAnswerUtilsSpec extends SpecBase {
       val result = UserAnswers("id").clearMonthlyReturnJourney("test-id")
 
       result.isSuccess mustBe true
+    }
+
+    "removes ID-scoped standard return and final validation pages" in {
+      val id = "test-id"
+
+      val ua = UserAnswers("id")
+        .setOrException(CisIdPage(id), "CIS-123")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+        .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
+        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorPage(2, Some(id)), incompleteSub(2))
+        .setOrException(VerifySubcontractorsPage(id), true)
+        .setOrException(AllSubcontractorDetailsAdded(id), true)
+        .setOrException(PaymentDetailsConfirmationPage(id), true)
+        .setOrException(EmploymentStatusDeclarationPage(id), true)
+        .setOrException(VerifiedStatusDeclarationPage(id), true)
+        .setOrException(SubcontractorValidationFailuresPage(id), validationFailures)
+        .setOrException(OriginalSubcontractorCountPage(id), 2)
+        .setOrException(FinalValidationDraftIdPage(id), "draft-123")
+        .setOrException(MonthlyFinalValidationContinuationPage(id), "NormalMode")
+        .setOrException(MonthlyFinalValidationSourcePage(id), MonthlyFinalValidationSource.SelectSubcontractors)
+
+      val cleared = ua.clearMonthlyReturnJourney(id).get
+
+      cleared.get(CisIdPage(id)) mustBe None
+      cleared.get(ReturnTypePage(id)) mustBe None
+      cleared.get(DateConfirmPaymentsPage(id)) mustBe None
+      cleared.get(SelectedSubcontractorPage.all(Some(id))) mustBe None
+      cleared.get(SelectedSubcontractorPage(1, Some(id))) mustBe None
+      cleared.get(SelectedSubcontractorPage(2, Some(id))) mustBe None
+      cleared.get(VerifySubcontractorsPage(id)) mustBe None
+      cleared.get(AllSubcontractorDetailsAdded(id)) mustBe None
+      cleared.get(PaymentDetailsConfirmationPage(id)) mustBe None
+      cleared.get(EmploymentStatusDeclarationPage(id)) mustBe None
+      cleared.get(VerifiedStatusDeclarationPage(id)) mustBe None
+      cleared.get(SubcontractorValidationFailuresPage(id)) mustBe None
+      cleared.get(OriginalSubcontractorCountPage(id)) mustBe None
+      cleared.get(FinalValidationDraftIdPage(id)) mustBe None
+      cleared.get(MonthlyFinalValidationContinuationPage(id)) mustBe None
+      cleared.get(MonthlyFinalValidationSourcePage(id)) mustBe None
+    }
+
+    "retains legacy and other ID-scoped standard return answers" in {
+      val ua = UserAnswers("id")
+        .setOrException(ReturnTypePage, MonthlyStandardReturn)
+        .setOrException(SelectedSubcontractorPage(1), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded, true)
+        .setOrException(ReturnTypePage("first-id"), MonthlyStandardReturn)
+        .setOrException(SelectedSubcontractorPage(1, Some("first-id")), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded("first-id"), true)
+        .setOrException(ReturnTypePage("second-id"), MonthlyStandardReturn)
+        .setOrException(SelectedSubcontractorPage(1, Some("second-id")), completeSub(1))
+        .setOrException(AllSubcontractorDetailsAdded("second-id"), true)
+
+      val cleared = ua.clearMonthlyReturnJourney("first-id").get
+
+      cleared.get(ReturnTypePage("first-id")) mustBe None
+      cleared.get(SelectedSubcontractorPage(1, Some("first-id"))) mustBe None
+      cleared.get(AllSubcontractorDetailsAdded("first-id")) mustBe None
+
+      cleared.get(ReturnTypePage("second-id")) mustBe Some(MonthlyStandardReturn)
+      cleared.get(SelectedSubcontractorPage(1, Some("second-id"))) mustBe Some(completeSub(1))
+      cleared.get(AllSubcontractorDetailsAdded("second-id")) mustBe Some(true)
+
+      cleared.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)
+      cleared.get(SelectedSubcontractorPage(1)) mustBe Some(completeSub(1))
+      cleared.get(AllSubcontractorDetailsAdded) mustBe Some(true)
     }
   }
 

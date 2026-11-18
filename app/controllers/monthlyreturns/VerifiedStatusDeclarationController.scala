@@ -101,7 +101,9 @@ class VerifiedStatusDeclarationController @Inject() (
               updatedAnswers <-
                 Future.fromTry(request.userAnswers.set(VerifiedStatusDeclarationPage(subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(VerifiedStatusDeclarationPage(subJourneyId), mode, updatedAnswers))
+            } yield Redirect(
+              navigator.nextPage(flowId, VerifiedStatusDeclarationPage(subJourneyId), mode, updatedAnswers)
+            )
         )
     }
 }

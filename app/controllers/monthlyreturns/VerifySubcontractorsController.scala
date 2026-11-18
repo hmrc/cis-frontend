@@ -102,15 +102,14 @@ class VerifySubcontractorsController @Inject() (
           formWithErrors => Future.successful(BadRequest(view(formWithErrors, mode, formAction))),
           value =>
             for {
-              updatedAnswers <-
-                Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(subJourneyId), value))
+              updatedAnswers <- Future.fromTry(request.userAnswers.set(VerifySubcontractorsPage(subJourneyId), value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield value match {
-              case true  => Redirect(appConfig.verifySubcontractorsUrl)
+              case true  =>
+                // TODO DTR-9474: Update this redirect once the Verify Subcontractors journey supports multi-tab.
+                Redirect(appConfig.verifySubcontractorsUrl)
               case false =>
-                Redirect(
-                  navigator.nextPage(VerifySubcontractorsPage(subJourneyId), mode, request.userAnswers)
-                )
+                Redirect(navigator.nextPage(flowId, VerifySubcontractorsPage(subJourneyId), mode, updatedAnswers))
             }
         )
     }

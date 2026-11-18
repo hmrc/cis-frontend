@@ -17,6 +17,7 @@
 @import viewmodels.checkAnswers.monthlyreturns.ChangeAnswersTotalPaymentsViewModel
 @import viewmodels.checkAnswers.monthlyreturns.TotalPaymentsSummary
 @import models.CheckMode
+@import java.util.UUID
 
 @this(
     layout: templates.Layout,
@@ -29,7 +30,8 @@
 @(
     subcontractor: ChangeAnswersTotalPaymentsViewModel,
     index: Integer,
-    formAction: Option[Call] = None
+    formAction: Option[Call] = None,
+    flowId: Option[UUID] = None
 )(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = titleNoForm(messages("monthlyreturns.changeAnswersTotalPayments.title", subcontractor.name))) {
@@ -38,7 +40,7 @@
 
     @govukSummaryList(
         SummaryListViewModel(
-            TotalPaymentsSummary.rowsForChangeAnswers(subcontractor, index)
+            TotalPaymentsSummary.rowsForChangeAnswers(subcontractor, index, flowId)
         )
     )
 

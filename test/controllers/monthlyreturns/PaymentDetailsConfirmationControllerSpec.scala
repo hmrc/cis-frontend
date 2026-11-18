@@ -281,9 +281,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
           routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode)
         )
 
-        val cancelAction = Some(
-          routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId)
-        )
+        val cancelAction = None
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual
@@ -314,9 +312,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
           routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode)
         )
 
-        val cancelAction = Some(
-          routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId)
-        )
+        val cancelAction = None
 
         status(result) mustEqual OK
         contentAsString(result) mustEqual
@@ -430,9 +426,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
           routes.PaymentDetailsConfirmationController.onSubmitWithId(flowId, NormalMode)
         )
 
-        val cancelAction = Some(
-          routes.PaymentDetailsConfirmationController.onCancelAmendmentWithId(flowId)
-        )
+        val cancelAction = None
 
         val result = route(application, request).value
 
@@ -445,7 +439,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
       }
     }
 
-    "must redirect to scoped Confirm Cancel Amendment page when cancelling amendment with ID" in {
+    "must redirect to Journey Recovery when cancelling amendment with ID" in {
 
       val userAnswers = userAnswersWithId
         .setOrException(ReturnTypePage(subJourneyId), MonthlyAmendedStandardReturn)
@@ -465,7 +459,7 @@ class PaymentDetailsConfirmationControllerSpec extends SpecBase with MockitoSuga
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual
-          controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoadWithId(flowId).url
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
       }
     }
   }

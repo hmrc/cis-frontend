@@ -171,7 +171,7 @@ class EnterYourEmailAddressController @Inject() (
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(flowId, EnterYourEmailAddressPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(flowId, EnterYourEmailAddressPage(id), mode, updatedAnswers))
         )
     }
 }

@@ -84,9 +84,15 @@ object SubcontractorDetailsAddedBuilder {
               changeLabel = if (added) { "monthlyreturns.subcontractorDetailsAdded.amend" }
               else { "monthlyreturns.subcontractorDetailsAdded.add" },
               changeCall = changeCall,
-              removeCall =
-                controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController // TODO DTR-9474: Update with future id scope
-                  .onPageLoad(CheckMode, index)
+              removeCall = id match {
+                case Some(value) =>
+                  controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+                    .onPageLoadWithId(UUID.fromString(value), CheckMode, index)
+
+                case None =>
+                  controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+                    .onPageLoad(CheckMode, index)
+              }
             )
           }
         }

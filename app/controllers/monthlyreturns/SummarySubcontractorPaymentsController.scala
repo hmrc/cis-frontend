@@ -64,6 +64,7 @@ class SummarySubcontractorPaymentsController @Inject() (
       Ok(view(viewModel))
   }
 
+  // Multi-tab
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val subJourneyId   = flowId.toString

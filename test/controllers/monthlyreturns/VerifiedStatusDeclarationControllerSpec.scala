@@ -20,6 +20,7 @@ import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
 import models.{NormalMode, UserAnswers}
+import models.ReturnType.MonthlyStandardReturn
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentCaptor
@@ -195,7 +196,9 @@ class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar
       val flowId = UUID.randomUUID()
       val id     = flowId.toString
 
-      val userAnswers = userAnswersWithCisId.set(CisIdPage(id), "1").success.value
+      val userAnswers = userAnswersWithCisId
+        .setOrException(CisIdPage(id), "1")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
 
       val mockSessionRepository = mock[SessionRepository]
 
@@ -205,7 +208,6 @@ class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar
         applicationBuilder(userAnswers = Some(userAnswers))
           .configure("features.multi-tab-enabled" -> true)
           .overrides(
-            bind[Navigator].toInstance(new FakeNavigator(onwardRoute)),
             bind[SessionRepository].toInstance(mockSessionRepository)
           )
           .build()
@@ -220,7 +222,8 @@ class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar
         val result = route(application, request).value
 
         status(result) mustEqual SEE_OTHER
-        redirectLocation(result).value mustEqual onwardRoute.url
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode).url
 
         val capturedAnswers = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(capturedAnswers.capture())

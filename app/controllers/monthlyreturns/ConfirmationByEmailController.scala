@@ -102,7 +102,7 @@ class ConfirmationByEmailController @Inject() (
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(ConfirmationByEmailPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(flowId, ConfirmationByEmailPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(flowId, ConfirmationByEmailPage(id), mode, updatedAnswers))
         )
     }
 }

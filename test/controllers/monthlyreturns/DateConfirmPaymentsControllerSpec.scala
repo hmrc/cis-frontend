@@ -691,7 +691,8 @@ class DateConfirmPaymentsControllerSpec extends SpecBase with MockitoSugar {
           val result = route(application, scopedPostRequest(flowId)).value
 
           status(result) mustBe SEE_OTHER
-          redirectLocation(result).value mustBe scopedGetRoute(flowId)
+          redirectLocation(result).value mustBe
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, None).url
 
           val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
           verify(repository).set(captor.capture())
