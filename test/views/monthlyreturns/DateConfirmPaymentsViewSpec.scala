@@ -35,6 +35,13 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
 
   "DateConfirmPaymentsView" - {
 
+    "must render the month input with a text keyboard and the day and year inputs as numeric" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select("input[name$=month]").attr("inputmode") mustBe "text"
+      doc.select("input[name$=year]").attr("inputmode") mustBe "numeric"
+    }
+
     "must render the page with the correct html elements" in new Setup {
       val doc: Document = Jsoup.parse(html.toString)
 
@@ -54,6 +61,60 @@ class DateConfirmPaymentsViewSpec extends SpecBase with MockitoSugar {
         app.injector.instanceOf[FrontendAppConfig].incompleteReturnsUrl
 
       doc.getElementsByClass("govuk-button").text must include(messages("site.continue"))
+    }
+
+    "must show one summary link, to the first field with an error, matching the inline message" in new Setup {
+      val boundForm = formProvider().bind(Map("value.month" -> "", "value.year" -> ""))
+      val doc       =
+        Jsoup.parse(view(boundForm, NormalMode, "monthlyreturns.dateConfirmPayments", MonthlyStandardReturn).toString)
+
+      val monthMsg = messages("monthlyreturns.dateConfirmNilPayments.error.required.month")
+      val yearMsg  = messages("monthlyreturns.dateConfirmNilPayments.error.required.year")
+
+      val links = doc.select(".govuk-error-summary__list a")
+      links.size mustBe 1
+      links.text mustBe monthMsg
+      links.attr("href") mustBe "#value.month"
+      doc.select(".govuk-error-message").text must include(monthMsg)
+      doc.select(".govuk-error-message").text must not include yearMsg
+    }
+
+    "must link the summary to the year field when only the year has an error" in new Setup {
+      val boundForm = formProvider().bind(Map("value.month" -> "Nov", "value.year" -> ""))
+      val doc       =
+        Jsoup.parse(view(boundForm, NormalMode, "monthlyreturns.dateConfirmPayments", MonthlyStandardReturn).toString)
+
+      val links = doc.select(".govuk-error-summary__list a")
+      links.size mustBe 1
+      links.attr("href") mustBe "#value.year"
+      doc.select(".govuk-error-message").text mustBe s"Error: ${links.text}"
+    }
+
+    "must show the same message in the summary and inline when month is invalid and year is missing" in new Setup {
+      val boundForm = formProvider().bind(Map("value.month" -> "jany", "value.year" -> ""))
+      val doc       =
+        Jsoup.parse(view(boundForm, NormalMode, "monthlyreturns.dateConfirmPayments", MonthlyStandardReturn).toString)
+
+      val links = doc.select(".govuk-error-summary__list a")
+      links.size mustBe 1
+      links.text mustBe messages("monthlyreturns.dateConfirmNilPayments.error.invalid.month")
+      links.attr("href") mustBe "#value.month"
+      doc.select(".govuk-error-message").text mustBe s"Error: ${links.text}"
+    }
+
+    "must render the legend heading with a reduced bottom margin so the hint sits close to it" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      val legendHeading = doc.select("legend h2")
+      legendHeading.text mustBe messages("monthlyreturns.dateConfirmPayments.legendText")
+      legendHeading.hasClass("govuk-!-margin-bottom-1") mustBe true
+    }
+
+    "must set autocomplete=off on the month and year inputs, as they do not hold personal data" in new Setup {
+      val doc: Document = Jsoup.parse(html.toString)
+
+      doc.select("input[name$=month]").attr("autocomplete") mustBe "off"
+      doc.select("input[name$=year]").attr("autocomplete") mustBe "off"
     }
 
     "must display error summary when form has errors" in new Setup {
