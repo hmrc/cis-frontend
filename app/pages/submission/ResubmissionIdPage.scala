@@ -24,7 +24,7 @@ case class ResubmissionIdPage(id: String) extends QuestionPage[Long] {
   override def toString: String = "resubmissionId"
 }
 
-object ResubmissionIdPage extends QuestionPage[Long] {
+case object ResubmissionIdPage extends QuestionPage[Long] {
   override def path: JsPath     = JsPath \ "submission" \ toString
   override def toString: String = "resubmissionId"
 }

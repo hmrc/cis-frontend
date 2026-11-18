@@ -184,5 +184,52 @@ class AmendMonthlyReturnServiceSpec extends SpecBase {
 
       service.startStandardAmendment(userAnswers).futureValue mustBe Left("Missing amendment details")
     }
+
+    "startStandardAmendment with id should update monthly return when scoped AmendmentDetailsPage exists" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val mockConnector            = mock[ConstructionIndustrySchemeConnector]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val id = "test-id"
+
+      val amendmentDetails = AmendmentDetails(
+        instanceId = "1",
+        taxYear = 2025,
+        taxMonth = 1,
+        contractorName = "Test Contractor",
+        originalReturnType = MonthlyStandardReturn,
+        acceptedTime = Some("2025-04-01T12:00:00Z")
+      )
+
+      val userAnswers = UserAnswers("user-id")
+        .set(AmendmentDetailsPage(id), amendmentDetails)
+        .success
+        .value
+
+      when(
+        mockMonthlyReturnService.updateMonthlyReturn(any[UpdateMonthlyReturnRequest]())(
+          any[HeaderCarrier]()
+        )
+      ) thenReturn Future.successful(())
+
+      val service = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
+
+      service.startStandardAmendment(userAnswers, id).futureValue mustBe Right(())
+    }
+
+    "startStandardAmendment with id should return Left when scoped AmendmentDetailsPage is missing" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val mockConnector            = mock[ConstructionIndustrySchemeConnector]
+      val mockMonthlyReturnService = mock[MonthlyReturnService]
+
+      val id = "test-id"
+
+      val userAnswers = UserAnswers("user-id")
+      val service     = new AmendMonthlyReturnService(mockConnector, mockMonthlyReturnService)
+
+      service.startStandardAmendment(userAnswers, id).futureValue mustBe Left("Missing amendment details")
+    }
   }
 }

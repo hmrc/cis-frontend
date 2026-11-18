@@ -22,12 +22,14 @@ import models.{NormalMode, UserAnswers}
 import models.amend.WhatDoYouWantToAmendStandard
 import models.finalvalidation.MonthlyFinalValidationSource
 import models.monthlyreturns.{GetAllMonthlyReturnDetailsResponse, MonthlyReturn, MonthlyReturnItem, Subcontractor}
+import models.ReturnType.MonthlyAmendedStandardReturn
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.amend.WhatDoYouWantToAmendStandardPage
+import pages.amend.*
 import pages.finalvalidations.*
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -36,6 +38,7 @@ import services.{AmendMonthlyReturnService, MonthlyReturnService}
 import views.html.amend.WhatDoYouWantToAmendStandardView
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.concurrent.Future
 
 class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSugar {
@@ -48,6 +51,9 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
   val cisId   = "12345678"
   val taxDate = LocalDate.of(2023, 1, 5)
 
+  val flowId = UUID.randomUUID()
+  val id     = flowId.toString
+
   val baseAnswers = emptyUserAnswers
     .set(CisIdPage, cisId)
     .success
@@ -55,6 +61,11 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
     .set(DateConfirmPaymentsPage, taxDate)
     .success
     .value
+
+  val scopedBaseAnswers = emptyUserAnswers
+    .setOrException(CisIdPage(id), cisId)
+    .setOrException(DateConfirmPaymentsPage(id), taxDate)
+    .setOrException(ReturnTypePage(id), MonthlyAmendedStandardReturn)
 
   val mockMonthlyReturn = GetAllMonthlyReturnDetailsResponse(
     scheme = Nil,
@@ -503,6 +514,108 @@ class WhatDoYouWantToAmendStandardControllerSpec extends SpecBase with MockitoSu
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockMonthlyReturnService).retrieveMonthlyReturnForEditDetails(any())(any())
+      }
+    }
+
+    // Multi-tab
+    "must populate the view correctly on a multi-tab GET when the question has previously been answered" in {
+
+      val answer = WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails
+
+      val userAnswers = scopedBaseAnswers
+        .setOrException(WhatDoYouWantToAmendStandardPage(id), answer)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+      running(application) {
+        val request = FakeRequest(GET, routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId).url)
+
+        val view = application.injector.instanceOf[WhatDoYouWantToAmendStandardView]
+
+        val result = route(application, request).value
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual view(
+          form.fill(answer),
+          Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
+        )(request, messages(application)).toString
+      }
+    }
+
+    "must save scoped subcontractors and start a standard amendment on a multi-tab POST" in {
+
+      val mockSessionRepository         = mock[SessionRepository]
+      val mockMonthlyReturnService      = mock[MonthlyReturnService]
+      val mockAmendMonthlyReturnService = mock[AmendMonthlyReturnService]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      when(mockMonthlyReturnService.retrieveMonthlyReturnForEditDetails(any())(any())) thenReturn
+        Future.successful(mockMonthlyReturn)
+
+      when(
+        mockAmendMonthlyReturnService.startStandardAmendment(any[UserAnswers](), any[String]())(any())
+      ) thenReturn Future.successful(Right(()))
+
+      val application =
+        applicationBuilder(userAnswers = Some(scopedBaseAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository),
+            bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[AmendMonthlyReturnService].toInstance(mockAmendMonthlyReturnService)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId).url)
+            .withFormUrlEncodedBody(("value", WhatDoYouWantToAmendStandard.AmendPaymentOrSubcontractorDetails.toString))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(mockAmendMonthlyReturnService).startStandardAmendment(any[UserAnswers](), any[String]())(any())
+
+        val userAnswersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository, times(2)).set(userAnswersCaptor.capture())
+
+        val savedAnswers = userAnswersCaptor.getAllValues.get(1)
+
+        savedAnswers.get(SelectedSubcontractorPage.all(id)).value.values.map(_.id).toSeq mustEqual Seq(1L)
+        savedAnswers.get(WhichSubcontractorsToAddPage(id)) mustBe Some(Set("1"))
+        savedAnswers.get(SelectedSubcontractorPage.all) mustBe None
+      }
+    }
+
+    "must return a Bad Request and preserve the multi-tab form action when invalid data is submitted" in {
+
+      val application =
+        applicationBuilder(userAnswers = Some(scopedBaseAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(POST, routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId).url)
+            .withFormUrlEncodedBody(("value", "invalid value"))
+
+        val boundForm = form.bind(Map("value" -> "invalid value"))
+
+        val view = application.injector.instanceOf[WhatDoYouWantToAmendStandardView]
+
+        val result = route(application, request).value
+
+        status(result) mustEqual BAD_REQUEST
+        contentAsString(result) mustEqual view(
+          boundForm,
+          Some(routes.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId))
+        )(request, messages(application)).toString
       }
     }
   }

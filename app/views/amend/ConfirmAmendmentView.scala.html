@@ -15,6 +15,7 @@
  *@
 
 @import views.html.components._
+@import play.api.mvc.Call
 
 @this(
     layout: templates.Layout,
@@ -25,7 +26,7 @@
     bulletList: BulletList
 )
 
-@(showWarning: Boolean)(implicit request: Request[_], messages: Messages)
+@(showWarning: Boolean, formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @defining(Seq(
         "amend.confirmAmendment.bullet1",
@@ -34,7 +35,7 @@
     )) { items =>
 
         @layout(pageTitle = titleNoForm(messages("amend.confirmAmendment.title"))) {
-            @formHelper(action = controllers.amend.routes.ConfirmAmendmentController.onSubmit(), Symbol("autoComplete") -> "off") {
+            @formHelper(action = formAction.getOrElse(controllers.amend.routes.ConfirmAmendmentController.onSubmit()), Symbol("autoComplete") -> "off") {
 
                 @h1(messages("amend.confirmAmendment.heading"))
                 @paragraph(messages("amend.confirmAmendment.p1"))

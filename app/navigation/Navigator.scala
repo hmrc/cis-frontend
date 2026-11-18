@@ -207,6 +207,19 @@ class Navigator @Inject() () extends Logging {
     case (DateConfirmPaymentsPage, MonthlyNilReturn) =>
       _ => controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode)
 
+    // standard return
+    case (DateConfirmPaymentsPage, MonthlyStandardReturn) =>
+      userAnswers =>
+        if (userAnswers.get(SelectedSubcontractorPage.all(flowId.toString)).exists(_.nonEmpty)) {
+          // TODO: Redirect to SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
+          // once SubcontractorDetailsAddedController is multi-tab enabled.
+          controllers.routes.JourneyRecoveryController.onPageLoad()
+        } else {
+          // TODO: Redirect to SelectSubcontractorsController.onPageLoadWithId(flowId, None)
+          // once SelectSubcontractorsController is multi-tab enabled.
+          controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+
     case (DeclarationPage, _) =>
       _ => controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
@@ -215,10 +228,6 @@ class Navigator @Inject() () extends Logging {
 
     case (EnterYourEmailAddressPage, _) =>
       _ => navigatorFromEnterYourEmailAddressPage(flowId, NormalMode)
-
-    // TODO: Add UUID-scoped standard monthly return navigation.
-
-    // TODO: Add UUID-scoped amended monthly return navigation.
 
     case _ =>
       _ => controllers.routes.JourneyRecoveryController.onPageLoad()
