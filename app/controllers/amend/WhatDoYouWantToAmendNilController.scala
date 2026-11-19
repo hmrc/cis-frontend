@@ -181,7 +181,7 @@ class WhatDoYouWantToAmendNilController @Inject() (
                           } yield Redirect(
                             // TODO: Temp Redirect
                             controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
-                            // controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(cisPath,
+                            // controllers.amend.routes.WhichSubcontractorsToAddController.onPageLoadWithId(
                             // flowId,
                             // NormalMode)
                           )
@@ -202,11 +202,8 @@ class WhatDoYouWantToAmendNilController @Inject() (
                                          )
                       _             <- monthlyReturnService.updateMonthlyReturn(updateRequest)
                     } yield Redirect(
-                      // TODO: Temp Redirect
-                      controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
-                      // controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(cisPath,
-                      // flowId,
-                      // NormalMode)
+                      controllers.monthlyreturns.routes.SubmitInactivityRequestController
+                        .onPageLoadWithId(flowId, NormalMode)
                     )
                 }
             } yield result

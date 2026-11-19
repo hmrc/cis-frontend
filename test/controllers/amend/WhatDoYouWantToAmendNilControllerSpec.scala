@@ -531,7 +531,9 @@ class WhatDoYouWantToAmendNilControllerSpec extends SpecBase with MockitoSugar {
 
           status(result) mustEqual SEE_OTHER
           // TODO: update when SubmitInactivityRequestController.onPageLoadWithId replaces the temp redirect
-          redirectLocation(result).value mustEqual scopedGetUrl(flowId)
+          redirectLocation(result).value mustEqual controllers.monthlyreturns.routes.SubmitInactivityRequestController
+            .onPageLoadWithId(flowId, NormalMode)
+            .url
 
           val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
           verify(repository, atLeastOnce()).set(captor.capture())

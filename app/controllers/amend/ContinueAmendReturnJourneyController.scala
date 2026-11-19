@@ -249,10 +249,14 @@ class ContinueAmendReturnJourneyController @Inject() (
                       result.isNilReturn,
                       result.hasSubcontractors
                     ) match {
-                      case (_, false, true)  => tempRedirect
-                      case (_, false, false) => tempRedirect
-                      case (true, true, _)   => tempRedirect // genuine WhatDoYouWantToAmendNil route
-                      case _                 => tempRedirect
+                      case (_, false, true)  => tempRedirect // Redirect(
+                      // controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId,
+                      // NormalMode))
+                      case (_, false, false) =>
+                        tempRedirect // routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
+                      case (true, true, _)   =>
+                        Redirect(routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId))
+                      case _                 => tempRedirect // routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
                     }
 
                   val withAgentData =
