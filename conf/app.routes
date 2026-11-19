@@ -256,6 +256,10 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil/:flowId          
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
+#DTR-9475
+GET        /manage-cis-return/amend-monthly-return/confirm-amendments/multi-tab   controllers.amend.ConfirmAmendmentController.onPageLoadMultiTab(handoffId: String)
+POST       /manage-cis-return/amend-monthly-return/confirm-amendments/multi-tab   controllers.amend.ConfirmAmendmentController.onSubmitMultiTab(handoffId: String)
+
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
