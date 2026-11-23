@@ -262,7 +262,7 @@ class ContinueReturnJourneyController @Inject() (
                   sessionRepository.set(withSource).flatMap { _ =>
                     reconcileScopedReturn(
                       taxpayer,
-                      Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
+                      Redirect(navigator.nextPage(flowId, DateConfirmPaymentsPage, NormalMode, withSource))
                     )
                   }
                 }
