@@ -17,7 +17,7 @@
 package models.monthlyreturns
 
 import models.ReturnType.{MonthlyNilReturn, MonthlyStandardReturn}
-import models.UserAnswers
+import models.{ReturnType, UserAnswers}
 import models.amend.AmendmentDetails
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
