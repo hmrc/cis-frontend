@@ -31,5 +31,6 @@ case object SubcontractorValidationFailuresPage extends QuestionPage[List[Subcon
 
   override def path: JsPath = JsPath \ "validation" \ toString
 
-  override def toString: String = "subcontractorValidationFailures"
+  override def toString: String =
+    "subcontractorValidationFailures"
 }

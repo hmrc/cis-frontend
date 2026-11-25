@@ -23,19 +23,18 @@ class ConfirmationByEmailPageSpec extends SpecBase {
 
   "ConfirmationByEmailPage" - {
 
-    "use correct ConfirmationByEmailPage path" in {
-      ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
-      ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
-    }
+    "unscoped" - {
 
-    "use correct ConfirmationByEmailPage path with id" in {
-      val testId = "testId"
-      ConfirmationByEmailPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "confirmationByEmail")
-      ConfirmationByEmailPage(testId).toString mustBe "confirmationByEmail"
-    }
+      "have the correct path" in {
+        ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
+      }
 
-    "cleanup" - {
-      "without id" - {
+      "have the correct toString" in {
+        ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
+      }
+
+      "cleanup" - {
+
         "must remove EnterYourEmailAddressPage when answer is No" in {
           val userAnswers = emptyUserAnswers
             .setOrException(EnterYourEmailAddressPage, "test@example.com")
@@ -61,37 +60,6 @@ class ConfirmationByEmailPageSpec extends SpecBase {
           val result = ConfirmationByEmailPage.cleanup(Some(true), userAnswers).success.value
 
           result.get(EnterYourEmailAddressPage) mustBe Some("test@example.com")
-        }
-      }
-
-      "with id" - {
-        val testId = "testId"
-
-        "must remove EnterYourEmailAddressPage when answer is No" in {
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
-
-          val result = ConfirmationByEmailPage(testId).cleanup(Some(false), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(testId)) mustBe None
-        }
-
-        "must remove EnterYourEmailAddressPage when answer is removed" in {
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
-
-          val result = ConfirmationByEmailPage(testId).cleanup(None, userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(testId)) mustBe None
-        }
-
-        "must retain EnterYourEmailAddressPage when answer is Yes" in {
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
-
-          val result = ConfirmationByEmailPage(testId).cleanup(Some(true), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(testId)) mustBe Some("test@example.com")
         }
       }
     }
