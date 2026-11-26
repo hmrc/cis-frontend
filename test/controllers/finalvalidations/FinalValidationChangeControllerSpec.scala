@@ -56,11 +56,13 @@ class FinalValidationChangeControllerSpec extends SpecBase {
       .url
 
   private def testApplicationBuilder(
-    userAnswers: Option[UserAnswers]
+    userAnswers: Option[UserAnswers],
+    multiTabEnabled: Boolean = false
   ) =
     applicationBuilder(userAnswers = userAnswers)
       .configure(
-        "play.http.context" -> "/"
+        "play.http.context"          -> "/",
+        "features.multi-tab-enabled" -> multiTabEnabled
       )
 
   "FinalValidationChangeController.onPageLoad" - {
@@ -241,7 +243,7 @@ class FinalValidationChangeControllerSpec extends SpecBase {
         )
 
       val application =
-        testApplicationBuilder(Some(scopedUserAnswers))
+        testApplicationBuilder(Some(scopedUserAnswers), multiTabEnabled = true)
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector),
             bind[FinalValidationDraftService].toInstance(finalValidationDraftService)
@@ -289,7 +291,7 @@ class FinalValidationChangeControllerSpec extends SpecBase {
           .value
 
       val application =
-        testApplicationBuilder(Some(userAnswers))
+        testApplicationBuilder(Some(userAnswers), multiTabEnabled = true)
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector),
             bind[FinalValidationDraftService].toInstance(finalValidationDraftService)
@@ -321,7 +323,7 @@ class FinalValidationChangeControllerSpec extends SpecBase {
       when(draft.subcontractor(subcontractorId)).thenReturn(None)
 
       val application =
-        testApplicationBuilder(Some(scopedUserAnswers))
+        testApplicationBuilder(Some(scopedUserAnswers), multiTabEnabled = true)
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector),
             bind[FinalValidationDraftService].toInstance(finalValidationDraftService)

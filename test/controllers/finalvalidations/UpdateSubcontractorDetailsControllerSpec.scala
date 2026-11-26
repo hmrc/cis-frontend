@@ -702,7 +702,8 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
           applicationWith(
             userAnswers = Some(scopedUserAnswers),
             finalValidationDraftService = finalValidationDraftService,
-            finalValidationService = finalValidationService
+            finalValidationService = finalValidationService,
+            multiTabEnabled = true
           )
 
         running(application) {
@@ -809,7 +810,8 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
           applicationWith(
             userAnswers = Some(scopedUserAnswers),
             finalValidationDraftService = finalValidationDraftService,
-            finalValidationService = finalValidationService
+            finalValidationService = finalValidationService,
+            multiTabEnabled = true
           )
 
         running(application) {
@@ -878,7 +880,8 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
           applicationWith(
             userAnswers = Some(scopedUserAnswers),
             finalValidationDraftService = finalValidationDraftService,
-            finalValidationService = finalValidationService
+            finalValidationService = finalValidationService,
+            multiTabEnabled = true
           )
 
         running(application) {
@@ -947,7 +950,8 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
           applicationWith(
             userAnswers = Some(scopedUserAnswers),
             finalValidationDraftService = finalValidationDraftService,
-            finalValidationService = finalValidationService
+            finalValidationService = finalValidationService,
+            multiTabEnabled = true
           )
 
         running(application) {
@@ -1003,7 +1007,8 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
           applicationWith(
             userAnswers = Some(answersWithoutDraftId),
             finalValidationDraftService = finalValidationDraftService,
-            finalValidationService = finalValidationService
+            finalValidationService = finalValidationService,
+            multiTabEnabled = true
           )
 
         running(application) {
@@ -1064,7 +1069,8 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
   private def applicationWith(
     userAnswers: Option[UserAnswers],
     finalValidationDraftService: FinalValidationDraftService,
-    finalValidationService: FinalValidationService
+    finalValidationService: FinalValidationService,
+    multiTabEnabled: Boolean = false
   ) =
     applicationBuilder(
       userAnswers = userAnswers,
@@ -1074,5 +1080,7 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
         bind[FinalValidationService]
           .toInstance(finalValidationService)
       )
-    ).build()
+    )
+      .configure("features.multi-tab-enabled" -> multiTabEnabled)
+      .build()
 }

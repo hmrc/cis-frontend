@@ -66,11 +66,13 @@ class FinalValidationReturnControllerSpec extends SpecBase {
     routes.FinalValidationReturnController.onPageLoad(handoffId).url
 
   private def testApplicationBuilder(
-    userAnswers: Option[UserAnswers]
+    userAnswers: Option[UserAnswers],
+    multiTabEnabled: Boolean = false
   ) =
     applicationBuilder(userAnswers = userAnswers)
       .configure(
-        "play.http.context" -> "/"
+        "play.http.context"          -> "/",
+        "features.multi-tab-enabled" -> multiTabEnabled
       )
 
   "FinalValidationReturnController.onPageLoad" - {
@@ -225,7 +227,7 @@ class FinalValidationReturnControllerSpec extends SpecBase {
         .deleteJourneyHandoff(any(), any[String])(using any[HeaderCarrier])
 
       val application =
-        testApplicationBuilder(Some(scopedUserAnswers))
+        testApplicationBuilder(Some(scopedUserAnswers), multiTabEnabled = true)
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector)
           )
@@ -273,7 +275,7 @@ class FinalValidationReturnControllerSpec extends SpecBase {
       )
 
       val application =
-        testApplicationBuilder(Some(scopedUserAnswers))
+        testApplicationBuilder(Some(scopedUserAnswers), multiTabEnabled = true)
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector)
           )
@@ -317,7 +319,7 @@ class FinalValidationReturnControllerSpec extends SpecBase {
       ).thenReturn(Future.successful(None))
 
       val application =
-        testApplicationBuilder(Some(scopedUserAnswers))
+        testApplicationBuilder(Some(scopedUserAnswers), multiTabEnabled = true)
           .overrides(
             bind[ConstructionIndustrySchemeConnector].toInstance(connector)
           )

@@ -625,7 +625,8 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
         applicationWith(
           userAnswers = scopedUserAnswers,
           finalValidationDraftService = finalValidationDraftService,
-          sessionRepository = sessionRepository
+          sessionRepository = sessionRepository,
+          multiTabEnabled = true
         )
 
       running(application) {
@@ -701,7 +702,8 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
         applicationWith(
           userAnswers = answersWithoutDraftId,
           finalValidationDraftService = finalValidationDraftService,
-          sessionRepository = sessionRepository
+          sessionRepository = sessionRepository,
+          multiTabEnabled = true
         )
 
       running(application) {
@@ -769,7 +771,8 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
   private def applicationWith(
     userAnswers: UserAnswers,
     finalValidationDraftService: FinalValidationDraftService,
-    sessionRepository: SessionRepository
+    sessionRepository: SessionRepository,
+    multiTabEnabled: Boolean = false
   ) =
     applicationBuilder(
       userAnswers = Some(userAnswers),
@@ -779,5 +782,7 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
         bind[SessionRepository]
           .toInstance(sessionRepository)
       )
-    ).build()
+    )
+      .configure("features.multi-tab-enabled" -> multiTabEnabled)
+      .build()
 }
