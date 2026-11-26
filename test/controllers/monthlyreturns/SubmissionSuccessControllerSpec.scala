@@ -976,84 +976,111 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           )
           .build()
 
-      "must return OK using ID-scoped answers and complete the submission journey" in {
+      Seq(
+        "nil"      -> ReturnType.MonthlyNilReturn,
+        "standard" -> ReturnType.MonthlyStandardReturn
+      ).foreach { case (returnTypeName, returnType) =>
+        s"must return OK using ID-scoped $returnTypeName return answers and complete the submission journey" in {
 
-        when(mockGuard.check(any[UserAnswers], any[String]))
-          .thenReturn(true)
+          val userAnswers = scopedAnswers
+            .setOrException(ReturnTypePage(id), returnType)
+            .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
 
-        when(
-          mockMonthlyReturnService.getMonthlyReturnComplete(
-            any[GetMonthlyReturnCompleteRequest]
-          )(
-            any[HeaderCarrier]
-          )
-        ).thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
+          when(mockGuard.check(any[UserAnswers], eqTo(id)))
+            .thenReturn(true)
 
-        when(
-          mockMonthlyReturnService.completeSubmissionJourney(
-            any[UserAnswers],
-            any[String]
-          )(
-            any[HeaderCarrier]
-          )
-        ).thenReturn(Future.unit)
-
-        val app = scopedApp(scopedAnswers)
-
-        running(app) {
-          val request = FakeRequest(
-            GET,
-            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
-          )
-
-          val result = route(app, request).value
-
-          status(result) mustBe OK
-
-          val body = contentAsString(result)
-
-          body must include("Scoped Contractor")
-          body must include("scoped@example.com")
-          body must not include email
-          body must include(
-            routes.ManageCisReturnController.onExitWithId(flowId).url
-          )
-
-          val requestCaptor =
-            org.mockito.ArgumentCaptor.forClass(classOf[GetMonthlyReturnCompleteRequest])
-
-          verify(mockMonthlyReturnService)
-            .getMonthlyReturnComplete(
-              requestCaptor.capture()
+          when(
+            mockMonthlyReturnService.getMonthlyReturnComplete(
+              any[GetMonthlyReturnCompleteRequest]
             )(
               any[HeaderCarrier]
             )
+          ).thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
 
-          requestCaptor.getValue.instanceId mustBe "2"
-          requestCaptor.getValue.taxYear mustBe 2024
-          requestCaptor.getValue.taxMonth mustBe 3
-          requestCaptor.getValue.amendment mustBe "N"
-
-          val answersCaptor =
-            org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
-
-          val idCaptor =
-            org.mockito.ArgumentCaptor.forClass(classOf[String])
-
-          verify(mockMonthlyReturnService)
-            .completeSubmissionJourney(
-              answersCaptor.capture(),
-              idCaptor.capture()
+          when(
+            mockMonthlyReturnService.completeSubmissionJourney(
+              any[UserAnswers],
+              any[String]
             )(
               any[HeaderCarrier]
             )
+          ).thenReturn(Future.unit)
 
-          idCaptor.getValue mustBe id
-          answersCaptor.getValue.get(SubmissionConfirmationCachePage(id)).isDefined mustBe true
-          answersCaptor.getValue.get(SubmissionConfirmationCachePage) mustBe None
+          val app = scopedApp(userAnswers)
 
-          verify(mockMonthlyReturnService, never())
-            .getSchemeEmail(any[String])(any[HeaderCarrier])
+          running(app) {
+            val request = FakeRequest(
+              GET,
+              routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+            )
+
+            val result = route(app, request).value
+
+            status(result) mustBe OK
+
+            val body = contentAsString(result)
+
+            body must include("March 2024")
+            body must include("Scoped Contractor")
+            body must include("scoped@example.com")
+            body must not include email
+
+            body must include(
+              routes.ManageCisReturnController.onExitWithId(flowId).url
+            )
+
+            val requestCaptor =
+              org.mockito.ArgumentCaptor.forClass(classOf[GetMonthlyReturnCompleteRequest])
+
+            verify(mockMonthlyReturnService)
+              .getMonthlyReturnComplete(
+                requestCaptor.capture()
+              )(
+                any[HeaderCarrier]
+              )
+
+            requestCaptor.getValue.instanceId mustBe "2"
+            requestCaptor.getValue.taxYear mustBe 2024
+            requestCaptor.getValue.taxMonth mustBe 3
+            requestCaptor.getValue.amendment mustBe "N"
+
+            val answersCaptor =
+              org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+
+            verify(mockMonthlyReturnService)
+              .completeSubmissionJourney(
+                answersCaptor.capture(),
+                eqTo(id)
+              )(
+                any[HeaderCarrier]
+              )
+
+            val completedAnswers = answersCaptor.getValue
+
+            completedAnswers.get(ReturnTypePage(id)) mustBe Some(returnType)
+
+            completedAnswers.get(ReturnTypePage) mustBe
+              Some(ReturnType.MonthlyNilReturn)
+
+            val cache = completedAnswers
+              .get(SubmissionConfirmationCachePage(id))
+              .value
+
+            cache.periodEnd mustBe "March 2024"
+            cache.contractorName mustBe Some("Scoped Contractor")
+            cache.email mustBe "scoped@example.com"
+
+            completedAnswers.get(SubmissionConfirmationCachePage) mustBe None
+
+            verify(mockGuard)
+              .check(any[UserAnswers], eqTo(id))
+
+            verify(mockMonthlyReturnService, never())
+              .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+
+            verify(mockMonthlyReturnService, never())
+              .getSchemeEmail(any[String])(any[HeaderCarrier])
+          }
         }
       }
 

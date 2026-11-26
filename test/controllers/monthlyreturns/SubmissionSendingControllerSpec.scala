@@ -21,6 +21,7 @@ import models.monthlyreturns.Declaration.Confirmed
 import models.requests.{CisIdDataRequest, DataRequest}
 import models.submission.*
 import models.{ReturnType, UserAnswers}
+import models.monthlyreturns.SelectedSubcontractor
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -1237,6 +1238,23 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       .setOrException(ConfirmationByEmailPage(id), false)
       .setOrException(DeclarationPage(id), Set(Confirmed))
 
+    val scopedSubcontractor = SelectedSubcontractor(
+      id = 1001L,
+      name = "Tyne Test Ltd",
+      totalPaymentsMade = Some(BigDecimal("1200")),
+      costOfMaterials = Some(BigDecimal("500")),
+      totalTaxDeducted = Some(BigDecimal("240"))
+    )
+
+    val scopedStandardAnswers = scopedAnswers
+      .setOrException(ReturnTypePage(id), ReturnType.MonthlyStandardReturn)
+      .setOrException(SelectedSubcontractorForFlowPage(id, 1), scopedSubcontractor)
+      .setOrException(OriginalSubcontractorCountPage(id), 1)
+      .setOrException(AllSubcontractorDetailsAdded(id), true)
+      .setOrException(PaymentDetailsConfirmationPage(id), true)
+      .setOrException(EmploymentStatusDeclarationPage(id), true)
+      .setOrException(VerifiedStatusDeclarationPage(id), true)
+
     val submissionDetails = SubmissionDetails(
       id = "sub-123",
       status = "PENDING",
@@ -1244,96 +1262,109 @@ final class SubmissionSendingControllerSpec extends SpecBase with MockitoSugar {
       submittedAt = LocalDateTime.parse("2025-01-01T00:00:00")
     )
 
-    "must submit the ID-scoped return to ChRIS and redirect to polling" in {
+    Seq(
+      "nil"      -> scopedAnswers,
+      "standard" -> scopedStandardAnswers
+    ).foreach { case (returnType, answers) =>
+      s"must submit the ID-scoped $returnType return to ChRIS and redirect to polling" in {
 
-      val mockService = mock[SubmissionService]
+        val mockService = mock[SubmissionService]
 
-      val reconcileService = new FormpRdsReconcileService {
-        override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
-          hc: HeaderCarrier
-        ): Future[Unit] =
-          Future.unit
-      }
+        val reconcileService = new FormpRdsReconcileService {
+          override def reconcile(instanceId: String, taxOfficeNumber: String, taxOfficeReference: String)(implicit
+            hc: HeaderCarrier
+          ): Future[Unit] =
+            Future.unit
+        }
 
-      val submitted = ChrisSubmissionResponse(
-        submissionId = "sub-123",
-        status = "ACCEPTED",
-        hmrcMarkGenerated = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
-        correlationId = Some("CID123"),
-        responseEndPoint = None,
-        gatewayTimestamp = Some("2025-01-01T00:00:00"),
-        error = None
-      )
-
-      when(mockService.getOrCreateSubmissionForChris(any[UserAnswers], any[String])(using any[HeaderCarrier]))
-        .thenReturn(Future.successful(("sub-123", scopedAnswers, false)))
-
-      when(
-        mockService.submitToChrisAndPersist(
-          any[String],
-          any[UserAnswers],
-          any[String],
-          any[Boolean],
-          any[Boolean]
-        )(using any[HeaderCarrier])
-      ).thenReturn(Future.successful(submitted))
-
-      when(
-        mockService.updateSubmissionFromChrisResponse(
-          any[String],
-          any[UserAnswers],
-          any[String],
-          any[ChrisSubmissionResponse]
-        )(any[DataRequest[AnyContent]], any[HeaderCarrier])
-      ).thenReturn(Future.unit)
-
-      val application = applicationBuilder(
-        userAnswers = Some(scopedAnswers),
-        formpRdsReconcileService = reconcileService
-      )
-        .configure("features.multi-tab-enabled" -> true)
-        .overrides(bind[SubmissionService].toInstance(mockService))
-        .build()
-
-      running(application) {
-        val request = FakeRequest(
-          GET,
-          controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId).url
+        val submitted = ChrisSubmissionResponse(
+          submissionId = "sub-123",
+          status = "ACCEPTED",
+          hmrcMarkGenerated = "Dj5TVJDyRYCn9zta5EdySeY4fyA=",
+          correlationId = Some("CID123"),
+          responseEndPoint = None,
+          gatewayTimestamp = Some("2025-01-01T00:00:00"),
+          error = None
         )
 
-        val result = route(application, request).value
+        when(mockService.getOrCreateSubmissionForChris(any[UserAnswers], any[String])(using any[HeaderCarrier]))
+          .thenReturn(Future.successful(("sub-123", answers, false)))
 
-        status(result) mustBe SEE_OTHER
-        redirectLocation(result).value mustBe
-          controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
-
-        val idCaptor = ArgumentCaptor.forClass(classOf[String])
-
-        verify(mockService)
-          .getOrCreateSubmissionForChris(any[UserAnswers], idCaptor.capture())(using any[HeaderCarrier])
-
-        idCaptor.getValue mustBe id
-
-        verify(mockService)
-          .submitToChrisAndPersist(
+        when(
+          mockService.submitToChrisAndPersist(
             any[String],
             any[UserAnswers],
-            idCaptor.capture(),
+            any[String],
             any[Boolean],
             any[Boolean]
           )(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(submitted))
 
-        idCaptor.getValue mustBe id
-
-        verify(mockService)
-          .updateSubmissionFromChrisResponse(
+        when(
+          mockService.updateSubmissionFromChrisResponse(
             any[String],
             any[UserAnswers],
-            idCaptor.capture(),
+            any[String],
             any[ChrisSubmissionResponse]
           )(any[DataRequest[AnyContent]], any[HeaderCarrier])
+        ).thenReturn(Future.unit)
 
-        idCaptor.getValue mustBe id
+        val application = applicationBuilder(
+          userAnswers = Some(answers),
+          formpRdsReconcileService = reconcileService
+        )
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(bind[SubmissionService].toInstance(mockService))
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            controllers.monthlyreturns.routes.SubmissionSendingController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            controllers.monthlyreturns.routes.SubmissionSendingController.onPollAndRedirectWithId(flowId).url
+
+          val answersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+          verify(mockService)
+            .getOrCreateSubmissionForChris(
+              answersCaptor.capture(),
+              eqTo(id)
+            )(using any[HeaderCarrier])
+
+          answersCaptor.getValue.get(ReturnTypePage(id)) mustBe
+            answers.get(ReturnTypePage(id))
+
+          if (returnType == "standard") {
+            answersCaptor.getValue.get(SelectedSubcontractorForFlowPage(id, 1)) mustBe
+              Some(scopedSubcontractor)
+          }
+
+          verify(mockService)
+            .submitToChrisAndPersist(
+              eqTo("sub-123"),
+              eqTo(answers),
+              eqTo(id),
+              any[Boolean],
+              eqTo(false)
+            )(using any[HeaderCarrier])
+
+          verify(mockService)
+            .updateSubmissionFromChrisResponse(
+              eqTo("sub-123"),
+              eqTo(answers),
+              eqTo(id),
+              eqTo(submitted)
+            )(any[DataRequest[AnyContent]], any[HeaderCarrier])
+
+          verify(mockService, never())
+            .getOrCreateSubmissionForChris(any[UserAnswers])(using any[HeaderCarrier])
+        }
       }
     }
 

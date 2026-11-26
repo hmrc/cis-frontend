@@ -19,6 +19,8 @@ package controllers.monthlyreturns
 import base.SpecBase
 import models.monthlyreturns.Declaration.Confirmed
 import models.{ReturnType, UserAnswers}
+import models.monthlyreturns.SelectedSubcontractor
+import models.monthlyreturns.UpdateMonthlyReturnRequest
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
@@ -57,6 +59,27 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       .setOrException(SubmitInactivityRequestPage(id), true)
       .setOrException(ConfirmationByEmailPage(id), false)
       .setOrException(DeclarationPage(id), Set(Confirmed))
+  }
+
+  // Multi-tab
+  private def completeScopedStandardAnswers(flowId: UUID): UserAnswers = {
+    val id = flowId.toString
+
+    val subcontractor = SelectedSubcontractor(
+      id = 1001L,
+      name = "Tyne Test Ltd",
+      totalPaymentsMade = Some(BigDecimal("1200")),
+      costOfMaterials = Some(BigDecimal("500")),
+      totalTaxDeducted = Some(BigDecimal("240"))
+    )
+
+    completeScopedAnswers(flowId, ReturnType.MonthlyStandardReturn)
+      .setOrException(SelectedSubcontractorForFlowPage(id, 1), subcontractor)
+      .setOrException(OriginalSubcontractorCountPage(id), 1)
+      .setOrException(AllSubcontractorDetailsAdded(id), true)
+      .setOrException(PaymentDetailsConfirmationPage(id), true)
+      .setOrException(EmploymentStatusDeclarationPage(id), true)
+      .setOrException(VerifiedStatusDeclarationPage(id), true)
   }
 
   "Check Your Answers Controller" - {
@@ -577,9 +600,13 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
       "must render Check Your Answers for a supported ID-scoped standard return" in {
 
         val flowId = UUID.randomUUID()
+        val id     = flowId.toString
 
-        val userAnswers =
-          completeScopedAnswers(flowId, ReturnType.MonthlyStandardReturn)
+        val userAnswers = completeScopedStandardAnswers(flowId)
+          .setOrException(ConfirmationByEmailPage(id), true)
+          .setOrException(EnterYourEmailAddressPage(id), "scoped@example.com")
+          .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .setOrException(EnterYourEmailAddressPage, "legacy@example.com")
 
         val application = applicationBuilder(userAnswers = Some(userAnswers))
           .configure("features.multi-tab-enabled" -> true)
@@ -594,7 +621,13 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
           val result = route(application, request).value
 
           status(result) mustEqual OK
-          contentAsString(result) must include(
+
+          val html = contentAsString(result)
+
+          html must include("scoped@example.com")
+          html must not include "legacy@example.com"
+
+          html must include(
             controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
           )
         }
@@ -703,6 +736,65 @@ class CheckYourAnswersControllerSpec extends SpecBase with SummaryListFluency wi
 
           verify(mockService).updateMonthlyReturn(org.mockito.ArgumentMatchers.eq(expectedRequest))(any())
           verify(mockSubmissionService).isAlreadySubmitted(any[UserAnswers], org.mockito.ArgumentMatchers.eq(id))
+        }
+      }
+
+      "must update the ID-scoped standard return and redirect to scoped submission sending" in {
+
+        val flowId = UUID.randomUUID()
+        val id     = flowId.toString
+
+        val userAnswers = completeScopedStandardAnswers(flowId)
+          .setOrException(CisIdPage, "legacy-cis-id")
+          .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
+          .setOrException(DateConfirmPaymentsPage, LocalDate.of(2025, 8, 1))
+
+        val expectedRequest = UpdateMonthlyReturnRequest
+          .fromUserAnswers(userAnswers, id)
+          .toOption
+          .get
+
+        val mockService = mock[MonthlyReturnService]
+
+        when(mockService.updateMonthlyReturn(any())(any()))
+          .thenReturn(Future.successful(()))
+
+        val mockSubmissionService = mock[SubmissionService]
+
+        when(mockSubmissionService.isAlreadySubmitted(any[UserAnswers], any[String]))
+          .thenReturn(false)
+
+        val application = applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[SubmissionService].toInstance(mockSubmissionService)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.CheckYourAnswersController.onSubmitWithId(flowId).url
+          )
+
+          val result = route(application, request).value
+
+          status(result) mustEqual SEE_OTHER
+
+          redirectLocation(result).value mustEqual
+            controllers.monthlyreturns.routes.SubmissionSendingController
+              .onPageLoadWithId(flowId)
+              .url
+
+          verify(mockService)
+            .updateMonthlyReturn(org.mockito.ArgumentMatchers.eq(expectedRequest))(any())
+
+          verify(mockSubmissionService)
+            .isAlreadySubmitted(any[UserAnswers], org.mockito.ArgumentMatchers.eq(id))
+
+          verify(mockSubmissionService, never())
+            .isAlreadySubmitted(any[UserAnswers])
         }
       }
 
