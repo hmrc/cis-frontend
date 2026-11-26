@@ -50,9 +50,9 @@ class ContinueReturnJourneyController @Inject() (
   navigator: Navigator,
   identify: IdentifierAction,
   monthlyReturnService: MonthlyReturnService,
+  formpRdsReconcileService: FormpRdsReconcileService,
   cisTaxpayerService: CisTaxpayerService,
   appConfig: FrontendAppConfig,
-  formpRdsReconcileService: FormpRdsReconcileService,
   val controllerComponents: MessagesControllerComponents
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController
@@ -244,12 +244,11 @@ class ContinueReturnJourneyController @Inject() (
                 val answersWithSource =
                   withAgentData.flatMap { ua =>
                     if (
-                      ua.get(ReturnTypePage(id)).contains(MonthlyStandardReturn) &&
+                      ua.get(ReturnTypePage(id)).getOrElse(MonthlyStandardReturn) == MonthlyStandardReturn &&
                       ua.get(SelectedSubcontractorPage.all(id)).exists(_.nonEmpty)
                     ) {
-                      // TODO: Final Validation is not yet multi-tab enabled.
                       ua.set(
-                        MonthlyFinalValidationSourcePage,
+                        MonthlyFinalValidationSourcePage(id),
                         MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
                       )
                     } else {
@@ -263,7 +262,7 @@ class ContinueReturnJourneyController @Inject() (
                   sessionRepository.set(withSource).flatMap { _ =>
                     reconcileScopedReturn(
                       taxpayer,
-                      Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode))
+                      Redirect(navigator.nextPage(flowId, DateConfirmPaymentsPage, NormalMode, withSource))
                     )
                   }
                 }

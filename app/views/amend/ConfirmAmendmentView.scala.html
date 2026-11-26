@@ -29,23 +29,23 @@
 @(showWarning: Boolean, formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @defining(Seq(
-        "amend.confirmAmendment.bullet1",
-        "amend.confirmAmendment.bullet2",
-        "amend.confirmAmendment.bullet3"
-    )) { items =>
+    "amend.confirmAmendment.bullet1",
+    "amend.confirmAmendment.bullet2",
+    "amend.confirmAmendment.bullet3"
+)) { items =>
 
-        @layout(pageTitle = titleNoForm(messages("amend.confirmAmendment.title"))) {
-            @formHelper(action = formAction.getOrElse(controllers.amend.routes.ConfirmAmendmentController.onSubmit()), Symbol("autoComplete") -> "off") {
+    @layout(pageTitle = titleNoForm(messages("amend.confirmAmendment.title"))) {
+        @formHelper(action = formAction.getOrElse(controllers.amend.routes.ConfirmAmendmentController.onSubmit()), Symbol("autoComplete") -> "off") {
 
-                @h1(messages("amend.confirmAmendment.heading"))
-                @paragraph(messages("amend.confirmAmendment.p1"))
-                @if(showWarning) {
-                    @paragraph(messages("amend.confirmAmendment.p2"))
-                }
-                @paragraph(messages("amend.confirmAmendment.p3"))
+            @h1(messages("amend.confirmAmendment.heading"))
+            @paragraph(messages("amend.confirmAmendment.p1"))
+            @if(showWarning) {
+                @paragraph(messages("amend.confirmAmendment.p2"))
+            }
+            @paragraph(messages("amend.confirmAmendment.p3"))
 
-                @bulletList(items)
-                @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))
+            @bulletList(items)
+            @govukButton(ButtonViewModel(messages("site.confirmAndContinue")))
         }
     }
 }

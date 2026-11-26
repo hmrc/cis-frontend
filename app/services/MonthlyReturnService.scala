@@ -375,22 +375,6 @@ class MonthlyReturnService @Inject() (
       } yield updatedUa
     }
 
-  // Multi-tab: Apply updates to the latest UserAnswers before saving.
-  private def saveLatestUserAnswers(userAnswers: UserAnswers)(
-    update: UserAnswers => Try[UserAnswers]
-  ): Future[UserAnswers] =
-    sessionRepository.get(userAnswers.id).flatMap {
-      case Some(latestUa) =>
-        Future.fromTry(update(latestUa)).flatMap { updatedUa =>
-          sessionRepository.set(updatedUa).flatMap {
-            case true  => Future.successful(updatedUa)
-            case false => Future.failed(new IllegalStateException("Failed to persist updated UserAnswers"))
-          }
-        }
-      case None           =>
-        Future.failed(new IllegalStateException("UserAnswers not found in session"))
-    }
-
   def populateUserAnswersForContinueAmendJourney(
     ua: UserAnswers,
     id: String,
@@ -434,6 +418,22 @@ class MonthlyReturnService @Inject() (
         )
       case _         =>
         Left("Missing nil return indicator")
+    }
+
+  // Multi-tab: Apply updates to the latest UserAnswers before saving.
+  private def saveLatestUserAnswers(userAnswers: UserAnswers)(
+    update: UserAnswers => Try[UserAnswers]
+  ): Future[UserAnswers] =
+    sessionRepository.get(userAnswers.id).flatMap {
+      case Some(latestUa) =>
+        Future.fromTry(update(latestUa)).flatMap { updatedUa =>
+          sessionRepository.set(updatedUa).flatMap {
+            case true  => Future.successful(updatedUa)
+            case false => Future.failed(new IllegalStateException("Failed to persist updated UserAnswers"))
+          }
+        }
+      case None           =>
+        Future.failed(new IllegalStateException("UserAnswers not found in session"))
     }
 
   private def populateContinueAmendJourneyAnswers(
@@ -587,7 +587,7 @@ class MonthlyReturnService @Inject() (
       ua5  <- setOrError(ua4, AmendmentDetailsPage(id), amendmentDetails)
       ua6  <- setOrError(ua5, SelectedSubcontractorPage.all(id), preselectedSubcontractors)
       ua7  <- existingSubId match {
-                case Some(subId) => setOrError(ua6, ResubmissionIdPage(id), subId)
+                case Some(subId) => setOrError(ua6, ResubmissionIdPage(id), subId) // renamed from `id`: see below
                 case None        => Right(ua6)
               }
       ua8  <- setOrError(ua7, ConfirmationByEmailPage(id), emailRecipient.exists(_.nonEmpty))

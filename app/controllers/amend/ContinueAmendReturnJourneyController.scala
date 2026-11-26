@@ -256,9 +256,9 @@ class ContinueAmendReturnJourneyController @Inject() (
                         )
 
                       case (true, true, _) =>
-                        // TODO: Redirect to WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
-                        // once WhatDoYouWantToAmendNilController is multi-tab enabled.
-                        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+                        Redirect(
+                          controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
+                        )
 
                       case _ =>
                         Redirect(
@@ -282,9 +282,8 @@ class ContinueAmendReturnJourneyController @Inject() (
                   val answersWithSource =
                     withAgentData.flatMap { ua =>
                       if (!result.isNilReturn && result.hasSubcontractors) {
-                        // TODO: Final Validation is not yet multi-tab enabled. Keep using the legacy page.
                         ua.set(
-                          MonthlyFinalValidationSourcePage,
+                          MonthlyFinalValidationSourcePage(id),
                           MonthlyFinalValidationSource.WhichSubcontractorsToAdd(NormalMode.toString)
                         )
                       } else {

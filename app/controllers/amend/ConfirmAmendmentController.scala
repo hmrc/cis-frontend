@@ -316,11 +316,7 @@ class ConfirmAmendmentController @Inject() (
       case ReturnType.MonthlyStandardReturn =>
         Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId))
       case ReturnType.MonthlyNilReturn      =>
-        // TODO: Replace with WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId) when available.
-        logger.warn(
-          "[ConfirmAmendmentController] Temporary redirect to JourneyRecovery: multi-tab nil amendment endpoint not yet implemented"
-        )
-        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        Redirect(routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId))
       case unexpected                       =>
         logger.warn(s"[ConfirmAmendmentController] Unexpected original return type: $unexpected")
         Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
