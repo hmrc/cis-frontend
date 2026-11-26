@@ -24,7 +24,8 @@ final case class FinalValidationHandoffPayload(
   subcontractorId: Long,
   subbieResourceRef: Long,
   field: FinalValidationField,
-  changeTarget: FinalValidationChangeTarget
+  changeTarget: FinalValidationChangeTarget,
+  flowId: Option[String] = None
 )
 
 object FinalValidationHandoffPayload {

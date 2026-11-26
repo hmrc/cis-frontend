@@ -226,14 +226,17 @@ class DateConfirmPaymentsController @Inject() (
                                       monthlyReturnService
                                         .createMonthlyReturn(createRequest)
                                         .map { _ =>
-                                          // TODO: DTR-9430 - Temporary redirect until the next ID-scoped journey page is implemented.
-                                          Redirect(routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, mode))
+                                          Redirect(
+                                            navigator.nextPage(flowId, DateConfirmPaymentsPage(id), mode, updatedAnswers)
+                                          )
                                         }
                                     } else {
                                       monthlyReturnService
                                         .createNilMonthlyReturn(updatedAnswers, cisId, id)
                                         .map { _ =>
-                                          Redirect(navigator.nextPage(flowId, DateConfirmPaymentsPage, mode, updatedAnswers))
+                                          Redirect(
+                                            navigator.nextPage(flowId, DateConfirmPaymentsPage(id), mode, updatedAnswers)
+                                          )
                                         }
                                     }
                 } yield result).recover { case NonFatal(ex) =>

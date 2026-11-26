@@ -23,20 +23,17 @@ class FinalValidationDraftIdPageSpec extends SpecBase {
 
   "FinalValidationDraftIdPage" - {
 
-    "must have the correct path" in {
-      FinalValidationDraftIdPage.path mustBe
-        JsPath \ "finalvalidation" \ "finalValidationDraftId"
-    }
-
-    "must have the correct name" in {
+    "must use FinalValidationDraftIdPage path" in {
+      FinalValidationDraftIdPage.path mustBe JsPath \ "finalvalidation" \ "finalValidationDraftId"
       FinalValidationDraftIdPage.toString mustBe "finalValidationDraftId"
     }
 
-    "must have the correct Scoped toString and path" in {
-      FinalValidationDraftIdPage("CIS-ORG-1").toString mustBe "finalValidationDraftId"
+    "must use FinalValidationDraftIdPage path with id" in {
+      val testId = "testId"
       FinalValidationDraftIdPage(
-        "CIS-ORG-1"
-      ).path mustBe (JsPath \ "finalvalidation" \ "CIS-ORG-1" \ "finalValidationDraftId")
+        testId
+      ).path mustBe JsPath \ "monthlyReturn" \ testId \ "finalvalidation" \ "finalValidationDraftId"
+      FinalValidationDraftIdPage(testId).toString mustBe "finalValidationDraftId"
     }
   }
 }

@@ -20,8 +20,9 @@ import base.SpecBase
 import connectors.ConstructionIndustrySchemeConnector
 import models.finalvalidation.*
 import models.UserAnswers
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{doReturn, when}
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.finalvalidations.FinalValidationDraftIdPage
 import pages.monthlyreturns.CisIdPage
@@ -31,6 +32,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
@@ -171,6 +173,176 @@ class FinalValidationReturnControllerSpec extends SpecBase {
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
           controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+  }
+
+  // Multi-tab
+  "FinalValidationReturnController.onPageLoadWithId" - {
+
+    val flowId        = UUID.fromString("11111111-1111-1111-1111-111111111111")
+    val id            = flowId.toString
+    val scopedCisId   = "1045"
+    val scopedDraftId = "scoped-draft-id"
+
+    val scopedPayload =
+      payload.copy(
+        instanceId = scopedCisId,
+        draftId = scopedDraftId,
+        flowId = Some(id)
+      )
+
+    val scopedUserAnswers =
+      userAnswers
+        .set(CisIdPage(id), scopedCisId)
+        .success
+        .value
+        .set(FinalValidationDraftIdPage(id), scopedDraftId)
+        .success
+        .value
+
+    val finalValidationReturnRouteWithId =
+      routes.FinalValidationReturnController
+        .onPageLoadWithId(flowId, handoffId)
+        .url
+
+    "must delete the handoff and redirect to Update Subcontractor Details with flowId for a valid handoff" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+
+      when(
+        connector.getJourneyHandoff[FinalValidationHandoffPayload](
+          any(),
+          any[String]
+        )(using
+          any[Reads[FinalValidationHandoffPayload]],
+          any[ClassTag[FinalValidationHandoffPayload]],
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(Some(scopedPayload)))
+
+      doReturn(Future.unit)
+        .when(connector)
+        .deleteJourneyHandoff(any(), any[String])(using any[HeaderCarrier])
+
+      val application =
+        testApplicationBuilder(Some(scopedUserAnswers))
+          .overrides(
+            bind[ConstructionIndustrySchemeConnector].toInstance(connector)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(GET, finalValidationReturnRouteWithId)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          routes.UpdateSubcontractorDetailsController
+            .onPageLoadWithId(flowId, subcontractorId)
+            .url
+
+        val handoffIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+        verify(connector)
+          .deleteJourneyHandoff(any(), handoffIdCaptor.capture())(using any[HeaderCarrier])
+
+        handoffIdCaptor.getValue mustBe handoffId
+      }
+    }
+
+    "must redirect to Journey Recovery when the handoff flowId does not match" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+
+      when(
+        connector.getJourneyHandoff[FinalValidationHandoffPayload](
+          any(),
+          any[String]
+        )(using
+          any[Reads[FinalValidationHandoffPayload]],
+          any[ClassTag[FinalValidationHandoffPayload]],
+          any[HeaderCarrier]
+        )
+      ).thenReturn(
+        Future.successful(
+          Some(
+            scopedPayload.copy(
+              flowId = Some("22222222-2222-2222-2222-222222222222")
+            )
+          )
+        )
+      )
+
+      val application =
+        testApplicationBuilder(Some(scopedUserAnswers))
+          .overrides(
+            bind[ConstructionIndustrySchemeConnector].toInstance(connector)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(GET, finalValidationReturnRouteWithId)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(connector)
+          .getJourneyHandoff[FinalValidationHandoffPayload](
+            any(),
+            any[String]
+          )(using
+            any[Reads[FinalValidationHandoffPayload]],
+            any[ClassTag[FinalValidationHandoffPayload]],
+            any[HeaderCarrier]
+          )
+
+        verify(connector, never())
+          .deleteJourneyHandoff(any(), any[String])(using any[HeaderCarrier])
+      }
+    }
+
+    "must redirect to Journey Recovery when the handoff does not exist for the scoped journey" in {
+      val connector = mock[ConstructionIndustrySchemeConnector]
+
+      when(
+        connector.getJourneyHandoff[FinalValidationHandoffPayload](
+          any(),
+          any[String]
+        )(using
+          any[Reads[FinalValidationHandoffPayload]],
+          any[ClassTag[FinalValidationHandoffPayload]],
+          any[HeaderCarrier]
+        )
+      ).thenReturn(Future.successful(None))
+
+      val application =
+        testApplicationBuilder(Some(scopedUserAnswers))
+          .overrides(
+            bind[ConstructionIndustrySchemeConnector].toInstance(connector)
+          )
+          .build()
+
+      running(application) {
+        val request = FakeRequest(GET, finalValidationReturnRouteWithId)
+        val result  = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+        verify(connector)
+          .getJourneyHandoff[FinalValidationHandoffPayload](
+            any(),
+            any[String]
+          )(using
+            any[Reads[FinalValidationHandoffPayload]],
+            any[ClassTag[FinalValidationHandoffPayload]],
+            any[HeaderCarrier]
+          )
+
+        verify(connector, never())
+          .deleteJourneyHandoff(any(), any[String])(using any[HeaderCarrier])
       }
     }
   }

@@ -21,6 +21,7 @@ import models.UserAnswers
 import models.requests.GetMonthlyReturnForEditRequest
 import models.monthlyreturns.*
 import models.submission.SubcontractorType
+import org.mockito.ArgumentCaptor
 import pages.amend.WhichSubcontractorsToAddPage
 import pages.monthlyreturns.SelectedSubcontractorPage
 import play.api.libs.json.Json
@@ -721,6 +722,185 @@ class SubcontractorServiceSpec extends SpecBase {
 
       whenReady(selectedF) { subcontractors =>
         subcontractors.map(_.subcontractorId) mustBe Seq(1L)
+      }
+    }
+  }
+
+  // Multi-tab
+  "SubcontractorService.getSelectedSubcontractorsForFinalValidation with ID" - {
+
+    val id      = "11111111-1111-1111-1111-111111111111"
+    val otherId = "22222222-2222-2222-2222-222222222222"
+
+    val ua = emptyUserAnswers
+      .setOrException(
+        pages.monthlyreturns.ReturnTypePage,
+        models.ReturnType.MonthlyAmendedStandardReturn
+      )
+      .setOrException(
+        SelectedSubcontractorPage(1),
+        SelectedSubcontractor(1L, "Subbie 1", None, None, None)
+      )
+      .setOrException(
+        pages.monthlyreturns.ReturnTypePage(id),
+        models.ReturnType.MonthlyStandardReturn
+      )
+      .setOrException(
+        SelectedSubcontractorPage(1, Some(id)),
+        SelectedSubcontractor(2L, "Subbie 2", None, None, None)
+      )
+      .setOrException(
+        pages.monthlyreturns.ReturnTypePage(otherId),
+        models.ReturnType.MonthlyStandardReturn
+      )
+      .setOrException(
+        SelectedSubcontractorPage(1, Some(otherId)),
+        SelectedSubcontractor(3L, "Subbie 3", None, None, None)
+      )
+
+    val response = mkResponse(
+      items = Seq.empty,
+      subs = Seq(
+        mkSubcontractor(id = 1L, ref = Some(1001L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+        mkSubcontractor(id = 2L, ref = Some(2002L), verified = Some("N"), verificationDate = None, lastMrDate = None),
+        mkSubcontractor(id = 3L, ref = Some(3003L), verified = Some("N"), verificationDate = None, lastMrDate = None)
+      )
+    )
+
+    "returns only selected subcontractors under the requested ID for a standard return" in {
+      val monthlyReturnService = mock(classOf[MonthlyReturnService])
+      val service              = new SubcontractorService(monthlyReturnService)
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, ua, id)
+
+      whenReady(selectedF) { subcontractors =>
+        subcontractors mustBe Seq(response.subcontractors(1))
+
+        val requestCaptor =
+          ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
+
+        verify(monthlyReturnService)
+          .retrieveMonthlyReturnForEditDetails(
+            requestCaptor.capture()
+          )(any[HeaderCarrier])
+
+        requestCaptor.getValue mustBe
+          GetMonthlyReturnForEditRequest("1", 1, 2026, false)
+      }
+    }
+
+    "returns only selected subcontractors under the requested ID for an amended standard return" in {
+      val monthlyReturnService = mock(classOf[MonthlyReturnService])
+      val service              = new SubcontractorService(monthlyReturnService)
+
+      val answers = ua
+        .setOrException(
+          pages.monthlyreturns.ReturnTypePage,
+          models.ReturnType.MonthlyStandardReturn
+        )
+        .setOrException(
+          pages.monthlyreturns.ReturnTypePage(id),
+          models.ReturnType.MonthlyAmendedStandardReturn
+        )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, answers, id)
+
+      whenReady(selectedF) { subcontractors =>
+        subcontractors mustBe Seq(response.subcontractors(1))
+
+        val requestCaptor =
+          ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
+
+        verify(monthlyReturnService)
+          .retrieveMonthlyReturnForEditDetails(
+            requestCaptor.capture()
+          )(any[HeaderCarrier])
+
+        requestCaptor.getValue mustBe
+          GetMonthlyReturnForEditRequest("1", 1, 2026, true)
+      }
+    }
+
+    "fails when selected subcontractors are missing under the requested ID" in {
+      val monthlyReturnService = mock(classOf[MonthlyReturnService])
+      val service              = new SubcontractorService(monthlyReturnService)
+
+      val answers = ua
+        .remove(SelectedSubcontractorPage.all(id))
+        .get
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, answers, id)
+
+      whenReady(selectedF.failed) { exception =>
+        exception mustBe a[IllegalStateException]
+
+        exception.getMessage mustBe
+          "SelectedSubcontractorPage is missing from user answers"
+
+        verifyNoInteractions(monthlyReturnService)
+      }
+    }
+
+    "fails when ReturnTypePage is missing under the requested ID" in {
+      val monthlyReturnService = mock(classOf[MonthlyReturnService])
+      val service              = new SubcontractorService(monthlyReturnService)
+
+      val answers = ua
+        .remove(pages.monthlyreturns.ReturnTypePage(id))
+        .get
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, answers, id)
+
+      whenReady(selectedF.failed) { exception =>
+        exception mustBe a[IllegalStateException]
+
+        exception.getMessage mustBe
+          "ReturnTypePage is missing when loading subcontractors for Final Validation"
+
+        verifyNoInteractions(monthlyReturnService)
+      }
+    }
+
+    "fails when a selected subcontractor under the requested ID cannot be loaded" in {
+      val monthlyReturnService = mock(classOf[MonthlyReturnService])
+      val service              = new SubcontractorService(monthlyReturnService)
+
+      val answers = ua
+        .setOrException(
+          SelectedSubcontractorPage(1, Some(id)),
+          SelectedSubcontractor(999L, "Missing Subbie", None, None, None)
+        )
+
+      when(
+        monthlyReturnService.retrieveMonthlyReturnForEditDetails(
+          any[GetMonthlyReturnForEditRequest]
+        )(any[HeaderCarrier])
+      ).thenReturn(Future.successful(response))
+
+      val selectedF =
+        service.getSelectedSubcontractorsForFinalValidation("1", 1, 2026, answers, id)
+
+      whenReady(selectedF.failed) { exception =>
+        exception mustBe a[IllegalStateException]
+
+        exception.getMessage mustBe
+          "Unable to load selected subcontractors for Final Validation: 999"
       }
     }
   }

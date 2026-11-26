@@ -18,12 +18,13 @@ package controllers.monthlyreturns
 
 import base.SpecBase
 import forms.monthlyreturns.VerifySubcontractorsFormProvider
-import models.{CheckMode, NormalMode}
+import models.{CheckMode, NormalMode, UserAnswers}
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.VerifySubcontractorsPage
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -31,6 +32,7 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.VerifySubcontractorsView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
@@ -226,6 +228,76 @@ class VerifySubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         status(result) mustEqual SEE_OTHER
 
         redirectLocation(result).value mustEqual controllers.routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must prepopulate the form when the answer exists for a GET with ID" in {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val answersWithCisId = userAnswersWithCisId.set(CisIdPage(id), "1").success.value
+      val userAnswers      = answersWithCisId.set(VerifySubcontractorsPage(id), true).success.value
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.VerifySubcontractorsController.onPageLoadWithId(flowId, NormalMode).url
+        )
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[VerifySubcontractorsView]
+
+        val formAction =
+          Some(controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, NormalMode))
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form.fill(true), NormalMode, formAction)(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to verify subcontractors when 'true' is submitted with ID" in {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val userAnswers = userAnswersWithCisId.set(CisIdPage(id), "1").success.value
+
+      val mockSessionRepository = mock[SessionRepository]
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.VerifySubcontractorsController.onSubmitWithId(flowId, NormalMode).url
+          ).withFormUrlEncodedBody(("value", "true"))
+
+        val result    = route(application, request).value
+        val appConfig = application.injector.instanceOf[config.FrontendAppConfig]
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual appConfig.verifySubcontractorsUrl
+
+        val capturedAnswers = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(capturedAnswers.capture())
+
+        capturedAnswers.getValue.get(VerifySubcontractorsPage(id)).value mustEqual true
       }
     }
   }

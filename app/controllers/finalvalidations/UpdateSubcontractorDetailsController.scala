@@ -19,6 +19,7 @@ package controllers.finalvalidations
 import controllers.actions.*
 import models.finalvalidation.{FinalValidationReadiness, UpdateSubcontractorDetailsPageModel, UpdateSubcontractorDetailsPageModelBuilder}
 import pages.finalvalidations.FinalValidationDraftIdPage
+import pages.monthlyreturns.CisIdPage
 import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
 
 import javax.inject.{Inject, Singleton}
@@ -28,6 +29,7 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.finalvalidations.UpdateSubcontractorDetailsView
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -37,6 +39,7 @@ class UpdateSubcontractorDetailsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   finalValidationService: FinalValidationService,
   finalValidationDraftService: FinalValidationDraftService,
   pageModelBuilder: UpdateSubcontractorDetailsPageModelBuilder,
@@ -165,6 +168,133 @@ class UpdateSubcontractorDetailsController @Inject() (
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           )
+      }
+    }
+
+  // Multi-tab
+  def onPageLoadWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
+
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(cisId, draftId)
+            .map { draft =>
+              draft.subcontractor(subcontractorId) match {
+                case Some(subcontractor) if subcontractor.readiness == FinalValidationReadiness.Complete =>
+                  Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId))
+
+                case Some(subcontractor) =>
+                  val rows =
+                    pageModelBuilder.build(
+                      subcontractor,
+                      (field, target) =>
+                        routes.FinalValidationChangeController
+                          .onPageLoadWithId(flowId, subcontractorId, field.key, target.key)
+                          .url
+                    )
+
+                  val model =
+                    UpdateSubcontractorDetailsPageModel(
+                      subcontractor.subcontractorId,
+                      pageModelBuilder.displayName(subcontractor),
+                      rows
+                    )
+
+                  val formAction = Some(
+                    routes.UpdateSubcontractorDetailsController.onSubmitWithId(flowId, subcontractorId)
+                  )
+
+                  val cancelAction = Some(
+                    routes.UpdateSubcontractorDetailsController.onCancelWithId(flowId, subcontractorId)
+                  )
+
+                  Ok(view(model, formAction, cancelAction))
+
+                case None =>
+                  logger.error(
+                    s"[UpdateSubcontractorDetailsController][onPageLoadWithId] Unable to load update subcontractor details page: " +
+                      s"subcontractor $subcontractorId is missing from final validation draft"
+                  )
+                  Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
+              }
+            }
+
+        case None =>
+          logger.error(
+            "[UpdateSubcontractorDetailsController][onPageLoadWithId] Unable to load update subcontractor details page: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+
+      }
+    }
+
+  def onSubmitWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
+
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(cisId, draftId)
+            .flatMap { draft =>
+              draft.subcontractor(subcontractorId) match {
+                case Some(subcontractor) if subcontractor.readiness == FinalValidationReadiness.Complete =>
+                  Future.successful(Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId)))
+
+                case Some(_) =>
+                  for {
+                    issues <- Future.fromTry(finalValidationService.validateDraftSubcontractor(draft, subcontractorId))
+                    _      <- finalValidationDraftService.updateReadiness(cisId, draftId, subcontractorId, issues)
+                  } yield Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId))
+
+                case None =>
+                  logger.error(
+                    s"[UpdateSubcontractorDetailsController][onSubmitWithId] Unable to submit update subcontractor details: " +
+                      s"subcontractor $subcontractorId is missing from final validation draft"
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+              }
+            }
+
+        case None =>
+          logger.error(
+            "[UpdateSubcontractorDetailsController][onSubmitWithId] Unable to submit update subcontractor details: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+      }
+    }
+
+  def onCancelWithId(flowId: UUID, subcontractorId: Long): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
+        case Some(draftId) =>
+          finalValidationDraftService
+            .resetSubcontractor(cisId, draftId, subcontractorId)
+            .map(_ => Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId)))
+        case None          =>
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 }

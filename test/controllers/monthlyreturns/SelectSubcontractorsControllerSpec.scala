@@ -37,6 +37,7 @@ import viewmodels.SelectSubcontractorsViewModel
 import views.html.monthlyreturns.SelectSubcontractorsView
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
@@ -54,6 +55,9 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
   private val fullSubcontractor1 = mock[Subcontractor]
   private val fullSubcontractor2 = mock[Subcontractor]
 
+  private val flowId       = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  private val subJourneyId = flowId.toString
+
   when(fullSubcontractor1.subcontractorId).thenReturn(1L)
   when(fullSubcontractor2.subcontractorId).thenReturn(2L)
 
@@ -68,6 +72,10 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       .set(DateConfirmPaymentsPage, taxDate)
       .success
       .value
+
+  private val userAnswersWithId = userAnswersWithRequiredPages
+    .setOrException(CisIdPage(subJourneyId), cisId)
+    .setOrException(DateConfirmPaymentsPage(subJourneyId), taxDate)
 
   private val subcontractors = Seq(
     SelectSubcontractorsViewModel(1, "A", true, Some("Unknown"), Some("Unknown")),
@@ -106,6 +114,25 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
       .build()
   }
 
+  private def applicationWithId(
+    subcontractorService: SubcontractorService,
+    monthlyReturnService: MonthlyReturnService,
+    ua: Option[UserAnswers] = Some(userAnswersWithId),
+    sessionRepository: SessionRepository = mock[SessionRepository]
+  ) = {
+    when(sessionRepository.set(any[UserAnswers]))
+      .thenReturn(Future.successful(true))
+
+    applicationBuilder(userAnswers = ua)
+      .configure("features.multi-tab-enabled" -> true)
+      .overrides(
+        bind[SubcontractorService].toInstance(subcontractorService),
+        bind[MonthlyReturnService].toInstance(monthlyReturnService),
+        bind[SessionRepository].toInstance(sessionRepository)
+      )
+      .build()
+  }
+
   private val incompleteSub = SelectedSubcontractor(2L, "B", None, None, None)
 
   private def stubBuild(
@@ -121,6 +148,22 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         eqTo(defaultSel),
         any[Option[UserAnswers]],
         any[LocalDate]
+      )(using any[HeaderCarrier])
+    ).thenReturn(Future.successful(model))
+
+  private def stubBuildWithId(
+    service: SubcontractorService,
+    model: SelectSubcontractorsPageModel,
+    defaultSel: Option[Boolean]
+  ): Unit =
+    when(
+      service.buildSelectSubcontractorPage(
+        eqTo(cisId),
+        eqTo(taxMonth),
+        eqTo(taxYear),
+        eqTo(defaultSel),
+        any[Option[UserAnswers]],
+        eqTo(subJourneyId)
       )(using any[HeaderCarrier])
     ).thenReturn(Future.successful(model))
 
@@ -212,6 +255,80 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
             FakeRequest(GET, controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoad(None).url)
 
           val result = route(app, request).value
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "renders OK with scoped actions when initiallySelectedIds is non-empty with ID" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+
+        stubBuildWithId(subcontractorService, pageModelSelected, defaultSel = None)
+
+        val app = applicationWithId(subcontractorService, monthlyReturnService)
+
+        running(app) {
+          val request =
+            FakeRequest(
+              GET,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, None).url
+            )
+
+          val result = route(app, request).value
+          val view   = app.injector.instanceOf[SelectSubcontractorsView]
+
+          val formAction = Some(
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmitWithId(flowId)
+          )
+
+          val preSelectedAction = Some(
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, Some(true))
+          )
+
+          val noneSelectedAction = Some(
+            controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, Some(false))
+          )
+
+          status(result) mustBe OK
+          contentAsString(result) mustBe view(
+            form.fill(SelectSubcontractorsFormData(subcontractorsToInclude = Seq(1))),
+            subcontractors,
+            app.injector.instanceOf[config.FrontendAppConfig].yourSubcontractorsUrl,
+            formAction,
+            preSelectedAction,
+            noneSelectedAction
+          )(request, messages(app)).toString
+
+          verify(subcontractorService).buildSelectSubcontractorPage(
+            eqTo(cisId),
+            eqTo(taxMonth),
+            eqTo(taxYear),
+            eqTo(None),
+            any[Option[UserAnswers]],
+            eqTo(subJourneyId)
+          )(using any[HeaderCarrier])
+        }
+      }
+
+      "redirects to JourneyRecovery when scoped payment date is missing with ID" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+
+        val ua = userAnswersWithRequiredPages
+          .setOrException(CisIdPage(subJourneyId), cisId)
+
+        val app = applicationWithId(subcontractorService, monthlyReturnService, ua = Some(ua))
+
+        running(app) {
+          val request =
+            FakeRequest(
+              GET,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, None).url
+            )
+
+          val result = route(app, request).value
+
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
         }
@@ -425,6 +542,143 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
           val result = route(app, request).value
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
+        }
+      }
+
+      "clears scoped Final Validation state and redirects to scoped SubcontractorDetailsAdded with ID" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+        val sessionRepository    = mock[SessionRepository]
+
+        stubBuildWithId(subcontractorService, pageModelNoneSelected, defaultSel = None)
+
+        val answersWithPreviousFinalValidation = userAnswersWithId
+          .setOrException(SelectedSubcontractorPage(1, Some(subJourneyId)), incompleteSub)
+          .setOrException(FinalValidationDraftIdPage(subJourneyId), "scoped-draft")
+          .setOrException(MonthlyFinalValidationContinuationPage(subJourneyId), models.NormalMode.toString)
+          .setOrException(pages.monthlyreturns.IsResumedMonthlyReturnPage(subJourneyId), true)
+          .setOrException(FinalValidationDraftIdPage, "legacy-draft")
+          .setOrException(MonthlyFinalValidationContinuationPage, models.NormalMode.toString)
+
+        when(
+          monthlyReturnService.storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2),
+            cisId = eqTo(cisId),
+            id = eqTo(subJourneyId)
+          )(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(answersWithPreviousFinalValidation))
+
+        val app = applicationWithId(
+          subcontractorService,
+          monthlyReturnService,
+          sessionRepository = sessionRepository
+        )
+
+        running(app) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmitWithId(flowId).url
+            )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "2")
+
+          val result = route(app, request).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+              .onPageLoadWithId(flowId, models.NormalMode)
+              .url
+
+          verify(monthlyReturnService).storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2),
+            cisId = eqTo(cisId),
+            id = eqTo(subJourneyId)
+          )(using any[HeaderCarrier])
+
+          val userAnswersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+          verify(sessionRepository).set(userAnswersCaptor.capture())
+
+          val savedAnswers = userAnswersCaptor.getValue
+
+          savedAnswers.get(FinalValidationDraftIdPage(subJourneyId)) mustBe None
+          savedAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)) mustBe None
+
+          savedAnswers.get(MonthlyFinalValidationSourcePage(subJourneyId)) mustBe
+            Some(MonthlyFinalValidationSource.SelectSubcontractors)
+
+          savedAnswers.get(pages.monthlyreturns.IsResumedMonthlyReturnPage(subJourneyId)) mustBe Some(true)
+
+          savedAnswers.get(FinalValidationDraftIdPage) mustBe Some("legacy-draft")
+          savedAnswers.get(MonthlyFinalValidationContinuationPage) mustBe Some(models.NormalMode.toString)
+        }
+      }
+
+      "redirects to scoped VerifySubcontractorsController when verification is required with ID" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+
+        stubBuildWithId(subcontractorService, pageModelSelected, defaultSel = None)
+
+        val answersWithIncompleteSubcontractor = userAnswersWithId
+          .setOrException(
+            SelectedSubcontractorPage(1, Some(subJourneyId)),
+            SelectedSubcontractor(1, "A", None, None, None)
+          )
+
+        when(
+          monthlyReturnService.storeAndSyncSelectedSubcontractors(
+            ua = any[UserAnswers],
+            selected = any[Seq[SelectSubcontractorsViewModel]],
+            originalSubcontractorCount = eqTo(2),
+            cisId = eqTo(cisId),
+            id = eqTo(subJourneyId)
+          )(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(answersWithIncompleteSubcontractor))
+
+        val app = applicationWithId(subcontractorService, monthlyReturnService)
+
+        running(app) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmitWithId(flowId).url
+            )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "1")
+
+          val result = route(app, request).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            controllers.monthlyreturns.routes.VerifySubcontractorsController
+              .onPageLoadWithId(flowId, models.NormalMode)
+              .url
+        }
+      }
+
+      "returns BadRequest when form submission contains non-numeric values with ID" in {
+        val subcontractorService = mock[SubcontractorService]
+        val monthlyReturnService = mock[MonthlyReturnService]
+
+        stubBuildWithId(subcontractorService, pageModelNoneSelected, defaultSel = None)
+
+        val app = applicationWithId(subcontractorService, monthlyReturnService)
+
+        running(app) {
+          val request =
+            FakeRequest(
+              POST,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController.onSubmitWithId(flowId).url
+            )
+              .withFormUrlEncodedBody("subcontractorsToInclude.0" -> "not-a-number")
+
+          val result = route(app, request).value
+
+          status(result) mustBe BAD_REQUEST
         }
       }
     }

@@ -30,15 +30,20 @@
     govukButton: GovukButton
 )
 
-@(form: Form[_], mode: Mode, viewModel: SubcontractorDetailsAddedViewModel)(
-    implicit request: Request[_],
-    messages: Messages
-)
+@(
+    form: Form[_],
+    mode: Mode,
+    viewModel: SubcontractorDetailsAddedViewModel,
+    formAction: Option[Call] = None,
+    cancelAction: Option[String] = None,
+)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages(viewModel.headingKey, viewModel.headingArgs: _*))) {
 
     @formHelper(
-        action = SubcontractorDetailsAddedController.onSubmit(mode),
+        action = formAction.getOrElse(
+            SubcontractorDetailsAddedController.onSubmit(mode)
+        ),
         Symbol("autoComplete") -> "off"
     ) {
 
@@ -94,8 +99,8 @@
             )
             @if(viewModel.isAmendment) {
                 @link(
-                        "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
-                        controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url,
+                        linkTextKey = "monthlyreturns.subcontractorDetailsAdded.cancelAmendment",
+                        linkUrl = cancelAction.getOrElse(controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url),
                         paragraphWrapped = false
                 )
             }

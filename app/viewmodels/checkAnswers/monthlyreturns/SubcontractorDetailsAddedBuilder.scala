@@ -21,10 +21,12 @@ import models.{CheckMode, NormalMode, UserAnswers}
 import pages.amend.AmendmentDetailsPage
 import pages.monthlyreturns.{OriginalSubcontractorCountPage, SelectedSubcontractorPage}
 
+import java.util.UUID
+
 object SubcontractorDetailsAddedBuilder {
 
-  private def selectedSubcontractors(ua: UserAnswers): Map[Int, SelectedSubcontractor] =
-    ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+  private def selectedSubcontractors(ua: UserAnswers, id: Option[String]): Map[Int, SelectedSubcontractor] =
+    ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
 
   private def detailsAdded(sub: SelectedSubcontractor): Boolean =
     sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined
@@ -36,10 +38,16 @@ object SubcontractorDetailsAddedBuilder {
       ("monthlyreturns.subcontractorDetailsAdded.heading.multiple", Seq(addedCount.asInstanceOf[AnyRef]))
     }
 
-  def build(ua: UserAnswers): Option[SubcontractorDetailsAddedViewModel] = {
-    val isAmendment                = ua.get(AmendmentDetailsPage).isDefined
-    val subcontractorByIndex       = selectedSubcontractors(ua)
-    val originalSubcontractorCount = ua.get(OriginalSubcontractorCountPage)
+  def build(ua: UserAnswers, id: Option[String] = None): Option[SubcontractorDetailsAddedViewModel] = {
+    val isAmendment                = id match {
+      case Some(value) => ua.get(AmendmentDetailsPage(value)).isDefined
+      case None        => ua.get(AmendmentDetailsPage).isDefined
+    }
+    val subcontractorByIndex       = selectedSubcontractors(ua, id)
+    val originalSubcontractorCount = id match {
+      case Some(value) => ua.get(OriginalSubcontractorCountPage(value))
+      case None        => ua.get(OriginalSubcontractorCountPage)
+    }
     val indexes                    = subcontractorByIndex.keys.toSeq.sorted
 
     if (indexes.isEmpty) {
@@ -52,11 +60,20 @@ object SubcontractorDetailsAddedBuilder {
             val added      = detailsAdded(sub)
             val changeCall =
               if (added) {
-                controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
-                  .onPageLoad(index)
+                id match {
+                  case Some(value) =>
+                    controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController
+                      .onPageLoadWithId(UUID.fromString(value), index)
+                  case None        => controllers.monthlyreturns.routes.ChangeAnswersTotalPaymentsController.onPageLoad(index)
+                }
               } else {
-                controllers.monthlyreturns.routes.PaymentDetailsController
-                  .onPageLoad(NormalMode, index, None)
+                id match {
+                  case Some(value) =>
+                    controllers.monthlyreturns.routes.PaymentDetailsController
+                      .onPageLoadWithId(UUID.fromString(value), NormalMode, index, None)
+                  case None        =>
+                    controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(NormalMode, index, None)
+                }
               }
 
             SubcontractorDetailsAddedRow(
@@ -67,8 +84,15 @@ object SubcontractorDetailsAddedBuilder {
               changeLabel = if (added) { "monthlyreturns.subcontractorDetailsAdded.amend" }
               else { "monthlyreturns.subcontractorDetailsAdded.add" },
               changeCall = changeCall,
-              removeCall = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
-                .onPageLoad(CheckMode, index)
+              removeCall = id match {
+                case Some(value) =>
+                  controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+                    .onPageLoadWithId(UUID.fromString(value), CheckMode, index)
+
+                case None =>
+                  controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController
+                    .onPageLoad(CheckMode, index)
+              }
             )
           }
         }

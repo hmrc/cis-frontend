@@ -85,6 +85,45 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
     userAnswers: Option[UserAnswers] = None,
     today: LocalDate = LocalDate.now()
   )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
+    buildSelectSubcontractorPageInternal(
+      cisId,
+      taxMonth,
+      taxYear,
+      defaultSelection,
+      userAnswers,
+      None,
+      today
+    )
+
+  // Multi-tab: Build the page model for an ID-scoped monthly return.
+  def buildSelectSubcontractorPage(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    defaultSelection: Option[Boolean],
+    userAnswers: Option[UserAnswers],
+    id: String
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
+    buildSelectSubcontractorPageInternal(
+      cisId,
+      taxMonth,
+      taxYear,
+      defaultSelection,
+      userAnswers,
+      Some(id),
+      LocalDate.now()
+    )
+
+  // Multi-tab: Shared implementation for legacy and ID-scoped journeys.
+  private def buildSelectSubcontractorPageInternal(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    defaultSelection: Option[Boolean],
+    userAnswers: Option[UserAnswers],
+    id: Option[String],
+    today: LocalDate
+  )(implicit hc: HeaderCarrier): Future[SelectSubcontractorsPageModel] =
     monthlyReturnService
       .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, false))
       .map { data =>
@@ -132,7 +171,7 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
 
         val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
 
-        val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all)).getOrElse(Map())
+        val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all(id))).getOrElse(Map())
 
         val initiallySelectedIds: Seq[Int] = defaultSelection match {
           case Some(true)                              => subcontractorViewModels.map(_.id)
@@ -195,6 +234,52 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
         )
       }
 
+  // Multi-tab
+  def buildAmendWhichSubcontractorsPageWithId(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    id: String,
+    userAnswers: Option[UserAnswers] = None,
+    isAmendment: Boolean = true
+  )(implicit hc: HeaderCarrier): Future[WhichSubcontractorsToAddPageModel] =
+    monthlyReturnService
+      .retrieveMonthlyReturnForEditDetails(GetMonthlyReturnForEditRequest(cisId, taxMonth, taxYear, isAmendment))
+      .map { data =>
+
+        val previouslyIncludedResourceRefs: Set[Long] =
+          data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
+
+        val subcontractors: Seq[AmendSubcontractor] =
+          data.subcontractors.map { sub =>
+            AmendSubcontractor(
+              id = sub.subcontractorId.toString,
+              name = resolveSubcontractorName(sub)
+            )
+          }
+
+        val preSelectedIds: Set[String] =
+          userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage(id))) match {
+            case Some(ids) => ids
+            case None      =>
+              val knownIds     = data.subcontractors.map(_.subcontractorId).toSet
+              val idsFromRefs  = data.subcontractors
+                .filter(sub => sub.subbieResourceRef.exists(previouslyIncludedResourceRefs.contains))
+                .map(_.subcontractorId)
+              val idsFromItems = data.monthlyReturnItems.flatMap(_.subcontractorId).filter(knownIds.contains)
+              (idsFromRefs ++ idsFromItems).map(_.toString).toSet
+          }
+
+        val submissionStatus = data.monthlyReturn.headOption.flatMap(_.status)
+
+        WhichSubcontractorsToAddPageModel(
+          subcontractors = subcontractors,
+          preSelectedIds = preSelectedIds,
+          status = submissionStatus,
+          fullSubcontractors = data.subcontractors
+        )
+      }
+
   def getSelectedSubcontractorsForFinalValidation(
     cisId: String,
     taxMonth: Int,
@@ -228,6 +313,73 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
                 taxYear,
                 None,
                 Some(ua)
+              ).map(_.fullSubcontractors)
+
+            case None =>
+              Future.failed(
+                new IllegalStateException("ReturnTypePage is missing when loading subcontractors for Final Validation")
+              )
+          }
+
+        fullSubcontractorsFuture.flatMap { fullSubcontractors =>
+
+          val loadedIds  = fullSubcontractors.map(_.subcontractorId).toSet
+          val missingIds = selectedIds -- loadedIds
+
+          if (missingIds.nonEmpty) {
+            Future.failed(
+              new IllegalStateException(
+                s"Unable to load selected subcontractors for Final Validation: " +
+                  missingIds.toSeq.sorted.mkString(",")
+              )
+            )
+          } else {
+            Future.successful(
+              fullSubcontractors.filter { subcontractor =>
+                selectedIds.contains(subcontractor.subcontractorId)
+              }
+            )
+          }
+        }
+    }
+
+  // Multi-tab
+  def getSelectedSubcontractorsForFinalValidation(
+    cisId: String,
+    taxMonth: Int,
+    taxYear: Int,
+    ua: UserAnswers,
+    id: String
+  )(using hc: HeaderCarrier): Future[Seq[Subcontractor]] =
+    ua.get(SelectedSubcontractorPage.all(id)) match {
+
+      case None =>
+        Future.failed(new IllegalStateException("SelectedSubcontractorPage is missing from user answers"))
+
+      case Some(selectedSubcontractors) =>
+        val selectedIds: Set[Long] =
+          selectedSubcontractors.values.map(_.id).toSet
+
+        val fullSubcontractorsFuture: Future[Seq[Subcontractor]] =
+          ua.get(ReturnTypePage(id)) match {
+
+            case Some(returnType) if returnType.amendmentFlag == "Y" =>
+              buildAmendWhichSubcontractorsPageWithId(
+                cisId,
+                taxMonth,
+                taxYear,
+                id,
+                Some(ua)
+              ).map(_.fullSubcontractors)
+
+            case Some(_) =>
+              buildSelectSubcontractorPage(
+                cisId,
+                taxMonth,
+                taxYear,
+                None,
+                Some(ua),
+                id
               ).map(_.fullSubcontractors)
 
             case None =>

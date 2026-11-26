@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import controllers.actions.*
 import forms.monthlyreturns.EnterYourEmailAddressFormProvider
 import models.Mode
-import models.requests.CisIdDataRequest
+import models.requests.{CisIdDataRequest, DataRequest}
 import navigation.Navigator
 import pages.monthlyreturns.{CisIdPage, ConfirmationByEmailPage, EnterYourEmailAddressPage}
 import play.api.Logging
@@ -94,6 +94,26 @@ class EnterYourEmailAddressController @Inject() (
         Future.successful(None)
     }
 
+  private def getPrepopulationEmailAddressWithId(flowId: UUID, request: DataRequest[AnyContent])(implicit
+    hc: HeaderCarrier
+  ): Future[Option[String]] = {
+    val subJourneyId = flowId.toString
+    request.userAnswers.get(CisIdPage(subJourneyId)) match {
+      case Some(cisId) =>
+        monthlyReturnService
+          .getSchemeEmail(cisId)
+          .recover { case ex =>
+            logger.warn(
+              s"[EnterYourEmailAddressController][getPrepopulationEmailAddressWithId] - email lookup failed, cisId: $cisId",
+              ex
+            )
+            None
+          }
+      case None        =>
+        Future.successful(None)
+    }
+  }
+
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       form
@@ -151,7 +171,7 @@ class EnterYourEmailAddressController @Inject() (
             for {
               updatedAnswers <- Future.fromTry(request.userAnswers.set(EnterYourEmailAddressPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
-            } yield Redirect(navigator.nextPage(flowId, EnterYourEmailAddressPage, mode, updatedAnswers))
+            } yield Redirect(navigator.nextPage(flowId, EnterYourEmailAddressPage(id), mode, updatedAnswers))
         )
     }
 }

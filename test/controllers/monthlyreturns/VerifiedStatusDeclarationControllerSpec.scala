@@ -19,12 +19,14 @@ package controllers.monthlyreturns
 import base.SpecBase
 import controllers.routes
 import forms.monthlyreturns.VerifiedStatusDeclarationFormProvider
-import models.NormalMode
+import models.{NormalMode, UserAnswers}
+import models.ReturnType.MonthlyStandardReturn
 import navigation.{FakeNavigator, Navigator}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.VerifiedStatusDeclarationPage
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.mvc.Call
 import play.api.test.FakeRequest
@@ -32,6 +34,7 @@ import play.api.test.Helpers.*
 import repositories.SessionRepository
 import views.html.monthlyreturns.VerifiedStatusDeclarationView
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar {
@@ -153,6 +156,79 @@ class VerifiedStatusDeclarationControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustEqual SEE_OTHER
         redirectLocation(result).value mustEqual routes.JourneyRecoveryController.onPageLoad().url
+      }
+    }
+
+    "must prepopulate the form when the answer exists for a GET with ID" in {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val answersWithCisId = userAnswersWithCisId.set(CisIdPage(id), "1").success.value
+      val userAnswers      = answersWithCisId.set(VerifiedStatusDeclarationPage(id), true).success.value
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .build()
+
+      running(application) {
+        val request = FakeRequest(
+          GET,
+          controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onPageLoadWithId(flowId, NormalMode).url
+        )
+
+        val result = route(application, request).value
+
+        val view = application.injector.instanceOf[VerifiedStatusDeclarationView]
+
+        val formAction =
+          Some(controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onSubmitWithId(flowId, NormalMode))
+
+        status(result) mustEqual OK
+        contentAsString(result) mustEqual
+          view(form.fill(true), NormalMode, formAction)(request, messages(application)).toString
+      }
+    }
+
+    "must redirect to the next page when valid data is submitted with ID" in {
+
+      val flowId = UUID.randomUUID()
+      val id     = flowId.toString
+
+      val userAnswers = userAnswersWithCisId
+        .setOrException(CisIdPage(id), "1")
+        .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
+
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
+
+      val application =
+        applicationBuilder(userAnswers = Some(userAnswers))
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[SessionRepository].toInstance(mockSessionRepository)
+          )
+          .build()
+
+      running(application) {
+        val request =
+          FakeRequest(
+            POST,
+            controllers.monthlyreturns.routes.VerifiedStatusDeclarationController.onSubmitWithId(flowId, NormalMode).url
+          ).withFormUrlEncodedBody(("value", "true"))
+
+        val result = route(application, request).value
+
+        status(result) mustEqual SEE_OTHER
+        redirectLocation(result).value mustEqual
+          controllers.monthlyreturns.routes.SubmitInactivityRequestController.onPageLoadWithId(flowId, NormalMode).url
+
+        val capturedAnswers = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(capturedAnswers.capture())
+
+        capturedAnswers.getValue.get(VerifiedStatusDeclarationPage(id)).value mustEqual true
       }
     }
   }
