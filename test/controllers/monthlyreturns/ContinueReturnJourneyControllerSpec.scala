@@ -387,15 +387,17 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
     // Multi-tab
     "continueReturnJourneyWithCisId" - {
 
-      "must preserve existing answers and redirect to scoped DateConfirmPayments" in {
-        val mockService     = mock[MonthlyReturnService]
+      "must preserve existing answers and redirect to the next scoped page" in {
+        val mockService = mock[MonthlyReturnService]
         val mockSessionRepo = mock[SessionRepository]
         val mockTaxpayerSvc = mock[CisTaxpayerService]
-        val mockReconcile   = mock[FormpRdsReconcileService]
-        val taxpayer        = mock[CisTaxpayer]
-        val otherId         = UUID.randomUUID().toString
+        val mockReconcile = mock[FormpRdsReconcileService]
+        val mockNavigator = mock[Navigator]
+        val taxpayer = mock[CisTaxpayer]
+        val otherId = UUID.randomUUID().toString
 
         val existingAnswers = UserAnswers("id").setOrException(CisIdPage(otherId), "OTHER-CIS")
+        val nextPage = controllers.routes.JourneyRecoveryController.onPageLoad()
 
         when(taxpayer.uniqueId).thenReturn("CIS-123")
         when(taxpayer.taxOfficeNumber).thenReturn("123")
@@ -421,12 +423,22 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
           )(any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(existingAnswers)))
 
+        when(
+          mockNavigator.nextPage(
+            any[UUID],
+            eqTo(DateConfirmPaymentsPage),
+            eqTo(NormalMode),
+            any[UserAnswers]
+          )
+        ).thenReturn(nextPage)
+
         val application = applicationBuilder(isAgent = false, formpRdsReconcileService = mockReconcile)
           .configure("features.multi-tab-enabled" -> true)
           .overrides(
             bind[MonthlyReturnService].toInstance(mockService),
             bind[SessionRepository].toInstance(mockSessionRepo),
-            bind[CisTaxpayerService].toInstance(mockTaxpayerSvc)
+            bind[CisTaxpayerService].toInstance(mockTaxpayerSvc),
+            bind[Navigator].toInstance(mockNavigator)
           )
           .build()
 
@@ -444,7 +456,7 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
 
           status(result) mustBe SEE_OTHER
 
-          val idCaptor      = ArgumentCaptor.forClass(classOf[String])
+          val idCaptor = ArgumentCaptor.forClass(classOf[String])
           val requestCaptor = ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
           val answersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
 
@@ -456,12 +468,18 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
 
           verify(mockSessionRepo).set(answersCaptor.capture())
 
-          val id     = idCaptor.getValue
+          val id = idCaptor.getValue
           val flowId = UUID.fromString(id)
-          val saved  = answersCaptor.getValue
+          val saved = answersCaptor.getValue
 
-          redirectLocation(result).value mustBe
-            routes.DateConfirmPaymentsController.onPageLoadWithId(flowId, NormalMode).url
+          redirectLocation(result).value mustBe nextPage.url
+
+          verify(mockNavigator).nextPage(
+            flowId,
+            DateConfirmPaymentsPage,
+            NormalMode,
+            saved
+          )
 
           saved.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
           saved.get(IsResumedMonthlyReturnPage(id)) mustBe Some(true)
