@@ -22,16 +22,22 @@ import play.api.libs.json.JsPath
 class VerifySubcontractorsPageSpec extends SpecBase {
 
   "VerifySubcontractorsPage" - {
-
-    "have the correct path and toString" in {
+    "have the correct path" in {
       VerifySubcontractorsPage.path mustBe (JsPath \ "verifySubcontractors")
+    }
+
+    "have the correct toString" in {
       VerifySubcontractorsPage.toString mustBe "verifySubcontractors"
     }
 
-    "have the correct path and toString with id" in {
-      val testId = "testId"
-      VerifySubcontractorsPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "verifySubcontractors")
-      VerifySubcontractorsPage(testId).toString mustBe "verifySubcontractors"
+    "have the correct scoped path" in {
+      VerifySubcontractorsPage(
+        "CIS-ORG-1"
+      ).path mustBe (JsPath \ "monthlyReturn" \ "CIS-ORG-1" \ "verifySubcontractors")
+    }
+
+    "have the correct scoped toString" in {
+      VerifySubcontractorsPage("CIS-ORG-1").toString mustBe "verifySubcontractors"
     }
   }
 }

@@ -29,5 +29,14 @@ class ConfirmAmendmentPageSpec extends SpecBase {
     "have the correct toString" in {
       ConfirmAmendmentPage.toString mustBe "confirmAmendment"
     }
+
+    "have the correct handoff-scoped path" in {
+      ConfirmAmendmentPage("handoff-1").path mustBe
+        (JsPath \ "monthlyReturn" \ "handoff" \ "handoff-1" \ "confirmAmendment")
+    }
+
+    "have the correct handoff-scoped toString" in {
+      ConfirmAmendmentPage("handoff-1").toString mustBe "confirmAmendment"
+    }
   }
 }

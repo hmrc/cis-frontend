@@ -20,21 +20,20 @@ import base.SpecBase
 import play.api.libs.json.JsPath
 
 class AreYouSureYouWantToAmendYesNoPageSpec extends SpecBase {
+  "have the correct path" in {
+    AreYouSureYouWantToAmendYesNoPage.path mustBe (JsPath \ "areYouSureYouWantToAmendYesNo")
+  }
 
-  "AreYouSureYouWantToAmendYesNoPage" - {
+  "have the correct toString" in {
+    AreYouSureYouWantToAmendYesNoPage.toString mustBe "areYouSureYouWantToAmendYesNo"
+  }
 
-    "must use AreYouSureYouWantToAmendYesNo path" in {
-      AreYouSureYouWantToAmendYesNoPage.path mustBe JsPath \ "areYouSureYouWantToAmendYesNo"
-      AreYouSureYouWantToAmendYesNoPage.toString mustBe "areYouSureYouWantToAmendYesNo"
-    }
+  "have the correct scoped path" in {
+    AreYouSureYouWantToAmendYesNoPage("org_flow-1").path mustBe
+      (JsPath \ "amend" \ "org_flow-1" \ "areYouSureYouWantToAmendYesNo")
+  }
 
-    "must use amendmentDetails path with id" in {
-      val testId = "testId"
-
-      AreYouSureYouWantToAmendYesNoPage(
-        testId
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "areYouSureYouWantToAmendYesNo")
-      AreYouSureYouWantToAmendYesNoPage(testId).toString mustBe "areYouSureYouWantToAmendYesNo"
-    }
+  "have the correct scoped toString" in {
+    AreYouSureYouWantToAmendYesNoPage("org_flow-1").toString mustBe "areYouSureYouWantToAmendYesNo"
   }
 }

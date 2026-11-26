@@ -23,19 +23,18 @@ class ConfirmationByEmailPageSpec extends SpecBase {
 
   "ConfirmationByEmailPage" - {
 
-    "use correct ConfirmationByEmailPage path" in {
-      ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
-      ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
-    }
+    "unscoped" - {
 
-    "use correct ConfirmationByEmailPage path with id" in {
-      val testId = "testId"
-      ConfirmationByEmailPage(testId).path mustBe (JsPath \ "monthlyReturn" \ testId \ "confirmationByEmail")
-      ConfirmationByEmailPage(testId).toString mustBe "confirmationByEmail"
-    }
+      "have the correct path" in {
+        ConfirmationByEmailPage.path mustBe (JsPath \ "confirmationByEmail")
+      }
 
-    "cleanup" - {
-      "without id" - {
+      "have the correct toString" in {
+        ConfirmationByEmailPage.toString mustBe "confirmationByEmail"
+      }
+
+      "cleanup" - {
+
         "must remove EnterYourEmailAddressPage when answer is No" in {
           val userAnswers = emptyUserAnswers
             .setOrException(EnterYourEmailAddressPage, "test@example.com")
@@ -64,171 +63,140 @@ class ConfirmationByEmailPageSpec extends SpecBase {
         }
       }
 
-      "with id" - {
-        val testId = "testId"
+      "UUID-scoped journey" - {
 
-        "must remove EnterYourEmailAddressPage when answer is No" in {
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
-
-          val result = ConfirmationByEmailPage(testId).cleanup(Some(false), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(testId)) mustBe None
-        }
-
-        "must remove EnterYourEmailAddressPage when answer is removed" in {
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
-
-          val result = ConfirmationByEmailPage(testId).cleanup(None, userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(testId)) mustBe None
-        }
-
-        "must retain EnterYourEmailAddressPage when answer is Yes" in {
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(testId), "test@example.com")
-
-          val result = ConfirmationByEmailPage(testId).cleanup(Some(true), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(testId)) mustBe Some("test@example.com")
-        }
-      }
-    }
-
-    "UUID-scoped journey" - {
-
-      "have the correct path under monthlyReturn" in {
-        val id = "test-flow-id"
-
-        ConfirmationByEmailPage(id).path mustBe
-          (JsPath \ "monthlyReturn" \ id \ "confirmationByEmail")
-      }
-
-      "have the correct toString" in {
-        val id = "test-flow-id"
-
-        ConfirmationByEmailPage(id).toString mustBe "confirmationByEmail"
-      }
-
-      "must use different paths for different flowIds" in {
-        val firstId  = "first-flow-id"
-        val secondId = "second-flow-id"
-
-        ConfirmationByEmailPage(firstId).path mustBe
-          (JsPath \ "monthlyReturn" \ firstId \ "confirmationByEmail")
-
-        ConfirmationByEmailPage(secondId).path mustBe
-          (JsPath \ "monthlyReturn" \ secondId \ "confirmationByEmail")
-      }
-
-      "must store and retrieve the answer for the correct flowId" in {
-        val firstId  = "first-flow-id"
-        val secondId = "second-flow-id"
-
-        val userAnswers = emptyUserAnswers
-          .setOrException(ConfirmationByEmailPage(firstId), true)
-          .setOrException(ConfirmationByEmailPage(secondId), false)
-
-        userAnswers.get(ConfirmationByEmailPage(firstId)) mustBe Some(true)
-        userAnswers.get(ConfirmationByEmailPage(secondId)) mustBe Some(false)
-      }
-
-      "must not use the legacy answer when the scoped answer is missing" in {
-        val id = "test-flow-id"
-
-        val userAnswers = emptyUserAnswers
-          .setOrException(ConfirmationByEmailPage, true)
-
-        userAnswers.get(ConfirmationByEmailPage(id)) mustBe None
-        userAnswers.get(ConfirmationByEmailPage) mustBe Some(true)
-      }
-
-      "cleanup" - {
-
-        "must remove the scoped EnterYourEmailAddressPage when answer is No" in {
+        "have the correct path under monthlyReturn" in {
           val id = "test-flow-id"
 
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
-
-          val result = ConfirmationByEmailPage(id).cleanup(Some(false), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(id)) mustBe None
+          ConfirmationByEmailPage(id).path mustBe
+            (JsPath \ "monthlyReturn" \ id \ "confirmationByEmail")
         }
 
-        "must remove the scoped EnterYourEmailAddressPage when answer is removed" in {
+        "have the correct toString" in {
           val id = "test-flow-id"
 
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
-
-          val result = ConfirmationByEmailPage(id).cleanup(None, userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(id)) mustBe None
+          ConfirmationByEmailPage(id).toString mustBe "confirmationByEmail"
         }
 
-        "must retain the scoped EnterYourEmailAddressPage when answer is Yes" in {
-          val id = "test-flow-id"
+        "must use different paths for different flowIds" in {
+          val firstId  = "first-flow-id"
+          val secondId = "second-flow-id"
 
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
+          ConfirmationByEmailPage(firstId).path mustBe
+            (JsPath \ "monthlyReturn" \ firstId \ "confirmationByEmail")
 
-          val result = ConfirmationByEmailPage(id).cleanup(Some(true), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(id)) mustBe Some("test@example.com")
+          ConfirmationByEmailPage(secondId).path mustBe
+            (JsPath \ "monthlyReturn" \ secondId \ "confirmationByEmail")
         }
 
-        "must not remove another journey email address when answer is No" in {
+        "must store and retrieve the answer for the correct flowId" in {
           val firstId  = "first-flow-id"
           val secondId = "second-flow-id"
 
           val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
-            .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
+            .setOrException(ConfirmationByEmailPage(firstId), true)
+            .setOrException(ConfirmationByEmailPage(secondId), false)
 
-          val result = ConfirmationByEmailPage(firstId).cleanup(Some(false), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(firstId)) mustBe None
-          result.get(EnterYourEmailAddressPage(secondId)) mustBe Some("second@example.com")
+          userAnswers.get(ConfirmationByEmailPage(firstId)) mustBe Some(true)
+          userAnswers.get(ConfirmationByEmailPage(secondId)) mustBe Some(false)
         }
 
-        "must not remove another journey email address when answer is removed" in {
-          val firstId  = "first-flow-id"
-          val secondId = "second-flow-id"
-
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
-            .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
-
-          val result = ConfirmationByEmailPage(firstId).cleanup(None, userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(firstId)) mustBe None
-          result.get(EnterYourEmailAddressPage(secondId)) mustBe Some("second@example.com")
-        }
-
-        "must not remove the legacy email address when the scoped answer is No" in {
+        "must not use the legacy answer when the scoped answer is missing" in {
           val id = "test-flow-id"
 
           val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage, "legacy@example.com")
-            .setOrException(EnterYourEmailAddressPage(id), "scoped@example.com")
+            .setOrException(ConfirmationByEmailPage, true)
 
-          val result = ConfirmationByEmailPage(id).cleanup(Some(false), userAnswers).success.value
-
-          result.get(EnterYourEmailAddressPage(id)) mustBe None
-          result.get(EnterYourEmailAddressPage) mustBe Some("legacy@example.com")
+          userAnswers.get(ConfirmationByEmailPage(id)) mustBe None
+          userAnswers.get(ConfirmationByEmailPage) mustBe Some(true)
         }
 
-        "must remove the scoped email address when ConfirmationByEmailPage is set to No" in {
-          val id = "test-flow-id"
+        "cleanup" - {
 
-          val userAnswers = emptyUserAnswers
-            .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
-            .setOrException(ConfirmationByEmailPage(id), false)
+          "must remove the scoped EnterYourEmailAddressPage when answer is No" in {
+            val id = "test-flow-id"
 
-          userAnswers.get(ConfirmationByEmailPage(id)) mustBe Some(false)
-          userAnswers.get(EnterYourEmailAddressPage(id)) mustBe None
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
+
+            val result = ConfirmationByEmailPage(id).cleanup(Some(false), userAnswers).success.value
+
+            result.get(EnterYourEmailAddressPage(id)) mustBe None
+          }
+
+          "must remove the scoped EnterYourEmailAddressPage when answer is removed" in {
+            val id = "test-flow-id"
+
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
+
+            val result = ConfirmationByEmailPage(id).cleanup(None, userAnswers).success.value
+
+            result.get(EnterYourEmailAddressPage(id)) mustBe None
+          }
+
+          "must retain the scoped EnterYourEmailAddressPage when answer is Yes" in {
+            val id = "test-flow-id"
+
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
+
+            val result = ConfirmationByEmailPage(id).cleanup(Some(true), userAnswers).success.value
+
+            result.get(EnterYourEmailAddressPage(id)) mustBe Some("test@example.com")
+          }
+
+          "must not remove another journey email address when answer is No" in {
+            val firstId  = "first-flow-id"
+            val secondId = "second-flow-id"
+
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
+              .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
+
+            val result = ConfirmationByEmailPage(firstId).cleanup(Some(false), userAnswers).success.value
+
+            result.get(EnterYourEmailAddressPage(firstId)) mustBe None
+            result.get(EnterYourEmailAddressPage(secondId)) mustBe Some("second@example.com")
+          }
+
+          "must not remove another journey email address when answer is removed" in {
+            val firstId  = "first-flow-id"
+            val secondId = "second-flow-id"
+
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage(firstId), "first@example.com")
+              .setOrException(EnterYourEmailAddressPage(secondId), "second@example.com")
+
+            val result = ConfirmationByEmailPage(firstId).cleanup(None, userAnswers).success.value
+
+            result.get(EnterYourEmailAddressPage(firstId)) mustBe None
+            result.get(EnterYourEmailAddressPage(secondId)) mustBe Some("second@example.com")
+          }
+
+          "must not remove the legacy email address when the scoped answer is No" in {
+            val id = "test-flow-id"
+
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage, "legacy@example.com")
+              .setOrException(EnterYourEmailAddressPage(id), "scoped@example.com")
+
+            val result = ConfirmationByEmailPage(id).cleanup(Some(false), userAnswers).success.value
+
+            result.get(EnterYourEmailAddressPage(id)) mustBe None
+            result.get(EnterYourEmailAddressPage) mustBe Some("legacy@example.com")
+          }
+
+          "must remove the scoped email address when ConfirmationByEmailPage is set to No" in {
+            val id = "test-flow-id"
+
+            val userAnswers = emptyUserAnswers
+              .setOrException(EnterYourEmailAddressPage(id), "test@example.com")
+              .setOrException(ConfirmationByEmailPage(id), false)
+
+            userAnswers.get(ConfirmationByEmailPage(id)) mustBe Some(false)
+            userAnswers.get(EnterYourEmailAddressPage(id)) mustBe None
+          }
         }
       }
     }
