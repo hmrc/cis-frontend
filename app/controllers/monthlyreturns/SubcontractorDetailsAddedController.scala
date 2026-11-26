@@ -130,8 +130,11 @@ class SubcontractorDetailsAddedController @Inject() (
           monthlyReturnService.isEditable(cisId, month, year, isAmendment).flatMap {
             case true =>
               if (ua.get(FinalValidationDraftIdPage(subJourneyId)).isDefined) {
-                // TODO: Implement UUID-scoped final validation in a separate ticket.
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                Future.successful(
+                  Redirect(
+                    controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId)
+                  )
+                )
               } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
                 Future.successful(
                   renderPageWithId(subJourneyId, flowId, mode, ua)
@@ -139,13 +142,7 @@ class SubcontractorDetailsAddedController @Inject() (
               } else {
                 ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
                   case Some(source) if sourceMode(source).contains(mode) =>
-                    // Multi-tab: TEMPORARY LOCAL TESTING ONLY - restore final validation before committing.
-                    // runFinalValidationWithId(subJourneyId, flowId, cisId, month, year, mode, ua)
-                    for {
-                      withContinuation <-
-                        Future.fromTry(ua.set(MonthlyFinalValidationContinuationPage(subJourneyId), mode.toString))
-                      _                <- sessionRepository.set(withContinuation)
-                    } yield renderPageWithId(subJourneyId, flowId, mode, withContinuation)
+                    runFinalValidationWithId(subJourneyId, flowId, cisId, month, year, mode, ua)
 
                   case _ =>
                     logger.error(
@@ -161,18 +158,14 @@ class SubcontractorDetailsAddedController @Inject() (
               logger.error(
                 s"[SubcontractorDetailsAddedController][onPageLoadWithId] - isEditable returned false, cisId=$cisId"
               )
-              Future.successful(
-                Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-              )
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
           }
 
         case None =>
           logger.error(
             "[SubcontractorDetailsAddedController][onPageLoadWithId] - CisIdPage or DateConfirmPaymentsPage missing"
           )
-          Future.successful(
-            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
-          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
       }
     }
 
@@ -587,7 +580,7 @@ class SubcontractorDetailsAddedController @Inject() (
       }
   }
 
-  private def runFinalValidationWithId( // TODO DTR-9474: Final validation out of scope
+  private def runFinalValidationWithId(
     subJourneyId: String,
     flowId: UUID,
     cisId: String,
@@ -595,16 +588,9 @@ class SubcontractorDetailsAddedController @Inject() (
     year: Int,
     mode: Mode,
     ua: UserAnswers
-  )(implicit request: Request[?]): Future[Result] = {
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
-      request,
-      request.session
-    )
-
-    // TODO DTR-9474: Add UUID-scoped final-validation subcontractor retrieval.
-    // Current service method reads legacy SelectedSubcontractorPage and ReturnTypePage.
+  )(implicit request: Request[?]): Future[Result] =
     subcontractorService
-      .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua)
+      .getSelectedSubcontractorsForFinalValidation(cisId, month, year, ua, subJourneyId)
       .flatMap { selectedFullSubcontractors =>
         val validation = finalValidationService.validate(subcontractors = selectedFullSubcontractors)
         logger.info(
@@ -614,8 +600,20 @@ class SubcontractorDetailsAddedController @Inject() (
         )
 
         if (validation.hasErrors) {
-          // TODO: Implement UUID-scoped final validation in a separate ticket.
-          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+          for {
+            createRequest <- Future.fromTry(
+                               finalValidationDraftRequestBuilder.build(
+                                 instanceId = cisId,
+                                 selectedSubcontractors = selectedFullSubcontractors,
+                                 validation = validation
+                               )
+                             )
+            draftId       <- finalValidationDraftService.create(createRequest)
+            withDraftId   <- Future.fromTry(ua.set(FinalValidationDraftIdPage(subJourneyId), draftId))
+            _             <- sessionRepository.set(withDraftId)
+          } yield Redirect(
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId)
+          )
         } else {
           for {
             withContinuation <-
@@ -630,7 +628,6 @@ class SubcontractorDetailsAddedController @Inject() (
           controllers.routes.SystemErrorController.onPageLoad()
         )
       }
-  }
 
   private def renderPage(
     mode: Mode,

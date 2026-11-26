@@ -345,3 +345,12 @@ POST       /monthly-return/final-validations/review-subcontractor-details       
 GET        /monthly-return/final-validations/change/:subcontractorId/:fieldKey/:targetKey      controllers.finalvalidations.FinalValidationChangeController.onPageLoad(subcontractorId: Long, fieldKey: String, targetKey: String)
 GET        /monthly-return/final-validations/return/:handoffId                                 controllers.finalvalidations.FinalValidationReturnController.onPageLoad(handoffId: String)
 GET        /agent/no-longer-authorised                                                         controllers.AgentLostAccessController.onPageLoad()
+
+# Multi-tab - Subcontractor Final Validations
+GET        /monthly-return/final-validations/review-subcontractor-details/:flowId                          controllers.finalvalidations.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId: UUID)
+POST       /monthly-return/final-validations/review-subcontractor-details/:flowId                          controllers.finalvalidations.ReviewSubcontractorDetailsController.onSubmitWithId(flowId: UUID)
+GET        /monthly-return/final-validations/update-subcontractor-details/:subcontractorId/:flowId         controllers.finalvalidations.UpdateSubcontractorDetailsController.onPageLoadWithId(flowId: UUID, subcontractorId: Long)
+POST       /monthly-return/final-validations/update-subcontractor-details/:subcontractorId/:flowId         controllers.finalvalidations.UpdateSubcontractorDetailsController.onSubmitWithId(flowId: UUID, subcontractorId: Long)
+POST       /monthly-return/final-validations/update-subcontractor-details/:subcontractorId/cancel/:flowId  controllers.finalvalidations.UpdateSubcontractorDetailsController.onCancelWithId(flowId: UUID, subcontractorId: Long)
+GET        /monthly-return/final-validations/change/:subcontractorId/:fieldKey/:targetKey/:flowId          controllers.finalvalidations.FinalValidationChangeController.onPageLoadWithId(flowId: UUID, subcontractorId: Long, fieldKey: String, targetKey: String)
+GET        /monthly-return/final-validations/return/:handoffId/:flowId                                     controllers.finalvalidations.FinalValidationReturnController.onPageLoadWithId(flowId: UUID, handoffId: String)

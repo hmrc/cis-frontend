@@ -20,7 +20,7 @@ import controllers.actions.*
 import models.{CheckMode, Mode, NormalMode, UserAnswers}
 import models.finalvalidation.*
 import pages.finalvalidations.{FinalValidationDraftIdPage, MonthlyFinalValidationContinuationPage, MonthlyFinalValidationSourcePage}
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.{CisIdPage, SelectedSubcontractorPage}
 
 import javax.inject.Inject
 import play.api.Logging
@@ -31,6 +31,7 @@ import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -40,6 +41,7 @@ class ReviewSubcontractorDetailsController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   sessionRepository: SessionRepository,
   finalValidationDraftService: FinalValidationDraftService,
   pageModelBuilder: UpdateSubcontractorDetailsPageModelBuilder,
@@ -218,4 +220,179 @@ class ReviewSubcontractorDetailsController @Inject() (
     )
   }
 
+  // Multi-tab
+  def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
+
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(cisId, draftId)
+            .map { draft =>
+              val rows =
+                draft.subcontractors.map { subcontractor =>
+                  ReviewSubcontractorDetailsRow(
+                    subcontractor.subcontractorId,
+                    pageModelBuilder.displayName(subcontractor),
+                    subcontractor.readiness == FinalValidationReadiness.Incomplete
+                  )
+                }
+
+              val backUrl =
+                request.userAnswers
+                  .get(MonthlyFinalValidationSourcePage(subJourneyId))
+                  .map(source => backUrlFromSource(source, flowId))
+                  .getOrElse {
+                    logger.error(
+                      "[ReviewSubcontractorDetailsController][onPageLoadWithId] Unable to determine back URL: " +
+                        "MonthlyFinalValidationSourcePage is missing from user answers"
+                    )
+                    controllers.routes.JourneyRecoveryController.onPageLoad().url
+                  }
+
+              val formAction = Some(
+                routes.ReviewSubcontractorDetailsController.onSubmitWithId(flowId)
+              )
+
+              val taskListAction = Some((subcontractorId: Long) =>
+                routes.UpdateSubcontractorDetailsController.onPageLoadWithId(flowId, subcontractorId)
+              )
+
+              Ok(
+                view(
+                  ReviewSubcontractorDetailsPageModel(rows, draft.allComplete, backUrl),
+                  formAction,
+                  taskListAction
+                )
+              )
+            }
+
+        case None =>
+          logger.error(
+            "[ReviewSubcontractorDetailsController][onPageLoadWithId] Unable to load review page: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+      }
+    }
+
+  // Multi-tab
+  def onSubmitWithId(flowId: UUID): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      val draftIdOpt = request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId))
+      val sourceOpt  = request.userAnswers.get(MonthlyFinalValidationSourcePage(subJourneyId))
+
+      (draftIdOpt, sourceOpt.flatMap(modeFromSource)) match {
+        case (Some(draftId), Some(mode)) =>
+          finalValidationDraftService
+            .get(cisId, draftId)
+            .flatMap { draft =>
+              if (!draft.allComplete) {
+                Future.successful(
+                  Redirect(routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId))
+                )
+              } else {
+                for {
+                  _                <- finalValidationDraftService.commit(cisId, draftId)
+                  updatedAnswers   <- Future.fromTry(
+                                        updateSelectedSubcontractorNames(request.userAnswers, draft, subJourneyId)
+                                      )
+                  cleanedAnswers   <- Future.fromTry(clearFinalValidationState(updatedAnswers, subJourneyId))
+                  withContinuation <-
+                    Future.fromTry(
+                      cleanedAnswers.set(MonthlyFinalValidationContinuationPage(subJourneyId), mode.toString)
+                    )
+                  _                <- sessionRepository.set(withContinuation)
+                } yield Redirect(
+                  controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+                    .onPageLoadAfterFinalValidationWithId(flowId, mode)
+                )
+              }
+            }
+
+        case _ =>
+          logger.error(
+            s"[ReviewSubcontractorDetailsController][onSubmitWithId] Unable to submit final validation: " +
+              s"required journey data missing - " +
+              s"FinalValidationDraftIdPage present=${draftIdOpt.isDefined}, " +
+              s"MonthlyFinalValidationSourcePage present=${sourceOpt.isDefined}"
+          )
+          Future.successful(
+            Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+          )
+
+      }
+    }
+
+  private def clearFinalValidationState(userAnswers: UserAnswers, id: String): Try[UserAnswers] =
+    for {
+      withoutDraftId <- userAnswers.remove(FinalValidationDraftIdPage(id))
+      withoutSource  <- withoutDraftId.remove(MonthlyFinalValidationSourcePage(id))
+    } yield withoutSource
+
+  private def backUrlFromSource(source: MonthlyFinalValidationSource, flowId: UUID): String =
+    source match {
+      case MonthlyFinalValidationSource.SelectSubcontractors =>
+        controllers.monthlyreturns.routes.SelectSubcontractorsController
+          .onPageLoadWithId(flowId, None)
+          .url
+
+      case MonthlyFinalValidationSource.WhichSubcontractorsToAdd(modeValue) =>
+        // TODO DTR-9476: Add UUID-scoped subcontractor selection navigation.
+        logger.error(
+          "[ReviewSubcontractorDetailsController][backUrlFromSource] Unable to determine scoped back URL: " +
+            s"WhichSubcontractorsToAdd is not yet supported, mode=$modeValue"
+        )
+        controllers.routes.JourneyRecoveryController.onPageLoad().url
+    }
+
+  private def updateSelectedSubcontractorNames(
+    userAnswers: UserAnswers,
+    draft: FinalValidationDraft,
+    id: String
+  ): Try[UserAnswers] = {
+
+    val namesBySubcontractorId =
+      draft.subcontractors.map { subcontractor =>
+        subcontractor.subcontractorId ->
+          pageModelBuilder.resolvedName(subcontractor)
+      }.toMap
+
+    val selectedSubcontractors =
+      userAnswers
+        .get(SelectedSubcontractorPage.all(id))
+        .getOrElse(Map.empty)
+
+    val updatedSubcontractors =
+      selectedSubcontractors.map { case (index, subcontractor) =>
+        val updated =
+          namesBySubcontractorId
+            .get(subcontractor.id)
+            .map { name =>
+              subcontractor.copy(
+                name = name
+              )
+            }
+            .getOrElse(subcontractor)
+
+        index -> updated
+      }
+
+    userAnswers.set(
+      SelectedSubcontractorPage.all(id),
+      updatedSubcontractors
+    )
+  }
 }

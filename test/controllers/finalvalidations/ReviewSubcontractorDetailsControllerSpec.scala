@@ -22,7 +22,7 @@ import models.UserAnswers
 import models.finalvalidation.*
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.*
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pages.monthlyreturns.CisIdPage
 import pages.finalvalidations.*
@@ -36,6 +36,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import views.html.finalvalidations.ReviewSubcontractorDetailsView
 import models.NormalMode
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
@@ -595,6 +596,175 @@ class ReviewSubcontractorDetailsControllerSpec extends SpecBase {
       }
     }
   }
+
+  // Multi-tab
+  "ReviewSubcontractorDetailsController.onPageLoadWithId" - {
+
+    "render subcontractors from the scoped Final Validation draft" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      when(
+        finalValidationDraftService.get(
+          any[String],
+          any[String]
+        )(any[HeaderCarrier])
+      ).thenReturn(
+        Future.successful(
+          draft(
+            firstReadiness = "Incomplete",
+            secondReadiness = "Complete"
+          )
+        )
+      )
+
+      val application =
+        applicationWith(
+          userAnswers = scopedUserAnswers,
+          finalValidationDraftService = finalValidationDraftService,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, requestWithId).value
+
+        val view =
+          application.injector
+            .instanceOf[ReviewSubcontractorDetailsView]
+
+        status(result) mustBe OK
+
+        contentAsString(result) mustBe
+          view(
+            ReviewSubcontractorDetailsPageModel(
+              Seq(
+                ReviewSubcontractorDetailsRow(
+                  1L,
+                  "First Subcontractor",
+                  true
+                ),
+                ReviewSubcontractorDetailsRow(
+                  2L,
+                  "Second Subcontractor",
+                  false
+                )
+              ),
+              false,
+              controllers.monthlyreturns.routes.SelectSubcontractorsController
+                .onPageLoadWithId(flowId, None)
+                .url
+            ),
+            Some(
+              routes.ReviewSubcontractorDetailsController
+                .onSubmitWithId(flowId)
+            ),
+            Some((subcontractorId: Long) =>
+              routes.UpdateSubcontractorDetailsController
+                .onPageLoadWithId(flowId, subcontractorId)
+            )
+          )(
+            requestWithId,
+            messages(application)
+          ).toString
+
+        val cisIdCaptor   = ArgumentCaptor.forClass(classOf[String])
+        val draftIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+        verify(finalValidationDraftService)
+          .get(
+            cisIdCaptor.capture(),
+            draftIdCaptor.capture()
+          )(any[HeaderCarrier])
+
+        cisIdCaptor.getValue mustBe scopedCisId
+        draftIdCaptor.getValue mustBe scopedDraftId
+      }
+    }
+
+    "redirect to JourneyRecovery when there is no scoped Final Validation draft id" in {
+      val finalValidationDraftService =
+        mock[FinalValidationDraftService]
+
+      val sessionRepository =
+        mock[SessionRepository]
+
+      val answersWithoutDraftId =
+        scopedUserAnswers
+          .remove(FinalValidationDraftIdPage(id))
+          .get
+
+      val application =
+        applicationWith(
+          userAnswers = answersWithoutDraftId,
+          finalValidationDraftService = finalValidationDraftService,
+          sessionRepository = sessionRepository
+        )
+
+      running(application) {
+        val result =
+          route(application, requestWithId).value
+
+        status(result) mustBe SEE_OTHER
+
+        redirectLocation(result).value mustBe
+          controllers.routes.JourneyRecoveryController
+            .onPageLoad()
+            .url
+
+        verifyNoInteractions(finalValidationDraftService)
+      }
+    }
+  }
+
+  // Multi-tab
+  private val flowId        = UUID.fromString("11111111-1111-1111-1111-111111111111")
+  private val otherFlowId   = UUID.fromString("22222222-2222-2222-2222-222222222222")
+  private val id            = flowId.toString
+  private val otherId       = otherFlowId.toString
+  private val scopedCisId   = "CIS-456"
+  private val scopedDraftId = "scoped-draft-123"
+  private val otherDraftId  = "other-draft-123"
+
+  private val requestWithId =
+    FakeRequest(
+      GET,
+      routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId).url
+    )
+
+  private val submitRequestWithId =
+    FakeRequest(
+      POST,
+      routes.ReviewSubcontractorDetailsController.onSubmitWithId(flowId).url
+    )
+
+  private val scopedUserAnswers =
+    userAnswers
+      .setOrException(
+        MonthlyFinalValidationSourcePage,
+        MonthlyFinalValidationSource.WhichSubcontractorsToAdd(CheckMode.toString)
+      )
+      .setOrException(CisIdPage(id), scopedCisId)
+      .setOrException(
+        FinalValidationDraftIdPage(id),
+        scopedDraftId
+      )
+      .setOrException(
+        MonthlyFinalValidationSourcePage(id),
+        MonthlyFinalValidationSource.SelectSubcontractors
+      )
+      .setOrException(CisIdPage(otherId), "CIS-789")
+      .setOrException(
+        FinalValidationDraftIdPage(otherId),
+        otherDraftId
+      )
+      .setOrException(
+        MonthlyFinalValidationSourcePage(otherId),
+        MonthlyFinalValidationSource.SelectSubcontractors
+      )
 
   private def applicationWith(
     userAnswers: UserAnswers,

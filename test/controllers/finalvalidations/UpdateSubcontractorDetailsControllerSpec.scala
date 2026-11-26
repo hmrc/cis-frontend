@@ -22,6 +22,7 @@ import play.api.test.Helpers.*
 import views.html.finalvalidations.UpdateSubcontractorDetailsView
 import models.finalvalidation.*
 import models.UserAnswers
+import org.mockito.ArgumentCaptor
 import pages.finalvalidations.FinalValidationDraftIdPage
 import services.finalvalidation.{FinalValidationDraftService, FinalValidationService}
 import org.mockito.ArgumentMatchers.any
@@ -33,6 +34,8 @@ import play.api.libs.json.Json
 import play.api.i18n.Messages
 import play.api.test.CSRFTokenHelper
 import uk.gov.hmrc.http.HeaderCarrier
+
+import java.util.UUID
 import scala.concurrent.Future
 import scala.util.Success
 
@@ -671,7 +674,392 @@ class UpdateSubcontractorDetailsControllerSpec extends SpecBase {
         )
       }
     }
+
+    // Multi-tab
+    "UpdateSubcontractorDetails Controller WithId" - {
+
+      "must return OK and the correct scoped view for a GET" in {
+
+        val finalValidationDraftService =
+          mock[FinalValidationDraftService]
+
+        val finalValidationService =
+          mock[FinalValidationService]
+
+        val incompleteDraft =
+          draft()
+
+        when(
+          finalValidationDraftService.get(
+            any[String],
+            any[String]
+          )(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(incompleteDraft)
+        )
+
+        val application =
+          applicationWith(
+            userAnswers = Some(scopedUserAnswers),
+            finalValidationDraftService = finalValidationDraftService,
+            finalValidationService = finalValidationService
+          )
+
+        running(application) {
+          val request =
+            CSRFTokenHelper.addCSRFToken(
+              FakeRequest(
+                GET,
+                updateSubcontractorDetailsRouteWithId
+              )
+            )
+
+          val result =
+            route(application, request).value
+
+          val view =
+            application.injector
+              .instanceOf[UpdateSubcontractorDetailsView]
+
+          val pageModelBuilder =
+            application.injector
+              .instanceOf[UpdateSubcontractorDetailsPageModelBuilder]
+
+          val subcontractor =
+            incompleteDraft
+              .subcontractor(subcontractorId)
+              .value
+
+          given Messages =
+            messages(application)
+
+          val rows =
+            pageModelBuilder.build(
+              subcontractor,
+              (field, target) =>
+                controllers.finalvalidations.routes.FinalValidationChangeController
+                  .onPageLoadWithId(
+                    flowId,
+                    subcontractorId,
+                    field.key,
+                    target.key
+                  )
+                  .url
+            )
+
+          val model =
+            UpdateSubcontractorDetailsPageModel(
+              subcontractorId,
+              pageModelBuilder.displayName(subcontractor),
+              rows
+            )
+
+          status(result) mustBe OK
+
+          contentAsString(result) mustBe
+            view(
+              model,
+              Some(
+                routes.UpdateSubcontractorDetailsController
+                  .onSubmitWithId(flowId, subcontractorId)
+              ),
+              Some(
+                routes.UpdateSubcontractorDetailsController
+                  .onCancelWithId(flowId, subcontractorId)
+              )
+            )(
+              request,
+              messages(application)
+            ).toString
+
+          val cisIdCaptor   = ArgumentCaptor.forClass(classOf[String])
+          val draftIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+          verify(finalValidationDraftService)
+            .get(
+              cisIdCaptor.capture(),
+              draftIdCaptor.capture()
+            )(any[HeaderCarrier])
+
+          cisIdCaptor.getValue mustBe scopedCisId
+          draftIdCaptor.getValue mustBe scopedDraftId
+        }
+      }
+
+      "must redirect to scoped Review Subcontractor Details for a GET when the subcontractor is complete" in {
+
+        val finalValidationDraftService =
+          mock[FinalValidationDraftService]
+
+        val finalValidationService =
+          mock[FinalValidationService]
+
+        when(
+          finalValidationDraftService.get(
+            any[String],
+            any[String]
+          )(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(
+            draft(readiness = "Complete")
+          )
+        )
+
+        val application =
+          applicationWith(
+            userAnswers = Some(scopedUserAnswers),
+            finalValidationDraftService = finalValidationDraftService,
+            finalValidationService = finalValidationService
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(
+              GET,
+              updateSubcontractorDetailsRouteWithId
+            )
+
+          val result =
+            route(application, request).value
+
+          status(result) mustBe SEE_OTHER
+
+          redirectLocation(result).value mustBe
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController
+              .onPageLoadWithId(flowId)
+              .url
+        }
+      }
+
+      "must validate the scoped draft subcontractor, update readiness and redirect for a POST" in {
+
+        val finalValidationDraftService =
+          mock[FinalValidationDraftService]
+
+        val finalValidationService =
+          mock[FinalValidationService]
+
+        val incompleteDraft =
+          draft()
+
+        val issues =
+          Seq.empty[FinalValidationDraftIssue]
+
+        when(
+          finalValidationDraftService.get(
+            any[String],
+            any[String]
+          )(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(incompleteDraft)
+        )
+
+        when(
+          finalValidationService.validateDraftSubcontractor(
+            incompleteDraft,
+            subcontractorId
+          )
+        ).thenReturn(
+          Success(issues)
+        )
+
+        when(
+          finalValidationDraftService.updateReadiness(
+            any[String],
+            any[String],
+            any[Long],
+            any[Seq[FinalValidationDraftIssue]]
+          )(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(incompleteDraft)
+        )
+
+        val application =
+          applicationWith(
+            userAnswers = Some(scopedUserAnswers),
+            finalValidationDraftService = finalValidationDraftService,
+            finalValidationService = finalValidationService
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              submitSubcontractorDetailsRouteWithId
+            )
+
+          val result =
+            route(application, request).value
+
+          status(result) mustBe SEE_OTHER
+
+          redirectLocation(result).value mustBe
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController
+              .onPageLoadWithId(flowId)
+              .url
+
+          verify(finalValidationService)
+            .validateDraftSubcontractor(
+              incompleteDraft,
+              subcontractorId
+            )
+
+          val cisIdCaptor         = ArgumentCaptor.forClass(classOf[String])
+          val draftIdCaptor       = ArgumentCaptor.forClass(classOf[String])
+          val subcontractorCaptor = ArgumentCaptor.forClass(classOf[Long])
+
+          verify(finalValidationDraftService)
+            .updateReadiness(
+              cisIdCaptor.capture(),
+              draftIdCaptor.capture(),
+              subcontractorCaptor.capture(),
+              any[Seq[FinalValidationDraftIssue]]
+            )(any[HeaderCarrier])
+
+          cisIdCaptor.getValue mustBe scopedCisId
+          draftIdCaptor.getValue mustBe scopedDraftId
+          subcontractorCaptor.getValue mustBe subcontractorId
+        }
+      }
+
+      "must reset the scoped subcontractor and redirect to scoped Review Subcontractor Details for a cancel POST" in {
+
+        val finalValidationDraftService =
+          mock[FinalValidationDraftService]
+
+        val finalValidationService =
+          mock[FinalValidationService]
+
+        val resetDraft =
+          draft()
+
+        when(
+          finalValidationDraftService.resetSubcontractor(
+            any[String],
+            any[String],
+            any[Long]
+          )(any[HeaderCarrier])
+        ).thenReturn(
+          Future.successful(resetDraft)
+        )
+
+        val application =
+          applicationWith(
+            userAnswers = Some(scopedUserAnswers),
+            finalValidationDraftService = finalValidationDraftService,
+            finalValidationService = finalValidationService
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              cancelSubcontractorDetailsRouteWithId
+            )
+
+          val result =
+            route(application, request).value
+
+          status(result) mustBe SEE_OTHER
+
+          redirectLocation(result).value mustBe
+            controllers.finalvalidations.routes.ReviewSubcontractorDetailsController
+              .onPageLoadWithId(flowId)
+              .url
+
+          val cisIdCaptor         = ArgumentCaptor.forClass(classOf[String])
+          val draftIdCaptor       = ArgumentCaptor.forClass(classOf[String])
+          val subcontractorCaptor = ArgumentCaptor.forClass(classOf[Long])
+
+          verify(finalValidationDraftService)
+            .resetSubcontractor(
+              cisIdCaptor.capture(),
+              draftIdCaptor.capture(),
+              subcontractorCaptor.capture()
+            )(any[HeaderCarrier])
+
+          cisIdCaptor.getValue mustBe scopedCisId
+          draftIdCaptor.getValue mustBe scopedDraftId
+          subcontractorCaptor.getValue mustBe subcontractorId
+
+          verifyNoInteractions(finalValidationService)
+        }
+      }
+
+      "must redirect to Journey Recovery for a cancel POST when the scoped draft id is not found" in {
+
+        val finalValidationDraftService =
+          mock[FinalValidationDraftService]
+
+        val finalValidationService =
+          mock[FinalValidationService]
+
+        val answersWithoutDraftId =
+          scopedUserAnswers
+            .remove(FinalValidationDraftIdPage(id))
+            .get
+
+        val application =
+          applicationWith(
+            userAnswers = Some(answersWithoutDraftId),
+            finalValidationDraftService = finalValidationDraftService,
+            finalValidationService = finalValidationService
+          )
+
+        running(application) {
+          val request =
+            FakeRequest(
+              POST,
+              cancelSubcontractorDetailsRouteWithId
+            )
+
+          val result =
+            route(application, request).value
+
+          status(result) mustBe SEE_OTHER
+
+          redirectLocation(result).value mustBe
+            controllers.routes.JourneyRecoveryController
+              .onPageLoad()
+              .url
+
+          verifyNoInteractions(
+            finalValidationDraftService,
+            finalValidationService
+          )
+        }
+      }
+    }
   }
+
+  // Multi-tab
+  private val flowId        = UUID.fromString("11111111-1111-1111-1111-111111111111")
+  private val id            = flowId.toString
+  private val scopedCisId   = "CIS-456"
+  private val scopedDraftId = "scoped-draft-123"
+
+  private lazy val updateSubcontractorDetailsRouteWithId =
+    controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
+      .onPageLoadWithId(flowId, subcontractorId)
+      .url
+
+  private lazy val submitSubcontractorDetailsRouteWithId =
+    controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
+      .onSubmitWithId(flowId, subcontractorId)
+      .url
+
+  private lazy val cancelSubcontractorDetailsRouteWithId =
+    controllers.finalvalidations.routes.UpdateSubcontractorDetailsController
+      .onCancelWithId(flowId, subcontractorId)
+      .url
+
+  private val scopedUserAnswers =
+    userAnswers
+      .setOrException(CisIdPage(id), scopedCisId)
+      .setOrException(
+        FinalValidationDraftIdPage(id),
+        scopedDraftId
+      )
 
   private def applicationWith(
     userAnswers: Option[UserAnswers],

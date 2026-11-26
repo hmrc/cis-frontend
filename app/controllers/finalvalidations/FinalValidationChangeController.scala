@@ -18,17 +18,19 @@ package controllers.finalvalidations
 
 import config.FrontendAppConfig
 import connectors.ConstructionIndustrySchemeConnector
-import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.*
 import models.finalvalidation.{FinalValidationChangeTarget, FinalValidationField, FinalValidationHandoffPayload, FinalValidationReadiness}
 import models.handoff.JourneyHandoffTypes.FinalValidation
 import models.finalvalidation.FinalValidationHandoffPayload.given
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import pages.finalvalidations.FinalValidationDraftIdPage
+import pages.monthlyreturns.CisIdPage
 import play.api.Logging
 import services.finalvalidation.FinalValidationDraftService
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,6 +43,7 @@ class FinalValidationChangeController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requireCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents
 )(using ec: ExecutionContext)
     extends FrontendBaseController
@@ -107,6 +110,76 @@ class FinalValidationChangeController @Inject() (
           Future.successful(
             Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
           )
+
+      }
+    }
+
+  // Multi-tab
+  def onPageLoadWithId(
+    flowId: UUID,
+    subcontractorId: Long,
+    fieldKey: String,
+    targetKey: String
+  ): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)) match {
+
+        case Some(draftId) =>
+          finalValidationDraftService
+            .get(cisId, draftId)
+            .flatMap { draft =>
+              val payloadOpt =
+                for {
+                  subcontractor <- draft
+                                     .subcontractor(subcontractorId)
+                                     .filter(
+                                       _.readiness == FinalValidationReadiness.Incomplete
+                                     )
+                  issue         <- subcontractor.issues.find(_.fieldKey == fieldKey)
+                  field         <- FinalValidationField.fromKey(issue.fieldKey)
+                  target        <- FinalValidationChangeTarget.fromKey(targetKey)
+                } yield FinalValidationHandoffPayload(
+                  draftId = draftId,
+                  instanceId = cisId,
+                  subcontractorId = subcontractor.subcontractorId,
+                  subbieResourceRef = subcontractor.subbieResourceRef,
+                  field = field,
+                  changeTarget = target,
+                  flowId = Some(subJourneyId)
+                )
+
+              payloadOpt match {
+
+                case Some(payload) =>
+                  connector
+                    .createJourneyHandoff(
+                      FinalValidation,
+                      Json.toJsObject[FinalValidationHandoffPayload](payload)
+                    )
+                    .map(handoffId => Redirect(appConfig.cisContractorFinalValidationHandoffUrl(handoffId)))
+
+                case None =>
+                  logger.error(
+                    s"[FinalValidationChangeController][onPageLoadWithId] Unable to create final validation handoff: " +
+                      s"invalid or incomplete payload for subcontractorId=$subcontractorId, " +
+                      s"fieldKey=$fieldKey, targetKey=$targetKey"
+                  )
+                  Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+              }
+            }
+
+        case None =>
+          logger.error(
+            "[FinalValidationChangeController][onPageLoadWithId] Unable to change final validation field: " +
+              "FinalValidationDraftIdPage is missing from user answers"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
       }
     }

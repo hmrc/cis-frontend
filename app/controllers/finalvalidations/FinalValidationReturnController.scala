@@ -25,9 +25,11 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import controllers.actions.{CisIdRequiredAction, DataRequiredAction, DataRetrievalAction, IdentifierAction}
+import controllers.actions.*
 import pages.finalvalidations.FinalValidationDraftIdPage
+import pages.monthlyreturns.CisIdPage
 
+import java.util.UUID
 import scala.util.control.NonFatal
 
 @Singleton
@@ -37,6 +39,7 @@ class FinalValidationReturnController @Inject() (
   getData: DataRetrievalAction,
   requireData: DataRequiredAction,
   requiredCisId: CisIdRequiredAction,
+  multiTabAction: MultiTabAction,
   val controllerComponents: MessagesControllerComponents
 )(using ec: ExecutionContext)
     extends FrontendBaseController
@@ -80,6 +83,60 @@ class FinalValidationReturnController @Inject() (
         }
         .recover { case NonFatal(ex) =>
           logger.error(s"[FinalValidationReturnController] Error processing handoff data for handoffId: $handoffId", ex)
+          Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+        }
+    }
+
+  // Multi-tab
+  def onPageLoadWithId(flowId: UUID, handoffId: String): Action[AnyContent] =
+    (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
+      val subJourneyId = flowId.toString
+      val cisId        = request.userAnswers.get(CisIdPage(subJourneyId)).getOrElse {
+        throw new IllegalStateException("CisId missing after multitabAction validation")
+      }
+
+      connector
+        .getJourneyHandoff[FinalValidationHandoffPayload](JourneyHandoffTypes.FinalValidation, handoffId)
+        .flatMap {
+
+          case Some(payload) =>
+            val draftIdOpt = request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId))
+
+            val validHandoff =
+              payload.instanceId == cisId &&
+                draftIdOpt.contains(payload.draftId) &&
+                payload.flowId.contains(subJourneyId)
+
+            if (validHandoff) {
+              connector
+                .deleteJourneyHandoff(JourneyHandoffTypes.FinalValidation, handoffId)
+                .map(_ =>
+                  Redirect(
+                    routes.UpdateSubcontractorDetailsController.onPageLoadWithId(flowId, payload.subcontractorId)
+                  )
+                )
+
+            } else {
+              logger.error(
+                s"[FinalValidationReturnController][onPageLoadWithId] Invalid Final Validation handoff correlation " +
+                  s"for handoffId: $handoffId"
+              )
+              Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+            }
+
+          case None =>
+            logger.error(
+              s"[FinalValidationReturnController][onPageLoadWithId] Final Validation handoff not found " +
+                s"for handoffId: $handoffId"
+            )
+            Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+
+        }
+        .recover { case NonFatal(ex) =>
+          logger.error(
+            s"[FinalValidationReturnController][onPageLoadWithId] Error processing handoff data for handoffId: $handoffId",
+            ex
+          )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         }
     }

@@ -711,7 +711,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       }
     }
 
-    "must redirect to Journey Recovery when a scoped Final Validation draft exists" in {
+    "must redirect to scoped ReviewSubcontractorDetails when a scoped Final Validation draft exists" in {
       val ua = uaWithScopedSubcontractor
         .setOrException(FinalValidationDraftIdPage(subJourneyId), "draft-123")
 
@@ -730,7 +730,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
 
         status(result) mustBe SEE_OTHER
         redirectLocation(result).value mustBe
-          controllers.routes.JourneyRecoveryController.onPageLoad().url
+          controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoadWithId(flowId).url
       }
     }
 

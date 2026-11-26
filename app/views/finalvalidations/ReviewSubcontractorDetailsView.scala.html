@@ -17,6 +17,7 @@
 @import uk.gov.hmrc.govukfrontend.views.viewmodels.tasklist._
 @import views.html.components._
 @import models.finalvalidation.ReviewSubcontractorDetailsPageModel
+@import play.api.mvc.Call
 
 @this(
     layout: templates.Layout,
@@ -26,7 +27,10 @@
     link: Link
 )
 
-@(model: ReviewSubcontractorDetailsPageModel)(implicit request: Request[_], messages: Messages)
+@(model: ReviewSubcontractorDetailsPageModel,
+    formAction: Option[Call] = None,
+    taskListAction: Option[Long => Call] = None
+)(implicit request: Request[_], messages: Messages)
 
 @reviewSubcontractorTitle(name: String) = {
     <span class="govuk-visually-hidden">
@@ -36,7 +40,7 @@
 }
 
 @fileAReturnSubmitLink() = {
-    @helper.form(controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit()) {
+    @helper.form(formAction.getOrElse(controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onSubmit())) {
         @helper.CSRF.formField
 
         <button
@@ -66,15 +70,16 @@
 
         @p("finalValidations.reviewSubcontractorDetails.intro")
 
-        <!--TODO DTR-9474: Implement taskListAction.getOrElse for href-->
-        val rowId = "test"
         @govukTaskList(TaskList(
             idPrefix = "review-subcontractor-details",
             items = model.subcontractors.map { row =>
                 if (row.hasErrors) {
                     TaskListItem(
                         title = TaskListItemTitle(content = HtmlContent(reviewSubcontractorTitle(row.name))),
-                        href = Some(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId).url),
+                        href = Some(
+                            taskListAction.map(action => action(row.subcontractorId))
+                                .getOrElse(controllers.finalvalidations.routes.UpdateSubcontractorDetailsController.onPageLoad(row.subcontractorId)).url
+                        ),
                         status = incompleteStatus
                     )
                 } else {
