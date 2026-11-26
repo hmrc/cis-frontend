@@ -22,7 +22,7 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.amend.*
-import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn}
+import models.ReturnType.*
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
 import pages.amend.{AreYouSureYouWantToAmendYesNoPage, WhichSubcontractorsToAddPage}
 
@@ -642,6 +642,36 @@ class NavigatorSpec extends SpecBase {
             NormalMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        // Multi-tab: Standard return navigation
+        "must go from DateConfirmPaymentsPage to JourneyRecovery when standard return has no subcontractors" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id")
+            .setOrException(ReturnTypePage(flowId.toString), MonthlyStandardReturn)
+
+          navigator.nextPage(
+            flowId,
+            DateConfirmPaymentsPage,
+            NormalMode,
+            ua
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        }
+
+        "must go from DateConfirmPaymentsPage to JourneyRecovery when standard return has subcontractors" in {
+          val flowId = UUID.randomUUID()
+          val ua     = UserAnswers("id")
+            .setOrException(ReturnTypePage(flowId.toString), MonthlyStandardReturn)
+            .setOrException(SelectedSubcontractorForFlowPage(flowId.toString, 1), completeSub)
+
+          ua.get(SelectedSubcontractorPage.all(flowId.toString)).exists(_.nonEmpty) mustBe true
+
+          navigator.nextPage(
+            flowId,
+            DateConfirmPaymentsPage,
+            NormalMode,
+            ua
+          ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
         }
       }
 

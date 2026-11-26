@@ -786,10 +786,8 @@ class ConfirmAmendmentControllerSpec extends SpecBase with MockitoSugar {
         val flowId = UUID.fromString(redirectLocation(result).value.split("/").last)
         val id     = flowId.toString
 
-        // TODO REMOVE tempRedirect for commented ver when route implemented
-        val tempRedirect = controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId).url
-        redirectLocation(result).value mustEqual tempRedirect
-//          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId).url
+        redirectLocation(result).value mustEqual
+          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId).url
 
         verify(mockSessionRepository).set(captor.capture())
 

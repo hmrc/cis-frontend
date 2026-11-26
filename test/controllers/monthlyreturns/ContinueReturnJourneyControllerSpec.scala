@@ -21,8 +21,8 @@ import models.NormalMode
 import models.UserAnswers
 import models.ReturnType
 import models.finalvalidation.MonthlyFinalValidationSource
-import models.monthlyreturns.SelectedSubcontractor
-import models.requests.GetMonthlyReturnForEditRequest
+import models.monthlyreturns.*
+import models.requests.*
 import navigation.Navigator
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
@@ -35,9 +35,10 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import repositories.SessionRepository
-import services.{FormpRdsReconcileService, MonthlyReturnService}
+import services.*
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.util.UUID
 import scala.concurrent.Future
 
 class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
@@ -380,6 +381,116 @@ class ContinueReturnJourneyControllerSpec extends SpecBase with MockitoSugar {
         redirectLocation(result).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
         verify(mockReconcile).reconcile(eqTo("CIS-123"), any(), any())(any[HeaderCarrier])
+      }
+    }
+
+    // Multi-tab
+    "continueReturnJourneyWithCisId" - {
+
+      "must preserve existing answers and redirect to the next scoped page" in {
+        val mockService = mock[MonthlyReturnService]
+        val mockSessionRepo = mock[SessionRepository]
+        val mockTaxpayerSvc = mock[CisTaxpayerService]
+        val mockReconcile = mock[FormpRdsReconcileService]
+        val mockNavigator = mock[Navigator]
+        val taxpayer = mock[CisTaxpayer]
+        val otherId = UUID.randomUUID().toString
+
+        val existingAnswers = UserAnswers("id").setOrException(CisIdPage(otherId), "OTHER-CIS")
+        val nextPage = controllers.routes.JourneyRecoveryController.onPageLoad()
+
+        when(taxpayer.uniqueId).thenReturn("CIS-123")
+        when(taxpayer.taxOfficeNumber).thenReturn("123")
+        when(taxpayer.taxOfficeRef).thenReturn("AB456")
+
+        when(mockTaxpayerSvc.findForOrganisation(using any[IdentifierRequest[?]]))
+          .thenReturn(Future.successful(taxpayer))
+
+        when(mockSessionRepo.get(any[String]))
+          .thenReturn(Future.successful(Some(existingAnswers)))
+
+        when(mockSessionRepo.set(any[UserAnswers]))
+          .thenReturn(Future.successful(true))
+
+        when(mockReconcile.reconcile(any(), any(), any())(any[HeaderCarrier]))
+          .thenReturn(Future.unit)
+
+        when(
+          mockService.populateUserAnswersForContinueJourney(
+            any[UserAnswers],
+            any[String],
+            any[GetMonthlyReturnForEditRequest]
+          )(any[HeaderCarrier])
+        ).thenReturn(Future.successful(Right(existingAnswers)))
+
+        when(
+          mockNavigator.nextPage(
+            any[UUID],
+            eqTo(DateConfirmPaymentsPage),
+            eqTo(NormalMode),
+            any[UserAnswers]
+          )
+        ).thenReturn(nextPage)
+
+        val application = applicationBuilder(isAgent = false, formpRdsReconcileService = mockReconcile)
+          .configure("features.multi-tab-enabled" -> true)
+          .overrides(
+            bind[MonthlyReturnService].toInstance(mockService),
+            bind[SessionRepository].toInstance(mockSessionRepo),
+            bind[CisTaxpayerService].toInstance(mockTaxpayerSvc),
+            bind[Navigator].toInstance(mockNavigator)
+          )
+          .build()
+
+        running(application) {
+          val request = FakeRequest(
+            GET,
+            routes.ContinueReturnJourneyController
+              .continueReturnJourneyWithCisId(
+                ContinueReturnJourneyQueryParams("CIS-123", 2025, 1)
+              )
+              .url
+          ).withBody(AnyContentAsEmpty)
+
+          val result = route(application, request).value
+
+          status(result) mustBe SEE_OTHER
+
+          val idCaptor = ArgumentCaptor.forClass(classOf[String])
+          val requestCaptor = ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
+          val answersCaptor = ArgumentCaptor.forClass(classOf[UserAnswers])
+
+          verify(mockService).populateUserAnswersForContinueJourney(
+            eqTo(existingAnswers),
+            idCaptor.capture(),
+            requestCaptor.capture()
+          )(any[HeaderCarrier])
+
+          verify(mockSessionRepo).set(answersCaptor.capture())
+
+          val id = idCaptor.getValue
+          val flowId = UUID.fromString(id)
+          val saved = answersCaptor.getValue
+
+          redirectLocation(result).value mustBe nextPage.url
+
+          verify(mockNavigator).nextPage(
+            flowId,
+            DateConfirmPaymentsPage,
+            NormalMode,
+            saved
+          )
+
+          saved.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
+          saved.get(IsResumedMonthlyReturnPage(id)) mustBe Some(true)
+
+          requestCaptor.getValue mustBe GetMonthlyReturnForEditRequest(
+            instanceId = "CIS-123",
+            taxYear = 2025,
+            taxMonth = 1,
+            isAmendment = false
+          )
+        }
       }
     }
   }

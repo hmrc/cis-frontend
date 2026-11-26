@@ -61,7 +61,7 @@ class AmendMonthlyReturnService @Inject() (
         Future.successful(Left("Missing amendment details"))
     }
 
-  // DTR-9475 Multitab overload
+  // Multi-tab: Start a standard amendment using the ID-scoped amendment details.
   def startStandardAmendment(
     userAnswers: UserAnswers,
     id: String
@@ -75,5 +75,4 @@ class AmendMonthlyReturnService @Inject() (
       case None =>
         Future.successful(Left("Missing amendment details"))
     }
-
 }

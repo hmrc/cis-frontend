@@ -256,17 +256,21 @@ POST       /amend-monthly-return/what-do-you-want-to-amend-nil/:flowId          
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onPageLoad(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments   controllers.amend.ConfirmAmendmentController.onSubmit()
 
-#DTR-9475
+#Multi-tab
 GET        /manage-cis-return/amend-monthly-return/confirm-amendments/multi-tab   controllers.amend.ConfirmAmendmentController.onPageLoadMultiTab(handoffId: String)
 POST       /manage-cis-return/amend-monthly-return/confirm-amendments/multi-tab   controllers.amend.ConfirmAmendmentController.onSubmitMultiTab(handoffId: String)
 
 GET        /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoad()
 POST       /amend-monthly-return/what-do-you-want-to-amend-standard     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmit()
 
+# Multi-tab
+GET        /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId: UUID)
+POST       /amend-monthly-return/what-do-you-want-to-amend-standard/:flowId     controllers.amend.WhatDoYouWantToAmendStandardController.onSubmitWithId(flowId: UUID)
+
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoad(mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmit(mode: Mode = NormalMode)
 
-# DTR-9475
+# Multi-tab
 GET        /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onPageLoadWithId(flowId: UUID, mode: Mode = NormalMode)
 POST       /amend-monthly-return/are-you-sure-you-want-to-amend/:flowId         controllers.amend.AreYouSureYouWantToAmendYesNoController.onSubmitWithId(flowId: UUID, mode: Mode = NormalMode)
 

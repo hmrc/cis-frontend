@@ -3685,4 +3685,143 @@ class MonthlyReturnServiceSpec extends SpecBase {
     }
   }
 
+  // Multi-tab
+  "multi-tab continuation journeys" - {
+
+    "populate scoped standard return answers without overwriting another journey" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val id      = "flow-1"
+      val otherId = "flow-2"
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3,
+        isAmendment = false
+      )
+
+      val existingAnswers = UserAnswers("id")
+        .setOrException(CisIdPage, "LEGACY-CIS")
+        .setOrException(CisIdPage(otherId), "OTHER-CIS")
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N"),
+            decNoMoreSubPayments = Some("Y"),
+            decEmpStatusConsidered = Some("Y"),
+            decAllSubsVerified = Some("N")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Seq(
+          MonthlyReturnItem(
+            monthlyReturnId = 101,
+            monthlyReturnItemId = 2001,
+            totalPayments = Some("1,000.00"),
+            costOfMaterials = Some("100.00"),
+            totalDeducted = Some("50.00"),
+            unmatchedTaxRateIndicator = None,
+            subcontractorId = Some(1001),
+            subcontractorName = Some("A Ltd"),
+            verificationNumber = None,
+            itemResourceReference = None
+          )
+        ),
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueJourney(existingAnswers, id, editRequest).futureValue
+
+      result.isRight mustBe true
+      val ua = result.toOption.value
+
+      ua.get(CisIdPage(id)) mustBe Some("CIS-123")
+      ua.get(ReturnTypePage(id)) mustBe Some(MonthlyStandardReturn)
+      ua.get(DateConfirmPaymentsPage(id)) mustBe Some(LocalDate.of(2025, 3, 5))
+      ua.get(SubmitInactivityRequestPage(id)) mustBe Some(true)
+      ua.get(EmploymentStatusDeclarationPage(id)) mustBe Some(true)
+      ua.get(VerifiedStatusDeclarationPage(id)) mustBe Some(false)
+      ua.get(PaymentDetailsConfirmationPage(id)) mustBe Some(true)
+
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).map(_.id) mustBe Some(1001L)
+      ua.get(SelectedSubcontractorForFlowPage(id, 1)).flatMap(_.totalPaymentsMade) mustBe
+        Some(BigDecimal("1000.00"))
+
+      ua.get(CisIdPage) mustBe Some("LEGACY-CIS")
+      ua.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
+      ua.get(ReturnTypePage) mustBe None
+
+      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(editRequest))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+
+    "populate scoped amended standard return answers without overwriting another journey" in {
+      val (service, connector, sessionRepo) = newService()
+
+      val id      = "flow-1"
+      val otherId = "flow-2"
+
+      val editRequest = GetMonthlyReturnForEditRequest(
+        instanceId = "CIS-123",
+        taxYear = 2025,
+        taxMonth = 3,
+        isAmendment = true
+      )
+
+      val existingAnswers = UserAnswers("id")
+        .setOrException(CisIdPage(otherId), "OTHER-CIS")
+
+      val payload = GetAllMonthlyReturnDetailsResponse(
+        scheme = Seq(contractorScheme()),
+        monthlyReturn = Seq(
+          MonthlyReturn(
+            monthlyReturnId = 101,
+            taxYear = 2025,
+            taxMonth = 3,
+            nilReturnIndicator = Some("N")
+          )
+        ),
+        subcontractors = Nil,
+        monthlyReturnItems = Nil,
+        submission = Nil
+      )
+
+      when(connector.retrieveMonthlyReturnForEditDetails(any[GetMonthlyReturnForEditRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(payload))
+
+      val result = service.populateUserAnswersForContinueAmendJourney(existingAnswers, id, editRequest).futureValue
+
+      result.isRight mustBe true
+      val amendResult = result.toOption.value
+
+      amendResult.isNilReturn mustBe false
+      amendResult.hasSubcontractors mustBe false
+
+      val ua = amendResult.userAnswers
+
+      ua.get(CisIdPage(id)) mustBe Some("CIS-123")
+      ua.get(ReturnTypePage(id)) mustBe Some(MonthlyAmendedStandardReturn)
+      ua.get(DateConfirmPaymentsPage(id)) mustBe Some(LocalDate.of(2025, 3, 5))
+      ua.get(AmendmentDetailsPage(id)).value.originalReturnType mustBe MonthlyAmendedStandardReturn
+      ua.get(OriginalSubcontractorCountPage(id)) mustBe Some(0)
+      ua.get(ConfirmationByEmailPage(id)) mustBe Some(false)
+
+      ua.get(CisIdPage(otherId)) mustBe Some("OTHER-CIS")
+      ua.get(ReturnTypePage) mustBe None
+      ua.get(AmendmentDetailsPage) mustBe None
+
+      verify(connector).retrieveMonthlyReturnForEditDetails(eqTo(editRequest))(any[HeaderCarrier])
+      verifyNoInteractions(sessionRepo)
+    }
+  }
+
 }

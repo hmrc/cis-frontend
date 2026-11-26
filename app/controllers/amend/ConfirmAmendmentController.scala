@@ -314,8 +314,7 @@ class ConfirmAmendmentController @Inject() (
   private def redirectToAmendment(flowId: UUID, originalReturnType: ReturnType): Result =
     originalReturnType match {
       case ReturnType.MonthlyStandardReturn =>
-        Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId))
-      // TODO, replace above redirect with: Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId))
+        Redirect(controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId))
       case ReturnType.MonthlyNilReturn      =>
         Redirect(routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId))
       case unexpected                       =>

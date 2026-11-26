@@ -69,9 +69,6 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
   private def flowIdFrom(res: Future[play.api.mvc.Result]): UUID =
     UUID.fromString(redirectLocation(res).value.split("/").last)
 
-  private def tempRedirect(flowId: UUID): String =
-    controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId).url
-
   private def reconcileOk: FormpRdsReconcileService = {
     val reconcile = mock[FormpRdsReconcileService]
     when(reconcile.reconcile(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.unit)
@@ -600,11 +597,19 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
             status(res) mustBe SEE_OTHER
 
-            val flowId = flowIdFrom(res)
-            val id     = flowId.toString
+            val idCaptor = ArgumentCaptor.forClass(classOf[String])
 
-            // TODO: update to SubcontractorDetailsAddedController.onPageLoadWithId once it exists
-            redirectLocation(res).value mustBe tempRedirect(flowId)
+            verify(service).populateUserAnswersForContinueAmendJourney(
+              any[UserAnswers],
+              idCaptor.capture(),
+              any[GetMonthlyReturnForEditRequest]
+            )(any[HeaderCarrier])
+
+            val id = idCaptor.getValue
+
+            // TODO: Update to SubcontractorDetailsAddedController.onPageLoadWithId once it exists.
+            redirectLocation(res).value mustBe
+              controllers.routes.JourneyRecoveryController.onPageLoad().url
 
             val saved = lastSaved(repo)
             saved.get(MonthlyFinalValidationSourcePage(id)) mustBe Some(
@@ -630,8 +635,8 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
           val flowId = flowIdFrom(res)
 
-          // TODO: update to WhatDoYouWantToAmendStandardController.onPageLoadWithId once it exists
-          redirectLocation(res).value mustBe tempRedirect(flowId)
+          redirectLocation(res).value mustBe
+            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId).url
 
           val saved = lastSaved(repo)
           saved.get(MonthlyFinalValidationSourcePage(flowId.toString)) mustBe None
@@ -652,8 +657,8 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
 
           status(res) mustBe SEE_OTHER
 
-          // TODO: update to WhatDoYouWantToAmendStandardController.onPageLoadWithId once it exists
-          redirectLocation(res).value mustBe tempRedirect(flowIdFrom(res))
+          redirectLocation(res).value mustBe
+            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowIdFrom(res)).url
         }
       }
 
@@ -679,12 +684,14 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           status(res) mustBe SEE_OTHER
 
           val flowId = flowIdFrom(res)
+          redirectLocation(res).value mustBe
+            controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId).url
 
           val idCaptor  = ArgumentCaptor.forClass(classOf[String])
           val reqCaptor = ArgumentCaptor.forClass(classOf[GetMonthlyReturnForEditRequest])
 
           verify(service).populateUserAnswersForContinueAmendJourney(
-            any[UserAnswers],
+            eqTo(existing),
             idCaptor.capture(),
             reqCaptor.capture()
           )(any[HeaderCarrier])
@@ -768,6 +775,28 @@ class ContinueAmendReturnJourneyControllerSpec extends SpecBase with MockitoSuga
           status(res) mustBe SEE_OTHER
           redirectLocation(res).value mustBe controllers.routes.JourneyRecoveryController.onPageLoad().url
 
+          verifyNoInteractions(reconcile)
+        }
+      }
+
+      "must redirect to JourneyRecovery when saving the populated answers returns false" in {
+        val service   = mock[MonthlyReturnService]
+        val repo      = scopedSessionRepo()
+        val reconcile = mock[FormpRdsReconcileService]
+        stubPopulate(service, hasSubcontractors = false, isNilReturn = false)
+
+        when(repo.set(any[UserAnswers])).thenReturn(Future.successful(false))
+
+        val application = scopedApplication(service, repo, reconcile)
+
+        running(application) {
+          val res = route(application, FakeRequest(GET, scopedUrl()).withBody(AnyContentAsEmpty)).value
+
+          status(res) mustBe SEE_OTHER
+          redirectLocation(res).value mustBe
+            controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(repo).set(any[UserAnswers])
           verifyNoInteractions(reconcile)
         }
       }

@@ -239,24 +239,31 @@ class ContinueAmendReturnJourneyController @Inject() (
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
                 case Right(result) =>
-                  // TODO: Temp redirects until SubcontractorDetailsAdded and WhatDoYouWantToAmendStandard have WithId routes.
-                  val tempRedirect =
-                    Redirect(controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId))
-
                   val redirect =
                     (
                       queryParams.isOriginalNilReturn.getOrElse(false),
                       result.isNilReturn,
                       result.hasSubcontractors
                     ) match {
-                      case (_, false, true)  => tempRedirect // Redirect(
-                      // controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoadWithId(flowId,
-                      // NormalMode))
+                      case (_, false, true) =>
+                        // TODO: Redirect to SubcontractorDetailsAddedController.onPageLoadWithId(flowId, NormalMode)
+                        // once SubcontractorDetailsAddedController is multi-tab enabled.
+                        Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
+
                       case (_, false, false) =>
-                        tempRedirect // routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
-                      case (true, true, _)   =>
-                        Redirect(routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId))
-                      case _                 => tempRedirect // routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
+                        Redirect(
+                          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
+                        )
+
+                      case (true, true, _) =>
+                        Redirect(
+                          controllers.amend.routes.WhatDoYouWantToAmendNilController.onPageLoadWithId(flowId)
+                        )
+
+                      case _ =>
+                        Redirect(
+                          controllers.amend.routes.WhatDoYouWantToAmendStandardController.onPageLoadWithId(flowId)
+                        )
                     }
 
                   val withAgentData =
@@ -285,8 +292,14 @@ class ContinueAmendReturnJourneyController @Inject() (
                     }
 
                   Future.fromTry(answersWithSource).flatMap { withSource =>
-                    sessionRepository.set(withSource).flatMap { _ =>
-                      reconcileScopedReturn(taxpayer, redirect)
+                    sessionRepository.set(withSource).flatMap {
+                      case true  =>
+                        reconcileScopedReturn(taxpayer, redirect)
+                      case false =>
+                        logger.error(
+                          "[ContinueAmendReturnJourneyController] Failed to save multi-tab amendment user answers"
+                        )
+                        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
                     }
                   }
               }
@@ -297,4 +310,5 @@ class ContinueAmendReturnJourneyController @Inject() (
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         }
     }
+
 }

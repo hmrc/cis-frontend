@@ -22,21 +22,29 @@ import play.api.libs.json.JsPath
 class OriginalSubcontractorCountPageSpec extends SpecBase {
 
   "OriginalSubcontractorCountPage" - {
+
     "have the correct path" in {
-      OriginalSubcontractorCountPage.path mustBe (JsPath \ "originalSubcontractorCount")
+      OriginalSubcontractorCountPage.path mustBe
+        (JsPath \ "originalSubcontractorCount")
     }
 
     "have the correct toString" in {
       OriginalSubcontractorCountPage.toString mustBe "originalSubcontractorCount"
     }
+  }
+
+  "OriginalSubcontractorCountPage with ID" - {
+
+    val id = "flow-1"
 
     "have the correct scoped path" in {
-      OriginalSubcontractorCountPage("org_flow-1").path mustBe
-        (JsPath \ "amend" \ "org_flow-1" \ "originalSubcontractorCount")
+      OriginalSubcontractorCountPage(id).path mustBe
+        (JsPath \ "monthlyReturn" \ id \ "originalSubcontractorCount")
     }
 
-    "have the correct scoped toString" in {
-      OriginalSubcontractorCountPage("org_flow-1").toString mustBe "originalSubcontractorCount"
+    "use different paths for different journeys" in {
+      OriginalSubcontractorCountPage("flow-1").path must not be
+        OriginalSubcontractorCountPage("flow-2").path
     }
   }
 }
