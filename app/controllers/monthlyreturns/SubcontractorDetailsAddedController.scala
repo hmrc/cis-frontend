@@ -80,7 +80,7 @@ class SubcontractorDetailsAddedController @Inject() (
                 Future.successful(
                   Redirect(controllers.finalvalidations.routes.ReviewSubcontractorDetailsController.onPageLoad())
                 )
-              } else if (ua.get(MonthlyFinalValidationContinuationPage).contains(mode.toString)) {
+              } else if (canReuseFinalValidation(ua.get(MonthlyFinalValidationContinuationPage), mode)) {
                 Future.successful(renderPage(mode, ua))
               } else {
                 ua.get(MonthlyFinalValidationSourcePage) match {
@@ -152,7 +152,7 @@ class SubcontractorDetailsAddedController @Inject() (
   def onSubmit(mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen requireCisId).async { implicit request =>
       val hasPassedFinalValidation =
-        request.userAnswers.get(MonthlyFinalValidationContinuationPage).contains(mode.toString) &&
+        canReuseFinalValidation(request.userAnswers.get(MonthlyFinalValidationContinuationPage), mode) &&
           request.userAnswers.get(FinalValidationDraftIdPage).isEmpty
 
       if (request.userAnswers.get(ReturnTypePage).isEmpty) {
@@ -265,6 +265,10 @@ class SubcontractorDetailsAddedController @Inject() (
     (identify andThen getData andThen requireData andThen requireCisId) { implicit request =>
       Redirect(controllers.amend.routes.ConfirmCancelAmendmentYesNoController.onPageLoad())
     }
+
+  private def canReuseFinalValidation(continuation: Option[String], mode: Mode): Boolean =
+    continuation.contains(mode.toString) ||
+      (mode == CheckMode && continuation.contains(NormalMode.toString))
 
   private def runFinalValidation(
     cisId: String,
