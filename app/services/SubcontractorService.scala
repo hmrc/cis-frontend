@@ -171,7 +171,10 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
 
         val (subcontractorViewModels, includedLastMonthFlags) = rows.unzip
 
-        val selectedSubcontractors = userAnswers.flatMap(_.get(SelectedSubcontractorPage.all(id))).getOrElse(Map())
+        val selectedSubcontractors = id match {
+          case Some(value) => userAnswers.flatMap(_.get(SelectedSubcontractorPage.all(value))).getOrElse(Map.empty)
+          case None        => userAnswers.flatMap(_.get(SelectedSubcontractorPage.all)).getOrElse(Map.empty)
+        }
 
         val initiallySelectedIds: Seq[Int] = defaultSelection match {
           case Some(true)                              => subcontractorViewModels.map(_.id)

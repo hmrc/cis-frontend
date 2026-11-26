@@ -60,7 +60,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
     .setOrException(CisIdPage(subJourneyId), "i-123")
     .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
     .setOrException(
-      SelectedSubcontractorPage(1, Some(subJourneyId)),
+      SelectedSubcontractorForFlowPage(subJourneyId, 1),
       SelectedSubcontractor(123, companyName, None, None, None)
     )
 
@@ -342,7 +342,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
       val updatedAnswers = userAnswersWithId
         .setOrException(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("999"))
-        .setOrException(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId)), validAnswer)
+        .setOrException(SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, 1), validAnswer)
 
       val application = applicationBuilder(userAnswers = Some(updatedAnswers))
         .configure("features.multi-tab-enabled" -> true)
@@ -425,7 +425,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+        captor.getValue.get(SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, 1)) mustBe Some(validAnswer)
         captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal("999"))
       }
     }
@@ -434,7 +434,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
 
       val existingAnswerUa = userAnswersWithId
         .setOrException(SelectedSubcontractorTaxDeductedPage(1), BigDecimal("45.67"))
-        .setOrException(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId)), BigDecimal("123"))
+        .setOrException(SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, 1), BigDecimal("123"))
 
       val mockSessionRepository = mock[SessionRepository]
       when(mockSessionRepository.set(any())) thenReturn Future.successful(true)
@@ -466,7 +466,7 @@ class TotalTaxDeductedControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1, Some(subJourneyId))) mustBe Some(BigDecimal(0))
+        captor.getValue.get(SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, 1)) mustBe Some(BigDecimal(0))
         captor.getValue.get(SelectedSubcontractorTaxDeductedPage(1)) mustBe Some(BigDecimal("45.67"))
       }
     }

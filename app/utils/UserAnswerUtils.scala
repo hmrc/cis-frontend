@@ -50,7 +50,7 @@ object UserAnswerUtils {
     // Multi-tab: Check completion of subcontractors belonging to this journey.
     private def allSubcontractorsComplete(id: String): Boolean =
       userAnswers
-        .get(SelectedSubcontractorPage.all(Some(id)))
+        .get(SelectedSubcontractorPage.all(id))
         .getOrElse(Map.empty)
         .values
         .forall(_.isComplete)
@@ -91,7 +91,7 @@ object UserAnswerUtils {
     // Multi-tab: Return incomplete subcontractor IDs for the current journey.
     def incompleteSubcontractorIds(id: String): Seq[Long] =
       userAnswers
-        .get(SelectedSubcontractorPage.all(Some(id)))
+        .get(SelectedSubcontractorPage.all(id))
         .getOrElse(Map.empty)
         .values
         .iterator
@@ -178,7 +178,7 @@ object UserAnswerUtils {
         .flatMap(_.remove(DeclarationPage(id)))
 
         // monthly standard return
-        .flatMap(_.remove(SelectedSubcontractorPage.all(Some(id))))
+        .flatMap(_.remove(SelectedSubcontractorPage.all(id)))
         .flatMap(_.remove(VerifySubcontractorsPage(id)))
         .flatMap(_.remove(AllSubcontractorDetailsAdded(id)))
         .flatMap(_.remove(PaymentDetailsConfirmationPage(id)))

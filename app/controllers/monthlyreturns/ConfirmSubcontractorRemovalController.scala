@@ -186,10 +186,10 @@ class ConfirmSubcontractorRemovalController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val subJourneyId = flowId.toString
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, Some(subJourneyId))) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None =>
           logger.error(
-            s"[ConfirmSubcontractorRemovalController][onPageLoadWithId] - SelectedSubcontractorPage missing, index: $index"
+            s"[ConfirmSubcontractorRemovalController][onPageLoadWithId] - SelectedSubcontractorForFlowPage missing, index: $index"
           )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
@@ -208,10 +208,10 @@ class ConfirmSubcontractorRemovalController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
       val subJourneyId = flowId.toString
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, Some(subJourneyId))) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None =>
           logger.error(
-            s"[ConfirmSubcontractorRemovalController][onSubmitWithId] - SelectedSubcontractorPage missing, index: $index"
+            s"[ConfirmSubcontractorRemovalController][onSubmitWithId] - SelectedSubcontractorForFlowPage missing, index: $index"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -257,7 +257,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
       case None =>
         logger.error(
           s"[ConfirmSubcontractorRemovalController][deleteFlowWithId] - payload build failed, CisIdPage, " +
-            s"DateConfirmPaymentsPage, SelectedSubcontractorPage or ReturnTypePage missing, index: $index"
+            s"DateConfirmPaymentsPage, SelectedSubcontractorForFlowPage or ReturnTypePage missing, index: $index"
         )
         Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -266,7 +266,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
           _ <- monthlyReturnService.deleteMonthlyReturnItem(payload)
 
           // TODO DTR-9475/DTR-9476: Update scoped WhichSubcontractorsToAddPage for amendment journeys.
-          updatedAnswers <- Future.fromTry(ua.remove(SelectedSubcontractorPage(index, Some(subJourneyId))))
+          updatedAnswers <- Future.fromTry(ua.remove(SelectedSubcontractorForFlowPage(subJourneyId, index)))
 
           _ <- sessionRepository.set(updatedAnswers)
         } yield redirectAfterDeleteWithId(updatedAnswers, flowId))
@@ -308,7 +308,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
     for {
       cisId         <- ua.get(CisIdPage(subJourneyId))
       monthYear     <- ua.get(DateConfirmPaymentsPage(subJourneyId))
-      subcontractor <- ua.get(SelectedSubcontractorPage(index, Some(subJourneyId)))
+      subcontractor <- ua.get(SelectedSubcontractorForFlowPage(subJourneyId, index))
       returnType    <- ua.get(ReturnTypePage(subJourneyId))
     } yield DeleteMonthlyReturnItemRequest(
       instanceId = cisId,
@@ -319,7 +319,7 @@ class ConfirmSubcontractorRemovalController @Inject() (
     )
 
   private def selectedSubcontractorsWithId(ua: UserAnswers, subJourneyId: String): Map[Int, SelectedSubcontractor] =
-    ua.get(SelectedSubcontractorPage.all(Some(subJourneyId))).getOrElse(Map.empty)
+    ua.get(SelectedSubcontractorPage.all(subJourneyId)).getOrElse(Map.empty)
 
   private def redirectAfterValidationWithId(ua: UserAnswers, flowId: UUID): Result = {
     val subJourneyId = flowId.toString

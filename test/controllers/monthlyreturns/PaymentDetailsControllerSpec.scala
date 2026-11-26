@@ -60,7 +60,7 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
     .setOrException(CisIdPage(subJourneyId), "i-123")
     .setOrException(ReturnTypePage(subJourneyId), MonthlyStandardReturn)
     .setOrException(
-      SelectedSubcontractorPage(1, Some(subJourneyId)),
+      SelectedSubcontractorForFlowPage(subJourneyId, 1),
       SelectedSubcontractor(123, companyName, None, None, None)
     )
 
@@ -250,7 +250,7 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
 
       val updatedAnswers = userAnswersWithId
         .setOrException(SelectedSubcontractorPaymentsMadePage(1), BigDecimal("999"))
-        .setOrException(SelectedSubcontractorPaymentsMadePage(1, Some(subJourneyId)), validAnswer)
+        .setOrException(SelectedSubcontractorPaymentsMadeForFlowPage(subJourneyId, 1), validAnswer)
 
       val application = applicationBuilder(userAnswers = Some(updatedAnswers))
         .configure("features.multi-tab-enabled" -> true)
@@ -332,7 +332,7 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorPaymentsMadePage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+        captor.getValue.get(SelectedSubcontractorPaymentsMadeForFlowPage(subJourneyId, 1)) mustBe Some(validAnswer)
         captor.getValue.get(SelectedSubcontractorPaymentsMadePage(1)) mustBe Some(BigDecimal("999"))
       }
     }
@@ -369,7 +369,7 @@ class PaymentDetailsControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorPaymentsMadePage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+        captor.getValue.get(SelectedSubcontractorPaymentsMadeForFlowPage(subJourneyId, 1)) mustBe Some(validAnswer)
       }
     }
 

@@ -658,7 +658,7 @@ class NavigatorSpec extends SpecBase {
         "must go from DateConfirmPaymentsPage to SubcontractorDetailsAddedController for a standard return with scoped subcontractors" in {
           val flowId = UUID.randomUUID()
           val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
-            .setOrException(SelectedSubcontractorPage(1, Some(flowId.toString)), completeSub)
+            .setOrException(SelectedSubcontractorForFlowPage(flowId.toString, 1), completeSub)
 
           navigator.nextPage(
             flowId,
@@ -681,36 +681,36 @@ class NavigatorSpec extends SpecBase {
             .onPageLoadWithId(flowId, NormalMode)
         }
 
-        "must go from SelectedSubcontractorPaymentsMadePage to scoped CostOfMaterialsController" in {
+        "must go from SelectedSubcontractorPaymentsMadeForFlowPage to scoped CostOfMaterialsController" in {
           val flowId = UUID.randomUUID()
 
           navigator.nextPage(
             flowId,
-            SelectedSubcontractorPaymentsMadePage(1, Some(flowId.toString)),
+            SelectedSubcontractorPaymentsMadeForFlowPage(flowId.toString, 1),
             NormalMode,
             scopedUserAnswers(flowId, MonthlyStandardReturn)
           ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController
             .onPageLoadWithId(flowId, NormalMode, 1, None)
         }
 
-        "must go from SelectedSubcontractorMaterialCostsPage to scoped TotalTaxDeductedController" in {
+        "must go from SelectedSubcontractorMaterialCostsForFlowPage to scoped TotalTaxDeductedController" in {
           val flowId = UUID.randomUUID()
 
           navigator.nextPage(
             flowId,
-            SelectedSubcontractorMaterialCostsPage(1, Some(flowId.toString)),
+            SelectedSubcontractorMaterialCostsForFlowPage(flowId.toString, 1),
             NormalMode,
             scopedUserAnswers(flowId, MonthlyStandardReturn)
           ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController
             .onPageLoadWithId(flowId, NormalMode, 1, None)
         }
 
-        "must go from SelectedSubcontractorTaxDeductedPage to scoped CheckAnswersTotalPaymentsController" in {
+        "must go from SelectedSubcontractorTaxDeductedForFlowPage to scoped CheckAnswersTotalPaymentsController" in {
           val flowId = UUID.randomUUID()
 
           navigator.nextPage(
             flowId,
-            SelectedSubcontractorTaxDeductedPage(1, Some(flowId.toString)),
+            SelectedSubcontractorTaxDeductedForFlowPage(flowId.toString, 1),
             NormalMode,
             scopedUserAnswers(flowId, MonthlyStandardReturn)
           ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
@@ -906,34 +906,34 @@ class NavigatorSpec extends SpecBase {
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
 
-        "must go from SelectedSubcontractorPaymentsMadePage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
+        "must go from SelectedSubcontractorPaymentsMadeForFlowPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
           val flowId = UUID.randomUUID()
 
           navigator.nextPage(
             flowId,
-            SelectedSubcontractorPaymentsMadePage(1, Some(flowId.toString)),
+            SelectedSubcontractorPaymentsMadeForFlowPage(flowId.toString, 1),
             CheckMode,
             scopedUserAnswers(flowId, MonthlyStandardReturn)
           ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
         }
 
-        "must go from SelectedSubcontractorMaterialCostsPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
+        "must go from SelectedSubcontractorMaterialCostsForFlowPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
           val flowId = UUID.randomUUID()
 
           navigator.nextPage(
             flowId,
-            SelectedSubcontractorMaterialCostsPage(1, Some(flowId.toString)),
+            SelectedSubcontractorMaterialCostsForFlowPage(flowId.toString, 1),
             CheckMode,
             scopedUserAnswers(flowId, MonthlyStandardReturn)
           ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
         }
 
-        "must go from SelectedSubcontractorTaxDeductedPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
+        "must go from SelectedSubcontractorTaxDeductedForFlowPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
           val flowId = UUID.randomUUID()
 
           navigator.nextPage(
             flowId,
-            SelectedSubcontractorTaxDeductedPage(1, Some(flowId.toString)),
+            SelectedSubcontractorTaxDeductedForFlowPage(flowId.toString, 1),
             CheckMode,
             scopedUserAnswers(flowId, MonthlyStandardReturn)
           ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)

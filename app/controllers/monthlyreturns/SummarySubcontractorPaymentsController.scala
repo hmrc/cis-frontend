@@ -69,7 +69,7 @@ class SummarySubcontractorPaymentsController @Inject() (
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val subJourneyId   = flowId.toString
       val subcontractors = request.userAnswers
-        .get(SelectedSubcontractorPage.all(Some(subJourneyId)))
+        .get(SelectedSubcontractorPage.all(subJourneyId))
         .getOrElse(Map.empty)
         .values
         .filter(_.isComplete)

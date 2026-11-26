@@ -26,7 +26,7 @@ import org.mockito.Mockito.*
 import org.mockito.ArgumentCaptor
 import org.scalatestplus.mockito.MockitoSugar
 import pages.finalvalidations.*
-import pages.monthlyreturns.{CisIdPage, DateConfirmPaymentsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -553,7 +553,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
         stubBuildWithId(subcontractorService, pageModelNoneSelected, defaultSel = None)
 
         val answersWithPreviousFinalValidation = userAnswersWithId
-          .setOrException(SelectedSubcontractorPage(1, Some(subJourneyId)), incompleteSub)
+          .setOrException(SelectedSubcontractorForFlowPage(subJourneyId, 1), incompleteSub)
           .setOrException(FinalValidationDraftIdPage(subJourneyId), "scoped-draft")
           .setOrException(MonthlyFinalValidationContinuationPage(subJourneyId), models.NormalMode.toString)
           .setOrException(pages.monthlyreturns.IsResumedMonthlyReturnPage(subJourneyId), true)
@@ -626,7 +626,7 @@ class SelectSubcontractorsControllerSpec extends SpecBase with MockitoSugar {
 
         val answersWithIncompleteSubcontractor = userAnswersWithId
           .setOrException(
-            SelectedSubcontractorPage(1, Some(subJourneyId)),
+            SelectedSubcontractorForFlowPage(subJourneyId, 1),
             SelectedSubcontractor(1, "A", None, None, None)
           )
 

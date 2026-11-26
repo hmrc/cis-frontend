@@ -23,37 +23,33 @@ import play.api.libs.json.JsPath
 
 import scala.math.BigDecimal.RoundingMode
 
-case class SelectedSubcontractorIdPage(index: Int, id: Option[String] = None) extends QuestionPage[Long] {
-  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
+case class SelectedSubcontractorIdPage(index: Int) extends QuestionPage[Long] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "subcontractorId"
 }
 
-case class SelectedSubcontractorNamePage(index: Int, id: Option[String] = None) extends QuestionPage[String] {
-  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
+case class SelectedSubcontractorNamePage(index: Int) extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "name"
 }
 
-case class SelectedSubcontractorPaymentsMadePage(index: Int, id: Option[String] = None)
-    extends QuestionPage[BigDecimal] {
-  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
+case class SelectedSubcontractorPaymentsMadePage(index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "totalPaymentsMade"
 }
 
-case class SelectedSubcontractorMaterialCostsPage(index: Int, id: Option[String] = None)
-    extends QuestionPage[BigDecimal] {
-  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
+case class SelectedSubcontractorMaterialCostsPage(index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "costOfMaterials"
 }
 
-case class SelectedSubcontractorTaxDeductedPage(index: Int, id: Option[String] = None)
-    extends QuestionPage[BigDecimal] {
-  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString \ toString
+case class SelectedSubcontractorTaxDeductedPage(index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString \ toString
   override def toString: String = "totalTaxDeducted"
 }
 
-case class SelectedSubcontractorPage(index: Int, id: Option[String] = None)
-    extends QuestionPage[SelectedSubcontractor] {
-  override def path: JsPath     = SelectedSubcontractorPage.basePath(id) \ "subcontractors" \ index.toString
+case class SelectedSubcontractorPage(index: Int) extends QuestionPage[SelectedSubcontractor] {
+  override def path: JsPath     = JsPath \ "subcontractors" \ index.toString
   override def toString: String = s"subcontractor-$index"
 }
 
@@ -63,24 +59,38 @@ case class SelectedSubcontractorForFlowPage(id: String, index: Int) extends Ques
   override def toString: String = s"subcontractor-$index"
 }
 
+// Multi-tab: ID-scoped subcontractor details.
+case class SelectedSubcontractorIdForFlowPage(id: String, index: Int) extends QuestionPage[Long] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString \ toString
+  override def toString: String = "subcontractorId"
+}
+
+case class SelectedSubcontractorNameForFlowPage(id: String, index: Int) extends QuestionPage[String] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString \ toString
+  override def toString: String = "name"
+}
+
+case class SelectedSubcontractorPaymentsMadeForFlowPage(id: String, index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString \ toString
+  override def toString: String = "totalPaymentsMade"
+}
+
+case class SelectedSubcontractorMaterialCostsForFlowPage(id: String, index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString \ toString
+  override def toString: String = "costOfMaterials"
+}
+
+case class SelectedSubcontractorTaxDeductedForFlowPage(id: String, index: Int) extends QuestionPage[BigDecimal] {
+  override def path: JsPath     = JsPath \ "monthlyReturn" \ id \ "subcontractors" \ index.toString \ toString
+  override def toString: String = "totalTaxDeducted"
+}
+
 object SelectedSubcontractorPage {
-  def all: IndexedQuestionPage[SelectedSubcontractor] =
-    new IndexedQuestionPage[SelectedSubcontractor] {
-      override def path: JsPath     = JsPath \ toString
-      override def toString: String = "subcontractors"
-    }
 
-  def all(id: Option[String]): IndexedQuestionPage[SelectedSubcontractor] =
-    new IndexedQuestionPage[SelectedSubcontractor] {
-      override def path: JsPath     = basePath(id) \ toString
-      override def toString: String = "subcontractors"
-    }
-
-  def basePath(id: Option[String]): JsPath =
-    id match {
-      case Some(value) => JsPath \ "monthlyReturn" \ value
-      case None        => JsPath
-    }
+  def all: IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
+    override def path: JsPath     = JsPath \ toString
+    override def toString: String = "subcontractors"
+  }
 
   // Multi-tab: Retrieve selected subcontractors for the ID-scoped journey.
   def all(id: String): IndexedQuestionPage[SelectedSubcontractor] = new IndexedQuestionPage[SelectedSubcontractor] {
@@ -89,11 +99,12 @@ object SelectedSubcontractorPage {
   }
 
   extension (ua: UserAnswers) {
+
     private def sumPaymentsField(
       getField: SelectedSubcontractor => Option[BigDecimal],
-      id: Option[String]
+      page: IndexedQuestionPage[SelectedSubcontractor]
     ): Option[BigDecimal] =
-      ua.get(all(id)).map { subcontractors =>
+      ua.get(page).map { subcontractors =>
         subcontractors.values
           .filter(_.isComplete)
           .flatMap(x => getField(x).toList)
@@ -101,13 +112,13 @@ object SelectedSubcontractorPage {
           .setScale(2, RoundingMode.HALF_DOWN)
       }
 
-    def summaryTotalPayments: Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade, None)
-    def summaryTotalMaterialsCost: Option[BigDecimal] = sumPaymentsField(_.costOfMaterials, None)
-    def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted, None)
+    def summaryTotalPayments: Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade, all)
+    def summaryTotalMaterialsCost: Option[BigDecimal] = sumPaymentsField(_.costOfMaterials, all)
+    def summaryTotalCisDeductions: Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted, all)
 
     // ID-scoped subcontractor payment details
-    def summaryTotalPayments(id: String): Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade, Some(id))
-    def summaryTotalMaterialsCost(id: String): Option[BigDecimal] = sumPaymentsField(_.costOfMaterials, Some(id))
-    def summaryTotalCisDeductions(id: String): Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted, Some(id))
+    def summaryTotalPayments(id: String): Option[BigDecimal]      = sumPaymentsField(_.totalPaymentsMade, all(id))
+    def summaryTotalMaterialsCost(id: String): Option[BigDecimal] = sumPaymentsField(_.costOfMaterials, all(id))
+    def summaryTotalCisDeductions(id: String): Option[BigDecimal] = sumPaymentsField(_.totalTaxDeducted, all(id))
   }
 }

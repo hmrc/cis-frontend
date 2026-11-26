@@ -23,7 +23,7 @@ import javax.inject.Inject
 import java.util.UUID
 import models.Mode
 import navigation.Navigator
-import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorPaymentsMadePage}
+import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -75,10 +75,10 @@ class PaymentDetailsController @Inject() (
   def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
       val subJourneyId = flowId.toString
-      request.userAnswers.get(SelectedSubcontractorPage(index, Some(subJourneyId))) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None =>
           logger.error(
-            s"[PaymentDetailsController][onPageLoadWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+            s"[PaymentDetailsController][onPageLoadWithId] - SelectedSubcontractorForFlowPage missing from answers, index=$index, subJourneyId=$subJourneyId"
           )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
 
@@ -130,14 +130,14 @@ class PaymentDetailsController @Inject() (
 
   def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = Some(flowId.toString)
+      val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.PaymentDetailsController.onSubmitWithId(flowId, mode, index, returnTo))
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None =>
           logger.error(
-            s"[PaymentDetailsController][onSubmitWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+            s"[PaymentDetailsController][onSubmitWithId] - SelectedSubcontractorForFlowPage missing from answers, index=$index, subJourneyId=$subJourneyId"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -152,7 +152,7 @@ class PaymentDetailsController @Inject() (
                 for {
                   updatedAnswers <-
                     Future.fromTry(
-                      request.userAnswers.set(SelectedSubcontractorPaymentsMadePage(index, subJourneyId), value)
+                      request.userAnswers.set(SelectedSubcontractorPaymentsMadeForFlowPage(subJourneyId, index), value)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield returnTo match {
@@ -166,7 +166,7 @@ class PaymentDetailsController @Inject() (
                       navigator
                         .nextPage(
                           flowId,
-                          SelectedSubcontractorPaymentsMadePage(index, subJourneyId),
+                          SelectedSubcontractorPaymentsMadeForFlowPage(subJourneyId, index),
                           mode,
                           updatedAnswers
                         )

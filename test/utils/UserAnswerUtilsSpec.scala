@@ -631,7 +631,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
         .setOrException(EmploymentStatusDeclarationPage(id), true)
@@ -649,7 +649,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
         .setOrException(EmploymentStatusDeclarationPage(id), true)
@@ -667,7 +667,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
         // EmploymentStatusDeclarationPage missing
@@ -684,8 +684,8 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
-        .setOrException(SelectedSubcontractorPage(2, Some(id)), incompleteSub(2))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 2), incompleteSub(2))
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
         .setOrException(EmploymentStatusDeclarationPage(id), true)
@@ -702,7 +702,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded(id), false)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
         .setOrException(EmploymentStatusDeclarationPage(id), true)
@@ -719,7 +719,7 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
         .setOrException(EmploymentStatusDeclarationPage(id), true)
@@ -736,8 +736,8 @@ class UserAnswerUtilsSpec extends SpecBase {
       val ua = UserAnswers("id")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
-        .setOrException(SelectedSubcontractorPage(2, Some("other-id")), incompleteSub(2))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage("other-id", 2), incompleteSub(2))
         .setOrException(SelectedSubcontractorPage(3), incompleteSub(3))
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
@@ -836,8 +836,8 @@ class UserAnswerUtilsSpec extends SpecBase {
         .setOrException(CisIdPage(id), "CIS-123")
         .setOrException(ReturnTypePage(id), MonthlyStandardReturn)
         .setOrException(DateConfirmPaymentsPage(id), java.time.LocalDate.of(2025, 1, 1))
-        .setOrException(SelectedSubcontractorPage(1, Some(id)), completeSub(1))
-        .setOrException(SelectedSubcontractorPage(2, Some(id)), incompleteSub(2))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 1), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage(id, 2), incompleteSub(2))
         .setOrException(VerifySubcontractorsPage(id), true)
         .setOrException(AllSubcontractorDetailsAdded(id), true)
         .setOrException(PaymentDetailsConfirmationPage(id), true)
@@ -854,9 +854,9 @@ class UserAnswerUtilsSpec extends SpecBase {
       cleared.get(CisIdPage(id)) mustBe None
       cleared.get(ReturnTypePage(id)) mustBe None
       cleared.get(DateConfirmPaymentsPage(id)) mustBe None
-      cleared.get(SelectedSubcontractorPage.all(Some(id))) mustBe None
-      cleared.get(SelectedSubcontractorPage(1, Some(id))) mustBe None
-      cleared.get(SelectedSubcontractorPage(2, Some(id))) mustBe None
+      cleared.get(SelectedSubcontractorPage.all(id)) mustBe None
+      cleared.get(SelectedSubcontractorForFlowPage(id, 1)) mustBe None
+      cleared.get(SelectedSubcontractorForFlowPage(id, 2)) mustBe None
       cleared.get(VerifySubcontractorsPage(id)) mustBe None
       cleared.get(AllSubcontractorDetailsAdded(id)) mustBe None
       cleared.get(PaymentDetailsConfirmationPage(id)) mustBe None
@@ -875,20 +875,20 @@ class UserAnswerUtilsSpec extends SpecBase {
         .setOrException(SelectedSubcontractorPage(1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded, true)
         .setOrException(ReturnTypePage("first-id"), MonthlyStandardReturn)
-        .setOrException(SelectedSubcontractorPage(1, Some("first-id")), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage("first-id", 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded("first-id"), true)
         .setOrException(ReturnTypePage("second-id"), MonthlyStandardReturn)
-        .setOrException(SelectedSubcontractorPage(1, Some("second-id")), completeSub(1))
+        .setOrException(SelectedSubcontractorForFlowPage("second-id", 1), completeSub(1))
         .setOrException(AllSubcontractorDetailsAdded("second-id"), true)
 
       val cleared = ua.clearMonthlyReturnJourney("first-id").get
 
       cleared.get(ReturnTypePage("first-id")) mustBe None
-      cleared.get(SelectedSubcontractorPage(1, Some("first-id"))) mustBe None
+      cleared.get(SelectedSubcontractorForFlowPage("first-id", 1)) mustBe None
       cleared.get(AllSubcontractorDetailsAdded("first-id")) mustBe None
 
       cleared.get(ReturnTypePage("second-id")) mustBe Some(MonthlyStandardReturn)
-      cleared.get(SelectedSubcontractorPage(1, Some("second-id"))) mustBe Some(completeSub(1))
+      cleared.get(SelectedSubcontractorForFlowPage("second-id", 1)) mustBe Some(completeSub(1))
       cleared.get(AllSubcontractorDetailsAdded("second-id")) mustBe Some(true)
 
       cleared.get(ReturnTypePage) mustBe Some(MonthlyStandardReturn)

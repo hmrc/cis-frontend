@@ -274,7 +274,7 @@ class CheckAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSugar
     "GET with ID must return OK and the correct view" in {
       val ua = emptyUserAnswers
         .set(CisIdPage(subJourneyId), "i-123")
-        .flatMap(_.set(SelectedSubcontractorPage(index, Some(subJourneyId)), subcontractor))
+        .flatMap(_.set(SelectedSubcontractorForFlowPage(subJourneyId, index), subcontractor))
         .success
         .value
 

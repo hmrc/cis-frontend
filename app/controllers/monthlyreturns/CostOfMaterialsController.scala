@@ -20,7 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.CostOfMaterialsFormProvider
 import models.Mode
 import navigation.Navigator
-import pages.monthlyreturns.{SelectedSubcontractorMaterialCostsPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -72,18 +72,18 @@ class CostOfMaterialsController @Inject() (
 
   def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      val subJourneyId = Some(flowId.toString)
+      val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, mode, index, returnTo))
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None                =>
           logger.error(
-            s"[CostOfMaterialsController][onPageLoadWithId] - SelectedSubcontractorPage missing, index: $index, subJourneyId=$subJourneyId"
+            s"[CostOfMaterialsController][onPageLoadWithId] - SelectedSubcontractorForFlowPage missing, index: $index, subJourneyId=$subJourneyId"
           )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
           val preparedForm =
-            request.userAnswers.get(SelectedSubcontractorMaterialCostsPage(index, subJourneyId)) match {
+            request.userAnswers.get(SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, index)) match {
               case None        => form
               case Some(value) => form.fill(Some(value))
             }
@@ -132,7 +132,7 @@ class CostOfMaterialsController @Inject() (
 
   def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = Some(flowId.toString)
+      val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.CostOfMaterialsController.onSubmitWithId(flowId, mode, index, returnTo))
 
@@ -145,14 +145,19 @@ class CostOfMaterialsController @Inject() (
           case _                     =>
             Redirect(
               navigator
-                .nextPage(flowId, SelectedSubcontractorMaterialCostsPage(index, subJourneyId), mode, updatedAnswers)
+                .nextPage(
+                  flowId,
+                  SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, index),
+                  mode,
+                  updatedAnswers
+                )
             )
         }
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None =>
           logger.error(
-            s"[CostOfMaterialsController][onSubmit] - SelectedSubcontractorPage missing, index: $index"
+            s"[CostOfMaterialsController][onSubmitWithId] - SelectedSubcontractorForFlowPage missing, index: $index, subJourneyId=$subJourneyId"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -170,7 +175,7 @@ class CostOfMaterialsController @Inject() (
                   updatedAnswers <-
                     Future.fromTry(
                       request.userAnswers
-                        .set(SelectedSubcontractorMaterialCostsPage(index, subJourneyId), valueToPersist)
+                        .set(SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, index), valueToPersist)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield redirect(updatedAnswers)

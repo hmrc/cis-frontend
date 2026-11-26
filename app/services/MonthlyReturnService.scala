@@ -256,15 +256,15 @@ class MonthlyReturnService @Inject() (
     id: String
   )(implicit hc: HeaderCarrier): Future[UserAnswers] = {
     val selectedIds: Seq[Long]         = selected.map(_.id)
-    val existingSelectedSubcontractors = ua.get(SelectedSubcontractorPage.all(Some(id))).getOrElse(Map.empty)
-    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all(Some(id)))
+    val existingSelectedSubcontractors = ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
+    val cleared: Try[UserAnswers]      = ua.remove(SelectedSubcontractorPage.all(id))
     val updatedTry: Try[UserAnswers]   =
       selected.zipWithIndex
         .foldLeft(cleared) { case (uaTry, (vm, index)) =>
           uaTry.flatMap { answers =>
             val existing = existingSelectedSubcontractors.values.find(_.id == vm.id)
             answers.set(
-              SelectedSubcontractorPage(index + 1, Some(id)),
+              SelectedSubcontractorForFlowPage(id, index + 1),
               SelectedSubcontractor(
                 vm.id,
                 vm.name,

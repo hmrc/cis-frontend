@@ -27,130 +27,84 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
   "SelectedSubcontractorIdPage" - {
 
-    "have the correct path and toString" in {
+    "have the correct path" in {
       SelectedSubcontractorIdPage(index).path mustBe (JsPath \ "subcontractors" \ index.toString \ "subcontractorId")
-      SelectedSubcontractorIdPage(index).toString mustBe "subcontractorId"
     }
 
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorIdPage(
-        index,
-        Some(testId)
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "subcontractorId")
-      SelectedSubcontractorIdPage(index, Some(testId)).toString mustBe "subcontractorId"
+    "have the correct toString" in {
+      SelectedSubcontractorIdPage(index).toString mustBe "subcontractorId"
     }
   }
 
   "SelectedSubcontractorNamePage" - {
 
-    "have the correct path and toString" in {
+    "have the correct path" in {
       SelectedSubcontractorNamePage(index).path mustBe (JsPath \ "subcontractors" \ index.toString \ "name")
-      SelectedSubcontractorNamePage(index).toString mustBe "name"
     }
 
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorNamePage(
-        index,
-        Some(testId)
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "name")
-      SelectedSubcontractorNamePage(index, Some(testId)).toString mustBe "name"
+    "have the correct toString" in {
+      SelectedSubcontractorNamePage(index).toString mustBe "name"
     }
   }
 
   "SelectedSubcontractorPaymentsMadePage" - {
 
-    "have the correct path and toString" in {
+    "have the correct path" in {
       SelectedSubcontractorPaymentsMadePage(
         index
       ).path mustBe (JsPath \ "subcontractors" \ index.toString \ "totalPaymentsMade")
-      SelectedSubcontractorPaymentsMadePage(index).toString mustBe "totalPaymentsMade"
     }
 
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorPaymentsMadePage(
-        index,
-        Some(testId)
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "totalPaymentsMade")
-      SelectedSubcontractorPaymentsMadePage(index, Some(testId)).toString mustBe "totalPaymentsMade"
+    "have the correct toString" in {
+      SelectedSubcontractorPaymentsMadePage(index).toString mustBe "totalPaymentsMade"
     }
   }
 
   "SelectedSubcontractorMaterialCostsPage" - {
 
-    "have the correct path and toString" in {
+    "have the correct path" in {
       SelectedSubcontractorMaterialCostsPage(
         index
       ).path mustBe (JsPath \ "subcontractors" \ index.toString \ "costOfMaterials")
-      SelectedSubcontractorMaterialCostsPage(index).toString mustBe "costOfMaterials"
     }
 
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorMaterialCostsPage(
-        index,
-        Some(testId)
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "costOfMaterials")
-      SelectedSubcontractorMaterialCostsPage(index, Some(testId)).toString mustBe "costOfMaterials"
+    "have the correct toString" in {
+      SelectedSubcontractorMaterialCostsPage(index).toString mustBe "costOfMaterials"
     }
   }
 
   "SelectedSubcontractorTaxDeductedPage" - {
 
-    "have the correct path and toString" in {
+    "have the correct path" in {
       SelectedSubcontractorTaxDeductedPage(
         index
       ).path mustBe (JsPath \ "subcontractors" \ index.toString \ "totalTaxDeducted")
-      SelectedSubcontractorTaxDeductedPage(index).toString mustBe "totalTaxDeducted"
     }
 
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorTaxDeductedPage(
-        index,
-        Some(testId)
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "totalTaxDeducted")
-      SelectedSubcontractorTaxDeductedPage(index, Some(testId)).toString mustBe "totalTaxDeducted"
+    "have the correct toString" in {
+      SelectedSubcontractorTaxDeductedPage(index).toString mustBe "totalTaxDeducted"
     }
   }
 
   "SelectedSubcontractorPage" - {
 
-    "have the correct path and toString" in {
-      SelectedSubcontractorPage(index).path mustBe (JsPath \ "subcontractors" \ index.toString)
-      SelectedSubcontractorPage(index).toString mustBe "subcontractor-0"
-    }
-
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorPage(
-        index,
-        Some(testId)
-      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString)
-      SelectedSubcontractorPage(index, Some(testId)).toString mustBe "subcontractor-0"
-    }
-  }
-
-  "SelectedSubcontractorForFlowPage" - {
-
     "have the correct path" in {
-      SelectedSubcontractorForFlowPage(
-        "test-id",
-        index
-      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "subcontractors" \ index.toString)
+      SelectedSubcontractorPage(index).path mustBe (JsPath \ "subcontractors" \ index.toString)
     }
 
     "have the correct toString" in {
-      SelectedSubcontractorForFlowPage("test-id", index).toString mustBe "subcontractor-0"
+      SelectedSubcontractorPage(index).toString mustBe "subcontractor-0"
     }
   }
 
   "SelectedSubcontractorPage.all" - {
 
-    "have the correct path and toString" in {
+    "have the correct path" in {
       SelectedSubcontractorPage.all.path mustBe (JsPath \ "subcontractors")
-      SelectedSubcontractorPage.all.toString mustBe "subcontractors"
     }
 
-    "have the correct path and toString with id" in {
-      SelectedSubcontractorPage.all(Some(testId)).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors")
-      SelectedSubcontractorPage.all(Some(testId)).toString mustBe "subcontractors"
+    "have the correct toString" in {
+      SelectedSubcontractorPage.all.toString mustBe "subcontractors"
     }
 
     "have the correct path with id" in {
@@ -159,6 +113,62 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "have the correct toString with id" in {
       SelectedSubcontractorPage.all("test-id").toString mustBe "subcontractors"
+    }
+  }
+
+  // Multi-tab
+  "SelectedSubcontractorIdForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorIdForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "subcontractorId")
+      SelectedSubcontractorIdForFlowPage(testId, index).toString mustBe "subcontractorId"
+    }
+  }
+
+  "SelectedSubcontractorNameForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorNameForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "name")
+      SelectedSubcontractorNameForFlowPage(testId, index).toString mustBe "name"
+    }
+  }
+
+  "SelectedSubcontractorPaymentsMadeForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorPaymentsMadeForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "totalPaymentsMade")
+      SelectedSubcontractorPaymentsMadeForFlowPage(testId, index).toString mustBe "totalPaymentsMade"
+    }
+  }
+
+  "SelectedSubcontractorMaterialCostsForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorMaterialCostsForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "costOfMaterials")
+      SelectedSubcontractorMaterialCostsForFlowPage(testId, index).toString mustBe "costOfMaterials"
+    }
+  }
+
+  "SelectedSubcontractorTaxDeductedForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorTaxDeductedForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "totalTaxDeducted")
+      SelectedSubcontractorTaxDeductedForFlowPage(testId, index).toString mustBe "totalTaxDeducted"
     }
   }
 

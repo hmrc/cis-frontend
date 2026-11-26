@@ -23,7 +23,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, times, verify, when}
 import org.scalatestplus.mockito.MockitoSugar
-import pages.monthlyreturns.{CisIdPage, SelectedSubcontractorPage}
+import pages.monthlyreturns.*
 import play.api.inject.bind
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -242,7 +242,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
     "GET with ID must return OK and the correct view" in {
       val ua = emptyUserAnswers
         .setOrException(CisIdPage(subJourneyId), "i-123")
-        .setOrException(SelectedSubcontractorPage(index, Some(subJourneyId)), subcontractor)
+        .setOrException(SelectedSubcontractorForFlowPage(subJourneyId, index), subcontractor)
 
       val application = applicationBuilder(userAnswers = Some(ua))
         .configure("features.multi-tab-enabled" -> true)
@@ -324,7 +324,7 @@ class ChangeAnswersTotalPaymentsControllerSpec extends SpecBase with MockitoSuga
 
       val ua = emptyUserAnswers
         .setOrException(CisIdPage(subJourneyId), "i-123")
-        .setOrException(SelectedSubcontractorPage(index, Some(subJourneyId)), subcontractor)
+        .setOrException(SelectedSubcontractorForFlowPage(subJourneyId, index), subcontractor)
 
       val payload = UpdateMonthlyReturnItemRequest(
         instanceId = "i-123",

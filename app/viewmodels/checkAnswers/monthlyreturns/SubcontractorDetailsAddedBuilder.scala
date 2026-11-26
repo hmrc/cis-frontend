@@ -26,7 +26,10 @@ import java.util.UUID
 object SubcontractorDetailsAddedBuilder {
 
   private def selectedSubcontractors(ua: UserAnswers, id: Option[String]): Map[Int, SelectedSubcontractor] =
-    ua.get(SelectedSubcontractorPage.all(id)).getOrElse(Map.empty)
+    id match {
+      case Some(value) => ua.get(SelectedSubcontractorPage.all(value)).getOrElse(Map.empty)
+      case None        => ua.get(SelectedSubcontractorPage.all).getOrElse(Map.empty)
+    }
 
   private def detailsAdded(sub: SelectedSubcontractor): Boolean =
     sub.totalPaymentsMade.isDefined && sub.costOfMaterials.isDefined && sub.totalTaxDeducted.isDefined

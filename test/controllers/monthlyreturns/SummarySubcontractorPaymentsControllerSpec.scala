@@ -186,7 +186,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
       val userAnswers = buildUserAnswers(legacySubcontractors)
         .setOrException(CisIdPage(subJourneyId), "i-123")
         .setOrException(
-          SelectedSubcontractorPage(1, Some(subJourneyId)),
+          SelectedSubcontractorForFlowPage(subJourneyId, 1),
           SelectedSubcontractor(
             201,
             "Scoped Alpha Ltd",
@@ -196,7 +196,7 @@ class SummarySubcontractorPaymentsControllerSpec extends SpecBase with MockitoSu
           )
         )
         .setOrException(
-          SelectedSubcontractorPage(2, Some(subJourneyId)),
+          SelectedSubcontractorForFlowPage(subJourneyId, 2),
           SelectedSubcontractor(
             202,
             "Scoped Incomplete Ltd",

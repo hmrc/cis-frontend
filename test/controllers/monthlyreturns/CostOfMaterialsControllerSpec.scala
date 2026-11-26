@@ -60,7 +60,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
   val userAnswersWithId: UserAnswers = userAnswers
     .setOrException(CisIdPage(subJourneyId), "i-123")
     .setOrException(
-      SelectedSubcontractorPage(1, Some(subJourneyId)),
+      SelectedSubcontractorForFlowPage(subJourneyId, 1),
       SelectedSubcontractor(123, companyName, None, None, None)
     )
 
@@ -315,7 +315,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
     "must return OK and the correct view for a GET with ID" in {
 
       val updatedAnswers =
-        userAnswersWithId.set(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId)), validAnswer).success.value
+        userAnswersWithId.set(SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, 1), validAnswer).success.value
 
       val application = applicationBuilder(userAnswers = Some(updatedAnswers))
         .configure("features.multi-tab-enabled" -> true)
@@ -395,7 +395,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         verify(mockSessionRepository).set(captor.capture())
 
         captor.getValue
-          .get(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId))) mustBe Some(validAnswer)
+          .get(SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, 1)) mustBe Some(validAnswer)
       }
     }
 
@@ -404,7 +404,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
       val existingAnswerUa =
         userAnswersWithId
           .set(SelectedSubcontractorMaterialCostsPage(1), BigDecimal("123"))
-          .flatMap(_.set(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId)), BigDecimal("456")))
+          .flatMap(_.set(SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, 1), BigDecimal("456")))
           .success
           .value
 
@@ -436,7 +436,7 @@ class CostOfMaterialsControllerSpec extends SpecBase with MockitoSugar {
         val captor = ArgumentCaptor.forClass(classOf[models.UserAnswers])
         verify(mockSessionRepository).set(captor.capture())
 
-        captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1, Some(subJourneyId))) mustBe Some(BigDecimal(0))
+        captor.getValue.get(SelectedSubcontractorMaterialCostsForFlowPage(subJourneyId, 1)) mustBe Some(BigDecimal(0))
         captor.getValue.get(SelectedSubcontractorMaterialCostsPage(1)) mustBe Some(BigDecimal("123"))
       }
     }

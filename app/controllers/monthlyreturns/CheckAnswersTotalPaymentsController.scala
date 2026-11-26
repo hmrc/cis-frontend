@@ -32,7 +32,7 @@ import javax.inject.Inject
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import pages.monthlyreturns.SelectedSubcontractorPage
+import pages.monthlyreturns.*
 
 class CheckAnswersTotalPaymentsController @Inject() (
   override val messagesApi: MessagesApi,
@@ -65,14 +65,14 @@ class CheckAnswersTotalPaymentsController @Inject() (
 
   def onPageLoadWithId(flowId: UUID, index: Int): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      val subJourneyId = Some(flowId.toString)
+      val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onSubmitWithId(flowId, index))
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None                =>
           logger.error(
-            s"[CheckAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorPage for index: $index, subJourneyId=$subJourneyId"
+            s"[CheckAnswersTotalPaymentsController][onPageLoadWithId] - Missing SelectedSubcontractorForFlowPage for index: $index, subJourneyId=$subJourneyId"
           )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>

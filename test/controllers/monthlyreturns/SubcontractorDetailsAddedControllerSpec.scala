@@ -70,7 +70,7 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
       .setOrException(MonthlyFinalValidationContinuationPage(subJourneyId), NormalMode.toString)
       .setOrException(OriginalSubcontractorCountPage(subJourneyId), 3)
       .setOrException(
-        SelectedSubcontractorPage(1, Some(subJourneyId)),
+        SelectedSubcontractorForFlowPage(subJourneyId, 1),
         SelectedSubcontractor(
           1001L,
           "TyneWear Ltd",

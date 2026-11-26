@@ -20,7 +20,7 @@ import controllers.actions.*
 import forms.monthlyreturns.TotalTaxDeductedFormProvider
 import models.{Mode, UserAnswers}
 import navigation.Navigator
-import pages.monthlyreturns.{SelectedSubcontractorPage, SelectedSubcontractorTaxDeductedPage}
+import pages.monthlyreturns.*
 import play.api.Logging
 import play.api.data.Form
 import play.api.i18n.{I18nSupport, MessagesApi}
@@ -72,21 +72,22 @@ class TotalTaxDeductedController @Inject() (
 
   def onPageLoadWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
-      val subJourneyId = Some(flowId.toString)
+      val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmitWithId(flowId, mode, index, returnTo))
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None                =>
           logger.error(
-            s"[TotalTaxDeductedController][onPageLoadWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+            s"[TotalTaxDeductedController][onPageLoadWithId] - SelectedSubcontractorForFlowPage missing from answers, index=$index, subJourneyId=$subJourneyId"
           )
           Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
         case Some(subcontractor) =>
-          val preparedForm = request.userAnswers.get(SelectedSubcontractorTaxDeductedPage(index, subJourneyId)) match {
-            case None        => form
-            case Some(value) => form.fill(Some(value))
-          }
+          val preparedForm =
+            request.userAnswers.get(SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, index)) match {
+              case None        => form
+              case Some(value) => form.fill(Some(value))
+            }
 
           Ok(view(preparedForm, mode, subcontractor.name, index, returnTo, formAction))
       }
@@ -132,7 +133,7 @@ class TotalTaxDeductedController @Inject() (
 
   def onSubmitWithId(flowId: UUID, mode: Mode, index: Int, returnTo: Option[String]): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val subJourneyId = Some(flowId.toString)
+      val subJourneyId = flowId.toString
       val formAction   =
         Some(controllers.monthlyreturns.routes.TotalTaxDeductedController.onSubmitWithId(flowId, mode, index, returnTo))
 
@@ -145,14 +146,19 @@ class TotalTaxDeductedController @Inject() (
           case _                     =>
             Redirect(
               navigator
-                .nextPage(flowId, SelectedSubcontractorTaxDeductedPage(index, subJourneyId), mode, updatedAnswers)
+                .nextPage(
+                  flowId,
+                  SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, index),
+                  mode,
+                  updatedAnswers
+                )
             )
         }
 
-      request.userAnswers.get(SelectedSubcontractorPage(index, subJourneyId)) match {
+      request.userAnswers.get(SelectedSubcontractorForFlowPage(subJourneyId, index)) match {
         case None =>
           logger.error(
-            s"[TotalTaxDeductedController][onSubmitWithId] - SelectedSubcontractorPage missing from answers, index=$index, subJourneyId=$subJourneyId"
+            s"[TotalTaxDeductedController][onSubmitWithId] - SelectedSubcontractorForFlowPage missing from answers, index=$index, subJourneyId=$subJourneyId"
           )
           Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
@@ -169,7 +175,8 @@ class TotalTaxDeductedController @Inject() (
                 for {
                   updatedAnswers <-
                     Future.fromTry(
-                      request.userAnswers.set(SelectedSubcontractorTaxDeductedPage(index, subJourneyId), valueToPersist)
+                      request.userAnswers
+                        .set(SelectedSubcontractorTaxDeductedForFlowPage(subJourneyId, index), valueToPersist)
                     )
                   _              <- sessionRepository.set(updatedAnswers)
                 } yield redirect(updatedAnswers)
