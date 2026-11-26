@@ -19,7 +19,7 @@ package controllers.monthlyreturns
 import base.SpecBase
 import models.ReturnType.{MonthlyAmendedStandardReturn, MonthlyStandardReturn}
 import models.amend.AmendmentDetails
-import models.{NormalMode, UserAnswers}
+import models.{CheckMode, NormalMode, UserAnswers}
 import org.mockito.ArgumentMatchers.{any, argThat}
 import org.mockito.Mockito.{verify, when}
 import org.mockito.ArgumentCaptor
@@ -112,6 +112,12 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
   private def postUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(NormalMode).url
 
+  private def getCheckUrl: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onPageLoad(CheckMode).url
+
+  private def postCheckUrl: String =
+    controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onSubmit(CheckMode).url
+
   private def cancelUrl: String =
     controllers.monthlyreturns.routes.SubcontractorDetailsAddedController.onCancelAmendment().url
 
@@ -129,6 +135,25 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
         val result  = route(application, request).value
 
         status(result) mustBe OK
+      }
+    }
+
+    "must return OK on GET in CheckMode when NormalMode Final Validation has completed" in {
+      val ua = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+        .setOrException(OriginalSubcontractorCountPage, 3)
+        .setOrException(AllSubcontractorDetailsAdded, true)
+
+      val svc = mock[MonthlyReturnService]
+      stubIsEditable(svc)
+
+      val application = buildApp(ua, Some(svc))
+
+      running(application) {
+        val request = FakeRequest(GET, getCheckUrl)
+        val result  = route(application, request).value
+
+        status(result) mustBe OK
+        contentAsString(result) must include(postCheckUrl)
       }
     }
 
@@ -522,6 +547,41 @@ class SubcontractorDetailsAddedControllerSpec extends SpecBase with MockitoSugar
           controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
             .onPageLoad()
             .url
+      }
+    }
+
+    "must redirect to SummarySubcontractorPayments on POST No in CheckMode when NormalMode Final Validation has completed" in {
+      val mockSessionRepository = mock[SessionRepository]
+
+      when(mockSessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val ua = uaWithSubcontractors(1 -> completeSub(1001L, "TyneWear Ltd"))
+        .setOrException(OriginalSubcontractorCountPage, 3)
+        .setOrException(AllSubcontractorDetailsAdded, true)
+
+      val application = buildApp(ua, sessionRepository = Some(mockSessionRepository))
+
+      running(application) {
+        val request =
+          FakeRequest(POST, postCheckUrl)
+            .withFormUrlEncodedBody("value" -> "false")
+
+        val result = route(application, request).value
+
+        status(result) mustBe SEE_OTHER
+        redirectLocation(result).value mustBe
+          controllers.monthlyreturns.routes.SummarySubcontractorPaymentsController
+            .onPageLoad()
+            .url
+
+        val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+        verify(mockSessionRepository).set(captor.capture())
+
+        val savedAnswers = captor.getValue
+
+        savedAnswers.get(AllSubcontractorDetailsAdded) mustBe Some(true)
+        savedAnswers.get(MonthlyFinalValidationContinuationPage) mustBe Some(NormalMode.toString)
       }
     }
 
