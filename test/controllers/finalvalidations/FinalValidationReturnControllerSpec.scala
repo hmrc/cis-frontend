@@ -203,10 +203,8 @@ class FinalValidationReturnControllerSpec extends SpecBase {
         .success
         .value
 
-    val finalValidationReturnRouteWithId =
-      routes.FinalValidationReturnController
-        .onPageLoadWithId(flowId, handoffId)
-        .url
+    def finalValidationReturnRouteWithId =
+      routes.FinalValidationReturnController.onPageLoadWithId(flowId, handoffId).url
 
     "must delete the handoff and redirect to Update Subcontractor Details with flowId for a valid handoff" in {
       val connector = mock[ConstructionIndustrySchemeConnector]

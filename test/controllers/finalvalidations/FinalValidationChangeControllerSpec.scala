@@ -186,7 +186,7 @@ class FinalValidationChangeControllerSpec extends SpecBase {
     val scopedCisId   = "1045"
     val scopedDraftId = "scoped-draft-id"
 
-    val finalValidationChangeRouteWithId =
+    def finalValidationChangeRouteWithId =
       controllers.finalvalidations.routes.FinalValidationChangeController
         .onPageLoadWithId(flowId, subcontractorId, field.key, changeTarget.key)
         .url
