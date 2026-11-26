@@ -215,10 +215,12 @@ class SubmissionService @Inject() (
       req            <- buildCreateRequest(ua, id)
       response       <- cisConnector.createSubmission(req)
       period          = selectedYearMonth(ua, id).toString
-      withCreated    <- Future.fromTry(ua.set(SubmissionCreatedForFlowPage(id, period), true))
-      updatedAnswers <-
-        Future.fromTry(withCreated.set(CreatedSubmissionIdForFlowPage(id, period), response.submissionId))
-      _              <- sessionRepository.set(updatedAnswers)
+      updatedAnswers <- saveLatestUserAnswers(ua) { latestUa =>
+                          for {
+                            withCreated <- latestUa.set(SubmissionCreatedForFlowPage(id, period), true)
+                            withId      <- withCreated.set(CreatedSubmissionIdForFlowPage(id, period), response.submissionId)
+                          } yield withId
+                        }
     } yield (response, updatedAnswers)
 
   def submitToChrisAndPersist(

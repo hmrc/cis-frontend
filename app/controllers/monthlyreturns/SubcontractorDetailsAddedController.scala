@@ -132,10 +132,8 @@ class SubcontractorDetailsAddedController @Inject() (
               if (ua.get(FinalValidationDraftIdPage(subJourneyId)).isDefined) {
                 // TODO: Implement UUID-scoped final validation in a separate ticket.
                 Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-              } else if (ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString)) {
-                Future.successful(
-                  renderPageWithId(subJourneyId, flowId, mode, ua)
-                )
+              } else if (canReuseFinalValidation(ua.get(MonthlyFinalValidationContinuationPage(subJourneyId)), mode)) {
+                Future.successful(renderPageWithId(subJourneyId, flowId, mode, ua))
               } else {
                 ua.get(MonthlyFinalValidationSourcePage(subJourneyId)) match {
                   case Some(source) if sourceMode(source).contains(mode) =>
@@ -380,7 +378,7 @@ class SubcontractorDetailsAddedController @Inject() (
       val subJourneyId = flowId.toString
 
       val hasPassedFinalValidation =
-        request.userAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)).contains(mode.toString) &&
+        canReuseFinalValidation(request.userAnswers.get(MonthlyFinalValidationContinuationPage(subJourneyId)), mode) &&
           request.userAnswers.get(FinalValidationDraftIdPage(subJourneyId)).isEmpty
 
       if (request.userAnswers.get(ReturnTypePage(subJourneyId)).isEmpty) {
@@ -541,6 +539,10 @@ class SubcontractorDetailsAddedController @Inject() (
       // TODO DTR-9475/DTR-9476: Add UUID-scoped amendment cancellation navigation.
       Redirect(controllers.routes.JourneyRecoveryController.onPageLoad())
     }
+
+  private def canReuseFinalValidation(continuation: Option[String], mode: Mode): Boolean =
+    continuation.contains(mode.toString) ||
+      (mode == CheckMode && continuation.contains(NormalMode.toString))
 
   private def runFinalValidation(
     cisId: String,
