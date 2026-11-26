@@ -38,7 +38,7 @@ class MonthlyFinalValidationSourcePageSpec extends SpecBase {
 
     "have the correct scoped path" in {
       MonthlyFinalValidationSourcePage("org_flow-1").path mustBe
-        (JsPath \ "finalvalidation" \ "org_flow-1" \ "monthlyFinalValidationSource")
+        (JsPath \ "monthlyReturn" \ "org_flow-1" \ "finalvalidation" \ "monthlyFinalValidationSource")
     }
 
     "have the correct scoped toString" in {

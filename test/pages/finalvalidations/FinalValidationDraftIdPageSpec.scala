@@ -35,12 +35,5 @@ class FinalValidationDraftIdPageSpec extends SpecBase {
       ).path mustBe JsPath \ "monthlyReturn" \ testId \ "finalvalidation" \ "finalValidationDraftId"
       FinalValidationDraftIdPage(testId).toString mustBe "finalValidationDraftId"
     }
-
-    "must have the correct Scoped toString and path" in {
-      FinalValidationDraftIdPage("CIS-ORG-1").toString mustBe "finalValidationDraftId"
-      FinalValidationDraftIdPage(
-        "CIS-ORG-1"
-      ).path mustBe (JsPath \ "finalvalidation" \ "CIS-ORG-1" \ "finalValidationDraftId")
-    }
   }
 }
