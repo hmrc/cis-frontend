@@ -412,4 +412,11 @@ class ConstructionIndustrySchemeConnector @Inject() (config: ServicesConfig, htt
     http
       .put(url"$cisBaseUrl/final-validation/drafts/$instanceId/$draftId/subcontractors/$subcontractorId/reset")
       .execute[FinalValidationDraft]
+
+  def getSubmittedMonthlyReturns(
+    instanceId: String
+  )(implicit hc: HeaderCarrier): Future[SubmittedReturnsData] =
+    http
+      .get(url"$cisBaseUrl/monthly-returns/submitted/$instanceId")
+      .execute[SubmittedReturnsData]
 }

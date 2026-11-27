@@ -34,7 +34,7 @@
     @formHelper(
         action = formAction.getOrElse(
             controllers.monthlyreturns.routes.ConfirmationByEmailController.onSubmit(mode)
-        ), 
+        ),
         Symbol("autoComplete") -> "off"
     ) {
         @if(form.errors.nonEmpty) {

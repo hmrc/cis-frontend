@@ -74,7 +74,7 @@ class SubmitInactivityRequestController @Inject() (
         )
     }
 
-  // DTR-9431: GET for UUID-scoped nil return journey
+  // Multi-tab: GET for UUID-scoped nil return journey
   def onPageLoadWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)) { implicit request =>
 
@@ -94,7 +94,7 @@ class SubmitInactivityRequestController @Inject() (
       )
     }
 
-  // DTR-9431: POST for UUID-scoped nil return journey
+  // Multi-tab: POST for UUID-scoped nil return journey
   def onSubmitWithId(flowId: UUID, mode: Mode): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
 
@@ -118,7 +118,7 @@ class SubmitInactivityRequestController @Inject() (
               updatedAnswers <- Future.fromTry(request.userAnswers.set(SubmitInactivityRequestPage(id), value))
               _              <- sessionRepository.set(updatedAnswers)
             } yield Redirect(
-              navigator.nextPage(flowId, SubmitInactivityRequestPage, mode, updatedAnswers)
+              navigator.nextPage(flowId, SubmitInactivityRequestPage(id), mode, updatedAnswers)
             )
         )
     }

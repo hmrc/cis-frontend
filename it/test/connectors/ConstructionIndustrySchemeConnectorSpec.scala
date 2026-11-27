@@ -546,6 +546,155 @@ class ConstructionIndustrySchemeConnectorSpec
     }
   }
 
+  "getSubmittedMonthlyReturns" should {
+
+    val instanceId = "CIS-123"
+
+    "return SubmittedReturnsData when BE returns 200 with valid JSON" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/monthly-returns/submitted/$instanceId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """
+                  |{
+                  |  "scheme": {
+                  |    "name": "ABC Construction Ltd",
+                  |    "taxOfficeNumber": "123",
+                  |    "taxOfficeReference": "AB456"
+                  |  },
+                  |  "monthlyReturns": [{
+                  |    "monthlyReturnId": 101,
+                  |    "taxYear": 2025,
+                  |    "taxMonth": 10,
+                  |    "nilReturnIndicator": "N",
+                  |    "status": "SUBMITTED",
+                  |    "amendment": "N"
+                  |  }],
+                  |  "submissions": [{
+                  |    "submissionId": 3001,
+                  |    "submissionType": "MONTHLY_RETURN",
+                  |    "activeObjectId": 101,
+                  |    "status": "SUBMITTED",
+                  |    "hmrcMarkGenerated": "IRMARK123",
+                  |    "hmrcMarkGgis": "IRMARK123",
+                  |    "emailRecipient": "test@test.com",
+                  |    "acceptedTime": "2025-10-05T12:00:00"
+                  |  }]
+                  |}
+                  |""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getSubmittedMonthlyReturns(instanceId).futureValue
+
+      result.scheme.name mustBe "ABC Construction Ltd"
+      result.scheme.taxOfficeNumber mustBe "123"
+      result.scheme.taxOfficeReference mustBe "AB456"
+
+      result.monthlyReturns.size mustBe 1
+      result.monthlyReturns.head.monthlyReturnId mustBe 101L
+      result.monthlyReturns.head.taxYear mustBe 2025
+      result.monthlyReturns.head.taxMonth mustBe 10
+      result.monthlyReturns.head.status mustBe "SUBMITTED"
+
+      result.submissions.size mustBe 1
+      result.submissions.head.submissionId mustBe 3001L
+      result.submissions.head.submissionType mustBe Some("MONTHLY_RETURN")
+      result.submissions.head.activeObjectId mustBe Some(101L)
+      result.submissions.head.status mustBe "SUBMITTED"
+      result.submissions.head.hmrcMarkGenerated mustBe Some("IRMARK123")
+      result.submissions.head.hmrcMarkGgis mustBe Some("IRMARK123")
+      result.submissions.head.emailRecipient mustBe Some("test@test.com")
+      result.submissions.head.acceptedTime mustBe Some(
+        java.time.LocalDateTime.parse("2025-10-05T12:00:00")
+      )
+    }
+
+    "return empty collections when BE returns 200 with empty arrays" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/monthly-returns/submitted/$instanceId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """
+                  |{
+                  |  "scheme": {
+                  |    "name": "ABC Construction Ltd",
+                  |    "taxOfficeNumber": "123",
+                  |    "taxOfficeReference": "AB456"
+                  |  },
+                  |  "monthlyReturns": [],
+                  |  "submissions": []
+                  |}
+                  |""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getSubmittedMonthlyReturns(instanceId).futureValue
+
+      result.monthlyReturns mustBe empty
+      result.submissions mustBe empty
+    }
+
+    "fail when BE returns 200 with invalid JSON" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/monthly-returns/submitted/$instanceId"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{ "unexpectedField": true }""")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getSubmittedMonthlyReturns(instanceId).futureValue
+      }
+
+      ex.getMessage.toLowerCase must include("scheme")
+    }
+
+    "propagate an upstream error when BE returns 404" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/monthly-returns/submitted/$instanceId"))
+          .willReturn(
+            aResponse()
+              .withStatus(NOT_FOUND)
+              .withBody("Not Found")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getSubmittedMonthlyReturns(instanceId).futureValue
+      }
+
+      ex.getMessage must include("returned 404")
+    }
+
+    "propagate an upstream error when BE returns 500" in {
+      stubFor(
+        get(urlPathEqualTo(s"/cis/monthly-returns/submitted/$instanceId"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+              .withBody("Internal Server Error")
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getSubmittedMonthlyReturns(instanceId).futureValue
+      }
+
+      ex.getMessage must include("returned 500")
+    }
+  }
+
   "startClientList" should {
 
     "POST /cis/agent/client-list/retrieval/start and return succeeded" in {

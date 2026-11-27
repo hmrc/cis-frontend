@@ -25,3 +25,10 @@ case class ConfirmSubcontractorRemovalPage(index: Int) extends QuestionPage[Bool
 
   override def toString: String = "confirmSubcontractorRemoval"
 }
+
+case class ConfirmSubcontractorRemovalForFlowPage(id: String, index: Int) extends QuestionPage[Boolean] {
+
+  override def path: JsPath = JsPath \ "monthlyReturn" \ id \ "confirmSubcontractorRemoval" \ index.toString
+
+  override def toString: String = s"confirmSubcontractorRemoval-$index"
+}

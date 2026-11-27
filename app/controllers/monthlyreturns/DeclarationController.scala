@@ -75,6 +75,6 @@ class DeclarationController @Inject() (
       for {
         updatedAnswers <- Future.fromTry(request.userAnswers.set(DeclarationPage(flowId.toString), Set(Confirmed)))
         _              <- sessionRepository.set(updatedAnswers)
-      } yield Redirect(navigator.nextPage(flowId, DeclarationPage, mode, updatedAnswers))
+      } yield Redirect(navigator.nextPage(flowId, DeclarationPage(flowId.toString), mode, updatedAnswers))
     }
 }

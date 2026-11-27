@@ -2432,7 +2432,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(CreateSubmissionResponse("scoped-submission")))
-      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      when(sessionRepository.get(ua.id))
+        .thenReturn(Future.successful(Some(ua)))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val (submissionId, updated, isResubmission) = service.getOrCreateSubmissionForChris(ua, id).futureValue
 
@@ -2443,6 +2448,7 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
       updated.get(CreatedSubmissionIdPage("2025-10")) mustBe Some("legacy-submission")
 
       verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      verify(sessionRepository).get(ua.id)
       verify(sessionRepository).set(updated)
     }
   }
@@ -2505,7 +2511,12 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
-      when(sessionRepository.set(any[UserAnswers])).thenReturn(Future.successful(true))
+
+      when(sessionRepository.get(ua.id))
+        .thenReturn(Future.successful(Some(ua)))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
 
       val (_, updated) = service.create(ua, id).futureValue
 
@@ -2519,9 +2530,13 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
         amendment = "Y",
         emailRecipient = Some("scoped@test.com")
       )
+
       updated.get(SubmissionCreatedForFlowPage(id, "2025-10")) mustBe Some(true)
       updated.get(CreatedSubmissionIdForFlowPage(id, "2025-10")) mustBe Some("sub-123")
       updated.get(SubmissionCreatedPage("2025-10")) mustBe None
+
+      verify(sessionRepository).get(ua.id)
+      verify(sessionRepository).set(updated)
     }
 
     "fail rather than use legacy answers when required scoped details are missing" in {
@@ -2531,6 +2546,128 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       exception.getMessage mustBe "Monthly return details missing"
       verifyNoInteractions(connector)
+    }
+
+    "preserve another journey's created submission when the original UserAnswers are stale" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      val firstId      = "first-flow-id"
+      val secondId     = "second-flow-id"
+      val firstPeriod  = "2018-04"
+      val secondPeriod = "2018-02"
+
+      val originalAnswers = scopedUa(firstId, MonthlyStandardReturn)
+        .setOrException(CisIdPage(firstId), "800")
+        .setOrException(DateConfirmPaymentsPage(firstId), LocalDate.of(2018, 4, 5))
+        .setOrException(EnterYourEmailAddressPage(firstId), "client800@test.com")
+        .setOrException(ReturnTypePage(secondId), MonthlyStandardReturn)
+        .setOrException(CisIdPage(secondId), "100")
+        .setOrException(DateConfirmPaymentsPage(secondId), LocalDate.of(2018, 2, 5))
+        .setOrException(EnterYourEmailAddressPage(secondId), "client100@test.com")
+        .setOrException(SubmissionCreatedPage(secondPeriod), true)
+        .setOrException(CreatedSubmissionIdPage(secondPeriod), "legacy-submission")
+
+      val latestAnswers = originalAnswers
+        .setOrException(SubmissionCreatedForFlowPage(firstId, firstPeriod), true)
+        .setOrException(CreatedSubmissionIdForFlowPage(firstId, firstPeriod), "13074")
+
+      val response = CreateSubmissionResponse("13075")
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(response))
+
+      when(sessionRepository.get(originalAnswers.id))
+        .thenReturn(Future.successful(Some(latestAnswers)))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(true))
+
+      val (created, updated) = service.create(originalAnswers, secondId).futureValue
+
+      created mustBe response
+
+      val captor = ArgumentCaptor.forClass(classOf[UserAnswers])
+      verify(sessionRepository).set(captor.capture())
+
+      val savedAnswers = captor.getValue
+
+      savedAnswers mustBe updated
+
+      savedAnswers.get(SubmissionCreatedForFlowPage(firstId, firstPeriod)) mustBe Some(true)
+      savedAnswers.get(CreatedSubmissionIdForFlowPage(firstId, firstPeriod)) mustBe Some("13074")
+
+      savedAnswers.get(SubmissionCreatedForFlowPage(secondId, secondPeriod)) mustBe Some(true)
+      savedAnswers.get(CreatedSubmissionIdForFlowPage(secondId, secondPeriod)) mustBe Some("13075")
+
+      savedAnswers.get(CisIdPage(firstId)) mustBe Some("800")
+      savedAnswers.get(CisIdPage(secondId)) mustBe Some("100")
+
+      savedAnswers.get(DateConfirmPaymentsPage(firstId)) mustBe Some(LocalDate.of(2018, 4, 5))
+      savedAnswers.get(DateConfirmPaymentsPage(secondId)) mustBe Some(LocalDate.of(2018, 2, 5))
+
+      savedAnswers.get(ReturnTypePage(firstId)) mustBe Some(MonthlyStandardReturn)
+      savedAnswers.get(ReturnTypePage(secondId)) mustBe Some(MonthlyStandardReturn)
+
+      savedAnswers.get(EnterYourEmailAddressPage(firstId)) mustBe Some("client800@test.com")
+      savedAnswers.get(EnterYourEmailAddressPage(secondId)) mustBe Some("client100@test.com")
+
+      savedAnswers.get(SubmissionCreatedPage(secondPeriod)) mustBe Some(true)
+      savedAnswers.get(CreatedSubmissionIdPage(secondPeriod)) mustBe Some("legacy-submission")
+
+      val order = org.mockito.Mockito.inOrder(connector, sessionRepository)
+
+      order.verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      order.verify(sessionRepository).get(originalAnswers.id)
+      order.verify(sessionRepository).set(savedAnswers)
+
+      verifyNoMoreInteractions(connector, sessionRepository)
+    }
+
+    "fail without persisting stale answers when the latest session cannot be found" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val ua = scopedUa(id, MonthlyStandardReturn)
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
+
+      when(sessionRepository.get(ua.id))
+        .thenReturn(Future.successful(None))
+
+      val exception = service.create(ua, id).failed.futureValue
+
+      exception mustBe an[IllegalStateException]
+      exception.getMessage mustBe "UserAnswers not found in session"
+
+      verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      verify(sessionRepository).get(ua.id)
+      verify(sessionRepository, never()).set(any[UserAnswers])
+    }
+
+    "fail when the updated scoped submission answers cannot be persisted" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+      val id                                         = "test-id"
+
+      val ua = scopedUa(id, MonthlyStandardReturn)
+
+      when(connector.createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(CreateSubmissionResponse("sub-123")))
+
+      when(sessionRepository.get(ua.id))
+        .thenReturn(Future.successful(Some(ua)))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(false))
+
+      val exception = service.create(ua, id).failed.futureValue
+
+      exception mustBe an[IllegalStateException]
+      exception.getMessage mustBe "Failed to persist updated UserAnswers"
+
+      verify(connector).createSubmission(any[CreateSubmissionRequest])(any[HeaderCarrier])
+      verify(sessionRepository).get(ua.id)
+      verify(sessionRepository).set(any[UserAnswers])
     }
   }
 
@@ -2770,6 +2907,160 @@ class SubmissionServiceSpec extends SpecBase with TryValues {
 
       service.isAlreadySubmitted(ua, "first-id") mustBe true
       service.isAlreadySubmitted(ua, "second-id") mustBe false
+    }
+  }
+
+  "reconcileSubmittedDetails" - {
+
+    val id      = "test-id"
+    val details = SubmissionDetails(
+      id = "3001",
+      status = "ACCEPTED",
+      irMark = "IR-MARK-123",
+      submittedAt = LocalDateTime.now(),
+      amendment = Some("N")
+    )
+
+    val ua = scopedUa(id, MonthlyStandardReturn)
+      .setOrException(SubmissionDetailsPage(id), details)
+
+    val submission = SubmittedSubmissionData(
+      submissionId = 3001L,
+      submissionType = Some("MONTHLY_RETURN"),
+      activeObjectId = Some(101L),
+      status = "SUBMITTED",
+      hmrcMarkGenerated = Some("IR-MARK-123"),
+      hmrcMarkGgis = Some("IR-MARK-123"),
+      emailRecipient = None,
+      acceptedTime = None
+    )
+
+    val response = SubmittedReturnsData(
+      scheme = SubmittedSchemeData("TEST LTD", "123", "AB456"),
+      monthlyReturns = Seq.empty,
+      submissions = Seq(submission)
+    )
+
+    Seq("ACCEPTED", "PENDING").foreach { status =>
+      s"reconcile $status submission details and preserve other journeys" in {
+        val (service, connector, sessionRepository, _) = newScopedService()
+
+        val staleDetails = details.copy(status = status)
+        val staleUa      = ua.setOrException(SubmissionDetailsPage(id), staleDetails)
+        val latestUa     = staleUa
+          .setOrException(SubmissionDetailsPage("other-id"), details.copy(id = "3002"))
+          .setOrException(SubmissionDetailsPage, details.copy(id = "legacy-submission"))
+
+        when(connector.getSubmittedMonthlyReturns(eqTo("CIS-123"))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(response))
+
+        when(sessionRepository.get(staleUa.id))
+          .thenReturn(Future.successful(Some(latestUa)))
+
+        when(sessionRepository.set(any[UserAnswers]))
+          .thenReturn(Future.successful(true))
+
+        val updated = service.reconcileSubmittedDetails(staleUa, id).futureValue.value
+
+        updated.get(SubmissionDetailsPage(id)) mustBe Some(
+          staleDetails.copy(status = "SUBMITTED", hmrcMarkGgis = Some("IR-MARK-123"))
+        )
+
+        updated.get(SubmissionDetailsPage("other-id")) mustBe
+          latestUa.get(SubmissionDetailsPage("other-id"))
+
+        updated.get(SubmissionDetailsPage) mustBe
+          latestUa.get(SubmissionDetailsPage)
+
+        verify(sessionRepository).get(staleUa.id)
+        verify(sessionRepository).set(updated)
+      }
+    }
+
+    Seq(
+      "submission id does not match"       -> submission.copy(submissionId = 3002L),
+      "submission status is not SUBMITTED" -> submission.copy(status = "SUBMITTED_NO_RECEIPT"),
+      "generated HMRC mark does not match" -> submission.copy(hmrcMarkGenerated = Some("OTHER-MARK"))
+    ).foreach { case (reason, unmatchedSubmission) =>
+      s"return None when $reason" in {
+        val (service, connector, sessionRepository, _) = newScopedService()
+
+        when(connector.getSubmittedMonthlyReturns(eqTo("CIS-123"))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(response.copy(submissions = Seq(unmatchedSubmission))))
+
+        service.reconcileSubmittedDetails(ua, id).futureValue mustBe None
+
+        verifyNoInteractions(sessionRepository)
+      }
+    }
+
+    "return None when ID-scoped submission details are missing" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      val incompleteUa = scopedUa(id)
+        .setOrException(SubmissionDetailsPage, details)
+
+      service.reconcileSubmittedDetails(incompleteUa, id).futureValue mustBe None
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "return None when the submission is already SUBMITTED" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      val submittedUa = ua
+        .setOrException(SubmissionDetailsPage(id), details.copy(status = "SUBMITTED"))
+
+      service.reconcileSubmittedDetails(submittedUa, id).futureValue mustBe None
+
+      verifyNoInteractions(connector)
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "return None when scoped submission details have changed in the latest session" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      val latestUa = ua
+        .setOrException(SubmissionDetailsPage(id), details.copy(id = "3002"))
+
+      when(connector.getSubmittedMonthlyReturns(eqTo("CIS-123"))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(response))
+
+      when(sessionRepository.get(ua.id))
+        .thenReturn(Future.successful(Some(latestUa)))
+
+      service.reconcileSubmittedDetails(ua, id).futureValue mustBe None
+
+      verify(sessionRepository, never()).set(any[UserAnswers])
+    }
+
+    "return None when retrieving submitted monthly returns fails" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      when(connector.getSubmittedMonthlyReturns(eqTo("CIS-123"))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new RuntimeException("boom")))
+
+      service.reconcileSubmittedDetails(ua, id).futureValue mustBe None
+
+      verifyNoInteractions(sessionRepository)
+    }
+
+    "return None when persisting reconciled submission details fails" in {
+      val (service, connector, sessionRepository, _) = newScopedService()
+
+      when(connector.getSubmittedMonthlyReturns(eqTo("CIS-123"))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(response))
+
+      when(sessionRepository.get(ua.id))
+        .thenReturn(Future.successful(Some(ua)))
+
+      when(sessionRepository.set(any[UserAnswers]))
+        .thenReturn(Future.successful(false))
+
+      service.reconcileSubmittedDetails(ua, id).futureValue mustBe None
+
+      verify(sessionRepository).set(any[UserAnswers])
     }
   }
 

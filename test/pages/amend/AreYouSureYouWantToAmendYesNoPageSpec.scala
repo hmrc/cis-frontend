@@ -30,7 +30,7 @@ class AreYouSureYouWantToAmendYesNoPageSpec extends SpecBase {
 
   "have the correct scoped path" in {
     AreYouSureYouWantToAmendYesNoPage("org_flow-1").path mustBe
-      (JsPath \ "amend" \ "org_flow-1" \ "areYouSureYouWantToAmendYesNo")
+      (JsPath \ "monthlyReturn" \ "org_flow-1" \ "areYouSureYouWantToAmendYesNo")
   }
 
   "have the correct scoped toString" in {

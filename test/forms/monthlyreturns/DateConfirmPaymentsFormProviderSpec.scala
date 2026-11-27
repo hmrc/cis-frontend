@@ -25,7 +25,6 @@ import play.api.i18n.Messages
 import play.api.test.Helpers.stubMessages
 
 import java.time.*
-import java.time.format
 
 class DateConfirmPaymentsFormProviderSpec extends DateBehaviours with SpecBase with MockitoSugar {
 

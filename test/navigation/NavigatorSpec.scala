@@ -22,7 +22,7 @@ import pages.*
 import pages.monthlyreturns.*
 import models.*
 import models.amend.*
-import models.ReturnType.{MonthlyAmendedNilReturn, MonthlyAmendedStandardReturn, MonthlyNilReturn}
+import models.ReturnType.*
 import models.monthlyreturns.{InactivityRequest, SelectedSubcontractor}
 import pages.amend.{AreYouSureYouWantToAmendYesNoPage, WhichSubcontractorsToAddPage}
 
@@ -32,8 +32,8 @@ class NavigatorSpec extends SpecBase {
 
   val navigator = new Navigator
 
-  private def scopedUserAnswers(flowId: UUID): UserAnswers =
-    UserAnswers("id").setOrException(ReturnTypePage(flowId.toString), MonthlyNilReturn)
+  private def scopedUserAnswers(flowId: UUID, returnType: ReturnType = MonthlyNilReturn): UserAnswers =
+    UserAnswers("id").setOrException(ReturnTypePage(flowId.toString), returnType)
 
   "Navigator" - {
 
@@ -543,7 +543,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            DateConfirmPaymentsPage,
+            DateConfirmPaymentsPage(flowId.toString),
             NormalMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController
@@ -556,7 +556,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            SubmitInactivityRequestPage,
+            SubmitInactivityRequestPage(flowId.toString),
             NormalMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController
@@ -569,7 +569,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            SubmitInactivityRequestPage,
+            SubmitInactivityRequestPage(flowId.toString),
             NormalMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController.onPageLoadWithId(flowId, NormalMode)
@@ -580,7 +580,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            SubmitInactivityRequestPage,
+            SubmitInactivityRequestPage(flowId.toString),
             NormalMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -592,7 +592,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            ConfirmationByEmailPage,
+            ConfirmationByEmailPage(flowId.toString),
             NormalMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController
@@ -605,7 +605,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            ConfirmationByEmailPage,
+            ConfirmationByEmailPage(flowId.toString),
             NormalMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
@@ -616,7 +616,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            ConfirmationByEmailPage,
+            ConfirmationByEmailPage(flowId.toString),
             NormalMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -627,7 +627,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            EnterYourEmailAddressPage,
+            EnterYourEmailAddressPage(flowId.toString),
             NormalMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(flowId)
@@ -638,9 +638,164 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            DeclarationPage,
+            DeclarationPage(flowId.toString),
             NormalMode,
             scopedUserAnswers(flowId)
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from DateConfirmPaymentsPage to SelectSubcontractorsController for a standard return without subcontractors" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            DateConfirmPaymentsPage(flowId.toString),
+            NormalMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.SelectSubcontractorsController.onPageLoadWithId(flowId, None)
+        }
+
+        "must go from DateConfirmPaymentsPage to SubcontractorDetailsAddedController for a standard return with scoped subcontractors" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(SelectedSubcontractorForFlowPage(flowId.toString, 1), completeSub)
+
+          navigator.nextPage(
+            flowId,
+            DateConfirmPaymentsPage(flowId.toString),
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from VerifySubcontractorsPage to SubcontractorDetailsAddedController for a standard return" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            VerifySubcontractorsPage(flowId.toString),
+            NormalMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from SelectedSubcontractorPaymentsMadeForFlowPage to scoped CostOfMaterialsController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SelectedSubcontractorPaymentsMadeForFlowPage(flowId.toString, 1),
+            NormalMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.CostOfMaterialsController
+            .onPageLoadWithId(flowId, NormalMode, 1, None)
+        }
+
+        "must go from SelectedSubcontractorMaterialCostsForFlowPage to scoped TotalTaxDeductedController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SelectedSubcontractorMaterialCostsForFlowPage(flowId.toString, 1),
+            NormalMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.TotalTaxDeductedController
+            .onPageLoadWithId(flowId, NormalMode, 1, None)
+        }
+
+        "must go from SelectedSubcontractorTaxDeductedForFlowPage to scoped CheckAnswersTotalPaymentsController" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SelectedSubcontractorTaxDeductedForFlowPage(flowId.toString, 1),
+            NormalMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
+        }
+
+        "must go from PaymentDetailsConfirmationPage to scoped EmploymentStatusDeclarationController when answer is true" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(PaymentDetailsConfirmationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            PaymentDetailsConfirmationPage(flowId.toString),
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.EmploymentStatusDeclarationController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from PaymentDetailsConfirmationPage to scoped SubcontractorDetailsAddedController when answer is false" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(PaymentDetailsConfirmationPage(flowId.toString), false)
+
+          navigator.nextPage(
+            flowId,
+            PaymentDetailsConfirmationPage(flowId.toString),
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.SubcontractorDetailsAddedController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from EmploymentStatusDeclarationPage to scoped VerifiedStatusDeclarationController" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(EmploymentStatusDeclarationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            EmploymentStatusDeclarationPage(flowId.toString),
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.VerifiedStatusDeclarationController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from VerifiedStatusDeclarationPage to scoped SubmitInactivityRequestController" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(VerifiedStatusDeclarationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            VerifiedStatusDeclarationPage(flowId.toString),
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.SubmitInactivityRequestController
+            .onPageLoadWithId(flowId, NormalMode)
+        }
+
+        "must go from ConfirmationByEmailPage to CheckYourAnswers when a scoped employment status declaration exists" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(ConfirmationByEmailPage(flowId.toString), false)
+            .setOrException(EmploymentStatusDeclarationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            ConfirmationByEmailPage(flowId.toString),
+            NormalMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from EnterYourEmailAddressPage to CheckYourAnswers when a scoped employment status declaration exists" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(EmploymentStatusDeclarationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            EnterYourEmailAddressPage(flowId.toString),
+            NormalMode,
+            ua
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
       }
@@ -652,7 +807,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            DateConfirmPaymentsPage,
+            DateConfirmPaymentsPage(flowId.toString),
             CheckMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
@@ -664,7 +819,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            SubmitInactivityRequestPage,
+            SubmitInactivityRequestPage(flowId.toString),
             CheckMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController
@@ -677,7 +832,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            SubmitInactivityRequestPage,
+            SubmitInactivityRequestPage(flowId.toString),
             CheckMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
@@ -688,7 +843,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            SubmitInactivityRequestPage,
+            SubmitInactivityRequestPage(flowId.toString),
             CheckMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -700,7 +855,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            ConfirmationByEmailPage,
+            ConfirmationByEmailPage(flowId.toString),
             CheckMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController.onPageLoadWithId(flowId, CheckMode)
@@ -712,7 +867,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            ConfirmationByEmailPage,
+            ConfirmationByEmailPage(flowId.toString),
             CheckMode,
             ua
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
@@ -723,7 +878,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            ConfirmationByEmailPage,
+            ConfirmationByEmailPage(flowId.toString),
             CheckMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -734,7 +889,7 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            EnterYourEmailAddressPage,
+            EnterYourEmailAddressPage(flowId.toString),
             CheckMode,
             scopedUserAnswers(flowId)
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
@@ -745,9 +900,68 @@ class NavigatorSpec extends SpecBase {
 
           navigator.nextPage(
             flowId,
-            DeclarationPage,
+            DeclarationPage(flowId.toString),
             CheckMode,
             scopedUserAnswers(flowId)
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from SelectedSubcontractorPaymentsMadeForFlowPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SelectedSubcontractorPaymentsMadeForFlowPage(flowId.toString, 1),
+            CheckMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
+        }
+
+        "must go from SelectedSubcontractorMaterialCostsForFlowPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SelectedSubcontractorMaterialCostsForFlowPage(flowId.toString, 1),
+            CheckMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
+        }
+
+        "must go from SelectedSubcontractorTaxDeductedForFlowPage to scoped CheckAnswersTotalPaymentsController in CheckMode" in {
+          val flowId = UUID.randomUUID()
+
+          navigator.nextPage(
+            flowId,
+            SelectedSubcontractorTaxDeductedForFlowPage(flowId.toString, 1),
+            CheckMode,
+            scopedUserAnswers(flowId, MonthlyStandardReturn)
+          ) mustBe controllers.monthlyreturns.routes.CheckAnswersTotalPaymentsController.onPageLoadWithId(flowId, 1)
+        }
+
+        "must go from EmploymentStatusDeclarationPage to scoped CheckYourAnswersController in CheckMode" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(EmploymentStatusDeclarationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            EmploymentStatusDeclarationPage(flowId.toString),
+            CheckMode,
+            ua
+          ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
+        }
+
+        "must go from VerifiedStatusDeclarationPage to scoped CheckYourAnswersController in CheckMode" in {
+          val flowId = UUID.randomUUID()
+          val ua     = scopedUserAnswers(flowId, MonthlyStandardReturn)
+            .setOrException(VerifiedStatusDeclarationPage(flowId.toString), true)
+
+          navigator.nextPage(
+            flowId,
+            VerifiedStatusDeclarationPage(flowId.toString),
+            CheckMode,
+            ua
           ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
         }
       }
@@ -760,7 +974,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           flowId,
-          SubmitInactivityRequestPage,
+          SubmitInactivityRequestPage(flowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -776,7 +990,7 @@ class NavigatorSpec extends SpecBase {
           UnknownPage,
           NormalMode,
           scopedUserAnswers(flowId)
-        ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
+        ) mustBe controllers.monthlyreturns.routes.CheckYourAnswersController.onPageLoadWithId(flowId)
 
         navigator.nextPage(
           flowId,
@@ -792,7 +1006,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           flowId,
-          SubmitInactivityRequestPage,
+          SubmitInactivityRequestPage(flowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -804,7 +1018,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           flowId,
-          ConfirmationByEmailPage,
+          ConfirmationByEmailPage(flowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
@@ -821,7 +1035,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           firstFlowId,
-          SubmitInactivityRequestPage,
+          SubmitInactivityRequestPage(firstFlowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.monthlyreturns.routes.InactivityRequestWarningController
@@ -829,7 +1043,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           secondFlowId,
-          SubmitInactivityRequestPage,
+          SubmitInactivityRequestPage(secondFlowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.monthlyreturns.routes.ConfirmationByEmailController
@@ -847,7 +1061,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           firstFlowId,
-          ConfirmationByEmailPage,
+          ConfirmationByEmailPage(firstFlowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.monthlyreturns.routes.EnterYourEmailAddressController
@@ -855,7 +1069,7 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           secondFlowId,
-          ConfirmationByEmailPage,
+          ConfirmationByEmailPage(secondFlowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.monthlyreturns.routes.DeclarationController.onPageLoadWithId(secondFlowId)
@@ -871,14 +1085,14 @@ class NavigatorSpec extends SpecBase {
 
         navigator.nextPage(
           secondFlowId,
-          SubmitInactivityRequestPage,
+          SubmitInactivityRequestPage(secondFlowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()
 
         navigator.nextPage(
           secondFlowId,
-          ConfirmationByEmailPage,
+          ConfirmationByEmailPage(secondFlowId.toString),
           NormalMode,
           ua
         ) mustBe controllers.routes.JourneyRecoveryController.onPageLoad()

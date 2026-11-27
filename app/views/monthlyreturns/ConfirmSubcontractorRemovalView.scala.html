@@ -25,11 +25,11 @@
     govukButton: GovukButton,
 )
 
-@(form: Form[_], mode: Mode, subcontractorName: String, index: Int)(implicit request: Request[_], messages: Messages)
+@(form: Form[_], mode: Mode, subcontractorName: String, index: Int, formAction: Option[Call] = None)(implicit request: Request[_], messages: Messages)
 
 @layout(pageTitle = title(form, messages("monthlyreturns.confirmSubcontractorRemoval.title"))) {
 
-    @formHelper(action = controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(mode, index), Symbol("autoComplete") -> "off") {
+    @formHelper(action = formAction.getOrElse(controllers.monthlyreturns.routes.ConfirmSubcontractorRemovalController.onSubmit(mode, index)), Symbol("autoComplete") -> "off") {
 
         @if(form.errors.nonEmpty) {
             @govukErrorSummary(ErrorSummaryViewModel(form))

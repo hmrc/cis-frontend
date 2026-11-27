@@ -22,7 +22,8 @@ import play.api.libs.json.JsPath
 
 class SelectedSubcontractorPageSpec extends SpecBase {
 
-  private val index = 0
+  private val index  = 0
+  private val testId = "testId"
 
   "SelectedSubcontractorIdPage" - {
 
@@ -96,20 +97,6 @@ class SelectedSubcontractorPageSpec extends SpecBase {
     }
   }
 
-  "SelectedSubcontractorForFlowPage" - {
-
-    "have the correct path" in {
-      SelectedSubcontractorForFlowPage(
-        "test-id",
-        index
-      ).path mustBe (JsPath \ "monthlyReturn" \ "test-id" \ "subcontractors" \ index.toString)
-    }
-
-    "have the correct toString" in {
-      SelectedSubcontractorForFlowPage("test-id", index).toString mustBe "subcontractor-0"
-    }
-  }
-
   "SelectedSubcontractorPage.all" - {
 
     "have the correct path" in {
@@ -126,6 +113,62 @@ class SelectedSubcontractorPageSpec extends SpecBase {
 
     "have the correct toString with id" in {
       SelectedSubcontractorPage.all("test-id").toString mustBe "subcontractors"
+    }
+  }
+
+  // Multi-tab
+  "SelectedSubcontractorIdForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorIdForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "subcontractorId")
+      SelectedSubcontractorIdForFlowPage(testId, index).toString mustBe "subcontractorId"
+    }
+  }
+
+  "SelectedSubcontractorNameForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorNameForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "name")
+      SelectedSubcontractorNameForFlowPage(testId, index).toString mustBe "name"
+    }
+  }
+
+  "SelectedSubcontractorPaymentsMadeForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorPaymentsMadeForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "totalPaymentsMade")
+      SelectedSubcontractorPaymentsMadeForFlowPage(testId, index).toString mustBe "totalPaymentsMade"
+    }
+  }
+
+  "SelectedSubcontractorMaterialCostsForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorMaterialCostsForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "costOfMaterials")
+      SelectedSubcontractorMaterialCostsForFlowPage(testId, index).toString mustBe "costOfMaterials"
+    }
+  }
+
+  "SelectedSubcontractorTaxDeductedForFlowPage" - {
+
+    "have the correct path and toString" in {
+      SelectedSubcontractorTaxDeductedForFlowPage(
+        testId,
+        index
+      ).path mustBe (JsPath \ "monthlyReturn" \ testId \ "subcontractors" \ index.toString \ "totalTaxDeducted")
+      SelectedSubcontractorTaxDeductedForFlowPage(testId, index).toString mustBe "totalTaxDeducted"
     }
   }
 

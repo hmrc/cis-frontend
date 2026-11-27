@@ -23,23 +23,17 @@ class MonthlyFinalValidationContinuationPageSpec extends SpecBase {
 
   "MonthlyFinalValidationContinuationPage" - {
 
-    "must have the correct path" in {
-      MonthlyFinalValidationContinuationPage.path mustBe
-        JsPath \ "finalvalidation" \ "monthlyFinalValidationContinuation"
+    "must use MonthlyFinalValidationContinuationPage path" in {
+      MonthlyFinalValidationContinuationPage.path mustBe JsPath \ "finalvalidation" \ "monthlyFinalValidationContinuation"
+      MonthlyFinalValidationContinuationPage.toString mustBe "monthlyFinalValidationContinuation"
     }
 
-    "must have the correct name" in {
-      MonthlyFinalValidationContinuationPage.toString mustBe
-        "monthlyFinalValidationContinuation"
-    }
-
-    "have the correct scoped path" in {
-      MonthlyFinalValidationContinuationPage("org_flow-1").path mustBe
-        (JsPath \ "finalvalidation" \ "org_flow-1" \ "monthlyFinalValidationContinuation")
-    }
-
-    "have the correct scoped toString" in {
-      MonthlyFinalValidationContinuationPage("org_flow-1").toString mustBe "monthlyFinalValidationContinuation"
+    "must use MonthlyFinalValidationContinuationPage path with id" in {
+      val testId = "testId"
+      MonthlyFinalValidationContinuationPage(
+        testId
+      ).path mustBe JsPath \ "monthlyReturn" \ testId \ "finalvalidation" \ "monthlyFinalValidationContinuation"
+      MonthlyFinalValidationContinuationPage(testId).toString mustBe "monthlyFinalValidationContinuation"
     }
   }
 }

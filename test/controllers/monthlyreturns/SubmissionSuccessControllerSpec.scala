@@ -37,6 +37,7 @@ import play.api.test.Helpers.*
 import play.api.inject.bind
 import play.api.mvc.AnyContentAsEmpty
 import services.MonthlyReturnService
+import services.submission.SubmissionService
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.IrMarkReferenceGenerator
@@ -61,11 +62,12 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
   private val timeFmt                  = DateTimeFormatter.ofPattern("h:mma").withLocale(Locale.UK)
   private val london                   = ZoneId.of("Europe/London")
   private val mockMonthlyReturnService = mock(classOf[MonthlyReturnService])
+  private val mockSubmissionService    = mock(classOf[SubmissionService])
   private val mockGuard                = mock(classOf[SubmissionSuccessfulServiceGuard])
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockMonthlyReturnService, mockGuard)
+    reset(mockMonthlyReturnService, mockSubmissionService, mockGuard)
   }
 
   protected lazy val ukNow: ZonedDateTime =
@@ -150,6 +152,7 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
       .overrides(
         bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
         bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+        bind[SubmissionService].toInstance(mockSubmissionService),
         bind[SubmissionSuccessfulServiceGuard].toInstance(mockGuard)
       )
       .build()
@@ -972,88 +975,116 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           .overrides(
             bind[Clock].toInstance(Clock.fixed(fixedInstant, ZoneOffset.UTC)),
             bind[MonthlyReturnService].toInstance(mockMonthlyReturnService),
+            bind[SubmissionService].toInstance(mockSubmissionService),
             bind[SubmissionSuccessfulServiceGuard].toInstance(mockGuard)
           )
           .build()
 
-      "must return OK using ID-scoped answers and complete the submission journey" in {
+      Seq(
+        "nil"      -> ReturnType.MonthlyNilReturn,
+        "standard" -> ReturnType.MonthlyStandardReturn
+      ).foreach { case (returnTypeName, returnType) =>
+        s"must return OK using ID-scoped $returnTypeName return answers and complete the submission journey" in {
 
-        when(mockGuard.check(any[UserAnswers], any[String]))
-          .thenReturn(true)
+          val userAnswers = scopedAnswers
+            .setOrException(ReturnTypePage(id), returnType)
+            .setOrException(ReturnTypePage, ReturnType.MonthlyNilReturn)
 
-        when(
-          mockMonthlyReturnService.getMonthlyReturnComplete(
-            any[GetMonthlyReturnCompleteRequest]
-          )(
-            any[HeaderCarrier]
-          )
-        ).thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
+          when(mockGuard.check(any[UserAnswers], eqTo(id)))
+            .thenReturn(true)
 
-        when(
-          mockMonthlyReturnService.completeSubmissionJourney(
-            any[UserAnswers],
-            any[String]
-          )(
-            any[HeaderCarrier]
-          )
-        ).thenReturn(Future.unit)
-
-        val app = scopedApp(scopedAnswers)
-
-        running(app) {
-          val request = FakeRequest(
-            GET,
-            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
-          )
-
-          val result = route(app, request).value
-
-          status(result) mustBe OK
-
-          val body = contentAsString(result)
-
-          body must include("Scoped Contractor")
-          body must include("scoped@example.com")
-          body must not include email
-          body must include(
-            routes.ManageCisReturnController.onExitWithId(flowId).url
-          )
-
-          val requestCaptor =
-            org.mockito.ArgumentCaptor.forClass(classOf[GetMonthlyReturnCompleteRequest])
-
-          verify(mockMonthlyReturnService)
-            .getMonthlyReturnComplete(
-              requestCaptor.capture()
+          when(
+            mockMonthlyReturnService.getMonthlyReturnComplete(
+              any[GetMonthlyReturnCompleteRequest]
             )(
               any[HeaderCarrier]
             )
+          ).thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
 
-          requestCaptor.getValue.instanceId mustBe "2"
-          requestCaptor.getValue.taxYear mustBe 2024
-          requestCaptor.getValue.taxMonth mustBe 3
-          requestCaptor.getValue.amendment mustBe "N"
-
-          val answersCaptor =
-            org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
-
-          val idCaptor =
-            org.mockito.ArgumentCaptor.forClass(classOf[String])
-
-          verify(mockMonthlyReturnService)
-            .completeSubmissionJourney(
-              answersCaptor.capture(),
-              idCaptor.capture()
+          when(
+            mockMonthlyReturnService.completeSubmissionJourney(
+              any[UserAnswers],
+              any[String]
             )(
               any[HeaderCarrier]
             )
+          ).thenReturn(Future.unit)
 
-          idCaptor.getValue mustBe id
-          answersCaptor.getValue.get(SubmissionConfirmationCachePage(id)).isDefined mustBe true
-          answersCaptor.getValue.get(SubmissionConfirmationCachePage) mustBe None
+          val app = scopedApp(userAnswers)
 
-          verify(mockMonthlyReturnService, never())
-            .getSchemeEmail(any[String])(any[HeaderCarrier])
+          running(app) {
+            val request = FakeRequest(
+              GET,
+              routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+            )
+
+            val result = route(app, request).value
+
+            status(result) mustBe OK
+
+            val body = contentAsString(result)
+
+            body must include("March 2024")
+            body must include("Scoped Contractor")
+            body must include("scoped@example.com")
+            body must not include email
+
+            body must include(
+              routes.ManageCisReturnController.onExitWithId(flowId).url
+            )
+
+            val requestCaptor =
+              org.mockito.ArgumentCaptor.forClass(classOf[GetMonthlyReturnCompleteRequest])
+
+            verify(mockMonthlyReturnService)
+              .getMonthlyReturnComplete(
+                requestCaptor.capture()
+              )(
+                any[HeaderCarrier]
+              )
+
+            requestCaptor.getValue.instanceId mustBe "2"
+            requestCaptor.getValue.taxYear mustBe 2024
+            requestCaptor.getValue.taxMonth mustBe 3
+            requestCaptor.getValue.amendment mustBe "N"
+
+            val answersCaptor =
+              org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+
+            verify(mockMonthlyReturnService)
+              .completeSubmissionJourney(
+                answersCaptor.capture(),
+                eqTo(id)
+              )(
+                any[HeaderCarrier]
+              )
+
+            val completedAnswers = answersCaptor.getValue
+
+            completedAnswers.get(ReturnTypePage(id)) mustBe Some(returnType)
+
+            completedAnswers.get(ReturnTypePage) mustBe
+              Some(ReturnType.MonthlyNilReturn)
+
+            val cache = completedAnswers
+              .get(SubmissionConfirmationCachePage(id))
+              .value
+
+            cache.periodEnd mustBe "March 2024"
+            cache.contractorName mustBe Some("Scoped Contractor")
+            cache.email mustBe "scoped@example.com"
+
+            completedAnswers.get(SubmissionConfirmationCachePage) mustBe None
+
+            verify(mockGuard)
+              .check(any[UserAnswers], eqTo(id))
+
+            verify(mockMonthlyReturnService, never())
+              .completeSubmissionJourney(any[UserAnswers])(any[HeaderCarrier])
+
+            verify(mockMonthlyReturnService, never())
+              .getSchemeEmail(any[String])(any[HeaderCarrier])
+          }
         }
       }
 
@@ -1101,10 +1132,13 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
         }
       }
 
-      "must redirect to Journey Recovery when the ID-scoped submission guard fails" in {
+      "must redirect to Journey Recovery when the ID-scoped submission guard fails and reconciliation returns None" in {
 
         when(mockGuard.check(any[UserAnswers], any[String]))
           .thenReturn(false)
+
+        when(mockSubmissionService.reconcileSubmittedDetails(any[UserAnswers], eqTo(id))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(None))
 
         val app = scopedApp(scopedAnswers)
 
@@ -1119,6 +1153,139 @@ class SubmissionSuccessControllerSpec extends SpecBase with BeforeAndAfterEach {
           status(result) mustBe SEE_OTHER
           redirectLocation(result).value mustBe
             controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(mockSubmissionService)
+            .reconcileSubmittedDetails(any[UserAnswers], eqTo(id))(any[HeaderCarrier])
+
+          verifyNoInteractions(mockMonthlyReturnService)
+        }
+      }
+
+      "must return OK when stale ID-scoped submission details are reconciled successfully" in {
+
+        val details = scopedAnswers.get(SubmissionDetailsPage(id)).value
+
+        val staleAnswers = scopedAnswers
+          .setOrException(ReturnTypePage(id), ReturnType.MonthlyStandardReturn)
+          .setOrException(SubmissionDetailsPage(id), details.copy(status = "ACCEPTED"))
+
+        val reconciledAnswers = staleAnswers
+          .setOrException(
+            SubmissionDetailsPage(id),
+            details.copy(status = "SUBMITTED", hmrcMarkGgis = Some(irMarkBase64))
+          )
+
+        when(mockGuard.check(any[UserAnswers], eqTo(id)))
+          .thenReturn(false)
+
+        when(mockGuard.check(eqTo(reconciledAnswers), eqTo(id)))
+          .thenReturn(true)
+
+        when(mockSubmissionService.reconcileSubmittedDetails(any[UserAnswers], eqTo(id))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(reconciledAnswers)))
+
+        when(
+          mockMonthlyReturnService.getMonthlyReturnComplete(
+            any[GetMonthlyReturnCompleteRequest]
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.successful(monthlyReturnResponseWithoutContractorName))
+
+        when(
+          mockMonthlyReturnService.completeSubmissionJourney(
+            any[UserAnswers],
+            eqTo(id)
+          )(
+            any[HeaderCarrier]
+          )
+        ).thenReturn(Future.unit)
+
+        val app = scopedApp(staleAnswers)
+
+        running(app) {
+          val request = FakeRequest(
+            GET,
+            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+
+          val body = contentAsString(result)
+
+          body must include("March 2024")
+          body must include("Scoped Contractor")
+          body must include("scoped@example.com")
+
+          verify(mockSubmissionService)
+            .reconcileSubmittedDetails(any[UserAnswers], eqTo(id))(any[HeaderCarrier])
+
+          verify(mockGuard)
+            .check(eqTo(reconciledAnswers), eqTo(id))
+
+          val answersCaptor =
+            org.mockito.ArgumentCaptor.forClass(classOf[UserAnswers])
+
+          verify(mockMonthlyReturnService)
+            .completeSubmissionJourney(
+              answersCaptor.capture(),
+              eqTo(id)
+            )(
+              any[HeaderCarrier]
+            )
+
+          val completedAnswers = answersCaptor.getValue
+
+          completedAnswers.get(SubmissionDetailsPage(id)) mustBe
+            reconciledAnswers.get(SubmissionDetailsPage(id))
+
+          completedAnswers.get(SubmissionDetailsPage) mustBe
+            staleAnswers.get(SubmissionDetailsPage)
+
+          completedAnswers.get(SubmissionConfirmationCachePage(id)) mustBe defined
+        }
+      }
+
+      "must redirect to Journey Recovery when the ID-scoped submission guard still fails after reconciliation" in {
+
+        val details = scopedAnswers.get(SubmissionDetailsPage(id)).value
+
+        val staleAnswers = scopedAnswers
+          .setOrException(SubmissionDetailsPage(id), details.copy(status = "ACCEPTED"))
+
+        val reconciledAnswers = staleAnswers
+          .setOrException(
+            SubmissionDetailsPage(id),
+            details.copy(status = "SUBMITTED", hmrcMarkGgis = None)
+          )
+
+        when(mockGuard.check(any[UserAnswers], eqTo(id)))
+          .thenReturn(false)
+
+        when(mockSubmissionService.reconcileSubmittedDetails(any[UserAnswers], eqTo(id))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(Some(reconciledAnswers)))
+
+        val app = scopedApp(staleAnswers)
+
+        running(app) {
+          val request = FakeRequest(
+            GET,
+            routes.SubmissionSuccessController.onPageLoadWithId(flowId).url
+          )
+
+          val result = route(app, request).value
+
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result).value mustBe
+            controllers.routes.JourneyRecoveryController.onPageLoad().url
+
+          verify(mockSubmissionService)
+            .reconcileSubmittedDetails(any[UserAnswers], eqTo(id))(any[HeaderCarrier])
+
+          verify(mockGuard)
+            .check(eqTo(reconciledAnswers), eqTo(id))
 
           verifyNoInteractions(mockMonthlyReturnService)
         }

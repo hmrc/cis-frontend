@@ -88,7 +88,7 @@ class SubcontractorValidationFailuresPageSpec extends SpecBase {
     "Multi-Tab/Scoped" - {
       "have the correct path" in {
         SubcontractorValidationFailuresPage("CIS-ORG-1").path mustBe
-          JsPath \ "validation" \ "CIS-ORG-1" \ "subcontractorValidationFailures"
+          JsPath \ "monthlyReturn" \ "CIS-ORG-1" \ "validation" \ "subcontractorValidationFailures"
       }
 
       "have the correct toString value" in {

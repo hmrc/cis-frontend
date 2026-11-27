@@ -41,7 +41,7 @@ import java.util.Locale
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class SubmissionService @Inject() (
@@ -215,10 +215,12 @@ class SubmissionService @Inject() (
       req            <- buildCreateRequest(ua, id)
       response       <- cisConnector.createSubmission(req)
       period          = selectedYearMonth(ua, id).toString
-      withCreated    <- Future.fromTry(ua.set(SubmissionCreatedForFlowPage(id, period), true))
-      updatedAnswers <-
-        Future.fromTry(withCreated.set(CreatedSubmissionIdForFlowPage(id, period), response.submissionId))
-      _              <- sessionRepository.set(updatedAnswers)
+      updatedAnswers <- saveLatestUserAnswers(ua) { latestUa =>
+                          for {
+                            withCreated <- latestUa.set(SubmissionCreatedForFlowPage(id, period), true)
+                            withId      <- withCreated.set(CreatedSubmissionIdForFlowPage(id, period), response.submissionId)
+                          } yield withId
+                        }
     } yield (response, updatedAnswers)
 
   def submitToChrisAndPersist(
@@ -943,6 +945,47 @@ class SubmissionService @Inject() (
         }
       case None           =>
         Future.failed(new IllegalStateException("UserAnswers not found in session"))
+    }
+
+  // Multi-tab: Reconcile stale successful submission details against the backend.
+  def reconcileSubmittedDetails(
+    ua: UserAnswers,
+    id: String
+  )(implicit hc: HeaderCarrier): Future[Option[UserAnswers]] =
+    (ua.get(CisIdPage(id)), ua.get(SubmissionDetailsPage(id))) match {
+      case (Some(cisId), Some(details)) if Set("ACCEPTED", "PENDING").contains(details.status) =>
+        cisConnector
+          .getSubmittedMonthlyReturns(cisId)
+          .flatMap { response =>
+            response.submissions.find { submission =>
+              submission.submissionId.toString == details.id &&
+              submission.status == "SUBMITTED" &&
+              submission.hmrcMarkGenerated.contains(details.irMark)
+            } match {
+              case Some(submission) =>
+                saveLatestUserAnswers(ua) { latestUa =>
+                  if (
+                    latestUa.get(CisIdPage(id)).contains(cisId) &&
+                    latestUa.get(SubmissionDetailsPage(id)).contains(details)
+                  ) {
+                    latestUa.set(
+                      SubmissionDetailsPage(id),
+                      details.copy(status = submission.status, hmrcMarkGgis = submission.hmrcMarkGgis)
+                    )
+                  } else {
+                    Failure(new IllegalStateException("Scoped submission details changed"))
+                  }
+                }.map[Option[UserAnswers]](Some(_))
+
+              case None => Future.successful(None)
+            }
+          }
+          .recover { case NonFatal(ex) =>
+            logger.warn(s"[SubmissionService][reconcileSubmittedDetails] - Failed to reconcile flowId=$id", ex)
+            None
+          }
+
+      case _ => Future.successful(None)
     }
 
 }
