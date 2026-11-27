@@ -31,13 +31,13 @@ object TotalPaymentsSummary {
     Seq(
       row(
         labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
-        displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
+        displayValue = roundedDownWholePounds(subcontractor.totalPaymentsMade),
         changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController.onPageLoad(CheckMode, index, None).url,
         actionId = None
       ),
       row(
         labelKey = "monthlyreturns.checkAnswersTotalPayments.details.totalCostOfMaterials",
-        displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
+        displayValue = roundedDownWholePounds(subcontractor.costOfMaterials),
         changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController.onPageLoad(CheckMode, index, None).url,
         actionId = None
       ),
@@ -55,7 +55,7 @@ object TotalPaymentsSummary {
     Seq(
       row(
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalPaymentsMadeToSubcontractors",
-        displayValue = messages("currency.pounds", subcontractor.totalPaymentsMade),
+        displayValue = roundedDownWholePounds(subcontractor.totalPaymentsMade),
         changeUrl = controllers.monthlyreturns.routes.PaymentDetailsController
           .onPageLoad(CheckMode, index, Some("changeAnswers"))
           .url,
@@ -63,7 +63,7 @@ object TotalPaymentsSummary {
       ),
       row(
         labelKey = "monthlyreturns.changeAnswersTotalPayments.details.totalCostOfMaterials",
-        displayValue = messages("currency.pounds", subcontractor.costOfMaterials),
+        displayValue = roundedDownWholePounds(subcontractor.costOfMaterials),
         changeUrl = controllers.monthlyreturns.routes.CostOfMaterialsController
           .onPageLoad(CheckMode, index, Some("changeAnswers"))
           .url,
@@ -77,6 +77,12 @@ object TotalPaymentsSummary {
           .url,
         actionId = Some("total-tax-deductions")
       )
+    )
+
+  private def roundedDownWholePounds(value: String)(implicit messages: Messages): String =
+    messages(
+      "currency.pounds",
+      BigDecimal(value).setScale(0, BigDecimal.RoundingMode.DOWN)
     )
 
   private def row(labelKey: String, displayValue: String, changeUrl: String, actionId: Option[String])(implicit
