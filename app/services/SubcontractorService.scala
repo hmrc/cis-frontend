@@ -208,12 +208,14 @@ class SubcontractorService @Inject() (monthlyReturnService: MonthlyReturnService
           data.monthlyReturnItems.flatMap(_.itemResourceReference).toSet
 
         val subcontractors: Seq[AmendSubcontractor] =
-          data.subcontractors.map { sub =>
-            AmendSubcontractor(
-              id = sub.subcontractorId.toString,
-              name = resolveSubcontractorName(sub)
-            )
-          }
+          data.subcontractors
+            .map { sub =>
+              AmendSubcontractor(
+                id = sub.subcontractorId.toString,
+                name = resolveSubcontractorName(sub)
+              )
+            }
+            .sortBy(_.name.toLowerCase)
 
         val preSelectedIds: Set[String] =
           userAnswers.flatMap(_.get(pages.amend.WhichSubcontractorsToAddPage)) match {
@@ -312,7 +314,7 @@ object SubcontractorService {
     sub.subcontractorType.flatMap(t => Try(SubcontractorType.fromString(t)).toOption) match {
       case Some(SubcontractorType.SoleTrader)  =>
         (nonBlank(sub.firstName), nonBlank(sub.surname)) match {
-          case (Some(first), Some(last)) => s"$first $last"
+          case (Some(first), Some(last)) => s"$last, $first"
           case (_, Some(last))           => last
           case _                         => nonBlank(sub.tradingName).getOrElse(NoNameProvided)
         }

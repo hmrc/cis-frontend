@@ -418,9 +418,9 @@ class SubcontractorServiceSpec extends SpecBase {
     val trust       = Some(SubcontractorType.Trust.value)
     val partnership = Some(SubcontractorType.Partnership.value)
 
-    "returns 'firstName surname' for a sole trader with both names" in {
+    "returns 'surname, firstName' for a sole trader with both names" in {
       val sub = mkNameSubcontractor(subcontractorType = soleTrader, firstName = Some("John"), surname = Some("Smith"))
-      SubcontractorService.resolveSubcontractorName(sub) mustBe "John Smith"
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Smith, John"
     }
 
     "returns surname for a sole trader with only surname" in {
@@ -483,7 +483,7 @@ class SubcontractorServiceSpec extends SpecBase {
         firstName = Some("  John  "),
         surname = Some("  Smith  ")
       )
-      SubcontractorService.resolveSubcontractorName(sub) mustBe "John Smith"
+      SubcontractorService.resolveSubcontractorName(sub) mustBe "Smith, John"
     }
 
     "treats blank strings as absent" in {
@@ -527,8 +527,8 @@ class SubcontractorServiceSpec extends SpecBase {
       )
 
       whenReady(modelF) { model =>
-        model.subcontractors.map(_.name) mustBe Seq("John Smith", "Acme Ltd")
-        model.subcontractors.map(_.id) mustBe Seq("1", "2")
+        model.subcontractors.map(_.name) mustBe Seq("Acme Ltd", "Smith, John")
+        model.subcontractors.map(_.id) mustBe Seq("2", "1")
         model.preSelectedIds mustBe Set("1")
         model.status mustBe Some("STARTED")
       }
