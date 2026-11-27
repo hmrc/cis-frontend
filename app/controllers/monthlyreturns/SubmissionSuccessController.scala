@@ -29,6 +29,7 @@ import play.api.Logging
 import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import services.MonthlyReturnService
+import services.submission.SubmissionService
 import services.guard.SubmissionSuccessfulServiceGuard
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -55,6 +56,7 @@ class SubmissionSuccessController @Inject() (
   view: SubmissionSuccessView,
   clock: Clock,
   monthlyReturnService: MonthlyReturnService,
+  submissionService: SubmissionService,
   submissionSuccessGuard: SubmissionSuccessfulServiceGuard
 )(implicit ec: ExecutionContext, appConfig: FrontendAppConfig)
     extends FrontendBaseController
@@ -260,52 +262,65 @@ class SubmissionSuccessController @Inject() (
   // Multi-tab: Display the successful submission for the ID-scoped journey.
   def onPageLoadWithId(flowId: UUID): Action[AnyContent] =
     (identify andThen getData andThen requireData andThen multiTabAction.forJourney(flowId)).async { implicit request =>
-      val ua      = request.userAnswers
-      val id      = flowId.toString
-      val exitUrl = controllers.monthlyreturns.routes.ManageCisReturnController.onExitWithId(flowId).url
+      val originalUa = request.userAnswers
+      val id         = flowId.toString
+      val exitUrl    = controllers.monthlyreturns.routes.ManageCisReturnController.onExitWithId(flowId).url
 
-      if (!submissionSuccessGuard.check(ua, id)) {
-        logger.error(
-          s"[SubmissionSuccessController][onPageLoadWithId] - submissionSuccessGuard check failed correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
-        )
-        Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-      } else {
-        ua.get(SubmissionConfirmationCachePage(id)) match {
-          case Some(cache) =>
-            Future.successful(Ok(view(buildViewModelFromCache(cache, ua, id), exitUrl)))
+      // Multi-tab: Reconcile stale submission details when the success guard fails.
+      val confirmedAnswers: Future[Option[UserAnswers]] =
+        if (submissionSuccessGuard.check(originalUa, id)) {
+          Future.successful(Some(originalUa))
+        } else {
+          submissionService
+            .reconcileSubmittedDetails(originalUa, id)
+            .map(_.filter(updatedUa => submissionSuccessGuard.check(updatedUa, id)))
+        }
 
-          case None =>
-            GetMonthlyReturnCompleteRequest.fromUserAnswers(ua, id) match {
-              case Left(error) =>
-                logger.error(
-                  s"[SubmissionSuccessController][onPageLoadWithId] " +
-                    s"Failed to build GetMonthlyReturnCompleteRequest: $error " +
-                    s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
-                )
-                Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-              case Right(req)  =>
-                logger.info(
-                  s"[SubmissionSuccessController][onPageLoadWithId] Calling getMonthlyReturnComplete " +
-                    s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment} " +
-                    s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
-                )
+      confirmedAnswers.flatMap {
+        case None =>
+          logger.error(
+            s"[SubmissionSuccessController][onPageLoadWithId] - submissionSuccessGuard check failed correlationId=${originalUa.get(CorrelationIdPage(id)).getOrElse("unknown")}"
+          )
+          Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
 
-                (for {
-                  monthlyReturn <- monthlyReturnService.getMonthlyReturnComplete(req)
-                  vm            <- buildViewModel(ua, monthlyReturn, id)
-                  uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage(id), cacheFrom(vm)))
-                  _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache, id)
-                } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
+        case Some(ua) =>
+          ua.get(SubmissionConfirmationCachePage(id)) match {
+            case Some(cache) =>
+              Future.successful(Ok(view(buildViewModelFromCache(cache, ua, id), exitUrl)))
+
+            case None =>
+              GetMonthlyReturnCompleteRequest.fromUserAnswers(ua, id) match {
+                case Left(error) =>
                   logger.error(
-                    s"[SubmissionSuccessController][onPageLoadWithId] getMonthlyReturnComplete failed " +
-                      s"with status ${ex.statusCode} for instanceId=${req.instanceId} " +
-                      s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}",
-                    ex
+                    s"[SubmissionSuccessController][onPageLoadWithId] " +
+                      s"Failed to build GetMonthlyReturnCompleteRequest: $error " +
+                      s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
                   )
                   Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
-                }
-            }
-        }
+
+                case Right(req) =>
+                  logger.info(
+                    s"[SubmissionSuccessController][onPageLoadWithId] Calling getMonthlyReturnComplete " +
+                      s"instanceId=${req.instanceId} taxYear=${req.taxYear} taxMonth=${req.taxMonth} amendment=${req.amendment} " +
+                      s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}"
+                  )
+
+                  (for {
+                    monthlyReturn <- monthlyReturnService.getMonthlyReturnComplete(req)
+                    vm            <- buildViewModel(ua, monthlyReturn, id)
+                    uaWithCache   <- Future.fromTry(ua.set(SubmissionConfirmationCachePage(id), cacheFrom(vm)))
+                    _             <- monthlyReturnService.completeSubmissionJourney(uaWithCache, id)
+                  } yield Ok(view(vm, exitUrl))).recoverWith { case ex: UpstreamErrorResponse =>
+                    logger.error(
+                      s"[SubmissionSuccessController][onPageLoadWithId] getMonthlyReturnComplete failed " +
+                        s"with status ${ex.statusCode} for instanceId=${req.instanceId} " +
+                        s"correlationId=${ua.get(CorrelationIdPage(id)).getOrElse("unknown")}",
+                      ex
+                    )
+                    Future.successful(Redirect(controllers.routes.JourneyRecoveryController.onPageLoad()))
+                  }
+              }
+          }
       }
     }
 
